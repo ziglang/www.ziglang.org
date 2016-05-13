@@ -1,0 +1,467 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>The Zig Programming Language</title>
+    <link rel="stylesheet" href="highlight/styles/default.css">
+  </head>
+  <body>
+    <img src="zig-logo.png">
+    <a href="https://github.com/andrewrk/zig">Source Code</a> | 
+    <a href="https://github.com/andrewrk/zig/issues">Bug Tracker</a> |
+    <a href="http://andrewkelley.me/post/intro-to-zig.html">Introduction</a> |
+    <a href="https://webchat.freenode.net/?channels=%23zig">IRC</a>
+    <p>Zig is a system programming language which prioritizes
+    <strong>optimality</strong>, 
+    <strong>safety</strong>, and
+    <strong>readability</strong>.</p>
+    <h2>Feature Highlights</h2>
+    <ul>
+      <li>Import .h files and directly use C types, variables, and functions.</li>
+      <li>The Zig Standard Library does not depend on libc.</li>
+      <li>Maybe type instead of null pointers.</li>
+      <li>A fresh take on error handling that resembles what well-written C error handling looks like,
+          minus the boilerplate and verbosity.</li>
+      <li>Order independent top level declarations.</li>
+      <li>Debug mode optimizes for fast compilation time and crashing when undefined behavior
+        <em>would</em> happen.</li>
+      <li>Release mode produces heavily optimized code. What other projects call
+        "Link Time Optimization" Zig does automatically.</li>
+      <li>Friendly toward package maintainers. Reproducible build, bootstrapping process carefully documented. Issues filed by package maintainers are considered especially important.</li>
+      <li>Easy cross-compiling.</li>
+      <li>There is no preprocessor. Instead Zig has a few carefully designed features that
+          provide a way to accomplish things you might do with a preprocessor.</li>
+      <li>Generic data structures and functions.</li>
+    </ul>
+    <h2>Project Status</h2>
+    <p>
+    Zig is under active development, but it has not yet reached a
+    <a href="https://github.com/andrewrk/zig/milestones">release milestone</a>.
+    </p>
+    <h2 id="source-examples">Source Code Examples</h2>
+    <ul>
+      <li><a href="#hello">Hello World</a></li>
+      <li><a href="#hello_libc">Hello World with libc</a></li>
+      <li><a href="#parse">Parsing Unsigned Integers</a></li>
+      <li><a href="#hashmap">HashMap with Custom Allocator</a></li>
+      <li><a href="#tetris">Tetris Clone</a></li>
+      <li><a href="#cat">Cat Utility</a></li>
+    </ul>
+    <h3 id="hello">Hello World</h3>
+    <pre><code class="zig">const io = @import("std").io;
+
+pub fn main(args: [][]u8) -&gt; %void {
+    %%io.stdout.printf("Hello, world!\n");
+}</code></pre>
+    <p>Build this with:</p>
+    <pre>zig build hello.zig --name hello --export exe</pre>
+    <h3 id="hello_libc">Hello World with libc</h3>
+    <pre><code class="zig">const c = @c_import(@c_include("stdio.h"));
+
+export fn main(argc: c_int, argv: &amp;&amp;u8) -&gt; c_int {
+    c.printf(c"Hello, world!\n");
+    return 0;
+}</code></pre>
+    <p>Build this with:</p>
+    <pre>zig build hello.zig --name hello --export exe --library c</pre>
+    <h3 id="parse">Parsing Unsigned Integers</h3>
+    <pre><code class="zig">pub error InvalidChar;
+pub error Overflow;
+
+pub fn parse_unsigned(T: type)(buf: []u8, radix: u8) -&gt; %T {
+    var x: T = 0;
+
+    for (buf) |c| {
+        const digit = char_to_digit(c);
+
+        if (digit &gt;= radix) {
+            return error.InvalidChar;
+        }
+
+        // x *= radix
+        if (@mul_with_overflow(T, x, radix, &amp;x)) {
+            return error.Overflow;
+        }
+
+        // x += digit
+        if (@add_with_overflow(T, x, digit, &amp;x)) {
+            return error.Overflow;
+        }
+    }
+
+    return x;
+}
+
+fn char_to_digit(c: u8) -&gt; u8 {
+    if ('0' &lt;= c &amp;&amp; c &lt;= '9') {
+        c - '0'
+    } else if ('A' &lt;= c &amp;&amp; c &lt;= 'Z') {
+        c - 'A' + 10
+    } else if ('a' &lt;= c &amp;&amp; c &lt;= 'z') {
+        c - 'a' + 10
+    } else {
+        @max_value(u8)
+    }
+}
+
+fn get_number_with_default(s: []u8) -&gt; u32 {
+    parse_unsigned(u32)(s, 10) %% 42
+}
+
+fn get_number_or_crash(s: []u8) -&gt; u32 {
+    %%parse_unsigned(u32)(s, 10)
+}
+
+fn add_two_together_or_return_err(a_str: []u8, b_str: []u8) -&gt; %u32 {
+    const a = parse_unsigned(u32)(a_str, 10) %% |err| return err;
+    const b = parse_unsigned(u32)(b_str, 10) %% |err| return err;
+    return a + b;
+}</code></pre>
+    <h3 id="hashmap">HashMap with Custom Allocator</h3>
+    <pre><code class="zig">const assert = @import("index.zig").assert;
+const math = @import("math.zig");
+const mem = @import("mem.zig");
+const Allocator = mem.Allocator;
+
+const want_modification_safety = !@compile_var("is_release");
+const debug_u32 = if (want_modification_safety) u32 else void;
+
+pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K, b: K)-&gt;bool, STATIC_SIZE: isize) {
+    entries: []Entry,
+    size: isize,
+    max_distance_from_start_index: isize,
+    allocator: &amp;Allocator,
+    // if the hash map is small enough, we use linear search through these
+    // entries instead of allocating memory
+    prealloc_entries: [STATIC_SIZE]Entry,
+    // this is used to detect bugs where a hashtable is edited while an iterator is running.
+    modification_count: debug_u32,
+
+    const Self = SmallHashMap(K, V, hash, eql, STATIC_SIZE);
+
+    pub struct Entry {
+        used: bool,
+        distance_from_start_index: isize,
+        key: K,
+        value: V,
+    }
+
+    pub struct Iterator {
+        hm: &amp;Self,
+        // how many items have we returned
+        count: isize,
+        // iterator through the entry array
+        index: isize,
+        // used to detect concurrent modification
+        initial_modification_count: debug_u32,
+
+        pub fn next(it: &amp;Iterator) -&gt; ?&amp;Entry {
+            if (want_modification_safety) {
+                assert(it.initial_modification_count == it.hm.modification_count); // concurrent modification
+            }
+            if (it.count &gt;= it.hm.size) return null;
+            while (it.index &lt; it.hm.entries.len; it.index += 1) {
+                const entry = &amp;it.hm.entries[it.index];
+                if (entry.used) {
+                    it.index += 1;
+                    it.count += 1;
+                    return entry;
+                }
+            }
+            unreachable{} // no next item
+        }
+    }
+    
+    pub fn init(hm: &amp;Self, allocator: &amp;Allocator) {
+        hm.entries = hm.prealloc_entries[0...];
+        hm.allocator = allocator;
+        hm.size = 0;
+        hm.max_distance_from_start_index = 0;
+        for (hm.entries) |*entry| {
+            entry.used = false;
+        }
+    }
+
+    pub fn deinit(hm: &amp;Self) {
+        if (hm.entries.ptr != &amp;hm.prealloc_entries[0]) {
+            hm.allocator.free(hm.allocator, ([]u8)(hm.entries));
+        }
+    }
+
+    pub fn clear(hm: &amp;Self) {
+        for (hm.entries) |*entry| {
+            entry.used = false;
+        }
+        hm.size = 0;
+        hm.max_distance_from_start_index = 0;
+        hm.increment_modification_count();
+    }
+
+    pub fn put(hm: &amp;Self, key: K, value: V) -&gt; %void {
+        hm.increment_modification_count();
+
+        const resize = if (hm.entries.ptr == &amp;hm.prealloc_entries[0]) {
+            // preallocated entries table is full
+            hm.size == hm.entries.len
+        } else {
+            // if we get too full (60%), double the capacity
+            hm.size * 5 &gt;= hm.entries.len * 3
+        };
+        if (resize) {
+            const old_entries = hm.entries;
+            %return hm.init_capacity(hm.entries.len * 2);
+            // dump all of the old elements into the new table
+            for (old_entries) |*old_entry| {
+                if (old_entry.used) {
+                    hm.internal_put(old_entry.key, old_entry.value);
+                }
+            }
+            if (old_entries.ptr != &amp;hm.prealloc_entries[0]) {
+                hm.allocator.free(hm.allocator, ([]u8)(old_entries));
+            }
+        }
+
+        hm.internal_put(key, value);
+    }
+
+    pub fn get(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
+        return hm.internal_get(key);
+    }
+
+    pub fn remove(hm: &amp;Self, key: K) {
+        hm.increment_modification_count();
+        const start_index = hm.key_to_index(key);
+        {var roll_over: isize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
+            const index = (start_index + roll_over) % hm.entries.len;
+            var entry = &amp;hm.entries[index];
+
+            assert(entry.used); // key not found
+
+            if (!eql(entry.key, key)) continue;
+
+            while (roll_over &lt; hm.entries.len; roll_over += 1) {
+                const next_index = (start_index + roll_over + 1) % hm.entries.len;
+                const next_entry = &amp;hm.entries[next_index];
+                if (!next_entry.used || next_entry.distance_from_start_index == 0) {
+                    entry.used = false;
+                    hm.size -= 1;
+                    return;
+                }
+                *entry = *next_entry;
+                entry.distance_from_start_index -= 1;
+                entry = next_entry;
+            }
+            unreachable{} // shifting everything in the table
+        }}
+        unreachable{} // key not found
+    }
+
+    pub fn entry_iterator(hm: &amp;Self) -&gt; Iterator {
+        return Iterator {
+            .hm = hm,
+            .count = 0,
+            .index = 0,
+            .initial_modification_count = hm.modification_count,
+        };
+    }
+
+    fn init_capacity(hm: &amp;Self, capacity: isize) -&gt; %void {
+        hm.entries = ([]Entry)(%return hm.allocator.alloc(hm.allocator, capacity * @sizeof(Entry)));
+        hm.size = 0;
+        hm.max_distance_from_start_index = 0;
+        for (hm.entries) |*entry| {
+            entry.used = false;
+        }
+    }
+
+    fn increment_modification_count(hm: &amp;Self) {
+        if (want_modification_safety) {
+            hm.modification_count += 1;
+        }
+    }
+
+    fn internal_put(hm: &amp;Self, orig_key: K, orig_value: V) {
+        var key = orig_key;
+        var value = orig_value;
+        const start_index = hm.key_to_index(key);
+        var roll_over: isize = 0;
+        var distance_from_start_index: isize = 0;
+        while (roll_over &lt; hm.entries.len; {roll_over += 1; distance_from_start_index += 1}) {
+            const index = (start_index + roll_over) % hm.entries.len;
+            const entry = &amp;hm.entries[index];
+
+            if (entry.used &amp;& !eql(entry.key, key)) {
+                if (entry.distance_from_start_index &lt; distance_from_start_index) {
+                    // robin hood to the rescue
+                    const tmp = *entry;
+                    hm.max_distance_from_start_index = math.max(isize)(
+                        hm.max_distance_from_start_index, distance_from_start_index);
+                    *entry = Entry {
+                        .used = true,
+                        .distance_from_start_index = distance_from_start_index,
+                        .key = key,
+                        .value = value,
+                    };
+                    key = tmp.key;
+                    value = tmp.value;
+                    distance_from_start_index = tmp.distance_from_start_index;
+                }
+                continue;
+            }
+
+            if (!entry.used) {
+                // adding an entry. otherwise overwriting old value with
+                // same key
+                hm.size += 1;
+            }
+
+            hm.max_distance_from_start_index = math.max(isize)(distance_from_start_index, hm.max_distance_from_start_index);
+            *entry = Entry {
+                .used = true,
+                .distance_from_start_index = distance_from_start_index,
+                .key = key,
+                .value = value,
+            };
+            return;
+        }
+        unreachable{} // put into a full map
+    }
+
+    fn internal_get(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
+        const start_index = hm.key_to_index(key);
+        {var roll_over: isize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
+            const index = (start_index + roll_over) % hm.entries.len;
+            const entry = &amp;hm.entries[index];
+
+            if (!entry.used) return null;
+            if (eql(entry.key, key)) return entry;
+        }}
+        return null;
+    }
+
+    fn key_to_index(hm: &amp;Self, key: K) -&gt; isize {
+        return isize(hash(key)) % hm.entries.len;
+    }
+}
+
+var global_allocator = Allocator {
+    .alloc = global_alloc,
+    .realloc = global_realloc,
+    .free = global_free,
+    .context = null,
+};
+
+var some_mem: [200]u8 = undefined;
+var some_mem_index: isize = 0;
+
+fn global_alloc(self: &amp;Allocator, n: isize) -&gt; %[]u8 {
+    const result = some_mem[some_mem_index ... some_mem_index + n];
+    some_mem_index += n;
+    return result;
+}
+
+fn global_realloc(self: &amp;Allocator, old_mem: []u8, new_size: isize) -&gt; %[]u8 {
+    const result = %return global_alloc(self, new_size);
+    @memcpy(result.ptr, old_mem.ptr, old_mem.len);
+    return result;
+}
+
+fn global_free(self: &amp;Allocator, old_mem: []u8) {
+}
+
+#attribute("test")
+fn basic_hash_map_test() {
+    var map: SmallHashMap(i32, i32, hash_i32, eql_i32, 4) = undefined;
+    map.init(&amp;global_allocator);
+    defer map.deinit();
+
+    %%map.put(1, 11);
+    %%map.put(2, 22);
+    %%map.put(3, 33);
+    %%map.put(4, 44);
+    %%map.put(5, 55);
+
+    assert((??map.get(2)).value == 22);
+    map.remove(2);
+    assert(if (const entry ?= map.get(2)) false else true);
+}
+
+fn hash_i32(x: i32) -&gt; u32 {
+    *(&amp;u32)(&amp;x)
+}
+fn eql_i32(a: i32, b: i32) -&gt; bool {
+    a == b
+}</code></pre>
+    <h3 id="tetris">Tetris Clone</h3>
+    <img src="tetris-screenshot.png">
+    <p>
+    <a href="https://github.com/andrewrk/tetris">Source Code on GitHub</a>
+    </p>
+    <h3 id="cat">Cat Utility</h3>
+    <pre><code class="zig">const std = @import("std");
+const io = std.io;
+const str = std.str;
+
+pub fn main(args: [][]u8) -&gt; %void {
+    const exe = args[0];
+    var catted_anything = false;
+    for (args[1...]) |arg| {
+        if (str.eql(arg, "-")) {
+            catted_anything = true;
+            cat_stream(io.stdin) %% |err| return err;
+        } else if (arg[0] == '-') {
+            return usage(exe);
+        } else {
+            var is = io.InStream.open(arg) %% |err| {
+                %%io.stderr.printf("Unable to open file: ");
+                %%io.stderr.printf(@err_name(err));
+                %%io.stderr.printf("\n");
+                return err;
+            };
+            defer %%is.close();
+
+            catted_anything = true;
+            cat_stream(is) %% |err| return err;
+        }
+    }
+    if (!catted_anything) {
+        cat_stream(io.stdin) %% |err| return err;
+    }
+    io.stdout.flush() %% |err| return err;
+}
+
+fn usage(exe: []u8) -&gt; %void {
+    %%io.stderr.printf("Usage: ");
+    %%io.stderr.printf(exe);
+    %%io.stderr.printf(" [FILE]...\n");
+    return error.Invalid;
+}
+
+fn cat_stream(is: io.InStream) -&gt; %void {
+    var buf: [1024 * 4]u8 = undefined;
+
+    while (true) {
+        const bytes_read = is.read(buf) %% |err| {
+            %%io.stderr.printf("Unable to read from stream: ");
+            %%io.stderr.printf(@err_name(err));
+            %%io.stderr.printf("\n");
+            return err;
+        };
+
+        if (bytes_read == 0) {
+            break;
+        }
+
+        io.stdout.write(buf[0...bytes_read]) %% |err| {
+            %%io.stderr.printf("Unable to write to stdout: ");
+            %%io.stderr.printf(@err_name(err));
+            %%io.stderr.printf("\n");
+            return err;
+        };
+    }
+}
+    </code></pre>
+    <script src="highlight/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
