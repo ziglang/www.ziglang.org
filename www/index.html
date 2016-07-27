@@ -66,66 +66,70 @@ export fn main(argc: c_int, argv: &amp;&amp;u8) -&gt; c_int {
     <p>Build this with:</p>
     <pre>zig build hello.zig --name hello --export exe --library c</pre>
     <h3 id="parse">Parsing Unsigned Integers</h3>
-    <pre><code class="zig">pub error InvalidChar;
-pub error Overflow;
-
-pub fn parse_unsigned(T: type)(buf: []u8, radix: u8) -&gt; %T {
+    <pre><code class="zig">pub fn parse_unsigned(inline T: type, buf: []u8, radix: u8) -&gt; %T {
     var x: T = 0;
 
     for (buf) |c| {
-        const digit = char_to_digit(c);
-
-        if (digit &gt;= radix) {
-            return error.InvalidChar;
-        }
-
-        // x *= radix
-        if (@mul_with_overflow(T, x, radix, &amp;x)) {
-            return error.Overflow;
-        }
-
-        // x += digit
-        if (@add_with_overflow(T, x, digit, &amp;x)) {
-            return error.Overflow;
-        }
+        const digit = char_to_digit(c, radix) %% |err| return err;
+        x = mul_overflow(T, x, radix) %% |err| return err;
+        x = add_overflow(T, x, digit) %% |err| return err;
     }
 
     return x;
 }
 
-fn char_to_digit(c: u8) -&gt; u8 {
-    if ('0' &lt;= c &amp;&amp; c &lt;= '9') {
+pub error InvalidChar;
+
+fn char_to_digit(c: u8, radix: u8) -&gt; %u8 {
+    const value = if ('0' &lt;= c &amp;&amp; c &lt;= '9') {
         c - '0'
     } else if ('A' &lt;= c &amp;&amp; c &lt;= 'Z') {
         c - 'A' + 10
     } else if ('a' &lt;= c &amp;&amp; c &lt;= 'z') {
         c - 'a' + 10
     } else {
-        @max_value(u8)
-    }
+        return error.InvalidChar;
+    };
+    return if (value &gt;= radix) error.InvalidChar else value;
+}
+
+pub error Overflow;
+
+pub fn mul_overflow(inline T: type, a: T, b: T) -&gt; %T {
+    var answer: T = undefined;
+    if (@mul_with_overflow(T, a, b, &amp;answer)) error.Overflow else answer
+}
+
+pub fn add_overflow(inline T: type, a: T, b: T) -&gt; %T {
+    var answer: T = undefined;
+    if (@add_with_overflow(T, a, b, &amp;answer)) error.Overflow else answer
 }
 
 fn get_number_with_default(s: []u8) -&gt; u32 {
-    parse_unsigned(u32)(s, 10) %% 42
+    parse_unsigned(u32, s, 10) %% 42
 }
 
 fn get_number_or_crash(s: []u8) -&gt; u32 {
-    %%parse_unsigned(u32)(s, 10)
+    %%parse_unsigned(u32, s, 10)
 }
 
 fn add_two_together_or_return_err(a_str: []u8, b_str: []u8) -&gt; %u32 {
-    const a = parse_unsigned(u32)(a_str, 10) %% |err| return err;
-    const b = parse_unsigned(u32)(b_str, 10) %% |err| return err;
+    const a = parse_unsigned(u32, a_str, 10) %% |err| return err;
+    const b = parse_unsigned(u32, b_str, 10) %% |err| return err;
     return a + b;
 }</code></pre>
     <h3 id="hashmap">HashMap with Custom Allocator</h3>
-    <pre><code class="zig">const assert = @import("index.zig").assert;
-const math = @import("math.zig");
-const mem = @import("mem.zig");
+    <pre><code class="zig">const assert = @import(&quot;debug.zig&quot;).assert;
+const math = @import(&quot;math.zig&quot;);
+const mem = @import(&quot;mem.zig&quot;);
 const Allocator = mem.Allocator;
 
-const want_modification_safety = !@compile_var("is_release");
+const want_modification_safety = !@compile_var(&quot;is_release&quot;);
 const debug_u32 = if (want_modification_safety) u32 else void;
+
+pub inline fn HashMap(inline K: type, inline V: type, inline hash: fn(key: K)-&gt;u32, inline eql: fn(a: K, b: K)-&gt;bool) {
+    SmallHashMap(K, V, hash, eql, 8);
+}
 
 pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K, b: K)-&gt;bool, STATIC_SIZE: isize) {
     entries: []Entry,
@@ -185,7 +189,7 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
 
     pub fn deinit(hm: &amp;Self) {
         if (hm.entries.ptr != &amp;hm.prealloc_entries[0]) {
-            hm.allocator.free(hm.allocator, ([]u8)(hm.entries));
+            hm.allocator.free(Entry, hm.entries);
         }
     }
 
@@ -218,7 +222,7 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
                 }
             }
             if (old_entries.ptr != &amp;hm.prealloc_entries[0]) {
-                hm.allocator.free(hm.allocator, ([]u8)(old_entries));
+                hm.allocator.free(Entry, old_entries);
             }
         }
 
@@ -267,7 +271,7 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
     }
 
     fn init_capacity(hm: &amp;Self, capacity: isize) -&gt; %void {
-        hm.entries = ([]Entry)(%return hm.allocator.alloc(hm.allocator, capacity * @sizeof(Entry)));
+        hm.entries = %return hm.allocator.alloc(Entry, capacity);
         hm.size = 0;
         hm.max_distance_from_start_index = 0;
         for (hm.entries) |*entry| {
@@ -291,11 +295,11 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
             const index = (start_index + roll_over) % hm.entries.len;
             const entry = &amp;hm.entries[index];
 
-            if (entry.used &amp;& !eql(entry.key, key)) {
+            if (entry.used &amp;&amp; !eql(entry.key, key)) {
                 if (entry.distance_from_start_index &lt; distance_from_start_index) {
                     // robin hood to the rescue
                     const tmp = *entry;
-                    hm.max_distance_from_start_index = math.max(isize)(
+                    hm.max_distance_from_start_index = math.max(isize,
                         hm.max_distance_from_start_index, distance_from_start_index);
                     *entry = Entry {
                         .used = true,
@@ -316,7 +320,8 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
                 hm.size += 1;
             }
 
-            hm.max_distance_from_start_index = math.max(isize)(distance_from_start_index, hm.max_distance_from_start_index);
+            hm.max_distance_from_start_index = math.max(isize, distance_from_start_index,
+                hm.max_distance_from_start_index);
             *entry = Entry {
                 .used = true,
                 .distance_from_start_index = distance_from_start_index,
@@ -346,9 +351,9 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
 }
 
 var global_allocator = Allocator {
-    .alloc = global_alloc,
-    .realloc = global_realloc,
-    .free = global_free,
+    .alloc_fn = global_alloc,
+    .realloc_fn = global_realloc,
+    .free_fn = global_free,
     .context = null,
 };
 
@@ -370,7 +375,7 @@ fn global_realloc(self: &amp;Allocator, old_mem: []u8, new_size: isize) -&gt; %[
 fn global_free(self: &amp;Allocator, old_mem: []u8) {
 }
 
-#attribute("test")
+#attribute(&quot;test&quot;)
 fn basic_hash_map_test() {
     var map: SmallHashMap(i32, i32, hash_i32, eql_i32, 4) = undefined;
     map.init(&amp;global_allocator);
