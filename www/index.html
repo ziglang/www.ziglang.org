@@ -41,6 +41,7 @@
     </p>
     <p>Latest developments:</p>
     <ul>
+      <li>2016-08-05 - <a href="https://github.com/andrewrk/zig/issues/162">Better multiline string syntax</a></li>
       <li>2016-07-27 - <a href="https://github.com/andrewrk/zig/issues/161">Remove multiline comments</a></li>
       <li>2016-07-27 - <a href="https://github.com/andrewrk/zig/issues/159">Explicit integer wrapping operations like Swift</a></li>
       <li>2016-07-26 - <a href="https://github.com/andrewrk/zig/blob/master/std/rand.zig">Improve random number standard library implementation and API</a></li>
@@ -55,6 +56,8 @@
       <li><a href="#hashmap">HashMap with Custom Allocator</a></li>
       <li><a href="#tetris">Tetris Clone</a></li>
       <li><a href="#cat">Cat Utility</a></li>
+      <li><a href="#multiline-strings">Multiline String Syntax</a></li>
+      <li><a href="#mersenne">Mersenne Twister Random Number Generator</a></li>
     </ul>
     <h3 id="hello">Hello World</h3>
     <pre><code class="zig">const io = @import("std").io;
@@ -475,6 +478,270 @@ fn cat_stream(is: io.InStream) -&gt; %void {
     }
 }
     </code></pre>
+    <h3 id="multiline-strings">Multiline String Syntax</h3>
+    <pre><code class="zig">pub fn create_all_shaders() -&gt; AllShaders {
+    var as : AllShaders = undefined;
+
+    as.primitive = create_shader(
+        \\#version 150 core
+        \\
+        \\in vec3 VertexPosition;
+        \\
+        \\uniform mat4 MVP;
+        \\
+        \\void main(void) {
+        \\    gl_Position = vec4(VertexPosition, 1.0) * MVP;
+        \\}
+    ,
+        \\#version 150 core
+        \\
+        \\out vec4 FragColor;
+        \\
+        \\uniform vec4 Color;
+        \\
+        \\void main(void) {
+        \\    FragColor = Color;
+        \\}
+    , null);
+
+    as.primitive_attrib_position = as.primitive.attrib_location(c&quot;VertexPosition&quot;);
+    as.primitive_uniform_mvp = as.primitive.uniform_location(c&quot;MVP&quot;);
+    as.primitive_uniform_color = as.primitive.uniform_location(c&quot;Color&quot;);
+
+
+
+    as.texture = create_shader(
+        \\#version 150 core
+        \\
+        \\in vec3 VertexPosition;
+        \\in vec2 TexCoord;
+        \\
+        \\out vec2 FragTexCoord;
+        \\
+        \\uniform mat4 MVP;
+        \\
+        \\void main(void)
+        \\{
+        \\    FragTexCoord = TexCoord;
+        \\    gl_Position = vec4(VertexPosition, 1.0) * MVP;
+        \\}
+    ,
+        \\#version 150 core
+        \\
+        \\in vec2 FragTexCoord;
+        \\out vec4 FragColor;
+        \\
+        \\uniform sampler2D Tex;
+        \\
+        \\void main(void)
+        \\{
+        \\    FragColor = texture(Tex, FragTexCoord);
+        \\}
+    , null);
+
+    as.primitive_attrib_position = as.primitive.attrib_location(c&quot;VertexPosition&quot;);
+    as.primitive_uniform_mvp = as.primitive.uniform_location(c&quot;MVP&quot;);
+    as.primitive_uniform_color = as.primitive.uniform_location(c&quot;Color&quot;);
+
+
+    as.texture_attrib_tex_coord = as.texture.attrib_location(c&quot;TexCoord&quot;);
+    as.texture_attrib_position = as.texture.attrib_location(c&quot;VertexPosition&quot;);
+    as.texture_uniform_mvp = as.texture.uniform_location(c&quot;MVP&quot;);
+    as.texture_uniform_tex = as.texture.uniform_location(c&quot;Tex&quot;);
+
+    debug_gl.assert_no_error();
+
+    return as;
+}</code></pre>
+    <h3 id="mersenne">Mersenne Twister Random Number Generator</h3>
+    <pre><code class="zig">const assert = @import(&quot;debug.zig&quot;).assert;
+const rand_test = @import(&quot;rand_test.zig&quot;);
+
+pub const MT19937_32 = MersenneTwister(
+    u32, 624, 397, 31,
+    0x9908B0DF,
+    11, 0xFFFFFFFF,
+    7, 0x9D2C5680,
+    15, 0xEFC60000,
+    18, 1812433253);
+
+pub const MT19937_64 = MersenneTwister(
+    u64, 312, 156, 31,
+    0xB5026F5AA96619E9,
+    29, 0x5555555555555555,
+    17, 0x71D67FFFEDA60000,
+    37, 0xFFF7EEE000000000,
+    43, 6364136223846793005);
+
+/// Use `init` to initialize this state.
+pub struct Rand {
+    const Rng = if (@sizeof(usize) &gt;= 8) MT19937_64 else MT19937_32;
+
+    rng: Rng,
+
+    /// Initialize random state with the given seed.
+    pub fn init(seed: usize) -&gt; Rand {
+        var r: Rand = undefined;
+        r.rng = Rng.init(seed);
+        return r;
+    }
+
+    /// Get an integer with random bits.
+    pub fn scalar(r: &amp;Rand, inline T: type) -&gt; T {
+        if (T == usize) {
+            return r.rng.get();
+        } else {
+            var result: [@sizeof(T)]u8 = undefined;
+            r.fill_bytes(result);
+            return ([]T)(result)[0];
+        }
+    }
+
+    /// Fill `buf` with randomness.
+    pub fn fill_bytes(r: &amp;Rand, buf: []u8) {
+        var bytes_left = buf.len;
+        while (bytes_left &gt;= @sizeof(usize)) {
+            ([]usize)(buf[buf.len - bytes_left...])[0] = r.rng.get();
+            bytes_left -= @sizeof(usize);
+        }
+        if (bytes_left &gt; 0) {
+            var rand_val_array : [@sizeof(usize)]u8 = undefined;
+            ([]usize)(rand_val_array)[0] = r.rng.get();
+            while (bytes_left &gt; 0) {
+                buf[buf.len - bytes_left] = rand_val_array[@sizeof(usize) - bytes_left];
+                bytes_left -= 1;
+            }
+        }
+    }
+
+    /// Get a random unsigned integer with even distribution between `start`
+    /// inclusive and `end` exclusive.
+    // TODO support signed integers and then rename to &quot;range&quot;
+    pub fn range_unsigned(r: &amp;Rand, inline T: type, start: T, end: T) -&gt; T {
+        const range = end - start;
+        const leftover = @max_value(T) % range;
+        const upper_bound = @max_value(T) - leftover;
+        var rand_val_array : [@sizeof(T)]u8 = undefined;
+
+        while (true) {
+            r.fill_bytes(rand_val_array);
+            const rand_val = ([]T)(rand_val_array)[0];
+            if (rand_val &lt; upper_bound) {
+                return start + (rand_val % range);
+            }
+        }
+    }
+
+    /// Get a floating point value in the range 0.0..1.0.
+    pub fn float(r: &amp;Rand, inline T: type) -&gt; T {
+        // TODO Implement this way instead:
+        // const int = @int_type(false, @sizeof(T) * 8);
+        // const mask = ((1 &lt;&lt; @float_mantissa_bit_count(T)) - 1);
+        // const rand_bits = r.rng.scalar(int) &amp; mask;
+        // return @float_compose(T, false, 0, rand_bits) - 1.0
+        const int_type = @int_type(false, @sizeof(T) * 8);
+        const precision = if (T == f32) {
+            16777216
+        } else if (T == f64) {
+            9007199254740992
+        } else {
+            @compile_err(&quot;unknown floating point type&quot; ++ @type_name(T))
+        };
+        return T(r.range_unsigned(int_type, 0, precision)) / T(precision);
+    }
+}
+
+struct MersenneTwister(
+    int: type, n: usize, m: usize, r: int,
+    a: int,
+    u: int, d: int,
+    s: int, b: int,
+    t: int, c: int,
+    l: int, f: int)
+{
+    const Self = MersenneTwister(int, n, m, r, a, u, d, s, b, t, c, l, f);
+
+    array: [n]int,
+    index: usize,
+
+    // TODO improve compile time eval code and then allow this function to be executed at compile time.
+    #static_eval_enable(false)
+    pub fn init(seed: int) -&gt; Self {
+        var mt: Self = undefined;
+        mt.index = n;
+
+        var prev_value = seed;
+        mt.array[0] = prev_value;
+        {var i: usize = 1; while (i &lt; n; i += 1) {
+            prev_value = int(i) +% f *% (prev_value ^ (prev_value &gt;&gt; (int.bit_count - 2)));
+            mt.array[i] = prev_value;
+        }};
+
+        return mt;
+    }
+
+    pub fn get(mt: &amp;Self) -&gt; int {
+        const mag01 = []int{0, a};
+        const LM: int = (1 &lt;&lt; r) - 1;
+        const UM = ~LM;
+
+        if (mt.index &gt;= n) {
+            var i: usize = 0;
+
+            while (i &lt; n - m; i += 1) {
+                const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
+                mt.array[i] = mt.array[i + m] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
+            }
+
+            while (i &lt; n - 1; i += 1) {
+                const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
+                mt.array[i] = mt.array[i + m - n] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
+
+            }
+            const x = (mt.array[i] &amp; UM) | (mt.array[0] &amp; LM);
+            mt.array[i] = mt.array[m - 1] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
+
+            mt.index = 0;
+        }
+
+        var x = mt.array[mt.index];
+        mt.index += 1;
+
+        x ^= ((x &gt;&gt; u) &amp; d);
+        x ^= ((x &lt;&lt;% s) &amp; b);
+        x ^= ((x &lt;&lt;% t) &amp; c);
+        x ^= (x &gt;&gt; l);
+
+        return x;
+    }
+}
+
+#attribute(&quot;test&quot;)
+fn test_float32() {
+    var r = Rand.init(42);
+
+    {var i: usize = 0; while (i &lt; 1000; i += 1) {
+        const val = r.float(f32);
+        assert(val &gt;= 0.0);
+        assert(val &lt; 1.0);
+    }}
+}
+
+#attribute(&quot;test&quot;)
+fn test_MT19937_64() {
+    const rng = MT19937_64.init(rand_test.mt64_seed);
+    for (rand_test.mt64_data) |value| {
+        assert(value == rng.get());
+    }
+}
+
+#attribute(&quot;test&quot;)
+fn test_MT19937_32() {
+    const rng = MT19937_32.init(rand_test.mt32_seed);
+    for (rand_test.mt32_data) |value| {
+        assert(value == rng.get());
+    }
+}</code></pre>
     <script src="highlight/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
   </body>
