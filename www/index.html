@@ -41,16 +41,16 @@
     </p>
     <p>Latest developments:</p>
     <ul>
+      <li>2016-09-26 - <a href="https://github.com/andrewrk/zig/issues/169">add `this` keyword which refers to things in immediate scope</a></li>
+      <li>2016-09-26 - <a href="https://github.com/andrewrk/zig/issues/140">Compile-time evaluation supports variable assignment</a></li>
+      <li>2016-09-23 - <a href="https://github.com/andrewrk/zig/commit/e06885d64e3569719e9479c7069da7ad426a70d3">Enums support member functions</a></li>
+      <li>2016-09-21 - <a href="https://github.com/andrewrk/zig/commit/3f8f0b9bba5407ed5f7279bfdb7d22afaa126674">Exporting an object file generates a C header file</a></li>
       <li>2016-09-14 - <a href="https://github.com/andrewrk/zig/pull/189">All tests passing on MacOS</a></li>
       <li>2016-09-08 - <a href="https://github.com/andrewrk/zig/commit/d324b1befa6c7f0fd5d18ffe45a98d104a62d8a0">Ability to infer parameter types</a></li>
       <li>2016-09-05 - <a href="https://github.com/andrewrk/zig/commit/4e7effd3d38894f4d00bb0bb51ed34e237a4167e">Port Zig to llvm 3.9.0</a></li>
       <li>2016-08-12 - <a href="https://github.com/andrewrk/zig/blob/master/doc/style.md">Official style guide posted</a></li>
       <li>2016-08-05 - <a href="https://github.com/andrewrk/zig/issues/162">Better multiline string syntax</a></li>
       <li>2016-07-27 - <a href="https://github.com/andrewrk/zig/issues/161">Remove multiline comments</a></li>
-      <li>2016-07-27 - <a href="https://github.com/andrewrk/zig/issues/159">Explicit integer wrapping operations like Swift</a></li>
-      <li>2016-07-26 - <a href="https://github.com/andrewrk/zig/blob/master/std/rand.zig">Improve random number standard library implementation and API</a></li>
-      <li>2016-07-26 - <a href="https://github.com/andrewrk/zig/issues/62">Switch from signed to unsigned integers for sizes of things</a></li>
-      <li>2016-07-24 - <a href="https://github.com/andrewrk/zig/issues/151">Support inline parameters</a></li>
     </ul>
     <h2 id="source-examples">Source Code Examples</h2>
     <ul>
@@ -157,7 +157,7 @@ pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K
     // this is used to detect bugs where a hashtable is edited while an iterator is running.
     modification_count: debug_u32,
 
-    const Self = SmallHashMap(K, V, hash, eql, STATIC_SIZE);
+    const Self = this;
 
     pub struct Entry {
         used: bool,
@@ -574,15 +574,13 @@ pub const MT19937_64 = MersenneTwister(
 
 /// Use `init` to initialize this state.
 pub struct Rand {
-    const Rng = if (@sizeof(usize) &gt;= 8) MT19937_64 else MT19937_32;
+    const Rng = if (@sizeOf(usize) &gt;= 8) MT19937_64 else MT19937_32;
 
     rng: Rng,
 
     /// Initialize random state with the given seed.
-    pub fn init(seed: usize) -&gt; Rand {
-        var r: Rand = undefined;
-        r.rng = Rng.init(seed);
-        return r;
+    pub fn init(r: &amp;Rand, seed: usize) {
+        r.rng.init(seed);
     }
 
     /// Get an integer with random bits.
@@ -590,24 +588,24 @@ pub struct Rand {
         if (T == usize) {
             return r.rng.get();
         } else {
-            var result: [@sizeof(T)]u8 = undefined;
-            r.fill_bytes(result);
+            var result: [@sizeOf(T)]u8 = undefined;
+            r.fillBytes(result);
             return ([]T)(result)[0];
         }
     }
 
     /// Fill `buf` with randomness.
-    pub fn fill_bytes(r: &amp;Rand, buf: []u8) {
+    pub fn fillBytes(r: &amp;Rand, buf: []u8) {
         var bytes_left = buf.len;
-        while (bytes_left &gt;= @sizeof(usize)) {
+        while (bytes_left &gt;= @sizeOf(usize)) {
             ([]usize)(buf[buf.len - bytes_left...])[0] = r.rng.get();
-            bytes_left -= @sizeof(usize);
+            bytes_left -= @sizeOf(usize);
         }
         if (bytes_left &gt; 0) {
-            var rand_val_array : [@sizeof(usize)]u8 = undefined;
+            var rand_val_array : [@sizeOf(usize)]u8 = undefined;
             ([]usize)(rand_val_array)[0] = r.rng.get();
             while (bytes_left &gt; 0) {
-                buf[buf.len - bytes_left] = rand_val_array[@sizeof(usize) - bytes_left];
+                buf[buf.len - bytes_left] = rand_val_array[@sizeOf(usize) - bytes_left];
                 bytes_left -= 1;
             }
         }
@@ -616,14 +614,14 @@ pub struct Rand {
     /// Get a random unsigned integer with even distribution between `start`
     /// inclusive and `end` exclusive.
     // TODO support signed integers and then rename to &quot;range&quot;
-    pub fn range_unsigned(r: &amp;Rand, inline T: type, start: T, end: T) -&gt; T {
+    pub fn rangeUnsigned(r: &amp;Rand, inline T: type, start: T, end: T) -&gt; T {
         const range = end - start;
-        const leftover = @max_value(T) % range;
-        const upper_bound = @max_value(T) - leftover;
-        var rand_val_array : [@sizeof(T)]u8 = undefined;
+        const leftover = @maxValue(T) % range;
+        const upper_bound = @maxValue(T) - leftover;
+        var rand_val_array : [@sizeOf(T)]u8 = undefined;
 
         while (true) {
-            r.fill_bytes(rand_val_array);
+            r.fillBytes(rand_val_array);
             const rand_val = ([]T)(rand_val_array)[0];
             if (rand_val &lt; upper_bound) {
                 return start + (rand_val % range);
@@ -634,19 +632,19 @@ pub struct Rand {
     /// Get a floating point value in the range 0.0..1.0.
     pub fn float(r: &amp;Rand, inline T: type) -&gt; T {
         // TODO Implement this way instead:
-        // const int = @int_type(false, @sizeof(T) * 8);
+        // const int = @int_type(false, @sizeOf(T) * 8);
         // const mask = ((1 &lt;&lt; @float_mantissa_bit_count(T)) - 1);
         // const rand_bits = r.rng.scalar(int) &amp; mask;
         // return @float_compose(T, false, 0, rand_bits) - 1.0
-        const int_type = @int_type(false, @sizeof(T) * 8);
+        const int_type = @intType(false, @sizeOf(T) * 8);
         const precision = if (T == f32) {
             16777216
         } else if (T == f64) {
             9007199254740992
         } else {
-            @compile_err(&quot;unknown floating point type&quot; ++ @type_name(T))
+            @compileError(&quot;unknown floating point type&quot; ++ @typeName(T))
         };
-        return T(r.range_unsigned(int_type, 0, precision)) / T(precision);
+        return T(r.rangeUnsigned(int_type, 0, precision)) / T(precision);
     }
 }
 
@@ -658,15 +656,12 @@ struct MersenneTwister(
     t: int, c: int,
     l: int, f: int)
 {
-    const Self = MersenneTwister(int, n, m, r, a, u, d, s, b, t, c, l, f);
+    const Self = this;
 
     array: [n]int,
     index: usize,
 
-    // TODO improve compile time eval code and then allow this function to be executed at compile time.
-    #static_eval_enable(false)
-    pub fn init(seed: int) -&gt; Self {
-        var mt: Self = undefined;
+    pub fn init(mt: &amp;Self, seed: int) {
         mt.index = n;
 
         var prev_value = seed;
@@ -675,8 +670,6 @@ struct MersenneTwister(
             prev_value = int(i) +% f *% (prev_value ^ (prev_value &gt;&gt; (int.bit_count - 2)));
             mt.array[i] = prev_value;
         }};
-
-        return mt;
     }
 
     pub fn get(mt: &amp;Self) -&gt; int {
@@ -716,8 +709,9 @@ struct MersenneTwister(
 }
 
 #attribute(&quot;test&quot;)
-fn test_float32() {
-    var r = Rand.init(42);
+fn testFloat32() {
+    var r: Rand = undefined;
+    r.init(42);
 
     {var i: usize = 0; while (i &lt; 1000; i += 1) {
         const val = r.float(f32);
@@ -727,16 +721,18 @@ fn test_float32() {
 }
 
 #attribute(&quot;test&quot;)
-fn test_MT19937_64() {
-    const rng = MT19937_64.init(rand_test.mt64_seed);
+fn testMT19937_64() {
+    var rng: MT19937_64 = undefined;
+    rng.init(rand_test.mt64_seed);
     for (rand_test.mt64_data) |value| {
         assert(value == rng.get());
     }
 }
 
 #attribute(&quot;test&quot;)
-fn test_MT19937_32() {
-    const rng = MT19937_32.init(rand_test.mt32_seed);
+fn testMT19937_32() {
+    var rng: MT19937_32 = undefined;
+    rng.init(rand_test.mt32_seed);
     for (rand_test.mt32_data) |value| {
         assert(value == rng.get());
     }
