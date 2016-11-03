@@ -72,7 +72,7 @@ pub fn main(args: [][]u8) -&gt; %void {
     <p>Build this with:</p>
     <pre>zig build hello.zig --name hello --export exe</pre>
     <h3 id="hello_libc">Hello World with libc</h3>
-    <pre><code class="zig">const c = @c_import(@c_include("stdio.h"));
+    <pre><code class="zig">const c = @cImport(@cInclude("stdio.h"));
 
 export fn main(argc: c_int, argv: &amp;&amp;u8) -&gt; c_int {
     c.printf(c"Hello, world!\n");
@@ -112,12 +112,12 @@ pub error Overflow;
 
 pub fn mul_overflow(inline T: type, a: T, b: T) -&gt; %T {
     var answer: T = undefined;
-    if (@mul_with_overflow(T, a, b, &amp;answer)) error.Overflow else answer
+    if (@mulWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer
 }
 
 pub fn add_overflow(inline T: type, a: T, b: T) -&gt; %T {
     var answer: T = undefined;
-    if (@add_with_overflow(T, a, b, &amp;answer)) error.Overflow else answer
+    if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer
 }
 
 fn get_number_with_default(s: []u8) -&gt; u32 {
@@ -139,7 +139,7 @@ const math = @import(&quot;math.zig&quot;);
 const mem = @import(&quot;mem.zig&quot;);
 const Allocator = mem.Allocator;
 
-const want_modification_safety = !@compile_var(&quot;is_release&quot;);
+const want_modification_safety = !@compileVar(&quot;is_release&quot;);
 const debug_u32 = if (want_modification_safety) u32 else void;
 
 pub inline fn HashMap(inline K: type, inline V: type, inline hash: fn(key: K)-&gt;u32, inline eql: fn(a: K, b: K)-&gt;bool) {
@@ -435,7 +435,7 @@ pub fn main(args: [][]u8) -&gt; %void {
         } else {
             var is = io.InStream.open(arg) %% |err| {
                 %%io.stderr.printf("Unable to open file: ");
-                %%io.stderr.printf(@err_name(err));
+                %%io.stderr.printf(@errorName(err));
                 %%io.stderr.printf("\n");
                 return err;
             };
@@ -464,7 +464,7 @@ fn cat_stream(is: io.InStream) -&gt; %void {
     while (true) {
         const bytes_read = is.read(buf) %% |err| {
             %%io.stderr.printf("Unable to read from stream: ");
-            %%io.stderr.printf(@err_name(err));
+            %%io.stderr.printf(@errorname(err));
             %%io.stderr.printf("\n");
             return err;
         };
@@ -475,7 +475,7 @@ fn cat_stream(is: io.InStream) -&gt; %void {
 
         io.stdout.write(buf[0...bytes_read]) %% |err| {
             %%io.stderr.printf("Unable to write to stdout: ");
-            %%io.stderr.printf(@err_name(err));
+            %%io.stderr.printf(@errorname(err));
             %%io.stderr.printf("\n");
             return err;
         };
@@ -632,10 +632,10 @@ pub struct Rand {
     /// Get a floating point value in the range 0.0..1.0.
     pub fn float(r: &amp;Rand, inline T: type) -&gt; T {
         // TODO Implement this way instead:
-        // const int = @int_type(false, @sizeOf(T) * 8);
-        // const mask = ((1 &lt;&lt; @float_mantissa_bit_count(T)) - 1);
+        // const int = @intType(false, @sizeOf(T) * 8);
+        // const mask = ((1 &lt;&lt; @floatMantissaBitCount(T)) - 1);
         // const rand_bits = r.rng.scalar(int) &amp; mask;
-        // return @float_compose(T, false, 0, rand_bits) - 1.0
+        // return @floatCompose(T, false, 0, rand_bits) - 1.0
         const int_type = @intType(false, @sizeOf(T) * 8);
         const precision = if (T == f32) {
             16777216
