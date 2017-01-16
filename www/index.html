@@ -41,6 +41,9 @@
     </p>
     <p>Latest developments:</p>
     <ul>
+      <li>2017-01-16 - <a href="https://github.com/andrewrk/zig/issues/222">Get rid of `zeroes`.</a></li>
+      <li>2017-01-16 - <a href="https://github.com/andrewrk/zig/issues/160">All containers are now anonymous. Unify generic syntax.</a></li>
+      <li>2017-01-16 - merge IR branch into master. Complete rewrite of Zig internals. Fixes many issues and paves the path for new features.</li>
       <li>2016-09-26 - <a href="https://github.com/andrewrk/zig/issues/169">add `this` keyword which refers to things in immediate scope</a></li>
       <li>2016-09-26 - <a href="https://github.com/andrewrk/zig/issues/140">Compile-time evaluation supports variable assignment</a></li>
       <li>2016-09-23 - <a href="https://github.com/andrewrk/zig/commit/e06885d64e3569719e9479c7069da7ad426a70d3">Enums support member functions</a></li>
@@ -93,7 +96,7 @@ export fn main(argc: c_int, argv: &amp;&amp;u8) -&gt; c_int {
     return x;
 }
 
-pub error InvalidChar;
+error InvalidChar;
 
 fn char_to_digit(c: u8, radix: u8) -&gt; %u8 {
     const value = if ('0' &lt;= c &amp;&amp; c &lt;= '9') {
@@ -108,7 +111,7 @@ fn char_to_digit(c: u8, radix: u8) -&gt; %u8 {
     return if (value &gt;= radix) error.InvalidChar else value;
 }
 
-pub error Overflow;
+error Overflow;
 
 pub fn mul_overflow(inline T: type, a: T, b: T) -&gt; %T {
     var answer: T = undefined;
@@ -134,7 +137,8 @@ fn add_two_together_or_return_err(a_str: []u8, b_str: []u8) -&gt; %u32 {
     return a + b;
 }</code></pre>
     <h3 id="hashmap">HashMap with Custom Allocator</h3>
-    <pre><code class="zig">const assert = @import(&quot;debug.zig&quot;).assert;
+    <pre><code class="zig">const debug = @import(&quot;debug.zig&quot;);
+const assert = debug.assert;
 const math = @import(&quot;math.zig&quot;);
 const mem = @import(&quot;mem.zig&quot;);
 const Allocator = mem.Allocator;
@@ -142,258 +146,222 @@ const Allocator = mem.Allocator;
 const want_modification_safety = !@compileVar(&quot;is_release&quot;);
 const debug_u32 = if (want_modification_safety) u32 else void;
 
-pub inline fn HashMap(inline K: type, inline V: type, inline hash: fn(key: K)-&gt;u32, inline eql: fn(a: K, b: K)-&gt;bool) {
-    SmallHashMap(K, V, hash, eql, 8)
-}
+pub fn HashMap(inline K: type, inline V: type, inline hash: fn(key: K)-&gt;u32,
+    inline eql: fn(a: K, b: K)-&gt;bool) -&gt; type
+{
+    struct {
+        entries: []Entry,
+        size: usize,
+        max_distance_from_start_index: usize,
+        allocator: &amp;Allocator,
+        // this is used to detect bugs where a hashtable is edited while an iterator is running.
+        modification_count: debug_u32,
 
-pub struct SmallHashMap(K: type, V: type, hash: fn(key: K)-&gt;u32, eql: fn(a: K, b: K)-&gt;bool, STATIC_SIZE: usize) {
-    entries: []Entry,
-    size: usize,
-    max_distance_from_start_index: usize,
-    allocator: &amp;Allocator,
-    // if the hash map is small enough, we use linear search through these
-    // entries instead of allocating memory
-    prealloc_entries: [STATIC_SIZE]Entry,
-    // this is used to detect bugs where a hashtable is edited while an iterator is running.
-    modification_count: debug_u32,
+        const Self = this;
 
-    const Self = this;
+        pub const Entry = struct {
+            used: bool,
+            distance_from_start_index: usize,
+            key: K,
+            value: V,
+        };
 
-    pub struct Entry {
-        used: bool,
-        distance_from_start_index: usize,
-        key: K,
-        value: V,
-    }
+        pub const Iterator = struct {
+            hm: &amp;Self,
+            // how many items have we returned
+            count: usize,
+            // iterator through the entry array
+            index: usize,
+            // used to detect concurrent modification
+            initial_modification_count: debug_u32,
 
-    pub struct Iterator {
-        hm: &amp;Self,
-        // how many items have we returned
-        count: usize,
-        // iterator through the entry array
-        index: usize,
-        // used to detect concurrent modification
-        initial_modification_count: debug_u32,
-
-        pub fn next(it: &amp;Iterator) -&gt; ?&amp;Entry {
-            if (want_modification_safety) {
-                assert(it.initial_modification_count == it.hm.modification_count); // concurrent modification
-            }
-            if (it.count &gt;= it.hm.size) return null;
-            while (it.index &lt; it.hm.entries.len; it.index += 1) {
-                const entry = &amp;it.hm.entries[it.index];
-                if (entry.used) {
-                    it.index += 1;
-                    it.count += 1;
-                    return entry;
+            pub fn next(it: &amp;Iterator) -&gt; ?&amp;Entry {
+                if (want_modification_safety) {
+                    assert(it.initial_modification_count == it.hm.modification_count); // concurrent modification
                 }
+                if (it.count &gt;= it.hm.size) return null;
+                while (it.index &lt; it.hm.entries.len; it.index += 1) {
+                    const entry = &amp;it.hm.entries[it.index];
+                    if (entry.used) {
+                        it.index += 1;
+                        it.count += 1;
+                        return entry;
+                    }
+                }
+                @unreachable() // no next item
             }
-            unreachable{} // no next item
-        }
-    }
-    
-    pub fn init(hm: &amp;Self, allocator: &amp;Allocator) {
-        hm.entries = hm.prealloc_entries[0...];
-        hm.allocator = allocator;
-        hm.size = 0;
-        hm.max_distance_from_start_index = 0;
-        for (hm.entries) |*entry| {
-            entry.used = false;
-        }
-    }
+        };
 
-    pub fn deinit(hm: &amp;Self) {
-        if (hm.entries.ptr != &amp;hm.prealloc_entries[0]) {
+        pub fn init(hm: &amp;Self, allocator: &amp;Allocator) {
+            hm.entries = []Entry{};
+            hm.allocator = allocator;
+            hm.size = 0;
+            hm.max_distance_from_start_index = 0;
+            // it doesn't actually matter what we set this to since we use wrapping integer arithmetic
+            hm.modification_count = undefined;
+        }
+
+        pub fn deinit(hm: &amp;Self) {
             hm.allocator.free(Entry, hm.entries);
         }
-    }
 
-    pub fn clear(hm: &amp;Self) {
-        for (hm.entries) |*entry| {
-            entry.used = false;
-        }
-        hm.size = 0;
-        hm.max_distance_from_start_index = 0;
-        hm.increment_modification_count();
-    }
-
-    pub fn put(hm: &amp;Self, key: K, value: V) -&gt; %void {
-        hm.increment_modification_count();
-
-        const resize = if (hm.entries.ptr == &amp;hm.prealloc_entries[0]) {
-            // preallocated entries table is full
-            hm.size == hm.entries.len
-        } else {
-            // if we get too full (60%), double the capacity
-            hm.size * 5 &gt;= hm.entries.len * 3
-        };
-        if (resize) {
-            const old_entries = hm.entries;
-            %return hm.init_capacity(hm.entries.len * 2);
-            // dump all of the old elements into the new table
-            for (old_entries) |*old_entry| {
-                if (old_entry.used) {
-                    hm.internal_put(old_entry.key, old_entry.value);
-                }
+        pub fn clear(hm: &amp;Self) {
+            for (hm.entries) |*entry| {
+                entry.used = false;
             }
-            if (old_entries.ptr != &amp;hm.prealloc_entries[0]) {
+            hm.size = 0;
+            hm.max_distance_from_start_index = 0;
+            hm.incrementModificationCount();
+        }
+
+        pub fn put(hm: &amp;Self, key: K, value: V) -&gt; %void {
+            if (hm.entries.len == 0) {
+                %return hm.initCapacity(16);
+            }
+            hm.incrementModificationCount();
+
+            // if we get too full (60%), double the capacity
+            if (hm.size * 5 &gt;= hm.entries.len * 3) {
+                const old_entries = hm.entries;
+                %return hm.initCapacity(hm.entries.len * 2);
+                // dump all of the old elements into the new table
+                for (old_entries) |*old_entry| {
+                    if (old_entry.used) {
+                        hm.internalPut(old_entry.key, old_entry.value);
+                    }
+                }
                 hm.allocator.free(Entry, old_entries);
             }
+
+            hm.internalPut(key, value);
         }
 
-        hm.internal_put(key, value);
-    }
+        pub fn get(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
+            return hm.internalGet(key);
+        }
 
-    pub fn get(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
-        return hm.internal_get(key);
-    }
+        pub fn remove(hm: &amp;Self, key: K) {
+            hm.incrementModificationCount();
+            const start_index = hm.keyToIndex(key);
+            {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
+                const index = (start_index + roll_over) % hm.entries.len;
+                var entry = &amp;hm.entries[index];
 
-    pub fn remove(hm: &amp;Self, key: K) {
-        hm.increment_modification_count();
-        const start_index = hm.key_to_index(key);
-        {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
-            const index = (start_index + roll_over) % hm.entries.len;
-            var entry = &amp;hm.entries[index];
+                assert(entry.used); // key not found
 
-            assert(entry.used); // key not found
+                if (!eql(entry.key, key)) continue;
 
-            if (!eql(entry.key, key)) continue;
-
-            while (roll_over &lt; hm.entries.len; roll_over += 1) {
-                const next_index = (start_index + roll_over + 1) % hm.entries.len;
-                const next_entry = &amp;hm.entries[next_index];
-                if (!next_entry.used || next_entry.distance_from_start_index == 0) {
-                    entry.used = false;
-                    hm.size -= 1;
-                    return;
+                while (roll_over &lt; hm.entries.len; roll_over += 1) {
+                    const next_index = (start_index + roll_over + 1) % hm.entries.len;
+                    const next_entry = &amp;hm.entries[next_index];
+                    if (!next_entry.used || next_entry.distance_from_start_index == 0) {
+                        entry.used = false;
+                        hm.size -= 1;
+                        return;
+                    }
+                    *entry = *next_entry;
+                    entry.distance_from_start_index -= 1;
+                    entry = next_entry;
                 }
-                *entry = *next_entry;
-                entry.distance_from_start_index -= 1;
-                entry = next_entry;
-            }
-            unreachable{} // shifting everything in the table
-        }}
-        unreachable{} // key not found
-    }
-
-    pub fn entry_iterator(hm: &amp;Self) -&gt; Iterator {
-        return Iterator {
-            .hm = hm,
-            .count = 0,
-            .index = 0,
-            .initial_modification_count = hm.modification_count,
-        };
-    }
-
-    fn init_capacity(hm: &amp;Self, capacity: usize) -&gt; %void {
-        hm.entries = %return hm.allocator.alloc(Entry, capacity);
-        hm.size = 0;
-        hm.max_distance_from_start_index = 0;
-        for (hm.entries) |*entry| {
-            entry.used = false;
+                @unreachable() // shifting everything in the table
+            }}
+            @unreachable() // key not found
         }
-    }
 
-    fn increment_modification_count(hm: &amp;Self) {
-        if (want_modification_safety) {
-            hm.modification_count += 1;
-        }
-    }
-
-    fn internal_put(hm: &amp;Self, orig_key: K, orig_value: V) {
-        var key = orig_key;
-        var value = orig_value;
-        const start_index = hm.key_to_index(key);
-        var roll_over: usize = 0;
-        var distance_from_start_index: usize = 0;
-        while (roll_over &lt; hm.entries.len; {roll_over += 1; distance_from_start_index += 1}) {
-            const index = (start_index + roll_over) % hm.entries.len;
-            const entry = &amp;hm.entries[index];
-
-            if (entry.used &amp;&amp; !eql(entry.key, key)) {
-                if (entry.distance_from_start_index &lt; distance_from_start_index) {
-                    // robin hood to the rescue
-                    const tmp = *entry;
-                    hm.max_distance_from_start_index = math.max(usize,
-                        hm.max_distance_from_start_index, distance_from_start_index);
-                    *entry = Entry {
-                        .used = true,
-                        .distance_from_start_index = distance_from_start_index,
-                        .key = key,
-                        .value = value,
-                    };
-                    key = tmp.key;
-                    value = tmp.value;
-                    distance_from_start_index = tmp.distance_from_start_index;
-                }
-                continue;
-            }
-
-            if (!entry.used) {
-                // adding an entry. otherwise overwriting old value with
-                // same key
-                hm.size += 1;
-            }
-
-            hm.max_distance_from_start_index = math.max(usize, distance_from_start_index,
-                hm.max_distance_from_start_index);
-            *entry = Entry {
-                .used = true,
-                .distance_from_start_index = distance_from_start_index,
-                .key = key,
-                .value = value,
+        pub fn entryIterator(hm: &amp;Self) -&gt; Iterator {
+            return Iterator {
+                .hm = hm,
+                .count = 0,
+                .index = 0,
+                .initial_modification_count = hm.modification_count,
             };
-            return;
         }
-        unreachable{} // put into a full map
+
+        fn initCapacity(hm: &amp;Self, capacity: usize) -&gt; %void {
+            hm.entries = %return hm.allocator.alloc(Entry, capacity);
+            hm.size = 0;
+            hm.max_distance_from_start_index = 0;
+            for (hm.entries) |*entry| {
+                entry.used = false;
+            }
+        }
+
+        fn incrementModificationCount(hm: &amp;Self) {
+            if (want_modification_safety) {
+                hm.modification_count +%= 1;
+            }
+        }
+
+        fn internalPut(hm: &amp;Self, orig_key: K, orig_value: V) {
+            var key = orig_key;
+            var value = orig_value;
+            const start_index = hm.keyToIndex(key);
+            var roll_over: usize = 0;
+            var distance_from_start_index: usize = 0;
+            while (roll_over &lt; hm.entries.len; {roll_over += 1; distance_from_start_index += 1}) {
+                const index = (start_index + roll_over) % hm.entries.len;
+                const entry = &amp;hm.entries[index];
+
+                if (entry.used &amp;&amp; !eql(entry.key, key)) {
+                    if (entry.distance_from_start_index &lt; distance_from_start_index) {
+                        // robin hood to the rescue
+                        const tmp = *entry;
+                        hm.max_distance_from_start_index = math.max(hm.max_distance_from_start_index,
+                            distance_from_start_index);
+                        *entry = Entry {
+                            .used = true,
+                            .distance_from_start_index = distance_from_start_index,
+                            .key = key,
+                            .value = value,
+                        };
+                        key = tmp.key;
+                        value = tmp.value;
+                        distance_from_start_index = tmp.distance_from_start_index;
+                    }
+                    continue;
+                }
+
+                if (!entry.used) {
+                    // adding an entry. otherwise overwriting old value with
+                    // same key
+                    hm.size += 1;
+                }
+
+                hm.max_distance_from_start_index = math.max(distance_from_start_index, hm.max_distance_from_start_index);
+                *entry = Entry {
+                    .used = true,
+                    .distance_from_start_index = distance_from_start_index,
+                    .key = key,
+                    .value = value,
+                };
+                return;
+            }
+            @unreachable() // put into a full map
+        }
+
+        fn internalGet(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
+            const start_index = hm.keyToIndex(key);
+            {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
+                const index = (start_index + roll_over) % hm.entries.len;
+                const entry = &amp;hm.entries[index];
+
+                if (!entry.used) return null;
+                if (eql(entry.key, key)) return entry;
+            }}
+            return null;
+        }
+
+        fn keyToIndex(hm: &amp;Self, key: K) -&gt; usize {
+            return usize(hash(key)) % hm.entries.len;
+        }
     }
-
-    fn internal_get(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
-        const start_index = hm.key_to_index(key);
-        {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
-            const index = (start_index + roll_over) % hm.entries.len;
-            const entry = &amp;hm.entries[index];
-
-            if (!entry.used) return null;
-            if (eql(entry.key, key)) return entry;
-        }}
-        return null;
-    }
-
-    fn key_to_index(hm: &amp;Self, key: K) -&gt; usize {
-        return usize(hash(key)) % hm.entries.len;
-    }
 }
 
-var global_allocator = Allocator {
-    .alloc_fn = global_alloc,
-    .realloc_fn = global_realloc,
-    .free_fn = global_free,
-    .context = null,
-};
+fn basicHashMapTest() {
+    @setFnTest(this);
 
-var some_mem: [200]u8 = undefined;
-var some_mem_index: usize = 0;
-
-fn global_alloc(self: &amp;Allocator, n: usize) -&gt; %[]u8 {
-    const result = some_mem[some_mem_index ... some_mem_index + n];
-    some_mem_index += n;
-    return result;
-}
-
-fn global_realloc(self: &amp;Allocator, old_mem: []u8, new_size: usize) -&gt; %[]u8 {
-    const result = %return global_alloc(self, new_size);
-    @memcpy(result.ptr, old_mem.ptr, old_mem.len);
-    return result;
-}
-
-fn global_free(self: &amp;Allocator, old_mem: []u8) {
-}
-
-#attribute(&quot;test&quot;)
-fn basic_hash_map_test() {
-    var map: SmallHashMap(i32, i32, hash_i32, eql_i32, 4) = undefined;
-    map.init(&amp;global_allocator);
+    var map: HashMap(i32, i32, hash_i32, eql_i32) = undefined;
+    map.init(&amp;debug.global_allocator);
     defer map.deinit();
 
     %%map.put(1, 11);
@@ -573,7 +541,7 @@ pub const MT19937_64 = MersenneTwister(
     43, 6364136223846793005);
 
 /// Use `init` to initialize this state.
-pub struct Rand {
+pub const Rand = struct {
     const Rng = if (@sizeOf(usize) &gt;= 8) MT19937_64 else MT19937_32;
 
     rng: Rng,
@@ -632,84 +600,87 @@ pub struct Rand {
     /// Get a floating point value in the range 0.0..1.0.
     pub fn float(r: &amp;Rand, inline T: type) -&gt; T {
         // TODO Implement this way instead:
-        // const int = @intType(false, @sizeOf(T) * 8);
-        // const mask = ((1 &lt;&lt; @floatMantissaBitCount(T)) - 1);
+        // const int = @int_type(false, @sizeOf(T) * 8);
+        // const mask = ((1 &lt;&lt; @float_mantissa_bit_count(T)) - 1);
         // const rand_bits = r.rng.scalar(int) &amp; mask;
-        // return @floatCompose(T, false, 0, rand_bits) - 1.0
+        // return @float_compose(T, false, 0, rand_bits) - 1.0
         const int_type = @intType(false, @sizeOf(T) * 8);
         const precision = if (T == f32) {
             16777216
         } else if (T == f64) {
             9007199254740992
         } else {
-            @compileError(&quot;unknown floating point type&quot; ++ @typeName(T))
+            @compileError(&quot;unknown floating point type&quot;)
         };
         return T(r.rangeUnsigned(int_type, 0, precision)) / T(precision);
     }
-}
+};
 
-struct MersenneTwister(
-    int: type, n: usize, m: usize, r: int,
-    a: int,
-    u: int, d: int,
-    s: int, b: int,
-    t: int, c: int,
-    l: int, f: int)
+fn MersenneTwister(
+    inline int: type, inline n: usize, inline m: usize, inline r: int,
+    inline a: int,
+    inline u: int, inline d: int,
+    inline s: int, inline b: int,
+    inline t: int, inline c: int,
+    inline l: int, inline f: int) -&gt; type
 {
-    const Self = this;
+    struct {
+        const Self = this;
 
-    array: [n]int,
-    index: usize,
+        array: [n]int,
+        index: usize,
 
-    pub fn init(mt: &amp;Self, seed: int) {
-        mt.index = n;
+        pub fn init(mt: &amp;Self, seed: int) {
+            mt.index = n;
 
-        var prev_value = seed;
-        mt.array[0] = prev_value;
-        {var i: usize = 1; while (i &lt; n; i += 1) {
-            prev_value = int(i) +% f *% (prev_value ^ (prev_value &gt;&gt; (int.bit_count - 2)));
-            mt.array[i] = prev_value;
-        }};
-    }
-
-    pub fn get(mt: &amp;Self) -&gt; int {
-        const mag01 = []int{0, a};
-        const LM: int = (1 &lt;&lt; r) - 1;
-        const UM = ~LM;
-
-        if (mt.index &gt;= n) {
-            var i: usize = 0;
-
-            while (i &lt; n - m; i += 1) {
-                const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
-                mt.array[i] = mt.array[i + m] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
-            }
-
-            while (i &lt; n - 1; i += 1) {
-                const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
-                mt.array[i] = mt.array[i + m - n] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
-
-            }
-            const x = (mt.array[i] &amp; UM) | (mt.array[0] &amp; LM);
-            mt.array[i] = mt.array[m - 1] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
-
-            mt.index = 0;
+            var prev_value = seed;
+            mt.array[0] = prev_value;
+            {var i: usize = 1; while (i &lt; n; i += 1) {
+                prev_value = int(i) +% f *% (prev_value ^ (prev_value &gt;&gt; (int.bit_count - 2)));
+                mt.array[i] = prev_value;
+            }};
         }
 
-        var x = mt.array[mt.index];
-        mt.index += 1;
+        pub fn get(mt: &amp;Self) -&gt; int {
+            const mag01 = []int{0, a};
+            const LM: int = (1 &lt;&lt; r) - 1;
+            const UM = ~LM;
 
-        x ^= ((x &gt;&gt; u) &amp; d);
-        x ^= ((x &lt;&lt;% s) &amp; b);
-        x ^= ((x &lt;&lt;% t) &amp; c);
-        x ^= (x &gt;&gt; l);
+            if (mt.index &gt;= n) {
+                var i: usize = 0;
 
-        return x;
+                while (i &lt; n - m; i += 1) {
+                    const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
+                    mt.array[i] = mt.array[i + m] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
+                }
+
+                while (i &lt; n - 1; i += 1) {
+                    const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
+                    mt.array[i] = mt.array[i + m - n] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
+
+                }
+                const x = (mt.array[i] &amp; UM) | (mt.array[0] &amp; LM);
+                mt.array[i] = mt.array[m - 1] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
+
+                mt.index = 0;
+            }
+
+            var x = mt.array[mt.index];
+            mt.index += 1;
+
+            x ^= ((x &gt;&gt; u) &amp; d);
+            x ^= ((x &lt;&lt;% s) &amp; b);
+            x ^= ((x &lt;&lt;% t) &amp; c);
+            x ^= (x &gt;&gt; l);
+
+            return x;
+        }
     }
 }
 
-#attribute(&quot;test&quot;)
 fn testFloat32() {
+    @setFnTest(this);
+
     var r: Rand = undefined;
     r.init(42);
 
@@ -720,8 +691,9 @@ fn testFloat32() {
     }}
 }
 
-#attribute(&quot;test&quot;)
 fn testMT19937_64() {
+    @setFnTest(this);
+
     var rng: MT19937_64 = undefined;
     rng.init(rand_test.mt64_seed);
     for (rand_test.mt64_data) |value| {
@@ -729,8 +701,9 @@ fn testMT19937_64() {
     }
 }
 
-#attribute(&quot;test&quot;)
 fn testMT19937_32() {
+    @setFnTest(this);
+
     var rng: MT19937_32 = undefined;
     rng.init(rand_test.mt32_seed);
     for (rand_test.mt32_data) |value| {
