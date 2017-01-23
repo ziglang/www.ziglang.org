@@ -84,13 +84,13 @@ export fn main(argc: c_int, argv: &amp;&amp;u8) -&gt; c_int {
     <p>Build this with:</p>
     <pre>zig build hello.zig --name hello --export exe --library c</pre>
     <h3 id="parse">Parsing Unsigned Integers</h3>
-    <pre><code class="zig">pub fn parse_unsigned(inline T: type, buf: []u8, radix: u8) -&gt; %T {
+    <pre><code class="zig">pub fn parseUnsigned(comptime T: type, buf: []u8, radix: u8) -&gt; %T {
     var x: T = 0;
 
     for (buf) |c| {
-        const digit = char_to_digit(c, radix) %% |err| return err;
-        x = mul_overflow(T, x, radix) %% |err| return err;
-        x = add_overflow(T, x, digit) %% |err| return err;
+        const digit = %return charToDigit(c, radix);
+        x = %return mulOverflow(T, x, radix);
+        x = %return addOverflow(T, x, digit);
     }
 
     return x;
@@ -98,42 +98,43 @@ export fn main(argc: c_int, argv: &amp;&amp;u8) -&gt; c_int {
 
 error InvalidChar;
 
-fn char_to_digit(c: u8, radix: u8) -&gt; %u8 {
-    const value = if ('0' &lt;= c &amp;&amp; c &lt;= '9') {
-        c - '0'
-    } else if ('A' &lt;= c &amp;&amp; c &lt;= 'Z') {
-        c - 'A' + 10
-    } else if ('a' &lt;= c &amp;&amp; c &lt;= 'z') {
-        c - 'a' + 10
-    } else {
-        return error.InvalidChar;
+fn charToDigit(c: u8, radix: u8) -&gt; %u8 {
+    const value = switch (c) {
+        '0' ... '9' =&gt; c - '0',
+        'A' ... 'Z' =&gt; c - 'A' + 10,
+        'a' ... 'z' =&gt; c - 'a' + 10,
+        else =&gt; return error.InvalidChar,
     };
-    return if (value &gt;= radix) error.InvalidChar else value;
+
+    if (value &gt;= radix)
+        return error.InvalidChar;
+
+    return value;
 }
 
 error Overflow;
 
-pub fn mul_overflow(inline T: type, a: T, b: T) -&gt; %T {
+pub fn mulOverflow(comptime T: type, a: T, b: T) -&gt; %T {
     var answer: T = undefined;
     if (@mulWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer
 }
 
-pub fn add_overflow(inline T: type, a: T, b: T) -&gt; %T {
+pub fn addOverflow(comptime T: type, a: T, b: T) -&gt; %T {
     var answer: T = undefined;
     if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer
 }
 
-fn get_number_with_default(s: []u8) -&gt; u32 {
-    parse_unsigned(u32, s, 10) %% 42
+fn getNumberWithDefault(s: []u8) -&gt; u32 {
+    parseUnsigned(u32, s, 10) %% 42
 }
 
-fn get_number_or_crash(s: []u8) -&gt; u32 {
-    %%parse_unsigned(u32, s, 10)
+fn getNumberOrCrash(s: []u8) -&gt; u32 {
+    %%parseUnsigned(u32, s, 10)
 }
 
-fn add_two_together_or_return_err(a_str: []u8, b_str: []u8) -&gt; %u32 {
-    const a = parse_unsigned(u32, a_str, 10) %% |err| return err;
-    const b = parse_unsigned(u32, b_str, 10) %% |err| return err;
+fn addTwoTogetherOrReturnErr(a_str: []u8, b_str: []u8) -&gt; %u32 {
+    const a = parseUnsigned(u32, a_str, 10) %% |err| return err;
+    const b = parseUnsigned(u32, b_str, 10) %% |err| return err;
     return a + b;
 }</code></pre>
     <h3 id="hashmap">HashMap with Custom Allocator</h3>
@@ -146,8 +147,8 @@ const Allocator = mem.Allocator;
 const want_modification_safety = !@compileVar(&quot;is_release&quot;);
 const debug_u32 = if (want_modification_safety) u32 else void;
 
-pub fn HashMap(inline K: type, inline V: type, inline hash: fn(key: K)-&gt;u32,
-    inline eql: fn(a: K, b: K)-&gt;bool) -&gt; type
+pub fn HashMap(comptime K: type, comptime V: type, comptime hash: fn(key: K)-&gt;u32,
+    comptime eql: fn(a: K, b: K)-&gt;bool) -&gt; type
 {
     struct {
         entries: []Entry,
@@ -397,7 +398,7 @@ pub fn main(args: [][]u8) -&gt; %void {
     for (args[1...]) |arg| {
         if (str.eql(arg, "-")) {
             catted_anything = true;
-            cat_stream(io.stdin) %% |err| return err;
+            catStream(io.stdin) %% |err| return err;
         } else if (arg[0] == '-') {
             return usage(exe);
         } else {
@@ -410,11 +411,11 @@ pub fn main(args: [][]u8) -&gt; %void {
             defer %%is.close();
 
             catted_anything = true;
-            cat_stream(is) %% |err| return err;
+            catStream(is) %% |err| return err;
         }
     }
     if (!catted_anything) {
-        cat_stream(io.stdin) %% |err| return err;
+        catStream(io.stdin) %% |err| return err;
     }
     io.stdout.flush() %% |err| return err;
 }
@@ -426,7 +427,7 @@ fn usage(exe: []u8) -&gt; %void {
     return error.Invalid;
 }
 
-fn cat_stream(is: io.InStream) -&gt; %void {
+fn catStream(is: io.InStream) -&gt; %void {
     var buf: [1024 * 4]u8 = undefined;
 
     while (true) {
@@ -451,10 +452,10 @@ fn cat_stream(is: io.InStream) -&gt; %void {
 }
     </code></pre>
     <h3 id="multiline-strings">Multiline String Syntax</h3>
-    <pre><code class="zig">pub fn create_all_shaders() -&gt; AllShaders {
+    <pre><code class="zig">pub fn createAllShaders() -&gt; AllShaders {
     var as : AllShaders = undefined;
 
-    as.primitive = create_shader(
+    as.primitive = createShader(
         \\#version 150 core
         \\
         \\in vec3 VertexPosition;
@@ -482,7 +483,7 @@ fn cat_stream(is: io.InStream) -&gt; %void {
 
 
 
-    as.texture = create_shader(
+    as.texture = createShader(
         \\#version 150 core
         \\
         \\in vec3 VertexPosition;
@@ -552,7 +553,7 @@ pub const Rand = struct {
     }
 
     /// Get an integer with random bits.
-    pub fn scalar(r: &amp;Rand, inline T: type) -&gt; T {
+    pub fn scalar(r: &amp;Rand, comptime T: type) -&gt; T {
         if (T == usize) {
             return r.rng.get();
         } else {
@@ -582,7 +583,7 @@ pub const Rand = struct {
     /// Get a random unsigned integer with even distribution between `start`
     /// inclusive and `end` exclusive.
     // TODO support signed integers and then rename to &quot;range&quot;
-    pub fn rangeUnsigned(r: &amp;Rand, inline T: type, start: T, end: T) -&gt; T {
+    pub fn rangeUnsigned(r: &amp;Rand, comptime T: type, start: T, end: T) -&gt; T {
         const range = end - start;
         const leftover = @maxValue(T) % range;
         const upper_bound = @maxValue(T) - leftover;
@@ -598,7 +599,7 @@ pub const Rand = struct {
     }
 
     /// Get a floating point value in the range 0.0..1.0.
-    pub fn float(r: &amp;Rand, inline T: type) -&gt; T {
+    pub fn float(r: &amp;Rand, comptime T: type) -&gt; T {
         // TODO Implement this way instead:
         // const int = @int_type(false, @sizeOf(T) * 8);
         // const mask = ((1 &lt;&lt; @float_mantissa_bit_count(T)) - 1);
@@ -617,12 +618,12 @@ pub const Rand = struct {
 };
 
 fn MersenneTwister(
-    inline int: type, inline n: usize, inline m: usize, inline r: int,
-    inline a: int,
-    inline u: int, inline d: int,
-    inline s: int, inline b: int,
-    inline t: int, inline c: int,
-    inline l: int, inline f: int) -&gt; type
+    comptime int: type, comptime n: usize, comptime m: usize, comptime r: int,
+    comptime a: int,
+    comptime u: int, comptime d: int,
+    comptime s: int, comptime b: int,
+    comptime t: int, comptime c: int,
+    comptime l: int, comptime f: int) -&gt; type
 {
     struct {
         const Self = this;
