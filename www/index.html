@@ -43,6 +43,8 @@
     </p>
     <p>Latest developments:</p>
     <ul>
+      <li>2017-03-23 - <a href="https://github.com/andrewrk/zig/issues/242">Use Intel dialect for inline assembly.</a></li>
+      <li>2017-03-22 - <a href="https://github.com/andrewrk/zig/issues/248">pub main entry point works regardless of whether linking libc..</a></li>
       <li>2017-03-18 - <a href="https://github.com/andrewrk/zig/commit/fa7c64ccd511703fef9971c4d07c447c9aeda49c">Fully lazy analysis of top level declarations.</a></li>
       <li>2017-03-16 - <a href="https://github.com/andrewrk/zig/commit/af536ac343564e5120f99cbf3b7fc9efa984eb93">Remove <code>setFnTest</code> builtin in favor of new test syntax.</a></li>
       <li>2017-03-13 - <a href="https://github.com/andrewrk/zig/commit/d10bbd28e9576d000f04ac6d06c2a8493ffc72ef">Use LLD instead of the system linker.</a></li>
@@ -56,8 +58,6 @@
       <li>2017-02-04 - <a href="https://github.com/andrewrk/zig/issues/238">Add support for volatile pointers.</a></li>
       <li>2017-02-03 - <a href="https://github.com/andrewrk/zig/commit/8c9016b6d1a62da847faf95b6124515cdcd9fe0b">Add `@setGlobalAlign` and `@setGlobalSection` builtin functions.</a></li>
       <li>2017-02-03 - <a href="https://github.com/andrewrk/zig/issues/183">Add support for packed structs.</a></li>
-      <li>2017-02-02 - <a href="https://github.com/andrewrk/zig/commit/c0b37e8514a26f56e3596f86b01771b1ae2bf299">Add `try` expression.</a></li>
-      <li>2017-02-02 - <a href="https://github.com/andrewrk/zig/commit/b78c91951a1db34c615a011e0444608285f1a74c">Remove `inline if` and `inline switch`.</a></li>
     </ul>
     <h2 id="reading-material">Reading Material</h2>
     <ul>
@@ -401,51 +401,46 @@ fn eql_i32(a: i32, b: i32) -&gt; bool {
     <h3 id="cat">Cat Utility</h3>
     <pre><code class="zig">const std = @import("std");
 const io = std.io;
-const str = std.str;
+const mem = std.mem;
 
 pub fn main(args: [][]u8) -&gt; %void {
     const exe = args[0];
     var catted_anything = false;
     for (args[1...]) |arg| {
-        if (str.eql(arg, "-")) {
+        if (mem.eql(u8, arg, "-")) {
             catted_anything = true;
-            catStream(io.stdin) %% |err| return err;
+            %return cat_stream(&amp;io.stdin);
         } else if (arg[0] == '-') {
             return usage(exe);
         } else {
-            var is = io.InStream.open(arg) %% |err| {
-                %%io.stderr.printf("Unable to open file: ");
-                %%io.stderr.printf(@errorName(err));
-                %%io.stderr.printf("\n");
+            var is: io.InStream = undefined;
+            is.open(arg) %% |err| {
+                %%io.stderr.printf("Unable to open file: {}\n", @errorName(err));
                 return err;
             };
             defer %%is.close();
 
             catted_anything = true;
-            catStream(is) %% |err| return err;
+            %return cat_stream(&amp;is);
         }
     }
     if (!catted_anything) {
-        catStream(io.stdin) %% |err| return err;
+        %return cat_stream(&amp;io.stdin);
     }
-    io.stdout.flush() %% |err| return err;
+    %return io.stdout.flush();
 }
 
 fn usage(exe: []u8) -&gt; %void {
-    %%io.stderr.printf("Usage: ");
-    %%io.stderr.printf(exe);
-    %%io.stderr.printf(" [FILE]...\n");
+    %%io.stderr.printf("Usage: {} [FILE]...\n", exe);
     return error.Invalid;
 }
 
-fn catStream(is: io.InStream) -&gt; %void {
+fn cat_stream(is: &amp;io.InStream) -&gt; %void {
     var buf: [1024 * 4]u8 = undefined;
 
     while (true) {
-        const bytes_read = is.read(buf) %% |err| {
-            %%io.stderr.printf("Unable to read from stream: ");
-            %%io.stderr.printf(@errorname(err));
-            %%io.stderr.printf("\n");
+        const bytes_read = is.read(buf[0...]) %% |err| {
+            %%io.stderr.printf("Unable to read from stream: {}\n", @errorName(err));
             return err;
         };
 
@@ -454,9 +449,7 @@ fn catStream(is: io.InStream) -&gt; %void {
         }
 
         io.stdout.write(buf[0...bytes_read]) %% |err| {
-            %%io.stderr.printf("Unable to write to stdout: ");
-            %%io.stderr.printf(@errorname(err));
-            %%io.stderr.printf("\n");
+            %%io.stderr.printf("Unable to write to stdout: {}\n", @errorName(err));
             return err;
         };
     }
