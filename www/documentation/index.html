@@ -45,6 +45,7 @@
         <li><a href="#integers">Integers</a>
           <ul>
             <li><a href="#integer-literals">Integer Literals</a></li>
+            <li><a href="#integer-overflow">Integer Overflow</a></li>
           </ul>
         </li>
         <li><a href="#floats">Floats</a>
@@ -121,6 +122,37 @@
             <li><a href="#builtin-truncate">@truncate</a></li>
             <li><a href="#builtin-typeName">@typeName</a></li>
             <li><a href="#builtin-typeOf">@typeOf</a></li>
+          </ul>
+        </li>
+        <li><a href="#build-mode">Build Mode</a>
+          <ul>
+          <li><a href="#build-mode-debug">Debug</a></li>
+          <li><a href="#build-mode-release-fast">ReleaseFast</a></li>
+          <li><a href="#build-mode-release-safe">ReleaseSafe</a></li>
+          </ul>
+        </li>
+        <li><a href="#undefined-behavior">Undefined Behavior</a>
+          <ul>
+            <li><a href="#undef-unreachable">Reaching Unreachable Code</a></li>
+            <li><a href="#undef-index-out-of-bounds">Index out of Bounds</a></li>
+            <li><a href="#undef-cast-negative-unsigned">Cast Negative Number to Unsigned Integer</a></li>
+            <li><a href="#undef-cast-truncates-data">Cast Truncates Data</a></li>
+            <li><a href="#undef-integer-overflow">Integer Overflow</a>
+              <ul>
+                <li><a href="#undef-int-overflow-default">Default Operations</a></li>
+                <li><a href="#undef-int-overflow-std">Standard Library Math Functions</a></li>
+                <li><a href="#undef-int-overflow-builtin">Builtin Overflow Functions</a></li>
+
+              </ul>
+            </li>
+            <li><a href="#undef-shift-overflow">Shift Overflow</a></li>
+            <li><a href="#undef-division-by-zero">Division by Zero</a></li>
+            <li><a href="#undef-remainder-division-by-zero">Remainder Division by Zero</a></li>
+            <li><a href="#undef-exact-division-remainder">Exact Division Remainder</a></li>
+            <li><a href="#undef-slice-widen-remainder">Slice Widen Remainder</a></li>
+            <li><a href="#undef-attempt-unwrap-null">Attempt to Unwrap Null</a></li>
+            <li><a href="#undef-attempt-unwrap-error">Attempt to Unwrap Error</a></li>
+            <li><a href="#undef-invalid-error-code">Invalid Error Code</a></li>
           </ul>
         </li>
         <li><a href="#compile-variables">Compile Variables</a></li>
@@ -491,46 +523,22 @@ test "string literals" {
       </ul>
       <h2 id="integers">Integers</h2>
       <h3 id="integer-literals">Integer Literals</h3>
-      <table>
-        <tr>
-          <th>Name</th>
-          <th>Example</th>
-        </tr>
-        <tr>
-          <td>Decimal</td>
-          <td><code>98222</code></td>
-        </tr>
-        <tr>
-          <td>Hex</td>
-          <td><code>0xff</code> or <code>0xFF</code></td>
-        </tr>
-        <tr>
-          <td>Octal</td>
-          <td><code>0o77</code></td>
-        </tr>
-        <tr>
-          <td>Binary</td>
-          <td><code>0b11110000</code></td>
-        </tr>
-      </table>
+      <pre><code class="zig">const decimal_int = 98222;
+const hex_int = 0xff;
+const another_hex_int = 0xFF;
+const octal_int = 0o755;
+const binary_int = 0b11110000;</code></pre>
+      <h3 id="integer-overflow">Integer Overflow</h3>
       <p>TODO</p>
-
       <h2 id="floats">Floats</h2>
       <h3 id="float-literals">Float Literals</h3>
-      <table>
-        <tr>
-          <th>Name</th>
-          <th>Example</th>
-        </tr>
-        <tr>
-          <td>Floating point</td>
-          <td><code>123.0E+77</code> or <code>123.0</code> or <code>123.0e+77</code></td>
-        </tr>
-        <tr>
-          <td>Hex floating point</td>
-          <td><code>0x103.70p-5</code> or <code>0x103.70</code> or <code>0x103.70P-5</code></td>
-        </tr>
-      </table>
+      <pre><code class="zig">const floating_point = 123.0E+77;
+const another_float = 123.0;
+const yet_another = 123.0e+77;
+
+const hex_floating_point = 0x103.70p-5;
+const another_hex_float = 0x103.70;
+const yet_another_hex_float = 0x103.70P-5;</code></pre>
       <p>TODO</p>
       <h2 id="arrays">Arrays</h2>
       <p>TODO</p>
@@ -1106,6 +1114,237 @@ const b: u8 = @truncate(u8, a);
       expression passed as an argument. The expression is <em>not evaluated</em>.
       </p>
 
+      <h2 id="build-mode">Build Mode</h2>
+      <p>
+      Zig has three build modes:
+      </p>
+      <ul>
+        <li><a href="#build-mode-debug">Debug</a> (default)</li>
+        <li><a href="#build-mode-release-fast">ReleaseFast</a></li>
+        <li><a href="#build-mode-release-safe">ReleaseSafe</a></li>
+      </ul>
+      <p>
+      To add standard build options to a <code>build.zig</code> file:
+      </p>
+      <pre><code class="sh">const Builder = @import("std").build.Builder;
+
+pub fn build(b: &amp;Builder) {
+    const exe = b.addExecutable("example", "example.zig");
+    exe.setBuildMode(b.standardReleaseOptions());
+    b.default_step.dependOn(&amp;exe.step);
+}</code></pre>
+      <p>
+      This causes these options to be available:
+      </p>
+      <pre><code class="sh">  -Drelease-safe=(bool)  optimizations on and safety on
+  -Drelease-fast=(bool)  optimizations on and safety off</code></pre>
+      <h3 id="build-mode-debug">Debug</h2>
+      <pre><code class="sh">$ zig build_exe example.zig</code></pre>
+      <ul>
+        <li>Fast compilation speed</li>
+        <li>Safety checks enabled</li>
+        <li>Slow runtime performance</li>
+      </ul>
+      <h3 id="build-mode-release-fast">ReleaseFast</h2>
+      <pre><code class="sh">$ zig build_exe example.zig --release-fast</code></pre>
+      <ul>
+        <li>Fast runtime performance</li>
+        <li>Safety checks disabled</li>
+        <li>Slow compilation speed</li>
+      </ul>
+      <h3 id="build-mode-release-safe">ReleaseSafe</h2>
+      <pre><code class="sh">$ zig build_exe example.zig --release-safe</code></pre>
+      <ul>
+        <li>Medium runtime performance</li>
+        <li>Safety checks enabled</li>
+        <li>Slow compilation speed</li>
+      </ul>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#compile-variables">Compile Variables</a></li>
+        <li><a href="#zig-build-system">Zig Build System</a></li>
+        <li><a href="#undefined-behavior">Undefined Behavior</a></li>
+      </ul>
+      <h2 id="undefined-behavior">Undefined Behavior</h2>
+      <p>
+      Zig has many instances of undefined behavior. If undefined behavior is
+      detected at compile-time, Zig emits an error. Most undefined behavior that
+      cannot be detected at compile-time can be detected at runtime. In these cases,
+      Zig has safety checks. Safety checks can be disabled on a per-block basis
+      with <code>@setDebugSafety</code>. The <a href="#build-mode-release-fast">ReleaseFast</a>
+      build mode disables all safety checks in order to facilitate optimizations.
+      </p>
+      <p>
+      When a safety check fails, Zig crashes with a stack trace, like this:
+      </p>
+      <pre><code class="zig">test "safety check" {
+    unreachable;
+}</code></pre>
+      <pre><code class="sh">$ ./zig test test.zig 
+Test 1/1 safety check...reached unreachable code
+/home/andy/dev/zig/build/lib/zig/std/special/zigrt.zig:16:35: 0x000000000020331c in ??? (test)
+        @import("std").debug.panic("{}", message_ptr[0...message_len]);
+                                  ^
+/home/andy/dev/zig/build/test.zig:2:5: 0x0000000000203297 in ??? (test)
+    unreachable;
+    ^
+/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214b0a in ??? (test)
+        test_fn.func();
+                    ^
+/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:50:21: 0x0000000000214a17 in ??? (test)
+    return root.main();
+                    ^
+/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:37:13: 0x00000000002148d0 in ??? (test)
+    callMain(argc, argv, envp) %% exit(1);
+            ^
+/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:30:20: 0x0000000000214820 in ??? (test)
+    callMainAndExit()
+                   ^
+
+Tests failed. Use the following command to reproduce the failure:
+./test</code></pre>
+      <h3 id="undef-unreachable">Reaching Unreachable Code</h3>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    assert(false);
+}
+fn assert(ok: bool) {
+    if (!ok) unreachable; // assertion failure
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:5:14: error: unable to evaluate constant expression
+    if (!ok) unreachable; // assertion failure
+             ^
+/home/andy/dev/zig/build/test.zig:2:11: note: called from here
+    assert(false);
+          ^
+/home/andy/dev/zig/build/test.zig:1:10: note: called from here
+comptime {
+         ^</code></pre>
+      <p>At runtime crashes with the message <code>reached unreachable code</code> and a stack trace.</p>
+      <h3 id="undef-index-out-of-bounds">Index out of Bounds</h3>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const array = "hello";
+    const garbage = array[5];
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:3:26: error: index 5 outside array of size 5
+    const garbage = array[5];
+                         ^</code></pre>
+      <p>At runtime crashes with the message <code>index out of bounds</code> and a stack trace.</p>
+      <h3 id="undef-cast-negative-unsigned">Cast Negative Number to Unsigned Integer</h3>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const value: i32 = -1;
+    const unsigned = u32(value);
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig /home/andy/dev/zig/build/test.zig:3:25: error: attempt to cast negative value to unsigned integer
+    const unsigned = u32(value);
+                        ^</code></pre>
+      <p>At runtime crashes with the message <code>attempt to cast negative value to unsigned integer</code> and a stack trace.</p>
+      <p>
+      If you are trying to obtain the maximum value of an unsigned integer, use <code>@maxValue(T)</code>,
+      where <code>T</code> is the integer type, such as <code>u32</code>.
+      </p>
+      <h3 id="undef-cast-truncates-data">Cast Truncates Data</h3>
+      <p>TODO (https://github.com/zig-lang/zig/issues/371)</p>
+      <h3 id="undef-integer-overflow">Integer Overflow</h3>
+      <h4 id="undef-int-overflow-default">Default Operations</h4>
+      <p>The following operators can cause integer overflow:</p>
+      <ul>
+        <li><code>+</code> (addition)</li>
+        <li><code>-</code> (subtraction)</li>
+        <li><code>-</code> (negation)</li>
+        <li><code>*</code> (multiplication)</li>
+        <li><code>/</code> (division)</li>
+        <li><code>@divTrunc</code> (division)</li>
+        <li><code>@divFloor</code> (division)</li>
+        <li><code>&lt;&lt;</code> (left shift)</li>
+      </ul>
+      <p>Example with addition at compile-time:</p>
+      <pre><code class="zig">comptime {
+    var byte: u8 = 255;
+    byte += 1;
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:3:10: error: operation caused overflow
+    byte += 1;
+         ^</code></pre>
+      <p>At runtime crashes with the message <code>integer overflow</code> and a stack trace.</p>
+      <h4 id="undef-int-overflow-std">Standard Library Math Functions</h4>
+      <p>These functions provided by the standard library return possible errors.</p>
+      <ul>
+        <li><code>@import("std").math.add</code></li>
+        <li><code>@import("std").math.sub</code></li>
+        <li><code>@import("std").math.mul</code></li>
+        <li><code>@import("std").math.divTrunc</code></li>
+        <li><code>@import("std").math.divFloor</code></li>
+        <li><code>@import("std").math.shl</code></li>
+      </ul>
+      <p>Example of catching an overflow for addition:</p>
+      <pre><code class="zig">const math = @import("std").math;
+const io = @import("std").io;
+pub fn main() -&gt; %void {
+    var byte: u8 = 255;
+
+    byte = if (math.add(u8, byte, 1)) |result| {
+        result
+    } else |err| {
+        %%io.stderr.printf("unable to add one: {}\n", @errorName(err));
+        return err;
+    };
+
+    %%io.stderr.printf("result: {}\n", byte);
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_exe test.zig 
+$ ./test 
+unable to add one: Overflow</code></pre>
+      <h4 id="undef-int-overflow-builtin">Builtin Overflow Functions</h4>
+      <p>
+      These builtins return a <code>bool</code> of whether or not overflow
+      occurred, as well as returning the overflowed bits:
+      </p>
+      <ul>
+        <li><code>@addWithOverflow</code></li>
+        <li><code>@subWithOverflow</code></li>
+        <li><code>@mulWithOverflow</code></li>
+        <li><code>@shlWithOverflow</code></li>
+      </ul>
+      <p>
+      Example of <code>@addWithOverflow</code>:
+      </p>
+      <pre><code class="zig">const io = @import("std").io;
+pub fn main() -&gt; %void {
+    var byte: u8 = 255;
+
+    var result: u8 = undefined;
+    if (@addWithOverflow(u8, byte, 10, &amp;result)) {
+        %%io.stderr.printf("overflowed result: {}\n", result);
+    } else {
+        %%io.stderr.printf("result: {}\n", result);
+    }
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_exe test.zig 
+$ ./test 
+overflowed result: 9</code></pre>
+
+      <h3 id="undef-shift-overflow">Shift Overflow</h3>
+      <p>TODO</p>
+      <h3 id="undef-division-by-zero">Division by Zero</h3>
+      <p>TODO https://github.com/zig-lang/zig/issues/372</p>
+      <h3 id="undef-remainder-division-by-zero">Remainder Division by Zero</h3>
+      <p>TODO</p>
+      <h3 id="undef-exact-division-remainder">Exact Division Remainder</h3>
+      <p>TODO</p>
+      <h3 id="undef-slice-widen-remainder">Slice Widen Remainder</h3>
+      <p>TODO</p>
+      <h3 id="undef-attempt-unwrap-null">Attempt to Unwrap Null</h3>
+      <p>TODO</p>
+      <h3 id="undef-attempt-unwrap-error">Attempt to Unwrap Error</h3>
+      <p>TODO</p>
+      <h3 id="undef-invalid-error-code">Invalid Error Code</h3>
+      <p>TODO</p>
       <h2 id="compile-variables">Compile Variables</h2>
       <p>
       Compile variables are accessible by importing the <code>"builtin"</code> package,
@@ -1272,6 +1511,10 @@ pub const object_format = ObjectFormat.elf;
 pub const mode = Mode.ReleaseFast;
 pub const link_libs = [][]const u8 {
 };</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#build-mode">Build Mode</a></li>
+      </ul>
       <h2 id="root-source-file">Root Source File</h2>
       <p>TODO</p>
       <h2 id="zig-test">Zig Test</h2>
