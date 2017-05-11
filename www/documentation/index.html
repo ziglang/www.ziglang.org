@@ -142,6 +142,7 @@
                 <li><a href="#undef-int-overflow-default">Default Operations</a></li>
                 <li><a href="#undef-int-overflow-std">Standard Library Math Functions</a></li>
                 <li><a href="#undef-int-overflow-builtin">Builtin Overflow Functions</a></li>
+                <li><a href="#undef-int-overflow-wrap">Wrapping Operations</a></li>
 
               </ul>
             </li>
@@ -153,6 +154,7 @@
             <li><a href="#undef-attempt-unwrap-null">Attempt to Unwrap Null</a></li>
             <li><a href="#undef-attempt-unwrap-error">Attempt to Unwrap Error</a></li>
             <li><a href="#undef-invalid-error-code">Invalid Error Code</a></li>
+            <li><a href="#undef-invalid-enum-cast">Invalid Enum Cast</a></li>
           </ul>
         </li>
         <li><a href="#compile-variables">Compile Variables</a></li>
@@ -207,10 +209,10 @@ Hello, world!</code></pre>
       <h2 id="values">Values</h2>
       <pre><code class="zig">const io = @import("std").io;
 
-pub fn main() -&gt; %void {
-    // ** and ++ work for compile-time known values
-    %%io.stdout.printf("zig" ** 3 ++ "lang\n");
+// error declaration, makes `error.SomeErrorCode` available
+error SomeErrorCode;
 
+pub fn main() -&gt; %void {
     // integers
     const one_plus_one: i32 = 1 + 1;
     %%io.stdout.printf("1 + 1 = {}\n", one_plus_one);
@@ -218,12 +220,23 @@ pub fn main() -&gt; %void {
     // floats
     const seven_div_three: f32 = 7.0 / 3.0;
     %%io.stdout.printf("7.0 / 3.0 = {}\n", seven_div_three);
+    // TODO float printing code in standard library
 
     // boolean
     %%io.stdout.printf("{}\n{}\n{}\n",
         true and false,
         true or false,
         !true);
+
+    // nullable
+    const maybe_a_number = if (true) i32(1234) else null;
+    %%io.stdout.printf("maybe_a_number = {}\n", maybe_a_number);
+    // TODO ability to print nullables
+
+    // error union
+    const number_or_error = if (true) i32(1234) else error.SomeErrorCode;
+    %%io.stdout.printf("number_or_error = {}\n", maybe_a_number);
+    // TODO ability to print error unions
 }</code></pre>
       <h3 id="primitive-types">Primitive Types</h2>
       <table>
@@ -1180,7 +1193,7 @@ pub fn build(b: &amp;Builder) {
       <pre><code class="zig">test "safety check" {
     unreachable;
 }</code></pre>
-      <pre><code class="sh">$ ./zig test test.zig 
+      <pre><code class="sh">$ zig test test.zig 
 Test 1/1 safety check...reached unreachable code
 /home/andy/dev/zig/build/lib/zig/std/special/zigrt.zig:16:35: 0x000000000020331c in ??? (test)
         @import("std").debug.panic("{}", message_ptr[0...message_len]);
@@ -1211,7 +1224,7 @@ Tests failed. Use the following command to reproduce the failure:
 fn assert(ok: bool) {
     if (!ok) unreachable; // assertion failure
 }</code></pre>
-      <pre><code class="sh">$ ./zig build_obj test.zig 
+      <pre><code class="sh">$ zig build_obj test.zig 
 /home/andy/dev/zig/build/test.zig:5:14: error: unable to evaluate constant expression
     if (!ok) unreachable; // assertion failure
              ^
@@ -1228,7 +1241,7 @@ comptime {
     const array = "hello";
     const garbage = array[5];
 }</code></pre>
-      <pre><code class="sh">$ ./zig build_obj test.zig 
+      <pre><code class="sh">$ zig build_obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:26: error: index 5 outside array of size 5
     const garbage = array[5];
                          ^</code></pre>
@@ -1239,7 +1252,7 @@ comptime {
     const value: i32 = -1;
     const unsigned = u32(value);
 }</code></pre>
-      <pre><code class="sh">$ ./zig build_obj test.zig /home/andy/dev/zig/build/test.zig:3:25: error: attempt to cast negative value to unsigned integer
+      <pre><code class="sh">$ zig build_obj test.zig /home/andy/dev/zig/build/test.zig:3:25: error: attempt to cast negative value to unsigned integer
     const unsigned = u32(value);
                         ^</code></pre>
       <p>At runtime crashes with the message <code>attempt to cast negative value to unsigned integer</code> and a stack trace.</p>
@@ -1267,7 +1280,7 @@ comptime {
     var byte: u8 = 255;
     byte += 1;
 }</code></pre>
-      <pre><code class="sh">$ ./zig build_obj test.zig 
+      <pre><code class="sh">$ zig build_obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:10: error: operation caused overflow
     byte += 1;
          ^</code></pre>
@@ -1297,7 +1310,7 @@ pub fn main() -&gt; %void {
 
     %%io.stderr.printf("result: {}\n", byte);
 }</code></pre>
-      <pre><code class="sh">$ ./zig build_exe test.zig 
+      <pre><code class="sh">$ zig build_exe test.zig 
 $ ./test 
 unable to add one: Overflow</code></pre>
       <h4 id="undef-int-overflow-builtin">Builtin Overflow Functions</h4>
@@ -1325,26 +1338,123 @@ pub fn main() -&gt; %void {
         %%io.stderr.printf("result: {}\n", result);
     }
 }</code></pre>
-      <pre><code class="sh">$ ./zig build_exe test.zig 
+      <pre><code class="sh">$ zig build_exe test.zig 
 $ ./test 
 overflowed result: 9</code></pre>
+      <h4 id="undef-int-overflow-wrap">Wrapping Operations</h4>
+      <p>
+      These operations have guaranteed wraparound semantics.
+      </p>
+      <ul>
+        <li><code>+%</code> (wraparound addition)</li>
+        <li><code>-%</code> (wraparound subtraction)</li>
+        <li><code>-%</code> (wraparound negation)</li>
+        <li><code>*%</code> (wraparound multiplication)</li>
+        <li><code>&lt;&lt;%</code> (wraparound left shift)</li>
+      </ul>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
 
+test "wraparound addition and subtraction" {
+    const x: i32 = @maxValue(i32);
+    const min_val = x +% 1;
+    assert(min_val == @minValue(i32));
+    const max_val = min_val -% 1;
+    assert(max_val == @maxValue(i32));
+}</code></pre>
+      <p>TODO is &lt;&lt;% even "wrapping" around? or is it just truncating?
+      maybe it shouldn't be one of the % operators?
+      </p>
       <h3 id="undef-shift-overflow">Shift Overflow</h3>
-      <p>TODO</p>
+      <p>TODO should this be a different section than normal integer overflow?</p>
       <h3 id="undef-division-by-zero">Division by Zero</h3>
       <p>TODO https://github.com/zig-lang/zig/issues/372</p>
       <h3 id="undef-remainder-division-by-zero">Remainder Division by Zero</h3>
-      <p>TODO</p>
+      <p>TODO https://github.com/zig-lang/zig/issues/372</p>
       <h3 id="undef-exact-division-remainder">Exact Division Remainder</h3>
       <p>TODO</p>
       <h3 id="undef-slice-widen-remainder">Slice Widen Remainder</h3>
       <p>TODO</p>
       <h3 id="undef-attempt-unwrap-null">Attempt to Unwrap Null</h3>
-      <p>TODO</p>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const maybe_number: ?i32 = null;
+    const number = ??maybe_number;
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:3:20: error: unable to unwrap null
+    const number = ??maybe_number;
+                   ^</code></pre>
+      <p>At runtime crashes with the message <code>attempt to unwrap null</code> and a stack trace.</p>
+      <p>One way to avoid this crash is to test for null instead of assuming non-null, with
+      the <code>if</code> expression:</p>
+      <pre><code class="zig">const io = @import("std").io;
+pub fn main() -&gt; %void {
+    const maybe_number: ?i32 = null;
+
+    if (maybe_number) |number| {
+        %%io.stderr.printf("got number: {}\n", number);
+    } else {
+        %%io.stderr.printf("it's null\n");
+    }
+}</code></pre>
+      <pre><code class="sh">% zig build_exe test.zig
+$ ./test 
+it's null</code></pre>
       <h3 id="undef-attempt-unwrap-error">Attempt to Unwrap Error</h3>
-      <p>TODO</p>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const number = %%getNumberOrFail();
+}
+
+error UnableToReturnNumber;
+
+fn getNumberOrFail() -&gt; %i32 {
+    return error.UnableToReturnNumber;
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:2:20: error: unable to unwrap error 'UnableToReturnNumber'
+    const number = %%getNumberOrFail();
+                         ^</code></pre>
+      <p>At runtime crashes with the message <code>attempt to unwrap error: ErrorCode</code> and a stack trace.</p>
+      <p>One way to avoid this crash is to test for an error instead of assuming a successful result, with
+      the <code>if</code> expression:</p>
+      <pre><code class="zig">const io = @import("std").io;
+
+pub fn main() -&gt; %void {
+    const result = getNumberOrFail();
+
+    if (result) |number| {
+        %%io.stderr.printf("got number: {}\n", number);
+    } else |err| {
+        %%io.stderr.printf("got error: {}\n", @errorName(err));
+    }
+}
+
+error UnableToReturnNumber;
+
+fn getNumberOrFail() -&gt; %i32 {
+    return error.UnableToReturnNumber;
+}</code></pre>
+      <pre><code class="sh">$ zig build_exe test.zig 
+$ ./test 
+got error: UnableToReturnNumber</code></pre>
+
       <h3 id="undef-invalid-error-code">Invalid Error Code</h3>
+      <p>At compile-time:</p>
+      <pre><code class="zig">error AnError;
+comptime {
+    const err = error.AnError;
+    const number = u32(err) + 10;
+    const invalid_err = error(number);
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:5:30: error: integer value 11 represents no error
+    const invalid_err = error(number);
+                             ^</code></pre>
+      <p>At runtime crashes with the message <code>invalid error code</code> and a stack trace.</p>
+      <h3 id="undef-invalid-enum-cast">Invalid Enum Cast</h3>
       <p>TODO</p>
+
       <h2 id="compile-variables">Compile Variables</h2>
       <p>
       Compile variables are accessible by importing the <code>"builtin"</code> package,
