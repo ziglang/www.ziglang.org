@@ -1354,7 +1354,7 @@ comptime {
     const value: i32 = -1;
     const unsigned = u32(value);
 }</code></pre>
-      <pre><code class="sh">$ zig build_obj test.zig /home/andy/dev/zig/build/test.zig:3:25: error: attempt to cast negative value to unsigned integer
+      <pre><code class="sh">$ zig build_obj test.zig test.zig:3:25: error: attempt to cast negative value to unsigned integer
     const unsigned = u32(value);
                         ^</code></pre>
       <p>At runtime crashes with the message <code>attempt to cast negative value to unsigned integer</code> and a stack trace.</p>
@@ -1363,7 +1363,21 @@ comptime {
       where <code>T</code> is the integer type, such as <code>u32</code>.
       </p>
       <h3 id="undef-cast-truncates-data">Cast Truncates Data</h3>
-      <p>TODO (https://github.com/zig-lang/zig/issues/371)</p>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const spartan_count: u16 = 300;
+    const byte = u8(spartan_count);
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig
+test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
+    const byte = u8(spartan_count);
+                   ^</code></pre>
+      <p>At runtime crashes with the message <code>integer cast truncated bits</code> and a stack trace.</p>
+      <p>
+      If you are trying to truncate bits, use <code>@truncate(T, value)</code>,
+      where <code>T</code> is the integer type, such as <code>u32</code>, and <code>value</code>
+      is the value you want to truncate.
+      </p>
       <h3 id="undef-integer-overflow">Integer Overflow</h3>
       <h4 id="undef-int-overflow-default">Default Operations</h4>
       <p>The following operators can cause integer overflow:</p>
