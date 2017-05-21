@@ -98,8 +98,6 @@
             <li><a href="#builtin-inlineCall">@inlineCall</a></li>
             <li><a href="#builtin-intToPtr">@intToPtr</a></li>
             <li><a href="#builtin-IntType">@IntType</a></li>
-            <li><a href="#builtin-isFloat">@isFloat</a></li>
-            <li><a href="#builtin-isInteger">@isInteger</a></li>
             <li><a href="#builtin-maxValue">@maxValue</a></li>
             <li><a href="#builtin-memberCount">@memberCount</a></li>
             <li><a href="#builtin-memcpy">@memcpy</a></li>
@@ -113,6 +111,7 @@
             <li><a href="#builtin-rem">@rem</a></li>
             <li><a href="#builtin-returnAddress">@returnAddress</a></li>
             <li><a href="#builtin-setDebugSafety">@setDebugSafety</a></li>
+            <li><a href="#builtin-setFloatMode">@setFloatMode</a></li>
             <li><a href="#builtin-setGlobalAlign">@setGlobalAlign</a></li>
             <li><a href="#builtin-setGlobalLinkage">@setGlobalLinkage</a></li>
             <li><a href="#builtin-setGlobalSection">@setGlobalSection</a></li>
@@ -121,6 +120,7 @@
             <li><a href="#builtin-subWithOverflow">@subWithOverflow</a></li>
             <li><a href="#builtin-truncate">@truncate</a></li>
             <li><a href="#builtin-typeName">@typeName</a></li>
+            <li><a href="#builtin-typeId">@typeId</a></li>
             <li><a href="#builtin-typeOf">@typeOf</a></li>
           </ul>
         </li>
@@ -871,7 +871,7 @@ Test 4/4 array initialization with function calls...OK</code></pre>
       <p>
       Floored division. Rounds toward negative infinity. For unsigned integers it is
       the same as <code>numerator / denominator</code>. Caller guarantees <code>denominator != 0</code> and
-      <code>!(@isInteger(T) and T.is_signed and numerator == @minValue(T) and denominator == -1)</code>.
+      <code>!(@typeId(T) == builtin.TypeId.Int and T.is_signed and numerator == @minValue(T) and denominator == -1)</code>.
       </p>
       <ul>
         <li><code>@divFloor(-5, 3) == -2</code></li>
@@ -888,7 +888,7 @@ Test 4/4 array initialization with function calls...OK</code></pre>
       <p>
       Truncated division. Rounds toward zero. For unsigned integers it is
       the same as <code>numerator / denominator</code>. Caller guarantees <code>denominator != 0</code> and
-      <code>!(@isInteger(T) and T.is_signed and numerator == @minValue(T) and denominator == -1)</code>.
+      <code>!(@typeId(T) == builtin.TypeId.Int and T.is_signed and numerator == @minValue(T) and denominator == -1)</code>.
       </p>
       <ul>
         <li><code>@divTrunc(-5, 3) == -1</code></li>
@@ -1010,16 +1010,6 @@ fn add(a: i32, b: i32) -&gt; i32 { a + b }</code></pre>
       <pre><code class="zig">@IntType(comptime is_signed: bool, comptime bit_count: u8) -&gt; type</code></pre>
       <p>
       This function returns an integer type with the given signness and bit count.
-      </p>
-      <h3 id="builtin-isFloat">@isFloat</h3>
-      <pre><code class="zig">@isFloat(comptime T: type) -&gt; bool</code></pre>
-      <p>
-      Returns whether a given type is a float.
-      </p>
-      <h3 id="builtin-isInteger">@isInteger</h3>
-      <pre><code class="zig">@isInteger(comptime T: type) -&gt; bool</code></pre>
-      <p>
-      Returns whether a given type is an integer.
       </p>
       <h3 id="builtin-maxValue">@maxValue</h3>
       <pre><code class="zig">@maxValue(comptime T: type) -&gt; (number literal)</code></pre>
@@ -1149,11 +1139,40 @@ mem.set(u8, dest, c);</code></pre>
       <p>
       This function is only valid within function scope.
       </p>
+
       <h3 id="builtin-setDebugSafety">@setDebugSafety</h3>
       <pre><code class="zig">@setDebugSafety(scope, safety_on: bool)</code></pre>
       <p>
-      Sets a whether we want debug safety checks on for a given scope.
+      Sets whether debug safety checks are on for a given scope.
       </p>
+
+      <h3 id="builtin-setFloatMode">@setFloatMode</h3>
+      <pre><code class="zig">@setFloatMode(scope, mode: @import("builtin").FloatMode)</code></pre>
+      <p>
+      Sets the floating point mode for a given scope. Possible values are:
+      </p>
+      <pre><code class="zig">pub const FloatMode = enum {
+    Optimized,
+    Strict,
+};</code></pre>
+      <ul>
+        <li>
+          <code>Optimized</code> (default) - Floating point operations may do all of the following:
+          <ul>
+            <li>Assume the arguments and result are not NaN. Optimizations are required to retain defined behavior over NaNs, but the value of the result is undefined.</li>
+            <li>Assume the arguments and result are not +/-Inf. Optimizations are required to retain defined behavior over +/-Inf, but the value of the result is undefined.</li>
+            <li>Treat the sign of a zero argument or result as insignificant.</li>
+            <li>Use the reciprocal of an argument rather than perform division.</li>
+            <li>Perform floating-point contraction (e.g. fusing a multiply followed by an addition into a fused multiply-and-add).</li>
+            <li>Perform algebraically equivalent transformations that may change results in floating point (e.g. reassociate).</li>
+          </ul>
+          This is equivalent to <code>-ffast-math</code> in GCC.
+        </li>
+        <li>
+          <code>Strict</code> - Floating point operations follow strict IEEE compliance.
+        </li>
+      </ul>
+
       <h3 id="builtin-setGlobalAlign">@setGlobalAlign</h3>
       <pre><code class="zig">@setGlobalAlign(global_variable_name, comptime byte_count: usize) -&gt; bool</code></pre>
       <p>
@@ -1222,6 +1241,40 @@ const b: u8 = @truncate(u8, a);
       <p>
       This function returns the string representation of a type.
       </p>
+
+      <h3 id="builtin-typeId">@typeId</h3>
+      <pre><code class="zig">@typeId(comptime T: type) -&gt; @import("builtin").TypeId</code></pre>
+      <p>
+      Returns which kind of type something is. Possible values:
+      </p>
+      <pre><code class="zig">pub const TypeId = enum {
+    Type,
+    Void,
+    Bool,
+    NoReturn,
+    Int,
+    Float,
+    Pointer,
+    Array,
+    Struct,
+    FloatLiteral,
+    IntLiteral,
+    UndefinedLiteral,
+    NullLiteral,
+    Nullable,
+    ErrorUnion,
+    Error,
+    Enum,
+    EnumTag,
+    Union,
+    Fn,
+    Namespace,
+    Block,
+    BoundFn,
+    ArgTuple,
+    Opaque,
+};</code></pre>
+
       <h3 id="builtin-typeOf">@typeOf</h3>
       <pre><code class="zig">@typeOf(expression) -&gt; type</code></pre>
       <p>
