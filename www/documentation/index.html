@@ -45,12 +45,13 @@
         <li><a href="#integers">Integers</a>
           <ul>
             <li><a href="#integer-literals">Integer Literals</a></li>
-            <li><a href="#integer-overflow">Integer Overflow</a></li>
+            <li><a href="#runtime-integer-values">Runtime Integer Values</a></li>
           </ul>
         </li>
         <li><a href="#floats">Floats</a>
           <ul>
             <li><a href="#float-literals">Float Literals</a></li>
+            <li><a href="#float-operations">Floating Point Operations</a></li>
           </ul>
         </li>
         <li><a href="#arrays">Arrays</a></li>
@@ -208,9 +209,10 @@ Hello, world!</code></pre>
       </ul>
       <h2 id="values">Values</h2>
       <pre><code class="zig">const io = @import("std").io;
+const os = @import("std").os;
 
-// error declaration, makes `error.SomeErrorCode` available
-error SomeErrorCode;
+// error declaration, makes `error.ArgNotFound` available
+error ArgNotFound;
 
 pub fn main() -&gt; %void {
     // integers
@@ -219,7 +221,7 @@ pub fn main() -&gt; %void {
 
     // floats
     const seven_div_three: f32 = 7.0 / 3.0;
-    %%io.stdout.printf("7.0 / 3.0 = {}\n", seven_div_three);
+    //%%io.stdout.printf("7.0 / 3.0 = {}\n", seven_div_three);
     // TODO float printing code in standard library
 
     // boolean
@@ -229,15 +231,29 @@ pub fn main() -&gt; %void {
         !true);
 
     // nullable
-    const maybe_a_number = if (true) i32(1234) else null;
-    %%io.stdout.printf("maybe_a_number = {}\n", maybe_a_number);
-    // TODO ability to print nullables
+    const nullable_value = if (os.args.count() &gt;= 2) os.args.at(1) else null;
+    %%io.stdout.printf("\nnullable\ntype: {}\nvalue: {}\n",
+        @typeName(@typeOf(nullable_value)), nullable_value);
 
     // error union
-    const number_or_error = if (true) i32(1234) else error.SomeErrorCode;
-    %%io.stdout.printf("number_or_error = {}\n", maybe_a_number);
-    // TODO ability to print error unions
+    const number_or_error = if (os.args.count() &gt;= 3) os.args.at(2) else error.ArgNotFound;
+    %%io.stdout.printf("\nerror union\ntype: {}\nvalue: {}\n",
+        @typeName(@typeOf(number_or_error)), number_or_error);
 }</code></pre>
+      <pre><code class="sh">$ zig build_exe values.zig
+$ ./values 
+1 + 1 = 2
+false
+true
+false
+
+nullable
+type: ?[]const u8
+value: null
+
+error union
+type: %[]const u8
+value: error.ArgNotFound</code></pre>
       <h3 id="primitive-types">Primitive Types</h2>
       <table>
         <tr>
@@ -446,8 +462,11 @@ test "string literals" {
     assert(@typeOf(null_terminated_bytes) == &amp;const u8);
     assert(null_terminated_bytes[5] == 0);
 }</code></pre>
+      <pre><code class="sh">$ zig test string_literals.zig 
+Test 1/1 string literals...OK</code></pre>
       <p>See also:</p>
       <ul>
+        <li><a href="#arrays">Arrays</a></li>
         <li><a href="#zig-test">Zig Test</a></li>
       </ul>
       <h4 id="string-literal-escapes">Escape Sequences</h4>
@@ -541,8 +560,34 @@ const hex_int = 0xff;
 const another_hex_int = 0xFF;
 const octal_int = 0o755;
 const binary_int = 0b11110000;</code></pre>
-      <h3 id="integer-overflow">Integer Overflow</h3>
-      <p>TODO</p>
+      <h3 id="runtime-integer-values">Runtime Integer Values</h3>
+      <p>
+      Integer literals have no size limitation, and if any undefined behavior occurs,
+      the compiler catches it.
+      </p>
+      <p>
+      However, once an integer value is no longer known at compile-time, it must have a
+      known size, and is vulnerable to undefined behavior.
+      </p>
+      <pre><code class="zig">fn divide(a: i32, b: i32) -&gt; i32 {
+    return a / b;
+}</code></pre>
+      <p>
+      In this function, values <code>a</code> and <code>b</code> are known only at runtime,
+      and thus this division operation is vulnerable to both integer overflow and
+      division by zero.
+      </p>
+      <p>
+      Operators such as <code>+</code> and <code>-</code> cause undefined behavior on
+      integer overflow. Also available are operations such as <code>+%</code> and
+      <code>-%</code> which are defined to have wrapping arithmetic on all targets.
+      </p>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#undef-integer-overflow">Integer Overflow</a></li>
+        <li><a href="#undef-division-by-zero">Division By Zero</a></li>
+        <li><a href="#undef-int-overflow-wrap">Wrapping Operations</a></li>
+      </ul>
       <h2 id="floats">Floats</h2>
       <h3 id="float-literals">Float Literals</h3>
       <pre><code class="zig">const floating_point = 123.0E+77;
@@ -552,7 +597,46 @@ const yet_another = 123.0e+77;
 const hex_floating_point = 0x103.70p-5;
 const another_hex_float = 0x103.70;
 const yet_another_hex_float = 0x103.70P-5;</code></pre>
-      <p>TODO</p>
+      <h3 id="float-operations">Floating Point Operations</h3>
+      <p>By default floating point operations use <code>Optimized</code> mode,
+      but you can switch to <code>Strict</code> mode on a per-block basis:</p>
+      <p>foo.zig</p>
+      <pre><code class="zig">const builtin = @import("builtin");
+const big = f64(1 &lt;&lt; 40);
+
+export fn foo_strict(x: f64) -&gt; f64 {
+    @setFloatMode(this, builtin.FloatMode.Strict);
+    return x + big - big;
+}
+
+export fn foo_optimized(x: f64) -&gt; f64 {
+    return x + big - big;
+}</code></pre>
+      <p>test.zig</p>
+      <pre><code class="zig">const io = @import("std").io;
+
+extern fn foo_strict(x: f64) -&gt; f64;
+extern fn foo_optimized(x: f64) -&gt; f64;
+
+pub fn main() -&gt; %void {
+    const x = 0.001;
+    // TODO float printing code in standard library
+    %%io.stdout.printf("optimized = {}\n", x);
+    %%io.stdout.printf("strict = {}\n", x);
+}</code></pre>
+      <p>For this test we have to separate code into two object files -
+      otherwise the optimizer figures out all the values at compile-time,
+      which operates in strict mode.</p>
+      <pre><code class="sh">$ zig build_obj foo.zig
+$ zig build_exe test.zig --object foo.o
+$ ./test
+optimized = 0.001000
+strict = 0.000977</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#builtin-setFloatMode">@setFloatMode</a></li>
+        <li><a href="#undef-division-by-zero">Division By Zero</a></li>
+      </ul>
       <h2 id="arrays">Arrays</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 const mem = @import("std").mem;
@@ -658,7 +742,151 @@ Test 2/4 modify an array...OK
 Test 3/4 compile-time array initalization...OK
 Test 4/4 array initialization with function calls...OK</code></pre>
       <h2 id="struct">struct</h2>
-      <p>TODO</p>
+      <pre><code class="zig">// Declare a struct.
+// Zig gives no guarantees about the order of fields and whether or
+// not there will be padding.
+const Point = struct {
+    x: f32,
+    y: f32,
+};
+
+// Maybe we want to pass it to OpenGL so we want to be particular about
+// how the bytes are arranged.
+const Point2 = packed struct {
+    x: f32,
+    y: f32,
+};
+
+
+// Declare an instance of a struct.
+const p = Point {
+    .x = 0.12,
+    .y = 0.34,
+};
+
+// Maybe we're not ready to fill out some of the fields.
+var p2 = Point {
+    .x = 0.12,
+    .y = undefined,
+};
+
+// Structs can have methods
+// Struct methods are not special, they are only namespaced
+// functions that you can call with dot syntax.
+const Vec3 = struct {
+    x: f32,
+    y: f32,
+    z: f32,
+
+    pub fn init(x: f32, y: f32, z: f32) -&gt; Vec3 {
+        return Vec3 {
+            .x = x,
+            .y = y,
+            .z = z,
+        };
+    }
+
+    pub fn dot(self: &amp;const Vec3, other: &amp;const Vec3) -&gt; f32 {
+        return self.x * other.x + self.y * other.y + self.z * other.z;
+    }
+};
+
+const assert = @import("std").debug.assert;
+test "dot product" {
+    const v1 = Vec3.init(1.0, 0.0, 0.0);
+    const v2 = Vec3.init(0.0, 1.0, 0.0);
+    assert(v1.dot(v2) == 0.0);
+
+    // Other than being available to call with dot syntax, struct methods are
+    // not special. You can reference them as any other declaration inside
+    // the struct:
+    assert(Vec3.dot(v1, v2) == 0.0);
+}
+
+// Structs can have global declarations.
+// Structs can have 0 fields.
+const Empty = struct {
+    pub const PI = 3.14;
+};
+test "struct namespaced variable" {
+    assert(Empty.PI == 3.14);
+    assert(@sizeOf(Empty) == 0);
+
+    // you can still instantiate an empty struct
+    const does_nothing = Empty {};
+}
+
+// struct field order is determined by the compiler for optimal performance.
+// however, you can still calculate a struct base pointer given a field pointer:
+fn setYBasedOnX(x: &amp;f32, y: f32) {
+    const point = @fieldParentPtr(Point, "x", x);
+    point.y = y;
+}
+test "field parent pointer" {
+    var point = Point {
+        .x = 0.1234,
+        .y = 0.5678,
+    };
+    setYBasedOnX(&amp;point.x, 0.9);
+    assert(point.y == 0.9);
+}
+
+// You can return a struct from a function. This is how we do generics
+// in Zig:
+fn LinkedList(comptime T: type) -&gt; type {
+    return struct {
+        pub const Node = struct {
+            prev: ?&amp;Node,
+            next: ?&amp;Node,
+            data: T,
+        };
+
+        first: ?&amp;Node,
+        last:  ?&amp;Node,
+        len:   usize,
+    };
+}
+
+test "linked list" {
+    // Functions called at compile-time are memoized. This means you can
+    // do this:
+    assert(LinkedList(i32) == LinkedList(i32));
+
+    var list = LinkedList(i32) {
+        .first = null,
+        .last = null,
+        .len = 0,
+    };
+    assert(list.len == 0);
+
+    // Since types are first class values you can instantiate the type
+    // by assigning it to a variable:
+    const ListOfInts = LinkedList(i32);
+    assert(ListOfInts == LinkedList(i32));
+
+    var node = ListOfInts.Node {
+        .prev = null,
+        .next = null,
+        .data = 1234,
+    };
+    var list2 = LinkedList(i32) {
+        .first = &amp;node,
+        .last = &amp;node,
+        .len = 1,
+    };
+    assert((??list2.first).data == 1234);
+}</code></pre>
+      <p>TODO https://github.com/zig-lang/zig/issues/307</p>
+      <pre><code class="sh">$ zig test structs.zig 
+Test 1/4 dot product...OK
+Test 2/4 struct namespaced variable...OK
+Test 3/4 field parent pointer...OK
+Test 4/4 linked list...OK</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#comptime">comptime</a></li>
+        <li><a href="#builtin-fieldParentPtr">@fieldParentPtr</a></li>
+      </ul>
       <h2 id="enum">enum</h2>
       <p>TODO</p>
       <h2 id="switch">switch</h2>
@@ -1172,6 +1400,10 @@ mem.set(u8, dest, c);</code></pre>
           <code>Strict</code> - Floating point operations follow strict IEEE compliance.
         </li>
       </ul>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#float-operations">Floating Point Operations</a></li>
+      </ul>
 
       <h3 id="builtin-setGlobalAlign">@setGlobalAlign</h3>
       <pre><code class="zig">@setGlobalAlign(global_variable_name, comptime byte_count: usize) -&gt; bool</code></pre>
@@ -1442,6 +1674,7 @@ test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
         <li><code>/</code> (division)</li>
         <li><code>@divTrunc</code> (division)</li>
         <li><code>@divFloor</code> (division)</li>
+        <li><code>@divExact</code> (division)</li>
         <li><code>&lt;&lt;</code> (left shift)</li>
       </ul>
       <p>Example with addition at compile-time:</p>
@@ -1462,6 +1695,7 @@ test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
         <li><code>@import("std").math.mul</code></li>
         <li><code>@import("std").math.divTrunc</code></li>
         <li><code>@import("std").math.divFloor</code></li>
+        <li><code>@import("std").math.divExact</code></li>
         <li><code>@import("std").math.shl</code></li>
       </ul>
       <p>Example of catching an overflow for addition:</p>
