@@ -893,21 +893,630 @@ Test 4/4 linked list...OK</code></pre>
         <li><a href="#builtin-fieldParentPtr">@fieldParentPtr</a></li>
       </ul>
       <h2 id="enum">enum</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+const mem = @import("std").mem;
+
+// Declare an enum.
+const Type = enum {
+    Ok,
+    NotOk,
+};
+
+// Enums are sum types, and can hold more complex data of different types.
+const ComplexType = enum {
+    Ok: u8,
+    NotOk: void,
+};
+
+// Declare a specific instance of the enum variant.
+const c = ComplexType.Ok { 0 };
+
+// The ordinal value of a simple enum with no data members can be
+// retrieved by a simple cast.
+// The value starts from 0, counting up for each member.
+const Value = enum {
+    Zero,
+    One,
+    Two,
+};
+test "enum ordinal value" {
+    assert(usize(Value.Zero) == 0);
+    assert(usize(Value.One) == 1);
+    assert(usize(Value.Two) == 2);
+}
+
+// Enums can have methods, the same as structs.
+// Enum methods are not special, they are only namespaced
+// functions that you can call with dot syntax.
+const Suit = enum {
+    Clubs,
+    Spades,
+    Diamonds,
+    Hearts,
+
+    pub fn ordinal(self: &const Suit) -> u8 {
+        u8(*self)
+    }
+};
+test "enum method" {
+    const p = Suit.Spades;
+    assert(p.ordinal() == 1);
+}
+
+// An enum variant of different types can be switched upon.
+// The associated data can be retrieved using `|...|` syntax.
+//
+// A void type is not required on a tag-only member.
+const Foo = enum {
+    String: []const u8,
+    Number: u64,
+    None,
+};
+test "enum variant switch" {
+    const p = Foo.Number { 54 };
+    const what_is_it = switch (p) {
+        // Capture by reference
+        Foo.String => |*x| {
+            "this is a string"
+        },
+
+        // Capture by value
+        Foo.Number => |x| {
+            "this is a number"
+        },
+
+        Foo.None => {
+            "this is a none"
+        }
+    };
+}
+
+// The @enumTagName and @memberCount builtin functions can be used to
+// the string representation and number of members respectively.
+const BuiltinType = enum {
+    A: f32,
+    B: u32,
+    C,
+};
+
+test "enum builtins" {
+    assert(mem.eql(u8, @enumTagName(BuiltinType.A { 0 }), "A"));
+    assert(mem.eql(u8, @enumTagName(BuiltinType.C), "C"));
+    assert(@memberCount(BuiltinType) == 3);
+}
+</code></pre>
+      <pre><code class="sh">$ zig test enum.zig
+Test 1/4 enum ordinal value...OK
+Test 2/4 enum method...OK
+Test 3/4 enum variant switch...OK
+Test 4/4 enum builtins...OK
+</code></pre>
       <h2 id="switch">switch</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "switch simple" {
+    const a: u64 = 10;
+    const zz: u64 = 103;
+
+    // A switch statement in zig is an expression. All branches must be able to
+    // be coerced to a common type.
+    //
+    // Branches cannot fallthrough. If fallthrough behavior is desired, combine
+    // the cases and use an if.
+    const b = switch (a) {
+        // Multiple cases can be combined via a ','
+        1, 2, 3 => 0,
+
+        // Ranges can be specified using the ... syntax. These are inclusive
+        // both ends.
+        5 ... 100 => 1,
+
+        // Branches can be arbitrarily complex.
+        101 => {
+            const c: u64 = 5;
+            c * 2 + 1
+        },
+
+        // Switching on identifer values is allowed.
+        zz => zz,
+
+        // Switching on arbitrary expressions is also allowed as long as they
+        // can evaluated completely at compiled.
+        comptime {
+            const d: u32 = 5;
+            const e: u32 = 100;
+            d + e
+        } => 107,
+
+        // The else branch catches everything not already captured.
+        else => 9,
+    };
+
+    assert(b == 1);
+}
+
+test "switch enum" {
+    const Item = enum {
+        A: u32,
+        C: struct { x: u8, y: u8 },
+        D,
+    };
+
+    var a = Item.A { 3 };
+
+    // Switching on more complex enums is allowed.
+    const b = switch (a) {
+        // A capture group is allowed on a match, and will return the enum
+        // value matched.
+        Item.A => |item| item,
+
+        // A reference to the matched value can be obtained using `*` syntax.
+        Item.C => |*item| {
+            (*item).x += 1;
+            6
+        },
+
+        // No else is required if the types cases was exhaustively handled
+        Item.D => 8,
+    };
+
+    assert(b == 3);
+}
+</code></pre>
+      <pre><code class="sh">$ zig test switch.zig
+Test 1/2 switch simple...OK
+Test 2/2 switch enum...OK
+</code></pre>
       <h2 id="while">while</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "while basics" {
+    // while loops work the same as in other languages
+    while (false) {
+        // Break and continue work as expected.
+        if (true) {
+            break;
+        }
+        if (true) {
+            continue;
+        }
+    }
+
+    // Since for loops are different than most other C-like
+    // languages, we typically use a while loop for similar behavior.
+    //
+    // for (int i = 0; i < 10; i++) becomes the following
+    { var i: usize = 0; while (i < 10) : (i += 1) {
+        const my_i = i;
+    }}
+
+    // note the precondition, this runs after each run of the
+    // while body. More complex blocks can be used as an expression.
+    var i1: usize = 1;
+    var j1: usize = 1;
+    while (i1 * j1 < 2000) : ({ i1 *= 2; j1 *= 3; }) {
+        const my_ij1 = i1 * j1;
+    }
+}
+
+test "while else" {
+    // An else statement on a while loop is executed after the loop
+    // has finished executing successfully.
+    var i: usize = 0;
+    while (i < 10) : (i += 1) {
+
+    }
+    else {
+        i = 30;
+    }
+    assert(i == 30);
+
+    // On abnormal exit, the else branch will not be executed.
+    var j: usize = 0;
+    while (j < 10) : (j += 1) {
+        if (j == 5) {
+            break;
+        }
+    }
+    else {
+        j = 20;
+    }
+
+    assert(j == 5);
+}
+
+test "while null capture" {
+    // A while loop also supports capturing a stream of values until a
+    // nullable is encounted.
+    var sum1: u32 = 0;
+    numbers_left = 3;
+    while (eventuallyNullSequence()) |value| {
+        sum1 += value;
+    }
+    assert(sum1 == 3);
+
+    // The else branch is allowed on nullable iteration. In this case, it will
+    // be executed on the first invalid result encountered.
+    var sum2: u32 = 0;
+    numbers_left = 3;
+    while (eventuallyNullSequence()) |value| {
+        sum2 += value;
+    }
+    else {
+        assert(sum1 == 3);
+    }
+
+    // This is more useful on an error sequence, and allows capturing the
+    // error value.
+    var sum3: u32 = 0;
+    numbers_left = 3;
+    while (eventuallyErrorSequence()) |value| {
+        sum3 += value;
+    }
+    else |err| {
+        assert(err == error.ReachedZero);
+    }
+}
+
+var numbers_left: u32 = undefined;
+fn eventuallyNullSequence() -> ?u32 {
+    return if (numbers_left == 0) {
+        null
+    } else {
+        numbers_left -= 1;
+        numbers_left
+    }
+}
+error ReachedZero;
+fn eventuallyErrorSequence() -> %u32 {
+    return if (numbers_left == 0) {
+        error.ReachedZero
+    } else {
+        numbers_left -= 1;
+        numbers_left
+    }
+}
+
+test "while expression" {
+    // One notable difference to be aware of is that while is an expression
+    // itself. A value can be given to a break statement and the else prong
+    // and captured by a variable.
+    var i: usize = 0;
+    const r = while (i < 10) : (i += 1) {
+        if (i == 4) {
+            break i;
+        }
+    } else {
+        usize(5)
+    };
+
+    assert(r == 4);
+}
+</code></pre>
+      <pre><code class="sh">$ zig while.zig
+Test 1/4 while basics...OK
+Test 2/4 while else...OK
+Test 3/4 while null capture...OK
+Test 4/4 while expression...OK
+</code></pre>
       <h2 id="for">for</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "for basics" {
+    const items = []i32 { 4, 5, 3, 4, 0 };
+    var sum: i32 = 0;
+
+    // A for loop in zig is used for iterating over a slice.
+    // A capture value is specified to bind to an identifier within the loop.
+    for (items) |value| {
+        // Break and continue are supported.
+        if (value == 0) {
+            continue;
+        }
+        sum += value;
+    }
+    assert(sum == 16);
+
+    // To iterate over a portion of a slice, simply reslice
+    for (items[0..1]) |value| {
+        sum += value;
+    }
+    assert(sum == 20);
+
+    // To access the index of iteration, specify a second capture value.
+    // This is zero-indexed. The type of i is a `usize`.
+    var sum2: i32 = 0;
+    for (items) |value, i| {
+        sum2 += i32(i);
+    }
+    assert(sum2 == 10);
+}
+
+test "for reference" {
+    var items = []i32 { 3, 4, 2 };
+
+    // Iteration over the slice by reference can be performed by
+    // specifying that the capture value is a pointer.
+    for (items) |*value| {
+        *value += 1;
+    }
+
+    assert(items[0] == 4);
+    assert(items[1] == 5);
+    assert(items[2] == 3);
+}
+
+test "for else" {
+    // For allows an else attached to it, the same as a while loop.
+    var items = []?i32 { 3, 4, null, 5 };
+
+    // For loops can also be used as expressions.
+    var sum: i32 = 0;
+    const result = for (items) |value| {
+        if (value == null) {
+            break 9;
+        } else {
+            sum += ??value;
+        }
+    }
+    else {
+        assert(sum == 7);
+        sum
+    };
+}
+</code></pre>
+      <pre><code class="sh">$ zig test for.zig
+Test 1/3 for basics...OK
+Test 2/3 for reference...OK
+Test 3/3 for else...OK
+</code></pre>
       <h2 id="if">if</h2>
-      <p>TODO</p>
+      <pre><code class="zig">// An if statement has multiple uses in zig.
+const assert = @import("std").debug.assert;
+
+test "if simple" {
+    // The first use is simply to test general boolean expressions against true.
+    const a: u32 = 5;
+    const b: u32 = 4;
+    if (a != b) {
+        assert(true);
+    } else if (a == 9) {
+        unreachable
+    } else {
+        unreachable
+    }
+
+    // If statements are used in place of the C ternary statement, since they
+    // themselves are expressions.
+    const result = if (a != b) 47 else 3089;
+    assert(result == 47);
+}
+
+test "if try" {
+    // The second use is as a test statement, comparing a possibly
+    // null optional value for existence.
+
+    const a: ?u32 = 0;
+    if (a) |value| {
+        assert(value == 0);
+    } else {
+        unreachable;
+    }
+
+    const b: ?u32 = null;
+    if (b) |value| {
+        unreachable;
+    } else {
+        assert(true);
+    }
+
+    // The else is not strictly required.
+    if (a) |value| {
+        assert(value == 0);
+    }
+
+    // To test against null only, just use the simple if case.
+    if (b == null) {
+        assert(true);
+    }
+
+    // We can access the value by reference using a * capture.
+    var c: ?u32 = 3;
+    if (c) |*value| {
+        *value = 2;
+    }
+
+    if (c) |value| {
+        assert(value == 2);
+    }
+}
+
+error BadValue;
+error LessBadValue;
+test "if test" {
+    // The third use is as a try statement, checking a possibly
+    // bad error value.
+
+    // This is the same as the test statement, but the error has a capture
+    // group on the else branch.
+    const a: %u32 = 0;
+    if (a) |value| {
+        assert(value == 0);
+    } else |err| {
+        unreachable
+    }
+
+    const b: %u32 = error.BadValue;
+    if (b) |value| {
+        unreachable
+    } else |err| {
+        assert(err == error.BadValue);
+    }
+
+    // The else is strictly required.
+    if (a) |value| {
+        assert(value == 0);
+    } else |_| {}
+
+    // If wanting to check only the error value, use an empty block expression.
+    if (b) |_| {} else |err| {
+        assert(err == error.BadValue);
+    }
+
+    // We can access the value by reference using a * capture, same as the
+    // test expression case.
+    var c: %u32 = 3;
+    if (c) |*value| {
+        *value = 9;
+    } else |err| {}
+
+    if (c) |value| {
+        assert(value == 9);
+    } else |err| {}
+}
+</code></pre>
+      <pre><code class="sh">$ zig test if.zig
+Test 1/3 if simple...OK
+Test 2/3 if try...OK
+Test 3/3 if test...OK
+</code></pre>
       <h2 id="goto">goto</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+// goto is present, but should typically not be used.
+// error-handling should instead be performed via defer.
+test "goto" {
+    var value = false;
+    goto label;
+    value = true;
+
+label:
+    assert(value == false);
+}
+</code></pre>
+      <pre><code class="sh">$ zig test goto.zig
+Test 1/1 goto...OK
+</code></pre>
       <h2 id="defer">defer</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+const printf = @import("std").io.stdout.printf;
+
+// defer will execute an expression at the end of the current scope.
+fn deferExample() -> usize {
+    var a: usize = 1;
+
+    {
+        defer a = 2;
+        a = 1;
+    }
+    assert(a == 2);
+
+    a = 5;
+    a
+}
+
+test "defer basics" {
+    assert(deferExample() == 5);
+}
+
+// If multiple defer statements are specified, they will be executed in
+// the reverse order they were run.
+fn deferUnwindExample() {
+    %%printf("\n");
+
+    defer {
+        %%printf("1 ");
+    }
+    defer {
+        %%printf("2 ");
+    }
+    if (false) {
+        // defers are not run if they are never executed.
+        defer {
+            %%printf("3 ");
+        }
+    }
+}
+
+test "defer unwinding" {
+    deferUnwindExample()
+}
+
+// The %defer keyword is similar to defer, but will only execute if the
+// function returns with an error.
+//
+// This is especially useful in allowing a function to clean up properly
+// on error, and replaces goto error handling tactics as seen in c.
+error DeferError;
+fn deferErrorExample(is_error: bool) -> %void {
+    %%printf("\nstart of function\n");
+
+    // This will always be executed on exit
+    defer {
+        %%printf("end of function\n");
+    }
+
+    %defer {
+        %%printf("encountered an error!\n");
+    }
+
+    if (is_error) {
+        return error.DeferError;
+    }
+}
+
+test "%defer unwinding" {
+    _ = deferErrorExample(false);
+    _ = deferErrorExample(true);
+}
+</code></pre>
+      <pre><code class="sh">$ zig test defer.zig
+Test 1/3 defer basics...OK
+Test 2/3 defer unwinding...
+2 1 OK
+Test 3/3 %defer unwinding...
+start of function
+end of function
+
+start of function
+encountered an error!
+end of function
+OK
+</code></pre>
       <h2 id="functions">Functions</h2>
-      <p>TODO</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+// Functions are declared like this
+// The last expression in the function can be used as the return value.
+pub fn add(a: i8, b: i8) -> i8 {
+    if (a == 0) {
+        // You can still return manually if needed.
+        return b;
+    }
+
+    a + b
+}
+
+// Functions can be made to use the C abi by using the export specifier.
+export fn sub(a: i8, b: i8) -> i8 { a - b }
+
+// The pub specifier allows the function to be visible when importing.
+pub fn sub2(a: i8, b: i8) -> i8 { a - b }
+
+// Functions can be passed to other functions, the same as C function pointers.
+const call2_op = fn (a: i8, b: i8) -> i8;
+fn do_op(fn_call: call2_op, op1: i8, op2: i8) -> i8 {
+    fn_call(op1, op2)
+}
+
+test "function" {
+    assert(do_op(add, 5, 6) == 11);
+    assert(do_op(sub2, 5, 6) == -1);
+}
+</code></pre>
+      <pre><code class="sh">$ zig test function.zig
+Test 1/1 function...OK
+</code></pre>
       <h2 id="errors">Errors</h2>
       <p>TODO</p>
       <h2 id="nullables">Nullables</h2>
