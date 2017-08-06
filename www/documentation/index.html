@@ -55,6 +55,7 @@
           </ul>
         </li>
         <li><a href="#arrays">Arrays</a></li>
+        <li><a href="#slices">Slices</a></li>
         <li><a href="#struct">struct</a></li>
         <li><a href="#enum">enum</a></li>
         <li><a href="#switch">switch</a></li>
@@ -63,6 +64,7 @@
         <li><a href="#if">if</a></li>
         <li><a href="#goto">goto</a></li>
         <li><a href="#defer">defer</a></li>
+        <li><a href="#unreachable">unreachable</a></li>
         <li><a href="#functions">Functions</a></li>
         <li><a href="#errors">Errors</a></li>
         <li><a href="#nullables">Nullables</a></li>
@@ -746,6 +748,18 @@ Test 1/4 iterate over an array...OK
 Test 2/4 modify an array...OK
 Test 3/4 compile-time array initalization...OK
 Test 4/4 array initialization with function calls...OK</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#for">for</a></li>
+        <li><a href="#slices">Slices</a></li>
+      </ul>
+      <h2 id="slices">Slices</h2>
+      <p>TODO</p>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#for">for</a></li>
+        <li><a href="#arrays">Arrays</a></li>
+      </ul>
       <h2 id="struct">struct</h2>
       <pre><code class="zig">// Declare a struct.
 // Zig gives no guarantees about the order of fields and whether or
@@ -989,6 +1003,11 @@ Test 1/4 enum ordinal value...OK
 Test 2/4 enum method...OK
 Test 3/4 enum variant switch...OK
 Test 4/4 enum builtins...OK</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#builtin-enumTagName">@enumTagName</a></li>
+        <li><a href="#builtin-memberCount">@memberCount</a></li>
+      </ul>
       <h2 id="switch">switch</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 const builtin = @import("builtin");
@@ -1221,20 +1240,44 @@ fn eventuallyErrorSequence() -&gt; %u32 {
         numbers_left -= 1;
         numbers_left
     }
+}
+
+test "inline while loop" {
+    // While loops can be inlined. This causes the loop to be unrolled, which
+    // allows the code to do some things which only work at compile time,
+    // such as use types as first class values.
+    comptime var i = 0;
+    var sum: usize = 0;
+    inline while (i &lt; 3) : (i += 1) {
+        const T = switch (i) {
+            0 =&gt; f32,
+            1 =&gt; i8,
+            2 =&gt; bool,
+            else =&gt; unreachable,
+        };
+        sum += typeNameLength(T);
+    }
+    assert(sum == 9);
+}
+
+fn typeNameLength(comptime T: type) -&gt; usize {
+    return @typeName(T).len;
 }</code></pre>
       <pre><code class="sh">$ zig while.zig
-Test 1/7 while basic...OK
-Test 2/7 while break...OK
-Test 3/7 while continue...OK
-Test 4/7 while loop continuation expression...OK
-Test 5/7 while loop continuation expression, more complicated...OK
-Test 6/7 while else...OK
-Test 7/7 while null capture...OK</code></pre>
+Test 1/8 while basic...OK
+Test 2/8 while break...OK
+Test 3/8 while continue...OK
+Test 4/8 while loop continuation expression...OK
+Test 5/8 while loop continuation expression, more complicated...OK
+Test 6/8 while else...OK
+Test 7/8 while null capture...OK
+Test 8/8 inline while loop...OK</code></pre>
       <p>See also:</p>
       <ul>
         <li><a href="#if">if</a></li>
         <li><a href="#nullables">Nullables</a></li>
         <li><a href="#errors">Errors</a></li>
+        <li><a href="#comptime">comptime</a></li>
       </ul>
       <h2 id="for">for</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
@@ -1243,8 +1286,7 @@ test "for basics" {
     const items = []i32 { 4, 5, 3, 4, 0 };
     var sum: i32 = 0;
 
-    // A for loop in zig is used for iterating over a slice.
-    // A capture value is specified to bind to an identifier within the loop.
+    // For loops iterate over slices and arrays.
     for (items) |value| {
         // Break and continue are supported.
         if (value == 0) {
@@ -1254,16 +1296,17 @@ test "for basics" {
     }
     assert(sum == 16);
 
-    // To iterate over a portion of a slice, simply reslice
+    // To iterate over a portion of a slice, reslice.
     for (items[0..1]) |value| {
         sum += value;
     }
     assert(sum == 20);
 
     // To access the index of iteration, specify a second capture value.
-    // This is zero-indexed. The type of i is a `usize`.
+    // This is zero-indexed.
     var sum2: i32 = 0;
     for (items) |value, i| {
+        assert(@typeOf(i) == usize);
         sum2 += i32(i);
     }
     assert(sum2 == 10);
@@ -1272,7 +1315,7 @@ test "for basics" {
 test "for reference" {
     var items = []i32 { 3, 4, 2 };
 
-    // Iteration over the slice by reference can be performed by
+    // Iterate over the slice by reference by
     // specifying that the capture value is a pointer.
     for (items) |*value| {
         *value += 1;
@@ -1300,18 +1343,53 @@ test "for else" {
         sum
     };
 }
-</code></pre>
+
+
+test "inline for loop" {
+    const nums = []i32{2, 4, 6};
+    // For loops can be inlined. This causes the loop to be unrolled, which
+    // allows the code to do some things which only work at compile time,
+    // such as use types as first class values.
+    // The capture value and iterator value of inlined for loops are
+    // compile-time known.
+    var sum: usize = 0;
+    inline for (nums) |i| {
+        const T = switch (i) {
+            2 =&gt; f32,
+            4 =&gt; i8,
+            6 =&gt; bool,
+            else =&gt; unreachable,
+        };
+        sum += typeNameLength(T);
+    }
+    assert(sum == 9);
+}
+
+fn typeNameLength(comptime T: type) -&gt; usize {
+    return @typeName(T).len;
+}</code></pre>
       <pre><code class="sh">$ zig test for.zig
-Test 1/3 for basics...OK
-Test 2/3 for reference...OK
-Test 3/3 for else...OK
-</code></pre>
+Test 1/4 for basics...OK
+Test 2/4 for reference...OK
+Test 3/4 for else...OK
+Test 4/4 inline for loop...OK</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#while">while</a></li>
+        <li><a href="#comptime">comptime</a></li>
+        <li><a href="#arrays">Arrays</a></li>
+        <li><a href="#slices">Slices</a></li>
+      </ul>
       <h2 id="if">if</h2>
-      <pre><code class="zig">// An if statement has multiple uses in zig.
+      <pre><code class="zig">// If expressions have three uses, corresponding to the three types:
+// * bool
+// * ?T
+// * %T
+
 const assert = @import("std").debug.assert;
 
-test "if simple" {
-    // The first use is simply to test general boolean expressions against true.
+test "if boolean" {
+    // If expressions test boolean conditions.
     const a: u32 = 5;
     const b: u32 = 4;
     if (a != b) {
@@ -1322,15 +1400,13 @@ test "if simple" {
         unreachable
     }
 
-    // If statements are used in place of the C ternary statement, since they
-    // themselves are expressions.
+    // If expressions are used instead of a ternary expression.
     const result = if (a != b) 47 else 3089;
     assert(result == 47);
 }
 
-test "if try" {
-    // The second use is as a test statement, comparing a possibly
-    // null optional value for existence.
+test "if nullable" {
+    // If expressions test for null.
 
     const a: ?u32 = 0;
     if (a) |value| {
@@ -1346,17 +1422,17 @@ test "if try" {
         assert(true);
     }
 
-    // The else is not strictly required.
+    // The else is not required.
     if (a) |value| {
         assert(value == 0);
     }
 
-    // To test against null only, just use the simple if case.
+    // To test against null only, use the binary equality operator.
     if (b == null) {
         assert(true);
     }
 
-    // We can access the value by reference using a * capture.
+    // Access the value by reference using a pointer capture.
     var c: ?u32 = 3;
     if (c) |*value| {
         *value = 2;
@@ -1364,17 +1440,17 @@ test "if try" {
 
     if (c) |value| {
         assert(value == 2);
+    } else {
+        unreachable;
     }
 }
 
 error BadValue;
 error LessBadValue;
-test "if test" {
-    // The third use is as a try statement, checking a possibly
-    // bad error value.
+test "if error union" {
+    // If expressions test for errors.
+    // Note the |err| capture on the else.
 
-    // This is the same as the test statement, but the error has a capture
-    // group on the else branch.
     const a: %u32 = 0;
     if (a) |value| {
         assert(value == 0);
@@ -1389,38 +1465,42 @@ test "if test" {
         assert(err == error.BadValue);
     }
 
-    // The else is strictly required.
+    // The else and |err| capture is strictly required.
     if (a) |value| {
         assert(value == 0);
     } else |_| {}
 
-    // If wanting to check only the error value, use an empty block expression.
+    // To check only the error value, use an empty block expression.
     if (b) |_| {} else |err| {
         assert(err == error.BadValue);
     }
 
-    // We can access the value by reference using a * capture, same as the
-    // test expression case.
+    // Access the value by reference using a pointer capture.
     var c: %u32 = 3;
     if (c) |*value| {
         *value = 9;
-    } else |err| {}
+    } else |err| {
+        unreachable
+    }
 
     if (c) |value| {
         assert(value == 9);
-    } else |err| {}
-}
-</code></pre>
+    } else |err| {
+        unreachable
+    }
+}</code></pre>
       <pre><code class="sh">$ zig test if.zig
-Test 1/3 if simple...OK
-Test 2/3 if try...OK
-Test 3/3 if test...OK
-</code></pre>
+Test 1/3 if boolean...OK
+Test 2/3 if nullable...OK
+Test 3/3 if error union...OK</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#nullables">Nullables</a></li>
+        <li><a href="#errors">Errors</a></li>
+      </ul>
       <h2 id="goto">goto</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 
-// goto is present, but should typically not be used.
-// error-handling should instead be performed via defer.
 test "goto" {
     var value = false;
     goto label;
@@ -1433,12 +1513,13 @@ label:
       <pre><code class="sh">$ zig test goto.zig
 Test 1/1 goto...OK
 </code></pre>
+<p>Note that there are <a href="https://github.com/zig-lang/zig/issues/346">plans to remove goto</a></p>
       <h2 id="defer">defer</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 const printf = @import("std").io.stdout.printf;
 
 // defer will execute an expression at the end of the current scope.
-fn deferExample() -> usize {
+fn deferExample() -&gt; usize {
     var a: usize = 1;
 
     {
@@ -1479,12 +1560,12 @@ test "defer unwinding" {
 }
 
 // The %defer keyword is similar to defer, but will only execute if the
-// function returns with an error.
+// scope returns with an error.
 //
 // This is especially useful in allowing a function to clean up properly
 // on error, and replaces goto error handling tactics as seen in c.
 error DeferError;
-fn deferErrorExample(is_error: bool) -> %void {
+fn deferErrorExample(is_error: bool) -&gt; %void {
     %%printf("\nstart of function\n");
 
     // This will always be executed on exit
@@ -1519,12 +1600,18 @@ encountered an error!
 end of function
 OK
 </code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#errors">Errors</a></li>
+      </ul>
+      <h2 id="unreachable">unreachable</h2>
+      <p>TODO</p>
       <h2 id="functions">Functions</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 
 // Functions are declared like this
 // The last expression in the function can be used as the return value.
-pub fn add(a: i8, b: i8) -> i8 {
+fn add(a: i8, b: i8) -&gt; i8 {
     if (a == 0) {
         // You can still return manually if needed.
         return b;
@@ -1533,23 +1620,42 @@ pub fn add(a: i8, b: i8) -> i8 {
     a + b
 }
 
-// Functions can be made to use the C abi by using the export specifier.
-export fn sub(a: i8, b: i8) -> i8 { a - b }
+// The export specifier makes a function externally visible in the generated
+// object file, and makes it use the C ABI.
+export fn sub(a: i8, b: i8) -&gt; i8 { a - b }
+
+// The extern specifier is used to declare a function that will be resolved
+// at link time, when linking statically, or at runtime, when linking
+// dynamically.
+// The stdcallcc specifier changes the calling convention of the function.
+extern "kernel32" stdcallcc fn ExitProcess(exit_code: u32) -&gt; noreturn;
+extern "c" fn atan2(a: f64, b: f64) -&gt; f64;
+
+// coldcc makes a function use the cold calling convention.
+coldcc fn abort() -&gt; noreturn {
+    while (true) {}
+}
+
+// nakedcc makes a function not have any function prologue or epilogue.
+// This can be useful when integrating with assembly.
+nakedcc fn _start() -&gt; noreturn {
+    abort();
+}
 
 // The pub specifier allows the function to be visible when importing.
-pub fn sub2(a: i8, b: i8) -> i8 { a - b }
+// Another file can use @import and call sub2
+pub fn sub2(a: i8, b: i8) -&gt; i8 { a - b }
 
-// Functions can be passed to other functions, the same as C function pointers.
-const call2_op = fn (a: i8, b: i8) -> i8;
-fn do_op(fn_call: call2_op, op1: i8, op2: i8) -> i8 {
+// Functions can be used as values and are equivalent to pointers.
+const call2_op = fn (a: i8, b: i8) -&gt; i8;
+fn do_op(fn_call: call2_op, op1: i8, op2: i8) -&gt; i8 {
     fn_call(op1, op2)
 }
 
 test "function" {
     assert(do_op(add, 5, 6) == 11);
     assert(do_op(sub2, 5, 6) == -1);
-}
-</code></pre>
+}</code></pre>
       <pre><code class="sh">$ zig test function.zig
 Test 1/1 function...OK
 </code></pre>
