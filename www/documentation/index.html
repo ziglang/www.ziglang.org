@@ -121,7 +121,9 @@
             <li><a href="#builtin-setGlobalAlign">@setGlobalAlign</a></li>
             <li><a href="#builtin-setGlobalLinkage">@setGlobalLinkage</a></li>
             <li><a href="#builtin-setGlobalSection">@setGlobalSection</a></li>
+            <li><a href="#builtin-shlExact">@shlExact</a></li>
             <li><a href="#builtin-shlWithOverflow">@shlWithOverflow</a></li>
+            <li><a href="#builtin-shrExact">@shrExact</a></li>
             <li><a href="#builtin-sizeOf">@sizeOf</a></li>
             <li><a href="#builtin-subWithOverflow">@subWithOverflow</a></li>
             <li><a href="#builtin-truncate">@truncate</a></li>
@@ -152,7 +154,8 @@
 
               </ul>
             </li>
-            <li><a href="#undef-shift-overflow">Shift Overflow</a></li>
+            <li><a href="#undef-shl-overflow">Exact Left Shift Overflow</a></li>
+            <li><a href="#undef-shr-overflow">Exact Right Shift Overflow</a></li>
             <li><a href="#undef-division-by-zero">Division by Zero</a></li>
             <li><a href="#undef-remainder-division-by-zero">Remainder Division by Zero</a></li>
             <li><a href="#undef-exact-division-remainder">Exact Division Remainder</a></li>
@@ -2217,6 +2220,17 @@ mem.set(u8, dest, c);</code></pre>
       <p>
       Puts the global variable in the specified section.
       </p>
+      <h3 id="builtin-shlExact">@shlExact</h3>
+      <pre><code class="zig">@shlExact(value: T, shift_amt: T) -&gt; T</code></pre>
+      <p>
+      Performs the left shift operation (<code>&lt;&lt;</code>). Caller guarantees
+      that the shift will not shift any 1 bits out.
+      </p>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#builtin-shrExact">@shrExact</a></li>
+        <li><a href="#builtin-shlWithOverflow">@shlWithOverflow</a></li>
+      </ul>
       <h3 id="builtin-shlWithOverflow">@shlWithOverflow</h3>
       <pre><code class="zig">@shlWithOverflow(comptime T: type, a: T, b: T, result: &amp;T) -&gt; bool</code></pre>
       <p>
@@ -2224,6 +2238,16 @@ mem.set(u8, dest, c);</code></pre>
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
       If no overflow or underflow occurs, returns <code>false</code>.
       </p>
+      <h3 id="builtin-shrExact">@shrExact</h3>
+      <pre><code class="zig">@shrExact(value: T, shift_amt: T) -&gt; T</code></pre>
+      <p>
+      Performs the right shift operation (<code>&gt;&gt;</code>). Caller guarantees
+      that the shift will not shift any 1 bits out.
+      </p>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#builtin-shlExact">@shlExact</a></li>
+      </ul>
       <h3 id="builtin-sizeOf">@sizeOf</h3>
       <pre><code class="zig">@sizeOf(comptime T: type) -&gt; (number literal)</code></pre>
       <p>
@@ -2468,7 +2492,7 @@ test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
         <li><code>@divTrunc</code> (division)</li>
         <li><code>@divFloor</code> (division)</li>
         <li><code>@divExact</code> (division)</li>
-        <li><code>&lt;&lt;</code> (left shift)</li>
+        <li><code>@shlExact</code> (left shift)</li>
       </ul>
       <p>Example with addition at compile-time:</p>
       <pre><code class="zig">comptime {
@@ -2546,7 +2570,6 @@ overflowed result: 9</code></pre>
         <li><code>-%</code> (wraparound subtraction)</li>
         <li><code>-%</code> (wraparound negation)</li>
         <li><code>*%</code> (wraparound multiplication)</li>
-        <li><code>&lt;&lt;%</code> (wraparound left shift)</li>
       </ul>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 
@@ -2557,11 +2580,26 @@ test "wraparound addition and subtraction" {
     const max_val = min_val -% 1;
     assert(max_val == @maxValue(i32));
 }</code></pre>
-      <p>TODO is &lt;&lt;% even "wrapping" around? or is it just truncating?
-      maybe it shouldn't be one of the % operators?
-      </p>
-      <h3 id="undef-shift-overflow">Shift Overflow</h3>
-      <p>TODO should this be a different section than normal integer overflow?</p>
+      <h3 id="undef-shl-overflow">Exact Left Shift Overflow</h3>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const x = @shlExact(u8(0b01010101), 2);
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:2:15: error: operation caused overflow
+    const x = @shlExact(u8(0b01010101), 2);
+              ^</code></pre>
+      <p>At runtime crashes with the message <code>left shift overflowed bits</code> and a stack trace.</p>
+      <h3 id="undef-shr-overflow">Exact Right Shift Overflow</h3>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const x = @shrExact(u8(0b10101010), 2);
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:2:15: error: exact shift shifted out 1 bits
+    const x = @shrExact(u8(0b10101010), 2);
+              ^</code></pre>
+      <p>At runtime crashes with the message <code>right shift overflowed bits</code> and a stack trace.</p>
       <h3 id="undef-division-by-zero">Division by Zero</h3>
       <p>At compile-time:</p>
       <pre><code class="zig">comptime {
@@ -2576,7 +2614,18 @@ test "wraparound addition and subtraction" {
       <p>At runtime crashes with the message <code>division by zero</code> and a stack trace.</p>
 
       <h3 id="undef-remainder-division-by-zero">Remainder Division by Zero</h3>
-      <p>TODO https://github.com/zig-lang/zig/issues/372</p>
+      <p>At compile-time:</p>
+      <pre><code class="zig">comptime {
+    const a: i32 = 10;
+    const b: i32 = 0;
+    const c = a % b;
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:4:17: error: division by zero is undefined
+    const c = a % b;
+                ^</code></pre>
+      <p>At runtime crashes with the message <code>remainder division by zero</code> and a stack trace.</p>
+
       <h3 id="undef-exact-division-remainder">Exact Division Remainder</h3>
       <p>TODO</p>
       <h3 id="undef-slice-widen-remainder">Slice Widen Remainder</h3>
