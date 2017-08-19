@@ -117,6 +117,7 @@
             <li><a href="#builtin-rem">@rem</a></li>
             <li><a href="#builtin-returnAddress">@returnAddress</a></li>
             <li><a href="#builtin-setDebugSafety">@setDebugSafety</a></li>
+            <li><a href="#builtin-setEvalBranchQuota">@setEvalBranchQuota</a></li>
             <li><a href="#builtin-setFloatMode">@setFloatMode</a></li>
             <li><a href="#builtin-setGlobalAlign">@setGlobalAlign</a></li>
             <li><a href="#builtin-setGlobalLinkage">@setGlobalLinkage</a></li>
@@ -2249,6 +2250,41 @@ mem.set(u8, dest, c);</code></pre>
       <p>
       Sets whether debug safety checks are on for a given scope.
       </p>
+
+      <h3 id="builtin-setEvalBranchQuota">@setEvalBranchQuota</h3>
+      <pre><code class="zig">@setEvalBranchQuota(new_quota: usize)</code></pre>
+      <p>
+      Changes the maximum number of backwards branches that compile-time code
+      execution can use before giving up and making a compile error.
+      </p>
+      <p>
+      If the <code>new_quota</code> is smaller than the default quota (<code>1000</code>) or
+      a previously explicitly set quota, it is ignored.
+      </p>
+      <p>
+      Example:
+      </p>
+      <pre><code class="zig">comptime {
+    var i = 0;
+    while (i &lt; 1001) : (i += 1) {}
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig 
+/home/andy/dev/zig/build/test.zig:3:5: error: evaluation exceeded 1000 backwards branches
+    while (i &lt; 1001) : (i += 1) {}
+    ^</code></pre>
+      <p>Now we use <code>@setEvalBranchQuota</code>:</p>
+      <pre><code class="zig">comptime {
+    @setEvalBranchQuota(1001);
+    var i = 0;
+    while (i &lt; 1001) : (i += 1) {}
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig</code></pre>
+      <p>(no output because it worked fine)</p>
+
+      <p>See also:</p>
+      <ul>
+        <li><a href="#comptime">comptime</a></li>
+      </ul>
 
       <h3 id="builtin-setFloatMode">@setFloatMode</h3>
       <pre><code class="zig">@setFloatMode(scope, mode: @import("builtin").FloatMode)</code></pre>
