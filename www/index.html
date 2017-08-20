@@ -196,7 +196,7 @@ pub fn HashMap(comptime K: type, comptime V: type, comptime hash: fn(key: K)-&gt
                     assert(it.initial_modification_count == it.hm.modification_count); // concurrent modification
                 }
                 if (it.count &gt;= it.hm.size) return null;
-                while (it.index &lt; it.hm.entries.len; it.index += 1) {
+                while (it.index &lt; it.hm.entries.len) : (it.index += 1) {
                     const entry = &amp;it.hm.entries[it.index];
                     if (entry.used) {
                         it.index += 1;
@@ -259,7 +259,7 @@ pub fn HashMap(comptime K: type, comptime V: type, comptime hash: fn(key: K)-&gt
         pub fn remove(hm: &amp;Self, key: K) {
             hm.incrementModificationCount();
             const start_index = hm.keyToIndex(key);
-            {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
+            {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index) : (roll_over += 1) {
                 const index = (start_index + roll_over) % hm.entries.len;
                 var entry = &amp;hm.entries[index];
 
@@ -267,7 +267,7 @@ pub fn HashMap(comptime K: type, comptime V: type, comptime hash: fn(key: K)-&gt
 
                 if (!eql(entry.key, key)) continue;
 
-                while (roll_over &lt; hm.entries.len; roll_over += 1) {
+                while (roll_over &lt; hm.entries.len) : (roll_over += 1) {
                     const next_index = (start_index + roll_over + 1) % hm.entries.len;
                     const next_entry = &amp;hm.entries[next_index];
                     if (!next_entry.used or next_entry.distance_from_start_index == 0) {
@@ -314,7 +314,7 @@ pub fn HashMap(comptime K: type, comptime V: type, comptime hash: fn(key: K)-&gt
             const start_index = hm.keyToIndex(key);
             var roll_over: usize = 0;
             var distance_from_start_index: usize = 0;
-            while (roll_over &lt; hm.entries.len; {roll_over += 1; distance_from_start_index += 1}) {
+            while (roll_over &lt; hm.entries.len) : ({roll_over += 1; distance_from_start_index += 1}) {
                 const index = (start_index + roll_over) % hm.entries.len;
                 const entry = &amp;hm.entries[index];
 
@@ -357,7 +357,7 @@ pub fn HashMap(comptime K: type, comptime V: type, comptime hash: fn(key: K)-&gt
 
         fn internalGet(hm: &amp;Self, key: K) -&gt; ?&amp;Entry {
             const start_index = hm.keyToIndex(key);
-            {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index; roll_over += 1) {
+            {var roll_over: usize = 0; while (roll_over &lt;= hm.max_distance_from_start_index) : (roll_over += 1) {
                 const index = (start_index + roll_over) % hm.entries.len;
                 const entry = &amp;hm.entries[index];
 
@@ -646,7 +646,7 @@ fn MersenneTwister(
 
             var prev_value = seed;
             mt.array[0] = prev_value;
-            {var i: usize = 1; while (i &lt; n; i += 1) {
+            {var i: usize = 1; while (i &lt; n) : (i += 1) {
                 prev_value = int(i) +% f *% (prev_value ^ (prev_value &gt;&gt; (int.bit_count - 2)));
                 mt.array[i] = prev_value;
             }};
@@ -660,12 +660,12 @@ fn MersenneTwister(
             if (mt.index &gt;= n) {
                 var i: usize = 0;
 
-                while (i &lt; n - m; i += 1) {
+                while (i &lt; n - m) : (i += 1) {
                     const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
                     mt.array[i] = mt.array[i + m] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
                 }
 
-                while (i &lt; n - 1; i += 1) {
+                while (i &lt; n - 1) : (i += 1) {
                     const x = (mt.array[i] &amp; UM) | (mt.array[i + 1] &amp; LM);
                     mt.array[i] = mt.array[i + m - n] ^ (x &gt;&gt; 1) ^ mag01[x &amp; 0x1];
 
@@ -693,7 +693,7 @@ test "float 32" {
     var r: Rand = undefined;
     r.init(42);
 
-    {var i: usize = 0; while (i &lt; 1000; i += 1) {
+    {var i: usize = 0; while (i &lt; 1000) : (i += 1) {
         const val = r.float(f32);
         assert(val &gt;= 0.0);
         assert(val &lt; 1.0);
