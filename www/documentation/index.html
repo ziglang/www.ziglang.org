@@ -65,6 +65,7 @@
         <li><a href="#goto">goto</a></li>
         <li><a href="#defer">defer</a></li>
         <li><a href="#unreachable">unreachable</a></li>
+        <li><a href="#noreturn">noreturn</a></li>
         <li><a href="#functions">Functions</a></li>
         <li><a href="#errors">Errors</a></li>
         <li><a href="#nullables">Nullables</a></li>
@@ -1353,6 +1354,7 @@ Test 8/8 inline while loop...OK</code></pre>
         <li><a href="#nullables">Nullables</a></li>
         <li><a href="#errors">Errors</a></li>
         <li><a href="#comptime">comptime</a></li>
+        <li><a href="#unreachable">unreachable</a></li>
       </ul>
       <h2 id="for">for</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
@@ -1680,7 +1682,114 @@ OK
         <li><a href="#errors">Errors</a></li>
       </ul>
       <h2 id="unreachable">unreachable</h2>
-      <p>TODO</p>
+      <p>
+      In <code>Debug</code> and <code>ReleaseSafe</code> mode, and when using <code>zig test</code>,
+      <code>unreachable</code> emits a call to <code>panic</code> with the message <code>reached unreachable code</code>.
+      </p>
+      <p>
+      In <code>ReleaseFast</code> mode, the optimizer uses the assumption that <code>unreachable</code> code
+      will never be hit to perform optimizations. However, <code>zig test</code> even in <code>ReleaseFast</code> mode
+      still emits <code>unreachable</code> as calls to <code>panic</code>.
+      </p>
+      <h3 id="unreachable-basics">Basics</h3>
+      <pre><code class="zig">// unreachable is used to assert that control flow will never happen upon a
+// particular location:
+test "basic math" {
+    const x = 1;
+    const y = 2;
+    if (x + y != 3) {
+        unreachable;
+    }
+}
+
+// in fact, this is how assert is implemented:
+fn assert(ok: bool) {
+    if (!ok) unreachable; // assertion failure
+}
+
+// This test will fail because we hit unreachable.
+test "this will fail" {
+    assert(false);
+}</code></pre>
+      <pre><code class="sh">$ zig test test.zig 
+Test 1/2 basic math...OK
+Test 2/2 this will fail...reached unreachable code
+test.zig:13:14: 0x00000000002033ac in ??? (test)
+    if (!ok) unreachable; // assertion failure
+             ^
+test.zig:18:11: 0x000000000020329b in ??? (test)
+    assert(false);
+          ^
+lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214a7a in ??? (test)
+        test_fn.func();
+                    ^
+lib/zig/std/special/bootstrap.zig:60:21: 0x0000000000214947 in ??? (test)
+    return root.main();
+                    ^
+lib/zig/std/special/bootstrap.zig:47:13: 0x0000000000214800 in ??? (test)
+    callMain(argc, argv, envp) %% std.os.posix.exit(1);
+            ^
+lib/zig/std/special/bootstrap.zig:34:25: 0x0000000000214750 in ??? (test)
+    posixCallMainAndExit()
+                        ^
+
+Tests failed. Use the following command to reproduce the failure:
+./test</code></pre>
+      <h3 id="unreachable-comptime">At Compile-Time</h3>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+comptime {
+    // The type of unreachable is noreturn.
+
+    // However this assertion will still fail because
+    // evaluating unreachable at compile-time is a compile error.
+
+    assert(@typeOf(unreachable) == noreturn);
+}</code></pre>
+      <pre><code class="sh">$ zig build_obj test.zig 
+test.zig:9:12: error: unreachable code
+    assert(@typeOf(unreachable) == noreturn);
+           ^</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#zig-test">Zig Test</a></li>
+        <li><a href="#build-mode">Build Mode</a></li>
+        <li><a href="#comptime">comptime</a></li>
+      </ul>
+      <h2 id="noreturn">noreturn</h2>
+      <p>
+      <code>noreturn</code> is the type of:
+      </p>
+      <ul>
+        <li><code>break</code></li>
+        <li><code>continue</code></li>
+        <li><code>goto</code></li>
+        <li><code>return</code></li>
+        <li><code>unreachable</code></li>
+        <li><code>while (true) {}</code></li>
+      </ul>
+      <p>When resolving types together, such as <code>if</code> clauses or <code>switch</code> prongs,
+      the <code>noreturn</code> type is compatible with every other type. Consider:
+      </p>
+      <pre><code class="zig">fn foo(condition: bool, b: u32) {
+    const a = if (condition) b else return;
+    bar(a);
+}
+
+extern fn bar(value: u32);</code></pre>
+      <p>Another use case for <code>noreturn</code> is the <code>exit</code> function:</p>
+      <pre><code class="zig">pub extern "kernel32" stdcallcc fn ExitProcess(exit_code: c_uint) -&gt; noreturn;
+
+fn foo() {
+    const value = bar() %% ExitProcess(1);
+    assert(value == 1234);
+}
+
+fn bar() -&gt; %u32 {
+    return 1234;
+}
+
+const assert = @import("std").debug.assert;</code></pre>
       <h2 id="functions">Functions</h2>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 
