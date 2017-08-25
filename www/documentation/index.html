@@ -56,7 +56,11 @@
           </ul>
         </li>
         <li><a href="#arrays">Arrays</a></li>
-        <li><a href="#pointers">Pointers</a></li>
+        <li><a href="#pointers">Pointers</a>
+          <ul>
+            <li><a href="#type-based-alias-analysis">Type Based Alias Analysis</a></li>
+          </ul>
+        </li>
         <li><a href="#slices">Slices</a></li>
         <li><a href="#operators">Operators</a>
           <ul>
@@ -898,16 +902,149 @@ Test 4/4 array initialization with function calls...OK</code></pre>
         <li><a href="#slices">Slices</a></li>
       </ul>
       <h2 id="pointers">Pointers</h2>
-      <p>TODO: address of and deref syntax</p>
-      <p>TODO: const pointers, if you addr of const get const ptr addr of var get var ptr</p>
-      <p>TODO: mention how to do undefined behavior and that it's unprotected</p>
-      <p>TODO: no pointer arithmetic. use array index notation</p>
-      <p>TODO: how to slice a pointer. prefer slices to pointers. pointers should generally only be 1 thing</p>
-      <p>TODO: comptime use of pointers</p>
-      <p>TODO: casting to and from integers</p>
-      <p>TODO: pointer casting</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "address of syntax" {
+    // Get the address of a variable:
+    const x: i32 = 1234;
+    const x_ptr = &x;
+
+    // Deference a pointer:
+    assert(*x_ptr == 1234);
+
+    // When you get the address of a const variable, you get a const pointer.
+    assert(@typeOf(x_ptr) == &amp;const i32);
+
+    // If you want to mutate the value, you'd need an address of a mutable variable:
+    var y: i32 = 5678;
+    const y_ptr = &y;
+    assert(@typeOf(y_ptr) == &amp;i32);
+    *y_ptr += 1;
+    assert(*y_ptr == 5679);
+}
+
+test "pointer array access" {
+    // Pointers do not support pointer arithmetic. If you
+    // need such a thing, use array index syntax:
+
+    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    const ptr = &amp;array[1];
+
+    assert(array[2] == 3);
+    ptr[1] += 1;
+    assert(array[2] == 4);
+}
+
+test "pointer slicing" {
+    // In Zig, we prefer using slices over null-terminated pointers.
+    // You can turn a pointer into a slice using slice syntax:
+    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    const ptr = &amp;array[1];
+    const slice = ptr[1..3];
+
+    assert(slice.ptr == &amp;ptr[1]);
+    assert(slice.len == 2);
+
+    // Slices have bounds checking and are therefore protected
+    // against this kind of undefined behavior. This is one reason
+    // we prefer slices to pointers.
+    assert(array[3] == 4);
+    slice[1] += 1;
+    assert(array[3] == 5);
+}
+
+comptime {
+    // Pointers work at compile-time too, as long as you don't use
+    // @ptrCast.
+    var x: i32 = 1;
+    const ptr = &amp;x;
+    *ptr += 1;
+    x += 1;
+    assert(*ptr == 3);
+}
+
+test "@ptrToInt and @intToPtr" {
+    // To convert an integer address into a pointer, use @intToPtr:
+    const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
+
+    // To convert a pointer to an integer, use @ptrToInt:
+    const addr = @ptrToInt(ptr);
+
+    assert(@typeOf(addr) == usize);
+    assert(addr == 0xdeadbeef);
+}
+
+comptime {
+    // Zig is able to do this at compile-time, as long as
+    // ptr is never dereferenced.
+    const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
+    const addr = @ptrToInt(ptr);
+    assert(@typeOf(addr) == usize);
+    assert(addr == 0xdeadbeef);
+}
+
+test "volatile" {
+    // In Zig, loads and stores are assumed to not have side effects.
+    // If a given load or store should have side effects, such as
+    // Memory Mapped Input/Output (MMIO), use `volatile`:
+    const mmio_ptr = @intToPtr(&amp;volatile u8, 0x12345678);
+
+    // Now loads and stores with mmio_ptr are guaranteed to all happen
+    // and in the same order as in source code.
+    assert(@typeOf(mmio_ptr) == &amp;volatile u8);
+}
+
+test "nullable pointers" {
+    // Pointers cannot be null. If you want a null pointer, use the nullable
+    // prefix `?` to make the pointer type nullable.
+    var ptr: ?&amp;i32 = null;
+
+    var x: i32 = 1;
+    ptr = &amp;x;
+
+    assert(*??ptr == 1);
+
+    // Nullable pointers are the same size as normal pointers, because pointer
+    // value 0 is used as the null value.
+    assert(@sizeOf(?&amp;i32) == @sizeOf(&amp;i32));
+}
+
+test "pointer casting" {
+    // To convert one pointer type to another, use @ptrCast. This is an unsafe
+    // operation that Zig cannot protect you against. Use @ptrCast only when other
+    // conversions are not possible.
+    const bytes = []u8{0x12, 0x12, 0x12, 0x12};
+    const u32_ptr = @ptrCast(&amp;const u32, &amp;bytes[0]);
+    assert(*u32_ptr == 0x12121212);
+
+    // Even this example is contrived - there are better ways to do the above than
+    // pointer casting. For example, using a slice narrowing cast:
+    const u32_value = ([]const u32)(bytes[0..])[0];
+    assert(u32_value == 0x12121212);
+
+    // And even another way, the most straightforward way to do it:
+    assert(@bitCast(u32, bytes) == 0x12121212);
+}</code></pre>
+      <pre><code class="sh">$ zig test test.zig 
+Test 1/7 address of syntax...OK
+Test 2/7 pointer array access...OK
+Test 3/7 pointer slicing...OK
+Test 4/7 @ptrToInt and @intToPtr...OK
+Test 5/7 volatile...OK
+Test 6/7 nullable pointers...OK
+Test 7/7 pointer casting...OK</code></pre>
+      <h3 id="type-based-alias-analysis">Type Based Alias Analysis</h3>
+      <p>Zig uses Type Based Alias Analysis (also known as Strict Aliasing) to
+      perform some optimizations. This means that pointers of different types must
+      not alias the same memory, with the exception of <code>u8</code>. pointers to
+      <code>u8</code> can alias any memory.
+      </p>
+      <p>As an example, this code produces undefined behavior:</p>
+      <pre><code class="zig">*@ptrCast(&amp;u32, f32(12.34))</code></pre>
+      <p>Instead, use <a href="#builtin-bitCast">@bitCast</a>:
+      <pre><code class="zig">@bitCast(u32, f32(12.34))</code></pre>
+      <p>As an added benefit, the <code>@bitcast</code> version works at compile-time.</p>
       <p>TODO: pointers to bitfield fields</p>
-      <p>TODO: explain nullable pointers</p>
       <p>See also:</p>
       <ul>
         <li><a href="#slices">Slices</a></li>
@@ -2540,6 +2677,9 @@ test "function" {
       <pre><code class="sh">$ zig test function.zig
 Test 1/1 function...OK
 </code></pre>
+      <p>TODO: function values are like pointers</p>
+      <p>TODO: byval not allowed except for C ABI</p>
+      <p>TODO: implicit cast from T to &amp;const T</p>
       <h2 id="errors">Errors</h2>
       <p>TODO: copy content from introduction to zig</p>
       <h2 id="nullables">Nullables</h2>
@@ -2931,7 +3071,7 @@ fn add(a: i32, b: i32) -&gt; i32 { a + b }</code></pre>
       <h3 id="builtin-intToPtr">@intToPtr</h3>
       <pre><code class="zig">@intToPtr(comptime DestType: type, int: usize) -&gt; DestType</code></pre>
       <p>
-      Converts an integer to a pointer. To convert the other way, use <code>usize(ptr)</code>.
+      Converts an integer to a pointer. To convert the other way, use <a href="#builtin-ptrToInt">@ptrToInt</a>.
       </p>
       <h3 id="builtin-IntType">@IntType</h3>
       <pre><code class="zig">@IntType(comptime is_signed: bool, comptime bit_count: u8) -&gt; type</code></pre>
@@ -3049,6 +3189,7 @@ mem.set(u8, dest, c);</code></pre>
         <li><code>fn()</code></li>
         <li><code>?fn()</code></li>
       </ul>
+      <p>To convert the other way, use <a href="#builtin-intToPtr">@intToPtr</a></p>
 
       <h3 id="builtin-rem">@rem</h3>
       <pre><code class="zig">@rem(numerator: T, denominator: T) -&gt; T</code></pre>
