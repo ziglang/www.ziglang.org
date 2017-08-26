@@ -2959,7 +2959,99 @@ pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
         <li><a href="#switch">switch</a></li>
       </ul>
       <h2 id="nullables">Nullables</h2>
-      <p>TODO: copy content from introduction to zig</p>
+      <p>
+      One area that Zig provides safety without compromising efficiency or
+      readability is with the nullable type.
+      </p>
+      <p>
+      The question mark symbolizes the nullable type. You can convert a type to a nullable
+      type by putting a question mark in front of it, like this:
+      </p>
+      <pre><code class="zig">// normal integer
+const normal_int: i32 = 1234;
+
+// nullable integer
+const nullable_int: ?i32 = 5678;</code></pre>
+      <p>
+      Now the variable <code>nullable_int</code> could be an <code>i32</code>, or <code>null</code>.
+      </p>
+      <p>
+      Instead of integers, let's talk about pointers. Null references are the source of many runtime
+      exceptions, and even stand accused of being
+      <a href="https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/">the worst mistake of computer science</a>.
+      </p>
+      <p>Zig does not have them.</p>
+      <p>
+      Instead, you can use a nullable pointer. This secretly compiles down to a normal pointer,
+      since we know we can use 0 as the null value for the nullable type. But the compiler
+      can check your work and make sure you don't assign null to something that can't be null.
+      </p>
+      <p>
+      Typically the downside of not having null is that it makes the code more verbose to
+      write. But, let's compare some equivalent C code and Zig code.
+      </p>
+      <p>
+      Task: call malloc, if the result is null, return null.
+      </p>
+      <p>C code</p>
+      <pre><code class="c">// malloc prototype included for reference
+void *malloc(size_t size);
+
+struct Foo *do_a_thing(void) {
+    char *ptr = malloc(1234);
+    if (!ptr) return NULL;
+    // ...
+}</code></pre>
+      <p>Zig code</p>
+      <pre><code class="zig">// malloc prototype included for reference
+extern fn malloc(size: size_t) -&gt; ?&amp;u8;
+
+fn doAThing() -&gt; ?&amp;Foo {
+    const ptr = malloc(1234) ?? return null;
+    // ...
+}</code></pre>
+      <p>
+        Here, Zig is at least as convenient, if not more, than C. And, the type of "ptr"
+        is <code>&amp;u8</code> <em>not</em> <code>?&amp;u8</code>. The <code>??</code> operator
+        unwrapped the nullable type and therefore <code>ptr</code> is guaranteed to be non-null everywhere
+        it is used in the function.
+      </p>
+      <p>
+        The other form of checking against NULL you might see looks like this:
+      </p>
+      <pre><code class="c">void do_a_thing(struct Foo *foo) {
+    // do some stuff
+
+    if (foo) {
+        do_something_with_foo(foo);
+    }
+
+    // do some stuff
+}</code></pre>
+      <p>
+        In Zig you can accomplish the same thing:
+      </p>
+      <pre><code class="zig">fn doAThing(nullable_foo: ?&amp;Foo) {
+    // do some stuff
+
+    if (const foo ?= nullable_foo) {
+      doSomethingWithFoo(foo);
+    }
+
+    // do some stuff
+}</code></pre>
+      <p>
+      Once again, the notable thing here is that inside the if block,
+      <code>foo</code> is no longer a nullable pointer, it is a pointer, which
+      cannot be null.
+      </p>
+      <p>
+      One benefit to this is that functions which take pointers as arguments can
+      be annotated with the "nonnull" attribute - <code>__attribute__((nonnull))</code> in
+      <a href="https://gcc.gnu.org/onlinedocs/gcc-4.0.0/gcc/Function-Attributes.html">GCC</a>.
+      The optimizer can sometimes make better decisions knowing that pointer arguments
+      cannot be null.
+      </p>
       <h2 id="casting">Casting</h2>
       <p>TODO: explain implicit vs explicit casting</p>
       <p>TODO: resolve peer types builtin</p>
@@ -4016,21 +4108,21 @@ test "wraparound addition and subtraction" {
       <h3 id="undef-attempt-unwrap-null">Attempt to Unwrap Null</h3>
       <p>At compile-time:</p>
       <pre><code class="zig">comptime {
-    const maybe_number: ?i32 = null;
-    const number = ??maybe_number;
+    const nullable_number: ?i32 = null;
+    const number = ??nullable_number;
 }</code></pre>
       <pre><code class="sh">$ zig build_obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:20: error: unable to unwrap null
-    const number = ??maybe_number;
+    const number = ??nullable_number;
                    ^</code></pre>
       <p>At runtime crashes with the message <code>attempt to unwrap null</code> and a stack trace.</p>
       <p>One way to avoid this crash is to test for null instead of assuming non-null, with
       the <code>if</code> expression:</p>
       <pre><code class="zig">const io = @import("std").io;
 pub fn main() -&gt; %void {
-    const maybe_number: ?i32 = null;
+    const nullable_number: ?i32 = null;
 
-    if (maybe_number) |number| {
+    if (nullable_number) |number| {
         %%io.stderr.printf("got number: {}\n", number);
     } else {
         %%io.stderr.printf("it's null\n");
@@ -4709,9 +4801,9 @@ AsmInputItem = "[" Symbol "]" String "(" Expression ")"
 
 AsmClobbers= ":" list(String, ",")
 
-UnwrapExpression = BoolOrExpression (UnwrapMaybe | UnwrapError) | BoolOrExpression
+UnwrapExpression = BoolOrExpression (UnwrapNullable | UnwrapError) | BoolOrExpression
 
-UnwrapMaybe = "??" Expression
+UnwrapNullable = "??" Expression
 
 UnwrapError = "%%" option("|" Symbol "|") Expression
 
