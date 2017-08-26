@@ -1051,15 +1051,95 @@ Test 7/7 pointer casting...OK</code></pre>
         <li><a href="#memory">Memory</a></li>
       </ul>
       <h2 id="slices">Slices</h2>
-      <p>TODO: slices are a ptr and a len. assignment copies the ptr and the len, not contents</p>
-      <p>TODO: explain how we prefer slices to pointers. safety and whatnot</p>
-      <p>TODO: strings are really just []u8</p>
-      <p>TODO: slicing an array into a slice. slice var array, get var slice, slice const array, get const slice</p>
-      <p>TODO: slicing a pointer into a slice. slice const ptr, get const slice. slice var ptr, get var slice</p>
-      <p>TODO: slicing a slice into a slice. const is preserved</p>
-      <p>TODO: casting []u8 to []T</p>
-      <p>TODO: string concatenation example</p>
-      <p>TODO: const slices</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "basic slices" {
+    var array = []i32{1, 2, 3, 4};
+    // A slice is a pointer and a length. The difference between an array and
+    // a slice is that the array's length is part of the type and known at
+    // compile-time, whereas the slice's length is known at runtime.
+    // Both can be accessed with the `len` field.
+    const slice = array[0..array.len];
+    assert(slice.ptr == &amp;array[0]);
+    assert(slice.len == array.len);
+
+    // Slices have array bounds checking. If you try to access something out
+    // of bounds, you'll get a safety check failure:
+    slice[10] += 1;
+}</code></pre>
+      <pre><code class="sh">$ zig test test.zig 
+Test 1/1 basic slices...index out of bounds
+lib/zig/std/special/zigrt.zig:16:35: 0x0000000000203455 in ??? (test)
+        @import("std").debug.panic("{}", message_ptr[0..message_len]);
+                                  ^
+test.zig:15:10: 0x0000000000203334 in ??? (test)
+    slice[10] += 1;
+         ^
+lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214b1a in ??? (test)
+        test_fn.func();
+                    ^
+lib/zig/std/special/bootstrap.zig:60:21: 0x00000000002149e7 in ??? (test)
+    return root.main();
+                    ^
+lib/zig/std/special/bootstrap.zig:47:13: 0x00000000002148a0 in ??? (test)
+    callMain(argc, argv, envp) %% std.os.posix.exit(1);
+            ^
+lib/zig/std/special/bootstrap.zig:34:25: 0x00000000002147f0 in ??? (test)
+    posixCallMainAndExit()
+                        ^
+
+Tests failed. Use the following command to reproduce the failure:
+./test</code></pre>
+      <p>This is one reason we prefer slices to pointers.</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+const mem = @import("std").mem;
+const fmt = @import("std").fmt;
+
+test "using slices for strings" {
+    // Zig has no concept of strings. String literals are arrays of u8, and
+    // in general the string type is []u8 (slice of u8).
+    // Here we implicitly cast [5]u8 to []const u8
+    const hello: []const u8 = "hello";
+    const world: []const u8 = "世界";
+
+    var all_together: [100]u8 = undefined;
+    // You can use slice syntax on an array to convert an array into a slice.
+    const all_together_slice = all_together[0..];
+    // String concatenation example:
+    const hello_world = fmt.bufPrint(all_together_slice, "{} {}", hello, world);
+
+    // Generally, you can use UTF-8 and not worry about whether something is a
+    // string. If you don't need to deal with individual characters, no need
+    // to decode.
+    assert(mem.eql(u8, hello_world, "hello 世界"));
+}
+
+test "slice pointer" {
+    var array: [10]u8 = undefined;
+    const ptr = &amp;array[0];
+
+    // You can use slicing syntax to convert a pointer into a slice:
+    const slice = ptr[0..5];
+    slice[2] = 3;
+    assert(slice[2] == 3);
+    // The slice is mutable because we sliced a mutable pointer.
+    assert(@typeOf(slice) == []u8);
+
+    // You can also slice a slice:
+    const slice2 = slice[2..3];
+    assert(slice2.len == 1);
+    assert(slice2[0] == 3);
+}
+
+test "slice widening" {
+    // Zig supports slice widening and slice narrowing. Cast a slice of u8
+    // to a slice of anything else, and Zig will perform the length conversion.
+    const array = []u8{0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13};
+    const slice = ([]const u32)(array[0..]);
+    assert(slice.len == 2);
+    assert(slice[0] == 0x12121212);
+    assert(slice[1] == 0x13131313);
+}</code></pre>
       <p>See also:</p>
       <ul>
         <li><a href="#pointers">Pointers</a></li>
