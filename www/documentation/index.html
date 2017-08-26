@@ -89,7 +89,18 @@
         <li><a href="#casting">Casting</a></li>
         <li><a href="#void">void</a></li>
         <li><a href="#this">this</a></li>
-        <li><a href="#comptime">comptime</a></li>
+        <li><a href="#comptime">comptime</a>
+          <ul>
+            <li><a href="#introducing-compile-time-concept">Introducing the Compile-Time Concept</a></li>
+            <ul>
+              <li><a href="#compile-time-parameters">Compile-time parameters</a></li>
+              <li><a href="#compile-time-variables">Compile-time variables</a></li>
+              <li><a href="#compile-time-expressions">Compile-time expressions</a></li>
+            </ul>
+            <li><a href="#generic-data-structures">Generic Data Structures</a></li>
+            <li><a href="#case-study-printf">Case Study: printf in Zig</a></li>
+          </ul>
+        </li>
         <li><a href="#inline">inline</a></li>
         <li><a href="#assembly">assembly</a></li>
         <li><a href="#atomics">Atomics</a></li>
@@ -2947,10 +2958,6 @@ pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
           errors not occuring. Just a small optimization benefit that is not available
           in other languages.
         </li>
-        <li>
-          There are no C++ style exceptions or stack unwinding or anything fancy like that.
-          Zig simply makes it convenient to pass error codes around.
-        </li>
       </ul>
       <p>See also:</p>
       <ul>
@@ -3072,7 +3079,615 @@ fn doAThing() -&gt; ?&amp;Foo {
       <p>TODO: example of this referring to recursion function</p>
       <p>TODO: example of this referring to basic block for @setDebugSafety</p>
       <h2 id="comptime">comptime</h2>
-      <p>TODO: copy content from zig blurs lines between runtime and comptime</p>
+      <p>
+      Zig places importance on the concept of whether an expression is known at compile-time.
+      There are a few different places this concept is used, and these building blocks are used
+      to keep the language small, readable, and powerful.
+      </p>
+      <h3 id="introducing-compile-time-concept">Introducing the Compile-Time Concept</h3>
+      <h4 id="compile-time-parameters">Compile-Time Parameters</h4>
+      <p>
+      Compile-time parameters is how Zig implements generics. It is compile-time duck typing.
+      </p>
+      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+    if (a &gt; b) a else b
+}
+fn gimmeTheBiggerFloat(a: f32, b: f32) -&gt; f32 {
+    max(f32, a, b)
+}
+fn gimmeTheBiggerInteger(a: u64, b: u64) -&gt; u64 {
+    max(u64, a, b)
+}</code></pre>
+      <p>
+      In Zig, types are first-class citizens. They can be assigned to variables, passed as parameters to functions,
+      and returned from functions. However, they can only be used in expressions which are known at <em>compile-time</em>,
+      which is why the parameter <code>T</code> in the above snippet must be marked with <code>comptime</code>.
+      </p>
+      <p>
+      A <code>comptime</code> parameter means that:
+      </p>
+      <ul>
+        <li>At the callsite, the value must be known at compile-time, or it is a compile error.</li>
+        <li>In the function definition, the value is known at compile-time.</li>
+      </ul>
+      <p>
+      </p>
+      <p>
+      For example, if we were to introduce another function to the above snippet:
+      </p>
+      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+    if (a &gt; b) a else b
+}
+fn letsTryToPassARuntimeType(condition: bool) {
+    const result = max(
+        if (condition) f32 else u64,
+        1234,
+        5678);
+}</code></pre>
+      <p>
+      Then we get this result from the compiler:
+      </p>
+      <pre><code class="sh">./test.zig:6:9: error: unable to evaluate constant expression
+        if (condition) f32 else u64,
+        ^</code></pre>
+      <p>
+      This is an error because the programmer attempted to pass a value only known at run-time
+      to a function which expects a value known at compile-time.
+      </p>
+      <p>
+      Another way to get an error is if we pass a type that violates the type checker when the
+      function is analyzed. This is what it means to have <em>compile-time duck typing</em>.
+      </p>
+      <p>
+      For example:
+      </p>
+      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+    if (a &gt; b) a else b
+}
+fn letsTryToCompareBools(a: bool, b: bool) -&gt; bool {
+    max(bool, a, b)
+}</code></pre>
+      <p>
+      The code produces this error message:
+      </p>
+      <pre><code>./test.zig:2:11: error: operator not allowed for type 'bool'
+    if (a &gt; b) a else b
+          ^
+./test.zig:5:8: note: called from here
+    max(bool, a, b)
+      ^</code></pre>
+      <p>
+      On the flip side, inside the function definition with the <code>comptime</code> parameter, the
+      value is known at compile-time. This means that we actually could make this work for the bool type
+      if we wanted to:
+      </p>
+      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+    if (T == bool) {
+        return a or b;
+    } else if (a &gt; b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+fn letsTryToCompareBools(a: bool, b: bool) -&gt; bool {
+    max(bool, a, b)
+}</code></pre>
+      <p>
+      This works because Zig implicitly inlines <code>if</code> expressions when the condition
+      is known at compile-time, and the compiler guarantees that it will skip analysis of
+      the branch not taken.
+      </p>
+      <p>
+      This means that the actual function generated for <code>max</code> in this situation looks like
+      this:
+      </p>
+      <pre><code class="zig">fn max(a: bool, b: bool) -&gt; bool {
+    return a or b;
+}</code></pre>
+      <p>
+      All the code that dealt with compile-time known values is eliminated and we are left with only
+      the necessary run-time code to accomplish the task.
+      </p>
+      <p>
+      This works the same way for <code>switch</code> expressions - they are implicitly inlined
+      when the target expression is compile-time known.
+      </p>
+      <h4 id="compile-time-variables">Compile-Time Variables</h4>
+      <p>
+      In Zig, the programmer can label variables as <code>comptime</code>. This guarantees to the compiler
+      that every load and store of the variable is performed at compile-time. Any violation of this results in a
+      compile error.
+      </p>
+      <p>
+      This combined with the fact that we can <code>inline</code> loops allows us to write
+      a function which is partially evaluated at compile-time and partially at run-time.
+      </p>
+      <p>
+      For example:
+      </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+const CmdFn = struct {
+    name: []const u8,
+    func: fn(i32) -&gt; i32,
+};
+
+const cmd_fns = []CmdFn{
+    CmdFn {.name = "one", .func = one},
+    CmdFn {.name = "two", .func = two},
+    CmdFn {.name = "three", .func = three},
+};
+fn one(value: i32) -&gt; i32 { value + 1 }
+fn two(value: i32) -&gt; i32 { value + 2 }
+fn three(value: i32) -&gt; i32 { value + 3 }
+
+fn performFn(comptime prefix_char: u8, start_value: i32) -&gt; i32 {
+    var result: i32 = start_value;
+    comptime var i = 0;
+    inline while (i &lt; cmd_fns.len) : (i += 1) {
+        if (cmd_fns[i].name[0] == prefix_char) {
+            result = cmd_fns[i].func(result);
+        }
+    }
+    return result;
+}
+
+test "perform fn" {
+    assert(performFn('t', 1) == 6);
+    assert(performFn('o', 0) == 1);
+    assert(performFn('w', 99) == 99);
+}</code></pre>
+      <p>
+      This example is a bit contrived, because the compile-time evaluation component is unnecessary;
+      this code would work fine if it was all done at run-time. But it does end up generating
+      different code. In this example, the function <code>performFn</code> is generated three different times,
+      for the different values of <code>prefix_char</code> provided:
+      </p>
+      <pre><code class="zig">// From the line:
+// assert(performFn('t', 1) == 6);
+fn performFn(start_value: i32) -&gt; i32 {
+    var result: i32 = start_value;
+    result = two(result);
+    result = three(result);
+    return result;
+}
+
+// From the line:
+// assert(performFn('o', 0) == 1);
+fn performFn(start_value: i32) -&gt; i32 {
+    var result: i32 = start_value;
+    result = one(result);
+    return result;
+}
+
+// From the line:
+// assert(performFn('w', 99) == 99);
+fn performFn(start_value: i32) -&gt; i32 {
+    var result: i32 = start_value;
+    return result;
+}</code></pre>
+      <p>
+      Note that this happens even in a debug build; in a release build these generated functions still
+      pass through rigorous LLVM optimizations. The important thing to note, however, is not that this
+      is a way to write more optimized code, but that it is a way to make sure that what <em>should</em> happen
+      at compile-time, <em>does</em> happen at compile-time. This catches more errors and as demonstrated
+      later in this article, allows expressiveness that in other languages requires using macros,
+      generated code, or a preprocessor to accomplish.
+      </p>
+      <h4 id="compile-time-expressions">Compile-Time Expressions</h4>
+      <p>
+      In Zig, it matters whether a given expression is known at compile-time or run-time. A programmer can
+      use a <code>comptime</code> expression to guarantee that the expression will be evaluated at compile-time.
+      If this cannot be accomplished, the compiler will emit an error. For example:
+      </p>
+      <pre><code class="zig">extern fn exit() -&gt; unreachable;
+
+fn foo() {
+    comptime {
+        exit();
+    }
+}</code></pre>
+      <pre><code>./test.zig:5:9: error: unable to evaluate constant expression
+        exit();
+        ^</code></pre>
+      <p>
+      It doesn't make sense that a program could call <code>exit()</code> (or any other external function)
+      at compile-time, so this is a compile error. However, a <code>comptime</code> expression does much
+      more than sometimes cause a compile error.
+      </p>
+      <p>
+      Within a <code>comptime</code> expression:
+      </p>
+      <ul>
+        <li>All variables are <code>comptime</code> variables.</li>
+        <li>All <code>if</code>, <code>while</code>, <code>for</code>, <code>switch</code>, and <code>goto</code>
+          expressions are evaluated at compile-time, or emit a compile error if this is not possible.</li>
+        <li>All function calls cause the compiler to interpret the function at compile-time, emitting a
+          compile error if the function tries to do something that has global run-time side effects.</li>
+      </ul>
+      <p>
+      This means that a programmer can create a function which is called both at compile-time and run-time, with
+      no modification to the function required.
+      </p>
+      <p>
+      Let's look at an example:
+      </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+      
+fn fibonacci(index: u32) -&gt; u32 {
+    if (index &lt; 2) return index;
+    return fibonacci(index - 1) + fibonacci(index - 2);
+}
+
+test "fibonacci" {
+    // test fibonacci at run-time
+    assert(fibonacci(7) == 13);
+
+    // test fibonacci at compile-time
+    comptime {
+        assert(fibonacci(7) == 13);
+    }
+}</code></pre>
+      <pre><code>$ zig test test.zig
+Test 1/1 testFibonacci...OK</code></pre>
+      <p>
+      Imagine if we had forgotten the base case of the recursive function and tried to run the tests:
+      </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+fn fibonacci(index: u32) -&gt; u32 {
+    //if (index &lt; 2) return index;
+    return fibonacci(index - 1) + fibonacci(index - 2);
+}
+
+test "fibonacci" {
+    comptime {
+        assert(fibonacci(7) == 13);
+    }
+}</code></pre>
+      <pre><code>$ zig test test.zig
+./test.zig:3:28: error: operation caused overflow
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                          ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:14:25: note: called from here
+        assert(fibonacci(7) == 13);
+                        ^</code></pre>
+      <p>
+      The compiler produces an error which is a stack trace from trying to evaluate the
+      function at compile-time.
+      </p>
+      <p>
+      Luckily, we used an unsigned integer, and so when we tried to subtract 1 from 0, it triggered
+      undefined behavior, which is always a compile error if the compiler knows it happened.
+      But what would have happened if we used a signed integer?
+      </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+      
+fn fibonacci(index: i32) -&gt; i32 {
+    //if (index &lt; 2) return index;
+    return fibonacci(index - 1) + fibonacci(index - 2);
+}
+
+test "fibonacci" {
+    comptime {
+        assert(fibonacci(7) == 13);
+    }
+}</code></pre>
+      <pre><code>./test.zig:3:21: error: evaluation exceeded 1000 backwards branches
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^
+./test.zig:3:21: note: called from here
+    return fibonacci(index - 1) + fibonacci(index - 2);
+                    ^</code></pre>
+      <p>
+      The compiler noticed that evaluating this function at compile-time took a long time,
+      and thus emitted a compile error and gave up. If the programmer wants to increase
+      the budget for compile-time computation, they can use a built-in function called
+      <a href="#builtin-setEvalBranchQuota">@setEvalBranchQuota</a> to change the default number 1000 to something else.
+      </p>
+      <p>
+      What if we fix the base case, but put the wrong value in the <code>assert</code> line?
+      </p>
+      <pre><code class="zig">comptime {
+    assert(fibonacci(7) == 99999);
+}</code></pre>
+      <pre><code>./test.zig:15:14: error: unable to evaluate constant expression
+    if (!ok) unreachable;
+            ^
+./test.zig:10:15: note: called from here
+        assert(fibonacci(7) == 99999);
+              ^</code></pre>
+      <p>
+      What happened is Zig started interpreting the <code>assert</code> function with the
+      parameter <code>ok</code> set to <code>false</code>. When the interpreter hit
+      <code>unreachable</code> it emitted a compile error, because reaching unreachable
+      code is undefined behavior, and undefined behavior causes a compile error if it is detected
+      at compile-time.
+      </p>
+
+      <p>
+      In the global scope (outside of any function), all expressions are implicitly
+      <code>comptime</code> expressions. This means that we can use functions to
+      initialize complex static data. For example:
+      </p>
+      <pre><code class="zig">const first_25_primes = firstNPrimes(25);
+const sum_of_first_25_primes = sum(first_25_primes);
+
+fn firstNPrimes(comptime n: usize) -&gt; [n]i32 {
+    var prime_list: [n]i32 = undefined;
+    var next_index: usize = 0;
+    var test_number: i32 = 2;
+    while (next_index &lt; prime_list.len) : (test_number += 1) {
+        var test_prime_index: usize = 0;
+        var is_prime = true;
+        while (test_prime_index &lt; next_index) : (test_prime_index += 1) {
+            if (test_number % prime_list[test_prime_index] == 0) {
+                is_prime = false;
+                break;
+            }
+        }
+        if (is_prime) {
+            prime_list[next_index] = test_number;
+            next_index += 1;
+        }
+    }
+    return prime_list;
+}
+
+fn sum(numbers: []i32) -&gt; i32 {
+    var result: i32 = 0;
+    for (numbers) |x| {
+        result += x;
+    }
+    return result;
+}</code></pre>
+      <p>
+      When we compile this program, Zig generates the constants
+      with the answer pre-computed. Here are the lines from the generated LLVM IR:
+      </p>
+      <pre><code>@0 = internal unnamed_addr constant [25 x i32] [i32 2, i32 3, i32 5, i32 7, i32 11, i32 13, i32 17, i32 19, i32 23, i32 29, i32 31, i32 37, i32 41, i32 43, i32 47, i32 53, i32 59, i32 61, i32 67, i32 71, i32 73, i32 79, i32 83, i32 89, i32 97]
+      @1 = internal unnamed_addr constant i32 1060</code></pre>
+      <p>
+      Note that we did not have to do anything special with the syntax of these functions. For example,
+      we could call the <code>sum</code> function as is with a slice of numbers whose length and values were
+      only known at run-time.
+      </p>
+      <h3 id="generic-data-structures">Generic Data Structures</h3>
+      <p>
+      Zig uses these capabilities to implement generic data structures without introducing any
+      special-case syntax. If you followed along so far, you may already know how to create a
+      generic data structure.
+      </p>
+      <p>
+      Here is an example of a generic <code>List</code> data structure, that we will instantiate with
+      the type <code>i32</code>. In Zig we refer to the type as <code>List(i32)</code>.
+      </p>
+      <pre><code class="zig">fn List(comptime T: type) -&gt; type {
+    struct {
+        items: []T,
+        len: usize,
+    }
+}</code></pre>
+      <p>
+      That's it. It's a function that returns an anonymous <code>struct</code>. For the purposes of error messages
+      and debugging, Zig infers the name <code>"List(i32)"</code> from the function name and parameters invoked when creating
+      the anonymous struct.
+      </p>
+      <p>
+      To keep the language small and uniform, all aggregate types in Zig are anonymous. To give a type
+      a name, we assign it to a constant:
+      </p>
+      <pre><code class="zig">const Node = struct {
+    next: &amp;Node,
+    name: []u8,
+};</code></pre>
+      <p>
+      This works because all top level declarations are order-independent, and as long as there isn't
+      an actual infinite regression, values can refer to themselves, directly or indirectly. In this case,
+      <code>Node</code> refers to itself as a pointer, which is not actually an infinite regression, so
+      it works fine.
+      </p>
+      <h3 id="case-study-printf">Case Study: printf in Zig</h3>
+      <p>
+      Putting all of this together, let's seee how <code>printf</code> works in Zig.
+      </p>
+      <pre><code class="zig">const io = @import("std").io;
+
+const a_number: i32 = 1234;
+const a_string = "foobar";
+
+pub fn main(args: [][]u8) -&gt; %void {
+    %%io.stderr.printf("here is a string: '{}' here is a number: {}\n", a_string, a_number);
+}</code></pre>
+      <pre><code>here is a string: 'foobar' here is a number: 1234</code></pre>
+
+      <p>
+      Let's crack open the implementation of this and see how it works:
+      </p>
+
+      <pre><code class="zig">/// Calls print and then flushes the buffer.
+pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt; %void {
+    const State = enum {
+        Start,
+        OpenBrace,
+        CloseBrace,
+    };
+
+    comptime var start_index: usize = 0;
+    comptime var state = State.Start;
+    comptime var next_arg: usize = 0;
+
+    inline for (format) |c, i| {
+        switch (state) {
+            State.Start =&gt; switch (c) {
+                '{' =&gt; {
+                    if (start_index &lt; i) %return self.write(format[start_index...i]);
+                    state = State.OpenBrace;
+                },
+                '}' =&gt; {
+                    if (start_index &lt; i) %return self.write(format[start_index...i]);
+                    state = State.CloseBrace;
+                },
+                else =&gt; {},
+            },
+            State.OpenBrace =&gt; switch (c) {
+                '{' =&gt; {
+                    state = State.Start;
+                    start_index = i;
+                },
+                '}' =&gt; {
+                    %return self.printValue(args[next_arg]);
+                    next_arg += 1;
+                    state = State.Start;
+                    start_index = i + 1;
+                },
+                else =&gt; @compileError("Unknown format character: " ++ c),
+            },
+            State.CloseBrace =&gt; switch (c) {
+                '}' =&gt; {
+                    state = State.Start;
+                    start_index = i;
+                },
+                else =&gt; @compileError("Single '}' encountered in format string"),
+            },
+        }
+    }
+    comptime {
+        if (args.len != next_arg) {
+            @compileError("Unused arguments");
+        }
+        if (state != State.Start) {
+            @compileError("Incomplete format string: " ++ format);
+        }
+    }
+    if (start_index &lt; format.len) {
+        %return self.write(format[start_index...format.len]);
+    }
+    %return self.flush();
+}</code></pre>
+      <p>
+      This is a proof of concept implementation; the actual function in the standard library has more
+      formatting capabilities.
+      </p>
+      <p>
+      Note that this is not hard-coded into the Zig compiler; this is userland code in the standard library.
+      </p>
+      <p>
+      When this function is analyzed from our example code above, Zig partially evaluates the function
+      and emits a function that actually looks like this:
+      </p>
+      <pre><code class="zig">pub fn printf(self: &amp;OutStream, arg0: i32, arg1: []const u8) -&gt; %void {
+    %return self.write("here is a string: '");
+    %return self.printValue(arg0);
+    %return self.write("' here is a number: ");
+    %return self.printValue(arg1);
+    %return self.write("\n");
+    %return self.flush();
+}</code></pre>
+      <p>
+      <code>printValue</code> is a function that takes a parameter of any type, and does different things depending
+      on the type:
+      </p>
+      <pre><code class="zig">pub fn printValue(self: &amp;OutStream, value: var) -&gt; %void {
+    const T = @typeOf(value);
+    if (@isInteger(T)) {
+        return self.printInt(T, value);
+    } else if (@isFloat(T)) {
+        return self.printFloat(T, value);
+    } else if (@canImplicitCast([]const u8, value)) {
+        const casted_value = ([]const u8)(value);
+        return self.write(casted_value);
+    } else {
+        @compileError("Unable to print type '" ++ @typeName(T) ++ "'");
+    }
+}</code></pre>
+      <p>
+      And now, what happens if we give too many arguments to <code>printf</code>?
+      </p>
+      <pre><code class="zig">%%io.stdout.printf("here is a string: '{}' here is a number: {}\n",
+        a_string, a_number, a_number);</code></pre>
+      <pre><code>.../std/io.zig:147:17: error: Unused arguments
+                @compileError("Unused arguments");
+                ^
+./test.zig:7:23: note: called from here
+    %%io.stdout.printf("here is a number: {} and here is a string: {}\n",
+                      ^</code></pre>
+      <p>
+      Zig gives programmers the tools needed to protect themselves against their own mistakes.
+      </p>
+      <p>
+      Zig doesn't care whether the format argument is a string literal,
+      only that it is a compile-time known value that is implicitly castable to a <code>[]const u8</code>:
+      </p>
+      <pre><code class="zig">const io = @import("std").io;
+
+const a_number: i32 = 1234;
+const a_string = "foobar";
+const fmt = "here is a string: '{}' here is a number: {}\n";
+
+pub fn main(args: [][]u8) -&gt; %void {
+    %%io.stderr.printf(fmt, a_string, a_number);
+}</code></pre>
+      <p>
+      This works fine.
+      </p>
+      <p>
+      Zig does not special case string formatting in the compiler and instead exposes enough power to accomplish this
+      task in userland. It does so without introducing another language on top of Zig, such as
+      a macro language or a preprocessor language. It's Zig all the way down.
+      </p>
       <p>TODO: suggestion to not use inline unless necessary</p>
       <h2 id="inline">inline</h2>
       <p>TODO: inline while</p>
