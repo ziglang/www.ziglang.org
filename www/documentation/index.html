@@ -2761,7 +2761,203 @@ Test 1/1 function...OK
       <p>TODO: byval not allowed except for C ABI</p>
       <p>TODO: implicit cast from T to &amp;const T</p>
       <h2 id="errors">Errors</h2>
-      <p>TODO: copy content from introduction to zig</p>
+      <p>
+      One of the distinguishing features of Zig is its exception handling strategy.
+      </p>
+      <p>
+      Among the top level declarations available is the error value declaration:
+      </p>
+      <pre><code class="zig">error FileNotFound;
+error OutOfMemory;
+error UnexpectedToken;</code></pre>
+      <p>
+      These error values are assigned an unsigned integer value greater than 0 at
+      compile time. You are allowed to declare the same error value more than once,
+      and if you do, it gets the same error value.
+      </p>
+      <p>
+      You can refer to these error values with the error namespace such as
+      <code>error.FileNotFound</code>.
+      </p>
+      <p>
+      Each error value across the entire compilation unit gets a unique integer,
+      and this determines the size of the pure error type.
+      </p>
+      <p>
+      The pure error type is one of the error values, and in the same way that pointers
+      cannot be null, a pure error is always an error.
+      </p>
+      <pre><code class="zig">const pure_error = error.FileNotFound;</code></pre>
+      <p>
+      Most of the time you will not find yourself using a pure error type. Instead,
+      likely you will be using the error union type. This is when you take a normal type,
+      and prefix it with the <code>%</code> operator.
+      </p>
+      <p>
+      Here is a function to parse a string into a 64-bit integer:
+      </p>
+      <pre><code class="zig">error InvalidChar;
+error Overflow;
+
+pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
+    var x: u64 = 0;
+
+    for (buf) |c| {
+        const digit = charToDigit(c);
+
+        if (digit &gt;= radix) {
+            return error.InvalidChar;
+        }
+
+        // x *= radix
+        if (@mulWithOverflow(u64, x, radix, &amp;x)) {
+            return error.Overflow;
+        }
+
+        // x += digit
+        if (@addWithOverflow(u64, x, digit, &amp;x)) {
+            return error.Overflow;
+        }
+    }
+
+    return x;
+}</code></pre>
+      <p>
+      Notice the return type is <code>%u64</code>. This means that the function
+      either returns an unsigned 64 bit integer, or an error.
+      </p>
+      <p>
+      Within the function definition, you can see some return statements that return
+      a pure error, and at the bottom a return statement that returns a <code>u64</code>.
+      Both types implicitly cast to <code>%u64</code>.
+      </p>
+      <p>
+      What it looks like to use this function varies depending on what you're
+      trying to do. One of the following:
+      </p>
+      <ul>
+        <li>You want to provide a default value if it returned an error.</li>
+        <li>If it returned an error then you want to return the same error.</li>
+        <li>You know with complete certainty it will not return an error, so want to unconditionally unwrap it.</li>
+        <li>You want to take a different action for each possible error.</li>
+      </ul>
+      <p>If you want to provide a default value, you can use the <code>%%</code> binary operator:</p>
+      <pre><code class="zig">fn doAThing(str: []u8) {
+    const number = parseU64(str, 10) %% 13;
+    // ...
+}</code></pre>
+      <p>
+      In this code, <code>number</code> will be equal to the successfully parsed string, or
+      a default value of 13. The type of the right hand side of the binary <code>%%</code> operator must
+      match the unwrapped error union type, or be of type <code>noreturn</code>.
+      </p>
+      <p>Let's say you wanted to return the error if you got one, otherwise continue with the
+      function logic:</p>
+      <pre><code class="zig">fn doAThing(str: []u8) -&gt; %void {
+    const number = parseU64(str, 10) %% |err| return err;
+    // ...
+}</code></pre>
+      <p>
+        There is a shortcut for this. The <code>%return</code> expression:
+      </p>
+      <pre><code class="zig">fn doAThing(str: []u8) -&gt; %void {
+    const number = %return parseU64(str, 10);
+    // ...
+}</code></pre>
+      <p>
+      <code>%return</code> evaluates an error union expression. If it is an error, it returns
+      from the current function with the same error. Otherwise, the expression results in
+      the unwrapped value.
+      </p>
+      <p>
+        Maybe you know with complete certainty that an expression will never be an error.
+        In this case you can do this:
+      </p>
+      <pre><code class="zig">const number = parseU64("1234", 10) %% unreachable;</code></pre>
+      <p>
+      Here we know for sure that "1234" will parse successfully. So we put the
+      <code>unreachable</code> value on the right hand side. <code>unreachable</code> generates
+      a panic in Debug and ReleaseSafe modes and undefined behavior in ReleaseFast mode. So, while we're debugging the
+      application, if there <em>was</em> a surprise error here, the application would crash
+      appropriately.
+      </p>
+      <p>Again there is a syntactic shortcut for this:</p>
+      <pre><code class="zig">const number = %%parseU64("1234", 10);</code></pre>
+      <p>
+      The <code>%%</code> <em>prefix</em> operator is equivalent to <code class="zig">expression %% |err| return err</code>. It unwraps an error union type,
+      and panics in debug mode if the value was an error.
+      </p>
+      <p>
+      Finally, you may want to take a different action for every situation. For that, we combine
+      the <code>if</code> and <code>switch</code> expression:
+      </p>
+      <pre><code class="zig">fn doAThing(str: []u8) {
+    if (parseU64(str, 10)) |number| {
+        doSomethingWithNumber(number);
+    } else |err| switch (err) {
+        error.Overflow =&gt; {
+            // handle overflow...
+        },
+        // we promise that InvalidChar won't happen (or crash in debug mode if it does)
+        error.InvalidChar =&gt; unreachable,
+    }
+}</code></pre>
+      <p>
+      The other component to error handling is defer statements.
+      In addition to an unconditional <code>defer</code>, Zig has <code>%defer</code>,
+      which evaluates the deferred expression on block exit path if and only if
+      the function returned with an error from the block.
+      </p>
+      <p>
+      Example:
+      </p>
+      <pre><code class="zig">fn createFoo(param: i32) -&gt; %Foo {
+    const foo = %return tryToAllocateFoo();
+    // now we have allocated foo. we need to free it if the function fails.
+    // but we want to return it if the function succeeds.
+    %defer deallocateFoo(foo);
+
+    const tmp_buf = allocateTmpBuffer() ?? return error.OutOfMemory;
+    // tmp_buf is truly a temporary resource, and we for sure want to clean it up
+    // before this block leaves scope
+    defer deallocateTmpBuffer(tmp_buf);
+
+    if (param &gt; 1337) return error.InvalidParam;
+
+    // here the %defer will not run since we're returning success from the function.
+    // but the defer will run!
+    return foo;
+}</code></pre>
+      <p>
+      The neat thing about this is that you get robust error handling without
+      the verbosity and cognitive overhead of trying to make sure every exit path
+      is covered. The deallocation code is always directly following the allocation code.
+      </p>
+      <p>
+      A couple of other tidbits about error handling:
+      </p>
+      <ul>
+        <li>These primitives give enough expressiveness that it's completely practical
+            to have failing to check for an error be a compile error. If you really want
+            to ignore the error, you can use the <code>%%</code> prefix operator and
+            get the added benefit of crashing in debug mode if your assumption was wrong.
+        </li>
+        <li>
+          Since Zig understands error types, it can pre-weight branches in favor of
+          errors not occuring. Just a small optimization benefit that is not available
+          in other languages.
+        </li>
+        <li>
+          There are no C++ style exceptions or stack unwinding or anything fancy like that.
+          Zig simply makes it convenient to pass error codes around.
+        </li>
+      </ul>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#defer">defer</a></li>
+        <li><a href="#if">if</a></li>
+        <li><a href="#switch">switch</a></li>
+      </ul>
       <h2 id="nullables">Nullables</h2>
       <p>TODO: copy content from introduction to zig</p>
       <h2 id="casting">Casting</h2>
