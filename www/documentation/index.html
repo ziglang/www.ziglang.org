@@ -55,6 +55,12 @@
             <li><a href="#float-operations">Floating Point Operations</a></li>
           </ul>
         </li>
+        <li><a href="#operators">Operators</a>
+          <ul>
+            <li><a href="#operators-table">Table of Operators</a></li>
+            <li><a href="#operators-precedence">Precedence</a></li>
+          </ul>
+        </li>
         <li><a href="#arrays">Arrays</a></li>
         <li><a href="#pointers">Pointers</a>
           <ul>
@@ -62,12 +68,6 @@
           </ul>
         </li>
         <li><a href="#slices">Slices</a></li>
-        <li><a href="#operators">Operators</a>
-          <ul>
-            <li><a href="#operators-table">Table of Operators</a></li>
-            <li><a href="#operators-precedence">Precedence</a></li>
-          </ul>
-        </li>
         <li><a href="#struct">struct</a></li>
         <li><a href="#enum">enum</a></li>
         <li><a href="#switch">switch</a></li>
@@ -787,365 +787,6 @@ strict = 9.765625e-3</code></pre>
         <li><a href="#builtin-setFloatMode">@setFloatMode</a></li>
         <li><a href="#undef-division-by-zero">Division By Zero</a></li>
       </ul>
-      <h2 id="arrays">Arrays</h2>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
-
-// array literal
-const message = []u8{'h', 'e', 'l', 'l', 'o'};
-
-// get the size of an array
-comptime {
-    assert(message.len == 5);
-}
-
-// a string literal is an array literal
-const same_message = "hello";
-
-comptime {
-    assert(mem.eql(u8, message, same_message));
-    assert(@typeOf(message) == @typeOf(same_message));
-}
-
-test "iterate over an array" {
-    var sum: usize = 0;
-    for (message) |byte| {
-        sum += byte;
-    }
-    assert(sum == usize('h') + usize('e') + usize('l') * 2 + usize('o'));
-}
-
-// modifiable array
-var some_integers: [100]i32 = undefined;
-
-test "modify an array" {
-    for (some_integers) |*item, i| {
-        *item = i32(i);
-    }
-    assert(some_integers[10] == 10);
-    assert(some_integers[99] == 99);
-}
-
-// array concatenation works if the values are known
-// at compile time
-const part_one = []i32{1, 2, 3, 4};
-const part_two = []i32{5, 6, 7, 8};
-const all_of_it = part_one ++ part_two;
-comptime {
-    assert(mem.eql(i32, all_of_it, []i32{1,2,3,4,5,6,7,8}));
-}
-
-// remember that string literals are arrays
-const hello = "hello";
-const world = "world";
-const hello_world = hello ++ " " ++ world;
-comptime {
-    assert(mem.eql(u8, hello_world, "hello world"));
-}
-
-// ** does repeating patterns
-const pattern = "ab" ** 3;
-comptime {
-    assert(mem.eql(u8, pattern, "ababab"));
-}
-
-// initialize an array to zero
-const all_zero = []u16{0} ** 10;
-
-comptime {
-    assert(all_zero.len == 10);
-    assert(all_zero[5] == 0);
-}
-
-// use compile-time code to initialize an array
-var fancy_array = {
-    var initial_value: [10]Point = undefined;
-    for (initial_value) |*pt, i| {
-        *pt = Point {
-            .x = i32(i),
-            .y = i32(i) * 2,
-        };
-    }
-    initial_value
-};
-const Point = struct {
-    x: i32,
-    y: i32,
-};
-
-test "compile-time array initalization" {
-    assert(fancy_array[4].x == 4);
-    assert(fancy_array[4].y == 8);
-}
-
-// call a function to initialize an array
-var more_points = []Point{makePoint(3)} ** 10;
-fn makePoint(x: i32) -&gt; Point {
-    Point {
-        .x = x,
-        .y = x * 2,
-    }
-}
-test "array initialization with function calls" {
-    assert(more_points[4].x == 3);
-    assert(more_points[4].y == 6);
-    assert(more_points.len == 10);
-}</code></pre>
-      <pre><code class="sh">$ zig test arrays.zig 
-Test 1/4 iterate over an array...OK
-Test 2/4 modify an array...OK
-Test 3/4 compile-time array initalization...OK
-Test 4/4 array initialization with function calls...OK</code></pre>
-      <p>See also:</p>
-      <ul>
-        <li><a href="#for">for</a></li>
-        <li><a href="#slices">Slices</a></li>
-      </ul>
-      <h2 id="pointers">Pointers</h2>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-
-test "address of syntax" {
-    // Get the address of a variable:
-    const x: i32 = 1234;
-    const x_ptr = &x;
-
-    // Deference a pointer:
-    assert(*x_ptr == 1234);
-
-    // When you get the address of a const variable, you get a const pointer.
-    assert(@typeOf(x_ptr) == &amp;const i32);
-
-    // If you want to mutate the value, you'd need an address of a mutable variable:
-    var y: i32 = 5678;
-    const y_ptr = &y;
-    assert(@typeOf(y_ptr) == &amp;i32);
-    *y_ptr += 1;
-    assert(*y_ptr == 5679);
-}
-
-test "pointer array access" {
-    // Pointers do not support pointer arithmetic. If you
-    // need such a thing, use array index syntax:
-
-    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    const ptr = &amp;array[1];
-
-    assert(array[2] == 3);
-    ptr[1] += 1;
-    assert(array[2] == 4);
-}
-
-test "pointer slicing" {
-    // In Zig, we prefer using slices over null-terminated pointers.
-    // You can turn a pointer into a slice using slice syntax:
-    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    const ptr = &amp;array[1];
-    const slice = ptr[1..3];
-
-    assert(slice.ptr == &amp;ptr[1]);
-    assert(slice.len == 2);
-
-    // Slices have bounds checking and are therefore protected
-    // against this kind of undefined behavior. This is one reason
-    // we prefer slices to pointers.
-    assert(array[3] == 4);
-    slice[1] += 1;
-    assert(array[3] == 5);
-}
-
-comptime {
-    // Pointers work at compile-time too, as long as you don't use
-    // @ptrCast.
-    var x: i32 = 1;
-    const ptr = &amp;x;
-    *ptr += 1;
-    x += 1;
-    assert(*ptr == 3);
-}
-
-test "@ptrToInt and @intToPtr" {
-    // To convert an integer address into a pointer, use @intToPtr:
-    const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
-
-    // To convert a pointer to an integer, use @ptrToInt:
-    const addr = @ptrToInt(ptr);
-
-    assert(@typeOf(addr) == usize);
-    assert(addr == 0xdeadbeef);
-}
-
-comptime {
-    // Zig is able to do this at compile-time, as long as
-    // ptr is never dereferenced.
-    const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
-    const addr = @ptrToInt(ptr);
-    assert(@typeOf(addr) == usize);
-    assert(addr == 0xdeadbeef);
-}
-
-test "volatile" {
-    // In Zig, loads and stores are assumed to not have side effects.
-    // If a given load or store should have side effects, such as
-    // Memory Mapped Input/Output (MMIO), use `volatile`:
-    const mmio_ptr = @intToPtr(&amp;volatile u8, 0x12345678);
-
-    // Now loads and stores with mmio_ptr are guaranteed to all happen
-    // and in the same order as in source code.
-    assert(@typeOf(mmio_ptr) == &amp;volatile u8);
-}
-
-test "nullable pointers" {
-    // Pointers cannot be null. If you want a null pointer, use the nullable
-    // prefix `?` to make the pointer type nullable.
-    var ptr: ?&amp;i32 = null;
-
-    var x: i32 = 1;
-    ptr = &amp;x;
-
-    assert(*??ptr == 1);
-
-    // Nullable pointers are the same size as normal pointers, because pointer
-    // value 0 is used as the null value.
-    assert(@sizeOf(?&amp;i32) == @sizeOf(&amp;i32));
-}
-
-test "pointer casting" {
-    // To convert one pointer type to another, use @ptrCast. This is an unsafe
-    // operation that Zig cannot protect you against. Use @ptrCast only when other
-    // conversions are not possible.
-    const bytes = []u8{0x12, 0x12, 0x12, 0x12};
-    const u32_ptr = @ptrCast(&amp;const u32, &amp;bytes[0]);
-    assert(*u32_ptr == 0x12121212);
-
-    // Even this example is contrived - there are better ways to do the above than
-    // pointer casting. For example, using a slice narrowing cast:
-    const u32_value = ([]const u32)(bytes[0..])[0];
-    assert(u32_value == 0x12121212);
-
-    // And even another way, the most straightforward way to do it:
-    assert(@bitCast(u32, bytes) == 0x12121212);
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig 
-Test 1/7 address of syntax...OK
-Test 2/7 pointer array access...OK
-Test 3/7 pointer slicing...OK
-Test 4/7 @ptrToInt and @intToPtr...OK
-Test 5/7 volatile...OK
-Test 6/7 nullable pointers...OK
-Test 7/7 pointer casting...OK</code></pre>
-      <h3 id="type-based-alias-analysis">Type Based Alias Analysis</h3>
-      <p>Zig uses Type Based Alias Analysis (also known as Strict Aliasing) to
-      perform some optimizations. This means that pointers of different types must
-      not alias the same memory, with the exception of <code>u8</code>. pointers to
-      <code>u8</code> can alias any memory.
-      </p>
-      <p>As an example, this code produces undefined behavior:</p>
-      <pre><code class="zig">*@ptrCast(&amp;u32, f32(12.34))</code></pre>
-      <p>Instead, use <a href="#builtin-bitCast">@bitCast</a>:
-      <pre><code class="zig">@bitCast(u32, f32(12.34))</code></pre>
-      <p>As an added benefit, the <code>@bitcast</code> version works at compile-time.</p>
-      <p>TODO: pointers to bitfield fields</p>
-      <p>See also:</p>
-      <ul>
-        <li><a href="#slices">Slices</a></li>
-        <li><a href="#memory">Memory</a></li>
-      </ul>
-      <h2 id="slices">Slices</h2>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-
-test "basic slices" {
-    var array = []i32{1, 2, 3, 4};
-    // A slice is a pointer and a length. The difference between an array and
-    // a slice is that the array's length is part of the type and known at
-    // compile-time, whereas the slice's length is known at runtime.
-    // Both can be accessed with the `len` field.
-    const slice = array[0..array.len];
-    assert(slice.ptr == &amp;array[0]);
-    assert(slice.len == array.len);
-
-    // Slices have array bounds checking. If you try to access something out
-    // of bounds, you'll get a safety check failure:
-    slice[10] += 1;
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig 
-Test 1/1 basic slices...index out of bounds
-lib/zig/std/special/zigrt.zig:16:35: 0x0000000000203455 in ??? (test)
-        @import("std").debug.panic("{}", message_ptr[0..message_len]);
-                                  ^
-test.zig:15:10: 0x0000000000203334 in ??? (test)
-    slice[10] += 1;
-         ^
-lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214b1a in ??? (test)
-        test_fn.func();
-                    ^
-lib/zig/std/special/bootstrap.zig:60:21: 0x00000000002149e7 in ??? (test)
-    return root.main();
-                    ^
-lib/zig/std/special/bootstrap.zig:47:13: 0x00000000002148a0 in ??? (test)
-    callMain(argc, argv, envp) %% std.os.posix.exit(1);
-            ^
-lib/zig/std/special/bootstrap.zig:34:25: 0x00000000002147f0 in ??? (test)
-    posixCallMainAndExit()
-                        ^
-
-Tests failed. Use the following command to reproduce the failure:
-./test</code></pre>
-      <p>This is one reason we prefer slices to pointers.</p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
-const fmt = @import("std").fmt;
-
-test "using slices for strings" {
-    // Zig has no concept of strings. String literals are arrays of u8, and
-    // in general the string type is []u8 (slice of u8).
-    // Here we implicitly cast [5]u8 to []const u8
-    const hello: []const u8 = "hello";
-    const world: []const u8 = "世界";
-
-    var all_together: [100]u8 = undefined;
-    // You can use slice syntax on an array to convert an array into a slice.
-    const all_together_slice = all_together[0..];
-    // String concatenation example:
-    const hello_world = fmt.bufPrint(all_together_slice, "{} {}", hello, world);
-
-    // Generally, you can use UTF-8 and not worry about whether something is a
-    // string. If you don't need to deal with individual characters, no need
-    // to decode.
-    assert(mem.eql(u8, hello_world, "hello 世界"));
-}
-
-test "slice pointer" {
-    var array: [10]u8 = undefined;
-    const ptr = &amp;array[0];
-
-    // You can use slicing syntax to convert a pointer into a slice:
-    const slice = ptr[0..5];
-    slice[2] = 3;
-    assert(slice[2] == 3);
-    // The slice is mutable because we sliced a mutable pointer.
-    assert(@typeOf(slice) == []u8);
-
-    // You can also slice a slice:
-    const slice2 = slice[2..3];
-    assert(slice2.len == 1);
-    assert(slice2[0] == 3);
-}
-
-test "slice widening" {
-    // Zig supports slice widening and slice narrowing. Cast a slice of u8
-    // to a slice of anything else, and Zig will perform the length conversion.
-    const array = []u8{0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13};
-    const slice = ([]const u32)(array[0..]);
-    assert(slice.len == 2);
-    assert(slice[0] == 0x12121212);
-    assert(slice[1] == 0x13131313);
-}</code></pre>
-      <p>See also:</p>
-      <ul>
-        <li><a href="#pointers">Pointers</a></li>
-        <li><a href="#for">for</a></li>
-        <li><a href="#arrays">Arrays</a></li>
-      </ul>
       <h2 id="operators">Operators</h2>
       <h3 id="operators-table">Table of Operators</h2>
       <table>
@@ -1750,6 +1391,365 @@ and
 or
 ?? %%
 = *= /= %= += -= &lt;&lt;= &gt;&gt;= &amp;= ^= |=</code></pre>
+      <h2 id="arrays">Arrays</h2>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+const mem = @import("std").mem;
+
+// array literal
+const message = []u8{'h', 'e', 'l', 'l', 'o'};
+
+// get the size of an array
+comptime {
+    assert(message.len == 5);
+}
+
+// a string literal is an array literal
+const same_message = "hello";
+
+comptime {
+    assert(mem.eql(u8, message, same_message));
+    assert(@typeOf(message) == @typeOf(same_message));
+}
+
+test "iterate over an array" {
+    var sum: usize = 0;
+    for (message) |byte| {
+        sum += byte;
+    }
+    assert(sum == usize('h') + usize('e') + usize('l') * 2 + usize('o'));
+}
+
+// modifiable array
+var some_integers: [100]i32 = undefined;
+
+test "modify an array" {
+    for (some_integers) |*item, i| {
+        *item = i32(i);
+    }
+    assert(some_integers[10] == 10);
+    assert(some_integers[99] == 99);
+}
+
+// array concatenation works if the values are known
+// at compile time
+const part_one = []i32{1, 2, 3, 4};
+const part_two = []i32{5, 6, 7, 8};
+const all_of_it = part_one ++ part_two;
+comptime {
+    assert(mem.eql(i32, all_of_it, []i32{1,2,3,4,5,6,7,8}));
+}
+
+// remember that string literals are arrays
+const hello = "hello";
+const world = "world";
+const hello_world = hello ++ " " ++ world;
+comptime {
+    assert(mem.eql(u8, hello_world, "hello world"));
+}
+
+// ** does repeating patterns
+const pattern = "ab" ** 3;
+comptime {
+    assert(mem.eql(u8, pattern, "ababab"));
+}
+
+// initialize an array to zero
+const all_zero = []u16{0} ** 10;
+
+comptime {
+    assert(all_zero.len == 10);
+    assert(all_zero[5] == 0);
+}
+
+// use compile-time code to initialize an array
+var fancy_array = {
+    var initial_value: [10]Point = undefined;
+    for (initial_value) |*pt, i| {
+        *pt = Point {
+            .x = i32(i),
+            .y = i32(i) * 2,
+        };
+    }
+    initial_value
+};
+const Point = struct {
+    x: i32,
+    y: i32,
+};
+
+test "compile-time array initalization" {
+    assert(fancy_array[4].x == 4);
+    assert(fancy_array[4].y == 8);
+}
+
+// call a function to initialize an array
+var more_points = []Point{makePoint(3)} ** 10;
+fn makePoint(x: i32) -&gt; Point {
+    Point {
+        .x = x,
+        .y = x * 2,
+    }
+}
+test "array initialization with function calls" {
+    assert(more_points[4].x == 3);
+    assert(more_points[4].y == 6);
+    assert(more_points.len == 10);
+}</code></pre>
+      <pre><code class="sh">$ zig test arrays.zig 
+Test 1/4 iterate over an array...OK
+Test 2/4 modify an array...OK
+Test 3/4 compile-time array initalization...OK
+Test 4/4 array initialization with function calls...OK</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#for">for</a></li>
+        <li><a href="#slices">Slices</a></li>
+      </ul>
+      <h2 id="pointers">Pointers</h2>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "address of syntax" {
+    // Get the address of a variable:
+    const x: i32 = 1234;
+    const x_ptr = &x;
+
+    // Deference a pointer:
+    assert(*x_ptr == 1234);
+
+    // When you get the address of a const variable, you get a const pointer.
+    assert(@typeOf(x_ptr) == &amp;const i32);
+
+    // If you want to mutate the value, you'd need an address of a mutable variable:
+    var y: i32 = 5678;
+    const y_ptr = &y;
+    assert(@typeOf(y_ptr) == &amp;i32);
+    *y_ptr += 1;
+    assert(*y_ptr == 5679);
+}
+
+test "pointer array access" {
+    // Pointers do not support pointer arithmetic. If you
+    // need such a thing, use array index syntax:
+
+    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    const ptr = &amp;array[1];
+
+    assert(array[2] == 3);
+    ptr[1] += 1;
+    assert(array[2] == 4);
+}
+
+test "pointer slicing" {
+    // In Zig, we prefer using slices over null-terminated pointers.
+    // You can turn a pointer into a slice using slice syntax:
+    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    const ptr = &amp;array[1];
+    const slice = ptr[1..3];
+
+    assert(slice.ptr == &amp;ptr[1]);
+    assert(slice.len == 2);
+
+    // Slices have bounds checking and are therefore protected
+    // against this kind of undefined behavior. This is one reason
+    // we prefer slices to pointers.
+    assert(array[3] == 4);
+    slice[1] += 1;
+    assert(array[3] == 5);
+}
+
+comptime {
+    // Pointers work at compile-time too, as long as you don't use
+    // @ptrCast.
+    var x: i32 = 1;
+    const ptr = &amp;x;
+    *ptr += 1;
+    x += 1;
+    assert(*ptr == 3);
+}
+
+test "@ptrToInt and @intToPtr" {
+    // To convert an integer address into a pointer, use @intToPtr:
+    const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
+
+    // To convert a pointer to an integer, use @ptrToInt:
+    const addr = @ptrToInt(ptr);
+
+    assert(@typeOf(addr) == usize);
+    assert(addr == 0xdeadbeef);
+}
+
+comptime {
+    // Zig is able to do this at compile-time, as long as
+    // ptr is never dereferenced.
+    const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
+    const addr = @ptrToInt(ptr);
+    assert(@typeOf(addr) == usize);
+    assert(addr == 0xdeadbeef);
+}
+
+test "volatile" {
+    // In Zig, loads and stores are assumed to not have side effects.
+    // If a given load or store should have side effects, such as
+    // Memory Mapped Input/Output (MMIO), use `volatile`:
+    const mmio_ptr = @intToPtr(&amp;volatile u8, 0x12345678);
+
+    // Now loads and stores with mmio_ptr are guaranteed to all happen
+    // and in the same order as in source code.
+    assert(@typeOf(mmio_ptr) == &amp;volatile u8);
+}
+
+test "nullable pointers" {
+    // Pointers cannot be null. If you want a null pointer, use the nullable
+    // prefix `?` to make the pointer type nullable.
+    var ptr: ?&amp;i32 = null;
+
+    var x: i32 = 1;
+    ptr = &amp;x;
+
+    assert(*??ptr == 1);
+
+    // Nullable pointers are the same size as normal pointers, because pointer
+    // value 0 is used as the null value.
+    assert(@sizeOf(?&amp;i32) == @sizeOf(&amp;i32));
+}
+
+test "pointer casting" {
+    // To convert one pointer type to another, use @ptrCast. This is an unsafe
+    // operation that Zig cannot protect you against. Use @ptrCast only when other
+    // conversions are not possible.
+    const bytes = []u8{0x12, 0x12, 0x12, 0x12};
+    const u32_ptr = @ptrCast(&amp;const u32, &amp;bytes[0]);
+    assert(*u32_ptr == 0x12121212);
+
+    // Even this example is contrived - there are better ways to do the above than
+    // pointer casting. For example, using a slice narrowing cast:
+    const u32_value = ([]const u32)(bytes[0..])[0];
+    assert(u32_value == 0x12121212);
+
+    // And even another way, the most straightforward way to do it:
+    assert(@bitCast(u32, bytes) == 0x12121212);
+}</code></pre>
+      <pre><code class="sh">$ zig test test.zig 
+Test 1/7 address of syntax...OK
+Test 2/7 pointer array access...OK
+Test 3/7 pointer slicing...OK
+Test 4/7 @ptrToInt and @intToPtr...OK
+Test 5/7 volatile...OK
+Test 6/7 nullable pointers...OK
+Test 7/7 pointer casting...OK</code></pre>
+      <h3 id="type-based-alias-analysis">Type Based Alias Analysis</h3>
+      <p>Zig uses Type Based Alias Analysis (also known as Strict Aliasing) to
+      perform some optimizations. This means that pointers of different types must
+      not alias the same memory, with the exception of <code>u8</code>. pointers to
+      <code>u8</code> can alias any memory.
+      </p>
+      <p>As an example, this code produces undefined behavior:</p>
+      <pre><code class="zig">*@ptrCast(&amp;u32, f32(12.34))</code></pre>
+      <p>Instead, use <a href="#builtin-bitCast">@bitCast</a>:
+      <pre><code class="zig">@bitCast(u32, f32(12.34))</code></pre>
+      <p>As an added benefit, the <code>@bitcast</code> version works at compile-time.</p>
+      <p>TODO: pointers to bitfield fields</p>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#slices">Slices</a></li>
+        <li><a href="#memory">Memory</a></li>
+      </ul>
+      <h2 id="slices">Slices</h2>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "basic slices" {
+    var array = []i32{1, 2, 3, 4};
+    // A slice is a pointer and a length. The difference between an array and
+    // a slice is that the array's length is part of the type and known at
+    // compile-time, whereas the slice's length is known at runtime.
+    // Both can be accessed with the `len` field.
+    const slice = array[0..array.len];
+    assert(slice.ptr == &amp;array[0]);
+    assert(slice.len == array.len);
+
+    // Slices have array bounds checking. If you try to access something out
+    // of bounds, you'll get a safety check failure:
+    slice[10] += 1;
+}</code></pre>
+      <pre><code class="sh">$ zig test test.zig 
+Test 1/1 basic slices...index out of bounds
+lib/zig/std/special/zigrt.zig:16:35: 0x0000000000203455 in ??? (test)
+        @import("std").debug.panic("{}", message_ptr[0..message_len]);
+                                  ^
+test.zig:15:10: 0x0000000000203334 in ??? (test)
+    slice[10] += 1;
+         ^
+lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214b1a in ??? (test)
+        test_fn.func();
+                    ^
+lib/zig/std/special/bootstrap.zig:60:21: 0x00000000002149e7 in ??? (test)
+    return root.main();
+                    ^
+lib/zig/std/special/bootstrap.zig:47:13: 0x00000000002148a0 in ??? (test)
+    callMain(argc, argv, envp) %% std.os.posix.exit(1);
+            ^
+lib/zig/std/special/bootstrap.zig:34:25: 0x00000000002147f0 in ??? (test)
+    posixCallMainAndExit()
+                        ^
+
+Tests failed. Use the following command to reproduce the failure:
+./test</code></pre>
+      <p>This is one reason we prefer slices to pointers.</p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+const mem = @import("std").mem;
+const fmt = @import("std").fmt;
+
+test "using slices for strings" {
+    // Zig has no concept of strings. String literals are arrays of u8, and
+    // in general the string type is []u8 (slice of u8).
+    // Here we implicitly cast [5]u8 to []const u8
+    const hello: []const u8 = "hello";
+    const world: []const u8 = "世界";
+
+    var all_together: [100]u8 = undefined;
+    // You can use slice syntax on an array to convert an array into a slice.
+    const all_together_slice = all_together[0..];
+    // String concatenation example:
+    const hello_world = fmt.bufPrint(all_together_slice, "{} {}", hello, world);
+
+    // Generally, you can use UTF-8 and not worry about whether something is a
+    // string. If you don't need to deal with individual characters, no need
+    // to decode.
+    assert(mem.eql(u8, hello_world, "hello 世界"));
+}
+
+test "slice pointer" {
+    var array: [10]u8 = undefined;
+    const ptr = &amp;array[0];
+
+    // You can use slicing syntax to convert a pointer into a slice:
+    const slice = ptr[0..5];
+    slice[2] = 3;
+    assert(slice[2] == 3);
+    // The slice is mutable because we sliced a mutable pointer.
+    assert(@typeOf(slice) == []u8);
+
+    // You can also slice a slice:
+    const slice2 = slice[2..3];
+    assert(slice2.len == 1);
+    assert(slice2[0] == 3);
+}
+
+test "slice widening" {
+    // Zig supports slice widening and slice narrowing. Cast a slice of u8
+    // to a slice of anything else, and Zig will perform the length conversion.
+    const array = []u8{0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13};
+    const slice = ([]const u32)(array[0..]);
+    assert(slice.len == 2);
+    assert(slice[0] == 0x12121212);
+    assert(slice[1] == 0x13131313);
+}</code></pre>
+      <p>See also:</p>
+      <ul>
+        <li><a href="#pointers">Pointers</a></li>
+        <li><a href="#for">for</a></li>
+        <li><a href="#arrays">Arrays</a></li>
+      </ul>
       <h2 id="struct">struct</h2>
       <pre><code class="zig">// Declare a struct.
 // Zig gives no guarantees about the order of fields and whether or
