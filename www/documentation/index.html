@@ -64,6 +64,7 @@
         <li><a href="#arrays">Arrays</a></li>
         <li><a href="#pointers">Pointers</a>
           <ul>
+            <li><a href="#alignment">Alignment</a></li>
             <li><a href="#type-based-alias-analysis">Type Based Alias Analysis</a></li>
           </ul>
         </li>
@@ -107,9 +108,9 @@
         <li><a href="#builtin-functions">Builtin Functions</a>
           <ul>
             <li><a href="#builtin-addWithOverflow">@addWithOverflow</a></li>
+            <li><a href="#builtin-alignOf">@alignOf</a></li>
             <li><a href="#builtin-bitCast">@bitCast</a></li>
             <li><a href="#builtin-breakpoint">@breakpoint</a></li>
-            <li><a href="#builtin-cAbiAlignOf">@cAbiAlignOf</a></li>
             <li><a href="#builtin-cDefine">@cDefine</a></li>
             <li><a href="#builtin-cImport">@cImport</a></li>
             <li><a href="#builtin-cInclude">@cInclude</a></li>
@@ -142,7 +143,6 @@
             <li><a href="#builtin-mulWithOverflow">@mulWithOverflow</a></li>
             <li><a href="#builtin-offsetOf">@offsetOf</a></li>
             <li><a href="#builtin-panic">@panic</a></li>
-            <li><a href="#builtin-preferredAlignOf">@preferredAlignOf</a></li>
             <li><a href="#builtin-ptrCast">@ptrCast</a></li>
             <li><a href="#builtin-ptrToInt">@ptrToInt</a></li>
             <li><a href="#builtin-rem">@rem</a></li>
@@ -150,7 +150,6 @@
             <li><a href="#builtin-setDebugSafety">@setDebugSafety</a></li>
             <li><a href="#builtin-setEvalBranchQuota">@setEvalBranchQuota</a></li>
             <li><a href="#builtin-setFloatMode">@setFloatMode</a></li>
-            <li><a href="#builtin-setGlobalAlign">@setGlobalAlign</a></li>
             <li><a href="#builtin-setGlobalLinkage">@setGlobalLinkage</a></li>
             <li><a href="#builtin-setGlobalSection">@setGlobalSection</a></li>
             <li><a href="#builtin-shlExact">@shlExact</a></li>
@@ -313,6 +312,16 @@ value: error.ArgNotFound</code></pre>
           <th>
             Description
           </th>
+        </tr>
+        <tr>
+          <td><code>i2</code></td>
+          <td><code>(none)</code></td>
+          <td>signed 2-bit integer</td>
+        </tr>
+        <tr>
+          <td><code>u2</code></td>
+          <td><code>(none)</code></td>
+          <td>unsigned 2-bit integer</td>
         </tr>
         <tr>
           <td><code>i3</code></td>
@@ -1649,6 +1658,10 @@ Test 4/7 @ptrToInt and @intToPtr...OK
 Test 5/7 volatile...OK
 Test 6/7 nullable pointers...OK
 Test 7/7 pointer casting...OK</code></pre>
+      <h3 id="alignment">Alignment</h3>
+      <p>TODO</p>
+      <p>TODO: align usage in the functions section</p>
+      <p>TODO: align usage in the variables section</p>
       <h3 id="type-based-alias-analysis">Type Based Alias Analysis</h3>
       <p>Zig uses Type Based Alias Analysis (also known as Strict Aliasing) to
       perform some optimizations. This means that pointers of different types must
@@ -2009,8 +2022,7 @@ Test 3/4 enum variant switch...OK
 Test 4/4 enum builtins...OK</code></pre>
       <p>
       Enums are generated as a struct with a tag field and union field. Zig
-      sorts the order of the tag and union field by the largest preferred
-      alignment.
+      sorts the order of the tag and union field by the largest alignment.
       </p>
       <p>See also:</p>
       <ul>
@@ -3763,18 +3775,24 @@ pub fn main(args: [][]u8) -&gt; %void {
       This function is only valid within function scope.
       </p>
 
-      <h3 id="builtin-cAbiAlignOf">@cAbiAlignOf</h3>
-      <pre><code class="zig">@cAbiAlignOf(comptime T: type) -&gt; (number literal)</code></pre>
+      <h3 id="builtin-alignOf">@alignOf</h3>
+      <pre><code class="zig">@alignOf(comptime T: type) -&gt; (number literal)</code></pre>
       <p>
       This function returns the number of bytes that this type should be aligned to
-      for the current target to match the C ABI.
+      for the current target to match the C ABI. When the child type of a pointer has
+      this alignment, the alignment can be omitted from the type.
       </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+comptime {
+    assert(&amp;u32 == &amp;align @alignOf(u32) u32);
+}</code></pre>
       <p>
-      The result is a target-specific compile time constant.
+      The result is a target-specific compile time constant. It is guaranteed to be
+      less than or equal to <a href="#builtin-sizeOf">@sizeOf(T)</a>.
       </p>
       <p>See also:</p>
       <ul>
-        <li><a href="#builtin-preferredAlignOf">@preferredAlignOf</a></li>
+        <li><a href="#alignment">Alignment</a></li>
       </ul>
 
       <h3 id="builtin-cDefine">@cDefine</h3>
@@ -4180,20 +4198,6 @@ mem.set(u8, dest, c);</code></pre>
         <li><a href="#root-source-file">Root Source File</a></li>
       </ul>
 
-      <h3 id="builtin-preferredAlignOf">@preferredAlignOf</h3>
-      <pre><code class="zig">@preferredAlignOf(comptime T: type) -&gt; (number literal)</code></pre>
-      <p>
-      This function returns the number of bytes that this type should be aligned to
-      for optimization purposes.
-      </p>
-      <p>
-      The result is a target-specific compile time constant.
-      </p>
-      <p>See also:</p>
-      <ul>
-        <li><a href="#builtin-cAbiAlignOf">@cAbiAlignOf</a></li>
-      </ul>
-
       <h3 id="builtin-ptrCast">@ptrCast</h3>
       <pre><code class="zig">@ptrCast(comptime DestType: type, value: var) -&gt; DestType</code></pre>
       <p>
@@ -4313,11 +4317,6 @@ mem.set(u8, dest, c);</code></pre>
         <li><a href="#float-operations">Floating Point Operations</a></li>
       </ul>
 
-      <h3 id="builtin-setGlobalAlign">@setGlobalAlign</h3>
-      <pre><code class="zig">@setGlobalAlign(global_variable_name, comptime byte_count: usize) -&gt; bool</code></pre>
-      <p>
-      Sets the alignment property of a global variable.
-      </p>
       <h3 id="builtin-setGlobalLinkage">@setGlobalLinkage</h3>
       <pre><code class="zig">@setGlobalLinkage(global_variable_name, comptime linkage: GlobalLinkage)</code></pre>
       <p>
@@ -5411,7 +5410,7 @@ ErrorValueDecl = "error" Symbol ";"
 
 GlobalVarDecl = VariableDeclaration ";"
 
-VariableDeclaration = option("comptime") ("var" | "const") Symbol option(":" TypeExpr) "=" Expression
+VariableDeclaration = option("comptime") ("var" | "const") Symbol option(":" TypeExpr) option("align" PrimaryExpression) "=" Expression
 
 ContainerMember = (ContainerField | FnDef | GlobalVarDecl)
 
@@ -5421,7 +5420,7 @@ UseDecl = "use" Expression ";"
 
 ExternDecl = "extern" option(String) (FnProto | VariableDeclaration) ";"
 
-FnProto = option("coldcc" | "nakedcc" | "stdcallcc") "fn" option(Symbol) ParamDeclList option("-&gt;" TypeExpr)
+FnProto = option("coldcc" | "nakedcc" | "stdcallcc") "fn" option(Symbol) ParamDeclList option("align" PrimaryExpression) option("-&gt;" TypeExpr)
 
 VisibleMod = "pub" | "export"
 
@@ -5537,11 +5536,11 @@ ContainerInitBody = list(StructLiteralField, ",") | list(Expression, ",")
 
 StructLiteralField = "." Symbol "=" Expression
 
-PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("const") option("volatile")) | "?" | "%" | "%%" | "??" | "-%"
+PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("align" PrimaryExpression option(":" Integer ":" Integer)) option("const") option("volatile")) | "?" | "%" | "%%" | "??" | "-%"
 
 PrimaryExpression = Integer | Float | String | CharLiteral | KeywordLiteral | GroupedExpression | GotoExpression | BlockExpression(BlockOrExpression) | Symbol | ("@" Symbol FnCallExpression) | ArrayType | (option("extern") FnProto) | AsmExpression | ("error" "." Symbol) | ContainerDecl
 
-ArrayType = "[" option(Expression) "]" option("const") TypeExpr
+ArrayType : "[" option(Expression) "]" option("align" PrimaryExpression)) option("const") option("volatile") TypeExpr
 
 GotoExpression = "goto" Symbol
 
