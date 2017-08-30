@@ -1529,6 +1529,8 @@ Test 4/4 array initialization with function calls...OK</code></pre>
         <li><a href="#slices">Slices</a></li>
       </ul>
       <h2 id="pointers">Pointers</h2>
+      <p>TODO: T.child</p>
+      <p>TODO: T.alignment</p>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 
 test "address of syntax" {
@@ -3796,7 +3798,7 @@ pub fn main(args: [][]u8) -&gt; %void {
       </p>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 comptime {
-    assert(&amp;u32 == &amp;align @alignOf(u32) u32);
+    assert(&amp;u32 == &amp;align(@alignOf(u32)) u32);
 }</code></pre>
       <p>
       The result is a target-specific compile time constant. It is guaranteed to be
@@ -3900,6 +3902,7 @@ comptime {
       <p>
       If <code>x</code> is zero, <code>@clz</code> returns <code>T.bit_count</code>.
       </p>
+
       <h3 id="builtin-cmpxchg">@cmpxchg</h3>
       <pre><code class="zig">@cmpxchg(ptr: &amp;T, cmp: T, new: T, success_order: AtomicOrder, fail_order: AtomicOrder) -&gt; bool</code></pre>
       <p>
@@ -3908,10 +3911,12 @@ comptime {
       <p>
       <code>AtomicOrder</code> can be found with <code>@import("builtin").AtomicOrder</code>.
       </p>
+      <p><code>@typeOf(ptr).alignment</code> must be <code>&gt;= @sizeOf(T).</code></p>
       <p>See also:</p>
       <ul>
         <li><a href="#compile-variables">Compile Variables</a></li>
       </ul>
+
       <h3 id="builtin-compileError">@compileError</h3>
       <pre><code class="zig">@compileError(comptime msg: []u8)</code></pre>
       <p>
@@ -5425,7 +5430,7 @@ ErrorValueDecl = "error" Symbol ";"
 
 GlobalVarDecl = VariableDeclaration ";"
 
-VariableDeclaration = option("comptime") ("var" | "const") Symbol option(":" TypeExpr) option("align" PrimaryExpression) "=" Expression
+VariableDeclaration = option("comptime") ("var" | "const") Symbol option(":" TypeExpr) option("align" "(" Expression ")") "=" Expression
 
 ContainerMember = (ContainerField | FnDef | GlobalVarDecl)
 
@@ -5435,7 +5440,7 @@ UseDecl = "use" Expression ";"
 
 ExternDecl = "extern" option(String) (FnProto | VariableDeclaration) ";"
 
-FnProto = option("coldcc" | "nakedcc" | "stdcallcc") "fn" option(Symbol) ParamDeclList option("align" PrimaryExpression) option("-&gt;" TypeExpr)
+FnProto = option("coldcc" | "nakedcc" | "stdcallcc") "fn" option(Symbol) ParamDeclList option("align" "(" Expression ")") option("-&gt;" TypeExpr)
 
 VisibleMod = "pub" | "export"
 
@@ -5551,11 +5556,11 @@ ContainerInitBody = list(StructLiteralField, ",") | list(Expression, ",")
 
 StructLiteralField = "." Symbol "=" Expression
 
-PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("align" PrimaryExpression option(":" Integer ":" Integer)) option("const") option("volatile")) | "?" | "%" | "%%" | "??" | "-%"
+PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "%" | "%%" | "??" | "-%"
 
 PrimaryExpression = Integer | Float | String | CharLiteral | KeywordLiteral | GroupedExpression | GotoExpression | BlockExpression(BlockOrExpression) | Symbol | ("@" Symbol FnCallExpression) | ArrayType | (option("extern") FnProto) | AsmExpression | ("error" "." Symbol) | ContainerDecl
 
-ArrayType : "[" option(Expression) "]" option("align" PrimaryExpression)) option("const") option("volatile") TypeExpr
+ArrayType : "[" option(Expression) "]" option("align" "(" Expression option(":" Integer ":" Integer) ")")) option("const") option("volatile") TypeExpr
 
 GotoExpression = "goto" Symbol
 
