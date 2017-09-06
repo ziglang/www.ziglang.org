@@ -143,6 +143,7 @@
             <li><a href="#builtin-mod">@mod</a></li>
             <li><a href="#builtin-mulWithOverflow">@mulWithOverflow</a></li>
             <li><a href="#builtin-offsetOf">@offsetOf</a></li>
+            <li><a href="#builtin-OpaqueType">@OpaqueType</a></li>
             <li><a href="#builtin-panic">@panic</a></li>
             <li><a href="#builtin-ptrCast">@ptrCast</a></li>
             <li><a href="#builtin-ptrToInt">@ptrToInt</a></li>
@@ -4203,6 +4204,26 @@ mem.set(u8, dest, c);</code></pre>
       <p>
       This function returns the byte offset of a field relative to its containing struct.
       </p>
+      <h3 id="builtin-OpaqueType">@OpaqueType</h3>
+      <pre><code class="zig">@OpaqueType() -&gt; type</code></pre>
+      <p>
+      Creates a new type with an unknown size and alignment.
+      </p>
+      <p>
+      This is typically used for type safety when interacting with C code that does not expose struct details.
+      Example:
+      </p>
+      <pre><code class="zig">const Derp = @OpaqueType();
+const Wat = @OpaqueType();
+
+extern fn bar(d: &amp;Derp);
+export fn foo(w: &amp;Wat) {
+    bar(w);
+}</code></pre>
+      <pre><code class="sh">$ ./zig build_obj test.zig
+test.zig:5:9: error: expected type '&amp;Derp', found '&amp;Wat'
+    bar(w);
+        ^</code></pre>
       <h3 id="builtin-panic">@panic</h3>
       <pre><code class="zig">@panic(message: []const u8) -&gt; noreturn</code></pre>
       <p>
@@ -4210,6 +4231,13 @@ mem.set(u8, dest, c);</code></pre>
       calls the public <code>panic</code> function exposed in the root source file, or
       if there is not one specified, invokes the one provided in <code>std/special/panic.zig</code>.
       </p>
+      <p>Generally it is better to use <code>@import("std").debug.panic</code>.
+      However, <code>@panic</code> can be useful for 2 scenarios:
+      </p>
+      <ul>
+        <li>From library code, calling the programmer's panic function if they exposed one in the root source file.</li>
+        <li>When mixing C and Zig code, calling the canonical panic implementation across multiple .o files.</li>
+      </ul>
       <p>See also:</p>
       <ul>
         <li><a href="#root-source-file">Root Source File</a></li>
