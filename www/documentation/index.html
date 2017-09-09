@@ -1530,8 +1530,6 @@ Test 4/4 array initialization with function calls...OK</code></pre>
         <li><a href="#slices">Slices</a></li>
       </ul>
       <h2 id="pointers">Pointers</h2>
-      <p>TODO: T.child</p>
-      <p>TODO: T.alignment</p>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 
 test "address of syntax" {
@@ -1654,23 +1652,126 @@ test "pointer casting" {
 
     // And even another way, the most straightforward way to do it:
     assert(@bitCast(u32, bytes) == 0x12121212);
+}
+      
+test "pointer child type" {
+    // pointer types have a `child` field which tells you the type they point to.
+    assert((&amp;u32).child == u32);
 }</code></pre>
       <pre><code class="sh">$ zig test test.zig 
-Test 1/7 address of syntax...OK
-Test 2/7 pointer array access...OK
-Test 3/7 pointer slicing...OK
-Test 4/7 @ptrToInt and @intToPtr...OK
-Test 5/7 volatile...OK
-Test 6/7 nullable pointers...OK
-Test 7/7 pointer casting...OK</code></pre>
+Test 1/8 address of syntax...OK
+Test 2/8 pointer array access...OK
+Test 3/8 pointer slicing...OK
+Test 4/8 @ptrToInt and @intToPtr...OK
+Test 5/8 volatile...OK
+Test 6/8 nullable pointers...OK
+Test 7/8 pointer casting...OK
+Test 8/8 pointer child type...OK</code></pre>
       <h3 id="alignment">Alignment</h3>
-      <p>TODO</p>
-      <p>TODO: align usage in the functions section</p>
-      <p>TODO: align usage in the variables section</p>
+      <p>
+      Each type has an <strong>alignment</strong> - a number of bytes such that,
+      when a value of the type is loaded from or stored to memory,
+      the memory address must be evenly divisible by this number. You can use
+      <a href="#builtin-alignOf">@alignOf</a> to find out this value for any type.
+      </p>
+      <p>
+      Alignment depends on the CPU architecture, but is always a power of two, and
+      less than <code>1 &lt;&lt; 29</code>.
+      </p>
+      <p>
+      In Zig, a pointer type has an alignment value. If the value is equal to the
+      alignment of the underlying type, it can be omitted from the type:
+      </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+const builtin = @import("builtin");
+
+test "variable alignment" {
+    var x: i32 = 1234;
+    const align_of_i32 = @alignOf(@typeOf(x));
+    assert(@typeOf(&amp;x) == &amp;i32);
+    assert(&amp;i32 == &amp;align(align_of_i32) i32);
+    if (builtin.arch == builtin.Arch.x86_64) {
+        assert((&amp;i32).alignment == 4);
+    }
+}</code></pre>
+      <p>In the same way that a <code>&amp;i32</code> can be implicitly cast to a
+      <code>&amp;const i32</code>, a pointer with a larger alignment can be implicitly
+      cast to a pointer with a smaller alignment, but not vice versa.
+      </p>
+      <p>
+      You can specify alignment on variables and functions. If you do this, then
+      pointers to them get the specified alignment:
+      </p>
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+var foo: u8 align(4) = 100;
+
+test "global variable alignment" {
+    assert(@typeOf(&amp;foo).alignment == 4);
+    assert(@typeOf(&amp;foo) == &amp;align(4) u8);
+    const slice = (&amp;foo)[0..1];
+    assert(@typeOf(slice) == []align(4) u8);
+}
+
+fn derp() align(@sizeOf(usize) * 2) -&gt; i32 { 1234 }
+fn noop1() align(1) {}
+fn noop4() align(4) {}
+
+test "function alignment" {
+    assert(derp() == 1234);
+    assert(@typeOf(noop1) == fn() align(1));
+    assert(@typeOf(noop4) == fn() align(4));
+    noop1();
+    noop4();
+}</code></pre>
+      <p>
+      If you have a pointer or a slice that has a small alignment, but you know that it actually
+      has a bigger alignment, use <a href="#builtin-alignCast">@alignCast</a> to change the
+      pointer into a more aligned pointer. This is a no-op at runtime, but inserts a
+      <a href="#undef-incorrect-pointer-alignment">safety check</a>:
+      </p> 
+      <pre><code class="zig">const assert = @import("std").debug.assert;
+
+test "pointer alignment safety" {
+    var array align(4) = []u32{0x11111111, 0x11111111};
+    const bytes = ([]u8)(array[0..]);
+    assert(foo(bytes) == 0x11111111);
+}
+fn foo(bytes: []u8) -&gt; u32 {
+    const slice4 = bytes[1..5];
+    const int_slice = ([]u32)(@alignCast(4, slice4));
+    return int_slice[0];
+}</code></pre>
+      <pre><code class="sh">$ zig test test.zig
+Test 1/1 pointer alignment safety...incorrect alignment
+/home/andy/dev/zig/build/lib/zig/std/special/zigrt.zig:16:35: 0x0000000000203525 in ??? (test)
+        @import("std").debug.panic("{}", message_ptr[0..message_len]);
+                                  ^
+/home/andy/dev/zig/build/test.zig:10:45: 0x00000000002035ec in ??? (test)
+    const int_slice = ([]u32)(@alignCast(4, slice4));
+                                            ^
+/home/andy/dev/zig/build/test.zig:6:15: 0x0000000000203439 in ??? (test)
+    assert(foo(bytes) == 0x11111111);
+              ^
+/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:9:21: 0x00000000002162d8 in ??? (test)
+        test_fn.func();
+                    ^
+/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:60:21: 0x0000000000216197 in ??? (test)
+    return root.main();
+                    ^
+/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:47:13: 0x0000000000216050 in ??? (test)
+    callMain(argc, argv, envp) %% std.os.posix.exit(1);
+            ^
+/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:34:25: 0x0000000000215fa0 in ??? (test)
+    posixCallMainAndExit()
+                        ^
+
+Tests failed. Use the following command to reproduce the failure:
+./test</code></pre>
       <h3 id="type-based-alias-analysis">Type Based Alias Analysis</h3>
       <p>Zig uses Type Based Alias Analysis (also known as Strict Aliasing) to
       perform some optimizations. This means that pointers of different types must
-      not alias the same memory, with the exception of <code>u8</code>. pointers to
+      not alias the same memory, with the exception of <code>u8</code>. Pointers to
       <code>u8</code> can alias any memory.
       </p>
       <p>As an example, this code produces undefined behavior:</p>
