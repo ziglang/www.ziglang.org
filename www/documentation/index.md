@@ -21,7 +21,7 @@ pub fn main() -> %void {
 ```
 
 ```
-$ zig build_exe hello.zig
+$ zig build-exe hello.zig
 $ ./hello
 Hello, world!
 ```
@@ -70,7 +70,7 @@ pub fn main() -> %void {
 ```
 
 ```
-$ zig build_exe values.zig
+$ zig build-exe values.zig
 $ ./values 
 1 + 1 = 2
 7.0 / 3.0 = 2.333333
@@ -413,8 +413,8 @@ For this test we have to separate code into two object files - otherwise the opt
 all the values at compile-time, which operates in strict mode.
 
 ```
-$ zig build_obj foo.zig --release-fast
-$ zig build_exe test.zig --object foo.o
+$ zig build-obj foo.zig --release-fast
+$ zig build-exe test.zig --object foo.o
 $ ./test
 optimized = 1.0e-2
 strict = 9.765625e-3
@@ -2522,7 +2522,7 @@ comptime {
 ```
 
 ```
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 test.zig:9:12: error: unreachable code
     assert(@typeOf(unreachable) == noreturn);
            ^
@@ -2647,7 +2647,7 @@ fn foo() { }
 ```
 
 ```
-$ zig build_obj test.zig
+$ zig build-obj test.zig
 ```
 
 TODO: byval not allowed except for C ABI
@@ -4223,7 +4223,7 @@ export fn foo(w: &Wat) {
 ```
 
 ```
-$ ./zig build_obj test.zig
+$ ./zig build-obj test.zig
 test.zig:5:9: error: expected type '&Derp', found '&Wat'
     bar(w);
         ^
@@ -4330,7 +4330,7 @@ comptime {
 ```
 
 ```
-$ ./zig build_obj test.zig 
+$ ./zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:5: error: evaluation exceeded 1000 backwards branches
     while (i < 1001) : (i += 1) {}
     ^
@@ -4347,7 +4347,7 @@ comptime {
 ```
 
 ```
-$ zig build_obj test.zig
+$ zig build-obj test.zig
 ```
 
 (no output because it worked fine)
@@ -4590,7 +4590,7 @@ This causes these options to be available:
 ### Debug {#build-mode-debug}
 
 ```
-$ zig build_exe example.zig
+$ zig build-exe example.zig
 ```
 
 -   Fast compilation speed
@@ -4600,7 +4600,7 @@ $ zig build_exe example.zig
 ### ReleaseFast {#build-mode-release-fast}
 
 ```
-$ zig build_exe example.zig --release-fast
+$ zig build-exe example.zig --release-fast
 ```
 
 -   Fast runtime performance
@@ -4610,7 +4610,7 @@ $ zig build_exe example.zig --release-fast
 ### ReleaseSafe {#build-mode-release-safe}
 
 ```
-$ zig build_exe example.zig --release-safe
+$ zig build-exe example.zig --release-safe
 ```
 
 -   Medium runtime performance
@@ -4679,7 +4679,7 @@ fn assert(ok: bool) {
 ```
 
 ```
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:5:14: error: unable to evaluate constant expression
     if (!ok) unreachable; // assertion failure
              ^
@@ -4705,7 +4705,7 @@ comptime {
 ```
 
 ```
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:26: error: index 5 outside array of size 5
     const garbage = array[5];
                          ^
@@ -4723,7 +4723,7 @@ comptime {
     const unsigned = u32(value);
 }
 
-$ zig build_obj test.zig test.zig:3:25: error: attempt to cast negative value to unsigned integer
+$ zig build-obj test.zig test.zig:3:25: error: attempt to cast negative value to unsigned integer
     const unsigned = u32(value);
                         ^
 ```
@@ -4746,7 +4746,7 @@ comptime {
 ```
 
 ```
-$ zig build_obj test.zig
+$ zig build-obj test.zig
 test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
     const byte = u8(spartan_count);
                    ^
@@ -4782,7 +4782,7 @@ comptime {
 ```
 
 ```
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:10: error: operation caused overflow
     byte += 1;
          ^
@@ -4822,7 +4822,7 @@ pub fn main() -> %void {
 ```
 
 ```
-$ zig build_exe test.zig 
+$ zig build-exe test.zig 
 $ ./test 
 unable to add one: Overflow
 ```
@@ -4854,7 +4854,7 @@ pub fn main() -> %void {
 ```
 
 ```
-$ zig build_exe test.zig 
+$ zig build-exe test.zig 
 $ ./test 
 overflowed result: 9
 ```
@@ -4890,7 +4890,7 @@ comptime {
     const x = @shlExact(u8(0b01010101), 2);
 }
 
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:2:15: error: operation caused overflow
     const x = @shlExact(u8(0b01010101), 2);
               ^
@@ -4907,7 +4907,7 @@ comptime {
     const x = @shrExact(u8(0b10101010), 2);
 }
 
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:2:15: error: exact shift shifted out 1 bits
     const x = @shrExact(u8(0b10101010), 2);
               ^
@@ -4926,7 +4926,7 @@ comptime {
     const c = a / b;
 }
 
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:4:17: error: division by zero is undefined
     const c = a / b;
                 ^
@@ -4945,7 +4945,7 @@ comptime {
     const c = a % b;
 }
 
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:4:17: error: division by zero is undefined
     const c = a % b;
                 ^
@@ -4971,7 +4971,7 @@ comptime {
     const number = ??nullable_number;
 }
 
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:3:20: error: unable to unwrap null
     const number = ??nullable_number;
                    ^
@@ -4996,7 +4996,7 @@ pub fn main() -> %void {
 ```
 
 ```
-% zig build_exe test.zig
+% zig build-exe test.zig
 $ ./test 
 it's null
 ```
@@ -5018,7 +5018,7 @@ fn getNumberOrFail() -> %i32 {
 ```
 
 ```
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:2:20: error: unable to unwrap error 'UnableToReturnNumber'
     const number = %%getNumberOrFail();
                          ^
@@ -5050,7 +5050,7 @@ fn getNumberOrFail() -> %i32 {
 ```
 
 ```
-$ zig build_exe test.zig 
+$ zig build-exe test.zig 
 $ ./test 
 got error: UnableToReturnNumber
 ```
@@ -5067,7 +5067,7 @@ comptime {
     const invalid_err = error(number);
 }
 
-$ zig build_obj test.zig 
+$ zig build-obj test.zig 
 /home/andy/dev/zig/build/test.zig:5:30: error: integer value 11 represents no error
     const invalid_err = error(number);
                              ^
