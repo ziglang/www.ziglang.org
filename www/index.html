@@ -411,23 +411,25 @@ fn eql_i32(a: i32, b: i32) -&gt; bool {
     <pre><code class="zig">const std = @import("std");
 const io = std.io;
 const mem = std.mem;
+const os = std.os;
 
-pub fn main(args: [][]u8) -&gt; %void {
-    const exe = args[0];
+pub fn main() -&gt; %void {
+    const exe = os.args.at(0);
     var catted_anything = false;
-    for (args[1...]) |arg| {
+    var arg_i: usize = 1;
+    while (arg_i &lt; os.args.count()) : (arg_i += 1) {
+        const arg = os.args.at(arg_i);
         if (mem.eql(u8, arg, "-")) {
             catted_anything = true;
             %return cat_stream(&amp;io.stdin);
         } else if (arg[0] == '-') {
             return usage(exe);
         } else {
-            var is: io.InStream = undefined;
-            is.open(arg) %% |err| {
+            var is = io.InStream.open(arg, null) %% |err| {
                 %%io.stderr.printf("Unable to open file: {}\n", @errorName(err));
                 return err;
             };
-            defer %%is.close();
+            defer is.close();
 
             catted_anything = true;
             %return cat_stream(&amp;is);
@@ -439,7 +441,7 @@ pub fn main(args: [][]u8) -&gt; %void {
     %return io.stdout.flush();
 }
 
-fn usage(exe: []u8) -&gt; %void {
+fn usage(exe: []const u8) -&gt; %void {
     %%io.stderr.printf("Usage: {} [FILE]...\n", exe);
     return error.Invalid;
 }
@@ -448,7 +450,7 @@ fn cat_stream(is: &amp;io.InStream) -&gt; %void {
     var buf: [1024 * 4]u8 = undefined;
 
     while (true) {
-        const bytes_read = is.read(buf[0...]) %% |err| {
+        const bytes_read = is.read(buf[0..]) %% |err| {
             %%io.stderr.printf("Unable to read from stream: {}\n", @errorName(err));
             return err;
         };
@@ -457,13 +459,12 @@ fn cat_stream(is: &amp;io.InStream) -&gt; %void {
             break;
         }
 
-        io.stdout.write(buf[0...bytes_read]) %% |err| {
+        io.stdout.write(buf[0..bytes_read]) %% |err| {
             %%io.stderr.printf("Unable to write to stdout: {}\n", @errorName(err));
             return err;
         };
     }
-}
-    </code></pre>
+}</code></pre>
     <h3 id="multiline-strings">Multiline String Syntax</h3>
     <pre><code class="zig">pub fn createAllShaders() -&gt; AllShaders {
     var as : AllShaders = undefined;
