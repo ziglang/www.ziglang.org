@@ -84,7 +84,11 @@
           </ul>
         </li>
         <li><a href="#noreturn">noreturn</a></li>
-        <li><a href="#functions">Functions</a></li>
+        <li><a href="#functions">Functions</a>
+          <ul>
+            <li><a href="#functions-by-val-params">Pass-by-val Parameters</a>
+          </ul>
+        </li>
         <li><a href="#errors">Errors</a></li>
         <li><a href="#nullables">Nullables</a></li>
         <li><a href="#casting">Casting</a></li>
@@ -2904,8 +2908,42 @@ comptime {
 
 fn foo() { }</code></pre>
       <pre><code class="sh">$ zig build-obj test.zig</code></pre>
-      <p>TODO: byval not allowed except for C ABI</p>
-      <p>TODO: implicit cast from T to &amp;const T</p>
+      <h3 id="functions-by-val-params">Pass-by-value Parameters</h3>
+      <p>
+      In Zig, structs, unions, and enums with payloads cannot be passed by value
+      to a function.
+      </p>
+      <pre><code class="zig">const Foo = struct {
+    x: i32,
+};
+
+fn bar(foo: Foo) {}
+
+export fn entry() {
+    bar(Foo {.x = 12,});
+}</code></pre>
+      <pre><code class="sh">$ ./zig build-obj test.zig 
+/home/andy/dev/zig/build/test.zig:5:13: error: type 'Foo' is not copyable; cannot pass by value
+fn bar(foo: Foo) {}
+            ^</code></pre>
+      <p>
+      Instead, one must use <code>&amp;const</code>. Zig allows implicitly casting something
+      to a const pointer to it:
+      </p>
+      <pre><code class="zig">const Foo = struct {
+    x: i32,
+};
+
+fn bar(foo: &amp;const Foo) {}
+
+export fn entry() {
+    bar(Foo {.x = 12,});
+}</code></pre>
+      <p>
+      However,
+      the C ABI does allow passing structs and unions by value. So functions which
+      use the C calling convention may pass structs and unions by value.
+      </p>
       <h2 id="errors">Errors</h2>
       <p>
       One of the distinguishing features of Zig is its exception handling strategy.
