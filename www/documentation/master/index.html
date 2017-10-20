@@ -268,6 +268,7 @@ Hello, world!</code></pre>
       <h2 id="values">Values</h2>
       <pre><code class="zig">const io = @import("std").io;
 const os = @import("std").os;
+const assert = @import("std").debug.assert;
 
 // error declaration, makes `error.ArgNotFound` available
 error ArgNotFound;
@@ -286,15 +287,29 @@ pub fn main() -&gt; %void {
         true and false,
         true or false,
         !true);
-
+    
     // nullable
-    const nullable_value = if (os.args.count() &gt;= 2) os.args.at(1) else null;
-    %%io.stdout.printf("\nnullable\ntype: {}\nvalue: {}\n",
+    var nullable_value: ?[]const u8 = null;
+    assert(nullable_value == null);
+
+    %%io.stdout.printf("\nnullable 1\ntype: {}\nvalue: {}\n",
+        @typeName(@typeOf(nullable_value)), nullable_value);
+
+    nullable_value = "hi";
+    assert(nullable_value != null);
+
+    %%io.stdout.printf("\nnullable 2\ntype: {}\nvalue: {}\n",
         @typeName(@typeOf(nullable_value)), nullable_value);
 
     // error union
-    const number_or_error = if (os.args.count() &gt;= 3) os.args.at(2) else error.ArgNotFound;
-    %%io.stdout.printf("\nerror union\ntype: {}\nvalue: {}\n",
+    var number_or_error: %i32 = error.ArgNotFound;
+
+    %%io.stdout.printf("\nerror union 1\ntype: {}\nvalue: {}\n",
+        @typeName(@typeOf(number_or_error)), number_or_error);
+ 
+    number_or_error = 1234;
+
+    %%io.stdout.printf("\nerror union 2\ntype: {}\nvalue: {}\n",
         @typeName(@typeOf(number_or_error)), number_or_error);
 }</code></pre>
       <pre><code class="sh">$ zig build-exe values.zig
@@ -305,13 +320,21 @@ false
 true
 false
 
-nullable
+nullable 1
 type: ?[]const u8
 value: null
 
-error union
-type: %[]const u8
-value: error.ArgNotFound</code></pre>
+nullable 2
+type: ?[]const u8
+value: hi
+
+error union 1
+type: %i32
+value: error.ArgNotFound
+
+error union 2
+type: %i32
+value: 1234</code></pre>
       <h3 id="primitive-types">Primitive Types</h2>
       <table>
         <tr>
