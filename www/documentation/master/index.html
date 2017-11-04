@@ -257,11 +257,26 @@
     <pre><code class="zig">const io = @import("std").io;
 
 pub fn main() -&gt; %void {
-    %%io.stdout.printf("Hello, world!\n");
+    // If this program is run without stdout attached, exit with an error.
+    var stdout_file = %return std.io.getStdOut();
+    const stdout = &amp;stdout_file.out_stream;
+    // If this program encounters pipe failure when printing to stdout, exit
+    // with an error.
+    %return stdout.print("Hello, world!\n");
 }</code></pre>
       <pre><code class="sh">$ zig build-exe hello.zig
 $ ./hello
 Hello, world!</code></pre>
+      <p>
+      Usually you don't want to write to stdout. You want to write to stderr. And you
+      don't care if it fails. It's more like a <em>warning message</em> that you want
+      to emit. For that you can use a simpler API:
+      </p>
+    <pre><code class="zig">const warn = @import("std").debug.warn;
+
+pub fn main() -&gt; %void {
+    warn("Hello, world!\n");
+}</code></pre>
       <p>See also:</p>
       <ul>
         <li><a href="#values">Values</a></li>
@@ -270,7 +285,7 @@ Hello, world!</code></pre>
         <li><a href="#root-source-file">Root Source File</a></li>
       </ul>
       <h2 id="values">Values</h2>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 const os = @import("std").os;
 const assert = @import("std").debug.assert;
 
@@ -280,14 +295,14 @@ error ArgNotFound;
 pub fn main() -&gt; %void {
     // integers
     const one_plus_one: i32 = 1 + 1;
-    %%io.stdout.printf("1 + 1 = {}\n", one_plus_one);
+    warn("1 + 1 = {}\n", one_plus_one);
 
     // floats
     const seven_div_three: f32 = 7.0 / 3.0;
-    %%io.stdout.printf("7.0 / 3.0 = {}\n", seven_div_three);
+    warn("7.0 / 3.0 = {}\n", seven_div_three);
 
     // boolean
-    %%io.stdout.printf("{}\n{}\n{}\n",
+    warn("{}\n{}\n{}\n",
         true and false,
         true or false,
         !true);
@@ -296,24 +311,24 @@ pub fn main() -&gt; %void {
     var nullable_value: ?[]const u8 = null;
     assert(nullable_value == null);
 
-    %%io.stdout.printf("\nnullable 1\ntype: {}\nvalue: {}\n",
+    warn("\nnullable 1\ntype: {}\nvalue: {}\n",
         @typeName(@typeOf(nullable_value)), nullable_value);
 
     nullable_value = "hi";
     assert(nullable_value != null);
 
-    %%io.stdout.printf("\nnullable 2\ntype: {}\nvalue: {}\n",
+    warn("\nnullable 2\ntype: {}\nvalue: {}\n",
         @typeName(@typeOf(nullable_value)), nullable_value);
 
     // error union
     var number_or_error: %i32 = error.ArgNotFound;
 
-    %%io.stdout.printf("\nerror union 1\ntype: {}\nvalue: {}\n",
+    warn("\nerror union 1\ntype: {}\nvalue: {}\n",
         @typeName(@typeOf(number_or_error)), number_or_error);
  
     number_or_error = 1234;
 
-    %%io.stdout.printf("\nerror union 2\ntype: {}\nvalue: {}\n",
+    warn("\nerror union 2\ntype: {}\nvalue: {}\n",
         @typeName(@typeOf(number_or_error)), number_or_error);
 }</code></pre>
       <pre><code class="sh">$ zig build-exe values.zig
@@ -824,15 +839,15 @@ export fn foo_optimized(x: f64) -&gt; f64 {
     return x + big - big;
 }</code></pre>
       <p>test.zig</p>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 
 extern fn foo_strict(x: f64) -&gt; f64;
 extern fn foo_optimized(x: f64) -&gt; f64;
 
 pub fn main() -&gt; %void {
     const x = 0.001;
-    %%io.stdout.printf("optimized = {}\n", foo_optimized(x));
-    %%io.stdout.printf("strict = {}\n", foo_strict(x));
+    warn("optimized = {}\n", foo_optimized(x));
+    warn("strict = {}\n", foo_strict(x));
 }</code></pre>
       <p>For this test we have to separate code into two object files -
       otherwise the optimizer figures out all the values at compile-time,
@@ -3748,13 +3763,13 @@ fn sum(numbers: []i32) -&gt; i32 {
       <p>
       Putting all of this together, let's seee how <code>printf</code> works in Zig.
       </p>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 
 const a_number: i32 = 1234;
 const a_string = "foobar";
 
 pub fn main(args: [][]u8) -&gt; %void {
-    %%io.stderr.printf("here is a string: '{}' here is a number: {}\n", a_string, a_number);
+    warn("here is a string: '{}' here is a number: {}\n", a_string, a_number);
 }</code></pre>
       <pre><code>here is a string: 'foobar' here is a number: 1234</code></pre>
 
@@ -3861,13 +3876,13 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
       <p>
       And now, what happens if we give too many arguments to <code>printf</code>?
       </p>
-      <pre><code class="zig">%%io.stdout.printf("here is a string: '{}' here is a number: {}\n",
+      <pre><code class="zig">warn("here is a string: '{}' here is a number: {}\n",
         a_string, a_number, a_number);</code></pre>
       <pre><code>.../std/io.zig:147:17: error: Unused arguments
                 @compileError("Unused arguments");
                 ^
 ./test.zig:7:23: note: called from here
-    %%io.stdout.printf("here is a number: {} and here is a string: {}\n",
+    warn("here is a number: {} and here is a string: {}\n",
                       ^</code></pre>
       <p>
       Zig gives programmers the tools needed to protect themselves against their own mistakes.
@@ -3876,14 +3891,14 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
       Zig doesn't care whether the format argument is a string literal,
       only that it is a compile-time known value that is implicitly castable to a <code>[]const u8</code>:
       </p>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 
 const a_number: i32 = 1234;
 const a_string = "foobar";
 const fmt = "here is a string: '{}' here is a number: {}\n";
 
 pub fn main(args: [][]u8) -&gt; %void {
-    %%io.stderr.printf(fmt, a_string, a_number);
+    warn(fmt, a_string, a_number);
 }</code></pre>
       <p>
       This works fine.
@@ -4861,18 +4876,18 @@ test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
       </ul>
       <p>Example of catching an overflow for addition:</p>
       <pre><code class="zig">const math = @import("std").math;
-const io = @import("std").io;
+const warn = @import("std").debug.warn;
 pub fn main() -&gt; %void {
     var byte: u8 = 255;
 
     byte = if (math.add(u8, byte, 1)) |result| {
         result
     } else |err| {
-        %%io.stderr.printf("unable to add one: {}\n", @errorName(err));
+        warn("unable to add one: {}\n", @errorName(err));
         return err;
     };
 
-    %%io.stderr.printf("result: {}\n", byte);
+    warn("result: {}\n", byte);
 }</code></pre>
       <pre><code class="sh">$ zig build-exe test.zig
 $ ./test
@@ -4891,15 +4906,15 @@ unable to add one: Overflow</code></pre>
       <p>
       Example of <code>@addWithOverflow</code>:
       </p>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 pub fn main() -&gt; %void {
     var byte: u8 = 255;
 
     var result: u8 = undefined;
     if (@addWithOverflow(u8, byte, 10, &amp;result)) {
-        %%io.stderr.printf("overflowed result: {}\n", result);
+        warn("overflowed result: {}\n", result);
     } else {
-        %%io.stderr.printf("result: {}\n", result);
+        warn("result: {}\n", result);
     }
 }</code></pre>
       <pre><code class="sh">$ zig build-exe test.zig
@@ -4987,14 +5002,14 @@ test "wraparound addition and subtraction" {
       <p>At runtime crashes with the message <code>attempt to unwrap null</code> and a stack trace.</p>
       <p>One way to avoid this crash is to test for null instead of assuming non-null, with
       the <code>if</code> expression:</p>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 pub fn main() -&gt; %void {
     const nullable_number: ?i32 = null;
 
     if (nullable_number) |number| {
-        %%io.stderr.printf("got number: {}\n", number);
+        warn("got number: {}\n", number);
     } else {
-        %%io.stderr.printf("it's null\n");
+        warn("it's null\n");
     }
 }</code></pre>
       <pre><code class="sh">% zig build-exe test.zig
@@ -5018,15 +5033,15 @@ fn getNumberOrFail() -&gt; %i32 {
       <p>At runtime crashes with the message <code>attempt to unwrap error: ErrorCode</code> and a stack trace.</p>
       <p>One way to avoid this crash is to test for an error instead of assuming a successful result, with
       the <code>if</code> expression:</p>
-      <pre><code class="zig">const io = @import("std").io;
+      <pre><code class="zig">const warn = @import("std").debug.warn;
 
 pub fn main() -&gt; %void {
     const result = getNumberOrFail();
 
     if (result) |number| {
-        %%io.stderr.printf("got number: {}\n", number);
+        warn("got number: {}\n", number);
     } else |err| {
-        %%io.stderr.printf("got error: {}\n", @errorName(err));
+        warn("got error: {}\n", @errorName(err));
     }
 }
 
