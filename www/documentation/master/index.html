@@ -4118,13 +4118,66 @@ comptime {
       <h3 id="builtin-compileLog">@compileLog</h3>
       <pre><code class="zig">@compileLog(args: ...)</code></pre>
       <p>
-      This function, when semantically analyzed, causes a compile error, but it does
-      not prevent compile-time code from continuing to run, and it otherwise does not
-      interfere with analysis.
+      This function will print passed  arguments during the compilation. 
+      After all compile-time code is processed it will end up in compile-time error. 
+      No executable will be produced.
+      </p>
+<pre><code class="zig">const io = @import("std").io;
+
+const num1 = {
+ var val1 : i32 = 99;
+ @compileLog("comptime val1 = ", val1); 
+ val1 = val1 + 1;
+ val1
+};
+
+
+pub fn main() -> %void {
+  comptime { 
+    @compileLog("comptime in main"); 
+  }
+
+  %%io.stdout.printf("Runtime in main, num1 = {}, num2 = {}.\n", num1, num2);
+}
+
+const num2 = {
+ var val2 : i32 = 11;
+ @compileLog("comptime val2 = ", val2); 
+ val2 = val2 + 1;
+ val2
+};</code></pre>
+
       </p>
       <p>
-      Each of the arguments will be serialized to a printable debug value and output
-      to stderr, and then a newline at the end.
+      will ouput:
+      </p>
+      <p>
+
+<pre><code class="sh">O:\zig>zig build-exe compileLogTest.zig
+| "comptime in main"
+| "comptime val1 = ", 99
+| "comptime val2 = ", 11
+O:\zig\compileLogTest.zig:14:5: error: found compile log statement
+    @compileLog("comptime in main");
+    ^
+O:\zig\compileLogTest.zig:6:2: error: found compile log statement
+ @compileLog("comptime val1 = ", val1);
+ ^
+O:\zig\compileLogTest.zig:22:2: error: found compile log statement
+ @compileLog("comptime val2 = ", val2);
+ ^
+</code></pre>
+      </p>
+      <p>
+      If all <code>@compileLog</code> calls are removed or 
+      deactivated using compile-time <code>if</code> the program compiles successfully 
+      and the generated executable prints:
+      </p>  
+      <p>
+            
+<pre><code class="sh">O:\zig>compileLogTest
+Runtime in main, num1 = 100, num2 = 12.</code></pre>
+      
       </p>
       <p>
       This function can be used to do "printf debugging" on compile-time executing
