@@ -4118,71 +4118,53 @@ comptime {
       <h3 id="builtin-compileLog">@compileLog</h3>
       <pre><code class="zig">@compileLog(args: ...)</code></pre>
       <p>
-      This function will print passed  arguments during the compilation. 
-      After all compile-time code is processed it will end up in compile-time error. 
-      No executable will be produced.
+      This function prints the arguments passed to it at compile-time.
       </p>
-<pre><code class="zig">const io = @import("std").io;
+      <p>
+      To prevent accidentally leaving compile log statements in a codebase,
+      a compilation error is added to the build, pointing to the compile
+      log statement. This error prevents code from being generated, but
+      does not otherwise interfere with analysis.
+      </p>
+      <p>
+      This function can be used to do "printf debugging" on
+      compile-time executing code.
+      </p>
+<pre><code class="zig">const warn = @import("std").debug.warn;
 
 const num1 = {
- var val1 : i32 = 99;
- @compileLog("comptime val1 = ", val1); 
- val1 = val1 + 1;
- val1
+    var val1: i32 = 99;
+    @compileLog("comptime val1 = ", val1); 
+    val1 = val1 + 1;
+    val1
 };
 
-
-pub fn main() -> %void {
-  comptime { 
+pub fn main() -&gt; %void {
     @compileLog("comptime in main"); 
-  }
 
-  %%io.stdout.printf("Runtime in main, num1 = {}, num2 = {}.\n", num1, num2);
-}
-
-const num2 = {
- var val2 : i32 = 11;
- @compileLog("comptime val2 = ", val2); 
- val2 = val2 + 1;
- val2
-};</code></pre>
+    warn("Runtime in main, num1 = {}.\n", num1);
+}</code></pre>
 
       </p>
       <p>
       will ouput:
       </p>
-      <p>
 
-<pre><code class="sh">O:\zig>zig build-exe compileLogTest.zig
+<pre><code class="sh">$ zig build-exe test.zig
 | "comptime in main"
 | "comptime val1 = ", 99
-| "comptime val2 = ", 11
-O:\zig\compileLogTest.zig:14:5: error: found compile log statement
+test.zig:14:5: error: found compile log statement
     @compileLog("comptime in main");
     ^
-O:\zig\compileLogTest.zig:6:2: error: found compile log statement
+test.zig:6:2: error: found compile log statement
  @compileLog("comptime val1 = ", val1);
- ^
-O:\zig\compileLogTest.zig:22:2: error: found compile log statement
- @compileLog("comptime val2 = ", val2);
- ^
-</code></pre>
-      </p>
+ ^</code></pre>
       <p>
       If all <code>@compileLog</code> calls are removed or 
-      deactivated using compile-time <code>if</code> the program compiles successfully 
-      and the generated executable prints:
+      not encountered by analysis, the
+      program compiles successfully and the generated executable prints:
       </p>  
-      <p>
-            
-<pre><code class="sh">O:\zig>compileLogTest
-Runtime in main, num1 = 100, num2 = 12.</code></pre>
-      
-      </p>
-      <p>
-      This function can be used to do "printf debugging" on compile-time executing
-      code.
-      </p>
+<pre><code class="sh">Runtime in main, num1 = 100.</code></pre>
       <h3 id="builtin-ctz">@ctz</h3>
       <pre><code class="zig">@ctz(x: T) -&gt; U</code></pre>
       <p>
