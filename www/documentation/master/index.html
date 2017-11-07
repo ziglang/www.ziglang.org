@@ -4118,18 +4118,53 @@ comptime {
       <h3 id="builtin-compileLog">@compileLog</h3>
       <pre><code class="zig">@compileLog(args: ...)</code></pre>
       <p>
-      This function, when semantically analyzed, causes a compile error, but it does
-      not prevent compile-time code from continuing to run, and it otherwise does not
-      interfere with analysis.
+      This function prints the arguments passed to it at compile-time.
       </p>
       <p>
-      Each of the arguments will be serialized to a printable debug value and output
-      to stderr, and then a newline at the end.
+      To prevent accidentally leaving compile log statements in a codebase,
+      a compilation error is added to the build, pointing to the compile
+      log statement. This error prevents code from being generated, but
+      does not otherwise interfere with analysis.
       </p>
       <p>
-      This function can be used to do "printf debugging" on compile-time executing
-      code.
+      This function can be used to do "printf debugging" on
+      compile-time executing code.
       </p>
+<pre><code class="zig">const warn = @import("std").debug.warn;
+
+const num1 = {
+    var val1: i32 = 99;
+    @compileLog("comptime val1 = ", val1); 
+    val1 = val1 + 1;
+    val1
+};
+
+pub fn main() -&gt; %void {
+    @compileLog("comptime in main"); 
+
+    warn("Runtime in main, num1 = {}.\n", num1);
+}</code></pre>
+
+      </p>
+      <p>
+      will ouput:
+      </p>
+
+<pre><code class="sh">$ zig build-exe test.zig
+| "comptime in main"
+| "comptime val1 = ", 99
+test.zig:14:5: error: found compile log statement
+    @compileLog("comptime in main");
+    ^
+test.zig:6:2: error: found compile log statement
+ @compileLog("comptime val1 = ", val1);
+ ^</code></pre>
+      <p>
+      If all <code>@compileLog</code> calls are removed or 
+      not encountered by analysis, the
+      program compiles successfully and the generated executable prints:
+      </p>  
+<pre><code class="sh">Runtime in main, num1 = 100.</code></pre>
       <h3 id="builtin-ctz">@ctz</h3>
       <pre><code class="zig">@ctz(x: T) -&gt; U</code></pre>
       <p>
