@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>Documentation - The Zig Programming Language</title>
-    <link rel="stylesheet" type="text/css" href="highlight/styles/default.css">
+    <style type="text/css">
+.hljs{display:block;overflow-x:auto;padding:0.5em;color:#333;background:#f8f8f8}.hljs-comment,.hljs-quote{color:#998;font-style:italic}.hljs-keyword,.hljs-selector-tag,.hljs-subst{color:#333;font-weight:bold}.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable,.hljs-tag .hljs-attr{color:#008080}.hljs-string,.hljs-doctag{color:#d14}.hljs-title,.hljs-section,.hljs-selector-id{color:#900;font-weight:bold}.hljs-subst{font-weight:normal}.hljs-type,.hljs-class .hljs-title{color:#458;font-weight:bold}.hljs-tag,.hljs-name,.hljs-attribute{color:#000080;font-weight:normal}.hljs-regexp,.hljs-link{color:#009926}.hljs-symbol,.hljs-bullet{color:#990073}.hljs-built_in,.hljs-builtin-name{color:#0086b3}.hljs-meta{color:#999;font-weight:bold}.hljs-deletion{background:#fdd}.hljs-addition{background:#dfd}.hljs-emphasis{font-style:italic}.hljs-strong{font-weight:bold}
+    </style>
     <style type="text/css">
       table, th, td {
         border-collapse: collapse;
@@ -12,6 +14,27 @@
       }
       th, td {
         padding: 0.1em;
+      }
+      .t0_1, .t37, .t37_1 {
+        font-weight: bold;
+      }
+      .t2_0 {
+        color: grey;
+      }
+      .t31_1 {
+        color: red;
+      }
+      .t32_1 {
+        color: green;
+      }
+      .t36_1 {
+        color: #0086b3;
+      }
+      .file {
+        text-decoration: underline;
+      }
+      pre {
+        font-size: 12pt;
       }
       @media screen and (min-width: 28.75em) {
         #nav {
@@ -122,6 +145,7 @@
             <li><a href="#cmpxchg">@cmpxchg</a></li>
             <li><a href="#compileError">@compileError</a></li>
             <li><a href="#compileLog">@compileLog</a></li>
+            <li><a href="#ctz">@ctz</a></li>
             <li><a href="#divExact">@divExact</a></li>
             <li><a href="#divFloor">@divFloor</a></li>
             <li><a href="#divTrunc">@divTrunc</a></li>
@@ -214,6 +238,7 @@
             <li><a href="#Import-from-C-Header-File">Import from C Header File</a></li>
             <li><a href="#Mixing-Object-Files">Mixing Object Files</a></li>
             <li><a href="#basezig">base64.zig</a></li>
+            <li><a href="#testc">test.c</a></li>
             <li><a href="#buildzig">build.zig</a></li>
             <li><a href="#Terminal">Terminal</a></li>
         </ul></li>
@@ -251,11 +276,15 @@
       If you search for something specific in this documentation and do not find it,
       please <a href="https://github.com/zig-lang/www.ziglang.org/issues/new?title=I%20searched%20for%20___%20in%20the%20docs%20and%20didn%27t%20find%20it">file an issue</a> or <a href="https://webchat.freenode.net/?channels=%23zig">say something on IRC</a>.
       </p>
+      <p>
+      The code samples in this document are compiled and tested as part of the main test suite of Zig.
+      This HTML document depends on no external files, so you can use it offline.
+      </p>
       
       <h1 id="Hello-World">Hello World</h1>
 
 
-      <pre><code class="zig">const std = @import(&quot;std&quot;);
+      <p class="file">hello.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
 
 pub fn main() -&gt; %void {
     // If this program is run without stdout attached, exit with an error.
@@ -263,7 +292,7 @@ pub fn main() -&gt; %void {
     // If this program encounters pipe failure when printing to stdout, exit
     // with an error.
     try stdout_file.write(&quot;Hello, world!\n&quot;);
-}</code></pre><pre><code class="sh">$ zig build-exe hello.zig
+}</code></pre><pre><code class="shell">$ zig build-exe hello.zig
 $ ./hello
 Hello, world!
 </code></pre>
@@ -273,11 +302,11 @@ Hello, world!
       don't care if it fails. It's more like a <em>warning message</em> that you want
       to emit. For that you can use a simpler API:
       </p>
-      <pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+      <p class="file">hello.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 
 pub fn main() -&gt; %void {
     warn(&quot;Hello, world!\n&quot;);
-}</code></pre><pre><code class="sh">$ zig build-exe hello.zig
+}</code></pre><pre><code class="shell">$ zig build-exe hello.zig
 $ ./hello
 Hello, world!
 </code></pre>
@@ -303,7 +332,7 @@ Hello, world!
       
       <h1 id="Values">Values</h1>
 
-      <pre><code class="zig">const std = @import(&quot;std&quot;);
+      <p class="file">values.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
 const warn = std.debug.warn;
 const os = std.os;
 const assert = std.debug.assert;
@@ -349,7 +378,7 @@ pub fn main() -&gt; %void {
 
     warn(&quot;\nerror union 2\ntype: {}\nvalue: {}\n&quot;,
         @typeName(@typeOf(number_or_error)), number_or_error);
-}</code></pre><pre><code class="sh">$ zig build-exe values.zig
+}</code></pre><pre><code class="shell">$ zig build-exe values.zig
 $ ./values
 1 + 1 = 2
 7.0 / 3.0 = 2.33333325
@@ -645,25 +674,26 @@ value: 1234
       
       <h2 id="String-Literals">String Literals</h2>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const mem = @import(&quot;std&quot;).mem;
 
-test "string literals" {
+test &quot;string literals&quot; {
     // In Zig a string literal is an array of bytes.
-    const normal_bytes = "hello";
+    const normal_bytes = &quot;hello&quot;;
     assert(@typeOf(normal_bytes) == [5]u8);
     assert(normal_bytes.len == 5);
     assert(normal_bytes[1] == 'e');
     assert('e' == '\x65');
-    assert(mem.eql(u8, "hello", "h\x65llo"));
+    assert(mem.eql(u8, &quot;hello&quot;, &quot;h\x65llo&quot;));
 
     // A C string literal is a null terminated pointer.
-    const null_terminated_bytes = c"hello";
+    const null_terminated_bytes = c&quot;hello&quot;;
     assert(@typeOf(null_terminated_bytes) == &amp;const u8);
     assert(null_terminated_bytes[5] == 0);
-}</code></pre>
-      <pre><code class="sh">$ zig test string_literals.zig
-Test 1/1 string literals...OK</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 string literals...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#Arrays">Arrays</a></li>
 <li><a href="#Zig-Test">Zig Test</a></li>
@@ -733,7 +763,7 @@ Test 1/1 string literals...OK</code></pre>
     \\#include &lt;stdio.h&gt;
     \\
     \\int main(int argc, char **argv) {
-    \\    printf("hello world\n");
+    \\    printf(&quot;hello world\n&quot;);
     \\    return 0;
     \\}
 ;</code></pre>
@@ -744,7 +774,7 @@ Test 1/1 string literals...OK</code></pre>
     c\\#include &lt;stdio.h&gt;
     c\\
     c\\int main(int argc, char **argv) {
-    c\\    printf("hello world\n");
+    c\\    printf(&quot;hello world\n&quot;);
     c\\    return 0;
     c\\}
 ;</code></pre>
@@ -761,7 +791,7 @@ Test 1/1 string literals...OK</code></pre>
       <h2 id="Assignment">Assignment</h2>
 
       <p>Use <code>const</code> to assign a value to an identifier:</p>
-      <pre><code class="zig">const x = 1234;
+      <p class="file">test.zig</p><pre><code class="zig">const x = 1234;
 
 fn foo() {
     // It works at global scope as well as inside functions.
@@ -771,45 +801,52 @@ fn foo() {
     y += 1;
 }
 
-test "assignment" {
+test &quot;assignment&quot; {
     foo();
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
-test.zig:8:7: error: cannot assign to constant
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:7: </span><span class="t31_1">error:</span><span class="t0_1"> cannot assign to constant</span>
     y += 1;
-      ^</code></pre>
-      <p>If you need a variable that you can modify, use <code>var</code>:</p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <span class="t32_1">^</span>
+</code></pre>
 
-test "var" {
+      <p>If you need a variable that you can modify, use <code>var</code>:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;var&quot; {
     var y: i32 = 5678;
 
     y += 1;
 
     assert(y == 5679);
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
-Test 1/1 assignment...OK</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 var...OK
+</code></pre>
+
       <p>Variables must be initialized:</p>
-      <pre><code class="zig">test "initialization" {
+      <p class="file">test.zig</p><pre><code class="zig">test &quot;initialization&quot; {
     var x: i32;
 
     x = 1;
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
-test.zig:3:5: error: variables must be initialized
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5: </span><span class="t31_1">error:</span><span class="t0_1"> variables must be initialized</span>
     var x: i32;
-    ^</code></pre>
-      <p>Use <code>undefined</code> to leave variables uninitialized:</p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:5: </span><span class="t31_1">error:</span><span class="t0_1"> use of undeclared identifier 'x'</span>
+    x = 1;
+    <span class="t32_1">^</span>
+</code></pre>
 
-test "init with undefined" {
+      <p>Use <code>undefined</code> to leave variables uninitialized:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;init with undefined&quot; {
     var x: i32 = undefined;
     x = 1;
     assert(x == 1);
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
-Test 1/1 init with undefined...OK</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 init with undefined...OK
+</code></pre>
+
       
       
       <h1 id="Integers">Integers</h1>
@@ -870,8 +907,7 @@ const yet_another_hex_float = 0x103.70P-5;</code></pre>
 
       <p>By default floating point operations use <code>Optimized</code> mode,
       but you can switch to <code>Strict</code> mode on a per-block basis:</p>
-      <p>foo.zig</p>
-      <pre><code class="zig">const builtin = @import("builtin");
+      <p class="file">foo.zig</p><pre><code class="zig">const builtin = @import(&quot;builtin&quot;);
 const big = f64(1 &lt;&lt; 40);
 
 export fn foo_strict(x: f64) -&gt; f64 {
@@ -881,26 +917,26 @@ export fn foo_strict(x: f64) -&gt; f64 {
 
 export fn foo_optimized(x: f64) -&gt; f64 {
     return x + big - big;
-}</code></pre>
-      <p>test.zig</p>
-      <pre><code class="zig">const warn = @import("std").debug.warn;
+}</code></pre><pre><code class="shell">$ zig build-obj foo.zig --release-fast</code></pre>
+
+      <p>For this test we have to separate code into two object files -
+      otherwise the optimizer figures out all the values at compile-time,
+      which operates in strict mode.</p>
+      <p class="file">float_mode.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 
 extern fn foo_strict(x: f64) -&gt; f64;
 extern fn foo_optimized(x: f64) -&gt; f64;
 
 pub fn main() -&gt; %void {
     const x = 0.001;
-    warn("optimized = {}\n", foo_optimized(x));
-    warn("strict = {}\n", foo_strict(x));
-}</code></pre>
-      <p>For this test we have to separate code into two object files -
-      otherwise the optimizer figures out all the values at compile-time,
-      which operates in strict mode.</p>
-      <pre><code class="sh">$ zig build-obj foo.zig --release-fast
-$ zig build-exe test.zig --object foo.o
-$ ./test
-optimized = 1.0e-2
-strict = 9.765625e-3</code></pre>
+    warn(&quot;optimized = {}\n&quot;, foo_optimized(x));
+    warn(&quot;strict = {}\n&quot;, foo_strict(x));
+}</code></pre><pre><code class="shell">$ zig build-exe float_mode.zig --object foo.o
+$ ./float_mode
+optimized = 1.0e-3
+strict = 9.765625e-4
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#setFloatMode">@setFloatMode</a></li>
 <li><a href="#Division-by-Zero">Division by Zero</a></li>
@@ -1519,8 +1555,8 @@ or
       
       <h1 id="Arrays">Arrays</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
+      <p class="file">arrays.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const mem = @import(&quot;std&quot;).mem;
 
 // array literal
 const message = []u8{'h', 'e', 'l', 'l', 'o'};
@@ -1531,14 +1567,14 @@ comptime {
 }
 
 // a string literal is an array literal
-const same_message = "hello";
+const same_message = &quot;hello&quot;;
 
 comptime {
     assert(mem.eql(u8, message, same_message));
     assert(@typeOf(message) == @typeOf(same_message));
 }
 
-test "iterate over an array" {
+test &quot;iterate over an array&quot; {
     var sum: usize = 0;
     for (message) |byte| {
         sum += byte;
@@ -1549,7 +1585,7 @@ test "iterate over an array" {
 // modifiable array
 var some_integers: [100]i32 = undefined;
 
-test "modify an array" {
+test &quot;modify an array&quot; {
     for (some_integers) |*item, i| {
         *item = i32(i);
     }
@@ -1567,17 +1603,17 @@ comptime {
 }
 
 // remember that string literals are arrays
-const hello = "hello";
-const world = "world";
-const hello_world = hello ++ " " ++ world;
+const hello = &quot;hello&quot;;
+const world = &quot;world&quot;;
+const hello_world = hello ++ &quot; &quot; ++ world;
 comptime {
-    assert(mem.eql(u8, hello_world, "hello world"));
+    assert(mem.eql(u8, hello_world, &quot;hello world&quot;));
 }
 
 // ** does repeating patterns
-const pattern = "ab" ** 3;
+const pattern = &quot;ab&quot; ** 3;
 comptime {
-    assert(mem.eql(u8, pattern, "ababab"));
+    assert(mem.eql(u8, pattern, &quot;ababab&quot;));
 }
 
 // initialize an array to zero
@@ -1589,7 +1625,7 @@ comptime {
 }
 
 // use compile-time code to initialize an array
-var fancy_array = {
+var fancy_array = init: {
     var initial_value: [10]Point = undefined;
     for (initial_value) |*pt, i| {
         *pt = Point {
@@ -1597,14 +1633,14 @@ var fancy_array = {
             .y = i32(i) * 2,
         };
     }
-    initial_value
+    break :init initial_value;
 };
 const Point = struct {
     x: i32,
     y: i32,
 };
 
-test "compile-time array initalization" {
+test &quot;compile-time array initalization&quot; {
     assert(fancy_array[4].x == 4);
     assert(fancy_array[4].y == 8);
 }
@@ -1612,21 +1648,22 @@ test "compile-time array initalization" {
 // call a function to initialize an array
 var more_points = []Point{makePoint(3)} ** 10;
 fn makePoint(x: i32) -&gt; Point {
-    Point {
+    return Point {
         .x = x,
         .y = x * 2,
-    }
+    };
 }
-test "array initialization with function calls" {
+test &quot;array initialization with function calls&quot; {
     assert(more_points[4].x == 3);
     assert(more_points[4].y == 6);
     assert(more_points.len == 10);
-}</code></pre>
-      <pre><code class="sh">$ zig test arrays.zig
+}</code></pre><pre><code class="shell">$ zig test arrays.zig
 Test 1/4 iterate over an array...OK
 Test 2/4 modify an array...OK
 Test 3/4 compile-time array initalization...OK
-Test 4/4 array initialization with function calls...OK</code></pre>
+Test 4/4 array initialization with function calls...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#for">for</a></li>
 <li><a href="#Slices">Slices</a></li>
@@ -1635,12 +1672,12 @@ Test 4/4 array initialization with function calls...OK</code></pre>
       
       <h1 id="Pointers">Pointers</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-test "address of syntax" {
+test &quot;address of syntax&quot; {
     // Get the address of a variable:
     const x: i32 = 1234;
-    const x_ptr = &x;
+    const x_ptr = &amp;x;
 
     // Deference a pointer:
     assert(*x_ptr == 1234);
@@ -1650,13 +1687,13 @@ test "address of syntax" {
 
     // If you want to mutate the value, you'd need an address of a mutable variable:
     var y: i32 = 5678;
-    const y_ptr = &y;
+    const y_ptr = &amp;y;
     assert(@typeOf(y_ptr) == &amp;i32);
     *y_ptr += 1;
     assert(*y_ptr == 5679);
 }
 
-test "pointer array access" {
+test &quot;pointer array access&quot; {
     // Pointers do not support pointer arithmetic. If you
     // need such a thing, use array index syntax:
 
@@ -1668,7 +1705,7 @@ test "pointer array access" {
     assert(array[2] == 4);
 }
 
-test "pointer slicing" {
+test &quot;pointer slicing&quot; {
     // In Zig, we prefer using slices over null-terminated pointers.
     // You can turn a pointer into a slice using slice syntax:
     var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -1696,7 +1733,7 @@ comptime {
     assert(*ptr == 3);
 }
 
-test "@ptrToInt and @intToPtr" {
+test &quot;@ptrToInt and @intToPtr&quot; {
     // To convert an integer address into a pointer, use @intToPtr:
     const ptr = @intToPtr(&amp;i32, 0xdeadbeef);
 
@@ -1716,7 +1753,7 @@ comptime {
     assert(addr == 0xdeadbeef);
 }
 
-test "volatile" {
+test &quot;volatile&quot; {
     // In Zig, loads and stores are assumed to not have side effects.
     // If a given load or store should have side effects, such as
     // Memory Mapped Input/Output (MMIO), use `volatile`:
@@ -1727,7 +1764,7 @@ test "volatile" {
     assert(@typeOf(mmio_ptr) == &amp;volatile u8);
 }
 
-test "nullable pointers" {
+test &quot;nullable pointers&quot; {
     // Pointers cannot be null. If you want a null pointer, use the nullable
     // prefix `?` to make the pointer type nullable.
     var ptr: ?&amp;i32 = null;
@@ -1742,11 +1779,11 @@ test "nullable pointers" {
     assert(@sizeOf(?&amp;i32) == @sizeOf(&amp;i32));
 }
 
-test "pointer casting" {
+test &quot;pointer casting&quot; {
     // To convert one pointer type to another, use @ptrCast. This is an unsafe
     // operation that Zig cannot protect you against. Use @ptrCast only when other
     // conversions are not possible.
-    const bytes = []u8{0x12, 0x12, 0x12, 0x12};
+    const bytes align(@alignOf(u32)) = []u8{0x12, 0x12, 0x12, 0x12};
     const u32_ptr = @ptrCast(&amp;const u32, &amp;bytes[0]);
     assert(*u32_ptr == 0x12121212);
 
@@ -1759,11 +1796,10 @@ test "pointer casting" {
     assert(@bitCast(u32, bytes) == 0x12121212);
 }
 
-test "pointer child type" {
+test &quot;pointer child type&quot; {
     // pointer types have a `child` field which tells you the type they point to.
-    assert((&amp;u32).child == u32);
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
+    assert((&amp;u32).Child == u32);
+}</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/8 address of syntax...OK
 Test 2/8 pointer array access...OK
 Test 3/8 pointer slicing...OK
@@ -1771,7 +1807,9 @@ Test 4/8 @ptrToInt and @intToPtr...OK
 Test 5/8 volatile...OK
 Test 6/8 nullable pointers...OK
 Test 7/8 pointer casting...OK
-Test 8/8 pointer child type...OK</code></pre>
+Test 8/8 pointer child type...OK
+</code></pre>
+
       <h2 id="Alignment">Alignment</h2>
 
       <p>
@@ -1788,10 +1826,10 @@ Test 8/8 pointer child type...OK</code></pre>
       In Zig, a pointer type has an alignment value. If the value is equal to the
       alignment of the underlying type, it can be omitted from the type:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const builtin = @import("builtin");
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const builtin = @import(&quot;builtin&quot;);
 
-test "variable alignment" {
+test &quot;variable alignment&quot; {
     var x: i32 = 1234;
     const align_of_i32 = @alignOf(@typeOf(x));
     assert(@typeOf(&amp;x) == &amp;i32);
@@ -1799,7 +1837,10 @@ test "variable alignment" {
     if (builtin.arch == builtin.Arch.x86_64) {
         assert((&amp;i32).alignment == 4);
     }
-}</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 variable alignment...OK
+</code></pre>
+
       <p>In the same way that a <code>&amp;i32</code> can be implicitly cast to a
       <code>&amp;const i32</code>, a pointer with a larger alignment can be implicitly
       cast to a pointer with a smaller alignment, but not vice versa.
@@ -1808,37 +1849,41 @@ test "variable alignment" {
       You can specify alignment on variables and functions. If you do this, then
       pointers to them get the specified alignment:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 var foo: u8 align(4) = 100;
 
-test "global variable alignment" {
+test &quot;global variable alignment&quot; {
     assert(@typeOf(&amp;foo).alignment == 4);
     assert(@typeOf(&amp;foo) == &amp;align(4) u8);
     const slice = (&amp;foo)[0..1];
     assert(@typeOf(slice) == []align(4) u8);
 }
 
-fn derp() align(@sizeOf(usize) * 2) -&gt; i32 { 1234 }
+fn derp() align(@sizeOf(usize) * 2) -&gt; i32 { return 1234; }
 fn noop1() align(1) {}
 fn noop4() align(4) {}
 
-test "function alignment" {
+test &quot;function alignment&quot; {
     assert(derp() == 1234);
     assert(@typeOf(noop1) == fn() align(1));
     assert(@typeOf(noop4) == fn() align(4));
     noop1();
     noop4();
-}</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/2 global variable alignment...OK
+Test 2/2 function alignment...OK
+</code></pre>
+
       <p>
       If you have a pointer or a slice that has a small alignment, but you know that it actually
       has a bigger alignment, use <a href="#builtin-alignCast">@alignCast</a> to change the
       pointer into a more aligned pointer. This is a no-op at runtime, but inserts a
       <a href="#undef-incorrect-pointer-alignment">safety check</a>:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-test "pointer alignment safety" {
+test &quot;pointer alignment safety&quot; {
     var array align(4) = []u32{0x11111111, 0x11111111};
     const bytes = ([]u8)(array[0..]);
     assert(foo(bytes) == 0x11111111);
@@ -1847,33 +1892,40 @@ fn foo(bytes: []u8) -&gt; u32 {
     const slice4 = bytes[1..5];
     const int_slice = ([]u32)(@alignCast(4, slice4));
     return int_slice[0];
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 pointer alignment safety...incorrect alignment
-/home/andy/dev/zig/build/lib/zig/std/special/zigrt.zig:16:35: 0x0000000000203525 in ??? (test)
-        @import("std").debug.panic("{}", message_ptr[0..message_len]);
-                                  ^
-/home/andy/dev/zig/build/test.zig:10:45: 0x00000000002035ec in ??? (test)
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x0000000000203984 in ??? (test)</span>
+    dumpCurrentStackTrace();
+                         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:19:39</span>: <span class="t2_0">0x00000000002037b6 in ??? (test)</span>
+            @import(&quot;std&quot;).debug.panic(&quot;{}&quot;, msg);
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:45</span>: <span class="t2_0">0x0000000000203a63 in ??? (test)</span>
     const int_slice = ([]u32)(@alignCast(4, slice4));
-                                            ^
-/home/andy/dev/zig/build/test.zig:6:15: 0x0000000000203439 in ??? (test)
+                                            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x00000000002036a2 in ??? (test)</span>
     assert(foo(bytes) == 0x11111111);
-              ^
-/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:9:21: 0x00000000002162d8 in ??? (test)
-        test_fn.func();
-                    ^
-/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:60:21: 0x0000000000216197 in ??? (test)
-    return root.main();
-                    ^
-/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:47:13: 0x0000000000216050 in ??? (test)
-    callMain(argc, argv, envp) catch std.os.posix.exit(1);
-            ^
-/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:34:25: 0x0000000000215fa0 in ??? (test)
-    posixCallMainAndExit()
-                        ^
+              <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021bf05 in ??? (test)</span>
+        try test_fn.func();
+                        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bd0b in ??? (test)</span>
+            root.main() catch |err| {
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bc78 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bb28 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bab0 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
 
 Tests failed. Use the following command to reproduce the failure:
-./test</code></pre>
+./zig-cache/test
+</code></pre>
+
       
       <h2 id="Type-Based-Alias-Analysis">Type Based Alias Analysis</h2>
 
@@ -1896,9 +1948,9 @@ Tests failed. Use the following command to reproduce the failure:
       
       <h1 id="Slices">Slices</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-test "basic slices" {
+test &quot;basic slices&quot; {
     var array = []i32{1, 2, 3, 4};
     // A slice is a pointer and a length. The difference between an array and
     // a slice is that the array's length is part of the type and known at
@@ -1911,55 +1963,62 @@ test "basic slices" {
     // Slices have array bounds checking. If you try to access something out
     // of bounds, you'll get a safety check failure:
     slice[10] += 1;
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 basic slices...index out of bounds
-lib/zig/std/special/zigrt.zig:16:35: 0x0000000000203455 in ??? (test)
-        @import("std").debug.panic("{}", message_ptr[0..message_len]);
-                                  ^
-test.zig:15:10: 0x0000000000203334 in ??? (test)
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x0000000000203a14 in ??? (test)</span>
+    dumpCurrentStackTrace();
+                         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:19:39</span>: <span class="t2_0">0x0000000000203846 in ??? (test)</span>
+            @import(&quot;std&quot;).debug.panic(&quot;{}&quot;, msg);
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:15:10</span>: <span class="t2_0">0x00000000002036eb in ??? (test)</span>
     slice[10] += 1;
-         ^
-lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214b1a in ??? (test)
-        test_fn.func();
-                    ^
-lib/zig/std/special/bootstrap.zig:60:21: 0x00000000002149e7 in ??? (test)
-    return root.main();
-                    ^
-lib/zig/std/special/bootstrap.zig:47:13: 0x00000000002148a0 in ??? (test)
-    callMain(argc, argv, envp) catch std.os.posix.exit(1);
-            ^
-lib/zig/std/special/bootstrap.zig:34:25: 0x00000000002147f0 in ??? (test)
-    posixCallMainAndExit()
-                        ^
+         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021be45 in ??? (test)</span>
+        try test_fn.func();
+                        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bc4b in ??? (test)</span>
+            root.main() catch |err| {
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bbb8 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021ba68 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021b9f0 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
 
 Tests failed. Use the following command to reproduce the failure:
-./test</code></pre>
-      <p>This is one reason we prefer slices to pointers.</p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
-const fmt = @import("std").fmt;
+./zig-cache/test
+</code></pre>
 
-test "using slices for strings" {
+      <p>This is one reason we prefer slices to pointers.</p>
+      <p class="file">slices.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const mem = @import(&quot;std&quot;).mem;
+const fmt = @import(&quot;std&quot;).fmt;
+
+test &quot;using slices for strings&quot; {
     // Zig has no concept of strings. String literals are arrays of u8, and
     // in general the string type is []u8 (slice of u8).
     // Here we implicitly cast [5]u8 to []const u8
-    const hello: []const u8 = "hello";
-    const world: []const u8 = "世界";
+    const hello: []const u8 = &quot;hello&quot;;
+    const world: []const u8 = &quot;世界&quot;;
 
     var all_together: [100]u8 = undefined;
     // You can use slice syntax on an array to convert an array into a slice.
     const all_together_slice = all_together[0..];
-    // String concatenation example:
-    const hello_world = fmt.bufPrint(all_together_slice, "{} {}", hello, world);
+    // String concatenation example.
+    const hello_world = try fmt.bufPrint(all_together_slice, &quot;{} {}&quot;, hello, world);
 
     // Generally, you can use UTF-8 and not worry about whether something is a
     // string. If you don't need to deal with individual characters, no need
     // to decode.
-    assert(mem.eql(u8, hello_world, "hello 世界"));
+    assert(mem.eql(u8, hello_world, &quot;hello 世界&quot;));
 }
 
-test "slice pointer" {
+test &quot;slice pointer&quot; {
     var array: [10]u8 = undefined;
     const ptr = &amp;array[0];
 
@@ -1976,19 +2035,20 @@ test "slice pointer" {
     assert(slice2[0] == 3);
 }
 
-test "slice widening" {
+test &quot;slice widening&quot; {
     // Zig supports slice widening and slice narrowing. Cast a slice of u8
     // to a slice of anything else, and Zig will perform the length conversion.
-    const array = []u8{0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13};
+    const array align(@alignOf(u32)) = []u8{0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13};
     const slice = ([]const u32)(array[0..]);
     assert(slice.len == 2);
     assert(slice[0] == 0x12121212);
     assert(slice[1] == 0x13131313);
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test slices.zig
 Test 1/3 using slices for strings...OK
 Test 2/3 slice pointer...OK
-Test 3/3 slice widening...OK</code></pre>
+Test 3/3 slice widening...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#Pointers">Pointers</a></li>
 <li><a href="#for">for</a></li>
@@ -1998,7 +2058,7 @@ Test 3/3 slice widening...OK</code></pre>
       
       <h1 id="struct">struct</h1>
 
-      <pre><code class="zig">// Declare a struct.
+      <p class="file">structs.zig</p><pre><code class="zig">// Declare a struct.
 // Zig gives no guarantees about the order of fields and whether or
 // not there will be padding.
 const Point = struct {
@@ -2047,8 +2107,8 @@ const Vec3 = struct {
     }
 };
 
-const assert = @import("std").debug.assert;
-test "dot product" {
+const assert = @import(&quot;std&quot;).debug.assert;
+test &quot;dot product&quot; {
     const v1 = Vec3.init(1.0, 0.0, 0.0);
     const v2 = Vec3.init(0.0, 1.0, 0.0);
     assert(v1.dot(v2) == 0.0);
@@ -2064,7 +2124,7 @@ test "dot product" {
 const Empty = struct {
     pub const PI = 3.14;
 };
-test "struct namespaced variable" {
+test &quot;struct namespaced variable&quot; {
     assert(Empty.PI == 3.14);
     assert(@sizeOf(Empty) == 0);
 
@@ -2075,10 +2135,10 @@ test "struct namespaced variable" {
 // struct field order is determined by the compiler for optimal performance.
 // however, you can still calculate a struct base pointer given a field pointer:
 fn setYBasedOnX(x: &amp;f32, y: f32) {
-    const point = @fieldParentPtr(Point, "x", x);
+    const point = @fieldParentPtr(Point, &quot;x&quot;, x);
     point.y = y;
 }
-test "field parent pointer" {
+test &quot;field parent pointer&quot; {
     var point = Point {
         .x = 0.1234,
         .y = 0.5678,
@@ -2103,7 +2163,7 @@ fn LinkedList(comptime T: type) -&gt; type {
     };
 }
 
-test "linked list" {
+test &quot;linked list&quot; {
     // Functions called at compile-time are memoized. This means you can
     // do this:
     assert(LinkedList(i32) == LinkedList(i32));
@@ -2131,12 +2191,13 @@ test "linked list" {
         .len = 1,
     };
     assert((??list2.first).data == 1234);
-}</code></pre>
-      <pre><code class="sh">$ zig test structs.zig
+}</code></pre><pre><code class="shell">$ zig test structs.zig
 Test 1/4 dot product...OK
 Test 2/4 struct namespaced variable...OK
 Test 3/4 field parent pointer...OK
-Test 4/4 linked list...OK</code></pre>
+Test 4/4 linked list...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#comptime">comptime</a></li>
 <li><a href="#fieldParentPtr">@fieldParentPtr</a></li>
@@ -2145,8 +2206,8 @@ Test 4/4 linked list...OK</code></pre>
       
       <h1 id="enum">enum</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
+      <p class="file">enums.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const mem = @import(&quot;std&quot;).mem;
 
 // Declare an enum.
 const Type = enum {
@@ -2167,7 +2228,7 @@ const Value = enum(u2) {
 
 // Now you can cast between u2 and Value.
 // The ordinal value starts from 0, counting up for each member.
-test "enum ordinal value" {
+test &quot;enum ordinal value&quot; {
     assert(u2(Value.Zero) == 0);
     assert(u2(Value.One) == 1);
     assert(u2(Value.Two) == 2);
@@ -2179,7 +2240,7 @@ const Value2 = enum(u32) {
     Thousand = 1000,
     Million = 1000000,
 };
-test "set enum ordinal value" {
+test &quot;set enum ordinal value&quot; {
     assert(u32(Value2.Hundred) == 100);
     assert(u32(Value2.Thousand) == 1000);
     assert(u32(Value2.Million) == 1000000);
@@ -2198,7 +2259,7 @@ const Suit = enum {
         return self == Suit.Clubs;
     }
 };
-test "enum method" {
+test &quot;enum method&quot; {
     const p = Suit.Spades;
     assert(!p.isClubs());
 }
@@ -2209,14 +2270,14 @@ const Foo = enum {
     Number,
     None,
 };
-test "enum variant switch" {
+test &quot;enum variant switch&quot; {
     const p = Foo.Number;
     const what_is_it = switch (p) {
-        Foo.String =&gt; "this is a string",
-        Foo.Number =&gt; "this is a number",
-        Foo.None =&gt; "this is a none",
+        Foo.String =&gt; &quot;this is a string&quot;,
+        Foo.Number =&gt; &quot;this is a number&quot;,
+        Foo.None =&gt; &quot;this is a none&quot;,
     };
-    assert(mem.eql(u8, what_is_it, "this is a number"));
+    assert(mem.eql(u8, what_is_it, &quot;this is a number&quot;));
 }
 
 // @TagType can be used to access the integer tag type of an enum.
@@ -2226,27 +2287,24 @@ const Small = enum {
     Three,
     Four,
 };
-test "@TagType" {
+test &quot;@TagType&quot; {
     assert(@TagType(Small) == u2);
 }
 
 // @memberCount tells how many fields an enum has:
-test "@memberCount" {
+test &quot;@memberCount&quot; {
     assert(@memberCount(Small) == 4);
 }
 
 // @memberName tells the name of a field in an enum:
-test "@memberName" {
-    assert(mem.eql(u8, @memberName(Small, 1), "Two"));
+test &quot;@memberName&quot; {
+    assert(mem.eql(u8, @memberName(Small, 1), &quot;Two&quot;));
 }
 
 // @tagName gives a []const u8 representation of an enum value:
-test "@tagName" {
-    assert(mem.eql(u8, @tagName(Small.Three), "Three"));
-}</code></pre>
-      <p>TODO extern enum</p>
-      <p>TODO packed enum</p>
-      <pre><code class="sh">$ zig test enum.zig
+test &quot;@tagName&quot; {
+    assert(mem.eql(u8, @tagName(Small.Three), &quot;Three&quot;));
+}</code></pre><pre><code class="shell">$ zig test enums.zig
 Test 1/8 enum ordinal value...OK
 Test 2/8 set enum ordinal value...OK
 Test 3/8 enum method...OK
@@ -2254,7 +2312,11 @@ Test 4/8 enum variant switch...OK
 Test 5/8 @TagType...OK
 Test 6/8 @memberCount...OK
 Test 7/8 @memberName...OK
-Test 8/8 @tagName...OK</code></pre>
+Test 8/8 @tagName...OK
+</code></pre>
+
+      <p>TODO extern enum</p>
+      <p>TODO packed enum</p>
       <p>See also:</p><ul>
 <li><a href="#memberName">@memberName</a></li>
 <li><a href="#memberCount">@memberCount</a></li>
@@ -2264,8 +2326,8 @@ Test 8/8 @tagName...OK</code></pre>
       
       <h1 id="union">union</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const mem = @import("std").mem;
+      <p class="file">union.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const mem = @import(&quot;std&quot;).mem;
 
 // A union has only 1 active field at a time.
 const Payload = union {
@@ -2273,7 +2335,7 @@ const Payload = union {
     Float: f64,
     Bool: bool,
 };
-test "simple union" {
+test &quot;simple union&quot; {
     var payload = Payload {.Int = 1234};
     // payload.Float = 12.34; // ERROR! field not active
     assert(payload.Int == 1234);
@@ -2290,13 +2352,13 @@ const ComplexType = union(ComplexTypeTag) {
 };
 
 // Declare a specific instance of the union variant.
-test "declare union value" {
+test &quot;declare union value&quot; {
     const c = ComplexType { .Ok = 0 };
     assert(ComplexTypeTag(c) == ComplexTypeTag.Ok);
 }
 
 // @TagType can be used to access the enum tag type of a union.
-test "@TagType" {
+test &quot;@TagType&quot; {
     assert(@TagType(ComplexType) == ComplexTypeTag);
 }
 
@@ -2308,25 +2370,25 @@ const Foo = union(enum) {
     // void can be omitted when inferring enum tag type.
     None,
 };
-test "union variant switch" {
+test &quot;union variant switch&quot; {
     const p = Foo { .Number = 54 };
     const what_is_it = switch (p) {
         // Capture by reference
-        Foo.String =&gt; |*x| {
-            "this is a string"
+        Foo.String =&gt; |*x| blk: {
+            break :blk &quot;this is a string&quot;;
         },
 
         // Capture by value
-        Foo.Number =&gt; |x| {
+        Foo.Number =&gt; |x| blk: {
             assert(x == 54);
-            "this is a number"
+            break :blk &quot;this is a number&quot;;
         },
 
-        Foo.None =&gt; {
-            "this is a none"
-        }
+        Foo.None =&gt; blk: {
+            break :blk &quot;this is a none&quot;;
+        },
     };
-    assert(mem.eql(u8, what_is_it, "this is a number"));
+    assert(mem.eql(u8, what_is_it, &quot;this is a number&quot;));
 }
 
 // TODO union methods
@@ -2339,13 +2401,13 @@ const Small = union {
 };
 
 // @memberCount tells how many fields a union has:
-test "@memberCount" {
+test &quot;@memberCount&quot; {
     assert(@memberCount(Small) == 3);
 }
 
 // @memberName tells the name of a field in an enum:
-test "@memberName" {
-    assert(mem.eql(u8, @memberName(Small, 1), "B"));
+test &quot;@memberName&quot; {
+    assert(mem.eql(u8, @memberName(Small, 1), &quot;B&quot;));
 }
 
 // @tagName gives a []const u8 representation of an enum value,
@@ -2355,17 +2417,18 @@ const Small2 = union(enum) {
     B: bool,
     C: u8,
 };
-test "@tagName" {
-    assert(mem.eql(u8, @tagName(Small2.C), "C"));
-}</code></pre>
-      <pre><code class="sh">$ zig test union.zig
+test &quot;@tagName&quot; {
+    assert(mem.eql(u8, @tagName(Small2.C), &quot;C&quot;));
+}</code></pre><pre><code class="shell">$ zig test union.zig
 Test 1/7 simple union...OK
 Test 2/7 declare union value...OK
 Test 3/7 @TagType...OK
 Test 4/7 union variant switch...OK
 Test 5/7 @memberCount...OK
 Test 6/7 @memberName...OK
-Test 7/7 @tagName...OK</code></pre>
+Test 7/7 @tagName...OK
+</code></pre>
+
       <p>
       Unions with an enum tag are generated as a struct with a tag field and union field. Zig
       sorts the order of the tag and union field by the largest alignment.
@@ -2373,10 +2436,10 @@ Test 7/7 @tagName...OK</code></pre>
       
       <h1 id="switch">switch</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const builtin = @import("builtin");
+      <p class="file">switch.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+const builtin = @import(&quot;builtin&quot;);
 
-test "switch simple" {
+test &quot;switch simple&quot; {
     const a: u64 = 10;
     const zz: u64 = 103;
 
@@ -2394,18 +2457,18 @@ test "switch simple" {
         5 ... 100 =&gt; 1,
 
         // Branches can be arbitrarily complex.
-        101 =&gt; {
+        101 =&gt; blk: {
             const c: u64 = 5;
-            c * 2 + 1
+            break :blk c * 2 + 1;
         },
 
         // Switching on arbitrary expressions is allowed as long as the
         // expression is known at compile-time.
         zz =&gt; zz,
-        comptime {
+        comptime blk: {
             const d: u32 = 5;
             const e: u32 = 100;
-            d + e
+            break :blk d + e;
         } =&gt; 107,
 
         // The else branch catches everything not already captured.
@@ -2417,14 +2480,14 @@ test "switch simple" {
     assert(b == 1);
 }
 
-test "switch enum" {
-    const Item = enum {
+test &quot;switch enum&quot; {
+    const Item = union(enum) {
         A: u32,
         C: struct { x: u8, y: u8 },
         D,
     };
 
-    var a = Item.A { 3 };
+    var a = Item { .A = 3 };
 
     // Switching on more complex enums is allowed.
     const b = switch (a) {
@@ -2433,9 +2496,9 @@ test "switch enum" {
         Item.A =&gt; |item| item,
 
         // A reference to the matched value can be obtained using `*` syntax.
-        Item.C =&gt; |*item| {
+        Item.C =&gt; |*item| blk: {
             (*item).x += 1;
-            6
+            break :blk 6;
         },
 
         // No else is required if the types cases was exhaustively handled
@@ -2447,27 +2510,28 @@ test "switch enum" {
 
 // Switch expressions can be used outside a function:
 const os_msg = switch (builtin.os) {
-    builtin.Os.linux =&gt; "we found a linux user",
-    else =&gt; "not a linux user",
+    builtin.Os.linux =&gt; &quot;we found a linux user&quot;,
+    else =&gt; &quot;not a linux user&quot;,
 };
 
 // Inside a function, switch statements implicitly are compile-time
 // evaluated if the target expression is compile-time known.
-test "switch inside function" {
+test &quot;switch inside function&quot; {
     switch (builtin.os) {
         builtin.Os.windows =&gt; {
             // On an OS other than windows, block is not even analyzed,
             // so this compile error is not triggered.
             // On windows this compile error would be triggered.
-            @compileError("windows not supported");
+            @compileError(&quot;windows not supported&quot;);
         },
         else =&gt; {},
-    };
-}</code></pre>
-      <pre><code class="sh">$ zig test switch.zig
-Test 1/2 switch simple...OK
-Test 2/2 switch enum...OK
-Test 3/3 switch inside function...OK</code></pre>
+    }
+}</code></pre><pre><code class="shell">$ zig test switch.zig
+Test 1/3 switch simple...OK
+Test 2/3 switch enum...OK
+Test 3/3 switch inside function...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#comptime">comptime</a></li>
 <li><a href="#enum">enum</a></li>
@@ -2478,9 +2542,9 @@ Test 3/3 switch inside function...OK</code></pre>
       
       <h1 id="while">while</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-test "while basic" {
+test &quot;while basic&quot; {
     // A while loop is used to repeatedly execute an expression until
     // some condition is no longer true.
     var i: usize = 0;
@@ -2490,7 +2554,7 @@ test "while basic" {
     assert(i == 10);
 }
 
-test "while break" {
+test &quot;while break&quot; {
     // You can use break to exit a while loop early.
     var i: usize = 0;
     while (true) {
@@ -2501,7 +2565,7 @@ test "while break" {
     assert(i == 10);
 }
 
-test "while continue" {
+test &quot;while continue&quot; {
     // You can use continue to jump back to the beginning of the loop.
     var i: usize = 0;
     while (true) {
@@ -2513,7 +2577,7 @@ test "while continue" {
     assert(i == 10);
 }
 
-test "while loop continuation expression" {
+test &quot;while loop continuation expression&quot; {
     // You can give an expression to the while loop to execute when
     // the loop is continued. This is respected by the continue control flow.
     var i: usize = 0;
@@ -2521,7 +2585,7 @@ test "while loop continuation expression" {
     assert(i == 10);
 }
 
-test "while loop continuation expression, more complicated" {
+test &quot;while loop continuation expression, more complicated&quot; {
     // More complex blocks can be used as an expression in the loop continue
     // expression.
     var i1: usize = 1;
@@ -2532,7 +2596,7 @@ test "while loop continuation expression, more complicated" {
     }
 }
 
-test "while else" {
+test &quot;while else&quot; {
     assert(rangeHasNumber(0, 10, 5));
     assert(!rangeHasNumber(0, 10, 15));
 }
@@ -2550,12 +2614,10 @@ fn rangeHasNumber(begin: usize, end: usize, number: usize) -&gt; bool {
             // evaluated.
             break true;
         }
-    } else {
-        false
-    }
+    } else false;
 }
 
-test "while null capture" {
+test &quot;while null capture&quot; {
     // Just like if expressions, while loops can take a nullable as the
     // condition and capture the payload. When null is encountered the loop
     // exits.
@@ -2591,24 +2653,20 @@ test "while null capture" {
 
 var numbers_left: u32 = undefined;
 fn eventuallyNullSequence() -&gt; ?u32 {
-    return if (numbers_left == 0) {
-        null
-    } else {
+    return if (numbers_left == 0) null else blk: {
         numbers_left -= 1;
-        numbers_left
-    }
+        break :blk numbers_left;
+    };
 }
 error ReachedZero;
 fn eventuallyErrorSequence() -&gt; %u32 {
-    return if (numbers_left == 0) {
-        error.ReachedZero
-    } else {
+    return if (numbers_left == 0) error.ReachedZero else blk: {
         numbers_left -= 1;
-        numbers_left
-    }
+        break :blk numbers_left;
+    };
 }
 
-test "inline while loop" {
+test &quot;inline while loop&quot; {
     // While loops can be inlined. This causes the loop to be unrolled, which
     // allows the code to do some things which only work at compile time,
     // such as use types as first class values.
@@ -2628,8 +2686,7 @@ test "inline while loop" {
 
 fn typeNameLength(comptime T: type) -&gt; usize {
     return @typeName(T).len;
-}</code></pre>
-      <pre><code class="sh">$ zig while.zig
+}</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/8 while basic...OK
 Test 2/8 while break...OK
 Test 3/8 while continue...OK
@@ -2637,7 +2694,9 @@ Test 4/8 while loop continuation expression...OK
 Test 5/8 while loop continuation expression, more complicated...OK
 Test 6/8 while else...OK
 Test 7/8 while null capture...OK
-Test 8/8 inline while loop...OK</code></pre>
+Test 8/8 inline while loop...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#if">if</a></li>
 <li><a href="#Nullables">Nullables</a></li>
@@ -2649,9 +2708,9 @@ Test 8/8 inline while loop...OK</code></pre>
       
       <h1 id="for">for</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">for.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-test "for basics" {
+test &quot;for basics&quot; {
     const items = []i32 { 4, 5, 3, 4, 0 };
     var sum: i32 = 0;
 
@@ -2681,7 +2740,7 @@ test "for basics" {
     assert(sum2 == 10);
 }
 
-test "for reference" {
+test &quot;for reference&quot; {
     var items = []i32 { 3, 4, 2 };
 
     // Iterate over the slice by reference by
@@ -2695,7 +2754,7 @@ test "for reference" {
     assert(items[2] == 3);
 }
 
-test "for else" {
+test &quot;for else&quot; {
     // For allows an else attached to it, the same as a while loop.
     var items = []?i32 { 3, 4, null, 5 };
 
@@ -2707,14 +2766,14 @@ test "for else" {
         } else {
             sum += ??value;
         }
-    } else {
+    } else blk: {
         assert(sum == 7);
-        sum
+        break :blk sum;
     };
 }
 
 
-test "inline for loop" {
+test &quot;inline for loop&quot; {
     const nums = []i32{2, 4, 6};
     // For loops can be inlined. This causes the loop to be unrolled, which
     // allows the code to do some things which only work at compile time,
@@ -2736,12 +2795,13 @@ test "inline for loop" {
 
 fn typeNameLength(comptime T: type) -&gt; usize {
     return @typeName(T).len;
-}</code></pre>
-      <pre><code class="sh">$ zig test for.zig
+}</code></pre><pre><code class="shell">$ zig test for.zig
 Test 1/4 for basics...OK
 Test 2/4 for reference...OK
 Test 3/4 for else...OK
-Test 4/4 inline for loop...OK</code></pre>
+Test 4/4 inline for loop...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#while">while</a></li>
 <li><a href="#comptime">comptime</a></li>
@@ -2752,23 +2812,23 @@ Test 4/4 inline for loop...OK</code></pre>
       
       <h1 id="if">if</h1>
 
-      <pre><code class="zig">// If expressions have three uses, corresponding to the three types:
+      <p class="file">if.zig</p><pre><code class="zig">// If expressions have three uses, corresponding to the three types:
 // * bool
 // * ?T
 // * %T
 
-const assert = @import("std").debug.assert;
+const assert = @import(&quot;std&quot;).debug.assert;
 
-test "if boolean" {
+test &quot;if boolean&quot; {
     // If expressions test boolean conditions.
     const a: u32 = 5;
     const b: u32 = 4;
     if (a != b) {
         assert(true);
     } else if (a == 9) {
-        unreachable
+        unreachable;
     } else {
-        unreachable
+        unreachable;
     }
 
     // If expressions are used instead of a ternary expression.
@@ -2776,7 +2836,7 @@ test "if boolean" {
     assert(result == 47);
 }
 
-test "if nullable" {
+test &quot;if nullable&quot; {
     // If expressions test for null.
 
     const a: ?u32 = 0;
@@ -2818,7 +2878,7 @@ test "if nullable" {
 
 error BadValue;
 error LessBadValue;
-test "if error union" {
+test &quot;if error union&quot; {
     // If expressions test for errors.
     // Note the |err| capture on the else.
 
@@ -2826,12 +2886,12 @@ test "if error union" {
     if (a) |value| {
         assert(value == 0);
     } else |err| {
-        unreachable
+        unreachable;
     }
 
     const b: %u32 = error.BadValue;
     if (b) |value| {
-        unreachable
+        unreachable;
     } else |err| {
         assert(err == error.BadValue);
     }
@@ -2851,19 +2911,20 @@ test "if error union" {
     if (c) |*value| {
         *value = 9;
     } else |err| {
-        unreachable
+        unreachable;
     }
 
     if (c) |value| {
         assert(value == 9);
     } else |err| {
-        unreachable
+        unreachable;
     }
-}</code></pre>
-      <pre><code class="sh">$ zig test if.zig
+}</code></pre><pre><code class="shell">$ zig test if.zig
 Test 1/3 if boolean...OK
 Test 2/3 if nullable...OK
-Test 3/3 if error union...OK</code></pre>
+Test 3/3 if error union...OK
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#Nullables">Nullables</a></li>
 <li><a href="#Errors">Errors</a></li>
@@ -2872,8 +2933,9 @@ Test 3/3 if error union...OK</code></pre>
       
       <h1 id="defer">defer</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-const printf = @import("std").io.stdout.printf;
+      <p class="file">defer.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+const assert = std.debug.assert;
+const warn = std.debug.warn;
 
 // defer will execute an expression at the end of the current scope.
 fn deferExample() -&gt; usize {
@@ -2886,34 +2948,34 @@ fn deferExample() -&gt; usize {
     assert(a == 2);
 
     a = 5;
-    a
+    return a;
 }
 
-test "defer basics" {
+test &quot;defer basics&quot; {
     assert(deferExample() == 5);
 }
 
 // If multiple defer statements are specified, they will be executed in
 // the reverse order they were run.
 fn deferUnwindExample() {
-    %%printf("\n");
+    warn(&quot;\n&quot;);
 
     defer {
-        %%printf("1 ");
+        warn(&quot;1 &quot;);
     }
     defer {
-        %%printf("2 ");
+        warn(&quot;2 &quot;);
     }
     if (false) {
         // defers are not run if they are never executed.
         defer {
-            %%printf("3 ");
+            warn(&quot;3 &quot;);
         }
     }
 }
 
-test "defer unwinding" {
-    deferUnwindExample()
+test &quot;defer unwinding&quot; {
+    deferUnwindExample();
 }
 
 // The %defer keyword is similar to defer, but will only execute if the
@@ -2923,15 +2985,15 @@ test "defer unwinding" {
 // on error, and replaces goto error handling tactics as seen in c.
 error DeferError;
 fn deferErrorExample(is_error: bool) -&gt; %void {
-    %%printf("\nstart of function\n");
+    warn(&quot;\nstart of function\n&quot;);
 
     // This will always be executed on exit
     defer {
-        %%printf("end of function\n");
+        warn(&quot;end of function\n&quot;);
     }
 
     %defer {
-        %%printf("encountered an error!\n");
+        warn(&quot;encountered an error!\n&quot;);
     }
 
     if (is_error) {
@@ -2939,12 +3001,10 @@ fn deferErrorExample(is_error: bool) -&gt; %void {
     }
 }
 
-test "%defer unwinding" {
+test &quot;%defer unwinding&quot; {
     _ = deferErrorExample(false);
     _ = deferErrorExample(true);
-}
-</code></pre>
-      <pre><code class="sh">$ zig test defer.zig
+}</code></pre><pre><code class="shell">$ zig test defer.zig
 Test 1/3 defer basics...OK
 Test 2/3 defer unwinding...
 2 1 OK
@@ -2957,6 +3017,7 @@ encountered an error!
 end of function
 OK
 </code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#Errors">Errors</a></li>
 </ul>
@@ -2975,66 +3036,80 @@ OK
       </p>
       <h2 id="Basics">Basics</h2>
 
-      <pre><code class="zig">// unreachable is used to assert that control flow will never happen upon a
+      <p class="file">test.zig</p><pre><code class="zig">// unreachable is used to assert that control flow will never happen upon a
 // particular location:
-test "basic math" {
+test &quot;basic math&quot; {
     const x = 1;
     const y = 2;
     if (x + y != 3) {
         unreachable;
     }
-}
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 basic math...OK
+</code></pre>
 
-// in fact, this is how assert is implemented:
-fn assert(ok: bool) {
+      <p>In fact, this is how assert is implemented:</p>
+      <p class="file">test.zig</p><pre><code class="zig">fn assert(ok: bool) {
     if (!ok) unreachable; // assertion failure
 }
 
 // This test will fail because we hit unreachable.
-test "this will fail" {
+test &quot;this will fail&quot; {
     assert(false);
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
-Test 1/2 basic math...OK
-Test 2/2 this will fail...reached unreachable code
-test.zig:13:14: 0x00000000002033ac in ??? (test)
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 this will fail...reached unreachable code
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x0000000000203904 in ??? (test)</span>
+    dumpCurrentStackTrace();
+                         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:19:39</span>: <span class="t2_0">0x0000000000203736 in ??? (test)</span>
+            @import(&quot;std&quot;).debug.panic(&quot;{}&quot;, msg);
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:14</span>: <span class="t2_0">0x0000000000203941 in ??? (test)</span>
     if (!ok) unreachable; // assertion failure
-             ^
-test.zig:18:11: 0x000000000020329b in ??? (test)
+             <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:11</span>: <span class="t2_0">0x000000000020362b in ??? (test)</span>
     assert(false);
-          ^
-lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214a7a in ??? (test)
-        test_fn.func();
-                    ^
-lib/zig/std/special/bootstrap.zig:60:21: 0x0000000000214947 in ??? (test)
-    return root.main();
-                    ^
-lib/zig/std/special/bootstrap.zig:47:13: 0x0000000000214800 in ??? (test)
-    callMain(argc, argv, envp) catch std.os.posix.exit(1);
-            ^
-lib/zig/std/special/bootstrap.zig:34:25: 0x0000000000214750 in ??? (test)
-    posixCallMainAndExit()
-                        ^
+          <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021bd75 in ??? (test)</span>
+        try test_fn.func();
+                        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bb7b in ??? (test)</span>
+            root.main() catch |err| {
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bae8 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021b998 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021b920 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
 
 Tests failed. Use the following command to reproduce the failure:
-./test</code></pre>
+./zig-cache/test
+</code></pre>
+
       
       <h2 id="At-Compile-Time">At Compile-Time</h2>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-comptime {
-    // The type of unreachable is noreturn.
+test &quot;type of unreachable&quot; {
+    comptime {
+        // The type of unreachable is noreturn.
 
-    // However this assertion will still fail because
-    // evaluating unreachable at compile-time is a compile error.
+        // However this assertion will still fail because
+        // evaluating unreachable at compile-time is a compile error.
 
-    assert(@typeOf(unreachable) == noreturn);
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-test.zig:9:12: error: unreachable code
-    assert(@typeOf(unreachable) == noreturn);
-           ^</code></pre>
+        assert(@typeOf(unreachable) == noreturn);
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:16: </span><span class="t31_1">error:</span><span class="t0_1"> unreachable code</span>
+        assert(@typeOf(unreachable) == noreturn);
+               <span class="t32_1">^</span>
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#Zig-Test">Zig Test</a></li>
 <li><a href="#Build-Mode">Build Mode</a></li>
@@ -3059,16 +3134,20 @@ test.zig:9:12: error: unreachable code
       <p>When resolving types together, such as <code>if</code> clauses or <code>switch</code> prongs,
       the <code>noreturn</code> type is compatible with every other type. Consider:
       </p>
-      <pre><code class="zig">fn foo(condition: bool, b: u32) {
+      <p class="file">test.zig</p><pre><code class="zig">fn foo(condition: bool, b: u32) {
     const a = if (condition) b else return;
-    bar(a);
+    @panic(&quot;do something with a&quot;);
 }
+test &quot;noreturn&quot; {
+    foo(false, 1);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 noreturn...OK
+</code></pre>
 
-extern fn bar(value: u32);</code></pre>
       <p>Another use case for <code>noreturn</code> is the <code>exit</code> function:</p>
-      <pre><code class="zig">pub extern "kernel32" stdcallcc fn ExitProcess(exit_code: c_uint) -&gt; noreturn;
+      <p class="file">test.zig</p><pre><code class="zig">pub extern &quot;kernel32&quot; stdcallcc fn ExitProcess(exit_code: c_uint) -&gt; noreturn;
 
-fn foo() {
+test &quot;foo&quot; {
     const value = bar() catch ExitProcess(1);
     assert(value == 1234);
 }
@@ -3077,11 +3156,14 @@ fn bar() -&gt; %u32 {
     return 1234;
 }
 
-const assert = @import("std").debug.assert;</code></pre>
+const assert = @import(&quot;std&quot;).debug.assert;</code></pre><pre><code class="shell">$ zig test test.zig
+Created ./zig-cache/test.exe but skipping execution because it is non-native.
+</code></pre>
+
       
       <h1 id="Functions">Functions</h1>
 
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">functions.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 // Functions are declared like this
 fn add(a: i8, b: i8) -&gt; i8 {
@@ -3095,14 +3177,14 @@ fn add(a: i8, b: i8) -&gt; i8 {
 
 // The export specifier makes a function externally visible in the generated
 // object file, and makes it use the C ABI.
-export fn sub(a: i8, b: i8) -&gt; i8 { a - b }
+export fn sub(a: i8, b: i8) -&gt; i8 { return a - b; }
 
 // The extern specifier is used to declare a function that will be resolved
 // at link time, when linking statically, or at runtime, when linking
 // dynamically.
 // The stdcallcc specifier changes the calling convention of the function.
-extern "kernel32" stdcallcc fn ExitProcess(exit_code: u32) -&gt; noreturn;
-extern "c" fn atan2(a: f64, b: f64) -&gt; f64;
+extern &quot;kernel32&quot; stdcallcc fn ExitProcess(exit_code: u32) -&gt; noreturn;
+extern &quot;c&quot; fn atan2(a: f64, b: f64) -&gt; f64;
 
 // coldcc makes a function use the cold calling convention.
 coldcc fn abort() -&gt; noreturn {
@@ -3117,63 +3199,67 @@ nakedcc fn _start() -&gt; noreturn {
 
 // The pub specifier allows the function to be visible when importing.
 // Another file can use @import and call sub2
-pub fn sub2(a: i8, b: i8) -&gt; i8 { a - b }
+pub fn sub2(a: i8, b: i8) -&gt; i8 { return a - b; }
 
 // Functions can be used as values and are equivalent to pointers.
 const call2_op = fn (a: i8, b: i8) -&gt; i8;
 fn do_op(fn_call: call2_op, op1: i8, op2: i8) -&gt; i8 {
-    fn_call(op1, op2)
+    return fn_call(op1, op2);
 }
 
-test "function" {
+test &quot;function&quot; {
     assert(do_op(add, 5, 6) == 11);
     assert(do_op(sub2, 5, 6) == -1);
-}</code></pre>
-      <pre><code class="sh">$ zig test function.zig
+}</code></pre><pre><code class="shell">$ zig test functions.zig
 Test 1/1 function...OK
 </code></pre>
+
       <p>Function values are like pointers:</p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 comptime {
     assert(@typeOf(foo) == fn());
     assert(@sizeOf(fn()) == @sizeOf(?fn()));
 }
 
-fn foo() { }</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig</code></pre>
+fn foo() { }</code></pre><pre><code class="shell">$ zig build-obj test.zig</code></pre>
+
       <h2 id="Pass-by-value-Parameters">Pass-by-value Parameters</h2>
 
       <p>
       In Zig, structs, unions, and enums with payloads cannot be passed by value
       to a function.
       </p>
-      <pre><code class="zig">const Foo = struct {
+      <p class="file">test.zig</p><pre><code class="zig">const Foo = struct {
     x: i32,
 };
 
 fn bar(foo: Foo) {}
 
-export fn entry() {
+test &quot;pass aggregate type by value to function&quot; {
     bar(Foo {.x = 12,});
-}</code></pre>
-      <pre><code class="sh">$ ./zig build-obj test.zig 
-/home/andy/dev/zig/build/test.zig:5:13: error: type 'Foo' is not copyable; cannot pass by value
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13: </span><span class="t31_1">error:</span><span class="t0_1"> type 'Foo' is not copyable; cannot pass by value</span>
 fn bar(foo: Foo) {}
-            ^</code></pre>
+            <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       Instead, one must use <code>&amp;const</code>. Zig allows implicitly casting something
       to a const pointer to it:
       </p>
-      <pre><code class="zig">const Foo = struct {
+      <p class="file">test.zig</p><pre><code class="zig">const Foo = struct {
     x: i32,
 };
 
 fn bar(foo: &amp;const Foo) {}
 
-export fn entry() {
+test &quot;implicitly cast to const pointer&quot; {
     bar(Foo {.x = 12,});
-}</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 implicitly cast to const pointer...OK
+</code></pre>
+
       <p>
       However,
       the C ABI does allow passing structs and unions by value. So functions which
@@ -3218,7 +3304,7 @@ error UnexpectedToken;</code></pre>
       <p>
       Here is a function to parse a string into a 64-bit integer:
       </p>
-      <pre><code class="zig">error InvalidChar;
+      <p class="file">test.zig</p><pre><code class="zig">error InvalidChar;
 error Overflow;
 
 pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
@@ -3243,7 +3329,24 @@ pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
     }
 
     return x;
-}</code></pre>
+}
+
+fn charToDigit(c: u8) -&gt; u8 {
+    return switch (c) {
+        '0' ... '9' =&gt; c - '0',
+        'A' ... 'Z' =&gt; c - 'A' + 10,
+        'a' ... 'z' =&gt; c - 'a' + 10,
+        else =&gt; @maxValue(u8),
+    };
+}
+
+test &quot;parse u64&quot; {
+    const result = try parseU64(&quot;1234&quot;, 10);
+    @import(&quot;std&quot;).debug.assert(result == 1234);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 parse u64...OK
+</code></pre>
+
       <p>
       Notice the return type is <code>%u64</code>. This means that the function
       either returns an unsigned 64 bit integer, or an error.
@@ -3263,14 +3366,14 @@ pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
         <li>You know with complete certainty it will not return an error, so want to unconditionally unwrap it.</li>
         <li>You want to take a different action for each possible error.</li>
       </ul>
-      <p>If you want to provide a default value, you can use the <code>%%</code> binary operator:</p>
+      <p>If you want to provide a default value, you can use the <code>catch</code> binary operator:</p>
       <pre><code class="zig">fn doAThing(str: []u8) {
     const number = parseU64(str, 10) catch 13;
     // ...
 }</code></pre>
       <p>
       In this code, <code>number</code> will be equal to the successfully parsed string, or
-      a default value of 13. The type of the right hand side of the binary <code>%%</code> operator must
+      a default value of 13. The type of the right hand side of the binary <code>catch</code> operator must
       match the unwrapped error union type, or be of type <code>noreturn</code>.
       </p>
       <p>Let's say you wanted to return the error if you got one, otherwise continue with the
@@ -3295,19 +3398,14 @@ pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
         Maybe you know with complete certainty that an expression will never be an error.
         In this case you can do this:
       </p>
-      <pre><code class="zig">const number = parseU64("1234", 10) catch unreachable;</code></pre>
+      <pre><code class="zig">const number = parseU64(&quot;1234&quot;, 10) catch unreachable;</code></pre>
       <p>
       Here we know for sure that "1234" will parse successfully. So we put the
       <code>unreachable</code> value on the right hand side. <code>unreachable</code> generates
       a panic in Debug and ReleaseSafe modes and undefined behavior in ReleaseFast mode. So, while we're debugging the
       application, if there <em>was</em> a surprise error here, the application would crash
       appropriately.
-      </p>
-      <p>Again there is a syntactic shortcut for this:</p>
-      <pre><code class="zig">const number = %%parseU64("1234", 10);</code></pre>
-      <p>
-      The <code>%%</code> <em>prefix</em> operator is equivalent to <code class="zig">expression catch unreachable</code>. It unwraps an error union type,
-      and panics in debug mode if the value was an error.
+      TODO: mention error return traces
       </p>
       <p>
       Finally, you may want to take a different action for every situation. For that, we combine
@@ -3361,7 +3459,7 @@ pub fn parseU64(buf: []const u8, radix: u8) -&gt; %u64 {
       <ul>
         <li>These primitives give enough expressiveness that it's completely practical
             to have failing to check for an error be a compile error. If you really want
-            to ignore the error, you can use the <code>%%</code> prefix operator and
+            to ignore the error, you can add <code>catch unreachable</code> and
             get the added benefit of crashing in Debug and ReleaseSafe modes if your assumption was wrong.
         </li>
         <li>
@@ -3414,7 +3512,7 @@ const nullable_int: ?i32 = 5678;</code></pre>
       Task: call malloc, if the result is null, return null.
       </p>
       <p>C code</p>
-      <pre><code class="c">// malloc prototype included for reference
+      <pre><code class="cpp">// malloc prototype included for reference
 void *malloc(size_t size);
 
 struct Foo *do_a_thing(void) {
@@ -3432,14 +3530,14 @@ fn doAThing() -&gt; ?&amp;Foo {
 }</code></pre>
       <p>
         Here, Zig is at least as convenient, if not more, than C. And, the type of "ptr"
-        is <code>&amp;u8</code> <em>not</em> <code>?&amp;u8</code>. The <code>??</code> operator
+        is <code>&u8</code> <em>not</em> <code>?&u8</code>. The <code>??</code> operator
         unwrapped the nullable type and therefore <code>ptr</code> is guaranteed to be non-null everywhere
         it is used in the function.
       </p>
       <p>
         The other form of checking against NULL you might see looks like this:
       </p>
-      <pre><code class="c">void do_a_thing(struct Foo *foo) {
+      <pre><code class="cpp">void do_a_thing(struct Foo *foo) {
     // do some stuff
 
     if (foo) {
@@ -3513,13 +3611,13 @@ fn doAThing() -&gt; ?&amp;Foo {
       Compile-time parameters is how Zig implements generics. It is compile-time duck typing.
       </p>
       <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
-    if (a &gt; b) a else b
+    return if (a &gt; b) a else b;
 }
 fn gimmeTheBiggerFloat(a: f32, b: f32) -&gt; f32 {
-    max(f32, a, b)
+    return max(f32, a, b);
 }
 fn gimmeTheBiggerInteger(a: u64, b: u64) -&gt; u64 {
-    max(u64, a, b)
+    return max(u64, a, b);
 }</code></pre>
       <p>
       In Zig, types are first-class citizens. They can be assigned to variables, passed as parameters to functions,
@@ -3538,21 +3636,23 @@ fn gimmeTheBiggerInteger(a: u64, b: u64) -&gt; u64 {
       <p>
       For example, if we were to introduce another function to the above snippet:
       </p>
-      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
-    if (a &gt; b) a else b
+      <p class="file">test.zig</p><pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+    return if (a &gt; b) a else b;
 }
-fn letsTryToPassARuntimeType(condition: bool) {
+test &quot;try to pass a runtime type&quot; {
+    foo(false);
+}
+fn foo(condition: bool) {
     const result = max(
         if (condition) f32 else u64,
         1234,
         5678);
-}</code></pre>
-      <p>
-      Then we get this result from the compiler:
-      </p>
-      <pre><code class="sh">./test.zig:6:9: error: unable to evaluate constant expression
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:9:9: </span><span class="t31_1">error:</span><span class="t0_1"> unable to evaluate constant expression</span>
         if (condition) f32 else u64,
-        ^</code></pre>
+        <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       This is an error because the programmer attempted to pass a value only known at run-time
       to a function which expects a value known at compile-time.
@@ -3564,27 +3664,26 @@ fn letsTryToPassARuntimeType(condition: bool) {
       <p>
       For example:
       </p>
-      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
-    if (a &gt; b) a else b
+      <p class="file">test.zig</p><pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+    return if (a &gt; b) a else b;
 }
-fn letsTryToCompareBools(a: bool, b: bool) -&gt; bool {
-    max(bool, a, b)
-}</code></pre>
-      <p>
-      The code produces this error message:
-      </p>
-      <pre><code>./test.zig:2:11: error: operator not allowed for type 'bool'
-    if (a &gt; b) a else b
-          ^
-./test.zig:5:8: note: called from here
-    max(bool, a, b)
-      ^</code></pre>
+test &quot;try to compare bools&quot; {
+    _ = max(bool, true, false);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:18: </span><span class="t31_1">error:</span><span class="t0_1"> operator not allowed for type 'bool'</span>
+    return if (a &gt; b) a else b;
+                 <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:12: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+    _ = max(bool, true, false);
+           <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       On the flip side, inside the function definition with the <code>comptime</code> parameter, the
       value is known at compile-time. This means that we actually could make this work for the bool type
       if we wanted to:
       </p>
-      <pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
+      <p class="file">test.zig</p><pre><code class="zig">fn max(comptime T: type, a: T, b: T) -&gt; T {
     if (T == bool) {
         return a or b;
     } else if (a &gt; b) {
@@ -3593,9 +3692,12 @@ fn letsTryToCompareBools(a: bool, b: bool) -&gt; bool {
         return b;
     }
 }
-fn letsTryToCompareBools(a: bool, b: bool) -&gt; bool {
-    max(bool, a, b)
-}</code></pre>
+test &quot;try to compare bools&quot; {
+    @import(&quot;std&quot;).debug.assert(max(bool, false, true) == true);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 try to compare bools...OK
+</code></pre>
+
       <p>
       This works because Zig implicitly inlines <code>if</code> expressions when the condition
       is known at compile-time, and the compiler guarantees that it will skip analysis of
@@ -3631,7 +3733,7 @@ fn letsTryToCompareBools(a: bool, b: bool) -&gt; bool {
       <p>
       For example:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">comptime_vars.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 const CmdFn = struct {
     name: []const u8,
@@ -3639,13 +3741,13 @@ const CmdFn = struct {
 };
 
 const cmd_fns = []CmdFn{
-    CmdFn {.name = "one", .func = one},
-    CmdFn {.name = "two", .func = two},
-    CmdFn {.name = "three", .func = three},
+    CmdFn {.name = &quot;one&quot;, .func = one},
+    CmdFn {.name = &quot;two&quot;, .func = two},
+    CmdFn {.name = &quot;three&quot;, .func = three},
 };
-fn one(value: i32) -&gt; i32 { value + 1 }
-fn two(value: i32) -&gt; i32 { value + 2 }
-fn three(value: i32) -&gt; i32 { value + 3 }
+fn one(value: i32) -&gt; i32 { return value + 1; }
+fn two(value: i32) -&gt; i32 { return value + 2; }
+fn three(value: i32) -&gt; i32 { return value + 3; }
 
 fn performFn(comptime prefix_char: u8, start_value: i32) -&gt; i32 {
     var result: i32 = start_value;
@@ -3658,11 +3760,14 @@ fn performFn(comptime prefix_char: u8, start_value: i32) -&gt; i32 {
     return result;
 }
 
-test "perform fn" {
+test &quot;perform fn&quot; {
     assert(performFn('t', 1) == 6);
     assert(performFn('o', 0) == 1);
     assert(performFn('w', 99) == 99);
-}</code></pre>
+}</code></pre><pre><code class="shell">$ zig test comptime_vars.zig
+Test 1/1 perform fn...OK
+</code></pre>
+
       <p>
       This example is a bit contrived, because the compile-time evaluation component is unnecessary;
       this code would work fine if it was all done at run-time. But it does end up generating
@@ -3676,17 +3781,15 @@ fn performFn(start_value: i32) -&gt; i32 {
     result = two(result);
     result = three(result);
     return result;
-}
-
-// From the line:
+}</code></pre>
+      <pre><code class="zig">// From the line:
 // assert(performFn('o', 0) == 1);
 fn performFn(start_value: i32) -&gt; i32 {
     var result: i32 = start_value;
     result = one(result);
     return result;
-}
-
-// From the line:
+}</code></pre>
+      <pre><code class="zig">// From the line:
 // assert(performFn('w', 99) == 99);
 fn performFn(start_value: i32) -&gt; i32 {
     var result: i32 = start_value;
@@ -3708,16 +3811,18 @@ fn performFn(start_value: i32) -&gt; i32 {
       use a <code>comptime</code> expression to guarantee that the expression will be evaluated at compile-time.
       If this cannot be accomplished, the compiler will emit an error. For example:
       </p>
-      <pre><code class="zig">extern fn exit() -&gt; unreachable;
+      <p class="file">test.zig</p><pre><code class="zig">extern fn exit() -&gt; noreturn;
 
-fn foo() {
+test &quot;foo&quot; {
     comptime {
         exit();
     }
-}</code></pre>
-      <pre><code>./test.zig:5:9: error: unable to evaluate constant expression
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:9: </span><span class="t31_1">error:</span><span class="t0_1"> unable to evaluate constant expression</span>
         exit();
-        ^</code></pre>
+        <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       It doesn't make sense that a program could call <code>exit()</code> (or any other external function)
       at compile-time, so this is a compile error. However, a <code>comptime</code> expression does much
@@ -3740,14 +3845,14 @@ fn foo() {
       <p>
       Let's look at an example:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 fn fibonacci(index: u32) -&gt; u32 {
     if (index &lt; 2) return index;
     return fibonacci(index - 1) + fibonacci(index - 2);
 }
 
-test "fibonacci" {
+test &quot;fibonacci&quot; {
     // test fibonacci at run-time
     assert(fibonacci(7) == 13);
 
@@ -3755,52 +3860,54 @@ test "fibonacci" {
     comptime {
         assert(fibonacci(7) == 13);
     }
-}</code></pre>
-      <pre><code>$ zig test test.zig
-Test 1/1 testFibonacci...OK</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 fibonacci...OK
+</code></pre>
+
       <p>
       Imagine if we had forgotten the base case of the recursive function and tried to run the tests:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 fn fibonacci(index: u32) -&gt; u32 {
     //if (index &lt; 2) return index;
     return fibonacci(index - 1) + fibonacci(index - 2);
 }
 
-test "fibonacci" {
+test &quot;fibonacci&quot; {
     comptime {
         assert(fibonacci(7) == 13);
     }
-}</code></pre>
-      <pre><code>$ zig test test.zig
-./test.zig:3:28: error: operation caused overflow
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:28: </span><span class="t31_1">error:</span><span class="t0_1"> operation caused overflow</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                          ^
-./test.zig:3:21: note: called from here
+                           <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:14:25: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:25: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
         assert(fibonacci(7) == 13);
-                        ^</code></pre>
+                        <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       The compiler produces an error which is a stack trace from trying to evaluate the
       function at compile-time.
@@ -3810,54 +3917,56 @@ test "fibonacci" {
       undefined behavior, which is always a compile error if the compiler knows it happened.
       But what would have happened if we used a signed integer?
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 fn fibonacci(index: i32) -&gt; i32 {
     //if (index &lt; 2) return index;
     return fibonacci(index - 1) + fibonacci(index - 2);
 }
 
-test "fibonacci" {
+test &quot;fibonacci&quot; {
     comptime {
         assert(fibonacci(7) == 13);
     }
-}</code></pre>
-      <pre><code>./test.zig:3:21: error: evaluation exceeded 1000 backwards branches
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t31_1">error:</span><span class="t0_1"> evaluation exceeded 1000 backwards branches</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^
-./test.zig:3:21: note: called from here
+                    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:21: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     return fibonacci(index - 1) + fibonacci(index - 2);
-                    ^</code></pre>
+                    <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       The compiler noticed that evaluating this function at compile-time took a long time,
       and thus emitted a compile error and gave up. If the programmer wants to increase
@@ -3867,15 +3976,26 @@ test "fibonacci" {
       <p>
       What if we fix the base case, but put the wrong value in the <code>assert</code> line?
       </p>
-      <pre><code class="zig">comptime {
-    assert(fibonacci(7) == 99999);
-}</code></pre>
-      <pre><code>./test.zig:15:14: error: unable to evaluate constant expression
-    if (!ok) unreachable;
-            ^
-./test.zig:10:15: note: called from here
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+fn fibonacci(index: i32) -&gt; i32 {
+    if (index &lt; 2) return index;
+    return fibonacci(index - 1) + fibonacci(index - 2);
+}
+
+test &quot;fibonacci&quot; {
+    comptime {
         assert(fibonacci(7) == 99999);
-              ^</code></pre>
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:94:13: </span><span class="t31_1">error:</span><span class="t0_1"> unable to evaluate constant expression</span>
+            @panic(&quot;assertion failure&quot;);
+            <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:15: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+        assert(fibonacci(7) == 99999);
+              <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       What happened is Zig started interpreting the <code>assert</code> function with the
       parameter <code>ok</code> set to <code>false</code>. When the interpreter hit
@@ -3889,7 +4009,7 @@ test "fibonacci" {
       <code>comptime</code> expressions. This means that we can use functions to
       initialize complex static data. For example:
       </p>
-      <pre><code class="zig">const first_25_primes = firstNPrimes(25);
+      <p class="file">test.zig</p><pre><code class="zig">const first_25_primes = firstNPrimes(25);
 const sum_of_first_25_primes = sum(first_25_primes);
 
 fn firstNPrimes(comptime n: usize) -&gt; [n]i32 {
@@ -3913,19 +4033,26 @@ fn firstNPrimes(comptime n: usize) -&gt; [n]i32 {
     return prime_list;
 }
 
-fn sum(numbers: []i32) -&gt; i32 {
+fn sum(numbers: []const i32) -&gt; i32 {
     var result: i32 = 0;
     for (numbers) |x| {
         result += x;
     }
     return result;
-}</code></pre>
+}
+
+test &quot;variable values&quot; {
+    @import(&quot;std&quot;).debug.assert(sum_of_first_25_primes == 1060);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 variable values...OK
+</code></pre>
+
       <p>
       When we compile this program, Zig generates the constants
       with the answer pre-computed. Here are the lines from the generated LLVM IR:
       </p>
-      <pre><code>@0 = internal unnamed_addr constant [25 x i32] [i32 2, i32 3, i32 5, i32 7, i32 11, i32 13, i32 17, i32 19, i32 23, i32 29, i32 31, i32 37, i32 41, i32 43, i32 47, i32 53, i32 59, i32 61, i32 67, i32 71, i32 73, i32 79, i32 83, i32 89, i32 97]
-      @1 = internal unnamed_addr constant i32 1060</code></pre>
+      <pre><code class="llvm">@0 = internal unnamed_addr constant [25 x i32] [i32 2, i32 3, i32 5, i32 7, i32 11, i32 13, i32 17, i32 19, i32 23, i32 29, i32 31, i32 37, i32 41, i32 43, i32 47, i32 53, i32 59, i32 61, i32 67, i32 71, i32 73, i32 79, i32 83, i32 89, i32 97]
+@1 = internal unnamed_addr constant i32 1060</code></pre>
       <p>
       Note that we did not have to do anything special with the syntax of these functions. For example,
       we could call the <code>sum</code> function as is with a slice of numbers whose length and values were
@@ -3945,10 +4072,10 @@ fn sum(numbers: []i32) -&gt; i32 {
       the type <code>i32</code>. In Zig we refer to the type as <code>List(i32)</code>.
       </p>
       <pre><code class="zig">fn List(comptime T: type) -&gt; type {
-    struct {
+    return struct {
         items: []T,
         len: usize,
-    }
+    };
 }</code></pre>
       <p>
       That's it. It's a function that returns an anonymous <code>struct</code>. For the purposes of error messages
@@ -3975,14 +4102,14 @@ fn sum(numbers: []i32) -&gt; i32 {
       <p>
       Putting all of this together, let's see how <code>printf</code> works in Zig.
       </p>
-      <pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+      <p class="file">printf.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 
 const a_number: i32 = 1234;
 const a_string = &quot;foobar&quot;;
 
 pub fn main() {
     warn(&quot;here is a string: '{}' here is a number: {}\n&quot;, a_string, a_number);
-}</code></pre><pre><code class="sh">$ zig build-exe printf.zig
+}</code></pre><pre><code class="shell">$ zig build-exe printf.zig
 $ ./printf
 here is a string: 'foobar' here is a number: 1234
 </code></pre>
@@ -4008,11 +4135,11 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
         switch (state) {
             State.Start =&gt; switch (c) {
                 '{' =&gt; {
-                    if (start_index &lt; i) try self.write(format[start_index...i]);
+                    if (start_index &lt; i) try self.write(format[start_index..i]);
                     state = State.OpenBrace;
                 },
                 '}' =&gt; {
-                    if (start_index &lt; i) try self.write(format[start_index...i]);
+                    if (start_index &lt; i) try self.write(format[start_index..i]);
                     state = State.CloseBrace;
                 },
                 else =&gt; {},
@@ -4028,27 +4155,27 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
                     state = State.Start;
                     start_index = i + 1;
                 },
-                else =&gt; @compileError("Unknown format character: " ++ c),
+                else =&gt; @compileError(&quot;Unknown format character: &quot; ++ c),
             },
             State.CloseBrace =&gt; switch (c) {
                 '}' =&gt; {
                     state = State.Start;
                     start_index = i;
                 },
-                else =&gt; @compileError("Single '}' encountered in format string"),
+                else =&gt; @compileError(&quot;Single '}' encountered in format string&quot;),
             },
         }
     }
     comptime {
         if (args.len != next_arg) {
-            @compileError("Unused arguments");
+            @compileError(&quot;Unused arguments&quot;);
         }
         if (state != State.Start) {
-            @compileError("Incomplete format string: " ++ format);
+            @compileError(&quot;Incomplete format string: &quot; ++ format);
         }
     }
     if (start_index &lt; format.len) {
-        try self.write(format[start_index...format.len]);
+        try self.write(format[start_index..format.len]);
     }
     try self.flush();
 }</code></pre>
@@ -4064,11 +4191,11 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
       and emits a function that actually looks like this:
       </p>
       <pre><code class="zig">pub fn printf(self: &amp;OutStream, arg0: i32, arg1: []const u8) -&gt; %void {
-    try self.write("here is a string: '");
+    try self.write(&quot;here is a string: '&quot;);
     try self.printValue(arg0);
-    try self.write("' here is a number: ");
+    try self.write(&quot;' here is a number: &quot;);
     try self.printValue(arg1);
-    try self.write("\n");
+    try self.write(&quot;\n&quot;);
     try self.flush();
 }</code></pre>
       <p>
@@ -4085,20 +4212,35 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
         const casted_value = ([]const u8)(value);
         return self.write(casted_value);
     } else {
-        @compileError("Unable to print type '" ++ @typeName(T) ++ "'");
+        @compileError(&quot;Unable to print type '&quot; ++ @typeName(T) ++ &quot;'&quot;);
     }
 }</code></pre>
       <p>
       And now, what happens if we give too many arguments to <code>printf</code>?
       </p>
-      <pre><code class="zig">warn("here is a string: '{}' here is a number: {}\n",
-        a_string, a_number, a_number);</code></pre>
-      <pre><code>.../std/io.zig:147:17: error: Unused arguments
-                @compileError("Unused arguments");
-                ^
-./test.zig:7:23: note: called from here
-    warn("here is a number: {} and here is a string: {}\n",
-                      ^</code></pre>
+      <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+
+const a_number: i32 = 1234;
+const a_string = &quot;foobar&quot;;
+
+test &quot;printf too many arguments&quot; {
+    warn(&quot;here is a string: '{}' here is a number: {}\n&quot;,
+        a_string, a_number, a_number);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:183:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
+            @compileError(&quot;Unused arguments&quot;);
+            <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:470:30: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+        return std.fmt.format(self, self.writeFn, format, args);
+                             <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:30:17: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+    stderr.print(fmt, args) catch return;
+                <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+    warn(&quot;here is a string: '{}' here is a number: {}\n&quot;,
+        <span class="t32_1">^</span>
+</code></pre>
+
       <p>
       Zig gives programmers the tools needed to protect themselves against their own mistakes.
       </p>
@@ -4106,7 +4248,7 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) -&gt
       Zig doesn't care whether the format argument is a string literal,
       only that it is a compile-time known value that is implicitly castable to a <code>[]const u8</code>:
       </p>
-      <pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+      <p class="file">printf.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 
 const a_number: i32 = 1234;
 const a_string = &quot;foobar&quot;;
@@ -4114,7 +4256,7 @@ const fmt = &quot;here is a string: '{}' here is a number: {}\n&quot;;
 
 pub fn main() {
     warn(fmt, a_string, a_number);
-}</code></pre><pre><code class="sh">$ zig build-exe printf.zig
+}</code></pre><pre><code class="shell">$ zig build-exe printf.zig
 $ ./printf
 here is a string: 'foobar' here is a number: 1234
 </code></pre>
@@ -4158,7 +4300,7 @@ here is a string: 'foobar' here is a number: 1234
       </p>
       <h2 id="addWithOverflow">@addWithOverflow</h2>
 
-      <pre><code class="zig">@addWithOverflow(comptime T: type, a: T, b: T, result: &amp;T) -&gt; bool</code></pre>
+      <pre><code class="zig">@addWithOverflow(comptime T: type, a: T, b: T, result: &T) -&gt; bool</code></pre>
       <p>
       Performs <code>*result = a + b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
@@ -4226,7 +4368,7 @@ here is a string: 'foobar' here is a number: 1234
       </p>
       <pre><code class="zig">const assert = @import("std").debug.assert;
 comptime {
-    assert(&amp;u32 == &amp;align(@alignOf(u32)) u32);
+    assert(&u32 == &align(@alignOf(u32)) u32);
 }</code></pre>
       <p>
       The result is a target-specific compile time constant. It is guaranteed to be
@@ -4345,7 +4487,7 @@ comptime {
       
       <h2 id="cmpxchg">@cmpxchg</h2>
 
-      <pre><code class="zig">@cmpxchg(ptr: &amp;T, cmp: T, new: T, success_order: AtomicOrder, fail_order: AtomicOrder) -&gt; bool</code></pre>
+      <pre><code class="zig">@cmpxchg(ptr: &T, cmp: T, new: T, success_order: AtomicOrder, fail_order: AtomicOrder) -&gt; bool</code></pre>
       <p>
       This function performs an atomic compare exchange operation.
       </p>
@@ -4387,42 +4529,57 @@ comptime {
       This function can be used to do "printf debugging" on
       compile-time executing code.
       </p>
-<pre><code class="zig">const warn = @import("std").debug.warn;
+      <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 
-const num1 = {
+const num1 = blk: {
     var val1: i32 = 99;
-    @compileLog("comptime val1 = ", val1); 
+    @compileLog(&quot;comptime val1 = &quot;, val1); 
     val1 = val1 + 1;
-    val1
+    break :blk val1;
 };
 
-pub fn main() -&gt; %void {
-    @compileLog("comptime in main"); 
+test &quot;main&quot; {
+    @compileLog(&quot;comptime in main&quot;); 
 
-    warn("Runtime in main, num1 = {}.\n", num1);
-}</code></pre>
+    warn(&quot;Runtime in main, num1 = {}.\n&quot;, num1);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+| &quot;comptime in main&quot;
+| &quot;comptime val1 = &quot;, 99
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:11:5: </span><span class="t31_1">error:</span><span class="t0_1"> found compile log statement</span>
+    @compileLog(&quot;comptime in main&quot;); 
+    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:5: </span><span class="t31_1">error:</span><span class="t0_1"> found compile log statement</span>
+    @compileLog(&quot;comptime val1 = &quot;, val1); 
+    <span class="t32_1">^</span>
+</code></pre>
 
       </p>
       <p>
       will ouput:
       </p>
-
-<pre><code class="sh">$ zig build-exe test.zig
-| "comptime in main"
-| "comptime val1 = ", 99
-test.zig:14:5: error: found compile log statement
-    @compileLog("comptime in main");
-    ^
-test.zig:6:2: error: found compile log statement
- @compileLog("comptime val1 = ", val1);
- ^</code></pre>
       <p>
       If all <code>@compileLog</code> calls are removed or 
       not encountered by analysis, the
       program compiles successfully and the generated executable prints:
       </p>  
-<pre><code class="sh">Runtime in main, num1 = 100.</code></pre>
-{{@ctheader_open:z}}
+      <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+
+const num1 = blk: {
+    var val1: i32 = 99;
+    val1 = val1 + 1;
+    break :blk val1;
+};
+
+test &quot;main&quot; {
+    warn(&quot;Runtime in main, num1 = {}.\n&quot;, num1);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 main...Runtime in main, num1 = 100.
+OK
+</code></pre>
+
+      
+      <h2 id="ctz">@ctz</h2>
+
       <pre><code class="zig">@ctz(x: T) -&gt; U</code></pre>
       <p>
       This function counts the number of trailing zeroes in <code>x</code> which is an integer
@@ -4551,7 +4708,7 @@ test.zig:6:2: error: found compile log statement
       
       <h2 id="errorReturnTrace">@errorReturnTrace</h2>
 
-      <pre><code class="zig">@errorReturnTrace() -&gt; ?&amp;builtin.StackTrace</code></pre>
+      <pre><code class="zig">@errorReturnTrace() -&gt; ?&builtin.StackTrace</code></pre>
       <p>
       If the binary is built with error return tracing, and this function is invoked in a
       function that calls a function with an error or error union return type, returns a
@@ -4575,7 +4732,7 @@ test.zig:6:2: error: found compile log statement
       <h2 id="fieldParentPtr">@fieldParentPtr</h2>
 
       <pre><code class="zig">@fieldParentPtr(comptime ParentType: type, comptime field_name: []const u8,
-    field_ptr: &amp;T) -&gt; &amp;ParentType</code></pre>
+    field_ptr: &T) -&gt; &ParentType</code></pre>
       <p>
       Given a pointer to a field, returns the base pointer of a struct.
       </p>
@@ -4626,12 +4783,16 @@ test.zig:6:2: error: found compile log statement
       <p>
       This calls a function, in the same way that invoking an expression with parentheses does:
       </p>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
-test "inline function call" {
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;inline function call&quot; {
     assert(@inlineCall(add, 3, 9) == 12);
 }
 
-fn add(a: i32, b: i32) -&gt; i32 { a + b }</code></pre>
+fn add(a: i32, b: i32) -&gt; i32 { return a + b; }</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 inline function call...OK
+</code></pre>
+
       <p>
       Unlike a normal function call, however, <code>@inlineCall</code> guarantees that the call
       will be inlined. If the call cannot be inlined, a compile error is emitted.
@@ -4685,7 +4846,7 @@ fn add(a: i32, b: i32) -&gt; i32 { a + b }</code></pre>
       
       <h2 id="memcpy">@memcpy</h2>
 
-      <pre><code class="zig">@memcpy(noalias dest: &amp;u8, noalias source: &amp;const u8, byte_count: usize)</code></pre>
+      <pre><code class="zig">@memcpy(noalias dest: &u8, noalias source: &const u8, byte_count: usize)</code></pre>
       <p>
       This function copies bytes from one region of memory to another. <code>dest</code> and
       <code>source</code> are both pointers and must not overlap.
@@ -4704,7 +4865,7 @@ mem.copy(u8, dest[0...byte_count], source[0...byte_count]);</code></pre>
       
       <h2 id="memset">@memset</h2>
 
-      <pre><code class="zig">@memset(dest: &amp;u8, c: u8, byte_count: usize)</code></pre>
+      <pre><code class="zig">@memset(dest: &u8, c: u8, byte_count: usize)</code></pre>
       <p>
       This function sets a region of memory to <code>c</code>. <code>dest</code> is a pointer.
       </p>
@@ -4749,7 +4910,7 @@ mem.set(u8, dest, c);</code></pre>
       
       <h2 id="mulWithOverflow">@mulWithOverflow</h2>
 
-      <pre><code class="zig">@mulWithOverflow(comptime T: type, a: T, b: T, result: &amp;T) -&gt; bool</code></pre>
+      <pre><code class="zig">@mulWithOverflow(comptime T: type, a: T, b: T, result: &T) -&gt; bool</code></pre>
       <p>
       Performs <code>*result = a * b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
@@ -4794,17 +4955,22 @@ fn add(a: i32, b: i32) -&gt; i32 { a + b }</code></pre>
       This is typically used for type safety when interacting with C code that does not expose struct details.
       Example:
       </p>
-      <pre><code class="zig">const Derp = @OpaqueType();
+      <p class="file">test.zig</p><pre><code class="zig">const Derp = @OpaqueType();
 const Wat = @OpaqueType();
 
 extern fn bar(d: &amp;Derp);
 export fn foo(w: &amp;Wat) {
     bar(w);
-}</code></pre>
-      <pre><code class="sh">$ ./zig build-obj test.zig
-test.zig:5:9: error: expected type '&amp;Derp', found '&amp;Wat'
+}
+
+test &quot;call foo&quot; {
+    foo(undefined);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:9: </span><span class="t31_1">error:</span><span class="t0_1"> expected type '&amp;Derp', found '&amp;Wat'</span>
     bar(w);
-        ^</code></pre>
+        <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="panic">@panic</h2>
 
@@ -4902,22 +5068,28 @@ test.zig:5:9: error: expected type '&amp;Derp', found '&amp;Wat'
       <p>
       Example:
       </p>
-      <pre><code class="zig">comptime {
-    var i = 0;
-    while (i &lt; 1001) : (i += 1) {}
-}</code></pre>
-      <pre><code class="sh">$ ./zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:3:5: error: evaluation exceeded 1000 backwards branches
-    while (i &lt; 1001) : (i += 1) {}
-    ^</code></pre>
-      <p>Now we use <code>@setEvalBranchQuota</code>:</p>
-      <pre><code class="zig">comptime {
-    @setEvalBranchQuota(1001);
-    var i = 0;
-    while (i &lt; 1001) : (i += 1) {}
-}</code></pre>
-      <pre><code class="sh">$ ./zig build-obj test.zig</code></pre>
-      <p>(no output because it worked fine)</p>
+      <p class="file">test.zig</p><pre><code class="zig">test &quot;foo&quot; {
+    comptime {
+        var i = 0;
+        while (i &lt; 1001) : (i += 1) {}
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:9: </span><span class="t31_1">error:</span><span class="t0_1"> evaluation exceeded 1000 backwards branches</span>
+        while (i &lt; 1001) : (i += 1) {}
+        <span class="t32_1">^</span>
+</code></pre>
+
+      <p>Now we use <code class="zig">@setEvalBranchQuota</code>:</p>
+      <p class="file">test.zig</p><pre><code class="zig">test &quot;foo&quot; {
+    comptime {
+        @setEvalBranchQuota(1001);
+        var i = 0;
+        while (i &lt; 1001) : (i += 1) {}
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 foo...OK
+</code></pre>
+
 
       <p>See also:</p><ul>
 <li><a href="#comptime">comptime</a></li>
@@ -4993,7 +5165,7 @@ test.zig:5:9: error: expected type '&amp;Derp', found '&amp;Wat'
       
       <h2 id="shlWithOverflow">@shlWithOverflow</h2>
 
-      <pre><code class="zig">@shlWithOverflow(comptime T: type, a: T, shift_amt: Log2T, result: &amp;T) -&gt; bool</code></pre>
+      <pre><code class="zig">@shlWithOverflow(comptime T: type, a: T, shift_amt: Log2T, result: &T) -&gt; bool</code></pre>
       <p>
       Performs <code>*result = a &lt;&lt; b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
@@ -5038,7 +5210,7 @@ test.zig:5:9: error: expected type '&amp;Derp', found '&amp;Wat'
       
       <h2 id="subWithOverflow">@subWithOverflow</h2>
 
-      <pre><code class="zig">@subWithOverflow(comptime T: type, a: T, b: T, result: &amp;T) -&gt; bool</code></pre>
+      <pre><code class="zig">@subWithOverflow(comptime T: type, a: T, b: T, result: &T) -&gt; bool</code></pre>
       <p>
       Performs <code>*result = a - b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
@@ -5094,7 +5266,6 @@ const b: u8 = @truncate(u8, a);
     ErrorUnion,
     Error,
     Enum,
-    EnumTag,
     Union,
     Fn,
     Namespace,
@@ -5103,7 +5274,6 @@ const b: u8 = @truncate(u8, a);
     ArgTuple,
     Opaque,
 };</code></pre>
-
       
       <h2 id="typeName">@typeName</h2>
 
@@ -5136,21 +5306,21 @@ const b: u8 = @truncate(u8, a);
       <p>
       To add standard build options to a <code>build.zig</code> file:
       </p>
-      <pre><code class="sh">const Builder = @import("std").build.Builder;
+      <pre><code class="zig">const Builder = @import(&quot;std&quot;).build.Builder;
 
-pub fn build(b: &amp;Builder) {
-    const exe = b.addExecutable("example", "example.zig");
+pub fn build(b: &amp;Builder) -&gt; %void {
+    const exe = b.addExecutable(&quot;example&quot;, &quot;example.zig&quot;);
     exe.setBuildMode(b.standardReleaseOptions());
     b.default_step.dependOn(&amp;exe.step);
 }</code></pre>
       <p>
       This causes these options to be available:
       </p>
-      <pre><code class="sh">  -Drelease-safe=(bool)  optimizations on and safety on
+      <pre><code class="shell">  -Drelease-safe=(bool)  optimizations on and safety on
   -Drelease-fast=(bool)  optimizations on and safety off</code></pre>
       <h2 id="Debug">Debug</h2>
 
-      <pre><code class="sh">$ zig build-exe example.zig</code></pre>
+      <pre><code class="shell">$ zig build-exe example.zig</code></pre>
       <ul>
         <li>Fast compilation speed</li>
         <li>Safety checks enabled</li>
@@ -5159,7 +5329,7 @@ pub fn build(b: &amp;Builder) {
       
       <h2 id="ReleaseFast">ReleaseFast</h2>
 
-      <pre><code class="sh">$ zig build-exe example.zig --release-fast</code></pre>
+      <pre><code class="shell">$ zig build-exe example.zig --release-fast</code></pre>
       <ul>
         <li>Fast runtime performance</li>
         <li>Safety checks disabled</li>
@@ -5168,7 +5338,7 @@ pub fn build(b: &amp;Builder) {
       
       <h2 id="ReleaseSafe">ReleaseSafe</h2>
 
-      <pre><code class="sh">$ zig build-exe example.zig --release-safe</code></pre>
+      <pre><code class="shell">$ zig build-exe example.zig --release-safe</code></pre>
       <ul>
         <li>Medium runtime performance</li>
         <li>Safety checks enabled</li>
@@ -5195,76 +5365,87 @@ pub fn build(b: &amp;Builder) {
       <p>
       When a safety check fails, Zig crashes with a stack trace, like this:
       </p>
-      <pre><code class="zig">test "safety check" {
+      <p class="file">test.zig</p><pre><code class="zig">test &quot;safety check&quot; {
     unreachable;
-}</code></pre>
-      <pre><code class="sh">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 safety check...reached unreachable code
-/home/andy/dev/zig/build/lib/zig/std/special/zigrt.zig:16:35: 0x000000000020331c in ??? (test)
-        @import("std").debug.panic("{}", message_ptr[0...message_len]);
-                                  ^
-/home/andy/dev/zig/build/test.zig:2:5: 0x0000000000203297 in ??? (test)
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x0000000000203914 in ??? (test)</span>
+    dumpCurrentStackTrace();
+                         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:19:39</span>: <span class="t2_0">0x0000000000203746 in ??? (test)</span>
+            @import(&quot;std&quot;).debug.panic(&quot;{}&quot;, msg);
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x0000000000203640 in ??? (test)</span>
     unreachable;
-    ^
-/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:9:21: 0x0000000000214b0a in ??? (test)
-        test_fn.func();
-                    ^
-/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:50:21: 0x0000000000214a17 in ??? (test)
-    return root.main();
-                    ^
-/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:37:13: 0x00000000002148d0 in ??? (test)
-    callMain(argc, argv, envp) catch exit(1);
-            ^
-/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:30:20: 0x0000000000214820 in ??? (test)
-    callMainAndExit()
-                   ^
+    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021bd45 in ??? (test)</span>
+        try test_fn.func();
+                        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bb4b in ??? (test)</span>
+            root.main() catch |err| {
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bab8 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021b968 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021b8f0 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
 
 Tests failed. Use the following command to reproduce the failure:
-./test</code></pre>
+./zig-cache/test
+</code></pre>
+
       <h2 id="Reaching-Unreachable-Code">Reaching Unreachable Code</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     assert(false);
 }
 fn assert(ok: bool) {
     if (!ok) unreachable; // assertion failure
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:5:14: error: unable to evaluate constant expression
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:14: </span><span class="t31_1">error:</span><span class="t0_1"> unable to evaluate constant expression</span>
     if (!ok) unreachable; // assertion failure
-             ^
-/home/andy/dev/zig/build/test.zig:2:11: note: called from here
+             <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:11: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     assert(false);
-          ^
-/home/andy/dev/zig/build/test.zig:1:10: note: called from here
+          <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:1:10: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
 comptime {
-         ^</code></pre>
+         <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>reached unreachable code</code> and a stack trace.</p>
       
       <h2 id="Index-out-of-Bounds">Index out of Bounds</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
-    const array = "hello";
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
+    const array = &quot;hello&quot;;
     const garbage = array[5];
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:3:26: error: index 5 outside array of size 5
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:26: </span><span class="t31_1">error:</span><span class="t0_1"> index 5 outside array of size 5</span>
     const garbage = array[5];
-                         ^</code></pre>
+                         <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>index out of bounds</code> and a stack trace.</p>
       
       <h2 id="Cast-Negative-Number-to-Unsigned-Integer">Cast Negative Number to Unsigned Integer</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const value: i32 = -1;
     const unsigned = u32(value);
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig test.zig:3:25: error: attempt to cast negative value to unsigned integer
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:25: </span><span class="t31_1">error:</span><span class="t0_1"> attempt to cast negative value to unsigned integer</span>
     const unsigned = u32(value);
-                        ^</code></pre>
+                        <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>attempt to cast negative value to unsigned integer</code> and a stack trace.</p>
       <p>
       If you are trying to obtain the maximum value of an unsigned integer, use <code>@maxValue(T)</code>,
@@ -5274,14 +5455,15 @@ comptime {
       <h2 id="Cast-Truncates-Data">Cast Truncates Data</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const spartan_count: u16 = 300;
     const byte = u8(spartan_count);
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:20: </span><span class="t31_1">error:</span><span class="t0_1"> cast from 'u16' to 'u8' truncates bits</span>
     const byte = u8(spartan_count);
-                   ^</code></pre>
+                   <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>integer cast truncated bits</code> and a stack trace.</p>
       <p>
       If you are trying to truncate bits, use <code>@truncate(T, value)</code>,
@@ -5305,14 +5487,15 @@ test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
         <li><code>@divExact</code> (division)</li>
       </ul>
       <p>Example with addition at compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     var byte: u8 = 255;
     byte += 1;
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:3:10: error: operation caused overflow
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:10: </span><span class="t31_1">error:</span><span class="t0_1"> operation caused overflow</span>
     byte += 1;
-         ^</code></pre>
+         <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>integer overflow</code> and a stack trace.</p>
       
       <h3 id="Standard-Library-Math-Functions">Standard Library Math Functions</h3>
@@ -5328,23 +5511,26 @@ test.zig:3:20: error: cast from 'u16' to 'u8' truncates bits
         <li><code>@import("std").math.shl</code></li>
       </ul>
       <p>Example of catching an overflow for addition:</p>
-      <pre><code class="zig">const math = @import("std").math;
-const warn = @import("std").debug.warn;
+      <p class="file">test.zig</p><pre><code class="zig">const math = @import(&quot;std&quot;).math;
+const warn = @import(&quot;std&quot;).debug.warn;
 pub fn main() -&gt; %void {
     var byte: u8 = 255;
 
-    byte = if (math.add(u8, byte, 1)) |result| {
-        result
-    } else |err| {
-        warn("unable to add one: {}\n", @errorName(err));
+    byte = if (math.add(u8, byte, 1)) |result| result else |err| {
+        warn(&quot;unable to add one: {}\n&quot;, @errorName(err));
         return err;
     };
 
-    warn("result: {}\n", byte);
-}</code></pre>
-      <pre><code class="sh">$ zig build-exe test.zig
+    warn(&quot;result: {}\n&quot;, byte);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-unable to add one: Overflow</code></pre>
+unable to add one: Overflow
+error: Overflow
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x000000000021bcd1 in ??? (test)</span>
+        return err;
+        <span class="t32_1">^</span>
+</code></pre>
+
       
       <h3 id="Builtin-Overflow-Functions">Builtin Overflow Functions</h3>
 
@@ -5361,20 +5547,21 @@ unable to add one: Overflow</code></pre>
       <p>
       Example of <code>@addWithOverflow</code>:
       </p>
-      <pre><code class="zig">const warn = @import("std").debug.warn;
+      <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 pub fn main() -&gt; %void {
     var byte: u8 = 255;
 
     var result: u8 = undefined;
     if (@addWithOverflow(u8, byte, 10, &amp;result)) {
-        warn("overflowed result: {}\n", result);
+        warn(&quot;overflowed result: {}\n&quot;, result);
     } else {
-        warn("result: {}\n", result);
+        warn(&quot;result: {}\n&quot;, result);
     }
-}</code></pre>
-      <pre><code class="sh">$ zig build-exe test.zig
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-overflowed result: 9</code></pre>
+overflowed result: 9
+</code></pre>
+
       
       <h3 id="Wrapping-Operations">Wrapping Operations</h3>
 
@@ -5387,68 +5574,75 @@ overflowed result: 9</code></pre>
         <li><code>-%</code> (wraparound negation)</li>
         <li><code>*%</code> (wraparound multiplication)</li>
       </ul>
-      <pre><code class="zig">const assert = @import("std").debug.assert;
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-test "wraparound addition and subtraction" {
+test &quot;wraparound addition and subtraction&quot; {
     const x: i32 = @maxValue(i32);
     const min_val = x +% 1;
     assert(min_val == @minValue(i32));
     const max_val = min_val -% 1;
     assert(max_val == @maxValue(i32));
-}</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 wraparound addition and subtraction...OK
+</code></pre>
+
       
       
       <h2 id="Exact-Left-Shift-Overflow">Exact Left Shift Overflow</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const x = @shlExact(u8(0b01010101), 2);
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:2:15: error: operation caused overflow
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:15: </span><span class="t31_1">error:</span><span class="t0_1"> operation caused overflow</span>
     const x = @shlExact(u8(0b01010101), 2);
-              ^</code></pre>
+              <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>left shift overflowed bits</code> and a stack trace.</p>
       
       <h2 id="Exact-Right-Shift-Overflow">Exact Right Shift Overflow</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const x = @shrExact(u8(0b10101010), 2);
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:2:15: error: exact shift shifted out 1 bits
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:15: </span><span class="t31_1">error:</span><span class="t0_1"> exact shift shifted out 1 bits</span>
     const x = @shrExact(u8(0b10101010), 2);
-              ^</code></pre>
+              <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>right shift overflowed bits</code> and a stack trace.</p>
       
       <h2 id="Division-by-Zero">Division by Zero</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const a: i32 = 1;
     const b: i32 = 0;
     const c = a / b;
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:4:17: error: division by zero is undefined
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:17: </span><span class="t31_1">error:</span><span class="t0_1"> division by zero</span>
     const c = a / b;
-                ^</code></pre>
+                <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>division by zero</code> and a stack trace.</p>
 
       
       <h2 id="Remainder-Division-by-Zero">Remainder Division by Zero</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const a: i32 = 10;
     const b: i32 = 0;
     const c = a % b;
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:4:17: error: division by zero is undefined
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:17: </span><span class="t31_1">error:</span><span class="t0_1"> division by zero</span>
     const c = a % b;
-                ^</code></pre>
+                <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>remainder division by zero</code> and a stack trace.</p>
 
       
@@ -5463,18 +5657,19 @@ test "wraparound addition and subtraction" {
       <h2 id="Attempt-to-Unwrap-Null">Attempt to Unwrap Null</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const nullable_number: ?i32 = null;
     const number = ??nullable_number;
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:3:20: error: unable to unwrap null
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:20: </span><span class="t31_1">error:</span><span class="t0_1"> unable to unwrap null</span>
     const number = ??nullable_number;
-                   ^</code></pre>
+                   <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>attempt to unwrap null</code> and a stack trace.</p>
       <p>One way to avoid this crash is to test for null instead of assuming non-null, with
       the <code>if</code> expression:</p>
-      <pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+      <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 pub fn main() {
     const nullable_number: ?i32 = null;
 
@@ -5483,7 +5678,7 @@ pub fn main() {
     } else {
         warn(&quot;it's null\n&quot;);
     }
-}</code></pre><pre><code class="sh">$ zig build-exe test.zig
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 it's null
 </code></pre>
@@ -5492,23 +5687,24 @@ it's null
       <h2 id="Attempt-to-Unwrap-Error">Attempt to Unwrap Error</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">comptime {
-    const number = %%getNumberOrFail();
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
+    const number = getNumberOrFail() catch unreachable;
 }
 
 error UnableToReturnNumber;
 
 fn getNumberOrFail() -&gt; %i32 {
     return error.UnableToReturnNumber;
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:2:20: error: unable to unwrap error 'UnableToReturnNumber'
-    const number = %%getNumberOrFail();
-                         ^</code></pre>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:38: </span><span class="t31_1">error:</span><span class="t0_1"> unable to unwrap error 'UnableToReturnNumber'</span>
+    const number = getNumberOrFail() catch unreachable;
+                                     <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>attempt to unwrap error: ErrorCode</code> and a stack trace.</p>
       <p>One way to avoid this crash is to test for an error instead of assuming a successful result, with
       the <code>if</code> expression:</p>
-      <pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
+      <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
 
 pub fn main() {
     const result = getNumberOrFail();
@@ -5524,7 +5720,7 @@ error UnableToReturnNumber;
 
 fn getNumberOrFail() -&gt; %i32 {
     return error.UnableToReturnNumber;
-}</code></pre><pre><code class="sh">$ zig build-exe test.zig
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 got error: UnableToReturnNumber
 </code></pre>
@@ -5533,16 +5729,17 @@ got error: UnableToReturnNumber
       <h2 id="Invalid-Error-Code">Invalid Error Code</h2>
 
       <p>At compile-time:</p>
-      <pre><code class="zig">error AnError;
+      <p class="file">test.zig</p><pre><code class="zig">error AnError;
 comptime {
     const err = error.AnError;
     const number = u32(err) + 10;
     const invalid_err = error(number);
-}</code></pre>
-      <pre><code class="sh">$ zig build-obj test.zig
-/home/andy/dev/zig/build/test.zig:5:30: error: integer value 11 represents no error
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:30: </span><span class="t31_1">error:</span><span class="t0_1"> integer value 11 represents no error</span>
     const invalid_err = error(number);
-                             ^</code></pre>
+                             <span class="t32_1">^</span>
+</code></pre>
+
       <p>At runtime crashes with the message <code>invalid error code</code> and a stack trace.</p>
       
       <h2 id="Invalid-Enum-Cast">Invalid Enum Cast</h2>
@@ -5582,17 +5779,23 @@ comptime {
       which the compiler makes available to every Zig source file. It contains
       compile-time constants such as the current target, endianness, and release mode.
       </p>
-      <pre><code class="zig">const builtin = @import("builtin");
+      <pre><code class="zig">const builtin = @import(&quot;builtin&quot;);
 const separator = if (builtin.os == builtin.Os.windows) '\\' else '/';</code></pre>
       <p>
       Example of what is imported with <code>@import("builtin")</code>:
       </p>
-      <pre><code class="zig">pub const Os = enum {
+      <pre><code class="zig">pub const StackTrace = struct {
+    index: usize,
+    instruction_addresses: []usize,
+};
+
+pub const Os = enum {
     freestanding,
+    ananas,
     cloudabi,
-    darwin,
     dragonfly,
     freebsd,
+    fuchsia,
     ios,
     kfreebsd,
     linux,
@@ -5617,12 +5820,15 @@ const separator = if (builtin.os == builtin.Os.windows) '\\' else '/';</code></p
     tvos,
     watchos,
     mesa3d,
+    contiki,
+    zen,
 };
 
 pub const Arch = enum {
     armv8_2a,
     armv8_1a,
     armv8,
+    armv8r,
     armv8m_baseline,
     armv8m_mainline,
     armv7,
@@ -5630,6 +5836,7 @@ pub const Arch = enum {
     armv7m,
     armv7s,
     armv7k,
+    armv7ve,
     armv6,
     armv6m,
     armv6k,
@@ -5649,16 +5856,20 @@ pub const Arch = enum {
     mips64,
     mips64el,
     msp430,
+    nios2,
     powerpc,
     powerpc64,
     powerpc64le,
     r600,
     amdgcn,
+    riscv32,
+    riscv64,
     sparc,
     sparcv9,
     sparcel,
     s390x,
     tce,
+    tcele,
     thumb,
     thumbeb,
     i386,
@@ -5684,7 +5895,9 @@ pub const Arch = enum {
     renderscript32,
     renderscript64,
 };
+
 pub const Environ = enum {
+    unknown,
     gnu,
     gnuabi64,
     gnueabi,
@@ -5702,6 +5915,7 @@ pub const Environ = enum {
     cygnus,
     amdopencl,
     coreclr,
+    opencl,
 };
 
 pub const ObjectFormat = enum {
@@ -5709,6 +5923,7 @@ pub const ObjectFormat = enum {
     coff,
     elf,
     macho,
+    wasm,
 };
 
 pub const GlobalLinkage = enum {
@@ -5733,15 +5948,52 @@ pub const Mode = enum {
     ReleaseFast,
 };
 
-pub const is_big_endian = false;
+pub const TypeId = enum {
+    Type,
+    Void,
+    Bool,
+    NoReturn,
+    Int,
+    Float,
+    Pointer,
+    Array,
+    Struct,
+    FloatLiteral,
+    IntLiteral,
+    UndefinedLiteral,
+    NullLiteral,
+    Nullable,
+    ErrorUnion,
+    Error,
+    Enum,
+    Union,
+    Fn,
+    Namespace,
+    Block,
+    BoundFn,
+    ArgTuple,
+    Opaque,
+};
+
+pub const FloatMode = enum {
+    Optimized,
+    Strict,
+};
+
+pub const Endian = enum {
+    Big,
+    Little,
+};
+
+pub const endian = Endian.Little;
 pub const is_test = false;
 pub const os = Os.linux;
 pub const arch = Arch.x86_64;
 pub const environ = Environ.gnu;
 pub const object_format = ObjectFormat.elf;
-pub const mode = Mode.ReleaseFast;
-pub const link_libs = [][]const u8 {
-};</code></pre>
+pub const mode = Mode.Debug;
+pub const link_libc = false;
+pub const have_error_return_tracing = true;</code></pre>
       <p>See also:</p><ul>
 <li><a href="#Build-Mode">Build Mode</a></li>
 </ul>
@@ -5804,16 +6056,23 @@ pub const link_libs = [][]const u8 {
       
       <h2 id="C-String-Literals">C String Literals</h2>
 
-      <pre><code class="zig">extern fn puts(&amp;const u8);
+      <p class="file">test.zig</p><pre><code class="zig">extern fn puts(&amp;const u8);
 
-pub fn main() -&gt; %void {
-    puts(c"this has a null terminator");
+pub fn main() {
+    puts(c&quot;this has a null terminator&quot;);
     puts(
         c\\and so
         c\\does this
         c\\multiline C string literal
     );
-}</code></pre>
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig --library c
+$ ./test
+this has a null terminator
+and so
+does this
+multiline C string literal
+</code></pre>
+
       <p>See also:</p><ul>
 <li><a href="#String-Literals">String Literals</a></li>
 </ul>
@@ -5825,27 +6084,31 @@ pub fn main() -&gt; %void {
       The <code>@cImport</code> builtin function can be used
       to directly import symbols from .h files:
       </p>
-      <pre><code class="zig">const c = @cImport(@cInclude("stdio.h"));
-pub fn main() -&gt; %void {
-    c.printf("hello\n");
-}</code></pre>
+      <p class="file">test.zig</p><pre><code class="zig">const c = @cImport(@cInclude(&quot;stdio.h&quot;));
+pub fn main() {
+    _ = c.printf(c&quot;hello\n&quot;);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig --library c
+$ ./test
+hello
+</code></pre>
+
       <p>
       The <code>@cImport</code> function takes an expression as a parameter.
       This expression is evaluated at compile-time and is used to control
       preprocessor directives and include multiple .h files:
       </p>
-      <pre><code class="zig">const builtin = @import("builtin");
+      <pre><code class="zig">const builtin = @import(&quot;builtin&quot;);
 
 const c = @cImport({
-    @cDefine("NDEBUG", builtin.mode == builtin.Mode.ReleaseFast);
+    @cDefine(&quot;NDEBUG&quot;, builtin.mode == builtin.Mode.ReleaseFast);
     if (something) {
-        @cDefine("_GNU_SOURCE", {});
+        @cDefine(&quot;_GNU_SOURCE&quot;, {});
     }
-    @cInclude("stdlib.h")
+    @cInclude(&quot;stdlib.h&quot;);
     if (something) {
-        @cUndef("_GNU_SOURCE");
+        @cUndef(&quot;_GNU_SOURCE&quot;);
     }
-    @cInclude("soundio.h");
+    @cInclude(&quot;soundio.h&quot;);
 });</code></pre>
       <p>See also:</p><ul>
 <li><a href="#cImport">@cImport</a></li>
@@ -5864,7 +6127,7 @@ const c = @cImport({
       
       <h2 id="basezig">base64.zig</h2>
 
-      <pre><code class="zig">const base64 = @import("std").base64;
+      <p class="file">test.zig</p><pre><code class="zig">const base64 = @import(&quot;std&quot;).base64;
 
 export fn decode_base_64(dest_ptr: &amp;u8, dest_len: usize,
     source_ptr: &amp;const u8, source_len: usize) -&gt; usize
@@ -5875,10 +6138,12 @@ export fn decode_base_64(dest_ptr: &amp;u8, dest_len: usize,
     const decoded_size = base64_decoder.calcSize(src);
     base64_decoder.decode(dest[0..decoded_size], src);
     return decoded_size;
-}
-</code></pre>
-{{teheader_open:st.c}}
-      <pre><code class="c">// This header is generated by zig from base64.zig
+}</code></pre><pre><code class="shell">$ zig build-obj test.zig</code></pre>
+
+      
+      <h2 id="testc">test.c</h2>
+
+      <pre><code class="cpp">// This header is generated by zig from base64.zig
 #include "base64.h"
 
 #include &lt;string.h&gt;
@@ -5897,25 +6162,25 @@ int main(int argc, char **argv) {
       
       <h2 id="buildzig">build.zig</h2>
 
-      <pre><code class="zig">const Builder = @import("std").build.Builder;
+      <pre><code class="zig">const Builder = @import(&quot;std&quot;).build.Builder;
 
-pub fn build(b: &amp;Builder) {
-    const obj = b.addObject("base64", "base64.zig");
+pub fn build(b: &amp;Builder) -&gt; %void {
+    const obj = b.addObject(&quot;base64&quot;, &quot;base64.zig&quot;);
 
-    const exe = b.addCExecutable("test");
+    const exe = b.addCExecutable(&quot;test&quot;);
     exe.addCompileFlags([][]const u8 {
-        "-std=c99",
+        &quot;-std=c99&quot;,
     });
-    exe.addSourceFile("test.c");
+    exe.addSourceFile(&quot;test.c&quot;);
     exe.addObject(obj);
-    exe.setOutputPath(".");
+    exe.setOutputPath(&quot;.&quot;);
 
     b.default_step.dependOn(&amp;exe.step);
 }</code></pre>
       
       <h2 id="Terminal">Terminal</h2>
 
-      <pre><code class="sh">$ zig build
+      <pre><code class="shell">$ zig build
 $ ./test
 all your base are belong to us</code></pre>
       <p>See also:</p><ul>
@@ -5932,11 +6197,12 @@ all your base are belong to us</code></pre>
       what it looks like to execute <code>zig targets</code> on a Linux x86_64
       computer:
       </p>
-      <pre><code class="sh">$ zig targets
+      <pre><code class="shell">$ zig targets
 Architectures:
   armv8_2a
   armv8_1a
   armv8
+  armv8r
   armv8m_baseline
   armv8m_mainline
   armv7
@@ -5944,6 +6210,7 @@ Architectures:
   armv7m
   armv7s
   armv7k
+  armv7ve
   armv6
   armv6m
   armv6k
@@ -5963,16 +6230,20 @@ Architectures:
   mips64
   mips64el
   msp430
+  nios2
   powerpc
   powerpc64
   powerpc64le
   r600
   amdgcn
+  riscv32
+  riscv64
   sparc
   sparcv9
   sparcel
   s390x
   tce
+  tcele
   thumb
   thumbeb
   i386
@@ -5986,6 +6257,7 @@ Architectures:
   amdil64
   hsail
   hsail64
+  spir
   spir64
   kalimbav3
   kalimbav4
@@ -5999,10 +6271,11 @@ Architectures:
 
 Operating Systems:
   freestanding
+  ananas
   cloudabi
-  darwin
   dragonfly
   freebsd
+  fuchsia
   ios
   kfreebsd
   linux (native)
@@ -6027,8 +6300,11 @@ Operating Systems:
   tvos
   watchos
   mesa3d
+  contiki
+  zen
 
 Environments:
+  unknown
   gnu (native)
   gnuabi64
   gnueabi
@@ -6045,7 +6321,8 @@ Environments:
   itanium
   cygnus
   amdopencl
-  coreclr</code></pre>
+  coreclr
+  opencl</code></pre>
       <p>
       The Zig Standard Library (<code>@import("std")</code>) has architecture, environment, and operating sytsem
       abstractions, and thus takes additional work to support more platforms. It currently supports
@@ -6116,7 +6393,7 @@ coding style.
       
       <h2 id="Examples">Examples</h2>
 
-      <pre><code class="zig">const namespace_name = @import("dir_name/file_name.zig");
+      <pre><code class="zig">const namespace_name = @import(&quot;dir_name/file_name.zig&quot;);
 var global_var: i32 = undefined;
 const const_name = 42;
 const primitive_type_alias = f32;
@@ -6138,15 +6415,15 @@ fn ListTemplateFunction(comptime ChildType: type, comptime fixed_size: usize) -&
 }
 
 fn ShortList(comptime T: type, comptime n: usize) -&gt; type {
-    struct {
+    return struct {
         field_name: [n]T,
         fn methodName() {}
-    }
+    };
 }
 
 // The word XML loses its casing when used in Zig identifiers.
 const xml_document =
-    \\&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    \\&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
     \\&lt;document&gt;
     \\&lt;/document&gt;
 ;
@@ -6161,7 +6438,7 @@ fn readU32Be() -&gt; u32 {}</code></pre>
       
       <h1 id="Grammar">Grammar</h1>
 
-      <pre><code>Root = many(TopLevelItem) EOF
+      <pre><code class="nohighlight">Root = many(TopLevelItem) EOF
 
 TopLevelItem = ErrorValueDecl | CompTimeExpression(Block) | TopLevelDecl | TestDecl
 
@@ -6334,8 +6611,142 @@ ContainerDecl = option("extern" | "packed")
       <p>TODO: document changes from a31b23c46ba2a8c28df01adc1aa0b4d878b9a5cf (compile time reflection additions)</p>
       
     </div>
-    <script src="highlight/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+/*! highlight.js v9.12.0 | BSD3 License | git.io/hljslicense */
+!function(e){var n="object"==typeof window&&window||"object"==typeof self&&self;"undefined"!=typeof exports?e(exports):n&&(n.hljs=e({}),"function"==typeof define&&define.amd&&define([],function(){return n.hljs}))}(function(e){function n(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}function t(e){return e.nodeName.toLowerCase()}function r(e,n){var t=e&&e.exec(n);return t&&0===t.index}function a(e){return k.test(e)}function i(e){var n,t,r,i,o=e.className+" ";if(o+=e.parentNode?e.parentNode.className:"",t=B.exec(o))return w(t[1])?t[1]:"no-highlight";for(o=o.split(/\s+/),n=0,r=o.length;r>n;n++)if(i=o[n],a(i)||w(i))return i}function o(e){var n,t={},r=Array.prototype.slice.call(arguments,1);for(n in e)t[n]=e[n];return r.forEach(function(e){for(n in e)t[n]=e[n]}),t}function u(e){var n=[];return function r(e,a){for(var i=e.firstChild;i;i=i.nextSibling)3===i.nodeType?a+=i.nodeValue.length:1===i.nodeType&&(n.push({event:"start",offset:a,node:i}),a=r(i,a),t(i).match(/br|hr|img|input/)||n.push({event:"stop",offset:a,node:i}));return a}(e,0),n}function c(e,r,a){function i(){return e.length&&r.length?e[0].offset!==r[0].offset?e[0].offset<r[0].offset?e:r:"start"===r[0].event?e:r:e.length?e:r}function o(e){function r(e){return" "+e.nodeName+'="'+n(e.value).replace('"',"&quot;")+'"'}s+="<"+t(e)+E.map.call(e.attributes,r).join("")+">"}function u(e){s+="</"+t(e)+">"}function c(e){("start"===e.event?o:u)(e.node)}for(var l=0,s="",f=[];e.length||r.length;){var g=i();if(s+=n(a.substring(l,g[0].offset)),l=g[0].offset,g===e){f.reverse().forEach(u);do c(g.splice(0,1)[0]),g=i();while(g===e&&g.length&&g[0].offset===l);f.reverse().forEach(o)}else"start"===g[0].event?f.push(g[0].node):f.pop(),c(g.splice(0,1)[0])}return s+n(a.substr(l))}function l(e){return e.v&&!e.cached_variants&&(e.cached_variants=e.v.map(function(n){return o(e,{v:null},n)})),e.cached_variants||e.eW&&[o(e)]||[e]}function s(e){function n(e){return e&&e.source||e}function t(t,r){return new RegExp(n(t),"m"+(e.cI?"i":"")+(r?"g":""))}function r(a,i){if(!a.compiled){if(a.compiled=!0,a.k=a.k||a.bK,a.k){var o={},u=function(n,t){e.cI&&(t=t.toLowerCase()),t.split(" ").forEach(function(e){var t=e.split("|");o[t[0]]=[n,t[1]?Number(t[1]):1]})};"string"==typeof a.k?u("keyword",a.k):x(a.k).forEach(function(e){u(e,a.k[e])}),a.k=o}a.lR=t(a.l||/\w+/,!0),i&&(a.bK&&(a.b="\\b("+a.bK.split(" ").join("|")+")\\b"),a.b||(a.b=/\B|\b/),a.bR=t(a.b),a.e||a.eW||(a.e=/\B|\b/),a.e&&(a.eR=t(a.e)),a.tE=n(a.e)||"",a.eW&&i.tE&&(a.tE+=(a.e?"|":"")+i.tE)),a.i&&(a.iR=t(a.i)),null==a.r&&(a.r=1),a.c||(a.c=[]),a.c=Array.prototype.concat.apply([],a.c.map(function(e){return l("self"===e?a:e)})),a.c.forEach(function(e){r(e,a)}),a.starts&&r(a.starts,i);var c=a.c.map(function(e){return e.bK?"\\.?("+e.b+")\\.?":e.b}).concat([a.tE,a.i]).map(n).filter(Boolean);a.t=c.length?t(c.join("|"),!0):{exec:function(){return null}}}}r(e)}function f(e,t,a,i){function o(e,n){var t,a;for(t=0,a=n.c.length;a>t;t++)if(r(n.c[t].bR,e))return n.c[t]}function u(e,n){if(r(e.eR,n)){for(;e.endsParent&&e.parent;)e=e.parent;return e}return e.eW?u(e.parent,n):void 0}function c(e,n){return!a&&r(n.iR,e)}function l(e,n){var t=N.cI?n[0].toLowerCase():n[0];return e.k.hasOwnProperty(t)&&e.k[t]}function p(e,n,t,r){var a=r?"":I.classPrefix,i='<span class="'+a,o=t?"":C;return i+=e+'">',i+n+o}function h(){var e,t,r,a;if(!E.k)return n(k);for(a="",t=0,E.lR.lastIndex=0,r=E.lR.exec(k);r;)a+=n(k.substring(t,r.index)),e=l(E,r),e?(B+=e[1],a+=p(e[0],n(r[0]))):a+=n(r[0]),t=E.lR.lastIndex,r=E.lR.exec(k);return a+n(k.substr(t))}function d(){var e="string"==typeof E.sL;if(e&&!y[E.sL])return n(k);var t=e?f(E.sL,k,!0,x[E.sL]):g(k,E.sL.length?E.sL:void 0);return E.r>0&&(B+=t.r),e&&(x[E.sL]=t.top),p(t.language,t.value,!1,!0)}function b(){L+=null!=E.sL?d():h(),k=""}function v(e){L+=e.cN?p(e.cN,"",!0):"",E=Object.create(e,{parent:{value:E}})}function m(e,n){if(k+=e,null==n)return b(),0;var t=o(n,E);if(t)return t.skip?k+=n:(t.eB&&(k+=n),b(),t.rB||t.eB||(k=n)),v(t,n),t.rB?0:n.length;var r=u(E,n);if(r){var a=E;a.skip?k+=n:(a.rE||a.eE||(k+=n),b(),a.eE&&(k=n));do E.cN&&(L+=C),E.skip||(B+=E.r),E=E.parent;while(E!==r.parent);return r.starts&&v(r.starts,""),a.rE?0:n.length}if(c(n,E))throw new Error('Illegal lexeme "'+n+'" for mode "'+(E.cN||"<unnamed>")+'"');return k+=n,n.length||1}var N=w(e);if(!N)throw new Error('Unknown language: "'+e+'"');s(N);var R,E=i||N,x={},L="";for(R=E;R!==N;R=R.parent)R.cN&&(L=p(R.cN,"",!0)+L);var k="",B=0;try{for(var M,j,O=0;;){if(E.t.lastIndex=O,M=E.t.exec(t),!M)break;j=m(t.substring(O,M.index),M[0]),O=M.index+j}for(m(t.substr(O)),R=E;R.parent;R=R.parent)R.cN&&(L+=C);return{r:B,value:L,language:e,top:E}}catch(T){if(T.message&&-1!==T.message.indexOf("Illegal"))return{r:0,value:n(t)};throw T}}function g(e,t){t=t||I.languages||x(y);var r={r:0,value:n(e)},a=r;return t.filter(w).forEach(function(n){var t=f(n,e,!1);t.language=n,t.r>a.r&&(a=t),t.r>r.r&&(a=r,r=t)}),a.language&&(r.second_best=a),r}function p(e){return I.tabReplace||I.useBR?e.replace(M,function(e,n){return I.useBR&&"\n"===e?"<br>":I.tabReplace?n.replace(/\t/g,I.tabReplace):""}):e}function h(e,n,t){var r=n?L[n]:t,a=[e.trim()];return e.match(/\bhljs\b/)||a.push("hljs"),-1===e.indexOf(r)&&a.push(r),a.join(" ").trim()}function d(e){var n,t,r,o,l,s=i(e);a(s)||(I.useBR?(n=document.createElementNS("http://www.w3.org/1999/xhtml","div"),n.innerHTML=e.innerHTML.replace(/\n/g,"").replace(/<br[ \/]*>/g,"\n")):n=e,l=n.textContent,r=s?f(s,l,!0):g(l),t=u(n),t.length&&(o=document.createElementNS("http://www.w3.org/1999/xhtml","div"),o.innerHTML=r.value,r.value=c(t,u(o),l)),r.value=p(r.value),e.innerHTML=r.value,e.className=h(e.className,s,r.language),e.result={language:r.language,re:r.r},r.second_best&&(e.second_best={language:r.second_best.language,re:r.second_best.r}))}function b(e){I=o(I,e)}function v(){if(!v.called){v.called=!0;var e=document.querySelectorAll("pre code");E.forEach.call(e,d)}}function m(){addEventListener("DOMContentLoaded",v,!1),addEventListener("load",v,!1)}function N(n,t){var r=y[n]=t(e);r.aliases&&r.aliases.forEach(function(e){L[e]=n})}function R(){return x(y)}function w(e){return e=(e||"").toLowerCase(),y[e]||y[L[e]]}var E=[],x=Object.keys,y={},L={},k=/^(no-?highlight|plain|text)$/i,B=/\blang(?:uage)?-([\w-]+)\b/i,M=/((^(<[^>]+>|\t|)+|(?:\n)))/gm,C="</span>",I={classPrefix:"hljs-",tabReplace:null,useBR:!1,languages:void 0};return e.highlight=f,e.highlightAuto=g,e.fixMarkup=p,e.highlightBlock=d,e.configure=b,e.initHighlighting=v,e.initHighlightingOnLoad=m,e.registerLanguage=N,e.listLanguages=R,e.getLanguage=w,e.inherit=o,e.IR="[a-zA-Z]\\w*",e.UIR="[a-zA-Z_]\\w*",e.NR="\\b\\d+(\\.\\d+)?",e.CNR="(-?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)",e.BNR="\\b(0b[01]+)",e.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|-|-=|/=|/|:|;|<<|<<=|<=|<|===|==|=|>>>=|>>=|>=|>>>|>>|>|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~",e.BE={b:"\\\\[\\s\\S]",r:0},e.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[e.BE]},e.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[e.BE]},e.PWM={b:/\b(a|an|the|are|I'm|isn't|don't|doesn't|won't|but|just|should|pretty|simply|enough|gonna|going|wtf|so|such|will|you|your|they|like|more)\b/},e.C=function(n,t,r){var a=e.inherit({cN:"comment",b:n,e:t,c:[]},r||{});return a.c.push(e.PWM),a.c.push({cN:"doctag",b:"(?:TODO|FIXME|NOTE|BUG|XXX):",r:0}),a},e.CLCM=e.C("//","$"),e.CBCM=e.C("/\\*","\\*/"),e.HCM=e.C("#","$"),e.NM={cN:"number",b:e.NR,r:0},e.CNM={cN:"number",b:e.CNR,r:0},e.BNM={cN:"number",b:e.BNR,r:0},e.CSSNM={cN:"number",b:e.NR+"(%|em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|in|pt|pc|px|deg|grad|rad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?",r:0},e.RM={cN:"regexp",b:/\//,e:/\/[gimuy]*/,i:/\n/,c:[e.BE,{b:/\[/,e:/\]/,r:0,c:[e.BE]}]},e.TM={cN:"title",b:e.IR,r:0},e.UTM={cN:"title",b:e.UIR,r:0},e.METHOD_GUARD={b:"\\.\\s*"+e.UIR,r:0},e});hljs.registerLanguage("cpp",function(t){var e={cN:"keyword",b:"\\b[a-z\\d_]*_t\\b"},r={cN:"string",v:[{b:'(u8?|U)?L?"',e:'"',i:"\\n",c:[t.BE]},{b:'(u8?|U)?R"',e:'"',c:[t.BE]},{b:"'\\\\?.",e:"'",i:"."}]},s={cN:"number",v:[{b:"\\b(0b[01']+)"},{b:"(-?)\\b([\\d']+(\\.[\\d']*)?|\\.[\\d']+)(u|U|l|L|ul|UL|f|F|b|B)"},{b:"(-?)(\\b0[xX][a-fA-F0-9']+|(\\b[\\d']+(\\.[\\d']*)?|\\.[\\d']+)([eE][-+]?[\\d']+)?)"}],r:0},i={cN:"meta",b:/#\s*[a-z]+\b/,e:/$/,k:{"meta-keyword":"if else elif endif define undef warning error line pragma ifdef ifndef include"},c:[{b:/\\\n/,r:0},t.inherit(r,{cN:"meta-string"}),{cN:"meta-string",b:/<[^\n>]*>/,e:/$/,i:"\\n"},t.CLCM,t.CBCM]},a=t.IR+"\\s*\\(",c={keyword:"int float while private char catch import module export virtual operator sizeof dynamic_cast|10 typedef const_cast|10 const for static_cast|10 union namespace unsigned long volatile static protected bool template mutable if public friend do goto auto void enum else break extern using asm case typeid short reinterpret_cast|10 default double register explicit signed typename try this switch continue inline delete alignof constexpr decltype noexcept static_assert thread_local restrict _Bool complex _Complex _Imaginary atomic_bool atomic_char atomic_schar atomic_uchar atomic_short atomic_ushort atomic_int atomic_uint atomic_long atomic_ulong atomic_llong atomic_ullong new throw return and or not",built_in:"std string cin cout cerr clog stdin stdout stderr stringstream istringstream ostringstream auto_ptr deque list queue stack vector map set bitset multiset multimap unordered_set unordered_map unordered_multiset unordered_multimap array shared_ptr abort abs acos asin atan2 atan calloc ceil cosh cos exit exp fabs floor fmod fprintf fputs free frexp fscanf isalnum isalpha iscntrl isdigit isgraph islower isprint ispunct isspace isupper isxdigit tolower toupper labs ldexp log10 log malloc realloc memchr memcmp memcpy memset modf pow printf putchar puts scanf sinh sin snprintf sprintf sqrt sscanf strcat strchr strcmp strcpy strcspn strlen strncat strncmp strncpy strpbrk strrchr strspn strstr tanh tan vfprintf vprintf vsprintf endl initializer_list unique_ptr",literal:"true false nullptr NULL"},n=[e,t.CLCM,t.CBCM,s,r];return{aliases:["c","cc","h","c++","h++","hpp"],k:c,i:"</",c:n.concat([i,{b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:c,c:["self",e]},{b:t.IR+"::",k:c},{v:[{b:/=/,e:/;/},{b:/\(/,e:/\)/},{bK:"new throw return else",e:/;/}],k:c,c:n.concat([{b:/\(/,e:/\)/,k:c,c:n.concat(["self"]),r:0}]),r:0},{cN:"function",b:"("+t.IR+"[\\*&\\s]+)+"+a,rB:!0,e:/[{;=]/,eE:!0,k:c,i:/[^\w\s\*&]/,c:[{b:a,rB:!0,c:[t.TM],r:0},{cN:"params",b:/\(/,e:/\)/,k:c,r:0,c:[t.CLCM,t.CBCM,r,s,e]},t.CLCM,t.CBCM,i]},{cN:"class",bK:"class struct",e:/[{;:]/,c:[{b:/</,e:/>/,c:["self"]},t.TM]}]),exports:{preprocessor:i,strings:r,k:c}}});hljs.registerLanguage("llvm",function(e){var n="([-a-zA-Z$._][\\w\\-$.]*)";return{k:"begin end true false declare define global constant private linker_private internal available_externally linkonce linkonce_odr weak weak_odr appending dllimport dllexport common default hidden protected extern_weak external thread_local zeroinitializer undef null to tail target triple datalayout volatile nuw nsw nnan ninf nsz arcp fast exact inbounds align addrspace section alias module asm sideeffect gc dbg linker_private_weak attributes blockaddress initialexec localdynamic localexec prefix unnamed_addr ccc fastcc coldcc x86_stdcallcc x86_fastcallcc arm_apcscc arm_aapcscc arm_aapcs_vfpcc ptx_device ptx_kernel intel_ocl_bicc msp430_intrcc spir_func spir_kernel x86_64_sysvcc x86_64_win64cc x86_thiscallcc cc c signext zeroext inreg sret nounwind noreturn noalias nocapture byval nest readnone readonly inlinehint noinline alwaysinline optsize ssp sspreq noredzone noimplicitfloat naked builtin cold nobuiltin noduplicate nonlazybind optnone returns_twice sanitize_address sanitize_memory sanitize_thread sspstrong uwtable returned type opaque eq ne slt sgt sle sge ult ugt ule uge oeq one olt ogt ole oge ord uno ueq une x acq_rel acquire alignstack atomic catch cleanup filter inteldialect max min monotonic nand personality release seq_cst singlethread umax umin unordered xchg add fadd sub fsub mul fmul udiv sdiv fdiv urem srem frem shl lshr ashr and or xor icmp fcmp phi call trunc zext sext fptrunc fpext uitofp sitofp fptoui fptosi inttoptr ptrtoint bitcast addrspacecast select va_arg ret br switch invoke unwind unreachable indirectbr landingpad resume malloc alloca free load store getelementptr extractelement insertelement shufflevector getresult extractvalue insertvalue atomicrmw cmpxchg fence argmemonly double",c:[{cN:"keyword",b:"i\\d+"},e.C(";","\\n",{r:0}),e.QSM,{cN:"string",v:[{b:'"',e:'[^\\\\]"'}],r:0},{cN:"title",v:[{b:"@"+n},{b:"@\\d+"},{b:"!"+n},{b:"!\\d+"+n}]},{cN:"symbol",v:[{b:"%"+n},{b:"%\\d+"},{b:"#\\d+"}]},{cN:"number",v:[{b:"0[xX][a-fA-F0-9]+"},{b:"-?\\d+(?:[.]\\d+)?(?:[eE][-+]?\\d+(?:[.]\\d+)?)?"}],r:0}]}});hljs.registerLanguage("bash",function(e){var t={cN:"variable",v:[{b:/\$[\w\d#@][\w\d_]*/},{b:/\$\{(.*?)}/}]},s={cN:"string",b:/"/,e:/"/,c:[e.BE,t,{cN:"variable",b:/\$\(/,e:/\)/,c:[e.BE]}]},a={cN:"string",b:/'/,e:/'/};return{aliases:["sh","zsh"],l:/\b-?[a-z\._]+\b/,k:{keyword:"if then else elif fi for while in do done case esac function",literal:"true false",built_in:"break cd continue eval exec exit export getopts hash pwd readonly return shift test times trap umask unset alias bind builtin caller command declare echo enable help let local logout mapfile printf read readarray source type typeset ulimit unalias set shopt autoload bg bindkey bye cap chdir clone comparguments compcall compctl compdescribe compfiles compgroups compquote comptags comptry compvalues dirs disable disown echotc echoti emulate fc fg float functions getcap getln history integer jobs kill limit log noglob popd print pushd pushln rehash sched setcap setopt stat suspend ttyctl unfunction unhash unlimit unsetopt vared wait whence where which zcompile zformat zftp zle zmodload zparseopts zprof zpty zregexparse zsocket zstyle ztcp",_:"-ne -eq -lt -gt -f -d -e -s -l -a"},c:[{cN:"meta",b:/^#![^\n]+sh\s*$/,r:10},{cN:"function",b:/\w[\w\d_]*\s*\(\s*\)\s*\{/,rB:!0,c:[e.inherit(e.TM,{b:/\w[\w\d_]*/})],r:0},e.HCM,s,a,t]}});hljs.registerLanguage("shell",function(s){return{aliases:["console"],c:[{cN:"meta",b:"^\\s{0,3}[\\w\\d\\[\\]()@-]*[>%$#]",starts:{e:"$",sL:"bash"}}]}});
+    </script>
+    <script>
+hljs.registerLanguage("zig", function(t) {
+    var e = {
+            cN: "keyword",
+            b: "\\b[a-z\\d_]*_t\\b"
+        },
+        r = {
+            cN: "string",
+            v: [{
+                b: '(u8?|U)?L?"',
+                e: '"',
+                i: "\\n",
+                c: [t.BE]
+            }, {
+                b: '(u8?|U)?R"',
+                e: '"',
+                c: [t.BE]
+            }, {
+                b: "'\\\\?.",
+                e: "'",
+                i: "."
+            }]
+        },
+        s = {
+            cN: "number",
+            v: [{
+                b: "\\b(0b[01']+)"
+            }, {
+                b: "(-?)\\b([\\d']+(\\.[\\d']*)?|\\.[\\d']+)(u|U|l|L|ul|UL|f|F|b|B)"
+            }, {
+                b: "(-?)(\\b0[xX][a-fA-F0-9']+|(\\b[\\d']+(\\.[\\d']*)?|\\.[\\d']+)([eE][-+]?[\\d']+)?)"
+            }],
+            r: 0
+        },
+        i = {
+            cN: "meta",
+            b: /#\s*[a-z]+\b/,
+            e: /$/,
+            k: {
+                "meta-keyword": "zzzzzzdisable"
+            },
+            c: [{
+                b: /\\\n/,
+                r: 0
+            }, t.inherit(r, {
+                cN: "meta-string"
+            }), {
+                cN: "meta-string",
+                b: /<[^\n>]*>/,
+                e: /$/,
+                i: "\\n"
+            }, t.CLCM, t.CBCM]
+        },
+        a = t.IR + "\\s*\\(",
+        c = {
+            keyword: "const align var extern stdcallcc coldcc nakedcc volatile export pub noalias inline struct packed enum union goto break return try catch test continue unreachable comptime and or asm defer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong",
+            built_in: "breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setDebugSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic canImplicitCast ptrCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchg fence divExact truncate",
+            literal: "true false null undefined"
+        },
+        n = [e, t.CLCM, t.CBCM, s, r];
+    return {
+        aliases: ["c", "cc", "h", "c++", "h++", "hpp"],
+        k: c,
+        i: "</",
+        c: n.concat([i, {
+            b: "\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",
+            e: ">",
+            k: c,
+            c: ["self", e]
+        }, {
+            b: t.IR + "::",
+            k: c
+        }, {
+            v: [{
+                b: /=/,
+                e: /;/
+            }, {
+                b: /\(/,
+                e: /\)/
+            }, {
+                bK: "new throw return else",
+                e: /;/
+            }],
+            k: c,
+            c: n.concat([{
+                b: /\(/,
+                e: /\)/,
+                k: c,
+                c: n.concat(["self"]),
+                r: 0
+            }]),
+            r: 0
+        }, {
+            cN: "function",
+            b: "(" + t.IR + "[\\*&\\s]+)+" + a,
+            rB: !0,
+            e: /[{;=]/,
+            eE: !0,
+            k: c,
+            i: /[^\w\s\*&]/,
+            c: [{
+                b: a,
+                rB: !0,
+                c: [t.TM],
+                r: 0
+            }, {
+                cN: "params",
+                b: /\(/,
+                e: /\)/,
+                k: c,
+                r: 0,
+                c: [t.CLCM, t.CBCM, r, s, e]
+            }, t.CLCM, t.CBCM, i]
+        }, {
+            cN: "class",
+            bK: "class struct",
+            e: /[{;:]/,
+            c: [{
+                b: /</,
+                e: />/,
+                c: ["self"]
+            }, t.TM]
+        }]),
+        exports: {
+            preprocessor: i,
+            strings: r,
+            k: c
+        }
+    }
+});
+    hljs.initHighlightingOnLoad();
+    </script>
   </body>
 </html>
 
