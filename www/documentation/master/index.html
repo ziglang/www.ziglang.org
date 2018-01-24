@@ -624,7 +624,7 @@ value: 1234
         <tr>
           <td><code>noreturn</code></td>
           <td>(none)</td>
-          <td>the type of <code>break</code>, <code>continue</code>, <code>goto</code>, <code>return</code>, <code>unreachable</code>, and <code>while (true) {}</code></td>
+          <td>the type of <code>break</code>, <code>continue</code>, <code>return</code>, <code>unreachable</code>, and <code>while (true) {}</code></td>
         </tr>
         <tr>
           <td><code>type</code></td>
@@ -2990,7 +2990,7 @@ test &quot;defer unwinding&quot; {
     deferUnwindExample();
 }
 
-// The %defer keyword is similar to defer, but will only execute if the
+// The errdefer keyword is similar to defer, but will only execute if the
 // scope returns with an error.
 //
 // This is especially useful in allowing a function to clean up properly
@@ -3004,7 +3004,7 @@ fn deferErrorExample(is_error: bool) -&gt; %void {
         warn(&quot;end of function\n&quot;);
     }
 
-    %defer {
+    errdefer {
         warn(&quot;encountered an error!\n&quot;);
     }
 
@@ -3013,14 +3013,14 @@ fn deferErrorExample(is_error: bool) -&gt; %void {
     }
 }
 
-test &quot;%defer unwinding&quot; {
+test &quot;errdefer unwinding&quot; {
     _ = deferErrorExample(false);
     _ = deferErrorExample(true);
 }</code></pre><pre><code class="shell">$ zig test defer.zig
 Test 1/3 defer basics...OK
 Test 2/3 defer unwinding...
 2 1 OK
-Test 3/3 %defer unwinding...
+Test 3/3 errdefer unwinding...
 start of function
 end of function
 
@@ -3138,7 +3138,6 @@ test &quot;type of unreachable&quot; {
       <ul>
         <li><code>break</code></li>
         <li><code>continue</code></li>
-        <li><code>goto</code></li>
         <li><code>return</code></li>
         <li><code>unreachable</code></li>
         <li><code>while (true) {}</code></li>
@@ -3437,7 +3436,7 @@ Test 1/1 parse u64...OK
 }</code></pre>
       <p>
       The other component to error handling is defer statements.
-      In addition to an unconditional <code>defer</code>, Zig has <code>%defer</code>,
+      In addition to an unconditional <code>defer</code>, Zig has <code>errdefer</code>,
       which evaluates the deferred expression on block exit path if and only if
       the function returned with an error from the block.
       </p>
@@ -3448,7 +3447,7 @@ Test 1/1 parse u64...OK
     const foo = try tryToAllocateFoo();
     // now we have allocated foo. we need to free it if the function fails.
     // but we want to return it if the function succeeds.
-    %defer deallocateFoo(foo);
+    errdefer deallocateFoo(foo);
 
     const tmp_buf = allocateTmpBuffer() ?? return error.OutOfMemory;
     // tmp_buf is truly a temporary resource, and we for sure want to clean it up
@@ -3457,7 +3456,7 @@ Test 1/1 parse u64...OK
 
     if (param &gt; 1337) return error.InvalidParam;
 
-    // here the %defer will not run since we're returning success from the function.
+    // here the errdefer will not run since we're returning success from the function.
     // but the defer will run!
     return foo;
 }</code></pre>
@@ -3846,7 +3845,7 @@ test &quot;foo&quot; {
       </p>
       <ul>
         <li>All variables are <code>comptime</code> variables.</li>
-        <li>All <code>if</code>, <code>while</code>, <code>for</code>, <code>switch</code>, and <code>goto</code>
+        <li>All <code>if</code>, <code>while</code>, <code>for</code>, and <code>switch</code>
           expressions are evaluated at compile-time, or emit a compile error if this is not possible.</li>
         <li>All function calls cause the compiler to interpret the function at compile-time, emitting a
           compile error if the function tries to do something that has global run-time side effects.</li>
@@ -6539,7 +6538,7 @@ TryExpression = "try" Expression
 
 BreakExpression = "break" option(":" Symbol) option(Expression)
 
-Defer(body) = option("%") "defer" body
+Defer(body) = ("defer" | "deferror") body
 
 IfExpression(body) = "if" "(" Expression ")" body option("else" BlockExpression(body))
 
@@ -6687,7 +6686,7 @@ hljs.registerLanguage("zig", function(t) {
         },
         a = t.IR + "\\s*\\(",
         c = {
-            keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union goto break return try catch test continue unreachable comptime and or asm defer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong",
+            keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union break return try catch test continue unreachable comptime and or asm defer errdefer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong",
             built_in: "breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setDebugSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic canImplicitCast ptrCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchg fence divExact truncate",
             literal: "true false null undefined"
         },
