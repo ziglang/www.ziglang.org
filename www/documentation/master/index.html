@@ -135,9 +135,17 @@
         <li><a href="#Functions">Functions</a>
         <ul>
             <li><a href="#Pass-by-value-Parameters">Pass-by-value Parameters</a></li>
+            <li><a href="#Function-Reflection">Function Reflection</a></li>
         </ul></li>
-        <li><a href="#Errors">Errors</a></li>
-        <li><a href="#Nullables">Nullables</a></li>
+        <li><a href="#Errors">Errors</a>
+        <ul>
+            <li><a href="#Error-Union-Type">Error Union Type</a></li>
+            <li><a href="#Error-Set-Type">Error Set Type</a></li>
+        </ul></li>
+        <li><a href="#Nullables">Nullables</a>
+        <ul>
+            <li><a href="#Nullable-Type">Nullable Type</a></li>
+        </ul></li>
         <li><a href="#Casting">Casting</a></li>
         <li><a href="#void">void</a></li>
         <li><a href="#this">this</a></li>
@@ -276,7 +284,6 @@
         </ul></li>
         <li><a href="#Grammar">Grammar</a></li>
         <li><a href="#Zen">Zen</a></li>
-        <li><a href="#TODO">TODO</a></li>
     </ul>
 
     </div>
@@ -3308,6 +3315,18 @@ Test 1/1 implicitly cast to const pointer...OK
       use the C calling convention may pass structs and unions by value.
       </p>
       
+      <h2 id="Function-Reflection">Function Reflection</h2>
+
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;fn reflection&quot; {
+    assert(@typeOf(assert).ReturnType == void);
+    assert(@typeOf(assert).is_var_args == false);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 fn reflection...OK
+</code></pre>
+
+      
       
       <h1 id="Errors">Errors</h1>
 
@@ -3516,6 +3535,34 @@ Test 1/1 parse u64...OK
 <li><a href="#switch">switch</a></li>
 </ul>
 
+      <h2 id="Error-Union-Type">Error Union Type</h2>
+
+      <p>An error union is created by putting a <code>%</code> in front of a type.
+      You can use compile-time reflection to access the child type of an error union:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+error SomeError;
+
+test &quot;error union&quot; {
+    var foo: %i32 = undefined;
+
+    // Implicitly cast from child type of an error union:
+    foo = 1234;
+
+    // Implicitly cast from an error set:
+    foo = error.SomeError;
+
+    // Use compile-time reflection to access the child type of an error union:
+    comptime assert(@typeOf(foo).Child == i32);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 error union...OK
+</code></pre>
+
+      
+      <h2 id="Error-Set-Type">Error Set Type</h2>
+
+      <p>TODO</p>
+      
       
       <h1 id="Nullables">Nullables</h1>
 
@@ -3612,6 +3659,26 @@ fn doAThing() ?&amp;Foo {
       The optimizer can sometimes make better decisions knowing that pointer arguments
       cannot be null.
       </p>
+      <h2 id="Nullable-Type">Nullable Type</h2>
+
+      <p>A nullable is created by putting <code>?</code> in front of a type. You can use compile-time
+      reflection to access the child type of a nullable:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;nullable type&quot; {
+    // Declare a nullable and implicitly cast from null:
+    var foo: ?i32 = null;
+
+    // Implicitly cast from child type of a nullable
+    foo = 1234;
+
+    // Use compile-time reflection to access the child type of the nullable:
+    comptime assert(@typeOf(foo).Child == i32);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 nullable type...OK
+</code></pre>
+
+      
       
       <h1 id="Casting">Casting</h1>
 
@@ -6651,10 +6718,6 @@ ContainerDecl = option("extern" | "packed")
         <li>Minimize energy spent on coding style.</li>
         <li>Together we serve end users.</li>
       </ul>
-      
-      <h1 id="TODO">TODO</h1>
-
-      <p>TODO: document changes from a31b23c46ba2a8c28df01adc1aa0b4d878b9a5cf (compile time reflection additions)</p>
       
     </div>
     <script>
