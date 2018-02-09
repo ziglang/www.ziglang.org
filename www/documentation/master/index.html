@@ -318,7 +318,7 @@
 
       <p class="file">hello.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
 
-pub fn main() %void {
+pub fn main() !void {
     // If this program is run without stdout attached, exit with an error.
     var stdout_file = try std.io.getStdOut();
     // If this program encounters pipe failure when printing to stdout, exit
@@ -344,8 +344,8 @@ Hello, world!
 </code></pre>
 
       <p>
-      Note that we also left off the <code class="zig">%</code> from the return type.
-      In Zig, if your main function cannot fail, you may use the <code class="zig">void</code> return type.
+      Note that we also left off the <code class="zig">!</code> from the return type.
+      In Zig, if your main function cannot fail, you must use the <code class="zig">void</code> return type.
       </p>
       <p>See also:</p><ul>
 <li><a href="#Values">Values</a></li>
@@ -362,10 +362,7 @@ const warn = std.debug.warn;
 const os = std.os;
 const assert = std.debug.assert;
 
-// error declaration, makes `error.ArgNotFound` available
-error ArgNotFound;
-
-pub fn main() %void {
+pub fn main() void {
     // integers
     const one_plus_one: i32 = 1 + 1;
     warn(&quot;1 + 1 = {}\n&quot;, one_plus_one);
@@ -394,7 +391,7 @@ pub fn main() %void {
         @typeName(@typeOf(nullable_value)), nullable_value);
 
     // error union
-    var number_or_error: %i32 = error.ArgNotFound;
+    var number_or_error: error!i32 = error.ArgNotFound;
 
     warn(&quot;\nerror union 1\ntype: {}\nvalue: {}\n&quot;,
         @typeName(@typeOf(number_or_error)), number_or_error);
@@ -420,11 +417,11 @@ type: ?[]const u8
 value: hi
 
 error union 1
-type: %i32
+type: error!i32
 value: error.ArgNotFound
 
 error union 2
-type: %i32
+type: error!i32
 value: 1234
 </code></pre>
 
@@ -957,7 +954,7 @@ export fn foo_optimized(x: f64) f64 {
 extern fn foo_strict(x: f64) f64;
 extern fn foo_optimized(x: f64) f64;
 
-pub fn main() %void {
+pub fn main() void {
     const x = 0.001;
     warn(&quot;optimized = {}\n&quot;, foo_optimized(x));
     warn(&quot;strict = {}\n&quot;, foo_strict(x));
@@ -1322,7 +1319,7 @@ a catch |err| b</code></pre></td>
             <code>err</code> is the <code>error</code> and is in scope of the expression <code>b</code>.
           </td>
           <td>
-            <pre><code class="zig">const value: %u32 = null;
+            <pre><code class="zig">const value: error!u32 = error.Broken;
 const unwrapped = value catch 1234;
 unwrapped == 1234</code></pre>
           </td>
@@ -1556,9 +1553,10 @@ const ptr = &amp;x;
       <h2 id="Precedence">Precedence</h2>
 
       <pre><code>x() x[] x.y
-!x -x -%x ~x *x &amp;x ?x %x ??x
+a!b
+!x -x -%x ~x *x &amp;x ?x ??x
 x{}
-* / % ** *%
+! * / % ** *%
 + - ++ +% -%
 &lt;&lt; &gt;&gt;
 &amp;
@@ -1912,7 +1910,7 @@ fn foo(bytes: []u8) u32 {
     return int_slice[0];
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 pointer alignment safety...incorrect alignment
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x0000000000203924 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:119:26</span>: <span class="t2_0">0x0000000000203924 in ??? (test)</span>
     dumpCurrentStackTrace();
                          <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:20:39</span>: <span class="t2_0">0x000000000020375b in ??? (test)</span>
@@ -1924,19 +1922,19 @@ Test 1/1 pointer alignment safety...incorrect alignment
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x00000000002036d6 in ??? (test)</span>
     assert(foo(bytes) == 0x11111111);
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021c138 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021c348 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bf3b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021c14b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021be9b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021c0ab in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bd2c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bf3c in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bcb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bec0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -1983,7 +1981,7 @@ test &quot;basic slices&quot; {
     slice[10] += 1;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 basic slices...index out of bounds
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x00000000002039b4 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:119:26</span>: <span class="t2_0">0x00000000002039b4 in ??? (test)</span>
     dumpCurrentStackTrace();
                          <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:20:39</span>: <span class="t2_0">0x00000000002037eb in ??? (test)</span>
@@ -1992,19 +1990,19 @@ Test 1/1 basic slices...index out of bounds
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:15:10</span>: <span class="t2_0">0x000000000020372b in ??? (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021c068 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021c278 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021be6b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021c07b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bdcb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bfdb in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bc5c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021be6c in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bbe0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bdf0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -2696,8 +2694,8 @@ fn eventuallyNullSequence() ?u32 {
         break :blk numbers_left;
     };
 }
-error ReachedZero;
-fn eventuallyErrorSequence() %u32 {
+
+fn eventuallyErrorSequence() error!u32 {
     return if (numbers_left == 0) error.ReachedZero else blk: {
         numbers_left -= 1;
         break :blk numbers_left;
@@ -2853,7 +2851,7 @@ Test 4/4 inline for loop...OK
       <p class="file">if.zig</p><pre><code class="zig">// If expressions have three uses, corresponding to the three types:
 // * bool
 // * ?T
-// * %T
+// * error!T
 
 const assert = @import(&quot;std&quot;).debug.assert;
 
@@ -2914,20 +2912,18 @@ test &quot;if nullable&quot; {
     }
 }
 
-error BadValue;
-error LessBadValue;
 test &quot;if error union&quot; {
     // If expressions test for errors.
     // Note the |err| capture on the else.
 
-    const a: %u32 = 0;
+    const a: error!u32 = 0;
     if (a) |value| {
         assert(value == 0);
     } else |err| {
         unreachable;
     }
 
-    const b: %u32 = error.BadValue;
+    const b: error!u32 = error.BadValue;
     if (b) |value| {
         unreachable;
     } else |err| {
@@ -2945,7 +2941,7 @@ test &quot;if error union&quot; {
     }
 
     // Access the value by reference using a pointer capture.
-    var c: %u32 = 3;
+    var c: error!u32 = 3;
     if (c) |*value| {
         *value = 9;
     } else |err| {
@@ -3021,8 +3017,7 @@ test &quot;defer unwinding&quot; {
 //
 // This is especially useful in allowing a function to clean up properly
 // on error, and replaces goto error handling tactics as seen in c.
-error DeferError;
-fn deferErrorExample(is_error: bool) %void {
+fn deferErrorExample(is_error: bool) !void {
     warn(&quot;\nstart of function\n&quot;);
 
     // This will always be executed on exit
@@ -3096,7 +3091,7 @@ test &quot;this will fail&quot; {
     assert(false);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 this will fail...reached unreachable code
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x0000000000203894 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:119:26</span>: <span class="t2_0">0x0000000000203894 in ??? (test)</span>
     dumpCurrentStackTrace();
                          <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:20:39</span>: <span class="t2_0">0x00000000002036cb in ??? (test)</span>
@@ -3108,19 +3103,19 @@ Test 1/1 this will fail...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:11</span>: <span class="t2_0">0x000000000020365b in ??? (test)</span>
     assert(false);
           <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021bf88 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021c198 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bd8b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bf9b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bceb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021befb in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bb7c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bd8c in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bb00 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bd10 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -3189,7 +3184,7 @@ test &quot;foo&quot; {
     assert(value == 1234);
 }
 
-fn bar() %u32 {
+fn bar() error!u32 {
     return 1234;
 }
 
@@ -3323,11 +3318,8 @@ Test 1/1 fn reflection...OK
       One of the distinguishing features of Zig is its exception handling strategy.
       </p>
       <p>
-      Among the top level declarations available is the error value declaration:
+      TODO rewrite the errors section to take into account error sets
       </p>
-      <pre><code class="zig">error FileNotFound;
-error OutOfMemory;
-error UnexpectedToken;</code></pre>
       <p>
       These error values are assigned an unsigned integer value greater than 0 at
       compile time. You are allowed to declare the same error value more than once,
@@ -3339,25 +3331,22 @@ error UnexpectedToken;</code></pre>
       </p>
       <p>
       Each error value across the entire compilation unit gets a unique integer,
-      and this determines the size of the pure error type.
+      and this determines the size of the error set type.
       </p>
       <p>
-      The pure error type is one of the error values, and in the same way that pointers
-      cannot be null, a pure error is always an error.
+      The error set type is one of the error values, and in the same way that pointers
+      cannot be null, a error set instance is always an error.
       </p>
       <pre><code class="zig">const pure_error = error.FileNotFound;</code></pre>
       <p>
-      Most of the time you will not find yourself using a pure error type. Instead,
-      likely you will be using the error union type. This is when you take a normal type,
-      and prefix it with the <code>%</code> operator.
+      Most of the time you will not find yourself using an error set type. Instead,
+      likely you will be using the error union type. This is when you take an error set
+      and a normal type, and create an error union with the <code>!</code> binary operator.
       </p>
       <p>
       Here is a function to parse a string into a 64-bit integer:
       </p>
-      <p class="file">test.zig</p><pre><code class="zig">error InvalidChar;
-error Overflow;
-
-pub fn parseU64(buf: []const u8, radix: u8) %u64 {
+      <p class="file">test.zig</p><pre><code class="zig">pub fn parseU64(buf: []const u8, radix: u8) !u64 {
     var x: u64 = 0;
 
     for (buf) |c| {
@@ -3398,13 +3387,14 @@ Test 1/1 parse u64...OK
 </code></pre>
 
       <p>
-      Notice the return type is <code>%u64</code>. This means that the function
-      either returns an unsigned 64 bit integer, or an error.
+      Notice the return type is <code>!u64</code>. This means that the function
+      either returns an unsigned 64 bit integer, or an error. We left off the error set
+      to the left of the <code>!</code>, so the error set is inferred.
       </p>
       <p>
       Within the function definition, you can see some return statements that return
-      a pure error, and at the bottom a return statement that returns a <code>u64</code>.
-      Both types implicitly cast to <code>%u64</code>.
+      an error, and at the bottom a return statement that returns a <code>u64</code>.
+      Both types implicitly cast to <code>error!u64</code>.
       </p>
       <p>
       What it looks like to use this function varies depending on what you're
@@ -3428,14 +3418,14 @@ Test 1/1 parse u64...OK
       </p>
       <p>Let's say you wanted to return the error if you got one, otherwise continue with the
       function logic:</p>
-      <pre><code class="zig">fn doAThing(str: []u8) %void {
+      <pre><code class="zig">fn doAThing(str: []u8) !void {
     const number = parseU64(str, 10) catch |err| return err;
     // ...
 }</code></pre>
       <p>
         There is a shortcut for this. The <code>try</code> expression:
       </p>
-      <pre><code class="zig">fn doAThing(str: []u8) %void {
+      <pre><code class="zig">fn doAThing(str: []u8) !void {
     const number = try parseU64(str, 10);
     // ...
 }</code></pre>
@@ -3481,7 +3471,7 @@ Test 1/1 parse u64...OK
       <p>
       Example:
       </p>
-      <pre><code class="zig">fn createFoo(param: i32) %Foo {
+      <pre><code class="zig">fn createFoo(param: i32) !Foo {
     const foo = try tryToAllocateFoo();
     // now we have allocated foo. we need to free it if the function fails.
     // but we want to return it if the function succeeds.
@@ -3526,14 +3516,12 @@ Test 1/1 parse u64...OK
 
       <h2 id="Error-Union-Type">Error Union Type</h2>
 
-      <p>An error union is created by putting a <code>%</code> in front of a type.
+      <p>An error union is created with the <code>!</code> binary operator.
       You can use compile-time reflection to access the child type of an error union:</p>
       <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
-error SomeError;
-
 test &quot;error union&quot; {
-    var foo: %i32 = undefined;
+    var foo: error!i32 = undefined;
 
     // Implicitly cast from child type of an error union:
     foo = 1234;
@@ -3541,8 +3529,11 @@ test &quot;error union&quot; {
     // Implicitly cast from an error set:
     foo = error.SomeError;
 
-    // Use compile-time reflection to access the child type of an error union:
-    comptime assert(@typeOf(foo).Child == i32);
+    // Use compile-time reflection to access the payload type of an error union:
+    comptime assert(@typeOf(foo).Payload == i32);
+
+    // Use compile-time reflection to access the error set type of an error union:
+    comptime assert(@typeOf(foo).ErrorSet == error);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 error union...OK
 </code></pre>
@@ -4086,7 +4077,7 @@ test &quot;fibonacci&quot; {
         assert(fibonacci(7) == 99999);
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:94:13: </span><span class="t31_1">error:</span><span class="t0_1"> encountered @panic at compile-time</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:85:13: </span><span class="t31_1">error:</span><span class="t0_1"> encountered @panic at compile-time</span>
             @panic(&quot;assertion failure&quot;);
             <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:15: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -4218,7 +4209,7 @@ here is a string: 'foobar' here is a number: 1234
       </p>
 
       <pre><code class="zig">/// Calls print and then flushes the buffer.
-pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) %void {
+pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) error!void {
     const State = enum {
         Start,
         OpenBrace,
@@ -4288,7 +4279,7 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) %voi
       When this function is analyzed from our example code above, Zig partially evaluates the function
       and emits a function that actually looks like this:
       </p>
-      <pre><code class="zig">pub fn printf(self: &amp;OutStream, arg0: i32, arg1: []const u8) %void {
+      <pre><code class="zig">pub fn printf(self: &amp;OutStream, arg0: i32, arg1: []const u8) !void {
     try self.write(&quot;here is a string: '&quot;);
     try self.printValue(arg0);
     try self.write(&quot;' here is a number: &quot;);
@@ -4300,7 +4291,7 @@ pub fn printf(self: &amp;OutStream, comptime format: []const u8, args: ...) %voi
       <code>printValue</code> is a function that takes a parameter of any type, and does different things depending
       on the type:
       </p>
-      <pre><code class="zig">pub fn printValue(self: &amp;OutStream, value: var) %void {
+      <pre><code class="zig">pub fn printValue(self: &amp;OutStream, value: var) !void {
     const T = @typeOf(value);
     if (@isInteger(T)) {
         return self.printInt(T, value);
@@ -4328,10 +4319,10 @@ test &quot;printf too many arguments&quot; {
 <span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:183:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
             @compileError(&quot;Unused arguments&quot;);
             <span class="t32_1">^</span>
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:510:30: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
-        return std.fmt.format(self, self.writeFn, format, args);
-                             <span class="t32_1">^</span>
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:30:17: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:502:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+            return std.fmt.format(self, error, self.writeFn, format, args);
+                                 <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:21:17: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
     stderr.print(fmt, args) catch return;
                 <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -5435,7 +5426,7 @@ const b: u8 = @truncate(u8, a);
       </p>
       <pre><code class="zig">const Builder = @import(&quot;std&quot;).build.Builder;
 
-pub fn build(b: &amp;Builder) %void {
+pub fn build(b: &amp;Builder) void {
     const exe = b.addExecutable(&quot;example&quot;, &quot;example.zig&quot;);
     exe.setBuildMode(b.standardReleaseOptions());
     b.default_step.dependOn(&amp;exe.step);
@@ -5496,7 +5487,7 @@ pub fn build(b: &amp;Builder) %void {
     unreachable;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 safety check...reached unreachable code
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:128:26</span>: <span class="t2_0">0x00000000002038a4 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:119:26</span>: <span class="t2_0">0x00000000002038a4 in ??? (test)</span>
     dumpCurrentStackTrace();
                          <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/panic.zig:20:39</span>: <span class="t2_0">0x00000000002036db in ??? (test)</span>
@@ -5505,19 +5496,19 @@ Test 1/1 safety check...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x0000000000203678 in ??? (test)</span>
     unreachable;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021bf58 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x000000000021c168 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bd5b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:85:22</span>: <span class="t2_0">0x000000000021bf6b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021bcbb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:62:20</span>: <span class="t2_0">0x000000000021becb in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bb4c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:52:39</span>: <span class="t2_0">0x000000000021bd5c in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bad0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:39:5</span>: <span class="t2_0">0x000000000021bce0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -5640,7 +5631,7 @@ comptime {
       <p>Example of catching an overflow for addition:</p>
       <p class="file">test.zig</p><pre><code class="zig">const math = @import(&quot;std&quot;).math;
 const warn = @import(&quot;std&quot;).debug.warn;
-pub fn main() %void {
+pub fn main() !void {
     var byte: u8 = 255;
 
     byte = if (math.add(u8, byte, 1)) |result| result else |err| {
@@ -5653,7 +5644,7 @@ pub fn main() %void {
 $ ./test
 unable to add one: Overflow
 error: Overflow
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x000000000021bee5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x000000000021c0f5 in ??? (test)</span>
         return err;
         <span class="t32_1">^</span>
 </code></pre>
@@ -5675,7 +5666,7 @@ error: Overflow
       Example of <code>@addWithOverflow</code>:
       </p>
       <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
-pub fn main() %void {
+pub fn main() void {
     var byte: u8 = 255;
 
     var result: u8 = undefined;
@@ -5818,12 +5809,10 @@ it's null
     const number = getNumberOrFail() catch unreachable;
 }
 
-error UnableToReturnNumber;
-
-fn getNumberOrFail() %i32 {
+fn getNumberOrFail() !i32 {
     return error.UnableToReturnNumber;
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:38: </span><span class="t31_1">error:</span><span class="t0_1"> unable to unwrap error 'UnableToReturnNumber'</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:38: </span><span class="t31_1">error:</span><span class="t0_1"> caught unexpected error 'UnableToReturnNumber'</span>
     const number = getNumberOrFail() catch unreachable;
                                      <span class="t32_1">^</span>
 </code></pre>
@@ -5843,9 +5832,7 @@ pub fn main() void {
     }
 }
 
-error UnableToReturnNumber;
-
-fn getNumberOrFail() %i32 {
+fn getNumberOrFail() !i32 {
     return error.UnableToReturnNumber;
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
@@ -5856,13 +5843,12 @@ got error: UnableToReturnNumber
       <h2 id="Invalid-Error-Code">Invalid Error Code</h2>
 
       <p>At compile-time:</p>
-      <p class="file">test.zig</p><pre><code class="zig">error AnError;
-comptime {
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
     const err = error.AnError;
     const number = u32(err) + 10;
     const invalid_err = error(number);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:30: </span><span class="t31_1">error:</span><span class="t0_1"> integer value 11 represents no error</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:30: </span><span class="t31_1">error:</span><span class="t0_1"> integer value 11 represents no error</span>
     const invalid_err = error(number);
                              <span class="t32_1">^</span>
 </code></pre>
@@ -6288,7 +6274,7 @@ int main(int argc, char **argv) {
       <p class="file">build.zig</p>
       <pre><code class="zig">const Builder = @import(&quot;std&quot;).build.Builder;
 
-pub fn build(b: &amp;Builder) %void {
+pub fn build(b: &amp;Builder) void {
     const obj = b.addObject(&quot;base64&quot;, &quot;base64.zig&quot;);
 
     const exe = b.addCExecutable(&quot;test&quot;);
@@ -6575,13 +6561,11 @@ fn readU32Be() u32 {}</code></pre>
 
       <pre><code class="nohighlight">Root = many(TopLevelItem) EOF
 
-TopLevelItem = ErrorValueDecl | CompTimeExpression(Block) | TopLevelDecl | TestDecl
+TopLevelItem = CompTimeExpression(Block) | TopLevelDecl | TestDecl
 
 TestDecl = "test" String Block
 
 TopLevelDecl = option("pub") (FnDef | ExternDecl | GlobalVarDecl | UseDecl)
-
-ErrorValueDecl = "error" Symbol ";"
 
 GlobalVarDecl = option("export") VariableDeclaration ";"
 
@@ -6597,7 +6581,7 @@ UseDecl = "use" Expression ";"
 
 ExternDecl = "extern" option(String) (FnProto | VariableDeclaration) ";"
 
-FnProto = option("nakedcc" | "stdcallcc" | "extern") "fn" option(Symbol) ParamDeclList option("align" "(" Expression ")") option("section" "(" Expression ")") TypeExpr
+FnProto = option("nakedcc" | "stdcallcc" | "extern") "fn" option(Symbol) ParamDeclList option("align" "(" Expression ")") option("section" "(" Expression ")") option("!") TypeExpr
 
 FnDef = option("inline" | "export") FnProto Block
 
@@ -6609,7 +6593,9 @@ Block = option(Symbol ":") "{" many(Statement) "}"
 
 Statement = LocalVarDecl ";" | Defer(Block) | Defer(Expression) ";" | BlockExpression(Block) | Expression ";" | ";"
 
-TypeExpr = PrefixOpExpression | "var"
+TypeExpr = ErrorSetExpr | "var"
+
+ErrorSetExpr = (PrefixOpExpression "!" PrefixOpExpression) | PrefixOpExpression
 
 BlockOrExpression = Block | Expression
 
@@ -6691,9 +6677,9 @@ MultiplyExpression = CurlySuffixExpression MultiplyOperator MultiplyExpression |
 
 CurlySuffixExpression = TypeExpr option(ContainerInitExpression)
 
-MultiplyOperator = "*" | "/" | "%" | "**" | "*%"
+MultiplyOperator = "||" | "*" | "/" | "%" | "**" | "*%"
 
-PrefixOpExpression = PrefixOp PrefixOpExpression | SuffixOpExpression
+PrefixOpExpression = PrefixOp ErrorSetExpr | SuffixOpExpression
 
 SuffixOpExpression = PrimaryExpression option(FnCallExpression | ArrayAccessExpression | FieldAccessExpression | SliceExpression)
 
@@ -6711,15 +6697,17 @@ ContainerInitBody = list(StructLiteralField, ",") | list(Expression, ",")
 
 StructLiteralField = "." Symbol "=" Expression
 
-PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "%" | "??" | "-%" | "try"
+PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "??" | "-%" | "try"
 
-PrimaryExpression = Integer | Float | String | CharLiteral | KeywordLiteral | GroupedExpression | BlockExpression(BlockOrExpression) | Symbol | ("@" Symbol FnCallExpression) | ArrayType | FnProto | AsmExpression | ("error" "." Symbol) | ContainerDecl | ("continue" option(":" Symbol))
+PrimaryExpression = Integer | Float | String | CharLiteral | KeywordLiteral | GroupedExpression | BlockExpression(BlockOrExpression) | Symbol | ("@" Symbol FnCallExpression) | ArrayType | FnProto | AsmExpression | ContainerDecl | ("continue" option(":" Symbol)) | ErrorSetDecl
 
 ArrayType : "[" option(Expression) "]" option("align" "(" Expression option(":" Integer ":" Integer) ")")) option("const") option("volatile") TypeExpr
 
 GroupedExpression = "(" Expression ")"
 
 KeywordLiteral = "true" | "false" | "null" | "undefined" | "error" | "this" | "unreachable"
+
+ErrorSetDecl = "error" "{" list(Symbol, ",") "}"
 
 ContainerDecl = option("extern" | "packed")
   ("struct" option(GroupedExpression) | "union" option("enum" option(GroupedExpression) | GroupedExpression) | ("enum" option(GroupedExpression)))
