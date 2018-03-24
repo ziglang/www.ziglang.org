@@ -6665,13 +6665,13 @@ VariableDeclaration = ("var" | "const") Symbol option(":" TypeExpr) option("alig
 
 ContainerMember = (ContainerField | FnDef | GlobalVarDecl)
 
-ContainerField = Symbol option(":" PrefixOpExpression option("=" PrefixOpExpression ","
+ContainerField = Symbol option(":" PrefixOpExpression) option("=" PrefixOpExpression) ","
 
 UseDecl = "use" Expression ";"
 
 ExternDecl = "extern" option(String) (FnProto | VariableDeclaration) ";"
 
-FnProto = option("nakedcc" | "stdcallcc" | "extern" | ("async" option("(" Expression ")"))) "fn" option(Symbol) ParamDeclList option("align" "(" Expression ")") option("section" "(" Expression ")") option("!") (TypeExpr | "var")
+FnProto = option("nakedcc" | "stdcallcc" | "extern" | ("async" option("&lt;" Expression "&gt;"))) "fn" option(Symbol) ParamDeclList option("align" "(" Expression ")") option("section" "(" Expression ")") option("!") (TypeExpr | "var")
 
 FnDef = option("inline" | "export") FnProto Block
 
@@ -6683,9 +6683,7 @@ Block = option(Symbol ":") "{" many(Statement) "}"
 
 Statement = LocalVarDecl ";" | Defer(Block) | Defer(Expression) ";" | BlockExpression(Block) | Expression ";" | ";"
 
-TypeExpr = ErrorSetExpr
-
-ErrorSetExpr = (PrefixOpExpression "!" PrefixOpExpression) | PrefixOpExpression
+TypeExpr = (PrefixOpExpression "!" PrefixOpExpression) | PrefixOpExpression
 
 BlockOrExpression = Block | Expression
 
@@ -6765,7 +6763,7 @@ BinaryAndExpression = BitShiftExpression "&amp;" BinaryAndExpression | BitShiftE
 
 BitShiftExpression = AdditionExpression BitShiftOperator BitShiftExpression | AdditionExpression
 
-BitShiftOperator = "&lt;&lt;" | "&gt;&gt;" | "&lt;&lt;"
+BitShiftOperator = "&lt;&lt;" | "&gt;&gt;"
 
 AdditionExpression = MultiplyExpression AdditionOperator AdditionExpression | MultiplyExpression
 
@@ -6777,9 +6775,9 @@ CurlySuffixExpression = TypeExpr option(ContainerInitExpression)
 
 MultiplyOperator = "||" | "*" | "/" | "%" | "**" | "*%"
 
-PrefixOpExpression = PrefixOp ErrorSetExpr | SuffixOpExpression
+PrefixOpExpression = PrefixOp TypeExpr | SuffixOpExpression
 
-SuffixOpExpression = ("async" option("(" Expression ")") PrimaryExpression FnCallExpression) | PrimaryExpression option(FnCallExpression | ArrayAccessExpression | FieldAccessExpression | SliceExpression)
+SuffixOpExpression = ("async" option("&lt;" SuffixOpExpression "&gt;") SuffixOpExpression FnCallExpression) | PrimaryExpression option(FnCallExpression | ArrayAccessExpression | FieldAccessExpression | SliceExpression)
 
 FieldAccessExpression = "." Symbol
 
