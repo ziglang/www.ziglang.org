@@ -1534,7 +1534,7 @@ mem.eql(u8, pattern, "ababab")</code></pre>
           </td>
         </tr>
         <tr>
-          <td><pre><code class="zig">*a<code></pre></td>
+          <td><pre><code class="zig">a.*<code></pre></td>
           <td>
             <ul>
               <li><a href="#Pointers">Pointers</a></li>
@@ -1546,7 +1546,7 @@ mem.eql(u8, pattern, "ababab")</code></pre>
           <td>
             <pre><code class="zig">const x: u32 = 1234;
 const ptr = &amp;x;
-*x == 1234</code></pre>
+x.* == 1234</code></pre>
           </td>
         </tr>
         <tr>
@@ -1560,7 +1560,7 @@ const ptr = &amp;x;
           <td>
             <pre><code class="zig">const x: u32 = 1234;
 const ptr = &amp;x;
-*x == 1234</code></pre>
+x.* == 1234</code></pre>
           </td>
         </tr>
       </table>
@@ -1570,8 +1570,8 @@ const ptr = &amp;x;
 
       <pre><code>x() x[] x.y
 a!b
-!x -x -%x ~x *x &amp;x ?x ??x
-x{}
+!x -x -%x ~x &amp;x ?x ??x
+x{} x.*
 ! * / % ** *%
 + - ++ +% -%
 &lt;&lt; &gt;&gt;
@@ -1619,7 +1619,7 @@ var some_integers: [100]i32 = undefined;
 
 test &quot;modify an array&quot; {
     for (some_integers) |*item, i| {
-        *item = i32(i);
+        item.* = i32(i);
     }
     assert(some_integers[10] == 10);
     assert(some_integers[99] == 99);
@@ -1660,7 +1660,7 @@ comptime {
 var fancy_array = init: {
     var initial_value: [10]Point = undefined;
     for (initial_value) |*pt, i| {
-        *pt = Point {
+        pt.* = Point {
             .x = i32(i),
             .y = i32(i) * 2,
         };
@@ -1712,7 +1712,7 @@ test &quot;address of syntax&quot; {
     const x_ptr = &amp;x;
 
     // Deference a pointer:
-    assert(*x_ptr == 1234);
+    assert(x_ptr.* == 1234);
 
     // When you get the address of a const variable, you get a const pointer.
     assert(@typeOf(x_ptr) == &amp;const i32);
@@ -1721,8 +1721,8 @@ test &quot;address of syntax&quot; {
     var y: i32 = 5678;
     const y_ptr = &amp;y;
     assert(@typeOf(y_ptr) == &amp;i32);
-    *y_ptr += 1;
-    assert(*y_ptr == 5679);
+    y_ptr.* += 1;
+    assert(y_ptr.* == 5679);
 }
 
 test &quot;pointer array access&quot; {
@@ -1760,9 +1760,9 @@ comptime {
     // @ptrCast.
     var x: i32 = 1;
     const ptr = &amp;x;
-    *ptr += 1;
+    ptr.* += 1;
     x += 1;
-    assert(*ptr == 3);
+    assert(ptr.* == 3);
 }
 
 test &quot;@ptrToInt and @intToPtr&quot; {
@@ -1804,7 +1804,7 @@ test &quot;nullable pointers&quot; {
     var x: i32 = 1;
     ptr = &amp;x;
 
-    assert(*??ptr == 1);
+    assert((??ptr).* == 1);
 
     // Nullable pointers are the same size as normal pointers, because pointer
     // value 0 is used as the null value.
@@ -1817,7 +1817,7 @@ test &quot;pointer casting&quot; {
     // conversions are not possible.
     const bytes align(@alignOf(u32)) = []u8{0x12, 0x12, 0x12, 0x12};
     const u32_ptr = @ptrCast(&amp;const u32, &amp;bytes[0]);
-    assert(*u32_ptr == 0x12121212);
+    assert(u32_ptr.* == 0x12121212);
 
     // Even this example is contrived - there are better ways to do the above than
     // pointer casting. For example, using a slice narrowing cast:
@@ -1961,7 +1961,7 @@ Tests failed. Use the following command to reproduce the failure:
       <code>u8</code> can alias any memory.
       </p>
       <p>As an example, this code produces undefined behavior:</p>
-      <pre><code class="zig">*@ptrCast(&amp;u32, f32(12.34))</code></pre>
+      <pre><code class="zig">@ptrCast(&amp;u32, f32(12.34)).*</code></pre>
       <p>Instead, use <a href="#bitCast">@bitCast</a>:
       <pre><code class="zig">@bitCast(u32, f32(12.34))</code></pre>
       <p>As an added benefit, the <code>@bitcast</code> version works at compile-time.</p>
@@ -2457,7 +2457,7 @@ const Variant = union(enum) {
     Bool: bool,
 
     fn truthy(self: &amp;const Variant) bool {
-        return switch (*self) {
+        return switch (self.*) {
             Variant.Int =&gt; |x_int| x_int != 0,
             Variant.Bool =&gt; |x_bool| x_bool,
         };
@@ -2577,7 +2577,7 @@ test &quot;switch enum&quot; {
 
         // A reference to the matched value can be obtained using `*` syntax.
         Item.C =&gt; |*item| blk: {
-            (*item).x += 1;
+            item.*.x += 1;
             break :blk 6;
         },
 
@@ -2826,7 +2826,7 @@ test &quot;for reference&quot; {
     // Iterate over the slice by reference by
     // specifying that the capture value is a pointer.
     for (items) |*value| {
-        *value += 1;
+        value.* += 1;
     }
 
     assert(items[0] == 4);
@@ -2946,7 +2946,7 @@ test &quot;if nullable&quot; {
     // Access the value by reference using a pointer capture.
     var c: ?u32 = 3;
     if (c) |*value| {
-        *value = 2;
+        value.* = 2;
     }
 
     if (c) |value| {
@@ -2987,7 +2987,7 @@ test &quot;if error union&quot; {
     // Access the value by reference using a pointer capture.
     var c: error!u32 = 3;
     if (c) |*value| {
-        *value = 9;
+        value.* = 9;
     } else |err| {
         unreachable;
     }
@@ -4432,10 +4432,10 @@ test &quot;printf too many arguments&quot; {
     warn(&quot;here is a string: '{}' here is a number: {}\n&quot;,
         a_string, a_number, a_number);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:213:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:260:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
             @compileError(&quot;Unused arguments&quot;);
             <span class="t32_1">^</span>
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:236:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:214:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
             return std.fmt.format(self, Error, self.writeFn, format, args);
                                  <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:22:17: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -4507,7 +4507,7 @@ here is a string: 'foobar' here is a number: 1234
 
       <pre><code class="zig">@addWithOverflow(comptime T: type, a: T, b: T, result: &T) -&gt; bool</code></pre>
       <p>
-      Performs <code>*result = a + b</code>. If overflow or underflow occurs,
+      Performs <code>result.* = a + b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
       If no overflow or underflow occurs, returns <code>false</code>.
       </p>
@@ -4749,9 +4749,9 @@ comptime {
       except atomic:
       </p>
       <pre><code class="zig">fn cmpxchgStrongButNotAtomic(comptime T: type, ptr: &amp;T, expected_value: T, new_value: T) ?T {
-    const old_value = *ptr;
+    const old_value = ptr.*;
     if (old_value == expected_value) {
-        *ptr = new_value;
+        ptr.* = new_value;
         return null;
     } else {
         return old_value;
@@ -4779,9 +4779,9 @@ comptime {
       except atomic:
       </p>
       <pre><code class="zig">fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: &amp;T, expected_value: T, new_value: T) ?T {
-    const old_value = *ptr;
+    const old_value = ptr.*;
     if (old_value == expected_value and usuallyTrueButSometimesFalse()) {
-        *ptr = new_value;
+        ptr.* = new_value;
         return null;
     } else {
         return old_value;
@@ -5191,7 +5191,7 @@ mem.copy(u8, dest[0...byte_count], source[0...byte_count]);</code></pre>
       This function is a low level intrinsic with no safety mechanisms. Most
       code should not use this function, instead using something like this:
       </p>
-      <pre><code class="zig">for (dest[0...byte_count]) |*b| *b = c;</code></pre>
+      <pre><code class="zig">for (dest[0...byte_count]) |*b| b.* = c;</code></pre>
       <p>
       The optimizer is intelligent enough to turn the above snippet into a memset.
       </p>
@@ -5230,7 +5230,7 @@ mem.set(u8, dest, c);</code></pre>
 
       <pre><code class="zig">@mulWithOverflow(comptime T: type, a: T, b: T, result: &T) -&gt; bool</code></pre>
       <p>
-      Performs <code>*result = a * b</code>. If overflow or underflow occurs,
+      Performs <code>result.* = a * b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
       If no overflow or underflow occurs, returns <code>false</code>.
       </p>
@@ -5264,7 +5264,7 @@ fn targetFunction(x: i32) usize {
 
     var local_variable: i32 = 42;
     const ptr = &amp;local_variable;
-    *ptr += 1;
+    ptr.* += 1;
 
     assert(local_variable == 43);
     return @ptrToInt(ptr);
@@ -5543,7 +5543,7 @@ Test 1/1 foo...OK
 
       <pre><code class="zig">@shlWithOverflow(comptime T: type, a: T, shift_amt: Log2T, result: &T) -&gt; bool</code></pre>
       <p>
-      Performs <code>*result = a &lt;&lt; b</code>. If overflow or underflow occurs,
+      Performs <code>result.* = a &lt;&lt; b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
       If no overflow or underflow occurs, returns <code>false</code>.
       </p>
@@ -5599,7 +5599,7 @@ Test 1/1 foo...OK
 
       <pre><code class="zig">@subWithOverflow(comptime T: type, a: T, b: T, result: &T) -&gt; bool</code></pre>
       <p>
-      Performs <code>*result = a - b</code>. If overflow or underflow occurs,
+      Performs <code>result.* = a - b</code>. If overflow or underflow occurs,
       stores the overflowed bits in <code>result</code> and returns <code>true</code>.
       If no overflow or underflow occurs, returns <code>false</code>.
       </p>
@@ -6082,7 +6082,7 @@ pub fn main() !void {
 $ ./test
 unable to add one: Overflow
 error: Overflow
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:206:5</span>: <span class="t2_0">0x2203e8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:205:5</span>: <span class="t2_0">0x2203e8 in ??? (test)</span>
     return if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer;
     <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x220275 in ??? (test)</span>
@@ -7335,9 +7335,11 @@ MultiplyOperator = "||" | "*" | "/" | "%" | "**" | "*%"
 
 PrefixOpExpression = PrefixOp TypeExpr | SuffixOpExpression
 
-SuffixOpExpression = ("async" option("&lt;" SuffixOpExpression "&gt;") SuffixOpExpression FnCallExpression) | PrimaryExpression option(FnCallExpression | ArrayAccessExpression | FieldAccessExpression | SliceExpression)
+SuffixOpExpression = ("async" option("&lt;" SuffixOpExpression "&gt;") SuffixOpExpression FnCallExpression) | PrimaryExpression option(FnCallExpression | ArrayAccessExpression | FieldAccessExpression | SliceExpression | PtrDerefExpression)
 
 FieldAccessExpression = "." Symbol
+
+PtrDerefExpression = ".*"
 
 FnCallExpression = "(" list(Expression, ",") ")"
 
@@ -7351,7 +7353,7 @@ ContainerInitBody = list(StructLiteralField, ",") | list(Expression, ",")
 
 StructLiteralField = "." Symbol "=" Expression
 
-PrefixOp = "!" | "-" | "~" | "*" | ("&amp;" option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "??" | "-%" | "try" | "await"
+PrefixOp = "!" | "-" | "~" | ("*" option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "??" | "-%" | "try" | "await"
 
 PrimaryExpression = Integer | Float | String | CharLiteral | KeywordLiteral | GroupedExpression | BlockExpression(BlockOrExpression) | Symbol | ("@" Symbol FnCallExpression) | ArrayType | FnProto | AsmExpression | ContainerDecl | ("continue" option(":" Symbol)) | ErrorSetDecl | PromiseType
 
