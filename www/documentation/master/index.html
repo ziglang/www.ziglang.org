@@ -730,7 +730,7 @@ test &quot;string literals&quot; {
 
     // A C string literal is a null terminated pointer.
     const null_terminated_bytes = c&quot;hello&quot;;
-    assert(@typeOf(null_terminated_bytes) == *const u8);
+    assert(@typeOf(null_terminated_bytes) == [*]const u8);
     assert(null_terminated_bytes[5] == 0);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 string literals...OK
@@ -823,7 +823,7 @@ Test 1/1 string literals...OK
     c\\}
 ;</code></pre>
       <p>
-      In this example the variable <code>c_string_literal</code> has type <code>*const char</code> and
+      In this example the variable <code>c_string_literal</code> has type <code>[*]const char</code> and
       has a terminating null byte.
       </p>
       <p>See also:</p><ul>
@@ -1591,7 +1591,7 @@ or
 const mem = @import(&quot;std&quot;).mem;
 
 // array literal
-const message = []u8{'h', 'e', 'l', 'l', 'o'};
+const message = []u8{ 'h', 'e', 'l', 'l', 'o' };
 
 // get the size of an array
 comptime {
@@ -1627,11 +1627,11 @@ test &quot;modify an array&quot; {
 
 // array concatenation works if the values are known
 // at compile time
-const part_one = []i32{1, 2, 3, 4};
-const part_two = []i32{5, 6, 7, 8};
+const part_one = []i32{ 1, 2, 3, 4 };
+const part_two = []i32{ 5, 6, 7, 8 };
 const all_of_it = part_one ++ part_two;
 comptime {
-    assert(mem.eql(i32, all_of_it, []i32{1,2,3,4,5,6,7,8}));
+    assert(mem.eql(i32, all_of_it, []i32{ 1, 2, 3, 4, 5, 6, 7, 8 }));
 }
 
 // remember that string literals are arrays
@@ -1660,7 +1660,7 @@ comptime {
 var fancy_array = init: {
     var initial_value: [10]Point = undefined;
     for (initial_value) |*pt, i| {
-        pt.* = Point {
+        pt.* = Point{
             .x = i32(i),
             .y = i32(i) * 2,
         };
@@ -1680,7 +1680,7 @@ test &quot;compile-time array initalization&quot; {
 // call a function to initialize an array
 var more_points = []Point{makePoint(3)} ** 10;
 fn makePoint(x: i32) Point {
-    return Point {
+    return Point{
         .x = x,
         .y = x * 2,
     };
@@ -1726,25 +1726,24 @@ test &quot;address of syntax&quot; {
 }
 
 test &quot;pointer array access&quot; {
-    // Pointers do not support pointer arithmetic. If you
-    // need such a thing, use array index syntax:
+    // Taking an address of an individual element gives a
+    // pointer to a single item. This kind of pointer
+    // does not support pointer arithmetic.
 
     var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    const ptr = &amp;array[1];
+    const ptr = &amp;array[2];
+    assert(@typeOf(ptr) == *u8);
 
     assert(array[2] == 3);
-    ptr[1] += 1;
+    ptr.* += 1;
     assert(array[2] == 4);
 }
 
 test &quot;pointer slicing&quot; {
     // In Zig, we prefer using slices over null-terminated pointers.
-    // You can turn a pointer into a slice using slice syntax:
+    // You can turn an array into a slice using slice syntax:
     var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    const ptr = &amp;array[1];
-    const slice = ptr[1..3];
-
-    assert(slice.ptr == &amp;ptr[1]);
+    const slice = array[2..4];
     assert(slice.len == 2);
 
     // Slices have bounds checking and are therefore protected
@@ -1932,19 +1931,19 @@ Test 1/1 pointer alignment safety...incorrect alignment
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2030d6 in ??? (test)</span>
     assert(foo(bytes) == 0x11111111);
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x2204c8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x2203a8 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:100:22</span>: <span class="t2_0">0x2202cb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x2201ab in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:74:20</span>: <span class="t2_0">0x220239 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x220119 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:68:39</span>: <span class="t2_0">0x21ffaf in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ff18 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fe50 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fdc0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -1977,36 +1976,45 @@ Tests failed. Use the following command to reproduce the failure:
       <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;basic slices&quot; {
-    var array = []i32{1, 2, 3, 4};
+    var array = []i32{ 1, 2, 3, 4 };
     // A slice is a pointer and a length. The difference between an array and
     // a slice is that the array's length is part of the type and known at
     // compile-time, whereas the slice's length is known at runtime.
     // Both can be accessed with the `len` field.
     const slice = array[0..array.len];
-    assert(slice.ptr == &amp;array[0]);
+    assert(&amp;slice[0] == &amp;array[0]);
     assert(slice.len == array.len);
+
+    // Using the address-of operator on a slice gives a pointer to a single
+    // item, while using the `ptr` field gives an unknown length pointer.
+    assert(@typeOf(slice.ptr) == [*]i32);
+    assert(@typeOf(&amp;slice[0]) == *i32);
+    assert(@ptrToInt(slice.ptr) == @ptrToInt(&amp;slice[0]));
 
     // Slices have array bounds checking. If you try to access something out
     // of bounds, you'll get a safety check failure:
     slice[10] += 1;
+
+    // Note that `slice.ptr` does not invoke safety checking, while `&amp;slice[0]`
+    // asserts that the slice has len &gt;= 1.
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 basic slices...index out of bounds
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:15:10</span>: <span class="t2_0">0x20312b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:21:10</span>: <span class="t2_0">0x2031b5 in ??? (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x2203f8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x220358 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:100:22</span>: <span class="t2_0">0x2201fb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x22015b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:74:20</span>: <span class="t2_0">0x220169 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x2200c9 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:68:39</span>: <span class="t2_0">0x21fedf in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21fec8 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fd80 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fd70 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -3141,19 +3149,19 @@ Test 1/1 this will fail...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:11</span>: <span class="t2_0">0x20305b in ??? (test)</span>
     assert(false);
           <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x220318 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x2201f8 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:100:22</span>: <span class="t2_0">0x22011b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21fffb in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:74:20</span>: <span class="t2_0">0x220089 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ff69 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:68:39</span>: <span class="t2_0">0x21fdff in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21fd68 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fca0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fc10 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -5985,19 +5993,19 @@ Test 1/1 safety check...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x203078 in ??? (test)</span>
     unreachable;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x2202e8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x2201c8 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:100:22</span>: <span class="t2_0">0x2200eb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21ffcb in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:74:20</span>: <span class="t2_0">0x220059 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ff39 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:68:39</span>: <span class="t2_0">0x21fdcf in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21fd38 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fc70 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21fbe0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -6133,10 +6141,10 @@ pub fn main() !void {
 $ ./test
 unable to add one: Overflow
 error: Overflow
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:205:5</span>: <span class="t2_0">0x2203e8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:205:5</span>: <span class="t2_0">0x2202c8 in ??? (test)</span>
     return if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x220275 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x220155 in ??? (test)</span>
         return err;
         <span class="t32_1">^</span>
 </code></pre>
@@ -6868,7 +6876,7 @@ pub const __zig_test_fn_slice = {}; // overwritten later</code></pre>
       
       <h2 id="C-String-Literals">C String Literals</h2>
 
-      <p class="file">test.zig</p><pre><code class="zig">extern fn puts(*const u8) void;
+      <p class="file">test.zig</p><pre><code class="zig">extern fn puts([*]const u8) void;
 
 pub fn main() void {
     puts(c&quot;this has a null terminator&quot;);
@@ -7404,7 +7412,7 @@ ContainerInitBody = list(StructLiteralField, ",") | list(Expression, ",")
 
 StructLiteralField = "." Symbol "=" Expression
 
-PrefixOp = "!" | "-" | "~" | ("*" option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "??" | "-%" | "try" | "await"
+PrefixOp = "!" | "-" | "~" | (("*" | "[*]") option("align" "(" Expression option(":" Integer ":" Integer) ")" ) option("const") option("volatile")) | "?" | "??" | "-%" | "try" | "await"
 
 PrimaryExpression = Integer | Float | String | CharLiteral | KeywordLiteral | GroupedExpression | BlockExpression(BlockOrExpression) | Symbol | ("@" Symbol FnCallExpression) | ArrayType | FnProto | AsmExpression | ContainerDecl | ("continue" option(":" Symbol)) | ErrorSetDecl | PromiseType
 
@@ -7499,7 +7507,7 @@ hljs.registerLanguage("zig", function(t) {
         a = t.IR + "\\s*\\(",
         c = {
             keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union break return try catch test continue unreachable comptime and or asm defer errdefer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong",
-            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic canImplicitCast ptrCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo newStackCall",
+            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic canImplicitCast ptrCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall",
             literal: "true false null undefined"
         },
         n = [e, t.CLCM, t.CBCM, s, r];
