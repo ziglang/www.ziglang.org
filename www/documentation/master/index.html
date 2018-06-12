@@ -145,6 +145,7 @@
             </ul></li>
             <li><a href="#Error-Union-Type">Error Union Type</a>
             <ul>
+                <li><a href="#Merging-Error-Sets">Merging Error Sets</a></li>
                 <li><a href="#Inferred-Error-Sets">Inferred Error Sets</a></li>
             </ul></li>
             <li><a href="#Error-Return-Traces">Error Return Traces</a></li>
@@ -3665,7 +3666,52 @@ test &quot;error union&quot; {
 Test 1/1 error union...OK
 </code></pre>
 
-      <p>TODO the <code>||</code> operator for error sets</p>
+      <h3 id="Merging-Error-Sets">Merging Error Sets</h3>
+
+      <p>
+      Use the <code>||</code> operator to merge two error sets together. The resulting
+      error set contains the errors of both error sets. Doc comments from the left-hand
+      side override doc comments from the right-hand side. In this example, the doc
+      comments for <code>C.PathNotFound</code> is <code>A doc comment</code>.
+      </p>
+      <p>
+      This is especially useful for functions which return different error sets depending
+      on <a href="#comptime">comptime</a> branches. For example, the Zig standard library uses
+      <code>LinuxFileOpenError || WindowsFileOpenError</code> for the error set of opening
+      files.
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const A = error{
+    NotDir,
+
+    /// A doc comment
+    PathNotFound,
+};
+const B = error{
+    OutOfMemory,
+
+    /// B doc comment
+    PathNotFound,
+};
+
+const C = A || B;
+
+fn foo() C!void {
+    return error.NotDir;
+}
+
+test &quot;merge error sets&quot; {
+    if (foo()) {
+        @panic(&quot;unexpected&quot;);
+    } else |err| switch (err) {
+        error.OutOfMemory =&gt; @panic(&quot;unexpected&quot;),
+        error.PathNotFound =&gt; @panic(&quot;unexpected&quot;),
+        error.NotDir =&gt; {},
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 merge error sets...OK
+</code></pre>
+
+      
       <h3 id="Inferred-Error-Sets">Inferred Error Sets</h3>
 
       <p>
