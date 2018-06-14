@@ -90,7 +90,10 @@
                 <li><a href="#Escape-Sequences">Escape Sequences</a></li>
                 <li><a href="#Multiline-String-Literals">Multiline String Literals</a></li>
             </ul></li>
-            <li><a href="#Assignment">Assignment</a></li>
+            <li><a href="#Assignment">Assignment</a>
+            <ul>
+                <li><a href="#undefined">undefined</a></li>
+            </ul></li>
         </ul></li>
         <li><a href="#Integers">Integers</a>
         <ul>
@@ -145,14 +148,21 @@
             </ul></li>
             <li><a href="#Error-Union-Type">Error Union Type</a>
             <ul>
+                <li><a href="#catch">catch</a></li>
+                <li><a href="#try">try</a></li>
+                <li><a href="#errdefer">errdefer</a></li>
                 <li><a href="#Merging-Error-Sets">Merging Error Sets</a></li>
                 <li><a href="#Inferred-Error-Sets">Inferred Error Sets</a></li>
             </ul></li>
-            <li><a href="#Error-Return-Traces">Error Return Traces</a></li>
+            <li><a href="#Error-Return-Traces">Error Return Traces</a>
+            <ul>
+                <li><a href="#Implementation-Details">Implementation Details</a></li>
+            </ul></li>
         </ul></li>
         <li><a href="#Optionals">Optionals</a>
         <ul>
             <li><a href="#Optional-Type">Optional Type</a></li>
+            <li><a href="#null">null</a></li>
         </ul></li>
         <li><a href="#Casting">Casting</a></li>
         <li><a href="#void">void</a></li>
@@ -260,6 +270,7 @@
             <li><a href="#Debug">Debug</a></li>
             <li><a href="#ReleaseFast">ReleaseFast</a></li>
             <li><a href="#ReleaseSafe">ReleaseSafe</a></li>
+            <li><a href="#ReleaseSmall">ReleaseSmall</a></li>
         </ul></li>
         <li><a href="#Undefined-Behavior">Undefined Behavior</a>
         <ul>
@@ -889,6 +900,8 @@ Test 1/1 var...OK
     <span class="t32_1">^</span>
 </code></pre>
 
+      <h3 id="undefined">undefined</h3>
+
       <p>Use <code>undefined</code> to leave variables uninitialized:</p>
       <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
@@ -900,6 +913,7 @@ test &quot;init with undefined&quot; {
 Test 1/1 init with undefined...OK
 </code></pre>
 
+      
       
       
       <h1 id="Integers">Integers</h1>
@@ -3552,6 +3566,8 @@ Test 1/1 parse u64...OK
         <li>You know with complete certainty it will not return an error, so want to unconditionally unwrap it.</li>
         <li>You want to take a different action for each possible error.</li>
       </ul>
+      <h3 id="catch">catch</h3>
+
       <p>If you want to provide a default value, you can use the <code>catch</code> binary operator:</p>
       <pre><code class="zig">fn doAThing(str: []u8) void {
     const number = parseU64(str, 10) catch 13;
@@ -3562,6 +3578,9 @@ Test 1/1 parse u64...OK
       a default value of 13. The type of the right hand side of the binary <code>catch</code> operator must
       match the unwrapped error union type, or be of type <code>noreturn</code>.
       </p>
+      
+      <h3 id="try">try</h3>
+
       <p>Let's say you wanted to return the error if you got one, otherwise continue with the
       function logic:</p>
       <pre><code class="zig">fn doAThing(str: []u8) !void {
@@ -3580,6 +3599,7 @@ Test 1/1 parse u64...OK
       from the current function with the same error. Otherwise, the expression results in
       the unwrapped value.
       </p>
+      
       <p>
         Maybe you know with complete certainty that an expression will never be an error.
         In this case you can do this:
@@ -3594,7 +3614,7 @@ Test 1/1 parse u64...OK
       </p>
       <p>
       Finally, you may want to take a different action for every situation. For that, we combine
-      the <code>if</code> and <code>switch</code> expression:
+      the <a href="#if">if</a> and <a href="#switch">switch</a> expression:
       </p>
       <pre><code class="zig">fn doAThing(str: []u8) void {
     if (parseU64(str, 10)) |number| {
@@ -3607,9 +3627,11 @@ Test 1/1 parse u64...OK
         error.InvalidChar =&gt; unreachable,
     }
 }</code></pre>
+      <h3 id="errdefer">errdefer</h3>
+
       <p>
       The other component to error handling is defer statements.
-      In addition to an unconditional <code>defer</code>, Zig has <code>errdefer</code>,
+      In addition to an unconditional <a href="#defer">defer</a>, Zig has <code>errdefer</code>,
       which evaluates the deferred expression on block exit path if and only if
       the function returned with an error from the block.
       </p>
@@ -3638,6 +3660,7 @@ Test 1/1 parse u64...OK
       the verbosity and cognitive overhead of trying to make sure every exit path
       is covered. The deallocation code is always directly following the allocation code.
       </p>
+      
       <p>
       A couple of other tidbits about error handling:
       </p>
@@ -3777,7 +3800,223 @@ Test 1/1 inferred error set...OK
       
       <h2 id="Error-Return-Traces">Error Return Traces</h2>
 
-      <p>TODO</p>
+      <p>
+      Error Return Traces show all the points in the code that an error was returned to the calling function. This makes it practical to use <a href="#try">try</a> everywhere and then still be able to know what happened if an error ends up bubbling all the way out of your application.
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">pub fn main() !void {
+    try foo(12);
+}
+
+fn foo(x: i32) !void {
+    if (x &gt;= 5) {
+        try bar();
+    } else {
+        try bang2();
+    }
+}
+
+fn bar() !void {
+    if (baz()) {
+        try quux();
+    } else |err| switch (err) {
+        error.FileNotFound =&gt; try hello(),
+        else =&gt; try another(),
+    }
+}
+
+fn baz() !void {
+    try bang1();
+}
+
+fn quux() !void {
+    try bang2();
+}
+
+fn hello() !void {
+    try bang2();
+}
+
+fn another() !void {
+    try bang1();
+}
+
+fn bang1() !void {
+    return error.FileNotFound;
+}
+
+fn bang2() !void {
+    return error.PermissionDenied;
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+error: PermissionDenied
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x220899 in ??? (test)</span>
+    return error.FileNotFound;
+    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x22077d in ??? (test)</span>
+    try bang1();
+    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x220749 in ??? (test)</span>
+    return error.PermissionDenied;
+    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x22086d in ??? (test)</span>
+    try bang2();
+    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x220719 in ??? (test)</span>
+        error.FileNotFound =&gt; try hello(),
+                              <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x22060a in ??? (test)</span>
+        try bar();
+        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x2204e2 in ??? (test)</span>
+    try foo(12);
+    <span class="t32_1">^</span>
+</code></pre>
+
+      <p>
+      Look closely at this example. This is no stack trace.
+      </p>
+      <p>
+      You can see that the final error bubbled up was <code>PermissionDenied</code>,
+      but the original error that started this whole thing was <code>FileNotFound</code>. In the <code>bar</code> function, the code handles the original error code,
+      and then returns another one, from the switch statement. Error Return Traces make this clear, whereas a stack trace would look like this:
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">pub fn main() void {
+    foo(12);
+}
+
+fn foo(x: i32) void {
+    if (x &gt;= 5) {
+        bar();
+    } else {
+        bang2();
+    }
+}
+
+fn bar() void {
+    if (baz()) {
+        quux();
+    } else {
+        hello();
+    }
+}
+
+fn baz() bool {
+    return bang1();
+}
+
+fn quux() void {
+    bang2();
+}
+
+fn hello() void {
+    bang2();
+}
+
+fn bang1() bool {
+    return false;
+}
+
+fn bang2() void {
+    @panic(&quot;PermissionDenied&quot;);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+PermissionDenied
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x220428 in ??? (test)</span>
+    @panic(&quot;PermissionDenied&quot;);
+    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x220469 in ??? (test)</span>
+    bang2();
+         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x2203fb in ??? (test)</span>
+        hello();
+             <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x2203c6 in ??? (test)</span>
+        bar();
+           <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x2203ae in ??? (test)</span>
+    foo(12);
+       <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x220389 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x220329 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x220128 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ffd0 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
+      <p>
+      Here, the stack trace does not explain how the control
+      flow in <code>bar</code> got to the <code>hello()</code> call.
+      One would have to open a debugger or further instrument the application
+      in order to find out. The error return trace, on the other hand, 
+      shows exactly how the error bubbled up.
+      </p>
+      <p>
+      This debugging feature makes it easier to iterate quickly on code that
+      robustly handles all error conditions. This means that Zig developers
+      will naturally find themselves writing correct, robust code in order
+      to increase their development pace.
+      </p>
+      <p>
+      Error Return Traces are enabled by default in <a href="#Debug">Debug</a> and <a href="#ReleaseSafe">ReleaseSafe</a> builds and disabled by default in <a href="#ReleaseFast">ReleaseFast</a> and <a href="#ReleaseSmall">ReleaseSmall</a> builds.
+      </p>
+      <p>
+      There are a few ways to activate this error return tracing feature:
+      </p>
+      <ul>
+        <li>Return an error from main</li>
+        <li>An error makes its way to <code>catch unreachable</code> and you have not overridden the default panic handler</li>
+        <li>Use <a href="#errorReturnTrace">errorReturnTrace</a> to access the current return trace. You can use <code>std.debug.dumpStackTrace</code> to print it. This function returns comptime-known <a href="#null">null</a> when building without error return tracing support.</li>
+      </ul>
+      <h3 id="Implementation-Details">Implementation Details</h3>
+
+      <p>
+      To analyze performance cost, there are two cases:
+      </p>
+      <ul>
+        <li>when no errors are returned</li>
+        <li>when returning errors</li>
+      </ul>
+      <p>
+      For the case when no errors are returned, the cost is a single memory write operation, only in the first non-failable function in the call graph that calls a failable function, i.e. when a function returning <code>void</code> calls a function returning <code>error</code>.
+      This is to initialize this struct in the stack memory:
+      </p>
+      <pre><code class="zig">pub const StackTrace = struct {
+    index: usize,
+    instruction_addresses: [N]usize,
+};</code></pre>
+      <p>
+      Here, N is the maximum function call depth as determined by call graph analysis. Recursion is ignored and counts for 2.
+      </p>
+      <p>
+      A pointer to <code>StackTrace</code> is passed as a secret parameter to every function that can return an error, but it's always the first parameter, so it can likely sit in a register and stay there.
+      </p>
+      <p>
+      That's it for the path when no errors occur. It's practically free in terms of performance.
+      </p>
+      <p>
+      When generating the code for a function that returns an error, just before the <code>return</code> statement (only for the <code>return</code> statements that return errors), Zig generates a call to this function:
+      </p>
+      <pre><code class="zig">// marked as &quot;no-inline&quot; in LLVM IR
+fn __zig_return_error(stack_trace: *StackTrace) void {
+    stack_trace.instruction_addresses[stack_trace.index] = @returnAddress();
+    stack_trace.index = (stack_trace.index + 1) % N;
+}</code></pre>
+      <p>
+      The cost is 2 math operations plus some memory reads and writes. The memory accessed is constrained and should remain cached for the duration of the error return bubbling.
+      </p>
+      <p>
+      As for code size cost, 1 function call before a return statement is no big deal. Even so,
+      I have <a href="https://github.com/ziglang/zig/issues/690">a plan</a> to make the call to
+      <code>__zig_return_error</code> a tail call, which brings the code size cost down to actually zero. What is a return statement in code without error return tracing can become a jump instruction in code with error return tracing.
+      </p>
+      
       
       
       <h1 id="Optionals">Optionals</h1>
@@ -3894,6 +4133,14 @@ test &quot;optional type&quot; {
 Test 1/1 optional type...OK
 </code></pre>
 
+      
+      <h2 id="null">null</h2>
+
+      <p>
+      Just like <a href="#undefined">undefined</a>, <code>null</code> has its own type, and the only way to use it is to
+      cast it to a different type:
+      </p>
+      <pre><code class="zig">const optional_value: ?i32 = null;</code></pre>
       
       
       <h1 id="Casting">Casting</h1>
@@ -6259,12 +6506,13 @@ const b: u8 = @truncate(u8, a);
       <h1 id="Build-Mode">Build Mode</h1>
 
       <p>
-      Zig has three build modes:
+      Zig has four build modes:
       </p>
       <ul>
         <li><a href="#Debug">Debug</a> (default)</li>
         <li><a href="#ReleaseFast">ReleaseFast</a></li>
         <li><a href="#ReleaseSafe">ReleaseSafe</a></li>
+        <li><a href="#ReleaseSmall">ReleaseSmall</a></li>
       </ul>
       <p>
       To add standard build options to a <code>build.zig</code> file:
@@ -6279,8 +6527,9 @@ pub fn build(b: &amp;Builder) void {
       <p>
       This causes these options to be available:
       </p>
-      <pre><code class="shell">  -Drelease-safe=(bool)  optimizations on and safety on
-  -Drelease-fast=(bool)  optimizations on and safety off</code></pre>
+      <pre><code class="shell">  -Drelease-safe=[bool] optimizations on and safety on
+  -Drelease-fast=[bool] optimizations on and safety off
+  -Drelease-small=[bool] size optimizations on and safety off</code></pre>
       <h2 id="Debug">Debug</h2>
 
       <pre><code class="shell">$ zig build-exe example.zig</code></pre>
@@ -6288,6 +6537,7 @@ pub fn build(b: &amp;Builder) void {
         <li>Fast compilation speed</li>
         <li>Safety checks enabled</li>
         <li>Slow runtime performance</li>
+        <li>Large binary size</li>
       </ul>
       
       <h2 id="ReleaseFast">ReleaseFast</h2>
@@ -6297,6 +6547,7 @@ pub fn build(b: &amp;Builder) void {
         <li>Fast runtime performance</li>
         <li>Safety checks disabled</li>
         <li>Slow compilation speed</li>
+        <li>Large binary size</li>
       </ul>
       
       <h2 id="ReleaseSafe">ReleaseSafe</h2>
@@ -6306,14 +6557,25 @@ pub fn build(b: &amp;Builder) void {
         <li>Medium runtime performance</li>
         <li>Safety checks enabled</li>
         <li>Slow compilation speed</li>
+        <li>Large binary size</li>
       </ul>
+      
+      <h2 id="ReleaseSmall">ReleaseSmall</h2>
+
+      <pre><code class="shell">$ zig build-exe example.zig --release-small</code></pre>
+      <ul>
+        <li>Medium runtime performance</li>
+        <li>Safety checks disabled</li>
+        <li>Slow compilation speed</li>
+        <li>Small binary size</li>
+      </ul>
+      
       <p>See also:</p><ul>
 <li><a href="#Compile-Variables">Compile Variables</a></li>
 <li><a href="#Zig-Build-System">Zig Build System</a></li>
 <li><a href="#Undefined-Behavior">Undefined Behavior</a></li>
 </ul>
 
-      
       
       <h1 id="Undefined-Behavior">Undefined Behavior</h1>
 
@@ -6322,7 +6584,7 @@ pub fn build(b: &amp;Builder) void {
       detected at compile-time, Zig emits an error. Most undefined behavior that
       cannot be detected at compile-time can be detected at runtime. In these cases,
       Zig has safety checks. Safety checks can be disabled on a per-block basis
-      with <code>@setRuntimeSafety</code>. The <a href="#ReleaseFast">ReleaseFast</a>
+      with <a href="#setRuntimeSafety">setRuntimeSafety</a>. The <a href="#ReleaseFast">ReleaseFast</a>
       build mode disables all safety checks in order to facilitate optimizations.
       </p>
       <p>
