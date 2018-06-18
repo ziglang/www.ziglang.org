@@ -201,6 +201,7 @@
             <li><a href="#breakpoint">@breakpoint</a></li>
             <li><a href="#alignCast">@alignCast</a></li>
             <li><a href="#alignOf">@alignOf</a></li>
+            <li><a href="#boolToInt">@boolToInt</a></li>
             <li><a href="#cDefine">@cDefine</a></li>
             <li><a href="#cImport">@cImport</a></li>
             <li><a href="#cInclude">@cInclude</a></li>
@@ -216,21 +217,23 @@
             <li><a href="#divTrunc">@divTrunc</a></li>
             <li><a href="#embedFile">@embedFile</a></li>
             <li><a href="#export">@export</a></li>
-            <li><a href="#tagName">@tagName</a></li>
-            <li><a href="#TagType">@TagType</a></li>
             <li><a href="#errorName">@errorName</a></li>
             <li><a href="#errorReturnTrace">@errorReturnTrace</a></li>
             <li><a href="#fence">@fence</a></li>
+            <li><a href="#field">@field</a></li>
             <li><a href="#fieldParentPtr">@fieldParentPtr</a></li>
+            <li><a href="#floatCast">@floatCast</a></li>
+            <li><a href="#floatToInt">@floatToInt</a></li>
             <li><a href="#frameAddress">@frameAddress</a></li>
             <li><a href="#import">@import</a></li>
             <li><a href="#inlineCall">@inlineCall</a></li>
+            <li><a href="#intCast">@intCast</a></li>
+            <li><a href="#intToFloat">@intToFloat</a></li>
             <li><a href="#intToPtr">@intToPtr</a></li>
             <li><a href="#IntType">@IntType</a></li>
             <li><a href="#maxValue">@maxValue</a></li>
             <li><a href="#memberCount">@memberCount</a></li>
             <li><a href="#memberName">@memberName</a></li>
-            <li><a href="#field">@field</a></li>
             <li><a href="#memberType">@memberType</a></li>
             <li><a href="#memcpy">@memcpy</a></li>
             <li><a href="#memset">@memset</a></li>
@@ -259,6 +262,8 @@
             <li><a href="#sizeOf">@sizeOf</a></li>
             <li><a href="#sqrt">@sqrt</a></li>
             <li><a href="#subWithOverflow">@subWithOverflow</a></li>
+            <li><a href="#tagName">@tagName</a></li>
+            <li><a href="#TagType">@TagType</a></li>
             <li><a href="#truncate">@truncate</a></li>
             <li><a href="#typeId">@typeId</a></li>
             <li><a href="#typeInfo">@typeInfo</a></li>
@@ -1679,7 +1684,7 @@ var some_integers: [100]i32 = undefined;
 
 test &quot;modify an array&quot; {
     for (some_integers) |*item, i| {
-        item.* = i32(i);
+        item.* = @intCast(i32, i);
     }
     assert(some_integers[10] == 10);
     assert(some_integers[99] == 99);
@@ -1721,8 +1726,8 @@ var fancy_array = init: {
     var initial_value: [10]Point = undefined;
     for (initial_value) |*pt, i| {
         pt.* = Point{
-            .x = i32(i),
-            .y = i32(i) * 2,
+            .x = @intCast(i32, i),
+            .y = @intCast(i32, i) * 2,
         };
     }
     break :init initial_value;
@@ -2883,7 +2888,7 @@ test &quot;for basics&quot; {
     var sum2: i32 = 0;
     for (items) |value, i| {
         assert(@typeOf(i) == usize);
-        sum2 += i32(i);
+        sum2 += @intCast(i32, i);
     }
     assert(sum2 == 10);
 }
@@ -4805,7 +4810,7 @@ test &quot;printf too many arguments&quot; {
     warn(&quot;here is a string: '{}' here is a number: {}\n&quot;,
         a_string, a_number, a_number);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:81:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:82:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
             @compileError(&quot;Unused arguments&quot;);
             <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:214:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -5288,6 +5293,20 @@ comptime {
 </ul>
 
       
+
+      <h2 id="boolToInt">@boolToInt</h2>
+
+      <pre><code class="zig">@boolToInt(value: bool) u1</code></pre>
+      <p>
+      Converts <code>true</code> to <code>u1(1)</code> and <code>false</code> to
+      <code>u1(0)</code>.
+      </p>
+      <p>
+      If the value is known at compile-time, the return type is <code>comptime_int</code>
+      instead of <code>u1</code>.
+      </p>
+      
+
       <h2 id="cDefine">@cDefine</h2>
 
       <pre><code class="zig">@cDefine(comptime name: []u8, value)</code></pre>
@@ -5631,23 +5650,6 @@ OK
       Creates a symbol in the output object file.
       </p>
       
-      <h2 id="tagName">@tagName</h2>
-
-      <pre><code class="zig">@tagName(value: var) []const u8</code></pre>
-      <p>
-      Converts an enum value or union value to a slice of bytes representing the name.
-      </p>
-      
-      <h2 id="TagType">@TagType</h2>
-
-      <pre><code class="zig">@TagType(T: type) type</code></pre>
-      <p>
-      For an enum, returns the integer type that is used to store the enumeration value.
-      </p>
-      <p>
-      For a union, returns the enum type that is used to store the tag value.
-      </p>
-      
       <h2 id="errorName">@errorName</h2>
 
       <pre><code class="zig">@errorName(err: error) []u8</code></pre>
@@ -5688,6 +5690,13 @@ OK
 </ul>
 
       
+
+      <h2 id="field">@field</h2>
+
+      <pre><code class="zig">@field(lhs: var, comptime field_name: []const u8) (field)</code></pre>
+      <p>Preforms field access equivalent to <code>lhs.-&gtfield_name-&lt</code>.</p>
+      
+
       <h2 id="fieldParentPtr">@fieldParentPtr</h2>
 
       <pre><code class="zig">@fieldParentPtr(comptime ParentType: type, comptime field_name: []const u8,
@@ -5696,6 +5705,25 @@ OK
       Given a pointer to a field, returns the base pointer of a struct.
       </p>
       
+
+      <h2 id="floatCast">@floatCast</h2>
+
+      <pre><code class="zig">@floatCast(comptime DestType: type, value: var) DestType</code></pre>
+      <p>
+      Convert from one float type to another. This cast is safe, but may cause the
+      numeric value to lose precision.
+      </p>
+      
+
+      <h2 id="floatToInt">@floatToInt</h2>
+
+      <pre><code class="zig">@floatToInt(comptime DestType: type, float: var) DestType</code></pre>
+      <p>
+      Converts the integer part of a floating point number to the destination type.
+      To convert the other way, use <a href="#intToFloat">@intToFloat</a>. This cast is always safe.
+      </p>
+      
+
       <h2 id="frameAddress">@frameAddress</h2>
 
       <pre><code class="zig">@frameAddress()</code></pre>
@@ -5761,6 +5789,25 @@ Test 1/1 inline function call...OK
 </ul>
 
       
+
+      <h2 id="intCast">@intCast</h2>
+
+      <pre><code class="zig">@intCast(comptime DestType: type, int: var) DestType</code></pre>
+      <p>
+      Converts an integer to another integer while keeping the same numerical value.
+      Attempting to convert a number which is out of range of the destination type results in
+      <a href="#Undefined-Behavior">Undefined Behavior</a>.
+      </p>
+      
+
+      <h2 id="intToFloat">@intToFloat</h2>
+
+      <pre><code class="zig">@intToFloat(comptime DestType: type, int: var) DestType</code></pre>
+      <p>
+      Converts an integer to the closest floating point representation. To convert the other way, use <a href="#floatToInt">@floatToInt</a>. This cast is always safe.
+      </p>
+      
+
       <h2 id="intToPtr">@intToPtr</h2>
 
       <pre><code class="zig">@intToPtr(comptime DestType: type, int: usize) DestType</code></pre>
@@ -5768,6 +5815,7 @@ Test 1/1 inline function call...OK
       Converts an integer to a pointer. To convert the other way, use <a href="#ptrToInt">@ptrToInt</a>.
       </p>
       
+
       <h2 id="IntType">@IntType</h2>
 
       <pre><code class="zig">@IntType(comptime is_signed: bool, comptime bit_count: u8) type</code></pre>
@@ -5808,11 +5856,6 @@ Test 1/1 inline function call...OK
       <p>
       It does not include functions, variables, or constants.
       </p>
-      
-      <h2 id="field">@field</h2>
-
-      <pre><code class="zig">@field(lhs: var, comptime field_name: []const u8) (field)</code></pre>
-      <p>Preforms field access equivalent to <code>lhs.-&gtfield_name-&lt</code>.</p>
       
       <h2 id="memberType">@memberType</h2>
 
@@ -6261,6 +6304,23 @@ Test 1/1 foo...OK
       If no overflow or underflow occurs, returns <code>false</code>.
       </p>
       
+      <h2 id="tagName">@tagName</h2>
+
+      <pre><code class="zig">@tagName(value: var) []const u8</code></pre>
+      <p>
+      Converts an enum value or union value to a slice of bytes representing the name.
+      </p>
+      
+      <h2 id="TagType">@TagType</h2>
+
+      <pre><code class="zig">@TagType(T: type) type</code></pre>
+      <p>
+      For an enum, returns the integer type that is used to store the enumeration value.
+      </p>
+      <p>
+      For a union, returns the enum type that is used to store the tag value.
+      </p>
+      
       <h2 id="truncate">@truncate</h2>
 
       <pre><code class="zig">@truncate(comptime T: type, integer) T</code></pre>
@@ -6667,11 +6727,11 @@ comptime {
       <p>At compile-time:</p>
       <p class="file">test.zig</p><pre><code class="zig">comptime {
     const value: i32 = -1;
-    const unsigned = u32(value);
+    const unsigned = @intCast(u32, value);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:25: </span><span class="t31_1">error:</span><span class="t0_1"> attempt to cast negative value to unsigned integer</span>
-    const unsigned = u32(value);
-                        <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:22: </span><span class="t31_1">error:</span><span class="t0_1"> attempt to cast negative value to unsigned integer</span>
+    const unsigned = @intCast(u32, value);
+                     <span class="t32_1">^</span>
 </code></pre>
 
       <p>At runtime crashes with the message <code>attempt to cast negative value to unsigned integer</code> and a stack trace.</p>
@@ -6685,11 +6745,11 @@ comptime {
       <p>At compile-time:</p>
       <p class="file">test.zig</p><pre><code class="zig">comptime {
     const spartan_count: u16 = 300;
-    const byte = u8(spartan_count);
+    const byte = @intCast(u8, spartan_count);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:20: </span><span class="t31_1">error:</span><span class="t0_1"> cast from 'u16' to 'u8' truncates bits</span>
-    const byte = u8(spartan_count);
-                   <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:18: </span><span class="t31_1">error:</span><span class="t0_1"> cast from 'u16' to 'u8' truncates bits</span>
+    const byte = @intCast(u8, spartan_count);
+                 <span class="t32_1">^</span>
 </code></pre>
 
       <p>At runtime crashes with the message <code>integer cast truncated bits</code> and a stack trace.</p>
@@ -8127,7 +8187,7 @@ hljs.registerLanguage("zig", function(t) {
         a = t.IR + "\\s*\\(",
         c = {
             keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union break return try catch test continue unreachable comptime and or asm defer errdefer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong resume cancel await async orelse",
-            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic ptrCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall",
+            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic ptrCast intCast floatCast intToFloat floatToInt boolToInt bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall",
             literal: "true false null undefined"
         },
         n = [e, t.CLCM, t.CBCM, s, r];
