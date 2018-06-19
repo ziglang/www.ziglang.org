@@ -202,6 +202,7 @@
             <li><a href="#alignCast">@alignCast</a></li>
             <li><a href="#alignOf">@alignOf</a></li>
             <li><a href="#boolToInt">@boolToInt</a></li>
+            <li><a href="#bytesToSlice">@bytesToSlice</a></li>
             <li><a href="#cDefine">@cDefine</a></li>
             <li><a href="#cImport">@cImport</a></li>
             <li><a href="#cInclude">@cInclude</a></li>
@@ -216,9 +217,12 @@
             <li><a href="#divFloor">@divFloor</a></li>
             <li><a href="#divTrunc">@divTrunc</a></li>
             <li><a href="#embedFile">@embedFile</a></li>
-            <li><a href="#export">@export</a></li>
+            <li><a href="#enumToInt">@enumToInt</a></li>
+            <li><a href="#errSetCast">@errSetCast</a></li>
             <li><a href="#errorName">@errorName</a></li>
             <li><a href="#errorReturnTrace">@errorReturnTrace</a></li>
+            <li><a href="#errorToInt">@errorToInt</a></li>
+            <li><a href="#export">@export</a></li>
             <li><a href="#fence">@fence</a></li>
             <li><a href="#field">@field</a></li>
             <li><a href="#fieldParentPtr">@fieldParentPtr</a></li>
@@ -228,6 +232,8 @@
             <li><a href="#import">@import</a></li>
             <li><a href="#inlineCall">@inlineCall</a></li>
             <li><a href="#intCast">@intCast</a></li>
+            <li><a href="#intToEnum">@intToEnum</a></li>
+            <li><a href="#intToError">@intToError</a></li>
             <li><a href="#intToFloat">@intToFloat</a></li>
             <li><a href="#intToPtr">@intToPtr</a></li>
             <li><a href="#IntType">@IntType</a></li>
@@ -260,6 +266,7 @@
             <li><a href="#shlWithOverflow">@shlWithOverflow</a></li>
             <li><a href="#shrExact">@shrExact</a></li>
             <li><a href="#sizeOf">@sizeOf</a></li>
+            <li><a href="#sliceToBytes">@sliceToBytes</a></li>
             <li><a href="#sqrt">@sqrt</a></li>
             <li><a href="#subWithOverflow">@subWithOverflow</a></li>
             <li><a href="#tagName">@tagName</a></li>
@@ -300,6 +307,7 @@
             <li><a href="#Attempt-to-Unwrap-Error">Attempt to Unwrap Error</a></li>
             <li><a href="#Invalid-Error-Code">Invalid Error Code</a></li>
             <li><a href="#Invalid-Enum-Cast">Invalid Enum Cast</a></li>
+            <li><a href="#Invalid-Error-Set-Cast">Invalid Error Set Cast</a></li>
             <li><a href="#Incorrect-Pointer-Alignment">Incorrect Pointer Alignment</a></li>
             <li><a href="#Wrong-Union-Field-Access">Wrong Union Field Access</a></li>
         </ul></li>
@@ -1794,8 +1802,7 @@ test &quot;pointer array access&quot; {
     // Taking an address of an individual element gives a
     // pointer to a single item. This kind of pointer
     // does not support pointer arithmetic.
-
-    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    var array = []u8{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     const ptr = &amp;array[2];
     assert(@typeOf(ptr) == *u8);
 
@@ -1807,7 +1814,7 @@ test &quot;pointer array access&quot; {
 test &quot;pointer slicing&quot; {
     // In Zig, we prefer using slices over null-terminated pointers.
     // You can turn an array into a slice using slice syntax:
-    var array = []u8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    var array = []u8{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     const slice = array[2..4];
     assert(slice.len == 2);
 
@@ -1879,13 +1886,13 @@ test &quot;pointer casting&quot; {
     // To convert one pointer type to another, use @ptrCast. This is an unsafe
     // operation that Zig cannot protect you against. Use @ptrCast only when other
     // conversions are not possible.
-    const bytes align(@alignOf(u32)) = []u8{0x12, 0x12, 0x12, 0x12};
+    const bytes align(@alignOf(u32)) = []u8{ 0x12, 0x12, 0x12, 0x12 };
     const u32_ptr = @ptrCast(*const u32, &amp;bytes[0]);
     assert(u32_ptr.* == 0x12121212);
 
     // Even this example is contrived - there are better ways to do the above than
     // pointer casting. For example, using a slice narrowing cast:
-    const u32_value = ([]const u32)(bytes[0..])[0];
+    const u32_value = @bytesToSlice(u32, bytes[0..])[0];
     assert(u32_value == 0x12121212);
 
     // And even another way, the most straightforward way to do it:
@@ -1980,35 +1987,35 @@ Test 2/2 function alignment...OK
       <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;pointer alignment safety&quot; {
-    var array align(4) = []u32{0x11111111, 0x11111111};
-    const bytes = ([]u8)(array[0..]);
+    var array align(4) = []u32{ 0x11111111, 0x11111111 };
+    const bytes = @sliceToBytes(array[0..]);
     assert(foo(bytes) == 0x11111111);
 }
 fn foo(bytes: []u8) u32 {
     const slice4 = bytes[1..5];
-    const int_slice = ([]u32)(@alignCast(4, slice4));
+    const int_slice = @bytesToSlice(u32, @alignCast(4, slice4));
     return int_slice[0];
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 pointer alignment safety...incorrect alignment
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:45</span>: <span class="t2_0">0x2032be in ??? (test)</span>
-    const int_slice = ([]u32)(@alignCast(4, slice4));
-                                            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:56</span>: <span class="t2_0">0x2032be in ??? (test)</span>
+    const int_slice = @bytesToSlice(u32, @alignCast(4, slice4));
+                                                       <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2030a6 in ??? (test)</span>
     assert(foo(bytes) == 0x11111111);
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21ea28 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21eab8 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e86b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e8fb in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e7e5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e875 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e648 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e6d8 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e500 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e590 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -2067,19 +2074,19 @@ Test 1/1 basic slices...index out of bounds
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:21:10</span>: <span class="t2_0">0x203155 in ??? (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21e9e8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21ea78 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e82b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e8bb in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e7a5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e835 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e608 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e698 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e4c0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e550 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -2131,8 +2138,8 @@ test &quot;slice pointer&quot; {
 test &quot;slice widening&quot; {
     // Zig supports slice widening and slice narrowing. Cast a slice of u8
     // to a slice of anything else, and Zig will perform the length conversion.
-    const array align(@alignOf(u32)) = []u8{0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13};
-    const slice = ([]const u32)(array[0..]);
+    const array align(@alignOf(u32)) = []u8{ 0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13 };
+    const slice = @bytesToSlice(u32, array[0..]);
     assert(slice.len == 2);
     assert(slice[0] == 0x12121212);
     assert(slice[1] == 0x13131313);
@@ -2322,9 +2329,9 @@ const Value = enum(u2) {
 // Now you can cast between u2 and Value.
 // The ordinal value starts from 0, counting up for each member.
 test &quot;enum ordinal value&quot; {
-    assert(u2(Value.Zero) == 0);
-    assert(u2(Value.One) == 1);
-    assert(u2(Value.Two) == 2);
+    assert(@enumToInt(Value.Zero) == 0);
+    assert(@enumToInt(Value.One) == 1);
+    assert(@enumToInt(Value.Two) == 2);
 }
 
 // You can override the ordinal value for an enum.
@@ -2334,9 +2341,9 @@ const Value2 = enum(u32) {
     Million = 1000000,
 };
 test &quot;set enum ordinal value&quot; {
-    assert(u32(Value2.Hundred) == 100);
-    assert(u32(Value2.Thousand) == 1000);
-    assert(u32(Value2.Million) == 1000000);
+    assert(@enumToInt(Value2.Hundred) == 100);
+    assert(@enumToInt(Value2.Thousand) == 1000);
+    assert(@enumToInt(Value2.Million) == 1000000);
 }
 
 // Enums can have methods, the same as structs and unions.
@@ -3214,19 +3221,19 @@ Test 1/1 this will fail...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:11</span>: <span class="t2_0">0x20304b in ??? (test)</span>
     assert(false);
           <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21e8d8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21e968 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e71b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e7ab in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e695 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e725 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e4f8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e588 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e3b0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e440 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -3863,25 +3870,25 @@ fn bang2() !void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 error: PermissionDenied
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x21eb79 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x21ec09 in ??? (test)</span>
     return error.FileNotFound;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x21ea5d in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x21eaed in ??? (test)</span>
     try bang1();
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x21ea29 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x21eab9 in ??? (test)</span>
     return error.PermissionDenied;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x21eb4d in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x21ebdd in ??? (test)</span>
     try bang2();
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x21e9f9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x21ea89 in ??? (test)</span>
         error.FileNotFound =&gt; try hello(),
                               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x21e8ea in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x21e97a in ??? (test)</span>
         try bar();
         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x21e7d2 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x21e862 in ??? (test)</span>
     try foo(12);
     <span class="t32_1">^</span>
 </code></pre>
@@ -3935,31 +3942,31 @@ fn bang2() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 PermissionDenied
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x21e724 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x21e7b4 in ??? (test)</span>
     @panic(&quot;PermissionDenied&quot;);
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x21e769 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x21e7f9 in ??? (test)</span>
     bang2();
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x21e70b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x21e79b in ??? (test)</span>
         hello();
              <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x21e6d6 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x21e766 in ??? (test)</span>
         bar();
            <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x21e6be in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x21e74e in ??? (test)</span>
     foo(12);
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e699 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e729 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e645 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e6d5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e4a8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e538 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e360 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e3f0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -5388,6 +5395,19 @@ comptime {
       </p>
       
 
+      <h2 id="bytesToSlice">@bytesToSlice</h2>
+
+      <pre><code class="zig">@bytesToSlice(comptime Element: type, bytes: []u8) []Element</code></pre>
+      <p>
+      Converts a slice of bytes or array of bytes into a slice of <code>Element</code>.
+      The resulting slice has the same <a href="#Pointers">pointer</a> properties as the parameter.
+      </p>
+      <p>
+      Attempting to convert a number of bytes with a length that does not evenly divide into a slice of
+      elements results in safety-protected <a href="#Undefined-Behavior">Undefined Behavior</a>.
+      </p>
+      
+
       <h2 id="cDefine">@cDefine</h2>
 
       <pre><code class="zig">@cDefine(comptime name: []u8, value)</code></pre>
@@ -5724,13 +5744,28 @@ OK
 </ul>
 
       
-      <h2 id="export">@export</h2>
 
-      <pre><code class="zig">@export(comptime name: []const u8, target: var, linkage: builtin.GlobalLinkage) []const u8</code></pre>
+      <h2 id="enumToInt">@enumToInt</h2>
+
+      <pre><code class="zig">@enumToInt(enum_value: var) var</code></pre>
       <p>
-      Creates a symbol in the output object file.
+      Converts an enumeration value into its integer tag type.
+      </p>
+      <p>See also:</p><ul>
+<li><a href="#intToEnum">@intToEnum</a></li>
+</ul>
+
+      
+
+      <h2 id="errSetCast">@errSetCast</h2>
+
+      <pre><code class="zig">@errSetCast(comptime T: DestType, value: var) DestType</code></pre>
+      <p>
+      Converts an error value from one error set to another error set. Attempting to convert an error
+      which is not in the destination error set results in safety-protected <a href="#Undefined-Behavior">Undefined Behavior</a>.
       </p>
       
+
       <h2 id="errorName">@errorName</h2>
 
       <pre><code class="zig">@errorName(err: error) []u8</code></pre>
@@ -5748,6 +5783,7 @@ OK
       error name table will be generated.
       </p>
       
+
       <h2 id="errorReturnTrace">@errorReturnTrace</h2>
 
       <pre><code class="zig">@errorReturnTrace() ?*builtin.StackTrace</code></pre>
@@ -5757,6 +5793,38 @@ OK
       stack trace object. Otherwise returns `null`.
       </p>
       
+
+      <h2 id="errorToInt">@errorToInt</h2>
+
+      <pre><code class="zig">@errorToInt(err: var) @IntType(false, @sizeOf(error) * 8)</code></pre>
+      <p>
+      Supports the following types:
+      </p>
+      <ul>
+          <li>error unions</li>
+          <li><code>E!void</code></li>
+      </ul>
+      <p>
+      Converts an error to the integer representation of an error.
+      </p>
+      <p>
+      It is generally recommended to avoid this
+      cast, as the integer representation of an error is not stable across source code changes.
+      </p>
+      <p>See also:</p><ul>
+<li><a href="#intToError">@intToError</a></li>
+</ul>
+
+      
+
+      <h2 id="export">@export</h2>
+
+      <pre><code class="zig">@export(comptime name: []const u8, target: var, linkage: builtin.GlobalLinkage) []const u8</code></pre>
+      <p>
+      Creates a symbol in the output object file.
+      </p>
+      
+
       <h2 id="fence">@fence</h2>
 
       <pre><code class="zig">@fence(order: AtomicOrder)</code></pre>
@@ -5877,8 +5945,44 @@ Test 1/1 inline function call...OK
       <p>
       Converts an integer to another integer while keeping the same numerical value.
       Attempting to convert a number which is out of range of the destination type results in
-      <a href="#Undefined-Behavior">Undefined Behavior</a>.
+      safety-protected <a href="#Undefined-Behavior">Undefined Behavior</a>.
       </p>
+      
+
+      <h2 id="intToEnum">@intToEnum</h2>
+
+      <pre><code class="zig">@intToEnum(comptime DestType: type, int_value: @TagType(DestType)) DestType</code></pre>
+      <p>
+      Converts an integer into an <a href="#enum">enum</a> value.
+      </p>
+      <p>
+      Attempting to convert an integer which represents no value in the chosen enum type invokes
+      safety-checked <a href="#Undefined-Behavior">Undefined Behavior</a>.
+      </p>
+      <p>See also:</p><ul>
+<li><a href="#enumToInt">@enumToInt</a></li>
+</ul>
+
+      
+
+      <h2 id="intToError">@intToError</h2>
+
+      <pre><code class="zig">@intToError(value: @IntType(false, @sizeOf(error) * 8)) error</code></pre>
+      <p>
+      Converts from the integer representation of an error into the global error set type.
+      </p>
+      <p>
+      It is generally recommended to avoid this
+      cast, as the integer representation of an error is not stable across source code changes.
+      </p>
+      <p>
+      Attempting to convert an integer that does not correspond to any error results in
+      safety-protected <a href="#Undefined-Behavior">Undefined Behavior</a>.
+      </p>
+      <p>See also:</p><ul>
+<li><a href="#errorToInt">@errorToInt</a></li>
+</ul>
+
       
 
       <h2 id="intToFloat">@intToFloat</h2>
@@ -6355,9 +6459,10 @@ Test 1/1 foo...OK
 </ul>
 
       
+
       <h2 id="sizeOf">@sizeOf</h2>
 
-      <pre><code class="zig">@sizeOf(comptime T: type) (number literal)</code></pre>
+      <pre><code class="zig">@sizeOf(comptime T: type) comptime_int</code></pre>
       <p>
       This function returns the number of bytes it takes to store <code>T</code> in memory.
       </p>
@@ -6365,6 +6470,16 @@ Test 1/1 foo...OK
       The result is a target-specific compile time constant.
       </p>
       
+
+      <h2 id="sliceToBytes">@sliceToBytes</h2>
+
+      <pre><code class="zig">@sliceToBytes(value: var) []u8</code></pre>
+      <p>
+      Converts a slice or array to a slice of <code>u8</code>. The resulting slice has the same
+      <a href="#Pointers">pointer</a> properties as the parameter.
+      </p>
+      
+
       <h2 id="sqrt">@sqrt</h2>
 
       <pre><code class="zig">@sqrt(comptime T: type, value: T) T</code></pre>
@@ -6731,10 +6846,10 @@ pub fn build(b: &amp;Builder) void {
 
       <p>
       Zig has many instances of undefined behavior. If undefined behavior is
-      detected at compile-time, Zig emits an error. Most undefined behavior that
-      cannot be detected at compile-time can be detected at runtime. In these cases,
-      Zig has safety checks. Safety checks can be disabled on a per-block basis
-      with <a href="#setRuntimeSafety">setRuntimeSafety</a>. The <a href="#ReleaseFast">ReleaseFast</a>
+      detected at compile-time, Zig emits a compile error and refuses to continue.
+      Most undefined behavior that cannot be detected at compile-time can be detected
+      at runtime. In these cases, Zig has safety checks. Safety checks can be disabled
+      on a per-block basis with <a href="#setRuntimeSafety">setRuntimeSafety</a>. The <a href="#ReleaseFast">ReleaseFast</a>
       build mode disables all safety checks in order to facilitate optimizations.
       </p>
       <p>
@@ -6747,19 +6862,19 @@ Test 1/1 safety check...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x203054 in ??? (test)</span>
     unreachable;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21e8a8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21e938 in ??? (test)</span>
         try test_fn.func();
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e6eb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21e77b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e665 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e6f5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e4c8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e558 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e380 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e410 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -6895,10 +7010,10 @@ pub fn main() !void {
 $ ./test
 unable to add one: Overflow
 error: Overflow
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:209:5</span>: <span class="t2_0">0x21e9a8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:209:5</span>: <span class="t2_0">0x21ea38 in ??? (test)</span>
     return if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x21e848 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x21e8d8 in ??? (test)</span>
         return err;
         <span class="t32_1">^</span>
 </code></pre>
@@ -7099,12 +7214,12 @@ got error: UnableToReturnNumber
       <p>At compile-time:</p>
       <p class="file">test.zig</p><pre><code class="zig">comptime {
     const err = error.AnError;
-    const number = u32(err) + 10;
-    const invalid_err = error(number);
+    const number = @errorToInt(err) + 10;
+    const invalid_err = @intToError(number);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:30: </span><span class="t31_1">error:</span><span class="t0_1"> integer value 11 represents no error</span>
-    const invalid_err = error(number);
-                             <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:25: </span><span class="t31_1">error:</span><span class="t0_1"> integer value 11 represents no error</span>
+    const invalid_err = @intToError(number);
+                        <span class="t32_1">^</span>
 </code></pre>
 
       <p>At runtime crashes with the message <code>invalid error code</code> and a stack trace.</p>
@@ -7114,6 +7229,12 @@ got error: UnableToReturnNumber
       <p>TODO</p>
 
       
+
+      <h2 id="Invalid-Error-Set-Cast">Invalid Error Set Cast</h2>
+
+      <p>TODO</p>
+      
+
       <h2 id="Incorrect-Pointer-Alignment">Incorrect Pointer Alignment</h2>
 
       <p>TODO</p>
@@ -7124,6 +7245,7 @@ got error: UnableToReturnNumber
       <p>TODO</p>
 
       
+
       
       <h1 id="Memory">Memory</h1>
 
@@ -8268,7 +8390,7 @@ hljs.registerLanguage("zig", function(t) {
         a = t.IR + "\\s*\\(",
         c = {
             keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union break return try catch test continue unreachable comptime and or asm defer errdefer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong resume cancel await async orelse",
-            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic ptrCast intCast floatCast intToFloat floatToInt boolToInt bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall",
+            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage setGlobalSection divTrunc divFloor enumTagName intToPtr ptrToInt panic ptrCast intCast floatCast intToFloat floatToInt boolToInt bytesToSlice sliceToBytes errSetCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall errorToInt intToError enumToInt intToEnum",
             literal: "true false null undefined"
         },
         n = [e, t.CLCM, t.CBCM, s, r];
