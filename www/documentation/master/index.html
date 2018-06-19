@@ -125,8 +125,14 @@
         </ul></li>
         <li><a href="#union">union</a></li>
         <li><a href="#switch">switch</a></li>
-        <li><a href="#while">while</a></li>
-        <li><a href="#for">for</a></li>
+        <li><a href="#while">while</a>
+        <ul>
+            <li><a href="#inline-while">inline while</a></li>
+        </ul></li>
+        <li><a href="#for">for</a>
+        <ul>
+            <li><a href="#inline-for">inline for</a></li>
+        </ul></li>
         <li><a href="#if">if</a></li>
         <li><a href="#defer">defer</a></li>
         <li><a href="#unreachable">unreachable</a>
@@ -178,7 +184,6 @@
             <li><a href="#Generic-Data-Structures">Generic Data Structures</a></li>
             <li><a href="#Case-Study-printf-in-Zig">Case Study: printf in Zig</a></li>
         </ul></li>
-        <li><a href="#inline">inline</a></li>
         <li><a href="#Assembly">Assembly</a></li>
         <li><a href="#Atomics">Atomics</a></li>
         <li><a href="#Coroutines">Coroutines</a>
@@ -2825,12 +2830,27 @@ fn eventuallyErrorSequence() error!u32 {
         numbers_left -= 1;
         break :blk numbers_left;
     };
-}
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/7 while basic...OK
+Test 2/7 while break...OK
+Test 3/7 while continue...OK
+Test 4/7 while loop continuation expression...OK
+Test 5/7 while loop continuation expression, more complicated...OK
+Test 6/7 while else...OK
+Test 7/7 while null capture...OK
+</code></pre>
+
+
+      <h2 id="inline-while">inline while</h2>
+
+      <p>
+      While loops can be inlined. This causes the loop to be unrolled, which
+      allows the code to do some things which only work at compile time,
+      such as use types as first class values.
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;inline while loop&quot; {
-    // While loops can be inlined. This causes the loop to be unrolled, which
-    // allows the code to do some things which only work at compile time,
-    // such as use types as first class values.
     comptime var i = 0;
     var sum: usize = 0;
     inline while (i &lt; 3) : (i += 1) {
@@ -2847,17 +2867,20 @@ test &quot;inline while loop&quot; {
 
 fn typeNameLength(comptime T: type) usize {
     return @typeName(T).len;
-}</code></pre><pre><code class="shell">$ zig test while.zig
-Test 1/8 while basic...OK
-Test 2/8 while break...OK
-Test 3/8 while continue...OK
-Test 4/8 while loop continuation expression...OK
-Test 5/8 while loop continuation expression, more complicated...OK
-Test 6/8 while else...OK
-Test 7/8 while null capture...OK
-Test 8/8 inline while loop...OK
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 inline while loop...OK
 </code></pre>
 
+      <p>
+      It is recommended to use <code>inline</code> loops only for one of these reasons:
+      </p>
+      <ul>
+        <li>You need the loop to execute at <a href="#comptime">comptime</a> for the semantics to work.</li>
+        <li>
+        You have a benchmark to prove that forcibly unrolling the loop in this way is measurably faster.
+        </li>
+      </ul>
+      
       <p>See also:</p><ul>
 <li><a href="#if">if</a></li>
 <li><a href="#Optionals">Optionals</a></li>
@@ -2931,16 +2954,25 @@ test &quot;for else&quot; {
         assert(sum == 7);
         break :blk sum;
     };
-}
+}</code></pre><pre><code class="shell">$ zig test for.zig
+Test 1/3 for basics...OK
+Test 2/3 for reference...OK
+Test 3/3 for else...OK
+</code></pre>
 
+      <h2 id="inline-for">inline for</h2>
+
+      <p>
+      For loops can be inlined. This causes the loop to be unrolled, which
+      allows the code to do some things which only work at compile time,
+      such as use types as first class values.
+      The capture value and iterator value of inlined for loops are
+      compile-time known.
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;inline for loop&quot; {
     const nums = []i32{2, 4, 6};
-    // For loops can be inlined. This causes the loop to be unrolled, which
-    // allows the code to do some things which only work at compile time,
-    // such as use types as first class values.
-    // The capture value and iterator value of inlined for loops are
-    // compile-time known.
     var sum: usize = 0;
     inline for (nums) |i| {
         const T = switch (i) {
@@ -2956,13 +2988,20 @@ test &quot;inline for loop&quot; {
 
 fn typeNameLength(comptime T: type) usize {
     return @typeName(T).len;
-}</code></pre><pre><code class="shell">$ zig test for.zig
-Test 1/4 for basics...OK
-Test 2/4 for reference...OK
-Test 3/4 for else...OK
-Test 4/4 inline for loop...OK
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 inline for loop...OK
 </code></pre>
 
+      <p>
+      It is recommended to use <code>inline</code> loops only for one of these reasons:
+      </p>
+      <ul>
+        <li>You need the loop to execute at <a href="#comptime">comptime</a> for the semantics to work.</li>
+        <li>
+        You have a benchmark to prove that forcibly unrolling the loop in this way is measurably faster.
+        </li>
+      </ul>
+      
       <p>See also:</p><ul>
 <li><a href="#while">while</a></li>
 <li><a href="#comptime">comptime</a></li>
@@ -4941,14 +4980,12 @@ here is a string: 'foobar' here is a number: 1234
       task in userland. It does so without introducing another language on top of Zig, such as
       a macro language or a preprocessor language. It's Zig all the way down.
       </p>
-      <p>TODO: suggestion to not use inline unless necessary</p>
       
-      
-      <h1 id="inline">inline</h1>
+      <p>See also:</p><ul>
+<li><a href="#inline-while">inline while</a></li>
+<li><a href="#inline-for">inline for</a></li>
+</ul>
 
-      <p>TODO: inline while</p>
-      <p>TODO: inline for</p>
-      <p>TODO: suggestion to not use inline unless necessary</p>
       
       <h1 id="Assembly">Assembly</h1>
 
