@@ -7060,7 +7060,7 @@ const b: u8 = @truncate(u8, a);
       </p>
       <pre><code class="zig">const Builder = @import(&quot;std&quot;).build.Builder;
 
-pub fn build(b: &amp;Builder) void {
+pub fn build(b: *Builder) void {
     const exe = b.addExecutable(&quot;example&quot;, &quot;example.zig&quot;);
     exe.setBuildMode(b.standardReleaseOptions());
     b.default_step.dependOn(&amp;exe.step);
@@ -7178,7 +7178,33 @@ comptime {
          <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>reached unreachable code</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">var x: u32 = 1;
+
+pub fn main() void {
+    if (x == 1) {
+        unreachable;
+    }
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+reached unreachable code
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:9</span>: <span class="t2_0">0x21e78d in ??? (test)</span>
+        unreachable;
+        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Index-out-of-Bounds">Index out of Bounds</h2>
 
@@ -7192,7 +7218,36 @@ comptime {
                          <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>index out of bounds</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">pub fn main() void {
+    var x = foo(&quot;hello&quot;);
+}
+
+fn foo(x: []const u8) u8 {
+    return x[5];
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+index out of bounds
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x21e7b9 in ??? (test)</span>
+    return x[5];
+            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:16</span>: <span class="t2_0">0x21e784 in ??? (test)</span>
+    var x = foo(&quot;hello&quot;);
+               <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Cast-Negative-Number-to-Unsigned-Integer">Cast Negative Number to Unsigned Integer</h2>
 
@@ -7206,10 +7261,35 @@ comptime {
                      <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>attempt to cast negative value to unsigned integer</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var value: i32 = -1;
+    var unsigned = @intCast(u32, value);
+    std.debug.warn(&quot;value: {}\n&quot;, unsigned);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+attempt to cast negative value to unsigned integer
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x21e7ae in ??? (test)</span>
+    var unsigned = @intCast(u32, value);
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       <p>
-      If you are trying to obtain the maximum value of an unsigned integer, use <code>@maxValue(T)</code>,
-      where <code>T</code> is the integer type, such as <code>u32</code>.
+      To obtain the maximum value of an unsigned integer, use <a href="#maxValue">@maxValue</a>.
       </p>
       
       <h2 id="Cast-Truncates-Data">Cast Truncates Data</h2>
@@ -7224,11 +7304,35 @@ comptime {
                  <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>integer cast truncated bits</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var spartan_count: u16 = 300;
+    const byte = @intCast(u8, spartan_count);
+    std.debug.warn(&quot;value: {}\n&quot;, byte);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+integer cast truncated bits
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x21e7b7 in ??? (test)</span>
+    const byte = @intCast(u8, spartan_count);
+                 <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       <p>
-      If you are trying to truncate bits, use <code>@truncate(T, value)</code>,
-      where <code>T</code> is the integer type, such as <code>u32</code>, and <code>value</code>
-      is the value you want to truncate.
+      To truncate bits, use <a href="#truncate">@truncate</a>.
       </p>
       
       <h2 id="Integer-Overflow">Integer Overflow</h2>
@@ -7256,7 +7360,33 @@ comptime {
          <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>integer overflow</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var byte: u8 = 255;
+    byte += 1;
+    std.debug.warn(&quot;value: {}\n&quot;, byte);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+integer overflow
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x21e79e in ??? (test)</span>
+    byte += 1;
+         <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h3 id="Standard-Library-Math-Functions">Standard Library Math Functions</h3>
 
@@ -7362,7 +7492,33 @@ Test 1/1 wraparound addition and subtraction...OK
               <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>left shift overflowed bits</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var x: u8 = 0b01010101;
+    var y = @shlExact(x, 2);
+    std.debug.warn(&quot;value: {}\n&quot;, y);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+left shift overflowed bits
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x21e7b5 in ??? (test)</span>
+    var y = @shlExact(x, 2);
+            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Exact-Right-Shift-Overflow">Exact Right Shift Overflow</h2>
 
@@ -7375,7 +7531,33 @@ Test 1/1 wraparound addition and subtraction...OK
               <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>right shift overflowed bits</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var x: u8 = 0b10101010;
+    var y = @shrExact(x, 2);
+    std.debug.warn(&quot;value: {}\n&quot;, y);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+right shift overflowed bits
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x21e7b5 in ??? (test)</span>
+    var y = @shrExact(x, 2);
+            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Division-by-Zero">Division by Zero</h2>
 
@@ -7390,7 +7572,33 @@ Test 1/1 wraparound addition and subtraction...OK
                 <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>division by zero</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var a: u32 = 1;
+    var b: u32 = 0;
+    var c = a / b;
+    std.debug.warn(&quot;value: {}\n&quot;, c);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+division by zero
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x21e7c2 in ??? (test)</span>
+    var c = a / b;
+              <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
 
       
       <h2 id="Remainder-Division-by-Zero">Remainder Division by Zero</h2>
@@ -7406,16 +7614,119 @@ Test 1/1 wraparound addition and subtraction...OK
                 <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>remainder division by zero</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var a: u32 = 10;
+    var b: u32 = 0;
+    var c = a % b;
+    std.debug.warn(&quot;value: {}\n&quot;, c);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+remainder division by zero or negative value
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x21e7c2 in ??? (test)</span>
+    var c = a % b;
+              <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
 
       
       <h2 id="Exact-Division-Remainder">Exact Division Remainder</h2>
 
-      <p>TODO</p>
+      <p>At compile-time:</p>
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
+    const a: u32 = 10;
+    const b: u32 = 3;
+    const c = @divExact(a, b);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:15: </span><span class="t31_1">error:</span><span class="t0_1"> exact division had a remainder</span>
+    const c = @divExact(a, b);
+              <span class="t32_1">^</span>
+</code></pre>
+
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var a: u32 = 10;
+    var b: u32 = 3;
+    var c = @divExact(a, b);
+    std.debug.warn(&quot;value: {}\n&quot;, c);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+exact division produced remainder
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x21e7e3 in ??? (test)</span>
+    var c = @divExact(a, b);
+            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Slice-Widen-Remainder">Slice Widen Remainder</h2>
 
-      <p>TODO</p>
+      <p>At compile-time:</p>
+      <p class="file">test.zig</p><pre><code class="zig">comptime {
+    var bytes = [5]u8{ 1, 2, 3, 4, 5 };
+    var slice = @bytesToSlice(u32, bytes);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:17: </span><span class="t31_1">error:</span><span class="t0_1"> unable to convert [5]u8 to []align(1) const u32: size mismatch</span>
+    var slice = @bytesToSlice(u32, bytes);
+                <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:3:31: </span><span class="t36_1">note:</span><span class="t0_1"> u32 has size 4; remaining bytes: 1</span>
+    var slice = @bytesToSlice(u32, bytes);
+                              <span class="t32_1">^</span>
+</code></pre>
+
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var bytes = [5]u8{ 1, 2, 3, 4, 5 };
+    var slice = @bytesToSlice(u32, bytes[0..]);
+    std.debug.warn(&quot;value: {}\n&quot;, slice[0]);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+slice widening size mismatch
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:17</span>: <span class="t2_0">0x21e805 in ??? (test)</span>
+    var slice = @bytesToSlice(u32, bytes[0..]);
+                <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Attempt-to-Unwrap-Null">Attempt to Unwrap Null</h2>
 
@@ -7429,7 +7740,33 @@ Test 1/1 wraparound addition and subtraction...OK
                                   <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>attempt to unwrap null</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var optional_number: ?i32 = null;
+    var number = optional_number.?;
+    std.debug.warn(&quot;value: {}\n&quot;, number);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+attempt to unwrap null
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x21e7af in ??? (test)</span>
+    var number = optional_number.?;
+                                <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       <p>One way to avoid this crash is to test for null instead of assuming non-null, with
       the <code>if</code> expression:</p>
       <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
@@ -7445,6 +7782,10 @@ pub fn main() void {
 $ ./test
 it's null
 </code></pre>
+
+      <p>See also:</p><ul>
+<li><a href="#Optionals">Optionals</a></li>
+</ul>
 
       
       <h2 id="Attempt-to-Unwrap-Error">Attempt to Unwrap Error</h2>
@@ -7462,7 +7803,42 @@ fn getNumberOrFail() !i32 {
                                      <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>attempt to unwrap error: ErrorCode</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    const number = getNumberOrFail() catch unreachable;
+    std.debug.warn(&quot;value: {}\n&quot;, number);
+}
+
+fn getNumberOrFail() !i32 {
+    return error.UnableToReturnNumber;
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+attempt to unwrap error: UnableToReturnNumber
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x21e81b in ??? (test)</span>
+    return error.UnableToReturnNumber;
+    <span class="t32_1">^</span>
+???:?:?: <span class="t2_0">0x21e8a9 in ??? (???)</span>
+    ???
+
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:38</span>: <span class="t2_0">0x21e7dc in ??? (test)</span>
+    const number = getNumberOrFail() catch unreachable;
+                                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       <p>One way to avoid this crash is to test for an error instead of assuming a successful result, with
       the <code>if</code> expression:</p>
       <p class="file">test.zig</p><pre><code class="zig">const warn = @import(&quot;std&quot;).debug.warn;
@@ -7484,6 +7860,10 @@ $ ./test
 got error: UnableToReturnNumber
 </code></pre>
 
+      <p>See also:</p><ul>
+<li><a href="#Errors">Errors</a></li>
+</ul>
+
       
       <h2 id="Invalid-Error-Code">Invalid Error Code</h2>
 
@@ -7498,11 +7878,87 @@ got error: UnableToReturnNumber
                         <span class="t32_1">^</span>
 </code></pre>
 
-      <p>At runtime crashes with the message <code>invalid error code</code> and a stack trace.</p>
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+pub fn main() void {
+    var err = error.AnError;
+    var number = @errorToInt(err) + 500;
+    var invalid_err = @intToError(number);
+    std.debug.warn(&quot;value: {}\n&quot;, number);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+invalid error code
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x21e7ca in ??? (test)</span>
+    var invalid_err = @intToError(number);
+                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
       
       <h2 id="Invalid-Enum-Cast">Invalid Enum Cast</h2>
 
-      <p>TODO</p>
+      <p>At compile-time:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const Foo = enum {
+    A,
+    B,
+    C,
+};
+comptime {
+    const a: u2 = 3;
+    const b = @intToEnum(Foo, a);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:15: </span><span class="t31_1">error:</span><span class="t0_1"> enum 'Foo' has no tag matching integer value 3</span>
+    const b = @intToEnum(Foo, a);
+              <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:1:13: </span><span class="t36_1">note:</span><span class="t0_1"> 'Foo' declared here</span>
+const Foo = enum {
+            <span class="t32_1">^</span>
+</code></pre>
+
+      <p>At runtime:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+const Foo = enum {
+    A,
+    B,
+    C,
+};
+
+pub fn main() void {
+    var a: u2 = 3;
+    var b = @intToEnum(Foo, a);
+    std.debug.warn(&quot;value: {}\n&quot;, @tagName(b));
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+invalid enum value
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x21e7ad in ??? (test)</span>
+    var b = @intToEnum(Foo, a);
+            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21e759 in ??? (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21e705 in ??? (test)</span>
+    return callMain();
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21e568 in ??? (test)</span>
+    std.os.posix.exit(callMainWithArgs(argc, argv, envp));
+                                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21e420 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
 
       
 
