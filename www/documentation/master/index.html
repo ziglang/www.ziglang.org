@@ -127,6 +127,8 @@
         <li><a href="#switch">switch</a></li>
         <li><a href="#while">while</a>
         <ul>
+            <li><a href="#while-with-Optionals">while with Optionals</a></li>
+            <li><a href="#while-with-Error-Unions">while with Error Unions</a></li>
             <li><a href="#inline-while">inline while</a></li>
         </ul></li>
         <li><a href="#for">for</a>
@@ -967,6 +969,17 @@ test &quot;init with undefined&quot; {
 Test 1/1 init with undefined...OK
 </code></pre>
 
+      <p>
+      <code>undefined</code> can be <a href="#Implicit-Casts">implicitly cast</a> to any type.
+      Once this happens, it is no longer possible to detect that the value is <code>undefined</code>.
+      <code>undefined</code> means the value could be anything, even something that is nonsense
+      according to the type. Translated into English, <code>undefined</code> means "Not a meaningful
+      value. Using this value would be a bug. The value will be unused, or overwritten before being used."
+      </p>
+      <p>
+      In <a href="#Debug">Debug</a> mode, Zig writes <code>0xaa</code> bytes to undefined memory. This is to catch
+      bugs early, and to help detect use of undefined memory in a debugger.
+      </p>
       
       
       
@@ -2734,20 +2747,28 @@ Test 3/3 switch inside function...OK
       
       <h1 id="while">while</h1>
 
+      <p>
+      A while loop is used to repeatedly execute an expression until
+      some condition is no longer true.
+      </p>
       <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;while basic&quot; {
-    // A while loop is used to repeatedly execute an expression until
-    // some condition is no longer true.
     var i: usize = 0;
     while (i &lt; 10) {
         i += 1;
     }
     assert(i == 10);
-}
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/1 while basic...OK
+</code></pre>
+
+      <p>
+      Use <code>break</code> to exit a while loop early.
+      </p>
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;while break&quot; {
-    // You can use break to exit a while loop early.
     var i: usize = 0;
     while (true) {
         if (i == 10)
@@ -2755,10 +2776,16 @@ test &quot;while break&quot; {
         i += 1;
     }
     assert(i == 10);
-}
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/1 while break...OK
+</code></pre>
+
+      <p>
+      Use <code>continue</code> to jump back to the beginning of the loop.
+      </p>
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;while continue&quot; {
-    // You can use continue to jump back to the beginning of the loop.
     var i: usize = 0;
     while (true) {
         i += 1;
@@ -2767,26 +2794,46 @@ test &quot;while continue&quot; {
         break;
     }
     assert(i == 10);
-}
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/1 while continue...OK
+</code></pre>
+
+      <p>
+      While loops support a continue expression which is executed when the loop
+      is continued. The <code>continue</code> keyword respects this expression.
+      </p>
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;while loop continuation expression&quot; {
-    // You can give an expression to the while loop to execute when
-    // the loop is continued. This is respected by the continue control flow.
     var i: usize = 0;
     while (i &lt; 10) : (i += 1) {}
     assert(i == 10);
 }
 
 test &quot;while loop continuation expression, more complicated&quot; {
-    // More complex blocks can be used as an expression in the loop continue
-    // expression.
     var i1: usize = 1;
     var j1: usize = 1;
     while (i1 * j1 &lt; 2000) : ({ i1 *= 2; j1 *= 3; }) {
         const my_ij1 = i1 * j1;
         assert(my_ij1 &lt; 2000);
     }
-}
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/2 while loop continuation expression...OK
+Test 2/2 while loop continuation expression, more complicated...OK
+</code></pre>
+
+      <p>
+      While loops are expressions. The result of the expression is the
+      result of the <code>else</code> clause of a while loop, which is executed when
+      the condition of the while loop is tested as false.
+      </p>
+      <p>
+      <code>break</code>, like <code>return</code>, accepts a value
+      parameter. This is the result of the <code>while</code> expression.
+      When you <code>break</code> from a while loop, the <code>else</code> branch is not
+      evaluated.
+      </p>
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;while else&quot; {
     assert(rangeHasNumber(0, 10, 5));
@@ -2795,24 +2842,33 @@ test &quot;while else&quot; {
 
 fn rangeHasNumber(begin: usize, end: usize, number: usize) bool {
     var i = begin;
-    // While loops are expressions. The result of the expression is the
-    // result of the else clause of a while loop, which is executed when
-    // the condition of the while loop is tested as false.
     return while (i &lt; end) : (i += 1) {
         if (i == number) {
-            // break expressions, like return expressions, accept a value
-            // parameter. This is the result of the while expression.
-            // When you break from a while loop, the else branch is not
-            // evaluated.
             break true;
         }
     } else false;
-}
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/1 while else...OK
+</code></pre>
+
+      <h2 id="while-with-Optionals">while with Optionals</h2>
+
+      <p>
+      Just like <a href="#if">if</a> expressions, while loops can take an optional as the
+      condition and capture the payload. When <a href="#null">null</a> is encountered the loop
+      exits.
+      </p>
+      <p>
+      When the <code>|x|</code> syntax is present on a <code>while</code> expression,
+      the while condition must have an <a href="#Optional-Type">Optional Type</a>.
+      </p>
+      <p>
+      The <code>else</code> branch is allowed on optional iteration. In this case, it will
+      be executed on the first null value encountered.
+      </p>
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
 
 test &quot;while null capture&quot; {
-    // Just like if expressions, while loops can take an optional as the
-    // condition and capture the payload. When null is encountered the loop
-    // exits.
     var sum1: u32 = 0;
     numbers_left = 3;
     while (eventuallyNullSequence()) |value| {
@@ -2820,26 +2876,12 @@ test &quot;while null capture&quot; {
     }
     assert(sum1 == 3);
 
-    // The else branch is allowed on optional iteration. In this case, it will
-    // be executed on the first null value encountered.
     var sum2: u32 = 0;
     numbers_left = 3;
     while (eventuallyNullSequence()) |value| {
         sum2 += value;
     } else {
         assert(sum1 == 3);
-    }
-
-    // Just like if expressions, while loops can also take an error union as
-    // the condition and capture the payload or the error code. When the
-    // condition results in an error code the else branch is evaluated and
-    // the loop is finished.
-    var sum3: u32 = 0;
-    numbers_left = 3;
-    while (eventuallyErrorSequence()) |value| {
-        sum3 += value;
-    } else |err| {
-        assert(err == error.ReachedZero);
     }
 }
 
@@ -2849,7 +2891,37 @@ fn eventuallyNullSequence() ?u32 {
         numbers_left -= 1;
         break :blk numbers_left;
     };
+}</code></pre><pre><code class="shell">$ zig test while.zig
+Test 1/1 while null capture...OK
+</code></pre>
+
+      
+
+      <h2 id="while-with-Error-Unions">while with Error Unions</h2>
+
+      <p>
+      Just like <a href="#if">if</a> expressions, while loops can take an error union as
+      the condition and capture the payload or the error code. When the
+      condition results in an error code the else branch is evaluated and
+      the loop is finished.
+      </p>
+      <p>
+      When the <code>else |x|</code> syntax is present on a <code>while</code> expression,
+      the while condition must have an <a href="#Error-Union-Type">Error Union Type</a>.
+      </p>
+      <p class="file">while.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;while error union capture&quot; {
+    var sum1: u32 = 0;
+    numbers_left = 3;
+    while (eventuallyErrorSequence()) |value| {
+        sum1 += value;
+    } else |err| {
+        assert(err == error.ReachedZero);
+    }
 }
+
+var numbers_left: u32 = undefined;
 
 fn eventuallyErrorSequence() error!u32 {
     return if (numbers_left == 0) error.ReachedZero else blk: {
@@ -2857,15 +2929,10 @@ fn eventuallyErrorSequence() error!u32 {
         break :blk numbers_left;
     };
 }</code></pre><pre><code class="shell">$ zig test while.zig
-Test 1/7 while basic...OK
-Test 2/7 while break...OK
-Test 3/7 while continue...OK
-Test 4/7 while loop continuation expression...OK
-Test 5/7 while loop continuation expression, more complicated...OK
-Test 6/7 while else...OK
-Test 7/7 while null capture...OK
+Test 1/1 while error union capture...OK
 </code></pre>
 
+      
 
       <h2 id="inline-while">inline while</h2>
 
@@ -7417,7 +7484,7 @@ pub fn main() !void {
 $ ./test
 unable to add one: Overflow
 error: Overflow
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:235:5</span>: <span class="t2_0">0x21ea68 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:252:5</span>: <span class="t2_0">0x21ea68 in ??? (test)</span>
     return if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer;
     <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x21e908 in ??? (test)</span>
