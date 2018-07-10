@@ -8075,7 +8075,9 @@ comptime {
 </code></pre>
 
       <p>At runtime:</p>
-      <p class="file">test.zig</p><pre><code class="zig">const Set1 = error{
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+const Set1 = error{
     A,
     B,
 };
@@ -8084,19 +8086,20 @@ const Set2 = error{
     C,
 };
 pub fn main() void {
-    _ = foo(Set1.B);
+    foo(Set1.B);
 }
-fn foo(set1: Set1) Set2 {
-    return @errSetCast(Set2, set1);
+fn foo(set1: Set1) void {
+    const x = @errSetCast(Set2, set1);
+    std.debug.warn(&quot;value: {}\n&quot;, x);
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 invalid error code
-???:?:?: <span class="t2_0">0x21f6cc in ??? (???)</span>
-    ???
-
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:12</span>: <span class="t2_0">0x21f660 in ??? (test)</span>
-    _ = foo(Set1.B);
-           <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x21f68c in ??? (test)</span>
+    const x = @errSetCast(Set2, set1);
+              <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:12:8</span>: <span class="t2_0">0x21f62e in ??? (test)</span>
+    foo(Set1.B);
+       <span class="t32_1">^</span>
 <span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
@@ -8177,7 +8180,9 @@ const Foo = union {
 </code></pre>
 
       <p>At runtime:</p>
-      <p class="file">test.zig</p><pre><code class="zig">const Foo = union {
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+const Foo = union {
     float: f32,
     int: u32,
 };
@@ -8189,27 +8194,79 @@ pub fn main() void {
 
 fn bar(f: *Foo) void {
     f.float = 12.34;
+    std.debug.warn(&quot;value: {}\n&quot;, f.float);
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 access of inactive union field
-???:?:?: <span class="t2_0">0x21f693 in ??? (???)</span>
-    ???
-
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:8</span>: <span class="t2_0">0x21f63c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x22769c in ??? (test)</span>
+    f.float = 12.34;
+     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:8</span>: <span class="t2_0">0x22763c in ??? (test)</span>
     bar(&amp;f);
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x227609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x2275b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x227418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x2272d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
+</code></pre>
+
+      <p>
+      This safety is not available for <code>extern</code> or <code>packed</code> unions.
+      </p>
+      <p>
+      To change the active field of a union, assign the entire union, like this:
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+const Foo = union {
+    float: f32,
+    int: u32,
+};
+
+pub fn main() void {
+    var f = Foo{ .int = 42 };
+    bar(&amp;f);
+}
+
+fn bar(f: *Foo) void {
+    f.* = Foo{ .float = 12.34 };
+    std.debug.warn(&quot;value: {}\n&quot;, f.float);
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+value: 1.23400001e+01
+</code></pre>
+
+      <p>
+      To change the active field of a union when a meaningful value for the field is not known,
+      use <a href="#undefined">undefined</a>, like this:
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+
+const Foo = union {
+    float: f32,
+    int: u32,
+};
+
+pub fn main() void {
+    var f = Foo{ .int = 42 };
+    f = Foo{ .float = undefined };
+    bar(&amp;f);
+    std.debug.warn(&quot;value: {}\n&quot;, f.float);
+}
+
+fn bar(f: *Foo) void {
+    f.float = 12.34;
+}</code></pre><pre><code class="shell">$ zig build-exe test.zig
+$ ./test
+value: 1.23400001e+01
 </code></pre>
 
       
