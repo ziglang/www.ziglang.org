@@ -81,6 +81,10 @@
     <ul>
         <li><a href="#Introduction">Introduction</a></li>
         <li><a href="#Hello-World">Hello World</a></li>
+        <li><a href="#Comments">Comments</a>
+        <ul>
+            <li><a href="#Doc-comments">Doc comments</a></li>
+        </ul></li>
         <li><a href="#Values">Values</a>
         <ul>
             <li><a href="#Primitive-Types">Primitive Types</a></li>
@@ -432,6 +436,60 @@ Hello, world!
 <li><a href="#Root-Source-File">Root Source File</a></li>
 </ul>
 
+      
+      <h1 id="Comments">Comments</h1>
+
+      <p class="file">comments.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
+
+test &quot;comments&quot; {
+    // Comments in Zig start with &quot;//&quot; and end at the next LF byte (end of line).
+    // The below line is a comment, and won't be executed.
+
+    //assert(false);
+
+    const x = true;  // another comment
+    assert(x);
+}</code></pre><pre><code class="shell">$ zig test comments.zig
+Test 1/1 comments...OK
+All tests passed.
+</code></pre>
+
+      <p>
+      There are no multiline comments in Zig (e.g. like <code>/* */</code>
+      comments in C).  This helps allow Zig to have the property that each line
+      of code can be tokenized out of context.
+      </p>
+      <h2 id="Doc-comments">Doc comments</h2>
+
+      <p>
+      A doc comment is one that begins with exactly three slashes (i.e.
+      <code class="zig">///</code> but not <code class="zig">////</code>);
+      multiple doc comments in a row are merged together to form a multiline
+      doc comment.  The doc comment documents whatever immediately follows it.
+      </p>
+      <pre><code class="zig">/// A structure for storing a timestamp, with nanosecond precision (this is a
+/// multiline doc comment).
+const Timestamp = struct {
+    /// The number of seconds since the epoch (this is also a doc comment).
+    seconds: i64,  // signed so we can represent pre-1970 (not a doc comment)
+    /// The number of nanoseconds past the second (doc comment again).
+    nanos: u32,
+
+    /// Returns a `Timestamp` struct representing the Unix epoch; that is, the
+    /// moment of 1970 Jan 1 00:00:00 UTC (this is a doc comment too).
+    pub fn unixEpoch() Timestamp {
+        return Timestamp{
+            .seconds = 0,
+            .nanos = 0,
+        };
+    }
+};</code></pre>
+      <p>
+      Doc comments are only allowed in certain places; eventually, it will
+      become a compile error have a doc comment in an unexpected place, such as
+      in the middle of an expression, or just before a non-doc comment.
+      </p>
+      
       
       <h1 id="Values">Values</h1>
 
@@ -811,6 +869,7 @@ test &quot;string literals&quot; {
     assert(null_terminated_bytes[5] == 0);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 string literals...OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -941,6 +1000,7 @@ test &quot;var&quot; {
     assert(y == 5679);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 var...OK
+All tests passed.
 </code></pre>
 
       <p>Variables must be initialized:</p>
@@ -968,6 +1028,7 @@ test &quot;init with undefined&quot; {
     assert(x == 1);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 init with undefined...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -1452,7 +1513,7 @@ unwrapped == 1234</code></pre>
           </td>
           <td>
             If <code>a</code> is <code>false</code>, returns <code>false</code>
-            without evaluating <code>b</code>. Otherwise, retuns <code>b</code>.
+            without evaluating <code>b</code>. Otherwise, returns <code>b</code>.
           </td>
           <td>
             <pre><code class="zig">false and true == false</code></pre>
@@ -1467,7 +1528,7 @@ unwrapped == 1234</code></pre>
           </td>
           <td>
             If <code>a</code> is <code>true</code>, returns <code>true</code>
-            without evaluating <code>b</code>. Otherwise, retuns <code>b</code>.
+            without evaluating <code>b</code>. Otherwise, returns <code>b</code>.
           </td>
           <td>
             <pre><code class="zig">false or true == true</code></pre>
@@ -1813,6 +1874,7 @@ Test 1/4 iterate over an array...OK
 Test 2/4 modify an array...OK
 Test 3/4 compile-time array initalization...OK
 Test 4/4 array initialization with function calls...OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -1858,7 +1920,7 @@ test &quot;pointer array access&quot; {
 }
 
 test &quot;pointer slicing&quot; {
-    // In Zig, we prefer using slices over null-terminated pointers.
+    // In Zig, we prefer slices over pointers to null-terminated arrays.
     // You can turn an array into a slice using slice syntax:
     var array = []u8{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     const slice = array[2..4];
@@ -1957,6 +2019,7 @@ Test 5/8 volatile...OK
 Test 6/8 optional pointers...OK
 Test 7/8 pointer casting...OK
 Test 8/8 pointer child type...OK
+All tests passed.
 </code></pre>
 
       <h2 id="Alignment">Alignment</h2>
@@ -1988,6 +2051,7 @@ test &quot;variable alignment&quot; {
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 variable alignment...OK
+All tests passed.
 </code></pre>
 
       <p>In the same way that a <code>*i32</code> can be <a href="#Implicit-Casts">implicitly cast</a> to a
@@ -2022,6 +2086,7 @@ test &quot;function alignment&quot; {
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/2 global variable alignment...OK
 Test 2/2 function alignment...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -2049,19 +2114,19 @@ Test 1/1 pointer alignment safety...incorrect alignment
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2030a6 in ??? (test)</span>
     assert(foo(bytes) == 0x11111111);
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21f278 in ??? (test)</span>
-        try test_fn.func();
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x21fa2a in ??? (test)</span>
+        if (test_fn.func()) |_| {
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f0bb in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f7db in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f035 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f755 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ee98 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f5b8 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ed50 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f470 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -2120,19 +2185,19 @@ Test 1/1 basic slices...index out of bounds
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:21:10</span>: <span class="t2_0">0x203155 in ??? (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21f238 in ??? (test)</span>
-        try test_fn.func();
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x21f9ea in ??? (test)</span>
+        if (test_fn.func()) |_| {
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f07b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f79b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21eff5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f715 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ee58 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f578 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ed10 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f430 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -2193,6 +2258,7 @@ test &quot;slice widening&quot; {
 Test 1/3 using slices for strings...OK
 Test 2/3 slice pointer...OK
 Test 3/3 slice widening...OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -2342,6 +2408,7 @@ Test 1/4 dot product...OK
 Test 2/4 struct namespaced variable...OK
 Test 3/4 field parent pointer...OK
 Test 4/4 linked list...OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -2459,6 +2526,7 @@ Test 5/8 @TagType...OK
 Test 6/8 @memberCount...OK
 Test 7/8 @memberName...OK
 Test 8/8 @tagName...OK
+All tests passed.
 </code></pre>
 
       <h2 id="extern-enum">extern enum</h2>
@@ -2498,6 +2566,7 @@ test &quot;packed enum&quot; {
     std.debug.assert(@sizeOf(Number) == @sizeOf(u8));
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 packed enum...OK
+All tests passed.
 </code></pre>
 
       
@@ -2633,6 +2702,7 @@ Test 5/8 union method...OK
 Test 6/8 @memberCount...OK
 Test 7/8 @memberName...OK
 Test 8/8 @tagName...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -2736,6 +2806,7 @@ test &quot;switch inside function&quot; {
 Test 1/3 switch simple...OK
 Test 2/3 switch enum...OK
 Test 3/3 switch inside function...OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -2762,6 +2833,7 @@ test &quot;while basic&quot; {
     assert(i == 10);
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/1 while basic...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -2779,6 +2851,7 @@ test &quot;while break&quot; {
     assert(i == 10);
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/1 while break...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -2797,6 +2870,7 @@ test &quot;while continue&quot; {
     assert(i == 10);
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/1 while continue...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -2821,6 +2895,7 @@ test &quot;while loop continue expression, more complicated&quot; {
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/2 while loop continue expression...OK
 Test 2/2 while loop continue expression, more complicated...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -2850,6 +2925,7 @@ fn rangeHasNumber(begin: usize, end: usize, number: usize) bool {
     } else false;
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/1 while else...OK
+All tests passed.
 </code></pre>
 
       <h2 id="while-with-Optionals">while with Optionals</h2>
@@ -2894,6 +2970,7 @@ fn eventuallyNullSequence() ?u32 {
     };
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/1 while null capture...OK
+All tests passed.
 </code></pre>
 
       
@@ -2931,6 +3008,7 @@ fn eventuallyErrorSequence() error!u32 {
     };
 }</code></pre><pre><code class="shell">$ zig test while.zig
 Test 1/1 while error union capture...OK
+All tests passed.
 </code></pre>
 
       
@@ -2963,6 +3041,7 @@ fn typeNameLength(comptime T: type) usize {
     return @typeName(T).len;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 inline while loop...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -3052,6 +3131,7 @@ test &quot;for else&quot; {
 Test 1/3 for basics...OK
 Test 2/3 for reference...OK
 Test 3/3 for else...OK
+All tests passed.
 </code></pre>
 
       <h2 id="inline-for">inline for</h2>
@@ -3084,6 +3164,7 @@ fn typeNameLength(comptime T: type) usize {
     return @typeName(T).len;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 inline for loop...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -3215,6 +3296,7 @@ test &quot;if error union&quot; {
 Test 1/3 if boolean...OK
 Test 2/3 if optional...OK
 Test 3/3 if error union...OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -3307,6 +3389,7 @@ start of function
 encountered an error!
 end of function
 OK
+All tests passed.
 </code></pre>
 
       <p>See also:</p><ul>
@@ -3337,6 +3420,7 @@ test &quot;basic math&quot; {
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 basic math...OK
+All tests passed.
 </code></pre>
 
       <p>In fact, this is how assert is implemented:</p>
@@ -3355,19 +3439,19 @@ Test 1/1 this will fail...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:11</span>: <span class="t2_0">0x20304b in ??? (test)</span>
     assert(false);
           <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21f128 in ??? (test)</span>
-        try test_fn.func();
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x21f8da in ??? (test)</span>
+        if (test_fn.func()) |_| {
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21ef6b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f68b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21eee5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f605 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ed48 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f468 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ec00 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f320 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -3426,6 +3510,7 @@ test &quot;noreturn&quot; {
     foo(false, 1);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 noreturn...OK
+All tests passed.
 </code></pre>
 
       <p>Another use case for <code>noreturn</code> is the <code>exit</code> function:</p>
@@ -3497,6 +3582,7 @@ test &quot;function&quot; {
     assert(do_op(sub2, 5, 6) == -1);
 }</code></pre><pre><code class="shell">$ zig test functions.zig
 Test 1/1 function...OK
+All tests passed.
 </code></pre>
 
       <p>Function values are like pointers:</p>
@@ -3529,6 +3615,7 @@ test &quot;pass aggregate type by non-copy value to function&quot; {
     assert(foo(Point{ .x = 1, .y = 2 }) == 3);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 pass aggregate type by non-copy value to function...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -3548,6 +3635,7 @@ test &quot;fn reflection&quot; {
     assert(@typeOf(assert).is_var_args == false);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 fn reflection...OK
+All tests passed.
 </code></pre>
 
       
@@ -3590,6 +3678,7 @@ fn foo(err: AllocationError) FileOpenError {
     return err;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 implicit cast subset to superset...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -3699,6 +3788,7 @@ test &quot;parse u64&quot; {
     @import(&quot;std&quot;).debug.assert(result == 1234);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 parse u64...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -3858,6 +3948,7 @@ test &quot;error union&quot; {
     comptime assert(@typeOf(foo).ErrorSet == error);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 error union...OK
+All tests passed.
 </code></pre>
 
       <h3 id="Merging-Error-Sets">Merging Error Sets</h3>
@@ -3903,6 +3994,7 @@ test &quot;merge error sets&quot; {
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 merge error sets...OK
+All tests passed.
 </code></pre>
 
       
@@ -3936,6 +4028,7 @@ test &quot;inferred error set&quot; {
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 inferred error set...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -4004,25 +4097,25 @@ fn bang2() !void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 error: PermissionDenied
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x21f3b9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x21fae9 in ??? (test)</span>
     return error.FileNotFound;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x21f29d in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x21f9cd in ??? (test)</span>
     try bang1();
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x21f269 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x21f999 in ??? (test)</span>
     return error.PermissionDenied;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x21f38d in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x21fabd in ??? (test)</span>
     try bang2();
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x21f239 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x21f969 in ??? (test)</span>
         error.FileNotFound =&gt; try hello(),
                               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x21f12a in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x21f85a in ??? (test)</span>
         try bar();
         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x21f022 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x21f742 in ??? (test)</span>
     try foo(12);
     <span class="t32_1">^</span>
 </code></pre>
@@ -4076,31 +4169,31 @@ fn bang2() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 PermissionDenied
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x21ef74 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x21f694 in ??? (test)</span>
     @panic(&quot;PermissionDenied&quot;);
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x21efb9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x21f6d9 in ??? (test)</span>
     bang2();
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x21ef5b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x21f67b in ??? (test)</span>
         hello();
              <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x21ef26 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x21f646 in ??? (test)</span>
         bar();
            <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x21ef0e in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x21f62e in ??? (test)</span>
     foo(12);
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -4286,6 +4379,7 @@ test &quot;optional type&quot; {
     comptime assert(@typeOf(foo).Child == i32);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 optional type...OK
+All tests passed.
 </code></pre>
 
       
@@ -4331,6 +4425,7 @@ test &quot;implicit cast - invoke a type as a function&quot; {
 Test 1/3 implicit cast - variable declaration...OK
 Test 2/3 implicit cast - function call...OK
 Test 3/3 implicit cast - invoke a type as a function...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -4360,6 +4455,7 @@ Test 3/3 implicit cast - invoke a type as a function...OK
 
 fn foo(a: *const i32) void {}</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 implicit cast - const qualification...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -4375,6 +4471,7 @@ test &quot;cast *[1][*]const u8 to [*]const ?[*]const u8&quot; {
     assert(mem.eql(u8, std.cstr.toSliceConst(x[0].?), &quot;window name&quot;));
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 cast *[1][*]const u8 to [*]const ?[*]const u8...OK
+All tests passed.
 </code></pre>
 
       
@@ -4414,6 +4511,7 @@ test &quot;float widening&quot; {
 Test 1/3 integer widening...OK
 Test 2/3 implicit unsigned integer to signed integer...OK
 Test 3/3 float widening...OK
+All tests passed.
 </code></pre>
 
       
@@ -4562,6 +4660,7 @@ fn eql_i32(a: i32, b: i32) bool {
     return a == b;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 turn HashMap into a set with void...OK
+All tests passed.
 </code></pre>
 
       <p>Note that this is different than using a dummy value for the hash map value.
@@ -4596,6 +4695,7 @@ fn foo() i32 {
 
 fn foo() void {}</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 ignoring expression value...OK
+All tests passed.
 </code></pre>
 
       
@@ -4706,6 +4806,7 @@ test &quot;try to compare bools&quot; {
     @import(&quot;std&quot;).debug.assert(max(bool, false, true) == true);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 try to compare bools...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -4776,6 +4877,7 @@ test &quot;perform fn&quot; {
     assert(performFn('w', 99) == 99);
 }</code></pre><pre><code class="shell">$ zig test comptime_vars.zig
 Test 1/1 perform fn...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -4872,6 +4974,7 @@ test &quot;fibonacci&quot; {
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 fibonacci...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -5055,6 +5158,7 @@ test &quot;variable values&quot; {
     @import(&quot;std&quot;).debug.assert(sum_of_first_25_primes == 1060);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 variable values...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -5237,7 +5341,7 @@ test &quot;printf too many arguments&quot; {
 <span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:82:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
             @compileError(&quot;Unused arguments&quot;);
             <span class="t32_1">^</span>
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:214:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:221:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
             return std.fmt.format(self, Error, self.writeFn, format, args);
                                  <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:28:17: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -5363,6 +5467,7 @@ async&lt;*std.mem.Allocator&gt; fn simpleAsyncFn() void {
     x += 1;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 create a coroutine and cancel it...OK
+All tests passed.
 </code></pre>
 
       
@@ -5402,6 +5507,7 @@ fn seq(c: u8) void {
     index += 1;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 coroutine suspend, resume, cancel...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -5431,6 +5537,7 @@ async fn testSuspendBlock() void {
     result = true;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 coroutine suspend with block...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -5454,29 +5561,30 @@ Test 1/1 coroutine suspend with block...OK
       block, while the old thread continued executing the suspend block.
       </p>
       <p>
-      However, if you use labeled <code>break</code> on the suspend block, the coroutine
+      However, the coroutine can be directly resumed from the suspend block, in which case it
       never returns to its resumer and continues executing.
       </p>
       <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
 const assert = std.debug.assert;
 
-test &quot;break from suspend&quot; {
+test &quot;resume from suspend&quot; {
     var buf: [500]u8 = undefined;
     var a = &amp;std.heap.FixedBufferAllocator.init(buf[0..]).allocator;
     var my_result: i32 = 1;
-    const p = try async&lt;a&gt; testBreakFromSuspend(&amp;my_result);
+    const p = try async&lt;a&gt; testResumeFromSuspend(&amp;my_result);
     cancel p;
     std.debug.assert(my_result == 2);
 }
-async fn testBreakFromSuspend(my_result: *i32) void {
-    s: suspend |p| {
-        break :s;
+async fn testResumeFromSuspend(my_result: *i32) void {
+    suspend |p| {
+        resume p;
     }
     my_result.* += 1;
     suspend;
     my_result.* += 1;
 }</code></pre><pre><code class="shell">$ zig test test.zig
-Test 1/1 break from suspend...OK
+Test 1/1 resume from suspend...OK
+All tests passed.
 </code></pre>
 
       
@@ -5545,6 +5653,7 @@ fn seq(c: u8) void {
     seq_index += 1;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 coroutine await...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -5992,6 +6101,7 @@ test &quot;main&quot; {
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 main...Runtime in main, num1 = 100.
 OK
+All tests passed.
 </code></pre>
 
       
@@ -6277,6 +6387,7 @@ test &quot;inline function call&quot; {
 
 fn add(a: i32, b: i32) i32 { return a + b; }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 inline function call...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -6505,6 +6616,7 @@ fn targetFunction(x: i32) usize {
     return @ptrToInt(ptr);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 calling a function with a new stack...OK
+All tests passed.
 </code></pre>
 
       
@@ -6524,6 +6636,7 @@ fn add(a: i32, b: i32) i32 {
     return a + b;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 noinline function call...OK
+All tests passed.
 </code></pre>
 
       <p>
@@ -6717,6 +6830,7 @@ test &quot;call foo&quot; {
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 foo...OK
+All tests passed.
 </code></pre>
 
 
@@ -7230,19 +7344,19 @@ Test 1/1 safety check...reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x203054 in ??? (test)</span>
     unreachable;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:11:25</span>: <span class="t2_0">0x21f0f8 in ??? (test)</span>
-        try test_fn.func();
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x21f8aa in ??? (test)</span>
+        if (test_fn.func()) |_| {
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21ef3b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f65b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21eeb5 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5d5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ed18 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f438 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebd0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2f0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -7281,19 +7395,19 @@ reached unreachable code
 <span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/debug/index.zig:98:13</span>: <span class="t2_0">0x203029 in ??? (test)</span>
             unreachable; // assertion failure
             <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:21</span>: <span class="t2_0">0x21ef0b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:21</span>: <span class="t2_0">0x21f62b in ??? (test)</span>
     std.debug.assert(false);
                     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7321,22 +7435,22 @@ fn foo(x: []const u8) u8 {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 index out of bounds
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x21ef49 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x21f669 in ??? (test)</span>
     return x[5];
             <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:16</span>: <span class="t2_0">0x21ef14 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:2:16</span>: <span class="t2_0">0x21f634 in ??? (test)</span>
     var x = foo(&quot;hello&quot;);
                <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7364,19 +7478,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 attempt to cast negative value to unsigned integer
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x21ef3e in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x21f65e in ??? (test)</span>
     var unsigned = @intCast(u32, value);
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7407,19 +7521,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 integer cast truncated bits
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x21ef47 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x21f667 in ??? (test)</span>
     const byte = @intCast(u8, spartan_count);
                  <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7463,19 +7577,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 integer overflow
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x21ef2e in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x21f64e in ??? (test)</span>
     byte += 1;
          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7509,10 +7623,10 @@ pub fn main() !void {
 $ ./test
 unable to add one: Overflow
 error: Overflow
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:252:5</span>: <span class="t2_0">0x21f1e8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/math/index.zig:252:5</span>: <span class="t2_0">0x21f918 in ??? (test)</span>
     return if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer;
     <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x21f098 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x21f7b8 in ??? (test)</span>
         return err;
         <span class="t32_1">^</span>
 </code></pre>
@@ -7570,6 +7684,7 @@ test &quot;wraparound addition and subtraction&quot; {
     assert(max_val == @maxValue(i32));
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test 1/1 wraparound addition and subtraction...OK
+All tests passed.
 </code></pre>
 
       
@@ -7595,19 +7710,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 left shift overflowed bits
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x21ef45 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x21f665 in ??? (test)</span>
     var y = @shlExact(x, 2);
             <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7634,19 +7749,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 right shift overflowed bits
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x21ef45 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x21f665 in ??? (test)</span>
     var y = @shrExact(x, 2);
             <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7676,19 +7791,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 division by zero
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x21ef52 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x21f672 in ??? (test)</span>
     var c = a / b;
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7718,19 +7833,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 remainder division by zero or negative value
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x21ef52 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x21f672 in ??? (test)</span>
     var c = a % b;
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7760,19 +7875,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 exact division produced remainder
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x21ef73 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x21f693 in ??? (test)</span>
     var c = @divExact(a, b);
             <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7803,19 +7918,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 slice widening size mismatch
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:17</span>: <span class="t2_0">0x21ef95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:17</span>: <span class="t2_0">0x21f6b5 in ??? (test)</span>
     var slice = @bytesToSlice(u32, bytes[0..]);
                 <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7843,19 +7958,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 attempt to unwrap null
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x21ef3f in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x21f65f in ??? (test)</span>
     var number = optional_number.?;
                                 <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7909,25 +8024,25 @@ fn getNumberOrFail() !i32 {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 attempt to unwrap error: UnableToReturnNumber
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x21efab in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x21f6cb in ??? (test)</span>
     return error.UnableToReturnNumber;
     <span class="t32_1">^</span>
-???:?:?: <span class="t2_0">0x21f039 in ??? (???)</span>
+???:?:?: <span class="t2_0">0x21f759 in ??? (???)</span>
     ???
 
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:38</span>: <span class="t2_0">0x21ef6c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:38</span>: <span class="t2_0">0x21f68c in ??? (test)</span>
     const number = getNumberOrFail() catch unreachable;
                                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -7982,19 +8097,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 invalid error code
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x21ef5a in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x21f67a in ??? (test)</span>
     var invalid_err = @intToError(number);
                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -8036,19 +8151,19 @@ pub fn main() void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 invalid enum value
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x21ef3d in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x21f65d in ??? (test)</span>
     var b = @intToEnum(Foo, a);
             <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -8094,22 +8209,22 @@ fn foo(set1: Set1) void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 invalid error code
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x21ef6c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x21f68c in ??? (test)</span>
     const x = @errSetCast(Set2, set1);
               <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:12:8</span>: <span class="t2_0">0x21ef0e in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:12:8</span>: <span class="t2_0">0x21f62e in ??? (test)</span>
     foo(Set1.B);
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21eee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x21f609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -8141,22 +8256,22 @@ fn foo(bytes: []u8) u32 {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 incorrect alignment
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:56</span>: <span class="t2_0">0x21f1ee in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:8:56</span>: <span class="t2_0">0x21f91e in ??? (test)</span>
     const int_slice = @bytesToSlice(u32, @alignCast(4, slice4));
                                                        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:12</span>: <span class="t2_0">0x21f07d in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:4:12</span>: <span class="t2_0">0x21f79d in ??? (test)</span>
     if (foo(bytes) != 0x11111111) return error.Wrong;
            <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21ef1b in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:102:22</span>: <span class="t2_0">0x21f63b in ??? (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21ee95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x21f5b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21ecf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x21f418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21ebb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x21f2d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -8198,22 +8313,22 @@ fn bar(f: *Foo) void {
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
 access of inactive union field
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x226f7c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x22769c in ??? (test)</span>
     f.float = 12.34;
      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:8</span>: <span class="t2_0">0x226f1c in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/docgen_tmp/test.zig:10:8</span>: <span class="t2_0">0x22763c in ??? (test)</span>
     bar(&amp;f);
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x226ee9 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:92:22</span>: <span class="t2_0">0x227609 in ??? (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x226e95 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:76:20</span>: <span class="t2_0">0x2275b5 in ??? (test)</span>
     return callMain();
                    <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x226cf8 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:70:39</span>: <span class="t2_0">0x227418 in ??? (test)</span>
     std.os.posix.exit(callMainWithArgs(argc, argv, envp));
                                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x226bb0 in ??? (test)</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x2272d0 in ??? (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -9279,7 +9394,7 @@ Defer(body) = ("defer" | "deferror") body
 
 IfExpression(body) = "if" "(" Expression ")" body option("else" BlockExpression(body))
 
-SuspendExpression(body) = option(Symbol ":") "suspend" option(("|" Symbol "|" body))
+SuspendExpression(body) = "suspend" option(("|" Symbol "|" body))
 
 IfErrorExpression(body) = "if" "(" Expression ")" option("|" option("*") Symbol "|") body "else" "|" Symbol "|" BlockExpression(body)
 
