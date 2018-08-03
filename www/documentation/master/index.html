@@ -261,6 +261,7 @@
             <li><a href="#floatCast">@floatCast</a></li>
             <li><a href="#floatToInt">@floatToInt</a></li>
             <li><a href="#frameAddress">@frameAddress</a></li>
+            <li><a href="#handle">@handle</a></li>
             <li><a href="#import">@import</a></li>
             <li><a href="#inlineCall">@inlineCall</a></li>
             <li><a href="#intCast">@intCast</a></li>
@@ -5338,7 +5339,7 @@ test &quot;printf too many arguments&quot; {
     warn(&quot;here is a string: '{}' here is a number: {}\n&quot;,
         a_string, a_number, a_number);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:82:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
+<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/fmt/index.zig:95:13: </span><span class="t31_1">error:</span><span class="t0_1"> Unused arguments</span>
             @compileError(&quot;Unused arguments&quot;);
             <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/io.zig:221:34: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -5530,9 +5531,9 @@ test &quot;coroutine suspend with block&quot; {
 var a_promise: promise = undefined;
 var result = false;
 async fn testSuspendBlock() void {
-    suspend |p| {
-        comptime assert(@typeOf(p) == promise-&gt;void);
-        a_promise = p;
+    suspend {
+        comptime assert(@typeOf(@handle()) == promise-&gt;void);
+        a_promise = @handle();
     }
     result = true;
 }</code></pre><pre><code class="shell">$ zig test test.zig
@@ -5576,8 +5577,8 @@ test &quot;resume from suspend&quot; {
     std.debug.assert(my_result == 2);
 }
 async fn testResumeFromSuspend(my_result: *i32) void {
-    suspend |p| {
-        resume p;
+    suspend {
+        resume @handle();
     }
     my_result.* += 1;
     suspend;
@@ -5637,9 +5638,9 @@ async fn amain() void {
 }
 async fn another() i32 {
     seq('c');
-    suspend |p| {
+    suspend {
         seq('d');
-        a_promise = p;
+        a_promise = @handle();
     }
     seq('g');
     return 1234;
@@ -6346,6 +6347,17 @@ All tests passed.
       </p>
       <p>
       This function is only valid within function scope.
+      </p>
+      
+      <h2 id="handle">@handle</h2>
+
+      <pre><code class="zig">@handle()</code></pre>
+      <p>
+      This function returns a <code>promise->T</code> type, where <code>T</code>
+      is the return type of the async function in scope.
+      </p>
+      <p>
+      This function is only valid within an async function scope.
       </p>
       
       <h2 id="import">@import</h2>
@@ -9394,7 +9406,7 @@ Defer(body) = ("defer" | "deferror") body
 
 IfExpression(body) = "if" "(" Expression ")" body option("else" BlockExpression(body))
 
-SuspendExpression(body) = "suspend" option(("|" Symbol "|" body))
+SuspendExpression(body) = "suspend" option( body )
 
 IfErrorExpression(body) = "if" "(" Expression ")" option("|" option("*") Symbol "|") body "else" "|" Symbol "|" BlockExpression(body)
 
