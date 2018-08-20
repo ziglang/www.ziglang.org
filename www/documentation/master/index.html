@@ -218,7 +218,7 @@
             <li><a href="#Minimal-Coroutine-Example">Minimal Coroutine Example</a></li>
             <li><a href="#Suspend-and-Resume">Suspend and Resume</a>
             <ul>
-                <li><a href="#Breaking-from-Suspend-Blocks">Breaking from Suspend Blocks</a></li>
+                <li><a href="#Resuming-from-Suspend-Blocks">Resuming from Suspend Blocks</a></li>
             </ul></li>
             <li><a href="#Await">Await</a></li>
             <li><a href="#Open-Issues">Open Issues</a></li>
@@ -1184,6 +1184,8 @@ a += b</code></pre></td>
           <td>Addition.
             <ul>
               <li>Can cause <a href="#Default-Operations">overflow</a> for integers.</li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+              <li>See also <a href="#addWithOverflow">@addWithOverflow</a>.</li>
             </ul>
           </td>
           <td>
@@ -1201,6 +1203,7 @@ a +%= b</code></pre></td>
           <td>Wrapping Addition.
             <ul>
               <li>Guaranteed to have twos-complement wrapping behavior.</li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
               <li>See also <a href="#addWithOverflow">@addWithOverflow</a>.</li>
             </ul>
           </td>
@@ -1220,6 +1223,8 @@ a -= b</code></pre></td>
           <td>Subtraction.
             <ul>
               <li>Can cause <a href="#Default-Operations">overflow</a> for integers.</li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+              <li>See also <a href="#subWithOverflow">@subWithOverflow</a>.</li>
             </ul>
           </td>
           <td>
@@ -1237,6 +1242,8 @@ a -%= b</code></pre></td>
           <td>Wrapping Subtraction.
             <ul>
               <li>Guaranteed to have twos-complement wrapping behavior.</li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+              <li>See also <a href="#subWithOverflow">@subWithOverflow</a>.</li>
             </ul>
           </td>
           <td>
@@ -1290,6 +1297,8 @@ a *= b</code></pre></td>
           <td>Multiplication.
             <ul>
               <li>Can cause <a href="#Default-Operations">overflow</a> for integers.</li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+              <li>See also <a href="#mulWithOverflow">@mulWithOverflow</a>.</li>
             </ul>
           </td>
           <td>
@@ -1307,6 +1316,8 @@ a *%= b</code></pre></td>
           <td>Wrapping Multiplication.
             <ul>
               <li>Guaranteed to have twos-complement wrapping behavior.</li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+              <li>See also <a href="#mulWithOverflow">@mulWithOverflow</a>.</li>
             </ul>
           </td>
           <td>
@@ -1332,6 +1343,7 @@ a /= b</code></pre></td>
                 <a href="#divFloor">@divFloor</a>, or
                 <a href="#divExact">@divExact</a> instead of <code>/</code>.
               </li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
             </ul>
           </td>
           <td>
@@ -1355,6 +1367,7 @@ a %= b</code></pre></td>
                 <a href="#rem">@rem</a> or
                 <a href="#mod">@mod</a> instead of <code>%</code>.
               </li>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
             </ul>
           </td>
           <td>
@@ -1371,6 +1384,7 @@ a &lt;&lt;= b</code></pre></td>
           </td>
           <td>Bit Shift Left.
             <ul>
+              <li><code>b</code> must be <a href="#comptime">comptime-known</a> or have a type with log2 number of bits as <code>a</code>.</li>
               <li>See also <a href="#shlExact">@shlExact</a>.</li>
               <li>See also <a href="#shlWithOverflow">@shlWithOverflow</a>.</li>
             </ul>
@@ -1389,6 +1403,7 @@ a &gt;&gt;= b</code></pre></td>
           </td>
           <td>Bit Shift Right.
             <ul>
+              <li><code>b</code> must be <a href="#comptime">comptime-known</a> or have a type with log2 number of bits as <code>a</code>.</li>
               <li>See also <a href="#shrExact">@shrExact</a>.</li>
             </ul>
           </td>
@@ -1405,6 +1420,9 @@ a &amp;= b</code></pre></td>
             </ul>
           </td>
           <td>Bitwise AND.
+            <ul>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+            </ul>
           </td>
           <td>
             <pre><code class="zig">0b011 &amp; 0b101 == 0b001</code></pre>
@@ -1419,6 +1437,9 @@ a |= b</code></pre></td>
             </ul>
           </td>
           <td>Bitwise OR.
+            <ul>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+            </ul>
           </td>
           <td>
             <pre><code class="zig">0b010 | 0b100 == 0b110</code></pre>
@@ -1433,6 +1454,9 @@ a ^= b</code></pre></td>
             </ul>
           </td>
           <td>Bitwise XOR.
+            <ul>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+            </ul>
           </td>
           <td>
             <pre><code class="zig">0b011 ^ 0b101 == 0b110</code></pre>
@@ -1562,6 +1586,7 @@ unwrapped == 1234</code></pre>
           </td>
           <td>
             Returns <code>true</code> if a and b are equal, otherwise returns <code>false</code>.
+            Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.
           </td>
           <td>
             <pre><code class="zig">(1 == 1) == true</code></pre>
@@ -1594,6 +1619,7 @@ value == null</code></pre>
           </td>
           <td>
             Returns <code>false</code> if a and b are equal, otherwise returns <code>true</code>.
+            Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.
           </td>
           <td>
             <pre><code class="zig">(1 != 1) == false</code></pre>
@@ -1609,6 +1635,7 @@ value == null</code></pre>
           </td>
           <td>
             Returns <code>true</code> if a is greater than b, otherwise returns <code>false</code>.
+            Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.
           </td>
           <td>
             <pre><code class="zig">(2 &gt; 1) == true</code></pre>
@@ -1624,6 +1651,7 @@ value == null</code></pre>
           </td>
           <td>
             Returns <code>true</code> if a is greater than or equal to b, otherwise returns <code>false</code>.
+            Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.
           </td>
           <td>
             <pre><code class="zig">(2 &gt;= 1) == true</code></pre>
@@ -1639,6 +1667,7 @@ value == null</code></pre>
           </td>
           <td>
             Returns <code>true</code> if a is less than b, otherwise returns <code>false</code>.
+            Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.
           </td>
           <td>
             <pre><code class="zig">(1 &lt; 2) == true</code></pre>
@@ -1654,6 +1683,7 @@ value == null</code></pre>
           </td>
           <td>
             Returns <code>true</code> if a is less than or equal to b, otherwise returns <code>false</code>.
+            Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.
           </td>
           <td>
             <pre><code class="zig">(1 &lt;= 2) == true</code></pre>
@@ -4608,7 +4638,113 @@ All tests passed.
 
       <h2 id="Peer-Type-Resolution">Peer Type Resolution</h2>
 
-      <p>TODO</p>
+      <p>Peer Type Resolution occurs in these places:</p>
+      <ul>
+        <li><a href="#switch">switch</a> expressions</li>
+        <li><a href="#if">if</a> expressions</li>
+        <li><a href="#while">while</a> expressions</li>
+        <li><a href="#for">for</a> expressions</li>
+        <li>Multiple break statements in a block</li>
+        <li>Some <a href="#Table-of-Operators">binary operations</a></li>
+      </ul>
+      <p>
+      This kind of type resolution chooses a type that all peer types can implicitly cast into. Here are
+      some examples:
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+const assert = std.debug.assert;
+const mem = std.mem;
+
+test &quot;peer resolve int widening&quot; {
+    var a: i8 = 12;
+    var b: i16 = 34;
+    var c = a + b;
+    assert(c == 46);
+    assert(@typeOf(c) == i16);
+}
+
+test &quot;peer resolve arrays of different size to const slice&quot; {
+    assert(mem.eql(u8, boolToStr(true), &quot;true&quot;));
+    assert(mem.eql(u8, boolToStr(false), &quot;false&quot;));
+    comptime assert(mem.eql(u8, boolToStr(true), &quot;true&quot;));
+    comptime assert(mem.eql(u8, boolToStr(false), &quot;false&quot;));
+}
+fn boolToStr(b: bool) []const u8 {
+    return if (b) &quot;true&quot; else &quot;false&quot;;
+}
+
+test &quot;peer resolve array and const slice&quot; {
+    testPeerResolveArrayConstSlice(true);
+    comptime testPeerResolveArrayConstSlice(true);
+}
+fn testPeerResolveArrayConstSlice(b: bool) void {
+    const value1 = if (b) &quot;aoeu&quot; else ([]const u8)(&quot;zz&quot;);
+    const value2 = if (b) ([]const u8)(&quot;zz&quot;) else &quot;aoeu&quot;;
+    assert(mem.eql(u8, value1, &quot;aoeu&quot;));
+    assert(mem.eql(u8, value2, &quot;zz&quot;));
+}
+
+test &quot;peer type resolution: ?T and T&quot; {
+    assert(peerTypeTAndOptionalT(true, false).? == 0);
+    assert(peerTypeTAndOptionalT(false, false).? == 3);
+    comptime {
+        assert(peerTypeTAndOptionalT(true, false).? == 0);
+        assert(peerTypeTAndOptionalT(false, false).? == 3);
+    }
+}
+fn peerTypeTAndOptionalT(c: bool, b: bool) ?usize {
+    if (c) {
+        return if (b) null else usize(0);
+    }
+
+    return usize(3);
+}
+
+test &quot;peer type resolution: [0]u8 and []const u8&quot; {
+    assert(peerTypeEmptyArrayAndSlice(true, &quot;hi&quot;).len == 0);
+    assert(peerTypeEmptyArrayAndSlice(false, &quot;hi&quot;).len == 1);
+    comptime {
+        assert(peerTypeEmptyArrayAndSlice(true, &quot;hi&quot;).len == 0);
+        assert(peerTypeEmptyArrayAndSlice(false, &quot;hi&quot;).len == 1);
+    }
+}
+fn peerTypeEmptyArrayAndSlice(a: bool, slice: []const u8) []const u8 {
+    if (a) {
+        return []const u8{};
+    }
+
+    return slice[0..1];
+}
+test &quot;peer type resolution: [0]u8, []const u8, and error![]u8&quot; {
+    {
+        var data = &quot;hi&quot;;
+        const slice = data[0..];
+        assert((try peerTypeEmptyArrayAndSliceAndError(true, slice)).len == 0);
+        assert((try peerTypeEmptyArrayAndSliceAndError(false, slice)).len == 1);
+    }
+    comptime {
+        var data = &quot;hi&quot;;
+        const slice = data[0..];
+        assert((try peerTypeEmptyArrayAndSliceAndError(true, slice)).len == 0);
+        assert((try peerTypeEmptyArrayAndSliceAndError(false, slice)).len == 1);
+    }
+}
+fn peerTypeEmptyArrayAndSliceAndError(a: bool, slice: []u8) error![]u8 {
+    if (a) {
+        return []u8{};
+    }
+
+    return slice[0..1];
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/6 peer resolve int widening...OK
+Test 2/6 peer resolve arrays of different size to const slice...OK
+Test 3/6 peer resolve array and const slice...OK
+Test 4/6 peer type resolution: ?T and T...OK
+Test 5/6 peer type resolution: [0]u8 and []const u8...OK
+Test 6/6 peer type resolution: [0]u8, []const u8, and error![]u8...OK
+All tests passed.
+</code></pre>
+
       
       
 
@@ -5550,11 +5686,8 @@ All tests passed.
       <p>
       <a href="#Await">Await</a> counts as a suspend point.
       </p>
-      <h3 id="Breaking-from-Suspend-Blocks">Breaking from Suspend Blocks</h3>
+      <h3 id="Resuming-from-Suspend-Blocks">Resuming from Suspend Blocks</h3>
 
-      <p>
-      Suspend blocks support labeled break, just like <a href="#while">while</a> and <a href="#for">for</a>.
-      </p>
       <p>
       Upon entering a <code>suspend</code> block, the coroutine is already considered
       suspended, and can be resumed. For example, if you started another kernel thread,
@@ -5589,6 +5722,9 @@ Test 1/1 resume from suspend...OK
 All tests passed.
 </code></pre>
 
+      <p>
+      This is guaranteed to be a tail call, and therefore will not cause a new stack frame.
+      </p>
       
       
       <h2 id="Await">Await</h2>
@@ -9553,8 +9689,8 @@ hljs.registerLanguage("zig", function(t) {
         },
         a = t.IR + "\\s*\\(",
         c = {
-            keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union break return try catch test continue unreachable comptime and or asm defer errdefer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong resume cancel await async orelse",
-            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage divTrunc divFloor enumTagName intToPtr ptrToInt panic ptrCast intCast floatCast intToFloat floatToInt boolToInt bytesToSlice sliceToBytes errSetCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz popCount import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall errorToInt intToError enumToInt intToEnum",
+            keyword: "const align var extern stdcallcc nakedcc volatile export pub noalias inline struct packed enum union break return try catch test continue unreachable comptime and or asm defer errdefer if else switch while for fn use bool f32 f64 void type noreturn error i8 u8 i16 u16 i32 u32 i64 u64 isize usize i8w u8w i16w i32w u32w i64w u64w isizew usizew c_short c_ushort c_int c_uint c_long c_ulong c_longlong c_ulonglong resume suspend cancel await async orelse",
+            built_in: "atomicLoad breakpoint returnAddress frameAddress fieldParentPtr setFloatMode IntType OpaqueType compileError compileLog setCold setRuntimeSafety setEvalBranchQuota offsetOf memcpy inlineCall setGlobalLinkage divTrunc divFloor enumTagName intToPtr ptrToInt panic ptrCast intCast floatCast intToFloat floatToInt boolToInt bytesToSlice sliceToBytes errSetCast bitCast rem mod memset sizeOf alignOf alignCast maxValue minValue memberCount memberName memberType typeOf addWithOverflow subWithOverflow mulWithOverflow shlWithOverflow shlExact shrExact cInclude cDefine cUndef ctz clz popCount import cImport errorName embedFile cmpxchgStrong cmpxchgWeak fence divExact truncate atomicRmw sqrt field typeInfo typeName newStackCall errorToInt intToError enumToInt intToEnum handle",
             literal: "true false null undefined"
         },
         n = [e, t.CLCM, t.CBCM, s, r];
