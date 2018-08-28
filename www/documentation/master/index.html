@@ -128,15 +128,18 @@
             <li><a href="#packed-enum">packed enum</a></li>
         </ul></li>
         <li><a href="#union">union</a></li>
+        <li><a href="#blocks">blocks</a></li>
         <li><a href="#switch">switch</a></li>
         <li><a href="#while">while</a>
         <ul>
+            <li><a href="#Labeled-while">Labeled while</a></li>
             <li><a href="#while-with-Optionals">while with Optionals</a></li>
             <li><a href="#while-with-Error-Unions">while with Error Unions</a></li>
             <li><a href="#inline-while">inline while</a></li>
         </ul></li>
         <li><a href="#for">for</a>
         <ul>
+            <li><a href="#Labeled-for">Labeled for</a></li>
             <li><a href="#inline-for">inline for</a></li>
         </ul></li>
         <li><a href="#if">if</a></li>
@@ -2688,6 +2691,49 @@ All tests passed.
       sorts the order of the tag and union field by the largest alignment.
       </p>
       
+      <h1 id="blocks">blocks</h1>
+
+      <p>
+      Blocks are used to limit the scope of variable declarations:
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">test &quot;access variable after block scope&quot; {
+    {
+        var x: i32 = 1;
+    }
+    x += 1;
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/zig/docgen_tmp/test.zig:5:5: </span><span class="t31_1">error:</span><span class="t0_1"> use of undeclared identifier 'x'</span>
+    x += 1;
+    <span class="t32_1">^</span>
+</code></pre>
+
+      <p>Blocks are expressions. When labeled, <code>break</code> can be used
+      to return a value from the block:
+      </p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+const assert = std.debug.assert;
+
+test &quot;labeled break from labeled block expression&quot; {
+    var y: i32 = 123;
+
+    const x = blk: {
+        y += 1;
+        break :blk y;
+    };
+    assert(x == 124);
+    assert(y == 124);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 labeled break from labeled block expression...OK
+All tests passed.
+</code></pre>
+
+      <p>Here, <code>blk</code> can be any name.</p>
+      <p>See also:</p><ul>
+<li><a href="#Labeled-while">Labeled while</a></li>
+<li><a href="#Labeled-for">Labeled for</a></li>
+</ul>
+
+      
       <h1 id="switch">switch</h1>
 
       <p class="file">switch.zig</p><pre><code class="zig">const assert = @import(&quot;std&quot;).debug.assert;
@@ -2906,6 +2952,32 @@ Test 1/1 while else...OK
 All tests passed.
 </code></pre>
 
+      <h2 id="Labeled-while">Labeled while</h2>
+
+      <p>When a <code>while</code> loop is labeled, it can be referenced from a <code>break</code>
+      or <code>continue</code> from within a nested loop:</p>
+      <p class="file">test.zig</p><pre><code class="zig">test &quot;nested break&quot; {
+    outer: while (true) {
+        while (true) {
+            break :outer;
+        }
+    }
+}
+
+test &quot;nested continue&quot; {
+    var i: usize = 0;
+    outer: while (i &lt; 10) : (i += 1) {
+        while (true) {
+            continue :outer;
+        }
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/2 nested break...OK
+Test 2/2 nested continue...OK
+All tests passed.
+</code></pre>
+
+      
       <h2 id="while-with-Optionals">while with Optionals</h2>
 
       <p>
@@ -3112,6 +3184,41 @@ Test 3/3 for else...OK
 All tests passed.
 </code></pre>
 
+      <h2 id="Labeled-for">Labeled for</h2>
+
+      <p>When a <code>for</code> loop is labeled, it can be referenced from a <code>break</code>
+      or <code>continue</code> from within a nested loop:</p>
+      <p class="file">test.zig</p><pre><code class="zig">const std = @import(&quot;std&quot;);
+const assert = std.debug.assert;
+
+test &quot;nested break&quot; {
+    var count: usize = 0;
+    outer: for ([]i32{ 1, 2, 3, 4, 5 }) |_| {
+        for ([]i32{ 1, 2, 3, 4, 5 }) |_| {
+            count += 1;
+            break :outer;
+        }
+    }
+    assert(count == 1);
+}
+
+test &quot;nested continue&quot; {
+    var count: usize = 0;
+    outer: for ([]i32{ 1, 2, 3, 4, 5, 6, 7, 8 }) |_| {
+        for ([]i32{ 1, 2, 3, 4, 5 }) |_| {
+            count += 1;
+            continue :outer;
+        }
+    }
+
+    assert(count == 8);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/2 nested break...OK
+Test 2/2 nested continue...OK
+All tests passed.
+</code></pre>
+
+      
       <h2 id="inline-for">inline for</h2>
 
       <p>
