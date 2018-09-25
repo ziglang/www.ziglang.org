@@ -16,6 +16,58 @@
       th, td {
         padding: 0.1em;
       }
+      .t0_1, .t37, .t37_1 {
+        font-weight: bold;
+      }
+      .t2_0 {
+        color: grey;
+      }
+      .t31_1 {
+        color: red;
+      }
+      .t32_1 {
+        color: green;
+      }
+      .t36_1 {
+        color: #0086b3;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #0086b3;
+      }
+      .tok-comment {
+          color: #998;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #008080;
+      }
+      .tok-number {
+          color: #008080;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+
+        padding: 0.5em;
+        color: #333;
+        background: #f8f8f8;
+      }
       pre, code {
         font-size: 18px;
       }
@@ -68,15 +120,96 @@ gotta go fast
    canonical style.
    </p>
    <p>
-   TODO example of zig fmt working
-   TODO mention marc's vim plugin
-   TODO mention vs code plugin
-   TODO mention that he did it without recursion and then I did the research to find out that
-    recursion is actually ok. link to recursion status
-   TODO we ran zig fmt on all of std/
-   TODO how to turn it off and on with comments
-   TODO the implementation demonstrates event-based I/O with M:N threading
+   As an example, <code>zig fmt</code> will change this code:
    </p>
+   <pre>{#syntax#}
+test "fmt" {
+const a = []u8{
+    1, 2, //
+    3,
+    4, // foo
+    5,
+    6,
+    7 };
+         switch (0) { 0 => {}, 1 => unreachable, 2,
+            3 => {}, 4...7 => {}, 1 + 4 * 3 + 22 => {}, else => { const a = 1; const b = a; }, }
+
+    foo(a, b, c, d, e, f, g,);
+}
+{#endsyntax#}</pre>
+   <p>
+   ...into this code:
+   </p>
+<pre>{#syntax#}
+test "fmt" {
+    const a = []u8{
+        1, 2,
+        3, 4, // foo
+        5, 6,
+        7,
+    };
+    switch (0) {
+        0 => {},
+        1 => unreachable,
+        2, 3 => {},
+        4...7 => {},
+        1 + 4 * 3 + 22 => {},
+        else => {
+            const a = 1;
+            const b = a;
+        },
+    }
+
+    foo(
+        a,
+        b,
+        c,
+        d,
+        e,
+        f,
+        g,
+    );
+}
+{#endsyntax#}</pre>
+  <p>It does not make any decisions about line widths. That is left up to the user.
+     However, it follows certain cues about when to line break. For example, it will put the
+     same number of array items in a line as there are in the first one. And it will
+     put a function call all on one line if there is no trailing comma, but break every
+     parameter into its own line if there is a trailing comma.
+    </p>
+    <p>Thanks to Marc Tiehuis, there are currently two editor plugins that integrate with <code>zig fmt</code>:
+    <ul>
+      <li><a href="https://github.com/ziglang/zig.vim">Vim</a></li>
+      <li><a href="https://github.com/ziglang/vscode-zig">VSCode</a></li>
+    </ul>
+    <p>
+    <code>zig fmt</code> is only implemented in the self-hosted compiler,
+    which is <a href="#stage2-progress">not finished yet</a>, so in order to use it one
+    must follow the README instructions to build the self-hosted compiler from source.
+    </p>
+    <p>
+    The
+    <a href="https://github.com/ziglang/zig/blob/0e6c18c8207cab5d3946f119a51d62f91c1b9028/std/zig/parse.zig#L12">implementation of the self-hosted parser</a>
+    is an interesting case study of avoiding recursion by using an explicit stack. It is essentially a
+    hand-written recursive descent parser, but with heap allocations instead of recursion. When Jimmi
+    originally implemented the code, we thought that we could not solve the unbounded stack growth problem
+    of recursion. However, since then, I prototyped several solutions that provide the ability to have
+    recursive function calls without giving up statically known upper bound stack growth. See
+    <a href="#recursion">Recursion Status</a> for more details.
+    </p>
+    <p>Automatic formatting can be disabled in source files with a comment like this:</p>
+    <pre>{#syntax#}
+// zig fmt: off
+test     "this is left alone"  {   }
+// zig fmt: on
+    {#endsyntax#}</pre>
+    <p>
+    <code>zig fmt</code> is written using the standard library's event-based I/O abstractions and
+    {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#} syntax, which means that it is
+    multi-threaded with non-blocking I/O. A debug build of <code>zig fmt</code> on my laptop
+    formats the entire Zig standard library in 2.1 seconds, which is 75,516 lines per second.
+    See <a href="#concurrency-status">Concurrency Status</a> for more details.
+    </p>
 
    <h2 id="zig-run">zig run</h2>
    <p>

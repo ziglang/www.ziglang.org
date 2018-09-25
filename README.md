@@ -3,6 +3,8 @@
 Website for [zig](https://github.com/andrewrk/zig)
 
 ```
+export ZIG_DOCGEN=/home/andy/dev/zig/zig-cache/docgen
+./build
 ./push
 ```
 
