@@ -144,10 +144,10 @@ gotta go fast
    contains debug information.</p>
    <h3 id="stack-traces-linux">Linux</h3>
    <img src="stack-traces-linux.png">
-   <p>Linux stack traces worked in 0.2.0. However now {#syntax#}std.debug.dumpStackTrace{#endsyntax#} &amp; friends use {#syntax#}ArenaAllocator{#endsyntax#} backed by
-   {#syntax#}DirectAllocator{#endsyntax#}. This has the downside of failing to print a stack trace
+   <p>Linux stack traces worked in 0.2.0. However now <code class="zig">std.debug.dumpStackTrace</code> &amp; friends use <code class="zig">ArenaAllocator</code> backed by
+   <code class="zig">DirectAllocator</code>. This has the downside of failing to print a stack trace
         when the system is out of memory, but for the more common use case when the system is not
-        out of memory, but the debug info cannot fit in {#syntax#}std.debug.global_allocator{#endsyntax#},
+        out of memory, but the debug info cannot fit in <code class="zig">std.debug.global_allocator</code>,
         now stack traces will work. This is the case for the self hosted compiler.
    There is <a href="https://github.com/ziglang/zig/issues/907#issuecomment-415946565">a proposal</a> to
    <code>mmap()</code> debug info rather than using <code>read()</code>.
@@ -163,41 +163,38 @@ gotta go fast
    <p>
    As an example, <code>zig fmt</code> will change this code:
    </p>
-   <pre>{#syntax#}
-test "fmt" {
-const a = []u8{
-    1, 2, //
-    3,
-    4, // foo
-    5,
-    6,
-    7 };
-         switch (0) { 0 => {}, 1 => unreachable, 2,
-            3 => {}, 4...7 => {}, 1 + 4 * 3 + 22 => {}, else => { const a = 1; const b = a; }, }
+   <pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;fmt&quot;</span> {
+<span class="tok-kw">const</span> a = []<span class="tok-type">u8</span>{
+    <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-comment">//</span>
+    <span class="tok-number">3</span>,
+    <span class="tok-number">4</span>, <span class="tok-comment">// foo</span>
+    <span class="tok-number">5</span>,
+    <span class="tok-number">6</span>,
+    <span class="tok-number">7</span> };
+         <span class="tok-kw">switch</span> (<span class="tok-number">0</span>) { <span class="tok-number">0</span> =&gt; {}, <span class="tok-number">1</span> =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-number">2</span>,
+            <span class="tok-number">3</span> =&gt; {}, <span class="tok-number">4</span>...<span class="tok-number">7</span> =&gt; {}, <span class="tok-number">1</span> + <span class="tok-number">4</span> * <span class="tok-number">3</span> + <span class="tok-number">22</span> =&gt; {}, <span class="tok-kw">else</span> =&gt; { <span class="tok-kw">const</span> a = <span class="tok-number">1</span>; <span class="tok-kw">const</span> b = a; }, }
 
     foo(a, b, c, d, e, f, g,);
-}
-{#endsyntax#}</pre>
+}</code></pre>
    <p>
    ...into this code:
    </p>
-<pre>{#syntax#}
-test "fmt" {
-    const a = []u8{
-        1, 2,
-        3, 4, // foo
-        5, 6,
-        7,
+<pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;fmt&quot;</span> {
+    <span class="tok-kw">const</span> a = []<span class="tok-type">u8</span>{
+        <span class="tok-number">1</span>, <span class="tok-number">2</span>,
+        <span class="tok-number">3</span>, <span class="tok-number">4</span>, <span class="tok-comment">// foo</span>
+        <span class="tok-number">5</span>, <span class="tok-number">6</span>,
+        <span class="tok-number">7</span>,
     };
-    switch (0) {
-        0 => {},
-        1 => unreachable,
-        2, 3 => {},
-        4...7 => {},
-        1 + 4 * 3 + 22 => {},
-        else => {
-            const a = 1;
-            const b = a;
+    <span class="tok-kw">switch</span> (<span class="tok-number">0</span>) {
+        <span class="tok-number">0</span> =&gt; {},
+        <span class="tok-number">1</span> =&gt; <span class="tok-kw">unreachable</span>,
+        <span class="tok-number">2</span>, <span class="tok-number">3</span> =&gt; {},
+        <span class="tok-number">4</span>...<span class="tok-number">7</span> =&gt; {},
+        <span class="tok-number">1</span> + <span class="tok-number">4</span> * <span class="tok-number">3</span> + <span class="tok-number">22</span> =&gt; {},
+        <span class="tok-kw">else</span> =&gt; {
+            <span class="tok-kw">const</span> a = <span class="tok-number">1</span>;
+            <span class="tok-kw">const</span> b = a;
         },
     }
 
@@ -210,8 +207,7 @@ test "fmt" {
         f,
         g,
     );
-}
-{#endsyntax#}</pre>
+}</code></pre>
   <p>It does not make any decisions about line widths. That is left up to the user.
      However, it follows certain cues about when to line break. For example, it will put the
      same number of array items in a line as there are in the first one. And it will
@@ -239,14 +235,12 @@ test "fmt" {
     <a href="#recursion">Recursion Status</a> for more details.
     </p>
     <p>Automatic formatting can be disabled in source files with a comment like this:</p>
-    <pre>{#syntax#}
-// zig fmt: off
-test     "this is left alone"  {   }
-// zig fmt: on
-    {#endsyntax#}</pre>
+    <pre><code class="zig"><span class="tok-comment">// zig fmt: off</span>
+<span class="tok-kw">test</span>     <span class="tok-str">&quot;this is left alone&quot;</span>  {   }
+<span class="tok-comment">// zig fmt: on</span></code></pre>
     <p>
     <code>zig fmt</code> is written using the standard library's event-based I/O abstractions and
-    {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#} syntax, which means that it is
+    <code class="zig"><span class="tok-kw">async</span></code>/<code class="zig"><span class="tok-kw">await</span></code> syntax, which means that it is
     multi-threaded with non-blocking I/O. A debug build of <code>zig fmt</code> on my laptop
     formats the entire Zig standard library in 2.1 seconds, which is 75,516 lines per second.
     See <a href="#concurrency-status">Concurrency Status</a> for more details.
@@ -292,33 +286,29 @@ test     "this is left alone"  {   }
    of changes that I called Pointer Reform, resulting in a more consistent syntax with
    simpler semantics.</p>
    <p>The first design flaw was that the syntax for pointers was ambiguous if the pointed
-   to type was a {#syntax#}type{#endsyntax#}. Consider this 0.2.0 code:</p>
-   <pre>{#syntax#}
-const assert = @import("std").debug.assert;
+   to type was a <code class="zig"><span class="tok-type">type</span></code>. Consider this 0.2.0 code:</p>
+   <pre><code class="zig"><span class="tok-kw">const</span> assert = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).debug.assert;
 
-comptime {
-    var a: i32 = 1;
-    const b = &a;
-    @compileLog(@typeOf(b));
-    *b = 2;
-    assert(a == 2);
-}
-{#endsyntax#}</pre>
+<span class="tok-kw">comptime</span> {
+    <span class="tok-kw">var</span> a: <span class="tok-type">i32</span> = <span class="tok-number">1</span>;
+    <span class="tok-kw">const</span> b = &amp;a;
+    <span class="tok-builtin">@compileLog</span>(<span class="tok-builtin">@typeOf</span>(b));
+    *b = <span class="tok-number">2</span>;
+    assert(a == <span class="tok-number">2</span>);
+}</code></pre>
    <p>This works fine. The value printed from the
-   {#syntax#}@compileLog{#endsyntax#} statement is {#syntax#}&i32{#endsyntax#}.
-   This makes sense because {#syntax#}b{#endsyntax#} is a pointer to {#syntax#}a{#endsyntax#}.</p>
-   <p>Now let's do it with a {#syntax#}type{#endsyntax#}:</p>
-   <pre>{#syntax#}
-const assert = @import("std").debug.assert;
+   <code class="zig"><span class="tok-builtin">@compileLog</span></code> statement is <code class="zig">&amp;<span class="tok-type">i32</span></code>.
+   This makes sense because <code class="zig">b</code> is a pointer to <code class="zig">a</code>.</p>
+   <p>Now let's do it with a <code class="zig"><span class="tok-type">type</span></code>:</p>
+   <pre><code class="zig"><span class="tok-kw">const</span> assert = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).debug.assert;
 
-comptime {
-    var a: type = i32;
-    const b = &a;
-    @compileLog(b);
-    *b = f32;
-    assert(a == f32);
-}
-{#endsyntax#}</pre>
+<span class="tok-kw">comptime</span> {
+    <span class="tok-kw">var</span> a: <span class="tok-type">type</span> = <span class="tok-type">i32</span>;
+    <span class="tok-kw">const</span> b = &amp;a;
+    <span class="tok-builtin">@compileLog</span>(b);
+    *b = <span class="tok-type">f32</span>;
+    assert(a == <span class="tok-type">f32</span>);
+}</code></pre>
 <pre><code class="shell">$ zig build-obj test.zig 
 | &amp;i32
 <span class="t0_1">/test.zig:6:5:</span> <span class="t31_1">error:</span> <span class="t0_1">found compile log statement</span>
@@ -327,56 +317,56 @@ comptime {
 <span class="t0_1">/test.zig:7:5:</span> <span class="t31_1">error:</span> <span class="t0_1">attempt to dereference non-pointer type 'type'</span>
     *b = f32;
     <span class="t32_1">^</span></code></pre>
-<p>It doesn't work in 0.2.0, because the {#syntax#}&{#endsyntax#} operator worked differently for
-{#syntax#}type{#endsyntax#} than other types. Here, {#syntax#}b{#endsyntax#} is the type {#syntax#}&i32{#endsyntax#} instead of a pointer to a type which is how we wanted to use it.</p>
+<p>It doesn't work in 0.2.0, because the <code class="zig">&amp;</code> operator worked differently for
+<code class="zig"><span class="tok-type">type</span></code> than other types. Here, <code class="zig">b</code> is the type <code class="zig">&amp;<span class="tok-type">i32</span></code> instead of a pointer to a type which is how we wanted to use it.</p>
 <p>This prevented other things from working too; for example if you had a
-{#syntax#}[]type{i32, u8, f64}{#endsyntax#} and you tried to use a for loop,
-it crashed the compiler because internally a for loop uses the {#syntax#}&{#endsyntax#}
+<code class="zig">[]<span class="tok-type">type</span>{<span class="tok-type">i32</span>, <span class="tok-type">u8</span>, <span class="tok-type">f64</span>}</code> and you tried to use a for loop,
+it crashed the compiler because internally a for loop uses the <code class="zig">&amp;</code>
 operator on the array element.</p>
    <p>The only reasonable solution to this is to have different syntax for the address-of operator and
-   the pointer operator, rather than them both being {#syntax#}&{#endsyntax#}.</p>
-   <p>So pointer syntax becomes {#syntax#}*T{#endsyntax#}, matching syntax from most other languages such as C.
-   Address-of syntax remains {#syntax#}&foo{#endsyntax#}, again matching common address-of syntax such as in C.
+   the pointer operator, rather than them both being <code class="zig">&amp;</code>.</p>
+   <p>So pointer syntax becomes <code class="zig">*T</code>, matching syntax from most other languages such as C.
+   Address-of syntax remains <code class="zig">&amp;foo</code>, again matching common address-of syntax such as in C.
    This leaves one problem though.</p>
-   <p>With this modification, the syntax {#syntax#}*foo{#endsyntax#} becomes ambiguous with the syntax for
-   dereferencing. And so dereferencing syntax is changed to a postfix operator: {#syntax#}foo.*{#endsyntax#}.
-   This matches post-fix indexing syntax: {#syntax#}foo[0]{#endsyntax#}, and in practice ends up harmonizing
+   <p>With this modification, the syntax <code class="zig">*foo</code> becomes ambiguous with the syntax for
+   dereferencing. And so dereferencing syntax is changed to a postfix operator: <code class="zig">foo.*</code>.
+   This matches post-fix indexing syntax: <code class="zig">foo[<span class="tok-number">0</span>]</code>, and in practice ends up harmonizing
    nicely with other postfix operators.</p>
    <p>The other design flaw is a problem that has plagued C since its creation: the pointer type doesn't tell you how many items
    there are at the address. This is now fixed by having two kinds of pointers in Zig:</p>
    <ul>
-     <li>{#syntax#}*T{#endsyntax#} - pointer to exactly one item.
+     <li><code class="zig">*T</code> - pointer to exactly one item.
        <ul>
-         <li>Supports deref syntax: {#syntax#}ptr.*{#endsyntax#}</li>
+         <li>Supports deref syntax: <code class="zig">ptr.*</code></li>
        </ul>
      </li>
-     <li>{#syntax#}[*]T{#endsyntax#} - pointer to unknown number of items.
+     <li><code class="zig">[*]T</code> - pointer to unknown number of items.
        <ul>
-         <li>Supports index syntax: {#syntax#}ptr[i]{#endsyntax#}</li>
-         <li>Supports slice syntax: {#syntax#}ptr[start..end]{#endsyntax#}</li>
-         <li>{#syntax#}T{#endsyntax#} must have a known size, which means that it cannot be
-           {#syntax#}c_void{#endsyntax#} or any other {#syntax#}@OpaqueType(){#endsyntax#}.</li>
+         <li>Supports index syntax: <code class="zig">ptr[i]</code></li>
+         <li>Supports slice syntax: <code class="zig">ptr[start..end]</code></li>
+         <li><code class="zig">T</code> must have a known size, which means that it cannot be
+           <code class="zig"><span class="tok-type">c_void</span></code> or any other <code class="zig"><span class="tok-builtin">@OpaqueType</span>()</code>.</li>
         </ul>
      </li>
    </ul>
    <p>Note that this causes pointers to arrays to fall into place, as a single-item pointer
    to an array acts as a pointer to a compile-time known number of items:</p>
    <ul>
-     <li>{#syntax#}*[N]T{#endsyntax#} - pointer to N items, same as single-item pointer to array.
+     <li><code class="zig">*[N]T</code> - pointer to N items, same as single-item pointer to array.
        <ul>
-         <li>Supports index syntax: {#syntax#}array_ptr[i]{#endsyntax#}</li>
-         <li>Supports slice syntax: {#syntax#}array_ptr[start..end]{#endsyntax#}</li>
-         <li>Supports len property: {#syntax#}array_ptr.len{#endsyntax#}</li>
+         <li>Supports index syntax: <code class="zig">array_ptr[i]</code></li>
+         <li>Supports slice syntax: <code class="zig">array_ptr[start..end]</code></li>
+         <li>Supports len property: <code class="zig">array_ptr.len</code></li>
        </ul>
      </li>
    </ul>
    <p>Consider how slices fit into this picture:</p>
    <ul>
-     <li>{#syntax#}[]T{#endsyntax#} - pointer to runtime-known number of items.
+     <li><code class="zig">[]T</code> - pointer to runtime-known number of items.
        <ul>
-         <li>Supports index syntax: {#syntax#}slice[i]{#endsyntax#}</li>
-         <li>Supports slice syntax: {#syntax#}slice[start..end]{#endsyntax#}</li>
-         <li>Supports len property: {#syntax#}slice.len{#endsyntax#}</li>
+         <li>Supports index syntax: <code class="zig">slice[i]</code></li>
+         <li>Supports slice syntax: <code class="zig">slice[start..end]</code></li>
+         <li>Supports len property: <code class="zig">slice.len</code></li>
        </ul>
      </li>
    </ul>
@@ -386,9 +376,9 @@ operator on the array element.</p>
    <p>For consistency with the postfix pointer dereference operator, optional unwrapping syntax is
    now postfix as well:</p>
    <p>0.2.0: <code>??x</code></p>
-   <p>0.3.0: {#syntax#}x.?{#endsyntax#}</p>
+   <p>0.3.0: <code class="zig">x.?</code></p>
    <p>And finally, to remove the last inconsistency of optional syntax, the <code>??</code> operator
-   is now the keyword {#syntax#}orelse{#endsyntax#}. This means that Zig now has the property that
+   is now the keyword <code class="zig"><span class="tok-kw">orelse</span></code>. This means that Zig now has the property that
    <strong>all control flow occurs exclusively via keywords</strong>.
    <p>
    There is <a href="https://github.com/ziglang/zig/issues/265">a plan for one more pointer type</a>,
@@ -404,7 +394,7 @@ operator on the array element.</p>
    <p>
    There is one new issue caused by Pointer Reform. Because C does not have the concept of
    single-item pointers or unknown-length pointers (or non-null pointers),
-   Zig must translate all C pointers as {#syntax#}?[*]T{#endsyntax#}. That is, a pointer to
+   Zig must translate all C pointers as <code class="zig">?[*]T</code>. That is, a pointer to
    an unknown number of items that might be null. This can cause some friction when using C APIs,
    which is unfortunate because Zig's types are perfectly compatible with C's types, but
    .h files are unable to adequately describe pointers. Although it would be much safer to
