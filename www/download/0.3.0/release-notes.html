@@ -317,10 +317,10 @@ gotta go fast
 }</code></pre>
 <pre><code class="shell">$ zig build-obj test.zig 
 | &amp;i32
-<span class="t0_1">/test.zig:6:5:</span> <span class="t31_1">error:</span> <span class="t0_1">found compile log statement</span>
+<span class="t0_1">test.zig:6:5:</span> <span class="t31_1">error:</span> <span class="t0_1">found compile log statement</span>
     @compileLog(b);
     <span class="t32_1">^</span>
-<span class="t0_1">/test.zig:7:5:</span> <span class="t31_1">error:</span> <span class="t0_1">attempt to dereference non-pointer type 'type'</span>
+<span class="t0_1">test.zig:7:5:</span> <span class="t31_1">error:</span> <span class="t0_1">attempt to dereference non-pointer type 'type'</span>
     *b = f32;
     <span class="t32_1">^</span></code></pre>
 <p>It doesn't work in 0.2.0, because the <code class="zig">&amp;</code> operator worked differently for
@@ -429,9 +429,64 @@ operator on the array element.</p>
    </p>
 
    <h2 id="casting-syntax">Remove Explicit Casting Syntax</h2>
-   TODO explain implicit vs explicit casting
-   TODO #1061
-   TODO list the new casting builtins
+   <p>Previously, these two lines would have different meanings:</p>
+   <pre><code class="zig"><span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(x: <span class="tok-type">u32</span>) <span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> a: <span class="tok-type">u8</span> = x;
+    <span class="tok-kw">const</span> b = <span class="tok-type">u8</span>(x);
+}</code></pre>
+   <p>The assignment to <code class="zig">a</code> would give <code>error: expected type 'u8', found 'u32'</code>,
+   because not all values of <code class="zig"><span class="tok-type">u32</span></code> can fit in a <code class="zig"><span class="tok-type">u8</span></code>. But the
+   assignment to <code class="zig">b</code> was "cast harder" syntax, and Zig would truncate bits,
+   with a safety check to ensure that the mathematical meaning of the integer was preserved.
+   </p><p>
+   Now, both lines are identical in semantics. There is no more "cast harder" syntax.
+   Both cause the compile error because implicit casts are only allowed when it is
+   completely unambiguous how to get from one type to another, and the transformation is
+   guaranteed to be safe. For other casts, Zig has builtin functions:
+   </p>
+   <ul>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#bitCast">@bitCast</a> - change type but maintain bit representation</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#alignCast">@alignCast</a> - make a pointer have more alignment</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#boolToInt">@boolToInt</a> - convert true to 1 and false to 0</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#bytesToSlice">@bytesToSlice</a> - convert a slice of bytes to a slice of another type</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#enumToInt">@enumToInt</a> - obtain the integer tag value of an enum or tagged union</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#errSetCast">@errSetCast</a> - convert to a smaller error set</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#errorToInt">@errorToInt</a> - obtain the integer value of an error code</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#floatCast">@floatCast</a> - convert a larger float to a smaller float</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#floatToInt">@floatToInt</a> - obtain the integer part of a float value</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#intCast">@intCast</a> - convert between integer types</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#intToEnum">@intToEnum</a> - obtain an enum value based on its integer tag value</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#intToError">@intToError</a> - obtain an error code based on its integer value</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#intToFloat">@intToFloat</a> - convert an integer to a float value</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#intToPtr">@intToPtr</a> - convert an address to a pointer</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#ptrCast">@ptrCast</a> - convert between pointer types</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#ptrToInt">@ptrToInt</a> - obtain the address of a pointer</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#sliceToBytes">@sliceToBytes</a> - convert a slice of anything to a slice of bytes</li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#truncate">@truncate</a> - convert between integer types, chopping off bits</li>
+   </ul>
+   <p>
+  Some are safe; some are not. Some perform language-level assertions; some do not.
+  Some are no-ops at runtime; some are not. Each casting function is documented independently.
+   </p>
+   <p>
+   Having explicit and fine-grained casting like this is a form of intentional redundancy.
+   Casts are often the source of bugs, and therefore it is worth double-checking a cast to verify that
+   it is still correct when the type of the operand changes. For example, imagine that we have the following
+   code:
+   </p>
+   <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(x: <span class="tok-type">i32</span>) <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> i = <span class="tok-builtin">@intCast</span>(<span class="tok-type">usize</span>, x);
+}</code></pre>
+   <p>
+   Now consider what happens when the type of <code class="zig">x</code> changes to a pointer:
+   <pre><code class="shell"><span class="t0_1">test.zig:2:29:</span> <span class="t31_1">error:</span> <span class="t0_1">expected integer type, found '*i32'</span>
+    var i = @intCast(usize, x);
+                            <span class="t32_1">^</span></code></pre>
+   Although we technically know how to convert a pointer to an integer,
+   because we used <code class="zig"><span class="tok-builtin">@intCast</span></code>, we are forced to inspect the cast and change
+   it appropriately. Perhaps that means changing it to <code class="zig"><span class="tok-builtin">@ptrToInt</span></code>, or perhaps
+   the entire function needs to be reworked in response to the type change.
+   </p>
 
    <h2 id="parameter-passing">Direct Parameter Passing</h2>
    <p>
