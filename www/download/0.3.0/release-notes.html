@@ -1166,18 +1166,196 @@ All your base are belong to us.</pre>
    <p>The main Zig test suite tests this functionality so that it will not regress as Zig continues to evolve.</p>
 
    <h2 id="concurrency">Concurrency Status</h2>
-   TODO get info from that issue "solve concurrency"
-   TODO std.event.Channel
-   TODO std.event.Future
-   TODO std.event.Group
-   TODO std.event.Lock
-   TODO std.event.Locked
-   TODO std.event.RwLock
-   TODO std.event.RwLocked
-   TODO std.event.Loop
-   TODO std.event.fs
-   TODO std.event.tcp
+   <p>
+   Concurrency is now solved. That is, there is a concrete plan for how concurrency will work in Zig,
+   and now it's a matter of implementing all the pieces.
+   </p>
+   <p>
+   First and foremost, Zig supports low-level control over hardware.
+   That means that it has atomic primitives:
+   </p>
+   <ul>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#atomicLoad">@atomicLoad</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#atomicRmw">@atomicRmw</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#cmpxchgStrong">@cmpxchgStrong</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#cmpxchgWeak">@cmpxchgWeak</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#fence">@fence</a></li>
+   </ul>
+   <p>...and it means that you can directly spawn kernel threads using standard library functions:</p>
+   <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> assert = std.debug.assert;
+<span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);
+<span class="tok-kw">const</span> AtomicRmwOp = builtin.AtomicRmwOp;
+<span class="tok-kw">const</span> AtomicOrder = builtin.AtomicOrder;
 
+<span class="tok-kw">test</span> <span class="tok-str">&quot;spawn threads&quot;</span> {
+    <span class="tok-kw">var</span> shared_ctx: <span class="tok-type">i32</span> = <span class="tok-number">1</span>;
+
+    <span class="tok-kw">const</span> thread1 = <span class="tok-kw">try</span> std.os.spawnThread({}, start1);
+    <span class="tok-kw">const</span> thread2 = <span class="tok-kw">try</span> std.os.spawnThread(&amp;shared_ctx, start2);
+    <span class="tok-kw">const</span> thread3 = <span class="tok-kw">try</span> std.os.spawnThread(&amp;shared_ctx, start2);
+    <span class="tok-kw">const</span> thread4 = <span class="tok-kw">try</span> std.os.spawnThread(&amp;shared_ctx, start2);
+
+    thread1.wait();
+    thread2.wait();
+    thread3.wait();
+    thread4.wait();
+
+    assert(shared_ctx == <span class="tok-number">4</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">start1</span>(ctx: <span class="tok-type">void</span>) <span class="tok-type">u8</span> {
+    <span class="tok-kw">return</span> <span class="tok-number">0</span>;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">start2</span>(ctx: *<span class="tok-type">i32</span>) <span class="tok-type">u8</span> {
+    _ = <span class="tok-builtin">@atomicRmw</span>(<span class="tok-type">i32</span>, ctx, AtomicRmwOp.Add, <span class="tok-number">1</span>, AtomicOrder.SeqCst);
+    <span class="tok-kw">return</span> <span class="tok-number">0</span>;
+}</code></pre>
+   <p>
+   On POSIX targets, when you link against libc, the standard library uses
+   pthreads; otherwise it uses its own lightweight kernel thread implementation.
+   </p>
+   <p>You can use mutexes, signals, condition variables, and all those things.
+   Anything you can accomplish in C, you can accomplish in Zig.</p>
+   <p>
+   However, the standard library provides a higher level concurrency abstraction,
+   designed for optimal performance, debuggability, and structuring code to closely
+   model the problems that concurrency presents.
+   </p>
+   <p>
+   The abstraction is built on two language features: stackless coroutines and
+   <code class="zig"><span class="tok-kw">async</span></code>/<code class="zig"><span class="tok-kw">await</span></code>
+   syntax. Everything else is implemented in userland.
+   </p>
+   <p>
+   <code class="zig">std.event.Loop</code> creates a kernel thread pool matching the number
+   of logical CPUs. It can then be used for non-blocking I/O that will be dispatched across
+   the thread pool, using the platform-native API:
+   </p>
+   <ul>
+     <li>Windows - <a href="https://docs.microsoft.com/en-us/windows/desktop/FileIO/i-o-completion-ports">I/O Completion Ports</a></li>
+     <li>MacOS - <a href="https://man.openbsd.org/kqueue.2">kqueue</a></li>
+     <li>Linux - <a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a></li>
+   </ul>
+   <p>This is a competitor to <a href="http://libuv.org/">libuv</a>, except multi-threaded.</p>
+   <p>
+   Once you have an event loop, all of the <code class="zig">std.event</code> API becomes available to use:
+   </p>
+   <ul>
+     <li><code class="zig">std.event.Channel</code> - Many producer, many consumer, thread-safe, runtime configurable buffer size.
+When buffer is empty, consumers suspend and are resumed by producers. When buffer is full, producers suspend and are resumed by consumers.</li>
+     <li><code class="zig">std.event.Future</code> - A value that many consumers can <code class="zig"><span class="tok-kw">await</span></code>.</li>
+     <li><code class="zig">std.event.Group</code> - A way to <code class="zig"><span class="tok-kw">await</span></code> multiple <code class="zig"><span class="tok-kw">async</span></code> operations.</li>
+     <li><code class="zig">std.event.Lock</code> - Ensures only one thread gets access to a resource, without blocking a kernel thread.</li>
+     <li><code class="zig">std.event.RwLock</code> - Same as Lock except allows multiple readers to access data simultaneously.</li>
+     <li><code class="zig">std.event.fs</code> - File system operations based on
+       <code class="zig"><span class="tok-kw">async</span></code>/<code class="zig"><span class="tok-kw">await</span></code> syntax.
+     </li>
+     <li><code class="zig">std.event.tcp</code> - Network operations based on
+       <code class="zig"><span class="tok-kw">async</span></code>/<code class="zig"><span class="tok-kw">await</span></code> syntax.
+     </li>
+   </ul>
+   <p>
+   All of these abstractions provide convenient APIs based on 
+   <code class="zig"><span class="tok-kw">async</span></code>/<code class="zig"><span class="tok-kw">await</span></code>
+   syntax, making it practical for API users to model their code with maximally efficient concurrency.
+   None of these abstractions block or use mutexes; when an API user must suspend, control flow
+   goes to the next coroutine waiting to run, if any. If no coroutines are waiting to run,
+   the application will sit idly, waiting for an event from the respective platform-native API
+   (e.g. epoll on Linux).
+   </p>
+   <p>
+   As an example, here is a snippet from a test in the standard library:
+   </p>
+   <pre><code class="zig"><span class="tok-kw">async</span> <span class="tok-kw">fn</span> <span class="tok-fn">testFsWatch</span>(loop: *Loop) !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file_path = <span class="tok-kw">try</span> os.path.join(loop.allocator, test_tmp_dir, <span class="tok-str">&quot;file.txt&quot;</span>);
+    <span class="tok-kw">defer</span> loop.allocator.free(file_path);
+
+    <span class="tok-kw">const</span> contents =
+        <span class="tok-str">\\line 1
+</span>        <span class="tok-str">\\line 2
+</span>    ;
+    <span class="tok-kw">const</span> line2_offset = <span class="tok-number">7</span>;
+
+    <span class="tok-comment">// first just write then read the file</span>
+    <span class="tok-kw">try</span> <span class="tok-kw">await</span> <span class="tok-kw">try</span> <span class="tok-kw">async</span> fs.writeFile(loop, file_path, contents);
+
+    <span class="tok-kw">const</span> read_contents = <span class="tok-kw">try</span> <span class="tok-kw">await</span> <span class="tok-kw">try</span> <span class="tok-kw">async</span> fs.readFile(loop, file_path, <span class="tok-number">1024</span> * <span class="tok-number">1024</span>);
+    assert(mem.eql(<span class="tok-type">u8</span>, read_contents, contents));
+
+    <span class="tok-comment">// now watch the file</span>
+    <span class="tok-kw">var</span> watch = <span class="tok-kw">try</span> fs.Watch(<span class="tok-type">void</span>).create(loop, <span class="tok-number">0</span>);
+    <span class="tok-kw">defer</span> watch.destroy();
+
+    assert((<span class="tok-kw">try</span> <span class="tok-kw">await</span> <span class="tok-kw">try</span> <span class="tok-kw">async</span> watch.addFile(file_path, {})) == <span class="tok-null">null</span>);
+
+    <span class="tok-kw">const</span> ev = <span class="tok-kw">try</span> <span class="tok-kw">async</span> watch.channel.get();
+    <span class="tok-kw">var</span> ev_consumed = <span class="tok-null">false</span>;
+    <span class="tok-kw">defer</span> <span class="tok-kw">if</span> (!ev_consumed) <span class="tok-kw">cancel</span> ev;
+
+    <span class="tok-comment">// overwrite line 2</span>
+    <span class="tok-kw">const</span> fd = <span class="tok-kw">try</span> <span class="tok-kw">await</span> <span class="tok-kw">try</span> <span class="tok-kw">async</span> fs.openReadWrite(loop, file_path, os.File.default_mode);
+    {
+        <span class="tok-kw">defer</span> os.close(fd);
+
+        <span class="tok-kw">try</span> <span class="tok-kw">await</span> <span class="tok-kw">try</span> <span class="tok-kw">async</span> fs.pwritev(loop, fd, [][]<span class="tok-kw">const</span> <span class="tok-type">u8</span>{<span class="tok-str">&quot;lorem ipsum&quot;</span>}, line2_offset);
+    }
+
+    ev_consumed = <span class="tok-null">true</span>;
+    <span class="tok-kw">switch</span> ((<span class="tok-kw">try</span> <span class="tok-kw">await</span> ev).id) {
+        WatchEventId.CloseWrite =&gt; {},
+        WatchEventId.Delete =&gt; <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;wrong event&quot;</span>),
+    }
+    <span class="tok-kw">const</span> contents_updated = <span class="tok-kw">try</span> <span class="tok-kw">await</span> <span class="tok-kw">try</span> <span class="tok-kw">async</span> fs.readFile(loop, file_path, <span class="tok-number">1024</span> * <span class="tok-number">1024</span>);
+    assert(mem.eql(<span class="tok-type">u8</span>, contents_updated,
+        <span class="tok-str">\\line 1
+</span>        <span class="tok-str">\\lorem ipsum
+</span>    ));
+}</code></pre>
+   <p>
+   You can see that even though Zig is a language with manual memory management that insists on handling
+   every possible error, it manages to be quite high level using these event-based APIs.
+   </p>
+   <p>
+   Now, there are some problems to solve:
+   </p>
+   <ul>
+     <li><a href="https://github.com/ziglang/zig/issues/1363">The way that canceling a coroutine works is currently unsound.</a> - I know how to fix this, but it'll have to be in 0.4.0. Unfortunately it's causing occasional
+     test failures.
+     </li>
+     <li>
+       <a href="https://github.com/ziglang/zig/issues/1260">Lack of a guarantee about whether an async function call allocates memory or not.</a> - In theory, there are many cases where Zig should be able to guarantee that
+       an async function call will not allocate memory for the coroutine frame. However in practice, using
+       LLVM's coroutines API, it will always result in an allocation.
+     </li>
+     <li><a href="https://github.com/ziglang/zig/issues/802">LLVM's coroutines implementation is buggy</a> -
+       Right now Zig sadly is forced to disable optimizations for <code class="zig"><span class="tok-kw">async</span></code> functions because 
+       LLVM has <a href="https://bugs.llvm.org/show_bug.cgi?id=36578">a bug</a>
+       where Mem2Reg turns correct coroutine frame spills back into incorrect
+       parameter references.
+     </li>
+     <li><strong>LLVM's coroutines implementation is slow</strong> - When I analyzed the compilation
+     speed of Zig, even with optimizations off, LLVM takes up over 80% of the time. And for the zig behavioral
+     tests, even though coroutines are a tiny percent of the code, LLVM's coroutine splitting pass takes
+     up 30% of that time.</li>
+   </ul>
+   <p>
+   And so, the plan is to rework coroutines, without using any of LLVM's coroutines API. Zig will implement
+   coroutines in the frontend, and LLVM will see only functions and structs. This is
+   <a href="https://github.com/rust-lang/rfcs/blob/master/text/2394-async_await.md">how Rust does it</a>,
+   and I think it was a strong choice.
+   </p>
+   <p>
+   The coroutine frame will be in a struct, and so Zig will know the size of it at compile-time, and
+   it will solve the problem of guaranteeing allocation elision - the <code class="zig"><span class="tok-kw">async</span></code> callsite
+   will simply have to provide the coroutine frame pointer in order to create the promise.
+   </p>
+   <p>
+   This will also be relevant for recursion; stackless function calls do not count against the
+   static stack size upper bound calculation. See <a href="#recursion">Recursion Status</a> for
+   more details.
+   </p>
 
    <h2 id="stage2-progress">Self-Hosted Compiler Status</h2>
    TODO link to video demo

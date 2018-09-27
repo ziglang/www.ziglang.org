@@ -1196,18 +1196,200 @@ All your base are belong to us.</pre>
    <p>The main Zig test suite tests this functionality so that it will not regress as Zig continues to evolve.</p>
 
    <h2 id="concurrency">Concurrency Status</h2>
-   TODO get info from that issue "solve concurrency"
-   TODO std.event.Channel
-   TODO std.event.Future
-   TODO std.event.Group
-   TODO std.event.Lock
-   TODO std.event.Locked
-   TODO std.event.RwLock
-   TODO std.event.RwLocked
-   TODO std.event.Loop
-   TODO std.event.fs
-   TODO std.event.tcp
+   <p>
+   Concurrency is now solved. That is, there is a concrete plan for how concurrency will work in Zig,
+   and now it's a matter of implementing all the pieces.
+   </p>
+   <p>
+   First and foremost, Zig supports low-level control over hardware.
+   That means that it has atomic primitives:
+   </p>
+   <ul>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#atomicLoad">@atomicLoad</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#atomicRmw">@atomicRmw</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#cmpxchgStrong">@cmpxchgStrong</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#cmpxchgWeak">@cmpxchgWeak</a></li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#fence">@fence</a></li>
+   </ul>
+   <p>...and it means that you can directly spawn kernel threads using standard library functions:</p>
+   <pre>{#syntax#}
+const std = @import("std");
+const assert = std.debug.assert;
+const builtin = @import("builtin");
+const AtomicRmwOp = builtin.AtomicRmwOp;
+const AtomicOrder = builtin.AtomicOrder;
 
+test "spawn threads" {
+    var shared_ctx: i32 = 1;
+
+    const thread1 = try std.os.spawnThread({}, start1);
+    const thread2 = try std.os.spawnThread(&shared_ctx, start2);
+    const thread3 = try std.os.spawnThread(&shared_ctx, start2);
+    const thread4 = try std.os.spawnThread(&shared_ctx, start2);
+
+    thread1.wait();
+    thread2.wait();
+    thread3.wait();
+    thread4.wait();
+
+    assert(shared_ctx == 4);
+}
+
+fn start1(ctx: void) u8 {
+    return 0;
+}
+
+fn start2(ctx: *i32) u8 {
+    _ = @atomicRmw(i32, ctx, AtomicRmwOp.Add, 1, AtomicOrder.SeqCst);
+    return 0;
+}
+   {#endsyntax#}</pre>
+   <p>
+   On POSIX targets, when you link against libc, the standard library uses
+   pthreads; otherwise it uses its own lightweight kernel thread implementation.
+   </p>
+   <p>You can use mutexes, signals, condition variables, and all those things.
+   Anything you can accomplish in C, you can accomplish in Zig.</p>
+   <p>
+   However, the standard library provides a higher level concurrency abstraction,
+   designed for optimal performance, debuggability, and structuring code to closely
+   model the problems that concurrency presents.
+   </p>
+   <p>
+   The abstraction is built on two language features: stackless coroutines and
+   {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#}
+   syntax. Everything else is implemented in userland.
+   </p>
+   <p>
+   {#syntax#}std.event.Loop{#endsyntax#} creates a kernel thread pool matching the number
+   of logical CPUs. It can then be used for non-blocking I/O that will be dispatched across
+   the thread pool, using the platform-native API:
+   </p>
+   <ul>
+     <li>Windows - <a href="https://docs.microsoft.com/en-us/windows/desktop/FileIO/i-o-completion-ports">I/O Completion Ports</a></li>
+     <li>MacOS - <a href="https://man.openbsd.org/kqueue.2">kqueue</a></li>
+     <li>Linux - <a href="http://man7.org/linux/man-pages/man7/epoll.7.html">epoll</a></li>
+   </ul>
+   <p>This is a competitor to <a href="http://libuv.org/">libuv</a>, except multi-threaded.</p>
+   <p>
+   Once you have an event loop, all of the {#syntax#}std.event{#endsyntax#} API becomes available to use:
+   </p>
+   <ul>
+     <li>{#syntax#}std.event.Channel{#endsyntax#} - Many producer, many consumer, thread-safe, runtime configurable buffer size.
+When buffer is empty, consumers suspend and are resumed by producers. When buffer is full, producers suspend and are resumed by consumers.</li>
+     <li>{#syntax#}std.event.Future{#endsyntax#} - A value that many consumers can {#syntax#}await{#endsyntax#}.</li>
+     <li>{#syntax#}std.event.Group{#endsyntax#} - A way to {#syntax#}await{#endsyntax#} multiple {#syntax#}async{#endsyntax#} operations.</li>
+     <li>{#syntax#}std.event.Lock{#endsyntax#} - Ensures only one thread gets access to a resource, without blocking a kernel thread.</li>
+     <li>{#syntax#}std.event.RwLock{#endsyntax#} - Same as Lock except allows multiple readers to access data simultaneously.</li>
+     <li>{#syntax#}std.event.fs{#endsyntax#} - File system operations based on
+       {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#} syntax.
+     </li>
+     <li>{#syntax#}std.event.tcp{#endsyntax#} - Network operations based on
+       {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#} syntax.
+     </li>
+   </ul>
+   <p>
+   All of these abstractions provide convenient APIs based on 
+   {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#}
+   syntax, making it practical for API users to model their code with maximally efficient concurrency.
+   None of these abstractions block or use mutexes; when an API user must suspend, control flow
+   goes to the next coroutine waiting to run, if any. If no coroutines are waiting to run,
+   the application will sit idly, waiting for an event from the respective platform-native API
+   (e.g. epoll on Linux).
+   </p>
+   <p>
+   As an example, here is a snippet from a test in the standard library:
+   </p>
+   <pre>{#syntax#}
+async fn testFsWatch(loop: *Loop) !void {
+    const file_path = try os.path.join(loop.allocator, test_tmp_dir, "file.txt");
+    defer loop.allocator.free(file_path);
+
+    const contents =
+        \\line 1
+        \\line 2
+    ;
+    const line2_offset = 7;
+
+    // first just write then read the file
+    try await try async fs.writeFile(loop, file_path, contents);
+
+    const read_contents = try await try async fs.readFile(loop, file_path, 1024 * 1024);
+    assert(mem.eql(u8, read_contents, contents));
+
+    // now watch the file
+    var watch = try fs.Watch(void).create(loop, 0);
+    defer watch.destroy();
+
+    assert((try await try async watch.addFile(file_path, {})) == null);
+
+    const ev = try async watch.channel.get();
+    var ev_consumed = false;
+    defer if (!ev_consumed) cancel ev;
+
+    // overwrite line 2
+    const fd = try await try async fs.openReadWrite(loop, file_path, os.File.default_mode);
+    {
+        defer os.close(fd);
+
+        try await try async fs.pwritev(loop, fd, [][]const u8{"lorem ipsum"}, line2_offset);
+    }
+
+    ev_consumed = true;
+    switch ((try await ev).id) {
+        WatchEventId.CloseWrite => {},
+        WatchEventId.Delete => @panic("wrong event"),
+    }
+    const contents_updated = try await try async fs.readFile(loop, file_path, 1024 * 1024);
+    assert(mem.eql(u8, contents_updated,
+        \\line 1
+        \\lorem ipsum
+    ));
+}
+   {#endsyntax#}</pre>
+   <p>
+   You can see that even though Zig is a language with manual memory management that insists on handling
+   every possible error, it manages to be quite high level using these event-based APIs.
+   </p>
+   <p>
+   Now, there are some problems to solve:
+   </p>
+   <ul>
+     <li><a href="https://github.com/ziglang/zig/issues/1363">The way that canceling a coroutine works is currently unsound.</a> - I know how to fix this, but it'll have to be in 0.4.0. Unfortunately it's causing occasional
+     test failures.
+     </li>
+     <li>
+       <a href="https://github.com/ziglang/zig/issues/1260">Lack of a guarantee about whether an async function call allocates memory or not.</a> - In theory, there are many cases where Zig should be able to guarantee that
+       an async function call will not allocate memory for the coroutine frame. However in practice, using
+       LLVM's coroutines API, it will always result in an allocation.
+     </li>
+     <li><a href="https://github.com/ziglang/zig/issues/802">LLVM's coroutines implementation is buggy</a> -
+       Right now Zig sadly is forced to disable optimizations for {#syntax#}async{#endsyntax#} functions because 
+       LLVM has <a href="https://bugs.llvm.org/show_bug.cgi?id=36578">a bug</a>
+       where Mem2Reg turns correct coroutine frame spills back into incorrect
+       parameter references.
+     </li>
+     <li><strong>LLVM's coroutines implementation is slow</strong> - When I analyzed the compilation
+     speed of Zig, even with optimizations off, LLVM takes up over 80% of the time. And for the zig behavioral
+     tests, even though coroutines are a tiny percent of the code, LLVM's coroutine splitting pass takes
+     up 30% of that time.</li>
+   </ul>
+   <p>
+   And so, the plan is to rework coroutines, without using any of LLVM's coroutines API. Zig will implement
+   coroutines in the frontend, and LLVM will see only functions and structs. This is
+   <a href="https://github.com/rust-lang/rfcs/blob/master/text/2394-async_await.md">how Rust does it</a>,
+   and I think it was a strong choice.
+   </p>
+   <p>
+   The coroutine frame will be in a struct, and so Zig will know the size of it at compile-time, and
+   it will solve the problem of guaranteeing allocation elision - the {#syntax#}async{#endsyntax#} callsite
+   will simply have to provide the coroutine frame pointer in order to create the promise.
+   </p>
+   <p>
+   This will also be relevant for recursion; stackless function calls do not count against the
+   static stack size upper bound calculation. See <a href="#recursion">Recursion Status</a> for
+   more details.
+   </p>
 
    <h2 id="stage2-progress">Self-Hosted Compiler Status</h2>
    TODO link to video demo
