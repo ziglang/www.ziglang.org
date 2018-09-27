@@ -282,9 +282,13 @@ gotta go fast
    and most reliable way to start using the latest version of Zig immediately.
    </p>
    <p>
-   Note: Windows has automated static builds of master branch
+   Windows has automated static builds of master branch
    <a href="https://ci.appveyor.com/project/andrewrk/zig-d3l86/history">via AppVeyor</a>.
-   Static MacOS builds of master are planned but not available yet.
+   </p>
+   <p>
+   MacOS static CI builds are
+   <a href="https://github.com/ziglang/zig/wiki/Building-Static-Zig-on-MacOS">in progress</a>
+   and should be available soon.
    </p>
 
    <h2 id="pointer-reform">Pointer Reform</h2>
@@ -665,9 +669,9 @@ zig-cache/test
    </p>
    <p>This fixes syntax ambiguity when leaving off the allocator,
    and fixes parse failure when call is a field access.</p>
-   <p>This sets a precedent for using <code>&lt;</code> to pass arguments
-   to a keyword. This will affect <code>enum</code>, <code>union</code>, and
-   <code>fn</code> (see #661).
+   <p>This sets a precedent for using <code>&lt;</code> <code>&gt;</code> to pass arguments
+   to a keyword. This will affect <code>enum</code>, <code>union</code>, <code>fn</code>, and
+   <code>align</code> (see #661).
    </p>
 
    <h2 id="release-small">ReleaseSmall Mode</h2>
@@ -1012,11 +1016,78 @@ zig-cache/test
     </ul>
 
    <h2 id="caching">Build Artifact Caching</h2>
-   TODO mention that zig-cache dir is much cleaner, but still has a use
-   TODO mention that zig build and zig run are cached now
-   TODO mention that builtin.o and compiler-rt.o are cached
-   TODO mention that the cache is perfect, no false positives
-   TODO mention --cache option
+   <p>Zig now supports global build artifact caching. This feature is one of those things that
+   you can generally ignore, because it "just works" without any babysitting.</p>
+   <p>By default, compilations are not cached. You can enable the global cache for a compilation
+   by using <code>--cache on</code>:</p>
+   <pre><code>andy@xps:~/tmp$ time zig build-exe hello.zig 
+
+real	0m0.414s
+user	0m0.369s
+sys	0m0.049s
+andy@xps:~/tmp$ time zig build-exe hello.zig --cache on
+/home/andy/.local/share/zig/stage1/artifact/hkGO0PyaOKDrdg2wyhV1vRy0ATyTaT0s0ECa2BiHFJfsb9RDVKK_r3qwHI5gaEfv/hello
+
+real	0m0.412s
+user	0m0.377s
+sys	0m0.038s
+andy@xps:~/tmp$ time zig build-exe hello.zig --cache on
+/home/andy/.local/share/zig/stage1/artifact/hkGO0PyaOKDrdg2wyhV1vRy0ATyTaT0s0ECa2BiHFJfsb9RDVKK_r3qwHI5gaEfv/hello
+
+real	0m0.012s
+user	0m0.009s
+sys	0m0.003s</code></pre>
+   <p>When the cache is on, the output is not written to the current directory. Instead, the output
+   is kept in the cache directory, and the path to it is printed to stdout.</p>
+   <p>This is off by default, because this is an uncommon use case. The real benefit of build artifact
+   caching comes in 3 places:</p>
+   <ul>
+     <li><a href="#zig-run">zig run</a>, where it is enabled by default:
+     <pre><code>andy@xps:~/tmp$ time zig run hello.zig 
+Hello, world!
+
+real	0m0.553s
+user	0m0.500s
+sys	0m0.055s
+andy@xps:~/tmp$ time zig run hello.zig 
+Hello, world!
+
+real	0m0.013s
+user	0m0.007s
+sys	0m0.006s</code></pre>
+     </li>
+     <li><a href="https://ziglang.org/documentation/0.3.0/#Zig-Build-System">zig build</a>, so that your build
+       script only has to build once.</li>
+     <li>
+       When building an executable or shared library, Zig must build <code>compiler_rt.o</code> and
+       <code>builtin.o</code> from source, for the given target. This usually only has to be done
+       once ever, which is why other compilers such as gcc ship with these components already built.
+       The problem with that strategy is that you have to build a special version of the compiler for
+       cross-compiling. With Zig, you can always build for any target, on any target.
+       <br><br>
+       So caching these artifacts provides a happy solution.
+     </li>
+   </ul>
+   <p>
+   The cache is perfect; there are no false positives. You could even fix a bug in <code>memcpy</code>
+   in the system's libc, and Zig will detect that its own code has (indirectly) been updated,
+   and invalidate the cache entry.
+   </p>
+   <p>
+   If you use <code>zig build-exe</code>, Zig will still create a <code>zig-cache</code> directory
+   in the current working directory in order to store an intermediate <code>.o</code> file.
+   This is because on MacOS, the intermediate .o file stores the debug information, and therefore
+   it needs to stick around somewhere sensible for <a href="#stack-traces">Stack Traces</a> to work.
+   </p>
+   <p>
+   Likewise, if you use <code>zig test</code>, Zig will put the test binary in the <code>zig-cache</code>
+   directory in the current working directory. It's useful to leave the test binary here so that the
+   programmer can use a debugger on it or otherwise inspect it.
+   </p>
+   <p>The <code>zig-cache</code> directory <em>is</em> cleaner than before, however. For example, the
+   <code>builtin.zig</code> file is no longer created there. It participates in the global caching system,
+   just like <code>compiler_rt.o</code>. You can use <code>zig builtin</code> to see the contents of
+   <code class="zig"><span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>)</code>.</p>
 
    <h2 id="rosegment">Compatibility with Valgrind</h2>
    TODO --no-rosegment
