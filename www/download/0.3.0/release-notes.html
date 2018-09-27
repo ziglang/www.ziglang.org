@@ -680,19 +680,255 @@ zig-cache/test
       <li>Small binary size</li>
     </ul>
 
-   <h2 id="builtin-typeInfo">New builtin: @typeInfo</h2>
-   TODO Alexandros Naskos
-   TODO Jimmi Added Slice as its own type info in userland and several bug fixes
-   TODO show that it's used to implement printing structs
+   <h2 id="builtin-typeInfo-and-field">New builtins: @typeInfo and @field</h2>
+   <p>Alexandros Naskos bravely dove head-first into the deepest, darkest parts of the Zig
+   compiler and implemented an incredibly useful builtin function:
+   <a href="https://ziglang.org/documentation/0.3.0/#typeInfo">@typeInfo</a>.
+   </p>
+   <p>
+   This function accepts a <code class="zig"><span class="tok-type">type</span></code> as a parameter, and returns a compile-time known
+   value of this type:
+   </p>
+   <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> TypeInfo = <span class="tok-kw">union</span>(TypeId) {
+    Type: <span class="tok-type">void</span>,
+    Void: <span class="tok-type">void</span>,
+    Bool: <span class="tok-type">void</span>,
+    NoReturn: <span class="tok-type">void</span>,
+    Int: Int,
+    Float: Float,
+    Pointer: Pointer,
+    Array: Array,
+    Struct: Struct,
+    ComptimeFloat: <span class="tok-type">void</span>,
+    ComptimeInt: <span class="tok-type">void</span>,
+    Undefined: <span class="tok-type">void</span>,
+    Null: <span class="tok-type">void</span>,
+    Optional: Optional,
+    ErrorUnion: ErrorUnion,
+    ErrorSet: ErrorSet,
+    Enum: Enum,
+    Union: Union,
+    Fn: Fn,
+    Namespace: <span class="tok-type">void</span>,
+    BoundFn: Fn,
+    ArgTuple: <span class="tok-type">void</span>,
+    Opaque: <span class="tok-type">void</span>,
+    Promise: Promise,
+
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Int = <span class="tok-kw">struct</span> {
+        is_signed: <span class="tok-type">bool</span>,
+        bits: <span class="tok-type">u8</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Float = <span class="tok-kw">struct</span> {
+        bits: <span class="tok-type">u8</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Pointer = <span class="tok-kw">struct</span> {
+        size: Size,
+        is_const: <span class="tok-type">bool</span>,
+        is_volatile: <span class="tok-type">bool</span>,
+        alignment: <span class="tok-type">u32</span>,
+        child: <span class="tok-type">type</span>,
+
+        <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Size = <span class="tok-kw">enum</span> {
+            One,
+            Many,
+            Slice,
+        };
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Array = <span class="tok-kw">struct</span> {
+        len: <span class="tok-type">usize</span>,
+        child: <span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> ContainerLayout = <span class="tok-kw">enum</span> {
+        Auto,
+        Extern,
+        Packed,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> StructField = <span class="tok-kw">struct</span> {
+        name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+        offset: ?<span class="tok-type">usize</span>,
+        field_type: <span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Struct = <span class="tok-kw">struct</span> {
+        layout: ContainerLayout,
+        fields: []StructField,
+        defs: []Definition,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Optional = <span class="tok-kw">struct</span> {
+        child: <span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> ErrorUnion = <span class="tok-kw">struct</span> {
+        error_set: <span class="tok-type">type</span>,
+        payload: <span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Error = <span class="tok-kw">struct</span> {
+        name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+        value: <span class="tok-type">usize</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> ErrorSet = <span class="tok-kw">struct</span> {
+        errors: []Error,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> EnumField = <span class="tok-kw">struct</span> {
+        name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+        value: <span class="tok-type">usize</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Enum = <span class="tok-kw">struct</span> {
+        layout: ContainerLayout,
+        tag_type: <span class="tok-type">type</span>,
+        fields: []EnumField,
+        defs: []Definition,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> UnionField = <span class="tok-kw">struct</span> {
+        name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+        enum_field: ?EnumField,
+        field_type: <span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Union = <span class="tok-kw">struct</span> {
+        layout: ContainerLayout,
+        tag_type: ?<span class="tok-type">type</span>,
+        fields: []UnionField,
+        defs: []Definition,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> CallingConvention = <span class="tok-kw">enum</span> {
+        Unspecified,
+        C,
+        Cold,
+        Naked,
+        Stdcall,
+        Async,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> FnArg = <span class="tok-kw">struct</span> {
+        is_generic: <span class="tok-type">bool</span>,
+        is_noalias: <span class="tok-type">bool</span>,
+        arg_type: ?<span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Fn = <span class="tok-kw">struct</span> {
+        calling_convention: CallingConvention,
+        is_generic: <span class="tok-type">bool</span>,
+        is_var_args: <span class="tok-type">bool</span>,
+        return_type: ?<span class="tok-type">type</span>,
+        async_allocator_type: ?<span class="tok-type">type</span>,
+        args: []FnArg,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Promise = <span class="tok-kw">struct</span> {
+        child: ?<span class="tok-type">type</span>,
+    };
+
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Definition = <span class="tok-kw">struct</span> {
+        name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+        is_pub: <span class="tok-type">bool</span>,
+        data: Data,
+
+        <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Data = <span class="tok-kw">union</span>(<span class="tok-kw">enum</span>) {
+            Type: <span class="tok-type">type</span>,
+            Var: <span class="tok-type">type</span>,
+            Fn: FnDef,
+
+            <span class="tok-kw">pub</span> <span class="tok-kw">const</span> FnDef = <span class="tok-kw">struct</span> {
+                fn_type: <span class="tok-type">type</span>,
+                inline_type: Inline,
+                calling_convention: CallingConvention,
+                is_var_args: <span class="tok-type">bool</span>,
+                is_extern: <span class="tok-type">bool</span>,
+                is_export: <span class="tok-type">bool</span>,
+                lib_name: ?[]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+                return_type: <span class="tok-type">type</span>,
+                arg_names: [][] <span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+
+                <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Inline = <span class="tok-kw">enum</span> {
+                    Auto,
+                    Always,
+                    Never,
+                };
+            };
+        };
+    };
+};</code></pre>
+   <p>
+   This kicks open the door for compile-time reflection, especially when combined with the fact that
+   Jimmi Holst Christensen implemented <a href="https://ziglang.org/documentation/0.3.0/#field">@field</a>,
+   which performs field access with a compile-time known name:
+   <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> assert = std.debug.assert;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@field&quot;</span> {
+    <span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {
+        one: <span class="tok-type">i32</span>,
+        two: <span class="tok-type">bool</span>,
+    };
+    <span class="tok-kw">var</span> f = Foo{
+        .one = <span class="tok-number">42</span>,
+        .two = <span class="tok-null">true</span>,
+    };
+
+    <span class="tok-kw">const</span> names = [][]<span class="tok-kw">const</span> <span class="tok-type">u8</span>{ <span class="tok-str">&quot;two&quot;</span>, <span class="tok-str">&quot;one&quot;</span> };
+
+    assert(<span class="tok-builtin">@field</span>(f, names[<span class="tok-number">0</span>]) == <span class="tok-null">true</span>);
+    assert(<span class="tok-builtin">@field</span>(f, names[<span class="tok-number">1</span>]) == <span class="tok-number">42</span>);
+
+    <span class="tok-builtin">@field</span>(f, <span class="tok-str">&quot;one&quot;</span>) += <span class="tok-number">1</span>;
+    assert(<span class="tok-builtin">@field</span>(f, <span class="tok-str">&quot;on&quot;</span> ++ <span class="tok-str">&quot;e&quot;</span>) == <span class="tok-number">43</span>);
+}</code></pre>
+   <p>This has the potential to be abused, and so the feature should be used carefully.</p>
+   <p>After Jimmi implemented <code class="zig"><span class="tok-builtin">@field</span></code>, he improved the implementation of 
+   <code class="zig"><span class="tok-builtin">@typeInfo</span></code> and fixed several bugs. And now, the combination of
+   these builtins is used to implement struct printing in userland:</p>
+   <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {
+    one: <span class="tok-type">i32</span>,
+    two: *<span class="tok-type">u64</span>,
+    three: <span class="tok-type">bool</span>,
+};
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> x: <span class="tok-type">u64</span> = <span class="tok-number">1234</span>;
+    <span class="tok-kw">var</span> f = Foo{
+        .one = <span class="tok-number">42</span>,
+        .two = &amp;x,
+        .three = <span class="tok-null">false</span>,
+    };
+
+    std.debug.warn(<span class="tok-str">&quot;here it is: {}\n&quot;</span>, f);
+}</code></pre>
+   <p>Output:</p>
+   <pre><code>here it is: Foo{ .one = 42, .two = u64@7ffdda208cf0, .three = false }</code></pre>
+   <p>See <a href="https://github.com/ziglang/zig/blob/0.3.0/std/fmt/index.zig#L15">std/fmt/index.zig:15</a>
+   for the implementation.</p>
+   <p>
+   Now that we have <code class="zig"><span class="tok-builtin">@typeInfo</span></code>, there is one more question to answer:
+   should there be a function which accepts a <code class="zig">TypeInfo</code> value, and makes
+   a type out of it?
+   </p>
+   <p>
+   This hypothetical feature is called <code>@reify</code>, and it's a
+   <a href="https://github.com/ziglang/zig/issues/383">hot topic</a>. Although undeniably powerful and
+   useful, there is concern that it would be <em>too</em> powerful, leading to complex meta-programming
+   that goes against the spirit of simplicity that Zig stands for.</p>
 
    <h2 id="cmpxchg">Improve cmpxchg</h2>
    <p><code>@cmpxchg</code> is removed. <a href="https://ziglang.org/documentation/0.3.0/#cmpxchgStrong">@cmpxchgStrong</a> and <a href="https://ziglang.org/documentation/0.3.0/#cmpxchgWeak">@cmpxchgWeak</a> are added.
    <p>The functions have operand type as the first parameter.</p>
    <p>The return type is <code>?T</code> where <code>T</code> is the operand type.</p>
-
-   <h2 id="builtin-field">New builtin: @field</h2>
-   TODO explanation
-   TODO this was implemented by Jimmi Holst Christensen
 
    <h2 id="f16">New Type: f16</h2>
    <p>Ben Noordhuis implemented <code class="zig"><span class="tok-type">f16</span></code>. This is guaranteed to be
