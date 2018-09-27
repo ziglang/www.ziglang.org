@@ -570,10 +570,54 @@ operator on the array element.</p>
    </p>
 
    <h2 id="int-sizes">All Integer Sizes are Primitives</h2>
-   TODO mention if you use one that is too big what happens
-   TODO mention u0
-   TODO link to docs
-   TODO #1242 #745 #1240
+   <p>Zig 0.2.0 had primitive types for integer bit widths of 2-8, 16, 29, 32, 64, 128.
+   Any number other than that, and you had to use <a href="https://ziglang.org/documentation/0.3.0/#IntType">@IntType</a> to create the type.
+   But you would get a compile error if you shadowed one of the above bit widths that already existed, for example with
+   <pre><code class="zig"><span class="tok-kw">const</span> <span class="tok-type">u29</span> = <span class="tok-builtin">@IntType</span>(<span class="tok-null">false</span>, <span class="tok-number">29</span>); <span class="tok-comment">// error: u29 shadows primitive type</span></code></pre>
+   </p>
+   <p>Needless to say, this situation was unnecessarily troublesome (#745). And so now
+    arbitrary bit-width integers can be referenced by using an identifier of
+    <code>i</code> or <code>u</code> followed by digits. For example, the identifier
+    <code class="zig"><span class="tok-type">i7</span></code> refers to a signed 7-bit integer. 
+   </p>
+   <p>
+   <code class="zig"><span class="tok-type">u0</span></code> is a 0-bit type, which means:</p>
+   <ul>
+     <li><code class="zig"><span class="tok-builtin">@sizeOf</span>(<span class="tok-type">u0</span>) == <span class="tok-number">0</span></code></li>
+     <li>No actual code is generated for loads and stores of this type of value.</li>
+     <li>The value of a <code class="zig"><span class="tok-type">u0</span></code> as always the compile-time known value of <code class="zig"><span class="tok-number">0</span></code>.</li>
+   </ul>
+   <p>
+   <code class="zig"><span class="tok-type">i0</span></code> <a href="https://github.com/ziglang/zig/issues/1593">doesn't make sense</a>
+   and will probably crash the compiler.
+   </p>
+   <p>
+   Although Zig defines arbitrary integer sizes to support all primitive operations, if you try to use,
+   for example, multiplication on 256-bit integers:
+   </p>
+   <pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;large multiplication&quot;</span> {
+    <span class="tok-kw">var</span> x: <span class="tok-type">u256</span> = <span class="tok-number">0xabcd</span>;
+    <span class="tok-kw">var</span> y: <span class="tok-type">u256</span> = <span class="tok-number">0xefef</span>;
+    <span class="tok-kw">var</span> z = x * y;
+}</code></pre>
+   <p>Then you'll get an error like this:</p>
+   <pre>LLVM ERROR: Unsupported library call operation!</pre>
+   <p>
+   Zig isn't supposed to be letting LLVM leak through here, but that's a separate issue.
+   What's happening is that normally if a primitive operation such as multiplication of
+   integers cannot be lowered to a machine instruction, LLVM will emit a library call to
+   compiler_rt to perform the operation. This works for up to 128-bit multiplication,
+   for example. However compiler_rt does not define an arbitrary precision multiplication
+   library function, and so LLVM is not able to generate code.
+   </p>
+   <p>It <a href="https://github.com/ziglang/zig/issues/1534">is planned</a> to submit a patch
+   to LLVM which adds the ability to emit a lib call for situations like this, and then
+   Zig will include the arbitrary precision multiplication function in Zig's compiler_rt.</p>
+   <p>In addition to this, Zig 0.3.0 fixes
+   <a href="https://github.com/ziglang/zig/issues/1242">a bug</a> where
+   <code class="zig"><span class="tok-builtin">@IntType</span></code> was silently wrapping the bit count parameter if it was greater
+   than pow(2, 32).
+   </p>
 
    <h2 id="f128">Improved f128 Support</h2>
    <p>Marc Tiehuis &amp; Ben Noordhuis solved the various issues that prevented <code>f128</code> from being generally useful.</p>
