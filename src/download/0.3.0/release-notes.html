@@ -293,7 +293,7 @@ test     "this is left alone"  {   }
    </p>
    <p>
    MacOS static CI builds are
-   <a href="https://github.com/ziglang/zig/wiki/Building-Static-Zig-on-MacOS">in progress</a>
+   <a href="https://github.com/ziglang/zig/issues/1089">in progress</a>
    and should be available soon.
    </p>
 
@@ -1118,9 +1118,48 @@ sys	0m0.006s</code></pre>
    {#syntax#}@import("builtin"){#endsyntax#}.</p>
 
    <h2 id="rosegment">Compatibility with Valgrind</h2>
-   TODO --no-rosegment
-   TODO link to the help wanted bug
-   TODO show some output
+   <p>I noticed that valgrind does not see Zig's debug symbols (#896):</p>
+   <pre>{#syntax#}
+pub fn main() void {
+    foo().* += 1;
+}
+
+fn foo() *i32 {
+    return @intToPtr(*i32, 10000000);
+}
+   {#endsyntax#}</pre><pre><code>==24133== Invalid read of size 4
+==24133==    at 0x2226D5: ??? (in /home/andy/downloads/zig/build/test)
+==24133==    by 0x2226A8: ??? (in /home/andy/downloads/zig/build/test)
+==24133==    by 0x222654: ??? (in /home/andy/downloads/zig/build/test)
+==24133==    by 0x2224B7: ??? (in /home/andy/downloads/zig/build/test)
+==24133==    by 0x22236F: ??? (in /home/andy/downloads/zig/build/test)</code></pre>
+   <p>After digging around, I was able to reproduce the problem using only Clang and LLD:</p>
+   <pre><code>static int *foo(void) {
+    return (int *)10000000;
+}
+
+int main(void) {
+    int *x = foo();
+    *x += 1;
+}</code></pre>
+   <p>If this C code is built with Clang and linked with LLD, Valgrind has the same issue
+   as with the Zig code.</p>
+   <p>I sent <a href="https://sourceforge.net/p/valgrind/mailman/message/36286103/">a message</a>
+   to the Valgrind mailing list, and they
+   <a href="https://sourceforge.net/p/valgrind/mailman/message/36286122/">suggested</a>
+   submitting a bug fix to Valgrind.
+   That's a good idea. I'm a little busy with Zig development though - anybody else want to take
+   a crack at it?
+   </p>
+   <p>
+   In the meantime, Zig now has a <code>--no-rosegment</code> flag, which works around the bug.
+   It should only be used for this purpose; the flag will likely be removed once Valgrind fixes
+   the issue upstream and enough time passes that the new version becomes generally available.
+   </p>
+   <pre><code>$ zig build-exe test.zig --no-rosegment
+$ valgrind ./test
+==24241== Invalid read of size 4
+==24241==    at 0x221FE5: main (test.zig:2)</code></pre>
 
    <h2 id="godbolt">Zig is now on Godbolt Compiler Explorer</h2>
    <p>Marc Tiehuis added Zig support, and then worked with the
