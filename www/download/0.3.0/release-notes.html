@@ -579,7 +579,85 @@ operator on the array element.</p>
    </p>
 
    <h2 id="async-err-ret-traces">Error Return Traces across async/await</h2>
-   TODO
+   <p>One of the problems with non-blocking programming is that stack traces
+   and exceptions are less useful, because the actual stack trace points back
+   to the event loop code.
+   </p>
+   <p>
+   In Zig 0.3.0, <a href="https://ziglang.org/documentation/0.3.0/#Error-Return-Traces">Error Return Traces</a>
+   work across suspend points. This means you can use <code class="zig"><span class="tok-kw">try</span></code> as the main
+   error handling strategy, and when an error bubbles up all the way, you'll still be able to find out
+   where it came from:
+   </p>
+   <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> event = std.event;
+<span class="tok-kw">const</span> fs = event.fs;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;unwrap error in async fn&quot;</span> {
+    <span class="tok-kw">var</span> da = std.heap.DirectAllocator.init();
+    <span class="tok-kw">defer</span> da.deinit();
+    <span class="tok-kw">const</span> allocator = &amp;da.allocator;
+
+    <span class="tok-kw">var</span> loop: event.Loop = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">try</span> loop.initMultiThreaded(allocator);
+    <span class="tok-kw">defer</span> loop.deinit();
+
+    <span class="tok-kw">const</span> handle = <span class="tok-kw">try</span> <span class="tok-kw">async</span>&lt;allocator&gt; openTheFile(&amp;loop);
+    <span class="tok-kw">defer</span> <span class="tok-kw">cancel</span> handle;
+
+    loop.run();
+}
+
+<span class="tok-kw">async</span> <span class="tok-kw">fn</span> <span class="tok-fn">openTheFile</span>(loop: *event.Loop) <span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> future = (<span class="tok-kw">async</span> fs.openRead(loop, <span class="tok-str">&quot;does_not_exist.txt&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>);
+    <span class="tok-kw">const</span> fd = (<span class="tok-kw">await</span> future) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 unwrap error in async fn...attempt to unwrap error: FileNotFound
+<span class="t37_1">std/event/fs.zig:367:5</span>: <span class="t2_0">0x22cb15 in ??? (test)</span>
+    return req_node.data.msg.Open.result;
+    <span class="t32_1">^</span>
+<span class="t37_1">std/event/fs.zig:374:13</span>: <span class="t2_0">0x22e5fc in ??? (test)</span>
+            return await (async openPosix(loop, path, flags, os.File.default_mode) catch unreachable);
+            <span class="t32_1">^</span>
+<span class="t37_1">test.zig:22:31</span>: <span class="t2_0">0x22f34b in ??? (test)</span>
+    const fd = (await future) catch unreachable;
+                              <span class="t32_1">^</span>
+<span class="t37_1">std/event/loop.zig:664:25</span>: <span class="t2_0">0x20c147 in ??? (test)</span>
+                        resume handle;
+                        <span class="t32_1">^</span>
+<span class="t37_1">std/event/loop.zig:543:23</span>: <span class="t2_0">0x206dee in ??? (test)</span>
+        self.workerRun();
+                      <span class="t32_1">^</span>
+<span class="t37_1">test.zig:17:13</span>: <span class="t2_0">0x206178 in ??? (test)</span>
+    loop.run();
+            <span class="t32_1">^</span>
+
+Tests failed. Use the following command to reproduce the failure:
+zig-cache/test
+</code></pre>
+<p>Note that this output contains 3 components:</p>
+    <ul>
+      <li>An error message: <code>attempt to unwrap error: FileNotFound</code></li>
+      <li>An error return trace. The error was first returned at <code>fs.zig:367:5</code>
+        and then returned at <code>fs.zig:374:13</code>. You could go look at those source locations
+        for more information.</li>
+      <li>A stack trace. Once the error came back from <code>openRead</code>, the code tried to
+        <code class="zig"><span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span></code> which caused the panic. You can see that the stack
+        trace does, in fact, go into the event loop as described above.
+      </li>
+    </ul>
+    <p>It is important to note in this example, that the error return trace survived despite
+    the fact that the event loop is multi-threaded, and any one of those threads could be the worker
+    thread that resumes an async function at the <code class="zig"><span class="tok-kw">await</span></code> point.
+    </p>
+    <p>
+    This feature is enabled by default for Debug and ReleaseSafe builds, and disabled for ReleaseFast
+    and ReleaseSmall builds.
+    </p>
+    <p>
+    This is just the beginning of an exploration of what debugging non-blocking behavior
+    could look like in the future of Zig. See <a href="#concurrency">Concurrency Status</a> for more details.
+    </p>
 
    <h2 id="async-call-syntax">New Async Call Syntax</h2>
    <p>Instead of <code>async(allocator) call()</code>, now it is
