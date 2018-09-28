@@ -112,7 +112,7 @@ gotta go fast
     </p>
     <p>I tried to give credit
     where credit is due, but it's inevitable I missed some contributions as I had
-    to go through 1,340 TODO commits to type up these release notes. I apologize in
+    to go through 1,345 commits to type up these release notes. I apologize in
     advance for any mistakes.
     </p>
     <p>
@@ -1390,8 +1390,53 @@ When buffer is empty, consumers suspend and are resumed by producers. When buffe
    </p>
 
    <h2 id="recursion">Recursion Status</h2>
-   TODO @newStackCall #1006
-   TODO impending coroutines rewrite
+   <p>
+   I've <a href="https://www.recurse.com/events/localhost-andrew-kelley">said before</a> that
+   recursion is one of the enemies of perfect software, because it represents a way that a
+   program can fail with no foolproof way of preventing it. With recursion, pick any stack size
+   and I'll give you an input that will crash your program. Embedded developers are all too
+   familiar with this problem.
+   </p>
+   <p>
+   It's always possible to rewrite code using an explicit stack using heap allocations,
+   and <a href="#zig-fmt">that's exactly what Jimmi did</a> in the self-hosted parser.
+   </p>
+   <p>
+   On the other hand, when recursion fits the problem, it's significantly more clear and
+   maintainable. It would be a real shame to have to give it up.
+   </p>
+   <p>
+   I researched different ways that Zig could keep recursion, even when we
+   introduce <a href="https://github.com/ziglang/zig/issues/157">statically known stack upper bound size</a>. 
+   I came up with a proof of concept for
+   <a href="https://ziglang.org/documentation/0.3.0/#newStackCall">@newStackCall</a>,
+   a builtin function that calls a function using an explicitly provided new stack.
+   You can find a usage example in the documentation by following that link.
+   </p>
+   <p>
+   This works, and it does break call graph cycles, but it would be a little bit awkward to use.
+   Because if you allocate an entire new stack, it has to be big enough for the rest of the
+   stack upper bound size, but in a recursive call, which should be only one stack frame,
+   it would overallocate every time.
+   </p>
+   <p>
+   So that's why I think that the actual solution to this problem is Zig's stackless coroutines.
+   Because Zig's coroutines are stackless, they are the perfect solution for recursion (direct
+   or indirect). With the reworking of coroutines, it will be possible to put the coroutine
+   frame of an async function anywhere - in a struct, in the stack, in a global variable -
+   as long as it outlives the duration of the coroutine. See <a href="#concurrency">Concurrency</a>
+   for more details.
+   </p>
+   <p>
+   So - although recursion is not yet solved, we know enough to know that recursion is OK to use in Zig.
+   It does suffer from the stack overflow issue today, but in the future we will have a compile error
+   to prevent call graph cycles. And then this hypothetical compile error will be solved by using
+   <code class="zig"><span class="tok-builtin">@newStackCall</span></code> or stackless functions (but probably stackless functions).
+   Once recursion is solved, if stackless functions turn out to be the better solution,
+   Zig will remove <code class="zig"><span class="tok-builtin">@newStackCall</span></code> from the language, unless someone demonstrates
+   a compelling use case for it.
+   </p>
+   <p>For now, use recursion whenever you want; you'll know when it's time to update your code.</p>
 
    <h2 id="wasm">WebAssembly Status</h2>
    <p>The pieces for web assembly are starting to come together.</p>
