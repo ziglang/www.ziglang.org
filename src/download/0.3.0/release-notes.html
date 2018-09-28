@@ -1392,9 +1392,36 @@ async fn testFsWatch(loop: *Loop) !void {
    </p>
 
    <h2 id="stage2-progress">Self-Hosted Compiler Status</h2>
-   TODO link to video demo
-   TODO mention reworking coroutines
-   TODO mention Marc Tiehuis big int library
+   <p>The self-hosted compiler is well underway.
+   <a href="https://www.youtube.com/watch?v=b_Pm29crq6Q">Here's a 1 minute demo of the self-hosted compiler watching source files and rebuilding.</a>
+   </p>
+   <p>
+   The self-hosted compiler cannot do much more than Hello World at the moment, but
+   it's being constructed from the ground up to fully take advantage of multiple cores
+   and in-memory caching. In addition, Zig's error system and other safety features
+   are making it easy to write reliable, robust code. Between stack traces, error return
+   traces, and runtime safety checks, I barely even need a debugger.
+   </p>
+   <p>
+   Marc Tiehuis contributed a <a href="https://tiehuis.github.io/blog/zig2.html">Big Integer library</a>,
+   which the self-hosted compiler is using for integer literals and compile-time math operations.
+   </p>
+   <p>
+   Writing the self-hosted compiler code revealed to me how coroutines should work in Zig.
+   All the little details and ergonomics are clear to me now. And so before I continue any further on the
+   self-hosted compiler, I will use this knowledge to rework coroutines and solve the problems with them.
+   See <a href="#concurrency">Concurrency Status</a> for more details.
+   </p>
+   <p>As a reminder, even when the self-hosted compiler is complete, Zig will forever be stuck
+   with the stage1 C++ compiler code. See <a href="https://github.com/ziglang/zig/issues/853">The Grand Bootstrapping Plan</a> for more details.</p>
+   <p>
+   The self-hosted compiler is successfully sharing some C++ code with the stage1 compiler.
+   For example the libLLVM C++ API wrapper is built into a static library, which then exports a C API wrapper.
+   The self-hosted compiler links against this static library in order to make libLLVM C++ API calls via the 
+   C API wrapper. In addition, the Microsoft Visual Studio detection code requires the Windows COM API,
+   which is also C++, and so a similar strategy is used. I think it's pretty neat that the build system
+   builds a static library once and then ends up linking against it twice - one for each of the two compiler stages!
+   </p>
 
    <h2 id="recursion">Recursion Status</h2>
    TODO @newStackCall #1006
