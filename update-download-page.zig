@@ -57,7 +57,8 @@ pub fn main() !void {
                     const var_name = in_contents[var_name_start..index];
                     if (vars.get(var_name)) |value| {
                         if (mem.endsWith(u8, var_name, "BYTESIZE")) {
-                            try out.print("{Bi1}", try std.fmt.parseInt(u64, value, 10));
+                            const trimmed = mem.trim(u8, value, " \r\n");
+                            try out.print("{Bi1}", try std.fmt.parseInt(u64, trimmed, 10));
                         } else {
                             try out.write(value);
                         }
