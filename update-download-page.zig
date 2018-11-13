@@ -23,7 +23,7 @@ pub fn main() !void {
     var buffer = try std.Buffer.initSize(allocator, 0);
     errdefer buffer.deinit();
 
-    const State = enum.{
+    const State = enum {
         Start,
         OpenBrace,
         VarName,
