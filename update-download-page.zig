@@ -56,10 +56,7 @@ pub fn main() !void {
                 '}' => {
                     const var_name = in_contents[var_name_start..index];
                     if (vars.get(var_name)) |value| {
-                        // workaround for
-                        // https://developercommunity.visualstudio.com/content/problem/375679/pipeline-variable-incorrectly-inserts-single-quote.html
-                        // azure is inserting a bogus single quote
-                        const trimmed = mem.trim(u8, value, " \r\n'");
+                        const trimmed = mem.trim(u8, value, " \r\n");
                         if (mem.endsWith(u8, var_name, "BYTESIZE")) {
                             try out.print("{Bi1}", try std.fmt.parseInt(u64, trimmed, 10));
                         } else {
