@@ -13,9 +13,27 @@ pub fn main() !void {
 
     const download_dir = "www" ++ path.sep_str ++ "download";
     try std.os.makePath(allocator, download_dir);
-    const out_file = download_dir ++ path.sep_str ++ "index.html";
-    const in_file = "src" ++ path.sep_str ++ "download" ++ path.sep_str ++ "index.html";
+    {
+        const out_file = download_dir ++ path.sep_str ++ "index.html";
+        const in_file = "src" ++ path.sep_str ++ "download" ++ path.sep_str ++ "index.html";
+        try render(allocator, in_file, out_file, .html);
+    }
+    {
+        const out_file = download_dir ++ path.sep_str ++ "index.json";
+        const in_file = "src" ++ path.sep_str ++ "download" ++ path.sep_str ++ "index.json";
+        try render(allocator, in_file, out_file, .plain);
+    }
+}
 
+fn render(
+    allocator: *mem.Allocator,
+    in_file: []const u8,
+    out_file: []const u8,
+    fmt: enum {
+        html,
+        plain,
+    },
+) !void {
     const in_contents = try std.io.readFileAlloc(allocator, in_file);
 
     var vars = try std.os.getEnvMap(allocator);
@@ -57,7 +75,7 @@ pub fn main() !void {
                     const var_name = in_contents[var_name_start..index];
                     if (vars.get(var_name)) |value| {
                         const trimmed = mem.trim(u8, value, " \r\n");
-                        if (mem.endsWith(u8, var_name, "BYTESIZE")) {
+                        if (fmt == .html and mem.endsWith(u8, var_name, "BYTESIZE")) {
                             try out.print("{Bi1}", try std.fmt.parseInt(u64, trimmed, 10));
                         } else {
                             try out.write(trimmed);
