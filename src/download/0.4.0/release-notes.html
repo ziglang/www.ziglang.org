@@ -198,10 +198,27 @@ cool sunglasses
     {#header_close#}
 
     {#header_open|FreeBSD Support#}
-    <p>Greg V and Marc Tiehuis worked together and got FreeBSD working in the stage1
+    <p>Greg V, Marc Tiehuis, and Marcio Giaxa worked together and got FreeBSD working in the stage1
     compiler as well as the Zig standard library.</p>
-    TODO
+    TODO look at the issue and pull some content from there
     TODO automated x86_64 CI builds. mention sr.ht 
+    {#header_close#}
+
+    {#header_open|UEFI Support#}
+    <p>GitHub user <a href="https://github.com/nebulaeonline">nebulaeonline</a>
+    approached the Zig project with an interesting use case: creating a UEFI application.
+    </p>
+    <p>
+    nebulaeonline <a href="https://github.com/ziglang/zig/pull/1855">submitted a pull request</a>
+    adding UEFI as a new operating system that Zig recognizes. The patch contained the
+    linker configuration and a few updates to the Zig Standard Library.
+    </p>
+    <p>With this patch merged, nebulaeonline went on to work on their
+    <a href="https://github.com/nebulaeonline/nebulae/tree/a5f2bf6f90a3b28af4632cb1f5f54a97320c50d2">UEFI barebones project</a>. It looks like they ended up using C rather than Zig in the end,
+    most likely due to Zig's lack of maturity. Here I have linked to the last revision before they
+    removed the Zig code, in case anyone wants to poke around.
+    Since then Zig has gained {#link|C Pointers#} which was a large pain point for nebulaeonline.
+    </p>
     {#header_close#}
 
     {#header_open|Tier System#}
@@ -622,12 +639,74 @@ cool sunglasses
 
     {#header_open|Zig is also a C Compiler#}
     TODO
+    <p>TODO mention no longer has default system paths</p>
+    {#header_open|Zig ships with libc#}
+    TODO
+    {#header_close#}
     {#header_close#}
 
     {#header_open|WebAssembly Support#}
     <p>Ben Noordhuis fixed build-exe for --target-arch wasm32 (#1570).</p>
     <p>TODO https://github.com/ziglang/zig/issues/1622</p>
     <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Vectors and SIMD#}
+    <p>TODO</p>
+    <p>TODO issue #903</p>
+    {#header_close#}
+
+    {#header_open|comptime memory reinterpretation#}
+    <p>TODO</p>
+    comptime: ability to @ptrCast to an extern struct and read fields
+    {#header_close#}
+
+    {#header_open|Thread-Local Storage#}
+    <p>TODO</p>
+
+    {#header_open|Avoid Creating Unnecessary Global Constants#}
+    <p>
+    This deletes some legacy cruft, and produces leaner object files.
+    Example:
+    </p>
+    {#code_begin|syntax#}
+var x: i32 = 1234;
+
+export fn entry() i32 {
+    return x;
+}
+    {#code_end#}
+    
+    <p>This produced:</p>
+    
+    <pre><code>@x = internal unnamed_addr global i32 1234, align 4
+@0 = internal unnamed_addr constant i32* @x, align 8</code></pre>
+    
+    <p>
+    and @0 was never even used. After Zig 0.4.0, @0 is not produced.
+    </p>
+    
+    <p>
+    This fixes a bug: Zig was creating invalid LLVM IR when one of these
+    globals that shouldn't exist takes the address of a thread local
+    variable. In {#link|LLVM 8#}, it would produce a linker error. But
+    probably after my bug report is solved it will be caught by the IR
+    verifier.
+    </p>
+
+    <p>
+    Thanks to <strong>Rui Ueyama</strong> and <strong>George Rimar</strong> who helped me
+    troubleshoot this problem
+    when I filed an <a href="https://bugs.llvm.org/show_bug.cgi?id=40652">LLVM bug report</a>.
+    </p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Single-Threaded Builds#}
+    <p>TODO --single-threaded</p>
+    <p>TODO explain info from docs</p>
+
+    <p>John Schmidt made ThreadSafeFixedBufferAllocator alias FixedBufferAllocator when --single-threaded. #1910</p>
     {#header_close#}
 
     {#header_open|Zig Build System#}
@@ -637,6 +716,7 @@ cool sunglasses
     a few improvements during this release cycle:
     </p>
     <ul>
+      <li>Zig uses <code>os_self_exe_path</code> to determine exe path not <code>argv[0]</code></li>
       <li>Tests as part of the build system support all of the same API as executables,
       libraries, and objects.</li>
     </ul>
@@ -648,6 +728,7 @@ cool sunglasses
     {#header_open|Valgrind Compatibility#}
     <p>TODO the bug from before is fixed</p>
     <p>TODO undefined language integration. --enable-valgrind --disable-valgrind</p>
+    <p>TODO note that undefined sets memory to 0xaa</p>
     {#header_close#}
 
     {#header_open|zig fmt#}
@@ -667,20 +748,17 @@ cool sunglasses
     <p>In addition the following improvements were made:</p>
     <ul>
     <li>support no-op cast</li>
+    <li><code>--verbose-cimport</code> prints clang command</li>
+    <li>Avoid array concatenation if the init node is empty, for clarity. -Sahnvour</li>
+    <li>Only detect ints as negative if they are signed. -Sahnvour</li>
+    <li>Correct array concatenation for incomplete C array initializers. -Sahnvour</li>
+    <li>Get real child type of array type for incomplete initializers and/or multi-dimensional arrays. -Sahnvour</li>
     </ul>
     {#header_close#}
 
-    {#header_open|Type-Based Alias Analysis Status#}
-    <p>TODO no more TBAA</p>
-    <p>TODO talk about the open aliasing issues</p>
-    {#header_close#}
-
-    {#header_open|macOS/Mach-O Linker Status#}
-    <p>TODO LLD doesn't really support macos</p>
-    <p>TODO talk about plan to create our own linker #1535</p>
-    <p>TODO we had to disable C ABI tests on macos due to LLD deficiency</p>
-    <p>TODO using --system-linker-hack for the self hosted compiler</p>
-    TODO 81c6f087241b6b7a1c12de72a2061cb02df0f93f workaround in building compiler-rt.a and builtin.a
+    {#header_open|C Pointers#}
+    <p>TODO</p>
+    <p>It's planned to <a href="https://github.com/ziglang/zig/issues/1967">support `if`, `orelse`, `null`, and `.?` for C pointers</a>.</p>
     {#header_close#}
 
     {#header_open|Grammar Formalization and Specification#}
@@ -725,6 +803,7 @@ cool sunglasses
       <li>New Section: <a href="/documentation/0.4.0/#volatile">volatile</a></li>
       <li>New Section: <a href="/documentation/0.4.0/#Optional-Pointers">Optional Pointers</a></li>
       <li>Improved: <a href="/documentation/0.4.0/#Operators">Operators</a></li>
+      <li>Improved: <a href="/documentation/0.4.0/#Pass-by-value-Parameters">Pass-by-value Parameters</a></li>
     </ul>
     {#header_close#}
 
@@ -750,7 +829,10 @@ cool sunglasses
       <li>
         <a href="/documentation/0.4.0/#for">for</a> now works with single-item pointers to arrays. #1663 -Jimmi Holst Christensen
       </li>
+    <li>Added <a href="/documentation/0.4.0/#bswap">@bswap</a> builtin function. #767</li>
+    <li><strong>vegecode</strong> added the <a href="/documentation/0.4.0/#bitreverse">@bitreverse</a> builtin function. #767</li>
     </ul>
+
     {#header_open|Implicit Casting Comptime-Known Integers#}
     <p>All numbers with comptime known values now implicitly cast
     to all number types. If the value does not fit, a compile error
@@ -838,7 +920,93 @@ test "implicit cast large integer to smaller with comptime value" {
           <a href="https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html">bare metal projects to take advantage of debug info parsing</a>.</li>
         <li>Added {#syntax#}std.debug.StackIterator{#endsyntax#}.</li>
       </li>
+      <li>rework the readInt/writeInt functions:
+<ul>
+<li>io.InStream().readIntNe renamed to readIntNative</li>
+<li>io.InStream().readIntLe renamed to readIntLittle</li>
+<li>io.InStream().readIntBe renamed to readIntBig</li>
+<li>introduced io.InStream().readIntForeign</li>
+<li>io.InStream().readInt has parameter order changed</li>
+<li>io.InStream().readVarInt has parameter order changed</li>
+<li>io.InStream().writeIntNe renamed to writeIntNative</li>
+<li>introduced io.InStream().writeIntForeign</li>
+<li>io.InStream().writeIntLe renamed to writeIntLittle</li>
+<li>io.InStream().writeIntBe renamed to writeIntBig</li>
+<li>io.InStream().writeInt has parameter order changed</li>
+<li>mem.readInt has different parameters and semantics</li>
+<li>introduced mem.readIntNative</li>
+<li>introduced mem.readIntForeign</li>
+<li>mem.readIntBE renamed to mem.readIntBig and different API</li>
+<li>mem.readIntLE renamed to mem.readIntLittle and different API</li>
+<li>introduced mem.readIntSliceNative</li>
+<li>introduced mem.readIntSliceForeign</li>
+<li>introduced mem.readIntSliceLittle</li>
+<li>introduced mem.readIntSliceBig</li>
+<li>introduced mem.readIntSlice</li>
+<li>mem.writeInt has different parameters and semantics</li>
+<li>introduced mem.writeIntNative</li>
+<li>introduced mem.writeIntForeign</li>
+<li>mem.writeIntBE renamed to mem.readIntBig and different semantics</li>
+<li>mem.writeIntLE renamed to mem.readIntLittle and different semantics</li>
+<li>introduced mem.writeIntSliceForeign</li>
+<li>introduced mem.writeIntSliceNative</li>
+<li>introduced mem.writeIntSliceBig</li>
+<li>introduced mem.writeIntSliceLittle</li>
+<li>introduced mem.writeIntSlice</li>
+<li>removed mem.endianSwapIfLe</li>
+<li>removed mem.endianSwapIfBe</li>
+<li>removed mem.endianSwapIf</li>
+<li>added mem.littleToNative</li>
+<li>added mem.bigToNative</li>
+<li>added mem.toNative</li>
+<li>added mem.nativeTo</li>
+<li>added mem.nativeToLittle</li>
+<li>added mem.nativeToBig</li>
+</ul>
+      </li>
+      <li>Add {#syntax#}error.DeviceBusy{#endsyntax#} as a possible result of {#syntax#}std.os.posixOpen{#endsyntax#}. I observed <code>EBUSY</code> when trying to open for writing a tty fd that is already opened with screen.</li>
+      <li>
+        {#syntax#}std.debug.assert{#endsyntax#} no longer has special behavior for test builds.
+        Use {#syntax#}std.testing.expect{#endsyntax#} to detect test failures in a way that will
+        work in release builds. See {#link|assert vs expect#}.
+      </li>
+      <li>
+        {#syntax#}std.mem.Allocator.create{#endsyntax#} is removed.
+        {#syntax#}std.mem.Allocator.createOne{#endsyntax#} is renamed to
+        {#syntax#}std.mem.Allocator.create{#endsyntax#}.
+    The problem with the previous API is that even after copy elision,
+    the initalization value passed as a parameter would always be a copy.
+    With the new API, once copy elision is done, initialization
+    functions can directly initialize allocated memory in place. #1872 #1873
+      </li>
+      <li>
+        {#syntax#}std.mem.split{#endsyntax#} is removed.
+        {#syntax#}std.mem.separate{#endsyntax#} and {#syntax#}std.mem.tokenize{#endsyntax#} are added.
+      </li>
     </ul>
+
+    {#header_open|assert vs expect#}
+    <p>Previously, {#syntax#}std.debug.assert{#endsyntax#} would
+    <a href="/documentation/0.4.0/#panic">@panic</a> in test builds,
+    if the assertion failed. Now, it's always {#syntax#}unreachable{#endsyntax#}.</p>
+    
+    <p>This makes release mode test builds more accurately test
+    the actual code that will be run.</p>
+    
+    <p>However this requires tests to call {#syntax#}std.testing.expect{#endsyntax#}
+    rather than {#syntax#}std.debug.assert{#endsyntax#} to make sure output is correct.</p>
+    
+    <p>Here is the explanation of when to use either one, copied from
+    the assert doc comments:</p>
+    
+    <p>
+    Inside a test block, it is best to use the {#syntax#}std.testing{#endsyntax#} module
+    rather than assert, because assert may not detect a test failure
+    in <a href="/documentation/0.4.0/#ReleaseFast">ReleaseFast</a> and
+    <a href="/documentation/0.4.0/#ReleaseSmall">ReleaseSmall</a> modes.
+    Outside of a test block, assert is the correct function to use.</p>
+    <p>See #1304.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Please Welcome Sahnvour to the Core Zig Team#}
@@ -857,6 +1025,10 @@ toward 1.0.0 and beyond.
     {#header_close#}
 
     {#header_open|Thank you contributors!#}
+    <p>
+    If you are looking to contribute to Zig, have a look at the
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3A%22contributor+friendly%22">issues labeled Contributor Friendly</a>.
+    </p>
     <ul>
       <li><strong>Shawn Landden</strong> added arm64 Linux support to the Zig standard library.
         Note, however, that the arm64-linux target remains a {#link|Tier 2 Support#} target,
@@ -897,13 +1069,30 @@ toward 1.0.0 and beyond.
       <li><strong>tgschultz</strong> added serialization and deserialization abstractions to the zig standard library.</li>
       <li><strong>Henry Nelson</strong> documented explicitly ignoring expression values.</li>
       <li><strong>Jay Weisskopf</strong> improved the documentation - and these release notes - to use the system-ui font family, as well as fallbacks for when this is not available.</li>
+      <li><strong>Wink Saville</strong> added compiler_rt routines for float to signed integer conversion</li>
+      <li><strong>kristopher tate</strong> added a temporary workaround to break a false positive dependency loop when a struct depends on its own alignment. #1832 #2174</li>
+      <li><strong>tgschultz</strong> removed unnecessary allocator field from Linux implementation of
+        std.DynLib and improved test coverage.</li>
+      <li><strong>alexander</strong> implemented switching on bools. #1768</li>
+      <li><strong>alexander</strong> Added DIFlagStaticMember flag to functions. This
+        prevents LLVM from generating debug info for struct member functions with a
+        pointer as the first parameter as though the first parameter were the
+        implicit "this" pointer from C++.</li>
+      <li><strong>emekoi</strong> added a {#syntax#}std.Mutex{#endsyntax#} implementation for Windows.</li>
+      <li><strong>tharvik</strong> added llvm-config sanity check to the stage1 cmake build configuration.</li>
+      <li><strong>kristopher tate</strong> added compile error notes to hint using {#syntax#}and{#endsyntax#} and {#syntax#}or{#endsyntax#} when {#syntax#}&&{#endsyntax#} and {#syntax#}||{#endsyntax#} are used.</li>
+      <li><strong>Matthew McAllister </strong> made tokenization errors more helpful.
+        Previously, it pointed to the start of the current token, but this made
+      it difficult to tell where the error occurred when it was, say, in the
+      middle of a string.</li>
+      <li><strong>kristopher tate</strong> improved stage1 os.cpp regarding opening files and 
+        getting the modification time.</li>
     </ul>
     {#header_close#}
 
     {#header_open|Miscellaneous Improvements#}
     <ul>
-      <li>Zig now recognizes the HermitCore OS.</li>
-      <li>zig build: use os_self_exe_path to determine exe path not arg0</li>
+      <li>Zig now recognizes the HermitCore and Hurd operating systems.</li>
       <li>The cmake configuration no longer tries to find libxml since it's not a direct
         dependency.</li>
       <li>add a test for {#syntax#}std.os.AtomicFile{#endsyntax#}</li>
@@ -951,11 +1140,29 @@ toward 1.0.0 and beyond.
           <li>asm: forbid comptime_int/floats as inputs in favor of explicitely sized constants.</li>
           <li>asm: handle inputs with integers of less than 8 or non power of 2 bitsize by widening them to the next highest power of two.</li>
         </ul></li>
-        <li>{#syntax#}std.rand.Rand{#endsyntax#}: better debiased random range implementation. -Josh Wolfe</li>
-        <li>Add a workaround to support Debian's patch of LLVM which breaks the public API.
-          <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=924953">Debian bug report</a>.
-        </li>
+      <li>{#syntax#}std.rand.Rand{#endsyntax#}: better debiased random range implementation. -Josh Wolfe</li>
+      <li>Add a workaround to support Debian's patch of LLVM which breaks the public API.
+        <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=924953">Debian bug report</a>.
+      </li>
+      <li>comptime evaluation facilities are improved to be able to handle a
+        <a href="/documentation/0.4.0/#ptrCast">@ptrCast</a> with a backing array.</li>
+      <li><a href="/documentation/0.4.0/#truncate">@truncate</a> allows "truncating" a
+        {#syntax#}u0{#endsyntax#} value to any integer type, and the result is always
+        comptime known to be {#syntax#}0{#endsyntax#}.</li>
+      <li>
+    {#syntax#}std.fmt.formatType{#endsyntax#} can now format comptime_int -Jimmi Holst Christensen
+      </li>
+      <li>
+    {#syntax#}std.fmt.format{#endsyntax#} can now format function pointers -Jimmi Holst Christensen
+      </li>
+      <li>Added compile errror for <a href="/documentation/0.4.0/#bitCast">@bitCast</a> when bit counts mismatch.</li>
+      <li>Sahnvour improved behaviour of ChildProcess under windows. Notify failure to create a
+        process when the executable is not found even in PATH.</li>
+      <li>Better error message when LLVM does not understand a triple.</li>
+      <li>stage1 cmake build configuration ensures that the LLVM it finds is the exact correct
+        version and that it has all the default targets enabled.</li>
     </ul>
+
     {#header_open|Recursive Type Mismatch Error Notes#}
     <p>
     Function type mismatches now have an error note which explains in more detail why the
@@ -988,6 +1195,23 @@ test "fn types" {
       <li>better file path handling in stage1 compiler. #1693 #1746</li>
       <li>Sahnvour fixed stack traces on windows.</li>
       <li>Josh Wolfe fixed child_process piped streams not getting closed</li>
+      <li>Fixed intToPtr to fn type when the address is hardcoded (#1842) -Jimmi Holst Christensen</li>
+      <li>vegecode fixed mutate through ptr initialized with constant intToPtr
+        value. #1171</li>
+      <li>Jimmi Holst Christensen fixed <a href="/documentation/0.4.0/#typeInfo">@typeInfo</a> returning incorrect results sometimes.</li>
+      <li>Jimmi Holst Christensen fixed using mem.writeInt at comptime can change the type of a structs field. #1866</li>
+      <li>Fixed debug info for function pointers.</i>
+      <li>Fixed <a href="/documentation/0.4.0/#typeInfo">@typeInfo</a> returning incorrect function return type sometimes.</li>
+      <li>Fixed incorrect parameter names for {#syntax#}std.math.atan2{#endsyntax#}.</li>
+      <li>Sauhnvour improved the line number accuracy of stack traces on Windows. #1503</li>
+      <li>krisopher tate fixed <a href="/documentation/0.4.0/#compileLog">@compileLog</a> with a pointer to an opaque value.</li>
+      <li>Fixed incorrect timeval struct type on macOS. #1648</li>
+      <li>Matthew McAllister fixed runtime assignment to comptime aggregate field.</li>
+      <li>Matthew McAllister fixed slice concatenation.</li>
+      <li>Fixed using the result of @intCast to u0. #1817</li>
+      <li>Fixed compiler assertion failure when returning value from test. #1935</li>
+      <li><a href="/documentation/0.4.0/#truncate">@truncate</a> now is {#syntax#}comptime{#endsyntax#}-known to be 0 when destination integer type has 0 bits.
+        If the destination type is a {#syntax#}comptime_int{#endsyntax#}, treat it as an <a href="/documentation/0.4.0/#Implicit-Casts">Implicit Cast</a>. #1568</li>
     </ul>
     {#header_open|This Release Contains Bugs#}
    <p>
@@ -1017,8 +1241,38 @@ test "fn types" {
    <p>
    TODO explain my 2 failed attempts at no-copy semantics
    </p>
+    {#header_open|Type-Based Alias Analysis Status#}
+    <p>TODO no more TBAA</p>
+    <p>TODO talk about the open aliasing issues</p>
+    {#header_close#}
+
+    {#header_open|macOS/Mach-O Linker Status#}
+    <p>TODO LLD doesn't really support macos</p>
+    <p>TODO talk about plan to create our own linker #1535</p>
+    <p>TODO we had to disable C ABI tests on macos due to LLD deficiency</p>
+    <p>TODO using --system-linker-hack for the self hosted compiler</p>
+    TODO 81c6f087241b6b7a1c12de72a2061cb02df0f93f workaround in building compiler-rt.a and builtin.a
+    {#header_close#}
+
+    {#header_open|Self-Hosted Compiler Status#}
+    <p>TODO</p>
+    {#header_close#}
+
     {#header_open|Accepted Proposals#}
-    TODO
+    <p>Here is a small selection of interesting proposals that have been accepted,
+    to give you an idea of the upcoming changes to Zig.</p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/2165">Remove shebang line support</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/1512">Ability to set alignment of struct fields</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/485">Default struct field initialization values</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/2029">Add a builtin function for source information</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/265">Support null-terminated pointer types</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/685">Anonymous struct literals</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/114">Require parentheses sometimes to disambiguate confusing operator precedence</a></li>
+    </ul>
+    <p>
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Aaccepted">Full list of accepted proposals</a>
+    </p>
     {#header_close#}
 
     {#header_close#}
@@ -1026,9 +1280,13 @@ test "fn types" {
     {#header_open|Active External Projects Using Zig#}
     <ul>
       <li><a href="https://github.com/andrewrk/zig-general-purpose-allocator/">GeneralPurposeDebugAllocator</a> - work in progress general purpose debug allocator with livestreamed development.</li>
-      <li><a href="https://github.com/Sahnvour/zig-benchmark">zig-benchmark</a> - Small and easy micro-benchmarking library.
-      </li>
-      <li>TODO more</li>
+      <li><a href="https://github.com/Sahnvour/zig-benchmark">zig-benchmark</a> - Small and easy micro-benchmarking library.</li>
+      <li><a href="https://github.com/dbandstra/oxid">Oxid</a> - an arcade-style game where you fight waves of monsters in a fixed-screen maze.</li>
+      <li><a href="https://github.com/sjdh02/trOS">trOS</a> - tiny aarch64 baremetal OS thingy.</li>
+      <li><a href="https://github.com/Hejsil/zig-clap">zig-clap</a> - Simple command line argument parsing library</li>
+      <li><a href="https://github.com/ul/simple-amplifier">Simple Amplifier</a> - a very simple example of LV2 plugin built in Zig.</li>
+      <li><a href="https://github.com/mikdusan/benchmark.unicode">benchmark.unicode</a> - A command-line tool written in Zig to measure the performance of various UTF8 decoders. The decoders are written in Zig or C.</li>
+      <li><a href="https://github.com/thejoshwolfe/hexdump-zip">hexdump-zip</a> - produce an annotated hexdump of a zipfile</li>
     </ul>
     {#header_close#}
 
