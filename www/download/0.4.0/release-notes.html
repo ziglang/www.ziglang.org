@@ -2309,41 +2309,172 @@ fn print(x: i32, mode: enum { normal, hex }) void {
 
     <h2 id="stddebugcaptureStackTrace"><a href="#toc-stddebugcaptureStackTrace">std.debug.captureStackTrace</a> <a class="hdr" href="#stddebugcaptureStackTrace">§</a></h2>
 
-    <p>TODO demo usage</p>
-    <p>TODO explain general purpose debug allocator</p>
+    <p>Zig code can use <code class="zig">std.debug.captureStackTrace</code> at any time
+    for debugging purposes:</p>
+    <p class="file">stack-traces.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);
+
+<span class="tok-kw">var</span> address_buffer: [<span class="tok-number">8</span>]<span class="tok-type">usize</span> = <span class="tok-null">undefined</span>;
+
+<span class="tok-kw">var</span> trace1 = builtin.StackTrace{
+    .instruction_addresses = address_buffer[<span class="tok-number">0</span>..<span class="tok-number">4</span>],
+    .index = <span class="tok-number">0</span>,
+};
+
+<span class="tok-kw">var</span> trace2 = builtin.StackTrace{
+    .instruction_addresses = address_buffer[<span class="tok-number">4</span>..],
+    .index = <span class="tok-number">0</span>,
+};
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    foo();
+    bar();
+
+    std.debug.warn(<span class="tok-str">&quot;first one:\n&quot;</span>);
+    std.debug.dumpStackTrace(trace1);
+    std.debug.warn(<span class="tok-str">&quot;\n\nsecond one:\n&quot;</span>);
+    std.debug.dumpStackTrace(trace2);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">void</span> {
+    std.debug.captureStackTrace(<span class="tok-null">null</span>, &amp;trace1);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() <span class="tok-type">void</span> {
+    std.debug.captureStackTrace(<span class="tok-null">null</span>, &amp;trace2);
+}</code></pre><pre><code class="shell">$ zig build-exe stack-traces.zig
+$ ./stack-traces
+first one:
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack-traces.zig:27:32</span>: <span class="t2_0">0x22586d in ??? (stack-traces)</span>
+    std.debug.captureStackTrace(null, &amp;trace1);
+                               <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack-traces.zig:17:8</span>: <span class="t2_0">0x225819 in ??? (stack-traces)</span>
+    foo();
+       <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:112:22</span>: <span class="t2_0">0x22528b in ??? (stack-traces)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x225081 in ??? (stack-traces)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+
+
+second one:
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack-traces.zig:31:32</span>: <span class="t2_0">0x22588d in ??? (stack-traces)</span>
+    std.debug.captureStackTrace(null, &amp;trace2);
+                               <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack-traces.zig:18:8</span>: <span class="t2_0">0x22581e in ??? (stack-traces)</span>
+    bar();
+       <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:112:22</span>: <span class="t2_0">0x22528b in ??? (stack-traces)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x225081 in ??? (stack-traces)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+</code></pre>
+
+    <p>This feature is used in the
+    <a href="https://github.com/andrewrk/zig-general-purpose-allocator/">GeneralPurposeDebugAllocator project</a> for helping detect and diagnose memory issues.
+    </p>
     
 
     <h2 id="Allocator-interface"><a href="#toc-Allocator-interface">Allocator interface</a> <a class="hdr" href="#Allocator-interface">§</a></h2>
 
-    TODO
-    breaking changes to std.mem.Allocator interface API
-    
-    Before, allocator implementations had to provide `allocFn`,
-    `reallocFn`, and `freeFn`.
-    
-    Now, they must provide only `reallocFn` and `shrinkFn`.
+    <p>Zig 0.4.0 brings breaking changes to the <code class="zig">std.mem.Allocator</code> interface
+    and API.</p>
+    <p>
+    Before, allocator implementations had to provide <code class="zig">allocFn</code>,
+    <code class="zig">reallocFn</code>, and <code class="zig">freeFn</code>.
+    </p>
+    <p>
+    Now, they must provide only <code class="zig">reallocFn</code> and <code class="zig">shrinkFn</code>.
     Reallocating from a zero length slice is allocation, and
     shrinking to a zero length slice is freeing.
-    
+    </p>
+    <p>
     When the new memory size is less than or equal to the
-    previous allocation size, `reallocFn` now has the option
-    to return `error.OutOfMemory` to indicate that the allocator
+    previous allocation size, <code class="zig">reallocFn</code> now has the option
+    to return <code class="zig"><span class="tok-kw">error</span>.OutOfMemory</code> to indicate that the allocator
     would not be able to take advantage of the new size.
-    
-    For more details see <a href="https://github.com/ziglang/zig/issues/1306">#1306</a>. This commit closes <a href="https://github.com/ziglang/zig/issues/1306">#1306</a>.
-    
-    This commit paves the way to solving <a href="https://github.com/ziglang/zig/issues/2009">#2009</a>.
-    
-    This commit also introduces a memory leak to all coroutines.
-    There is an issue where a coroutine calls the function and it
-    frees its own stack frame, but then the return value of `shrinkFn`
-    is a slice, which is implemented as an sret struct. Writing to
-    the return pointer causes invalid memory write. We could work
-    around it by having a global helper function which has a void
-    return type and calling that instead. But instead this hack will
-    suffice until I rework coroutines to be non-allocating. Basically
-    coroutines are not supported right now until they are reworked as
-    in <a href="https://github.com/ziglang/zig/issues/1194">#1194</a>.
+    </p>
+    <p>
+    For more details see <a href="https://github.com/ziglang/zig/issues/1306">#1306</a>.
+    </p>
+    <p>I have reproduced the documentation comments here:</p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Allocator = <span class="tok-kw">struct</span> {
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Error = <span class="tok-kw">error</span>{OutOfMemory};
+
+    <span class="tok-comment">/// Realloc is used to modify the size or alignment of an existing allocation,</span>
+    <span class="tok-comment">/// as well as to provide the allocator with an opportunity to move an allocation</span>
+    <span class="tok-comment">/// to a better location.</span>
+    <span class="tok-comment">/// When the size/alignment is greater than the previous allocation, this function</span>
+    <span class="tok-comment">/// returns `error.OutOfMemory` when the requested new allocation could not be granted.</span>
+    <span class="tok-comment">/// When the size/alignment is less than or equal to the previous allocation,</span>
+    <span class="tok-comment">/// this function returns `error.OutOfMemory` when the allocator decides the client</span>
+    <span class="tok-comment">/// would be better off keeping the extra alignment/size. Clients will call</span>
+    <span class="tok-comment">/// `shrinkFn` when they require the allocator to track a new alignment/size,</span>
+    <span class="tok-comment">/// and so this function should only return success when the allocator considers</span>
+    <span class="tok-comment">/// the reallocation desirable from the allocator's perspective.</span>
+    <span class="tok-comment">/// As an example, `std.ArrayList` tracks a &quot;capacity&quot;, and therefore can handle</span>
+    <span class="tok-comment">/// reallocation failure, even when `new_n` &lt;= `old_mem.len`. A `FixedBufferAllocator`</span>
+    <span class="tok-comment">/// would always return `error.OutOfMemory` for `reallocFn` when the size/alignment</span>
+    <span class="tok-comment">/// is less than or equal to the old allocation, because it cannot reclaim the memory,</span>
+    <span class="tok-comment">/// and thus the `std.ArrayList` would be better off retaining its capacity.</span>
+    <span class="tok-comment">/// When `reallocFn` returns,</span>
+    <span class="tok-comment">/// `return_value[0..min(old_mem.len, new_byte_count)]` must be the same</span>
+    <span class="tok-comment">/// as `old_mem` was when `reallocFn` is called. The bytes of</span>
+    <span class="tok-comment">/// `return_value[old_mem.len..]` have undefined values.</span>
+    <span class="tok-comment">/// The returned slice must have its pointer aligned at least to `new_alignment` bytes.</span>
+    reallocFn: <span class="tok-kw">fn</span> (
+        self: *Allocator,
+    <span class="tok-comment">/// Guaranteed to be the same as what was returned from most recent call to</span>
+    <span class="tok-comment">/// `reallocFn` or `shrinkFn`.</span>
+    <span class="tok-comment">/// If `old_mem.len == 0` then this is a new allocation and `new_byte_count`</span>
+    <span class="tok-comment">/// is guaranteed to be &gt;= 1.</span>
+        old_mem: []<span class="tok-type">u8</span>,
+    <span class="tok-comment">/// If `old_mem.len == 0` then this is `undefined`, otherwise:</span>
+    <span class="tok-comment">/// Guaranteed to be the same as what was returned from most recent call to</span>
+    <span class="tok-comment">/// `reallocFn` or `shrinkFn`.</span>
+    <span class="tok-comment">/// Guaranteed to be &gt;= 1.</span>
+    <span class="tok-comment">/// Guaranteed to be a power of 2.</span>
+        old_alignment: <span class="tok-type">u29</span>,
+    <span class="tok-comment">/// If `new_byte_count` is 0 then this is a free and it is guaranteed that</span>
+    <span class="tok-comment">/// `old_mem.len != 0`.</span>
+        new_byte_count: <span class="tok-type">usize</span>,
+    <span class="tok-comment">/// Guaranteed to be &gt;= 1.</span>
+    <span class="tok-comment">/// Guaranteed to be a power of 2.</span>
+    <span class="tok-comment">/// Returned slice's pointer must have this alignment.</span>
+        new_alignment: <span class="tok-type">u29</span>,
+    ) Error![]<span class="tok-type">u8</span>,
+
+    <span class="tok-comment">/// This function deallocates memory. It must succeed.</span>
+    shrinkFn: <span class="tok-kw">fn</span> (
+        self: *Allocator,
+    <span class="tok-comment">/// Guaranteed to be the same as what was returned from most recent call to</span>
+    <span class="tok-comment">/// `reallocFn` or `shrinkFn`.</span>
+        old_mem: []<span class="tok-type">u8</span>,
+    <span class="tok-comment">/// Guaranteed to be the same as what was returned from most recent call to</span>
+    <span class="tok-comment">/// `reallocFn` or `shrinkFn`.</span>
+        old_alignment: <span class="tok-type">u29</span>,
+    <span class="tok-comment">/// Guaranteed to be less than or equal to `old_mem.len`.</span>
+        new_byte_count: <span class="tok-type">usize</span>,
+    <span class="tok-comment">/// If `new_byte_count == 0` then this is `undefined`, otherwise:</span>
+    <span class="tok-comment">/// Guaranteed to be less than or equal to `old_alignment`.</span>
+        new_alignment: <span class="tok-type">u29</span>,
+    ) []<span class="tok-type">u8</span>,
+};</code></pre>
+    <p>
+    This allows allocators and data structures to "negotiate" with each other. For example,
+    here is <code class="zig">std.ArrayList.shrink</code>:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">shrink</span>(self: *Self, new_len: <span class="tok-type">usize</span>) <span class="tok-type">void</span> {
+    assert(new_len &lt;= self.len);
+    self.len = new_len;
+    self.items = self.allocator.realloc(self.items, new_len) <span class="tok-kw">catch</span> |e| <span class="tok-kw">switch</span> (e) {
+        <span class="tok-kw">error</span>.OutOfMemory =&gt; <span class="tok-kw">return</span>, <span class="tok-comment">// no problem, capacity is still correct then.</span>
+    };
+}</code></pre>
     
     
 
@@ -2709,37 +2840,85 @@ toward 1.0.0 and beyond.
    been considerable progress, none of these items are complete. And so the roadmap for 0.4.0 is
    the same.
    </p>
-   <p>
-   TODO explain my 2 failed attempts at no-copy semantics
-   </p>
     <h2 id="Type-Based-Alias-Analysis-Status"><a href="#toc-Type-Based-Alias-Analysis-Status">Type-Based Alias Analysis Status</a> <a class="hdr" href="#Type-Based-Alias-Analysis-Status">§</a></h2>
 
-    <p>TODO no more TBAA</p>
-    <p>TODO talk about the open aliasing issues</p>
+    <p>
+    It's no longer planned for Zig to have Type Based Alias Analysis. However,
+    there are some open research topics on potentially outlawing all kinds of aliasing
+    unless explicitly declared.
+    Subscribe to <a href="https://github.com/ziglang/zig/issues/1108">#1108</a>
+    for more details.
+    </p>
+    <p>
+    For now, Zig has a
+    <a href="#comptime-memory-reinterpretation">well-defined memory model</a>,
+    and aliasing is always allowed. Note, however,
+    that not all types have a guaranteed in-memory layout.
+    </p>
     
 
     <h2 id="macOSMach-O-Linker-Status"><a href="#toc-macOSMach-O-Linker-Status">macOS/Mach-O Linker Status</a> <a class="hdr" href="#macOSMach-O-Linker-Status">§</a></h2>
 
-    <p>TODO LLD doesn't really support macos</p>
-    <p>TODO talk about plan to create our own linker <a href="https://github.com/ziglang/zig/issues/1535">#1535</a></p>
-    <p>TODO we had to disable C ABI tests on macos due to LLD deficiency</p>
-    <p>TODO using --system-linker-hack for the self hosted compiler</p>
-    TODO 81c6f087241b6b7a1c12de72a2061cb02df0f93f workaround in building compiler-rt.a and builtin.a
+    <p>
+    Linking macOS/COFF files is still in a sad state. The Mach-O code in
+    <a href="http://lld.llvm.org/">LLD</a>, Zig's linker, has been barely maintained for several
+    years now. Zig has a fork of LLD in its source tree with a hacky patch to fix linking "Hello World"
+    on macOS.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/issues/1535">It's now planned for the Zig project to have its own linker</a>.
+    This is in part due to the lack of Mach-O maintenance, and in part because LLD has no
+    plans to do incremental linking - a feature that I foresee to be necessary to achieve
+    the performance we want to have for large projects in the self-hosted compiler.
+    </p>
+    <p>For now the self-hosted compiler uses <code>--system-linker-hack</code>
+    to be able to link successfully, which is a compromise of Zig's promise that it can build
+    on any target, for any target.</p>
+    <p>
+    There is also a workaround in the linker phase of Zig for compiler-rt.a and builtin.a.
+    I had to make them object files rather than archive files to avoid crashing LLD.
+    </p>
     
 
     <h2 id="Self-Hosted-Compiler-Status"><a href="#toc-Self-Hosted-Compiler-Status">Self-Hosted Compiler Status</a> <a class="hdr" href="#Self-Hosted-Compiler-Status">§</a></h2>
 
-    <p>TODO</p>
+    <p>
+    There has been no progress on the self-hosted compiler in this release cycle.
+    Progress is blocked on the volume of core language changes still happening, as
+    well as <a href="https://github.com/ziglang/zig/issues/287">no-copy semantics</a>,
+    and <a href="#Coroutine-Status">Reworking Coroutines</a>.
+    </p>
     
 
     <h2 id="Package-Manager-Status"><a href="#toc-Package-Manager-Status">Package Manager Status</a> <a class="hdr" href="#Package-Manager-Status">§</a></h2>
 
-    <p>TODO</p>
+    <p>
+    The package manager will be one of the focus areas of the 0.5.0 release cycle.
+    It depends on networking, which depends on <a href="#Coroutine-Status">Reworking Coroutines</a>,
+    which depends on <a href="https://github.com/ziglang/zig/issues/287">no-copy semantics</a>.
+    </p>
     
 
     <h2 id="Coroutine-Status"><a href="#toc-Coroutine-Status">Coroutine Status</a> <a class="hdr" href="#Coroutine-Status">§</a></h2>
 
-    <p>TODO</p>
+    <p>
+    There is no progress on coroutines in this release cycle. In fact there has been anti-progress.
+    </p>
+    <p>Zig 0.4.0 introduces a memory leak to all coroutines.
+    There is an issue where a coroutine calls the function and it
+    frees its own stack frame, but then the return value of <code class="zig">shrinkFn</code>
+    is a slice, which is implemented as an sret struct. Writing to
+    the return pointer causes invalid memory write. We could work
+    around it by having a global helper function which has a void
+    return type and calling that instead. But instead this hack will
+    suffice until I rework coroutines to be non-allocating. Basically
+    coroutines are not supported right now until they are reworked as
+    in <a href="https://github.com/ziglang/zig/issues/1194">#1194</a>.
+    </p>
+    <p>
+    Reworking coroutines is to be a major focus of 0.5.0 as it is blocking networking,
+    the <a href="#Package-Manager-Status">Package Manager</a>, and the <a href="#Self-Hosted-Compiler-Status">Self-Hosted Compiler</a>.
+    </p>
     
 
     <h2 id="Accepted-Proposals"><a href="#toc-Accepted-Proposals">Accepted Proposals</a> <a class="hdr" href="#Accepted-Proposals">§</a></h2>
