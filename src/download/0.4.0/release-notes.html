@@ -808,6 +808,8 @@ sys	0m0.009s</code></pre>
     system default search paths.
     <a href="https://github.com/ziglang/zig/issues/2041#issuecomment-479335822">Marc Tiehuis proposed to expose this functionality to the command line interface</a>,
     and that is likely to be an accepted proposal.</p>
+    <p>Thanks to Akuli for adding <code>/lib/x86_64-linux-gnu</code> or similar to default
+    system library search paths for zig build scripts.</p>
 
     {#header_open|Zig ships with libc#}
     <p>
@@ -1056,9 +1058,59 @@ kernel32_lib_dir=C:\Program Files (x86)\Windows Kits\10\\Lib\10.0.17134.0\um\x64
     <p>
     When one invokes the <code>zig build</code> command, this executes a user-defined
     build script. This is called the <strong>zig build system</strong>. It received
-    a few improvements during this release cycle:
+    a few improvements during this release cycle.
     </p>
+    <p>
+    Notably, {#link|Build Artifact Caching#} is enabled by default.
+    This means that by default build artifacts are now output into the
+    <code>zig-cache</code> directory. The output path is not predictable and if the build
+    script desires to run an executable, rather than hard coding a path and using
+    {#syntax#}builder.addCommand{#endsyntax#}, build scripts
+    must use {#syntax#}executable.run{#endsyntax#} API, or {#syntax#}addArtifactArg{#endsyntax#}.
+    An example of this can be found in the
+    <a href="https://github.com/andrewrk/tetris/blob/166246d8f1d889333e74a1a9cee894750f2d4cca/build.zig#L27">tetris example</a>.
+    </p>
+    <p>
+    {#syntax#}builder.addSystemCommand{#endsyntax#} is available to run commands that are not
+    created by the build system itself. An example of this can be found in the
+    <a href="https://github.com/andrewrk/clashos/blob/91f45cff49128b3322f98cc78ed08df5bcec35cb/build.zig#L32">Raspberry Pi OS example</a>.
+    </p>
+    <p>
+    Another option build scripts have is to specify the output directory of an artifact with
+    {#syntax#}artifact.setOutputDir{#endsyntax#}. This disables caching and makes
+    {#syntax#}artifact.getOutputPath{#endsyntax#},
+    {#syntax#}artifact.getOutputLibPath{#endsyntax#}, and
+    {#syntax#}artifact.getOutputHPath{#endsyntax#} available.
+    </p>
+    <p>
+    Finally, the best way to make the output path of an artifact predictable is to install it
+    with the build system's install step. There are some ergonomics and defaults to improve
+    with this strategy, which will be tackled during the next release cycle.
+    </p>
+    <p>Please note that Zig does no cache evicting yet. You may have to
+       manually delete zig-cache directories periodically to keep disk
+       usage down. It's planned for this to be a simple Least Recently
+       Used eviction system eventually.</p>
+    <p><code>--output</code>, <code>--output-lib</code>, and <code>--output-h</code> are removed.
+      Instead, use <code>--output-dir</code> which defaults to the current working directory.
+      Or take advantage of <code>--cache on</code>, which will print the main output
+       path to stdout, and the other artifacts will be in the same directory
+       with predictable file names. <code>--disable-gen-h</code> is available when
+       one wants to prevent .h file generation.</p>
+    <p><a href="/documentation/0.4.0/#cImport">@cImport</a> is always independently cached now.
+       It always writes the generated Zig code to disk which makes debug
+       info and compile errors better. No more "TODO: remember C source
+       location to display here" <a href="https://github.com/ziglang/zig/issues/2015">#2015</a>.
+       The <code>--verbose-cimport</code> command no longer dumps Zig AST to stderr; instead
+       it prints the file paths of the generated .zig files for inspection. In addition to
+       this improved behavior, the common case of {#syntax#}@cImport{#endsyntax#} with all the
+       C header files unchanged is now fast due to being cached, yet still correct if any of
+       the C files change.
+    </p>
+    <p>In addition, these improvements were made:</p>
     <ul>
+      <li>Zig no longer creates "temporary files" other than inside a
+        zig-cache directory.</li>
       <li>Zig uses <code>os_self_exe_path</code> to determine exe path not <code>argv[0]</code></li>
       <li>Tests as part of the build system support all of the same API as executables,
       libraries, and objects.</li>
@@ -1066,76 +1118,163 @@ kernel32_lib_dir=C:\Program Files (x86)\Windows Kits\10\\Lib\10.0.17134.0\um\x64
       <li>When building C source file(s), don't try to generate .h files.</li>
       <li>Added {#syntax#}builder.addFmt{#endsyntax#} API and use it to test stage1 zig fmt. <a href="https://github.com/ziglang/zig/issues/1968">#1968</a></li>
       <li>Fixed build.zig not respecting <code>--static</code>. <a href="https://github.com/ziglang/zig/issues/2027">#2027</a></li>
+      <li>Shritesh Bhattarai gave usageAndErr a clean exit which makes <code>zig build --help</code>
+        more friendly. (<a href="https://github.com/ziglang/zig/issues/2194">#2194</a>)</li>
+      <li>Ruslan Prokopchuk implemented support for {#syntax#}LibExeObjStep.disable_gen_h{#endsyntax#}.
+        It is sometimes useful to skip generating of the header file (e.g.
+        <a href="https://github.com/ziglang/zig/issues/2173">#2173</a>), and zig compiler
+        provides an option <code>--disable-gen-h</code> to control that behaviour. However,
+        setting {#syntax#}lib.disable_gen_h = true{#endsyntax#} in a typical <code>build.zig</code> didn't append
+        the option to arguments. This commit fixes it and adds a convenient <code>setDisableGenH</code>
+        setter.</li>
+      <li>Windows doesn't have rpaths for DLLs so we instead add
+        search paths to Path environment variable when running
+        an executable that depends on DLLs built with zig build.</li>
     </ul>
-    breaking changes to zig build API and improved caching
-    
-     * in Zig build scripts, getOutputPath() is no longer a valid function
-       to call, unless setOutputDir() was used, or within a custom make()
-       function. Instead there is more convenient API to use which takes
-       advantage of the caching system. Search this commit diff for
-       `exe.run()` for an example.
-     * Zig build by default enables caching. All build artifacts will go
-       into zig-cache. If you want to access build artifacts in a convenient
-       location, it is recommended to add an `install` step. Otherwise
-       you can use the `run()` API mentioned above to execute programs
-       directly from their location in the cache. Closes <a href="https://github.com/ziglang/zig/issues/330">#330</a>.
-       `addSystemCommand` is available for programs not built with Zig
-       build.
-     * Please note that Zig does no cache evicting yet. You may have to
-       manually delete zig-cache directories periodically to keep disk
-       usage down. It's planned for this to be a simple Least Recently
-       Used eviction system eventually.
-     * `--output`, `--output-lib`, and `--output-h` are removed. Instead,
-       use `--output-dir` which defaults to the current working directory.
-       Or take advantage of `--cache on`, which will print the main output
-       path to stdout, and the other artifacts will be in the same directory
-       with predictable file names. `--disable-gen-h` is available when
-       one wants to prevent .h file generation.
-     * `@cImport` is always independently cached now. Closes <a href="https://github.com/ziglang/zig/issues/2015">#2015</a>.
-       It always writes the generated Zig code to disk which makes debug
-       info and compile errors better. No more "TODO: remember C source
-       location to display here"
-     * Fix .d file parsing. (Fixes the MacOS CI failure)
-     * Zig no longer creates "temporary files" other than inside a
-       zig-cache directory.
-    
-    This breaks the CLI API that Godbolt uses. The suggested new invocation
-    can be found in this commit diff, in the changes to `test/cli.zig`.
-
-    Akuli: Add /lib/x86_64-linux-gnu or similar to default system library search paths. This makes compiling with libraries like zlib and ncurses easier
-
-    Shritesh Bhattarai build: usageAndErr clean exit (<a href="https://github.com/ziglang/zig/issues/2194">#2194</a>)
-
-    build.zig: allow run() on non-native target artifacts
-
-    Ruslan Prokopchuk handle LibExeObjStep.disable_gen_h 
-    It is sometimes useful to skip generating of the header file (e.g. https://github.com/ziglang/zig/issues/2173), and zig compiler provides an option `--disable-gen-h` to control that behaviour. However, setting `lib.disable_gen_h = true` in a typical `build.zig` didn't append the option to arguments. This commit fixes it and adds a convenient `setDisableGenH` setter.
 
     {#header_open|Build Artifact Caching#}
-    TODO
-    `@cImport` works with `--cache on`
-    
-    We pass -MD -MF args to clang when doing `@cImport`, which
-    gives us a complete list of files that the C code read from.
-    Then we add these to the cache. So even when using `@cImport`
-    Zig's caching system remains perfect. This is a proof of concept
-    for the mechanism that the self-hosted compiler will use to
-    watch and rebuild files.
-
-    fix running things with zig build on Windows
-    
-    Windows doesn't have rpaths for DLLs so we instead add
-    search paths to Path environment variable when running
-    an executable that depends on DLLs built with zig build.
-
-
-
-    stage1 caching system: detect problematic mtimes. <a href="https://github.com/ziglang/zig/issues/2045">#2045</a>
-
-    zig build: do a better job of detecting system paths. <a href="https://github.com/ziglang/zig/issues/2041">#2041</a>
-
-    zig test respects --output-dir parameter
-
+    <p>
+    Zig comes with a robust caching system. When compiling Zig code, Zig knows all the files that
+    it depends on, and when compiling C code, Zig uses <code>-MV -MD -MF</code> parameters to
+    Clang and then parses the generated .d file.
+    </p>
+    <p>
+    The other component of this is the "compiler id" concept:
+    </p>
+    <pre><code>$ zig id
+Cxb7A-sAjt6VDq35pHZj3ACcwiSFqcCndt0NJkdQQlZVKolwm-QKnce1KEMUTqPr</code></pre>
+    <p>
+    This is the hash of the compiler binary itself, plus all the dynamic libraries it depends on,
+    directly or indirectly. That means if you fix a bug in <code>memcpy</code> in the system libc,
+    Zig will detect this change and the value of <code>zig id</code> will be different.
+    However, the value is quickly computed because it also participates in the caching system.
+    </p>
+    <p>
+    Here is a "manifest file" in the caching system for <code>zig id</code>:
+    </p>
+    <pre><code>4850313 1554740311 416647968 cOOP0xpsfiYfuMJCS3V_fLKdNmxFxLih_UACAUqwynGp1Y616NJ2lHL0hOpWOp_o /home/andy/dev/zig/build/zig
+3077799 1 0 bBgfkt9ZSVN_HgBbzwHhzKmQxpssdDYq_HcbEkdu7KDcUhanATUER2_5l_U__9DE /nix/store/5dphwv1xs46n0qbhynny2lbhmx4xh1fc-zlib-1.2.11/lib/libz.so.1
+1165671 1 0 jSVrSQyNkPFoz0Z6GesezdVP1ZBRpHL2UbbX7HbNEprcU4aBuIyG9z6bAOvvPZr0 /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/librt.so.1
+1165626 1 0 scJm8rYLhDLp_SDXmbvdlcj9fEWQadEm_kHUBJn2oGnht3pSh2MNzsUJZjR1wwa1 /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/libdl.so.2
+1165664 1 0 pGDNQn5x_j1NAWzjh4AOUP8OKyJj1KSPd4SJYzRVbTTp7TRb4IQpDs7ZAU3muqfz /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/libpthread.so.0
+1165631 1 0 4tmxoKlbVwB42gYxT7B3CKIBXpbGdb_vuqfYiXlOZdyngmFJdQ7DBZxWqZKSO0Ss /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/libm.so.6
+3077645 1 0 dxe6qw_yMCi8Bp7ocrVcl2XMdRlKfa0S3ATqbxsEMISRQdQ1dyxTEE1uDbv0R54z /nix/store/sf0wnp30savqz9ljn6fsrn8f63w5v0za-gcc-7.4.0-lib/lib/libstdc++.so.6
+1165630 1 0 5boikua2jQubswAtj8MICJzjmGNUxTZrNreQm_DmtspgRsXULyCkyUUMYcNFamII /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/libgcc_s.so.1
+1165616 1 0 qiXB510da3ryfL7LcPUvL2EQgY2tIwszLRvgQdDrQtnWVl4zA1Nfpq4SDpIz3IYW /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/libc.so.6
+1165607 1 0 MpHwajxu3h0TtsHViKMAmHHeGMbi9IuDLlybX6PpqT66Xfa1h2GAT3XFIX19dEz- /nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib/ld-linux-x86-64.so.2</code></pre>
+    <p>
+    The fields are, respectively:
+    </p>
+    <ol>
+      <li>inode</li>
+      <li>mtime seconds</li>
+      <li>mtime nanoseconds</li>
+      <li>blake hash of file contents</li>
+      <li>path to file</li>
+    </ol>
+    <p>
+    This same system is used for build artifact caching. For example, here is the manifest file
+    for hello world in Zig (when built with <code>--cache on</code>):
+    </p>
+    <pre><code>5505089 1548876783 204467480 rcnRrxBgZSiWki_XN9XKlQ2yfWkM6KLYhUWprzniEBtjgmeUSmtlv5mAguA4l2Q1 /home/andy/dev/zig/example/hello_world/hello.zig
+4850617 1554305190 0 GXP-IfocPj934vVJYrccBKIVoOcWULaUtkBoR-iHnEKEIoXtdchyuQi8tk8FTncS /home/andy/dev/zig/build/lib/zig/std/std.zig
+5114024 1551557778 0 6u-vFMcHH_FcfkAyqCcoYXAfF2TLMCkoP86Q3Ykecmage7_E4ObRsfP52-YXDHH6 /home/andy/dev/zig/build/lib/zig/std/special/panic.zig
+4850617 1554305190 0 GXP-IfocPj934vVJYrccBKIVoOcWULaUtkBoR-iHnEKEIoXtdchyuQi8tk8FTncS /home/andy/dev/zig/build/lib/zig/std/std.zig
+4850277 1553179780 0 9S5aQg0ORbkQnvDCVeW2aNPSeCu993I4iO3JoGrif4py7zBS4si4mCaeHHuo9TEn /home/andy/dev/zig/build/lib/zig/std/debug.zig
+4849956 1554500038 0 8c76uDlKxK5jZ1L0Uup4Lu0y1NlU5-KrUCKFyZnzoi7Hv3dDByN8pvujTjxjaf0m /home/andy/dev/zig/build/lib/zig/std/os.zig
+4850678 1554330534 0 wFvlet_2y9YT6NlFrsqybubwMafHFCIZqq4AxLlcUGuTSZ7VjI8kGmM-3VKPrhkt /home/andy/dev/zig/build/lib/zig/std/io.zig
+5112957 1551560716 0 f29y95JhSfGVwEFrutPnquGPPuvvtOLu6_vUUgGbaqn-9uulgFvBnyPU8Zp_sH7r /home/andy/dev/zig/build/lib/zig/std/os/file.zig
+5113386 1552707664 0 Mb9m-jj_wRe6yt-TFko9wUGNToAA-IAbVfmR2TYZyPjKP3D87df6BGALjai5uKr2 /home/andy/dev/zig/build/lib/zig/std/os/windows/util.zig
+5113248 1551562209 0 F1infSSAdOgbOWl3y2FdUiB-6xrpTaeqUJ5xt_F9IZOeBvvTSLNpkGEg8mrYMcli /home/andy/dev/zig/build/lib/zig/std/os/linux.zig
+5113251 1536869149 0 LAlDVvl1TX-3-SB3MOBBjxuEk2Ms8SpkcYBLXnJONgZuo7aV9OYfXLfih9bfGyBS /home/andy/dev/zig/build/lib/zig/std/os/linux/errno.zig
+5113278 1551560715 0 TpIIt3DNczfgMKjhDA5mx-4JgoGd7SIV9lXK8GQs9Bix4EmPiL7VlV1oQVwv4gkO /home/andy/dev/zig/build/lib/zig/std/os/linux/x86_64.zig
+4849832 1554482295 0 AszHJ9beyMCotgQx4vwYWMBUcRd1dBspsou64fATNYXsSqwB5zAiqVEokfpV5xkF /home/andy/dev/zig/build/lib/zig/std/fmt.zig
+4850680 1551559869 0 Polq06O1t-jJ0SobBVqLaQrJVXaKzH4lQj6Na8NRN3Y5N0pZ2I4W2rpwL816MSz- /home/andy/dev/zig/build/lib/zig/std/io/seekable_stream.zig
+4850605 1552687041 0 Al_VWoytLHeozYOvM69cCR2Dw1HGYdJc2lDGQDXYoiJy1VuD6GWLIQhxSJuf3Oza /home/andy/dev/zig/build/lib/zig/std/array_list.zig
+4877695 1552687041 0 ouDIQ9yX5LXanXk6mc2ypFP-oy2zEt7uLLlPDVUFEfx4AKmeFP1cJWI7YSjYAVt9 /home/andy/dev/zig/build/lib/zig/std/mem.zig
+4850649 1551560732 0 rVa_7s1plylcGIUAHEt3eGG8XwSJAEOQzuIaYcnq0KHnb1IoGWUEXUGIW7QHH7fi /home/andy/dev/zig/build/lib/zig/std/elf.zig
+4849844 1554305190 0 58Tg88pYb1sgK8SI5_65Gy7lgCqaJmsW2NV-Hi4FeXOK8e2f2T1PofNfdUDgbYit /home/andy/dev/zig/build/lib/zig/std/math.zig
+4850647 1536869149 0 9-R2p6FQ_7UIjQMt3N-chgeh-_e_o29Gr2Pybfh2PurmRYT9mIIwsdW9rs6kEJR8 /home/andy/dev/zig/build/lib/zig/std/dwarf.zig
+5113295 1552687041 0 6oc1oIiWQJ1OIZGh5KFPtul93GCeAaLFx2VTICI3JMt-Ubnj-vjXvBBclnoo5UQ6 /home/andy/dev/zig/build/lib/zig/std/os/path.zig
+4850677 1552707664 0 qom60op_QDptmhKO6SIlpm48SlVybcFOT0gHCjncJvtZhM6uUNqZZ2Q0WV5AsmRP /home/andy/dev/zig/build/lib/zig/std/heap.zig
+4850683 1551560704 0 6t3PH8KaWwsz2MElBWZezzyZyeRS-Ttq6k2pJWwRK__NvVQ2hZSu1gk4jA7oDT_Y /home/andy/dev/zig/build/lib/zig/std/linked_list.zig
+4850685 1548876783 0 EsROc7EV9MKNd74wRR9tYFhMGs4CL4eqYSPvJVzKTzSoXABBfxVoQwO3N_VivhNG /home/andy/dev/zig/build/lib/zig/std/macho.zig
+4850663 1554667129 0 oWDxArJXQLKaeAqd-Uf52hiAjktfqEhJA4XIdlBKCeKOxbYZosChXsfReGM0azCQ /home/andy/dev/zig/build/lib/zig/std/hash_map.zig
+4877700 1551559918 0 0SY3kFjpRYGQ1eVmh4UHluGBDFA9LcwANsSlEZLKfBO6hWxoZWcowtXk1SJvSALu /home/andy/dev/zig/build/lib/zig/std/pdb.zig
+4850628 1551559906 0 QEww1cNolzNrXqhOMV8uMTXRXQmbekZ7nyUaEqj35x6ZjO8BRVzqvYxQeSmW8c_5 /home/andy/dev/zig/build/lib/zig/std/coff.zig
+4877702 1551562259 0 9cFnTGm01DAKqMZim8dzEXoPyN8w3R8UAer53ycBv2PFgg-pM6AsNd6hDf0jlseT /home/andy/dev/zig/build/lib/zig/std/rand.zig
+5113402 1554353707 0 m2d1Awh2J4qJuWpBI5sEZJyszBZB2VIZlHvVpXZlt9Vz9JdjXvMN2Cig4ohevME_ /home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig
+4877697 1551560726 0 y2XL97U7jZ9PY4d5TVVZmBzYQc5wrCE_j_utDeU8zfLp5W6iLdFEf_HLbG4-W9Mf /home/andy/dev/zig/build/lib/zig/std/mutex.zig
+4877707 1551560708 0 jd03IjTqKqI-sTTbTTL63EjXX2xp9vPInAn4fA0rRis3TeXGgWnP-44_8N0OTRPP /home/andy/dev/zig/build/lib/zig/std/spinlock.zig</code></pre>
+    <p>
+    The way the cache checking works, is that it calls <code>fstat</code> on all the files in the
+    manifest. For each file, if the inodes and mtimes from the manifest match the results from
+    <code>fstat</code>, then the hash is trusted to be up-to-date for that particular file.
+    Any files with outdated hashes, have their contents hashed, and the manifest file updated
+    with the updated hashes. Finally, all the hashes are hashed together, and that final hash
+    is used as the directory name within <code>zig-cache</code> that Zig looks for previously
+    created build artifacts.
+    </p>
+    <p>Because Zig uses <code>-MD -MF</code> args to clang when doing
+        {#syntax#}@cImport{#endsyntax#}, Zig has a complete list of files that the C code read from,
+        which Zig adds to the cache. So even when using {#syntax#}@cImport{#endsyntax#},
+        Zig's caching system remains perfect. This is a proof of concept
+        for the mechanism that the {#link|self-hosted compiler|Self-Hosted Compiler Status#}
+        will use to watch and rebuild files.</p>
+    <p>
+    There is one really fascinating problem to solve when relying on file modification times
+    to determine whether a file's contents have changed. Some file systems, such as macOS's HFS+,
+    do not support nanosecond precision; only seconds. However even nanosecond precision exhibits
+    the problem for very fast systems.
+    </p>
+    <p>
+    Imagine that a file was modified, and then immediately after, added to the cache. When
+    added to the manifest, the current time and the file's mtime will be the same. If the file
+    is modified again quickly, and then the cache checked, it will still be the same instant in
+    time; the modification to the file did not change the mtime.
+    </p>
+    <p>
+    There is a beautiful solution to this problem, which is to disqualify a file from being cached
+    if the current time, truncated to the file system time granularity, matches the mtime:
+    </p>
+    <pre><code>// If the wall clock time, rounded to the same precision as the
+// mtime, is equal to the mtime, then we cannot rely on this mtime
+// yet. We will instead save an mtime value that indicates the hash
+// must be unconditionally computed.
+static bool is_problematic_timestamp(const OsTimeStamp *fs_clock) {
+    OsTimeStamp wall_clock = os_timestamp_calendar();
+    // First make all the least significant zero bits in the fs_clock, also zero bits in the wall clock.
+    if (fs_clock-&gt;nsec == 0) {
+        wall_clock.nsec = 0;
+        if (fs_clock-&gt;sec == 0) {
+            wall_clock.sec = 0;
+        } else {
+            wall_clock.sec &amp;= (-1ull) &lt;&lt; ctzll(fs_clock-&gt;sec);
+        }
+    } else {
+        wall_clock.nsec &amp;= (-1ull) &lt;&lt; ctzll(fs_clock-&gt;nsec);
+    }
+    return wall_clock.nsec == fs_clock-&gt;nsec &amp;&amp; wall_clock.sec == fs_clock-&gt;sec;
+}</code></pre>
+    <p>
+    What's beautiful about this is that it generalizes to any granularity. If a file system had a
+    1 day mtime granularity, then this would mean any files modified within 1 day would have to
+    have their contents hashed, but files older than that could have their hashes trusted.
+    If a file system always wrote 0 for the mtime, Zig would never trust it.
+    </p>
+    <p>
+    Thanks to <a href="https://apenwarr.ca/log/20181113">apenwarr's insightful blog post about build system caching</a> for inspiration.
+    </p>
+    <p>
+    The caching system is disabled by default for the command line interface, except for <code>zig test</code>. <code>zig test</code> does respect <code>--output-dir</code> however, which disables caching.
+    The default caching behavior can be overridden with <code>--cache [on|off]</code>.
+    The {#link|Zig Build System#} enables caching by default.
+    </p>
+    <p>
+    Caching is always enabled, using the global cache directory, when building libc and compiler-rt.
+    This saves a considerable amount of accumulated time, since they must be available for every
+    compilation.
+    </p>
     {#header_close#}
     {#header_close#}
 
@@ -1147,29 +1286,66 @@ kernel32_lib_dir=C:\Program Files (x86)\Windows Kits\10\\Lib\10.0.17134.0\um\x64
     would not be detected</a>. Because of this, the <code>--no-rosegment</code>
     command line option is removed from Zig. It was only meant to be a temporary workaround.
     </p>
-    <p>TODO undefined language integration. --enable-valgrind --disable-valgrind</p>
-    <p>TODO note that undefined sets memory to 0xaa</p>
-    <p>TODO demo it</p>
-    <p>TODO daurnimator added a valgrind module to the standard library.</p>
+    <p>Thanks to daurnimator for adding a valgrind module to the standard library.
+    This allows Zig code to easily make
+    <a href="http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.clientreq">Valgrind client requests</a>.
+    </p>
+    <p>In addition to userland API, Zig integrates more tightly with Valgrind. For example,
+    one thing that Zig does in <a href="/documentation/0.4.0/#Debug">Debug</a> builds is 
+    write {#syntax#}0xaa{#endsyntax#} bytes to {#syntax#}undefined{#endsyntax#} variables:
+    </p>
+    {#code_begin|exe|undef#}
+const std = @import("std");
 
-    valgrind client requests for undefined values
-    
-    with this change, when you assign undefined, zig emits a few
-    assembly instructions to tell valgrind that the memory is undefined
-    
-    it's on by default for debug builds, and disabled otherwise. only
-    support for linux, darwin, solaris, mingw on x86_64 is currently
-    implemented.
-    
-    --disable-valgrind turns it off even in debug mode.
-    --enable-valgrind turns it on even in release modes.
-    
-    It's always disabled for compiler_rt.a and builtin.a.
-    
-    Adds `@import("builtin").valgrind_support` which lets code know
-    at comptime whether valgrind client requests are enabled.
-    
-    See <a href="https://github.com/ziglang/zig/issues/1989">#1989</a>
+pub fn main() void {
+    var array: [10]u8 = undefined;
+    std.debug.warn("array: {x}\n", array);
+}
+    {#code_end#}
+    <p>
+    Valgrind has detection for branching on undefined values, but if Zig was writing
+    {#syntax#}0xaa{#endsyntax#} values to uninitialized variables, Valgrind would not know
+    that this is supposed to be an undefined canary. It would see the values as defined.
+    However thanks to integrated Valgrind client requests with the Zig language, Valgrind
+    knows what's going on:
+    </p>
+    {#code_begin|exe|undef#}
+const std = @import("std");
+
+pub fn main() void {
+    var x: i32 = 1234;
+    std.debug.warn("x = {}\n", x);
+    x = undefined;
+    if (x > 10) {
+        std.debug.warn("greater than 10\n");
+    }
+}
+    {#code_end#}
+    <p>When run in valgrind:</p>
+    <pre><code>==16484== Conditional jump or move depends on uninitialised value(s)
+==16484==    at 0x224B6C: main (undef.zig:7)
+==16484==    by 0x22455A: posixCallMainAndExit (bootstrap.zig:86)
+==16484==    by 0x224350: _start (bootstrap.zig:43)</code></pre>
+    <p>
+    This is a debugging tool available in Zig that is not available in C -
+    setting things to {#syntax#}undefined{#endsyntax#} so that Valgrind can
+    catch it if you accidentally use it.
+    </p>
+    <p>
+    Language integration with Valgrind is enabled by default in
+    <a href="/documentation/0.4.0/#Debug">Debug</a> mode, and disabled by default in other
+    modes. The feature can be force enabled or force disabled with
+    <code>--enable-valgrind</code> and <code>--disable-valgrind</code>, respectively.
+    Also available is {#syntax#}@import("builtin").valgrind_support{#endsyntax#} which is a
+    {#syntax#}comptime{#endsyntax#} {#syntax#}bool{#endsyntax#} available for code to
+    find out whether the programmer wants the executable to have Valgrind integration.
+    It's always disabled for compiler_rt and libc/builtin.
+    </p>
+    <p>
+    The cost of this feature is a few assembly instructions with each assignment to
+    {#syntax#}undefined{#endsyntax#}. Only support for Linux, macOS, Solaris, and
+    MinGW on x86_64 is currently implemented.
+    </p>
     {#header_close#}
 
     {#header_open|zig fmt#}
