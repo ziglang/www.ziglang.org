@@ -204,12 +204,27 @@ cool sunglasses
     {#header_close#}
 
     {#header_open|FreeBSD Support#}
-    <p>Greg V, Marc Tiehuis, and Marcio Giaxa worked together and got FreeBSD working in the stage1
-    compiler as well as the Zig standard library.</p>
-    TODO look at the issue and pull some content from there
-    TODO automated x86_64 CI builds. mention sr.ht 
-    TODO not all tests passing
-    TODO can't build the libc startup files yet
+    <p>
+    Marc Tiehuis started an initial FreeBSD branch.
+    Greg V picked up the figurative baton in
+    <a href="https://github.com/ziglang/zig/pull/1661">#1661</a>, and Marcio Giaxa
+    completed the effort.
+    </p>
+    <p>
+    Now, FreeBSD works in the stage1 C++ compiler code, as well as the Zig Standard Library,
+    which means it now has {#link|Tier 2 Support#}. To achieve {#link|Tier 1 Support#}, these things
+    are needed:
+    </p>
+    <ul>
+      <li>{#link|Implement building the FreeBSD libc startup files|Zig ships with libc#}</li>
+      <li>Get all the tests passing. The CI does not have all the tests enabled for FreeBSD.</li>
+    </ul>
+    <p>
+    Despite these issues, thanks to <a href="https://sourcehut.org/">SourceHut</a>,
+    FreeBSD does have some CI testing support, as well as automated binary builds available
+    for x86_64 on <a href="/download">the download page</a>.
+    </p>
+    <p>See <a href="https://github.com/ziglang/zig/issues/1759">#1759</a> for more details.</p>
     {#header_close#}
 
     {#header_open|NetBSD Support#}
@@ -225,11 +240,41 @@ cool sunglasses
     {#header_close#}
 
     {#header_open|WebAssembly Support#}
-    <p>Ben Noordhuis fixed build-exe for --target-arch wasm32 (<a href="https://github.com/ziglang/zig/issues/1570">#1570</a>).</p>
-    <p>TODO https://github.com/ziglang/zig/issues/1622</p>
-    <p>TODO</p>
-    implement target_c_type_size_in_bits for WASI
-    Shritesh Bhattarai wasm: Pass --allow-undefined and --export-all to the linker
+    <p>Now that Zig uses {#link|LLVM 8#}, the <code>wasm32</code> target architecture is
+    guaranteed to be available in Zig.</p>
+    <p>Ben Noordhuis fixed <code>zig build-exe</code> for the <code>wasm32</code> target
+    (<a href="https://github.com/ziglang/zig/issues/1570">#1570</a>).</p>
+    <p>Shritesh Bhattarai added <code>--allow-undefined</code> and <code>--export-all</code>
+    to the wasm linker line, solving <a href="https://github.com/ziglang/zig/issues/1622">#1622</a>.
+    There may be a better way to catch link errors in the future, but for now, this makes
+    WebAssembly work out-of-the-box in Zig:
+    </p>
+    {#code_begin|syntax#}
+extern fn print(i32) void;
+
+export fn add(a: i32, b: i32) void {
+    print(a + b);
+}
+    {#code_end#}
+    <pre><code>$ zig build-exe math.zig -target wasm32-freestanding</code></pre>
+    <p class="file">test.js</p>
+    <pre><code>const fs = require('fs');
+const source = fs.readFileSync("./math");
+const typedArray = new Uint8Array(source);
+
+WebAssembly.instantiate(typedArray, {
+  env: {
+    print: (result) =&gt; { console.log(`The result is ${result}`); }
+  }
+}).then(result =&gt; {
+  const add = result.instance.exports.add;
+  add(1, 2);
+});</code></pre>
+    <pre><code>$ node test.js
+The result is 3</code></pre>
+    <p>There is also the "WebAssembly System Interface" operating system target, <code>wasi</code>.
+    I haven't really explored this use case yet, but I did make the C integer types work for it.
+    More research and exploration is needed.</p>
     {#header_close#}
 
     {#header_open|64-bit ARM Linux Support#}
@@ -674,88 +719,285 @@ cool sunglasses
     {#header_close#}
 
     {#header_open|Zig is also a C Compiler#}
-    TODO
-    <p>TODO mention nostdinc</p>
-    <p>TODO mention no longer has default system paths</p>
-    <p>TODO add `zig cc` command to act like a C compiler. <a href="https://github.com/ziglang/zig/issues/490">#490</a></p>
-    first class support for compiling C code
-    
-    New CLI parameter: --c-source [options] [file]
-    
-    It even works with `--cache on` when there are transitive dependencies.
-    
-    Instead of `builder.addCExecutable`, use `builder.addExecutable` and pass
-    `null` for the root source file. Then use `builder.addCSourceFile`,
-    which takes the path to the C code, and a list of C compiler args.
-    Be sure to linkSystemLibrary("c") if you want libc headers to be
-    available.
-    
-    print the command that failed when C source code fails to build
-    
-    also respect the --color arg when building C code
+    <p>
+    One of the main features of Zig is <a href="/documentation/0.4.0/#cImport">@cImport</a> and
+    {#link|C Translation|C Translation Status#}. This is accomplished by linking against
+    <a href="https://clang.llvm.org/">Clang</a> libraries. Clang is a fully featured
+    C and C++ compiler. Zig has all this functionality - so we may as well expose it!
+    </p>
+    <p>
+    The <code>zig cc</code> command exposes clang, which you can see with this amusing output:
+    </p>
+    <pre><code>$ zig cc --version
+clang version 8.0.0
+...</code></pre>
+    <p><code>zig cc</code> is a bit of a low level command. The higher level command line
+    interface <code>--c-source</code> (or the corresponding {#link|Zig Build System#} API)
+    is recommended instead, for a few reasons:</p>
+    <ul>
+      <li>Compilers are core system components and often have compatibility patches to make
+        them work on a given system. For example, a fresh build of clang from source does
+        not work out-of-the-box on <a href="https://nixos.org/">NixOS</a>, because it is
+        not aware of the location of the system libc. However if you install clang through
+        the system package manager, everything works as expected, due to the patches.
+        <code>zig cc</code> represents a fresh build of clang, which does not have such patches.
+        This is actually A Good Thing - more on this below.
+      </li>
+      <li>
+        The higher level interface has a consistent set of defaults for both C code and Zig code.
+        For example, when using <code>--c-source</code>:<ul>
+          <li>Automatic dependency tracking and caching. See {#link|Build Artifact Caching#}.</li>
+          <li><code>-march=native</code> is enabled for the native target.</li>
+          <li>Parameters such as <code>-target</code>, <code>--color</code>, and
+            <code>--strip</code> will apply to both C and Zig Code.</li>
+          <li>Zig has more capabilities as a linker driver than Clang. {#link|Zig ships with libc#}.</li>
+          <li>Consistent features enabled or disabled such as stack protection,
+            position independent code, and whether the frame pointer is omitted.</li>
+        </ul>
+      </li>
+    </ul>
+    <p>Here's an example of Zig building some C code:</p>
+    <p class="file">hello.c</p>
+    <pre><code>#include &lt;stdio.h&gt;
 
-    pass explicit frame pointer args when compiling C code
+int main(int argc, char **argv) {
+    printf("Hello world\n");
+    return 0;
+}</code></pre>
+<pre><code>$ zig build-exe --c-source hello.c --library c
+$ ./hello
+Hello world</code></pre>
+    <p>
+    You can use <code>--verbose-cc</code> to see what C compiler command this executed:
+    </p>
+    <pre><code>$ zig build-exe --c-source hello.c --library c --verbose-cc
+zig cc -MD -MV -MF zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC</code></pre>
+    <p>
+    Note that if I run the command again, there is no output, and it finishes instantly:
+    </p>
+    <pre><code>$ time zig build-exe --c-source hello.c --library c --verbose-cc
+
+real	0m0.027s
+user	0m0.018s
+sys	0m0.009s</code></pre>
+    <p>
+    This is thanks to {#link|Build Artifact Caching#}. Zig automatically parses the .d file that
+    clang produces and uses a robust caching system to avoid duplicating work.
+    </p>
+    <p>In the {#link|Zig Build System#}, {#syntax#}builder.addCExecutable{#endsyntax#}
+    used to be a system C compiler driver. That functionality is deleted. Instead,
+    build scripts can attach C source files to any executable, library, or object
+    with {#syntax#}foo.addCSourceFile{#endsyntax#}. You can see a nice example of
+    this in <a href="https://github.com/mikdusan/benchmark.unicode">Michael Dusan's benchmark.unicode project</a>.</p>
+    <p>Don't forget to use {#syntax#}foo.linkSystemLibrary("c");{#endsyntax#} if the C code
+    expects to use libc.</p>
+    <p>You may have noticed that the
+    Zig-generated C compilation command included <code>-nostdinc</code>.
+    </p><p>
+    This is a crucial step in the direction Zig is headed - providing consistent,
+    reliable builds that are insulated from the system-specific differences in the wild.
+    </p><p>
+    This affects <a href="/documentation/0.4.0/#cImport">@cImport</a> and
+    {#link|C Translation|C Translation Status#} as well. By default, Zig no longer looks in
+    system paths for C header files, instead relying only on what Zig ships and what
+    users explicitly request with <code>-isystem</code>.
+    </p>
+    <p>
+    However, when one uses the {#link|Zig Build System#}, and uses
+    {#syntax#}linkSystemLibrary{#endsyntax#} API, Zig takes that as a hint to look in
+    system default search paths.
+    <a href="https://github.com/ziglang/zig/issues/2041#issuecomment-479335822">Marc Tiehuis proposed to expose this functionality to the command line interface</a>,
+    and that is likely to be an accepted proposal.</p>
+
+    {#header_open|Zig ships with libc#}
+    <p>
+    One piece to this puzzle is that Zig now ships with libc. You can find the available
+    libc targets with <code>zig targets</code>:
+    </p>
+    <pre><code>...
+Available libcs:
+  aarch64_be-linux-gnu
+  aarch64_be-linux-musl
+  aarch64-linux-gnu
+  aarch64-linux-musleabi
+  armeb-linux-gnueabi
+  armeb-linux-gnueabihf
+  armeb-linux-musleabi
+  armeb-linux-musleabihf
+  arm-linux-gnueabi
+  arm-linux-gnueabihf
+  arm-linux-musleabi
+  arm-linux-musleabihf
+  i386-linux-gnu
+  i386-linux-musl
+  mips64el-linux-gnuabi64
+  mips64el-linux-gnuabin32
+  mips64el-linux-musl
+  mips64-linux-gnuabi64
+  mips64-linux-gnuabin32
+  mips64-linux-musl
+  mipsel-linux-gnu
+  mipsel-linux-musl
+  mips-linux-gnu
+  mips-linux-musl
+  powerpc64le-linux-gnu
+  powerpc64le-linux-musl
+  powerpc64-linux-gnu
+  powerpc64-linux-musl
+  powerpc-linux-gnu
+  powerpc-linux-musl
+  riscv32-linux-musl
+  riscv64-linux-gnu
+  riscv64-linux-musl
+  s390x-linux-gnu
+  s390x-linux-musl
+  sparc-linux-gnu
+  sparcv9-linux-gnu
+  x86_64-linux-gnu
+  x86_64-linux-gnux32
+  x86_64-linux-musl</code></pre>
+    <p>
+    What this means is that <code>--library c</code> for these targets <em>does not depend
+      on any system files</em>!
+    </p>
+    <p>
+    Let's look at that C hello world example again:
+    </p>
+<pre><code>$ zig build-exe --c-source hello.c --library c
+$ ./hello
+Hello world
+$ ldd ./hello
+	linux-vdso.so.1 (0x00007ffd03dc9000)
+	libc.so.6 =&gt; /lib/libc.so.6 (0x00007fc4b62be000)
+	libm.so.6 =&gt; /lib/libm.so.6 (0x00007fc4b5f29000)
+	libpthread.so.0 =&gt; /lib/libpthread.so.0 (0x00007fc4b5d0a000)
+	libdl.so.2 =&gt; /lib/libdl.so.2 (0x00007fc4b5b06000)
+	librt.so.1 =&gt; /lib/librt.so.1 (0x00007fc4b58fe000)
+	/lib/ld-linux-x86-64.so.2 =&gt; /lib64/ld-linux-x86-64.so.2 (0x00007fc4b6672000)
+</code></pre>
+    <p><a href="https://www.gnu.org/software/libc/">glibc</a> does not support building
+    {#link|statically|Static by Default#},
+    but <a href="https://www.musl-libc.org/">musl</a> does:</p>
+<pre><code>$ zig build-exe --c-source hello.c --library c -target x86_64-linux-musl
+$ ./hello
+Hello world
+$ ldd hello
+  not a dynamic executable</code></pre>
+    <p>In this example, Zig built musl libc from source and then linked against it.
+    The build of musl libc for x86_64-linux remains available thanks to the
+    {#link|caching system|Build Artifact Caching#}, so any time this libc is needed
+    again it will be available instantly.</p>
+    <p>
+    This means that this functionality is available on any platform. Windows and macOS users
+    can build Zig and C code, and link against libc, for any of the targets listed above.
+    Similarly code can be cross compiled for other architectures:
+    </p>
+<pre><code>$ zig build-exe --c-source hello.c --library c -target aarch64v8-linux-gnu
+$ file hello
+hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped</code></pre>
+    <p>
+    In some ways, Zig is a better C compiler than C compilers!
+    </p>
+    <p>
+    This functionality is more than bundling a cross-compilation toolchain
+    along with Zig. For example, the total size of libc headers that Zig ships is 22MiB
+    uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone
+    are 8MiB, and for glibc are 3.1MiB (glibc is missing the linux headers), yet Zig currently
+    ships with 40 libcs. With a naive bundling that would be 444MiB. However, thanks to
+    this
+    <a href="https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig">process_headers tool</a>
+    that I made, and some
+    <a href="https://github.com/ziglang/zig/wiki/Updating-libc-Headers">good old manual labor</a>,
+    Zig binary tarballs remain roughly 30MiB total, despite supporting libc for all these targets,
+    as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler.
+    For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132MiB.
+    </p>
+    <p>
+    Note that only the {#link|Tier 1 Support#} targets have been thoroughly tested.
+    It is planned to <a href="https://github.com/ziglang/zig/issues/514">add more libcs</a>
+    (including for Windows), and to
+    <a href="https://github.com/ziglang/zig/issues/2058">add test coverage for building against all the libcs</a>. Support for building the {#link|FreeBSD|FreeBSD Support#} libc startup files is the main feature
+    needed to achieve {#link|Tier 1 Support#} for the target.
+    </p>
+    <p>Thanks to Jay Weisskopf for helping with the glibc targets by removing an
+    obsolete compat shim file.</p>
+    {#header_close#}
 
     {#header_open|Libc Detection#}
-    better libc detection (<a href="https://github.com/ziglang/zig/issues/1996">#1996</a>)
-    
-    * better libc detection
-    
-    This introduces a new command `zig libc` which prints
+    <p>
+    Although {#link|Zig ships with libc#} for some targets, it still supports building
+    against the system-native libc.
+    </p>
+    <p>0.4.0 introduces a new command <code>zig libc</code> which prints
     the various paths of libc files. It outputs them to stdout
     in a simple text file format that it is capable of parsing.
-    You can use `zig libc libc.txt` to validate a file.
-    
-    These arguments are gone:
-    --libc-lib-dir [path]        directory where libc crt1.o resides
-    --libc-static-lib-dir [path] directory where libc crtbegin.o resides
-    --msvc-lib-dir [path]        (windows) directory where vcruntime.lib resides
-    --kernel32-lib-dir [path]    (windows) directory where kernel32.lib resides
-    
-    Instead we have this argument:
-    --libc [file]                Provide a file which specifies libc paths
-    
+    You can use <code>zig libc libc.txt</code> to validate a file.
+    </p>
+    <p>Here's what it looks like on my NixOS laptop:</p>
+    <pre><code>$ zig libc
+# The directory that contains `stdlib.h`.
+# On POSIX-like systems, include directories be found with: `cc -E -Wp,-v -xc /dev/null`
+include_dir=/nix/store/q2q1sg5sljia8sihhwcpbxir70yw33bw-glibc-2.27-dev/include
+# The system-specific include directory. May be the same as `include_dir`.
+# On Windows it's the directory that includes `vcruntime.h`.
+# On POSIX it's the directory that includes `sys/errno.h`.
+sys_include_dir=/nix/store/q2q1sg5sljia8sihhwcpbxir70yw33bw-glibc-2.27-dev/include
+
+# The directory that contains `crt1.o`.
+# On POSIX, can be found with `cc -print-file-name=crt1.o`.
+# Not needed when targeting MacOS.
+crt_dir=/nix/store/fivq0nbggp4y8mhy3ixprqd7qyn1hy2j-glibc-2.27/lib
+
+# The directory that contains `vcruntime.lib`.
+# Only needed when targeting MSVC on Windows.
+msvc_lib_dir=
+
+# The directory that contains `kernel32.lib`.
+# Only needed when targeting MSVC on Windows.
+kernel32_lib_dir=</code></pre>
+    <p>And here's what it looks like on my Windows laptop:</p>
+    <pre><code>&gt; zig.exe libc
+# The directory that contains `stdlib.h`.
+# On POSIX-like systems, include directories be found with: `cc -E -Wp,-v -xc /dev/null`
+include_dir=C:\Program Files (x86)\Windows Kits\10\\Include\10.0.17134.0\ucrt
+# The system-specific include directory. May be the same as `include_dir`.
+# On Windows it's the directory that includes `vcruntime.h`.
+# On POSIX it's the directory that includes `sys/errno.h`.
+sys_include_dir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.15.26726\lib\x64\\..\..\include
+
+# The directory that contains `crt1.o`.
+# On POSIX, can be found with `cc -print-file-name=crt1.o`.
+# Not needed when targeting MacOS.
+crt_dir=C:\Program Files (x86)\Windows Kits\10\\Lib\10.0.17134.0\ucrt\x64\
+
+# The directory that contains `vcruntime.lib`.
+# Only needed when targeting MSVC on Windows.
+msvc_lib_dir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.15.26726\lib\x64\
+
+# The directory that contains `kernel32.lib`.
+# Only needed when targeting MSVC on Windows.
+kernel32_lib_dir=C:\Program Files (x86)\Windows Kits\10\\Lib\10.0.17134.0\um\x64\</code></pre>
+    <p>These arguments are gone:</p>
+    <pre>--libc-lib-dir [path]        directory where libc crt1.o resides
+--libc-static-lib-dir [path] directory where libc crtbegin.o resides
+--msvc-lib-dir [path]        (windows) directory where vcruntime.lib resides
+--kernel32-lib-dir [path]    (windows) directory where kernel32.lib resides</pre>
+    <p>Instead we have this argument:</p>
+    <pre>--libc [file]                Provide a file which specifies libc paths</pre>
+    <p>
     This is used to pass a libc text file (which can be generated with
-    `zig libc`). So it is easier to manage multiple cross compilation
+    <code>zig libc</code>). So it is easier to manage multiple cross compilation
     environments.
-    
-    `--cache on` now works when linking against libc.
-    
-    `ZigTarget` now has a bool field `is_native`
-    
-    Better error messaging when you try to link against libc or use
-    `@cImport` but the various paths cannot be found. It should also be
-    faster.
-    
-    * save native_libc.txt in zig-cache
-    
-    This avoids having to detect libc at runtime on every invocation.
-
-    introduce sys_include_dir for when sys/* files are not with stdlib.h
-
-    dynamic linker path is independent from libc installation
-    dynamic_linker_path can be null on some targets
-    windows and uefi don't have dynamic linkers
-    don't resolve dynamic linker for static executables
-    stage1: implement get_dynamic_linker for riscv
-
-    {#header_close#}
-    {#header_open|Zig ships with libc#}
-    TODO
-    stop linking against gcc files
-    libunwind
-    libcxx
-    process headers tool
-
-    Jay Weisskopf removed glibc compat shim with restrictive license.
-    
-    Unlike the other glibc source code checked into the repo, `csu/init.c`
-    did not have a license clause that allowed linking without restrictions.
-    
-    `_IO_stdin_used` is the only symbol in the file and appears to be a 20
-    year old compatibility shim for the glibc 2.0 ABI. Obsolete in 2.1.
-
-    zig targets prints the available libcs
+    </p>
+    <p>
+    When Zig must depend on the native libc installation, it first looks for
+    <code>zig-cache/native_libc.txt</code>. If found, this file will be used. If this
+    file does not exist or has a parse error, Zig will perform native libc detection
+    and then overwrite this file. This can save time, because native libc detection can
+    be time consuming. For example it may need to invoke the system C compiler several
+    times to find out paths of things, or it may invoke some Windows COM API which is a bit
+    non-deterministic in terms of performance.
+    </p>
     {#header_close#}
     {#header_close#}
 
@@ -774,19 +1016,40 @@ cool sunglasses
     and <code>--disable-pic</code> can be used to override the default, but this
     should be a rare use case.
     </p>
-    <p>Position Independent Code is also disabled by default for the freestanding OS target.</p>
-    <p>When targeting Windows, Position Independent Code is always enabled.</p>
+    <p>Position Independent Code is also disabled by default for the freestanding OS target.
+    When targeting Windows, Position Independent Code is always enabled.</p>
     <p>It is <a href="https://github.com/ziglang/zig/issues/2213">proposed to rename these options</a> to <code>-fPIC</code> and <code>-fno-PIC</code> to match C compilers.</p>
     {#header_close#}
 
     {#header_open|Single-Threaded Builds#}
-    <p>TODO --single-threaded</p>
-    <p>TODO explain info from docs</p>
-
-    <p>John Schmidt made ThreadSafeFixedBufferAllocator alias FixedBufferAllocator when --single-threaded. <a href="https://github.com/ziglang/zig/issues/1910">#1910</a></p>
-    <p>Shritesh Bhattarai made {#syntax#}std.os.exit{#endsyntax#} use the <code>exit_group</code>
-    syscall when not single-threaded.</p>
-    zig build: support single-threaded builds
+    <p>
+    For some use cases, it is known at compile-time that a given application or executable will
+    never participate in multi-threading. For these use cases Zig has
+    <a href="/documentation/0.4.0/#Single-Threaded-Builds">Single-Threaded Builds</a>.
+    </p>
+    <p>There is now a compile option <code>--single-threaded</code> which has the following effects:</p>
+    <ul>
+      <li>All {#link|Thread Local Variables#} are treated as
+        <a href="/documentation/0.4.0/#Global-Variables">Global Variables</a>.</li>
+      <li>The overhead of <a href="/documentation/0.4.0/#Coroutines">Coroutines</a> becomes
+        equivalent to function call overhead. Note this will not be implemented until the
+        upcoming {#link|Coroutine Rewrite|Coroutine Status#}</li>
+      <li>The {#syntax#}@import("builtin").single_threaded{#endsyntax#} becomes
+        {#syntax#}true{#endsyntax#}
+        and therefore various userland APIs which read this variable become more efficient:<ul>
+          <li>{#syntax#}std.Mutex{#endsyntax#} becomes an empty data structure and all of its functions become no-ops.</li>
+          <li>John Schmidt made {#syntax#}std.heap.ThreadSafeFixedBufferAllocator{#endsyntax#}
+            alias {#syntax#}std.heap.FixedBufferAllocator{#endsyntax#} when
+            <code>--single-threaded</code>. <a href="https://github.com/ziglang/zig/issues/1910">#1910</a></li>
+          <li>Shritesh Bhattarai made {#syntax#}std.os.exit{#endsyntax#} use the
+            <code>exit_group</code> syscall when not single-threaded.</li>
+        </ul>
+      </li>
+    </ul>
+    <p>
+    The feature is exposed in the {#link|Zig Build System#} with
+    {#syntax#}foo.single_threaded = true;{#endsyntax#}
+    </p>
     {#header_close#}
 
     {#header_open|Zig Build System#}
@@ -1817,6 +2080,14 @@ test "fn types" {
     {#header_close#}
 
     {#header_open|Self-Hosted Compiler Status#}
+    <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Package Manager Status#}
+    <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Coroutine Status#}
     <p>TODO</p>
     {#header_close#}
 
