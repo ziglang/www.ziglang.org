@@ -1921,7 +1921,8 @@ All tests passed.
     </p>
     <p>
     Thanks to Rich Felker from the musl libc project,
-    who gave me this crucial information:
+    who gave me this crucial information, when I was implementing
+    thread local storage for static builds:
     </p>
     <blockquote>
     to satisfy the abi, your init code has to write the same value
@@ -1967,9 +1968,67 @@ All tests passed.
 
     <h2 id="C-Pointers"><a href="#toc-C-Pointers">C Pointers</a> <a class="hdr" href="#C-Pointers">§</a></h2>
 
-    <p>TODO</p>
+    <p>
+    One of the use cases of Zig is to beat C at its own game, and this means being a better
+    language for using C libraries than C is.
+    It's a tall order to fulfill, and it was compromised by Zig's
+    <a href="/download/0.3.0/release-notes.html#pointer-reform">pointer reform</a>. An unfortunate
+    side effect of having more type safety in pointer types was that C's very unsafe pointer types
+    became awkward to use. It is ambiguous whether pointers should be <a href="#C-Translation-Status">translated</a> as
+    single-item pointers (<code class="zig">*T</code>) or unknown-length pointers (<code class="zig">[*]T</code>).
+    </p>
+    <p>
+    <a href="/documentation/0.4.0/#C-Pointers">C Pointers</a> are a compromise so that
+    Zig code can utilize translated header files directly.
+    </p>
+    <p>
+    This type is to be avoided whenever possible. The only valid reason for using a C pointer is in
+    auto-generated code from translating C code.
+    </p>
+    <p><code class="zig">[*c]T</code> - C pointer.</p>
+    <ul>
+      <li>Supports all the syntax of the other two pointer types.</li>
+      <li>Implicitly casts to other pointer types, as well as <a href="/documentation/0.4.0/#Optional-Pointers">Optional Pointers</a>.
+          When a C pointer is implicitly casted to a non-optional pointer, safety-checked
+          <a href="/documentation/0.4.0/#Undefined-Behavior">Undefined Behavior</a> occurs if the address is 0.
+      </li>
+      <li>Allows address 0. On non-freestanding targets, dereferencing address 0 is safety-checked
+        <a href="/documentation/0.4.0/#Undefined-Behavior">Undefined Behavior</a>. Optional C pointers introduce another bit to keep track of
+          null, just like <code class="zig">?<span class="tok-type">usize</span></code>. Note that creating an optional C pointer
+          is unnecessary as one can use normal <a href="/documentation/0.4.0/#Optional-Pointers">Optional Pointers</a>.
+      </li>
+      <li>Supports <a href="/documentation/0.4.0/#Implicit-Casts">implicit casting</a> to and from integers.</li>
+      <li>Supports comparison with integers.</li>
+      <li>Does not support Zig-only pointer attributes such as alignment. Use normal
+        <a href="/documentation/0.4.0/#Pointers">Pointers</a> please!</li>
+    </ul>
     <p>It's planned to <a href="https://github.com/ziglang/zig/issues/1967">support `if`, `orelse`, `null`, and `.?` for C pointers</a>.</p>
-    <p>show off lots of examples including safety for null pointers.</p>
+    <p>
+    While C pointers themselves have all the footguns associated with, well, C pointers, there
+    is safety when casting to Zig pointers:
+    </p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;cast null C pointer to Zig pointer&quot;</span> {
+    <span class="tok-kw">var</span> c_ptr: [*c]<span class="tok-type">i32</span> = <span class="tok-number">0</span>;
+    <span class="tok-kw">var</span> zig_ptr: *<span class="tok-type">i32</span> = c_ptr;
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test 1/1 cast null C pointer to Zig pointer...cast causes pointer to be null
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:3:25</span>: <span class="t2_0">0x2040f1 in ??? (test)</span>
+    var zig_ptr: *i32 = c_ptr;
+                        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x225bdb in ??? (test)</span>
+        if (test_fn.func()) |_| {
+                        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:122:22</span>: <span class="t2_0">0x225366 in ??? (test)</span>
+            root.main() catch |err| {
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:43:5</span>: <span class="t2_0">0x2250d1 in ??? (test)</span>
+    @noInlineCall(posixCallMainAndExit);
+    <span class="t32_1">^</span>
+
+Tests failed. Use the following command to reproduce the failure:
+/home/andy/dev/www.ziglang.org/docgen_tmp/test
+</code></pre>
+
     
 
     <h2 id="Removal-of-the-Namespace-Type"><a href="#toc-Removal-of-the-Namespace-Type">Removal of the Namespace Type</a> <a class="hdr" href="#Removal-of-the-Namespace-Type">§</a></h2>

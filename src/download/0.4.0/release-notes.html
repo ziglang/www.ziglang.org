@@ -1845,9 +1845,51 @@ export fn entry() i32 {
     {#header_close#}
 
     {#header_open|C Pointers#}
-    <p>TODO</p>
+    <p>
+    One of the use cases of Zig is to beat C at its own game, and this means being a better
+    language for using C libraries than C is.
+    It's a tall order to fulfill, and it was compromised by Zig's
+    <a href="/download/0.3.0/release-notes.html#pointer-reform">pointer reform</a>. An unfortunate
+    side effect of having more type safety in pointer types was that C's very unsafe pointer types
+    became awkward to use. It is ambiguous whether pointers should be {#link|translated|C Translation Status#} as
+    single-item pointers ({#syntax#}*T{#endsyntax#}) or unknown-length pointers ({#syntax#}[*]T{#endsyntax#}).
+    </p>
+    <p>
+    <a href="/documentation/0.4.0/#C-Pointers">C Pointers</a> are a compromise so that
+    Zig code can utilize translated header files directly.
+    </p>
+    <p>
+    This type is to be avoided whenever possible. The only valid reason for using a C pointer is in
+    auto-generated code from translating C code.
+    </p>
+    <p>{#syntax#}[*c]T{#endsyntax#} - C pointer.</p>
+    <ul>
+      <li>Supports all the syntax of the other two pointer types.</li>
+      <li>Implicitly casts to other pointer types, as well as <a href="/documentation/0.4.0/#Optional-Pointers">Optional Pointers</a>.
+          When a C pointer is implicitly casted to a non-optional pointer, safety-checked
+          <a href="/documentation/0.4.0/#Undefined-Behavior">Undefined Behavior</a> occurs if the address is 0.
+      </li>
+      <li>Allows address 0. On non-freestanding targets, dereferencing address 0 is safety-checked
+        <a href="/documentation/0.4.0/#Undefined-Behavior">Undefined Behavior</a>. Optional C pointers introduce another bit to keep track of
+          null, just like {#syntax#}?usize{#endsyntax#}. Note that creating an optional C pointer
+          is unnecessary as one can use normal <a href="/documentation/0.4.0/#Optional-Pointers">Optional Pointers</a>.
+      </li>
+      <li>Supports <a href="/documentation/0.4.0/#Implicit-Casts">implicit casting</a> to and from integers.</li>
+      <li>Supports comparison with integers.</li>
+      <li>Does not support Zig-only pointer attributes such as alignment. Use normal
+        <a href="/documentation/0.4.0/#Pointers">Pointers</a> please!</li>
+    </ul>
     <p>It's planned to <a href="https://github.com/ziglang/zig/issues/1967">support `if`, `orelse`, `null`, and `.?` for C pointers</a>.</p>
-    <p>show off lots of examples including safety for null pointers.</p>
+    <p>
+    While C pointers themselves have all the footguns associated with, well, C pointers, there
+    is safety when converting to Zig pointers:
+    </p>
+    {#code_begin|test_err|causes pointer to be null#}
+test "cast null C pointer to Zig pointer" {
+    var c_ptr: [*c]i32 = 0;
+    var zig_ptr: *i32 = c_ptr;
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Removal of the Namespace Type#}
