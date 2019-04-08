@@ -169,14 +169,14 @@ cool sunglasses
     </p>
     <p>
     Zig is a general-purpose programming language designed for <strong>robustness</strong>,
-    <strong>optimality</strong>, and <strong>clarity</strong>. Zig is aggressively pursuing
+    <strong>optimality</strong>, and <strong>maintainability</strong>. Zig is aggressively pursuing
     its goal of overthrowing C as the de facto language for system programming. Zig intends
     to be so practical that people find themselves using it even if they dislike it.
     </p>
     <p>
     This release features <strong>6 months of work</strong> and
     changes from <strong>46 different contributors</strong>, spread among
-    <strong>846 commits</strong>.
+    <strong>875 commits</strong>.
     </p>
     <p>
     Special thanks to my <a href="https://www.patreon.com/andrewrk">patrons who provide financial support</a>. You're making Zig sustainable.
@@ -193,7 +193,13 @@ cool sunglasses
     Zig operates in lockstep with LLVM; Zig 0.4.0 is not compatible with LLVM 7.
     </p>
     <p>
-    Notably this means that Zig now has {#link|WebAssembly Support#}.
+    Notably this means that Zig now has {#link|WebAssembly Support#}, as well as recognizing
+    the <a href="https://hermitcore.org/">HermitCore</a> and
+    <a href="https://www.gnu.org/software/hurd/">Hurd</a> operating systems.
+    On the other hand, support for the
+    <a href="https://en.wikipedia.org/wiki/Nios_II">Nios II architecture</a> is dropped,
+    due to it being an
+    <a href="http://lists.llvm.org/pipermail/llvm-dev/2019-January/129121.html">experimental target which was largely unmaintained</a>.
     </p>
     {#header_close#}
 
@@ -202,6 +208,8 @@ cool sunglasses
     compiler as well as the Zig standard library.</p>
     TODO look at the issue and pull some content from there
     TODO automated x86_64 CI builds. mention sr.ht 
+    TODO not all tests passing
+    TODO can't build the libc startup files yet
     {#header_close#}
 
     {#header_open|NetBSD Support#}
@@ -214,6 +222,23 @@ cool sunglasses
     as well as a missing implementation of
     {#link|building the system's libc startup files lazily from source|Zig ships with libc#}.
     </p>
+    {#header_close#}
+
+    {#header_open|WebAssembly Support#}
+    <p>Ben Noordhuis fixed build-exe for --target-arch wasm32 (#1570).</p>
+    <p>TODO https://github.com/ziglang/zig/issues/1622</p>
+    <p>TODO</p>
+    implement target_c_type_size_in_bits for WASI
+    Shritesh Bhattarai wasm: Pass --allow-undefined and --export-all to the linker
+    {#header_close#}
+
+    {#header_open|64-bit ARM Linux Support#}
+    <p>Shawn Landden implemented arm64 Linux support in the Zig Standard Library,
+    as well as the necessary stage1 C++ compiler changes.</p>
+    <p>The arm64-linux target has now graduated to {#link|Tier 2 Support#}. To achieve
+    {#link|Tier 1 Support#}, we would need some way to run Continuous Integration
+    tests on arm64 linux.</p>
+    <p><a href="https://man.sr.ht/builds.sr.ht/compatibility.md">SourceHut has experimental arm64 Debian images</a>, which may be worth looking into.</p>
     {#header_close#}
 
     {#header_open|UEFI Support#}
@@ -669,6 +694,8 @@ cool sunglasses
     
     also respect the --color arg when building C code
 
+    pass explicit frame pointer args when compiling C code
+
     {#header_open|Libc Detection#}
     better libc detection (#1996)
     
@@ -709,6 +736,8 @@ cool sunglasses
     dynamic linker path is independent from libc installation
     dynamic_linker_path can be null on some targets
     windows and uefi don't have dynamic linkers
+    don't resolve dynamic linker for static executables
+    stage1: implement get_dynamic_linker for riscv
 
     {#header_close#}
     {#header_open|Zig ships with libc#}
@@ -726,13 +755,28 @@ cool sunglasses
     `_IO_stdin_used` is the only symbol in the file and appears to be a 20
     year old compatibility shim for the glibc 2.0 ABI. Obsolete in 2.1.
 
+    zig targets prints the available libcs
     {#header_close#}
     {#header_close#}
 
-    {#header_open|WebAssembly Support#}
-    <p>Ben Noordhuis fixed build-exe for --target-arch wasm32 (#1570).</p>
-    <p>TODO https://github.com/ziglang/zig/issues/1622</p>
-    <p>TODO</p>
+    {#header_open|Static by Default#}
+    <p>The <code>--static</code> CLI option is removed and the <code>-dynamic</code>
+    option is added.</p>
+    <p>Instead of an explicit <code>--static</code> flag, Zig makes things as static
+    as possible by default. Even <code>zig build-lib</code> will now create a static
+    library by default, but <code>-dynamic</code> can be used to choose a dynamic
+    library.</p>
+    <p>
+    When targeting Linux, Zig now automatically links statically when not linking against
+    any shared libraries. It also disables Position Independent Code in this case, which
+    <a href="http://ewontfix.com/18/">improves performance</a>, especially with regards
+    to {#link|Thread-Local Variables#}. <code>--enable-pic</code>
+    and <code>--disable-pic</code> can be used to override the default, but this
+    should be a rare use case.
+    </p>
+    <p>Position Independent Code is also disabled by default for the freestanding OS target.</p>
+    <p>When targeting Windows, Position Independent Code is always enabled.</p>
+    <p>It is <a href="https://github.com/ziglang/zig/issues/2213">proposed to rename these options</a> to <code>-fPIC</code> and <code>-fno-PIC</code> to match C compilers.</p>
     {#header_close#}
 
     {#header_open|Single-Threaded Builds#}
@@ -740,6 +784,9 @@ cool sunglasses
     <p>TODO explain info from docs</p>
 
     <p>John Schmidt made ThreadSafeFixedBufferAllocator alias FixedBufferAllocator when --single-threaded. #1910</p>
+    <p>Shritesh Bhattarai made {#syntax#}std.os.exit{#endsyntax#} use the <code>exit_group</code>
+    syscall when not single-threaded.</p>
+    zig build: support single-threaded builds
     {#header_close#}
 
     {#header_open|Zig Build System#}
@@ -791,6 +838,16 @@ cool sunglasses
     
     This breaks the CLI API that Godbolt uses. The suggested new invocation
     can be found in this commit diff, in the changes to `test/cli.zig`.
+
+    Akuli: Add /lib/x86_64-linux-gnu or similar to default system library search paths. This makes compiling with libraries like zlib and ncurses easier
+
+    Shritesh Bhattarai build: usageAndErr clean exit (#2194)
+
+    build.zig: allow run() on non-native target artifacts
+
+    Ruslan Prokopchuk handle LibExeObjStep.disable_gen_h 
+    It is sometimes useful to skip generating of the header file (e.g. https://github.com/ziglang/zig/issues/2173), and zig compiler provides an option `--disable-gen-h` to control that behaviour. However, setting `lib.disable_gen_h = true` in a typical `build.zig` didn't append the option to arguments. This commit fixes it and adds a convenient `setDisableGenH` setter.
+
     {#header_open|Build Artifact Caching#}
     TODO
     `@cImport` works with `--cache on`
@@ -811,6 +868,10 @@ cool sunglasses
 
 
     stage1 caching system: detect problematic mtimes. #2045
+
+    zig build: do a better job of detecting system paths. #2041
+
+    zig test respects --output-dir parameter
 
     {#header_close#}
     {#header_close#}
@@ -853,6 +914,12 @@ cool sunglasses
     TODO improvements
 
     <p>TODO Mention the discussion about alignment.</p>
+    <p>hryx: Vertically align array literal columns</p>
+    hryx: Always write a multiline struct literal if a field expr is multiline
+    Shritesh Bhattarai: fmt: fix first line comment indent in struct init
+    hryx: zig fmt: Allow one-line for loops
+    Shritesh Bhattarai fmt: format multi line only on trailing comma (#2184)
+    Shritesh Bhattarai: fmt: support trailing comma after var_args
 
     <p>
     <code>zig fmt</code> now has a <code>--check</code> flag, which does everything
@@ -865,6 +932,10 @@ cool sunglasses
       <li>Fixed argv[0] handled incorrectly.</li>
       <li>Removed <code>this</code> as a keyword since it was
         <a href="/download/0.3.0/release-notes.html#remove-this">removed in 0.3.0</a>.</li>
+      <li>Shritesh Bhattarai fixed zig fmt not detecting extra whitespace at the end
+        of a file. #2074</li>
+      <li>Shritesh Bhattarai implemented support for documentation comments on 
+        parameter declarations.</li>
     </ul>
     {#header_close#}
 
@@ -885,6 +956,18 @@ cool sunglasses
     </ul>
 
     Sahnvour translate-c: add support for integer suffixes on 0 (zero) litteral inside macro definitions
+    Sahnvour translate-c: additional test case for integer suffixes on 0
+
+    Jimmi Holst Christensen: workaround for #2043
+
+          Jimmi Holst Christensen Implemented enough of translate-c to translate assert
+          This required the following
+          * __extention__
+          * ({})
+          * Fixing if (0) ; else ;
+
+    Jimmi fixed void cast and added the last tests 5ae400fb393b4a7f
+
     {#header_close#}
 
     {#header_open|Grammar Formalization and Specification#}
@@ -935,6 +1018,21 @@ cool sunglasses
       <li>New section: <a href="/documentation/0.4.0/#packed-struct">packed struct</a></li>
       <li>New section: <a href="/documentation/0.4.0/#Zero-Bit-Types">Zero Bit Types</a></li>
       <li>Improved: <a href="/documentation/0.4.0/#union">union</a></li>
+      <li>New section: <a href="/documentation/0.4.0/#Implicit-Casts">Implicit Casts</a></li>
+      <li>Improved: <a href="/documentation/0.4.0/#export">@export</a></li>
+      <li>Improved: <a href="/documentation/0.4.0/#import">@import</a></li>
+      <li>New section: <a href="/documentation/0.4.0/#Memory">Memory</a></li>
+      <li>New section: <a href="/documentation/0.4.0/#Assembly">Assembly</a></li>
+      <li>New section: <a href="/documentation/0.4.0/#Zig-Test">Zig Test</a></li>
+      <li>Matt Stancliff fixed typos around pointer usage.</li>
+      <li>Vallentin fixed documentation typos.</li>
+      <li>New section: <a href="/documentation/0.4.0/#extern-struct">extern struct</a></li>
+      <li>New section: <a href="/documentation/0.4.0/#Variables">Variables</a></li>
+      <li>Jay Weisskopf made the docs use the section symbol § rather than the paragraph symbol ¶,
+      pointing out that a header may cover more than one paragraph, so a section symbol is more
+      appropriate.</li>
+      <li>Jay Weisskopf improved the documentation - and these release notes - to use the system-ui font family, as well as fallbacks for when this is not available.</li>
+      <li>Henry Nelson documented explicitly ignoring expression values.</li>
     </ul>
     {#header_close#}
 
@@ -961,7 +1059,7 @@ cool sunglasses
         <a href="/documentation/0.4.0/#for">for</a> now works with single-item pointers to arrays. #1663 -Jimmi Holst Christensen
       </li>
     <li>Added <a href="/documentation/0.4.0/#bswap">@bswap</a> builtin function. #767</li>
-    <li><strong>vegecode</strong> added the <a href="/documentation/0.4.0/#bitreverse">@bitreverse</a> builtin function. #767</li>
+    <li>vegecode added the <a href="/documentation/0.4.0/#bitreverse">@bitreverse</a> builtin function. #767</li>
     <li><a href="/documentation/0.4.0/#sizeOf">@sizeOf</a> is now defined to be the "ABI size"
       rather than the "store size". Quoting from the documentation:
       <br><br>
@@ -992,6 +1090,18 @@ cool sunglasses
       </ul></li>
       <li><a href="/documentation/0.4.0/#returnAddress">@returnAddress</a> and
         <a href="/documentation/0.4.0/#frameAddress">@frameAddress</a> now return a {#syntax#}usize{#endsyntax#} rather than a pointer.</li>
+      <li>{#syntax#}builtin.TypeInfo.ErrorSet{#endsyntax#} is now {#syntax#}?[]Error{#endsyntax#}
+        instead of {#syntax#}struct{errors:[]Error}{#endsyntax#}. #1936</li>
+      <li>Removed octal and binary floats from the language. This is technically a
+        breaking change but I would be surprised if anyone was actually using this feature.
+        MateuszOkulus did the documentation updates. #2093</li>
+      <li>Character literals allow unicode escapes. #2097</li>
+      <li>Added peer type resolution for {#syntax#}*const T{#endsyntax#} and {#syntax#}?*T{#endsyntax#}. #1298</li>
+      <li>Added compile error for ignoring error. #772</li>
+      <li>Add {#syntax#}allowzero{#endsyntax#} pointer attribute. Only useful for
+        freestanding targets. Also adds safety for
+        <a href="/documentatino/0.4.0/#intToPtr">@intToPtr</a> when the address is zero. #1953</li>
+      <li>alexander implemented switching on bools. #1768</li>
     </ul>
 
     {#header_open|Implicit Casting Comptime-Known Integers#}
@@ -1025,8 +1135,24 @@ test "implicit cast large integer to smaller with comptime value" {
     <p>TODO mention @sliceToBytes</p>
     {#header_close#}
 
-    {#header_open|Thread-Local Storage#}
+    {#header_open|Thread-Local Variables#}
     <p>TODO</p>
+
+    fix thread local variables for non- position independent code
+    
+    This fixes comes thanks to Rich Felker from the musl libc project,
+    who gave me this crucial information:
+    
+    "to satisfy the abi, your init code has to write the same value
+    to that memory location as the value passed to the [arch_prctl]
+    syscall"
+    
+    This commit also changes the rules for when to build statically
+    by default. When building objects and static libraries, position
+    independent code is disabled if no libraries will be dynamically
+    linked and the target does not require position independent code.
+    
+    closes #2063
 
     {#header_open|Avoid Creating Unnecessary Global Constants#}
     <p>
@@ -1089,6 +1215,16 @@ export fn entry() i32 {
 
     rename std lib files to new convention
 
+    this empty import workaround no longer necessary
+
+    {#header_close#}
+
+    {#header_open|Anonymous Enum Literal Type#}
+    <p>TODO introduce the enum literal type. #683</p>
+    implement implicit cast from enum literal to enum
+    make switch expressions allow enum literal types
+    implement peer type resolution for enum literals
+    add compile error test for invalid enum literal implicit cast
     {#header_close#}
     {#header_close#}
 
@@ -1233,6 +1369,25 @@ export fn entry() i32 {
       <li>John Schmidt added {#syntax#}std.PriorityQueue{#endsyntax#}.</li>
       <li>Added {#syntax#}std.os.posixMProtect{#endsyntax#}.</li>
       <li>{#syntax#}std.os.changeCurDir{#endsyntax#} no longer has an allocator parameter.</li>
+      <li>Shawn Landden added {#syntax#}std.ascii{#endsyntax#}. Rohlem 
+        added test coverage and fixed the logic.</li>
+      <li>Shawn Landden added {#syntax#}std.math.mulWide{#endsyntax#}.</li>
+      <li>kristopher tate exposed {#syntax#}std.crypto.HmacBlake2s256{#endsyntax#}.</li>
+      <li>Wink Saville added {#syntax#}SegmentedList.shrink{#endsyntax#}.</li>
+      <li>tgschultz added serialization and deserialization abstractions:<ul>
+          <li>Added {#syntax#}std.io.Serializer{#endsyntax#}.</li>
+          <li>Added {#syntax#}std.io.Deserializer{#endsyntax#}.</li>
+          <li>Added {#syntax#}std.io.BitInStream{#endsyntax#}.</li>
+          <li>Added {#syntax#}std.io.BitOutStream{#endsyntax#}.</li>
+          <li>Added {#syntax#}std.meta.TagPayloadType{#endsyntax#}.</li>
+          <li>Added {#syntax#}std.meta.trait.isUnsignedInt{#endsyntax#}.</li>
+          <li>Added {#syntax#}std.meta.trait.isSignedInt{#endsyntax#}.</li>
+        </ul></li>
+      <li>daurnimator added {#syntax#}std.meta.stringToEnum{#endsyntax#}</li>
+      <li>kristopher tate introduced the concept of {#syntax#}std.mem.separate{#endsyntax#} vs {#syntax#}std.mem.tokenize{#endsyntax#}.</li>
+      <li>daurnimator added {#syntax#}std.math.IntFittingRange{#endsyntax#}.</li>
+      <li>daurnimator added {#syntax#}std.LinkedList.concat{#endsyntax#}.</li>
+      <li>tgschultz added {#syntax#}std.meta{#endsyntax#} - helper functions for doing reflection. #1662</li>
     </ul>
 
     {#header_open|assert vs expect#}
@@ -1262,6 +1417,38 @@ export fn entry() i32 {
     <p>TODO demo usage</p>
     <p>TODO explain general purpose debug allocator</p>
     {#header_close#}
+
+    {#header_open|Allocator interface#}
+    TODO
+    breaking changes to std.mem.Allocator interface API
+    
+    Before, allocator implementations had to provide `allocFn`,
+    `reallocFn`, and `freeFn`.
+    
+    Now, they must provide only `reallocFn` and `shrinkFn`.
+    Reallocating from a zero length slice is allocation, and
+    shrinking to a zero length slice is freeing.
+    
+    When the new memory size is less than or equal to the
+    previous allocation size, `reallocFn` now has the option
+    to return `error.OutOfMemory` to indicate that the allocator
+    would not be able to take advantage of the new size.
+    
+    For more details see #1306. This commit closes #1306.
+    
+    This commit paves the way to solving #2009.
+    
+    This commit also introduces a memory leak to all coroutines.
+    There is an issue where a coroutine calls the function and it
+    frees its own stack frame, but then the return value of `shrinkFn`
+    is a slice, which is implemented as an sret struct. Writing to
+    the return pointer causes invalid memory write. We could work
+    around it by having a global helper function which has a void
+    return type and calling that instead. But instead this hack will
+    suffice until I rework coroutines to be non-allocating. Basically
+    coroutines are not supported right now until they are reworked as
+    in #1194.
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Please Welcome Antoine Vugliano to the Core Zig Team#}
@@ -1277,77 +1464,6 @@ for itself.
 I look forward to working with Antoine as we continue to push Zig
 toward 1.0.0 and beyond.
     </p>
-    {#header_close#}
-
-    {#header_open|Thank you contributors!#}
-    <p>
-    If you are looking to contribute to Zig, have a look at the
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3A%22contributor+friendly%22">issues labeled Contributor Friendly</a>.
-    </p>
-    <ul>
-      <li><strong>Shawn Landden</strong> added arm64 Linux support to the Zig standard library.
-        Note, however, that the arm64-linux target remains a {#link|Tier 2 Support#} target,
-        mainly due to lack of continuous integration testing.
-      </li>
-      <li><strong>Shawn Landden</strong> removed an invalid formatted printing test that relied
-        on negative NaN.</li>
-      <li><strong>Shawn Landden</strong> fixed ELF auxv handling.</li>
-      <li><strong>Wink Saville</strong> added tests to the Zig standard library.</li>
-      <li><strong>emekoi</strong> added dynamic library loading for windows. #1594</li>
-      <li><strong>emekoi</strong> maintained the MinGW build of Zig.</li>
-      <li><strong>Wink Saville</strong> Add doc comment for tokenLocationPtr (#1618)</li>
-      <li><strong>emekoi</strong> added math.pow support for integer types and math.powi. #1637 (#1642)</li>
-      <li><strong>tgschultz</strong> added std.meta - helper functions for doing reflection. #1662</li>
-      <li><strong>Greg V</strong> and <strong>Marc Tiehuis</strong> implemented FreeBSD support in the stage1 compiler and standard library.</li>
-      <li><strong>emekoi</strong> made the documentation headers have self links for sharing. #1667</li>
-      <li><strong>Ryan Saunderson</strong> fixed detecting the latest installed version of the
-        Windows SDK and related tests. #1665</li>
-      <li><strong>kristopher tate</strong> exposed {#syntax#}std.crypto.HmacBlake2s256{#endsyntax#}</li>
-      <li><strong>emekoi</strong> made terminal color output of the compiler more consistent (#1706)</li>
-      <li><strong>Matthew O'Connor</strong> updated {#syntax#}std.rb{#endsyntax#} to conform to the
-        <a href="/documentation/0.4.0/#Style-Guide">style guide</a>.</li>
-      </li>
-      <li><strong>kristopher tate</strong> added support for printing hex bytes on slices</li>
-      <li><strong>Vallentin</strong> fixed documentation typos</li>
-      <li><strong>kristopher tate</strong> made the internal compiler error handling more robust</li>
-      <li><strong>Duncan</strong> fixed the setsockopt syscall on linux.</li>
-      <li><strong>Wink Saville</strong> fixed {#syntax#}std.json.pushToParent{#endsyntax#} to work for arrays of Objects</li>
-      <li><strong>Wink Saville</strong> added {#syntax#}SegmentedList.shrink{#endsyntax#}</li>
-      <li><strong>Wink Saville</strong> renamed json tests to be easily filtered</li>
-      <li><strong>daurnimator</strong> added {#syntax#}std.meta.stringToEnum{#endsyntax#}</li>
-      <li><strong>kristopher tate</strong> introduced the concept of {#syntax#}std.mem.separate{#endsyntax#} vs {#syntax#}std.mem.tokenize{#endsyntax#}.</li>
-      <li><strong>daurnimator</strong> added {#syntax#}std.math.IntFittingRange{#endsyntax#}</li>
-      <li><strong>daurnimator</strong> added {#syntax#}std.LinkedList.concat{#endsyntax#}</li>
-      <li><strong>dbandstra</strong> made {#syntax#}std.fmt.parseUnsigned{#endsyntax#} handle types less than 8 bits wide.</li>
-      <li><strong>kristopher tate</strong> reduced code bloat by having {#syntax#}std.mem.join{#endsyntax#} and {#syntax#}std.os.path.join{#endsyntax#} use a slice parameter rather than var args.</li>
-      <li><strong>Suirad</strong> updated the standard library to use GetEnvironmentStringsW instead of GetEnvironmentStringsA. #534</li>
-      <li><strong>tgschultz</strong> added serialization and deserialization abstractions to the zig standard library.</li>
-      <li><strong>Henry Nelson</strong> documented explicitly ignoring expression values.</li>
-      <li><strong>Jay Weisskopf</strong> improved the documentation - and these release notes - to use the system-ui font family, as well as fallbacks for when this is not available.</li>
-      <li><strong>Wink Saville</strong> added compiler_rt routines for float to signed integer conversion</li>
-      <li><strong>kristopher tate</strong> added a temporary workaround to break a false positive dependency loop when a struct depends on its own alignment. #1832 #2174</li>
-      <li><strong>tgschultz</strong> removed unnecessary allocator field from Linux implementation of
-        std.DynLib and improved test coverage.</li>
-      <li><strong>alexander</strong> implemented switching on bools. #1768</li>
-      <li><strong>alexander</strong> Added DIFlagStaticMember flag to functions. This
-        prevents LLVM from generating debug info for struct member functions with a
-        pointer as the first parameter as though the first parameter were the
-        implicit "this" pointer from C++.</li>
-      <li><strong>emekoi</strong> added a {#syntax#}std.Mutex{#endsyntax#} implementation for Windows.</li>
-      <li><strong>tharvik</strong> added llvm-config sanity check to the stage1 cmake build configuration.</li>
-      <li><strong>kristopher tate</strong> added compile error notes to hint using {#syntax#}and{#endsyntax#} and {#syntax#}or{#endsyntax#} when {#syntax#}&&{#endsyntax#} and {#syntax#}||{#endsyntax#} are used.</li>
-      <li><strong>Matthew McAllister </strong> made tokenization errors more helpful.
-        Previously, it pointed to the start of the current token, but this made
-      it difficult to tell where the error occurred when it was, say, in the
-      middle of a string.</li>
-      <li><strong>kristopher tate</strong> improved stage1 os.cpp regarding opening files and 
-        getting the modification time.</li>
-      <li><strong>LemonBoy</strong> silenced gcc8 class-memaccess warnings using an explicit
-        cast to tell gcc we know what we're doing.</li>
-      <li><strong>Quetzal Bradley</strong> fixed a compile error in
-        {#syntax#}std.os.File.openWriteNoClobber{#endsyntax#} and added test coverage.</li>
-      <li><strong>sjdh02</strong> fixed check for 64-bit arm platforms with new targets.</li>
-    </ul>
     {#header_close#}
 
     {#header_open|Syntax Highlighting on GitHub#}
@@ -1366,7 +1482,6 @@ toward 1.0.0 and beyond.
 
     {#header_open|Miscellaneous Improvements#}
     <ul>
-      <li>Zig now recognizes the HermitCore and Hurd operating systems.</li>
       <li>The cmake configuration no longer tries to find libxml since it's not a direct
         dependency.</li>
       <li>add a test for {#syntax#}std.os.AtomicFile{#endsyntax#}</li>
@@ -1374,12 +1489,6 @@ toward 1.0.0 and beyond.
       <li>{#syntax#}std.Mutex{#endsyntax#} now has a high quality Linux implementation based on
         <a href="http://dept-info.labri.fr/~denis/Enseignement/2008-IR/Articles/01-futex.pdf">Ulrich Drepper's "Futexes are tricky" paper</a>, Mutex, Take 3.
         Thanks to Shawn Landden for the original implementation. #1463</li>
-      <li>
-        When targeting Linux, Zig now automatically links statically when not linking against
-        any shared libraries. It also disables Position Independent Code in this case, which
-        <a href="http://ewontfix.com/18/">improves performance</a>. <code>--enable-pic</code>
-        and <code>--disable-pic</code> can be used to override the default.
-      </li>
       <li>The cmake build looks for llvm-config-8 before llvm-config. Fixes building from source
       on some systems.</li>
       <li>
@@ -1416,8 +1525,7 @@ toward 1.0.0 and beyond.
         </ul></li>
       <li>{#syntax#}std.rand.Rand{#endsyntax#}: better debiased random range implementation. -Josh Wolfe</li>
       <li>Add a workaround to support Debian's patch of LLVM which breaks the public API.
-        <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=924953">Debian bug report</a>.
-      </li>
+        <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=924953">Debian bug report</a>. #2076</li>
       <li>comptime evaluation facilities are improved to be able to handle a
         <a href="/documentation/0.4.0/#ptrCast">@ptrCast</a> with a backing array.</li>
       <li><a href="/documentation/0.4.0/#truncate">@truncate</a> allows "truncating" a
@@ -1482,7 +1590,55 @@ toward 1.0.0 and beyond.
       <li>Antoine Vugliano made all integers returned by <a href="/documentation/0.4.0/#typeInfo">@typeInfo</a> {#syntax#}comptime_int{#endsyntax#}.</li>
       <li>Added {#syntax#}popcountdi2{#endsyntax#} to compiler_rt</li>
       <li>Matt Whiteside added elf riscv32 and elf riscv64 as options in getLDMOption during construction of link job.</li>
-
+      <li>Better buffer length for {#syntax#}std.fmt.formatIntUnsigned{#endsyntax#}. #1358</li>
+      <li>Added mulXf3 to compiler-rt. #1290</li>
+      <li>Suirad updated the standard library to use GetEnvironmentStringsW instead of GetEnvironmentStringsA. #534</li>
+      <li>Shawn Landden improved the compile error message when incorrectly
+        comparing against {#syntax#}null{#endsyntax#}. #2104</li>
+      <li>vegecode improved compiler-rt support for armv7m:<ul>
+          <li>Added {#syntax#}memcmp{#endsyntax#} to builtins.</li>
+          <li>Added all __aeabi functions (C versions) who alias currently existing functions to compiler-rt.</li>
+          <li>Added __aeabi_{f,d}neg and __neg{s,d,X}f2 to compiler-rt.</li>
+          <li>Added __aeabi_{f,d}{add,sub} and __{add,sub}{s,d}f3 to compiler-rt.</li>
+          <li>Added __aeabi_mem{cmp,clr,set,cpy,move} to compiler-rt.</li>
+        </ul></li>
+      <li>emekoi made terminal color output of the compiler more consistent (#1706)</li>
+      <li>kristopher tate reduced code bloat by having {#syntax#}std.mem.join{#endsyntax#} and {#syntax#}std.os.path.join{#endsyntax#} use a slice parameter rather than var args.</li>
+      <li>Shawn Landden removed an invalid formatted printing test that relied
+        on negative NaN.</li>
+      <li>kristopher tate added support for printing hex bytes on slices</li>
+      <li>kristopher tate made the internal compiler error handling more robust</li>
+      <li>Matthew O'Connor updated {#syntax#}std.rb{#endsyntax#} to conform to the
+        <a href="/documentation/0.4.0/#Style-Guide">style guide</a>.</li>
+      </li>
+      <li>emekoi added dynamic library loading for windows. #1594</li>
+      <li>emekoi maintained the MinGW build of Zig.</li>
+      <li><a href="/download/index.json">The download page also has a JSON URL available.</a></li>
+      <li>vegecode added divsf3 to compiler rt. #1290</li>
+      <li>Added <code>__modti3</code> to compiler-rt. #1290</li>
+      <li>Shawn Landden simplified {#syntax#}std.math.isnan{#endsyntax#} to use {#syntax#}x != x{#endsyntax#} rather than looking at the bits.</li>
+      <li>Shritesh Bhattarai added support for {#syntax#}comptime_int{#endsyntax#} in
+        {#syntax#}std.fmt.formatInt{#endsyntax#} and {#syntax#}std.fmt.formatValue{#endsyntax#}.</li>
+      <li>vegecode added divdf3 and __aeabi_ddiv to compiler_rt.</li>
+      <li>kristopher tate added compile error notes to hint using {#syntax#}and{#endsyntax#} and {#syntax#}or{#endsyntax#} when {#syntax#}&&{#endsyntax#} and {#syntax#}||{#endsyntax#} are used.</li>
+      <li>Matthew McAllister made tokenization errors more helpful.
+        Previously, it pointed to the start of the current token, but this made
+      it difficult to tell where the error occurred when it was, say, in the
+      middle of a string.</li>
+      <li>tharvik added llvm-config sanity check to the stage1 cmake build configuration.</li>
+      <li>dbandstra made {#syntax#}std.fmt.parseUnsigned{#endsyntax#} handle types less than 8 bits wide.</li>
+      <li>Wink Saville added compiler_rt routines for float to signed integer conversion</li>
+      <li>emekoi added a {#syntax#}std.Mutex{#endsyntax#} implementation for Windows.</li>
+      <li>kristopher tate improved stage1 os.cpp regarding opening files and 
+        getting the modification time.</li>
+      <li>emekoi added math.pow support for integer types and math.powi. #1637 (#1642)</li>
+      <li>Wink Saville added tests and documentation comments to the Zig standard library.</li>
+      <li>kristopher tate added a temporary workaround to break a false positive dependency loop when a struct depends on its own alignment. #1832 #2174</li>
+      <li>tgschultz removed unnecessary allocator field from Linux implementation of
+        std.DynLib and improved test coverage.</li>
+      <li>LemonBoy silenced gcc8 class-memaccess warnings using an explicit
+        cast to tell gcc we know what we're doing.</li>
+      <li>kristopher tate improved test coverage of self-referential generic functions.</li>
     </ul>
 
     {#header_open|Recursive Type Mismatch Error Notes#}
@@ -1558,6 +1714,62 @@ test "fn types" {
       <li>Jimmi Holst Christensen fixed function taking TypeInfo and returning type crashed compiler. #1600</li>
       <li>Added test for spawning child process with empty environment. Thanks to BenoitJGirard
         for pointing out the child process implementation needs 3 extra null bytes in #2031.</li>
+      <li>LemonBoy fixed generation of comptime slices.</li>
+      <li>Fixed <a href="/documentation/0.4.0/#setRuntimeSafety">@setRuntimeSafety</a> not able to override release modes.</li>
+      <li>Fixed while continue block not checking for ignored expression. #957</li>
+      <li>Added compile error for wrong type with {#syntax#}use{#endsyntax#}. #1557</li>
+      <li>Antoine Vugliano improved Zig's PDB (Windows) debug info parsing and used it to fix
+        Zig's C ABI support for Windows. The C ABI tests are now passing on all
+        {#link|Tier 1 Support#} targets.</li>
+      <li>Fixed global assembly parsing. Previously, global assembly was parsed expecting it to have
+      the template syntax. However global assembly has no inputs, outputs, or clobbers,
+      and thus does not have template syntax. This is now fixed.</li>
+      <li>Fixed parsing of large hex float literals. Float literals now parse using musl's
+        128 bit float code. Fixes float literals not having 128 bit precision. #2083</li>
+      <li>Marc Tiehuis fixed <code>bigint_append_buf</code>. All current usages had base 10
+        and a limb length of 2, hence why we weren't hitting this error in practice.</li>
+      <li>Wink Saville fixed {#syntax#}std.json.pushToParent{#endsyntax#} to work for arrays of Objects</li>
+      <li>Shawn Landden fixed ELF auxv handling.</li>
+      <li>Duncan fixed the setsockopt syscall on linux.</li>
+      <li>Michael Dusan fixed zig run to accept executable args.
+        <br><br>
+        The <code>--</code> double-hyphen is now used to end further zig processing
+        of command line options. All arguments after <code>--</code> will be passed
+        on to the executable. eg. <code>--help</code> will be passed on:
+        <br><br>
+        <code>zig run foo.zig -- --help</code>
+        <br><br>
+        #2148</li>
+      <li>emekoi added a missing compile error for implicit cast from
+        {#syntax#}*const T{#endsyntax#} to {#syntax#}*[1]T{#endsyntax#} based on a patch
+        from kristopher tate.</li>
+      <li>Fixed <a href="/documentation/0.4.0/#divFloor">@divFloor</a> returning incorrect
+        value. #2152</li>
+      <li>Fixed NaN comparing equal to itself. This was broken both in comptime code
+        and in runtime code. #1174</li>
+      <li>Fixed dereferencing a zero bit type. Before only u0 was special cased in
+        handling a dereference; now all zero bit types are handled the same way. Dereferencing
+        a pointer to a zero bit type always gives a comptime-known result.</li>
+      <li>Jimmi Holst Christensen fixed inability to capture pointer to elements of const array
+        in {#syntax#}for{#endsyntax#} loop. #1726</li>
+      <li>Ryan Liptak fixed {#syntax#}std.HashMap.remove{#endsyntax#} returning invalid memory.
+        <br><br>
+        Now returns a copy of the removed kv instead of a pointer to the removed kv.
+        The removed kv gets overwritten when shifting the hash map after the removal,
+        so returning a pointer to it will have another kv's values in it after the return.
+        <br><br>
+        This bug had some nasty downstream effects in things like {#syntax#}std.BufSet{#endsyntax#}
+        and {#syntax#}std.BufMap{#endsyntax#} where delete would free a still in-use KV and leave
+        the actually removed KV un-free'd.</li>
+      <li>Ryan Saunderson fixed detecting the latest installed version of the
+        Windows SDK and related tests. #1665</li>
+      <li>alexander added DIFlagStaticMember flag to functions. This
+        prevents LLVM from generating debug info for struct member functions with a
+        pointer as the first parameter as though the first parameter were the
+        implicit "this" pointer from C++.</li>
+      <li>Quetzal Bradley fixed a compile error in
+        {#syntax#}std.os.File.openWriteNoClobber{#endsyntax#} and added test coverage.</li>
+      <li>sjdh02 fixed check for 64-bit arm platforms with new targets.</li>
     </ul>
 
     {#header_open|This Release Contains Bugs#}
