@@ -1784,33 +1784,150 @@ All tests passed.
 
     <h2 id="comptime-memory-reinterpretation"><a href="#toc-comptime-memory-reinterpretation">comptime memory reinterpretation</a> <a class="hdr" href="#comptime-memory-reinterpretation">§</a></h2>
 
-    <p>TODO</p>
-    <p>comptime: ability to @ptrCast to an extern struct and read fields</p>
-    <p>demo comptime support for pointer arithmetic with hard coded addresses. 57a7ab0d330416f15c0288004b67101c1c3e9629</p>
-    <p>TODO demo packed structs and extern structs</p>
-    <p>TODO mention @sliceToBytes</p>
+    <p>Zig's <code class="zig"><span class="tok-kw">comptime</span></code> facilities are improved to support
+    reinterpreting memory, as long as the types in question have guaranteed
+    in-memory representation.</p>
+    <p class="file">bitcast.zig</p><pre><code class="zig"><span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);
+<span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@bitCast extern structs at runtime and comptime&quot;</span> {
+    <span class="tok-kw">const</span> Full = <span class="tok-kw">extern</span> <span class="tok-kw">struct</span> {
+        number: <span class="tok-type">u16</span>,
+    };
+    <span class="tok-kw">const</span> TwoHalves = <span class="tok-kw">extern</span> <span class="tok-kw">struct</span> {
+        half1: <span class="tok-type">u8</span>,
+        half2: <span class="tok-type">u8</span>,
+    };
+    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">fn</span> <span class="tok-fn">doTheTest</span>() <span class="tok-type">void</span> {
+            <span class="tok-kw">var</span> full = Full{ .number = <span class="tok-number">0x1234</span> };
+            <span class="tok-kw">var</span> two_halves = <span class="tok-builtin">@bitCast</span>(TwoHalves, full);
+            <span class="tok-kw">switch</span> (builtin.endian) {
+                builtin.Endian.Big =&gt; {
+                    expect(two_halves.half1 == <span class="tok-number">0x12</span>);
+                    expect(two_halves.half2 == <span class="tok-number">0x34</span>);
+                },
+                builtin.Endian.Little =&gt; {
+                    expect(two_halves.half1 == <span class="tok-number">0x34</span>);
+                    expect(two_halves.half2 == <span class="tok-number">0x12</span>);
+                },
+            }
+        }
+    };
+    S.doTheTest();
+    <span class="tok-kw">comptime</span> S.doTheTest();
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;reinterpret bytes of an array into an extern struct&quot;</span> {
+    testReinterpretBytesAsExternStruct();
+    <span class="tok-kw">comptime</span> testReinterpretBytesAsExternStruct();
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">testReinterpretBytesAsExternStruct</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> bytes <span class="tok-kw">align</span>(<span class="tok-number">2</span>) = []<span class="tok-type">u8</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span>, <span class="tok-number">5</span>, <span class="tok-number">6</span> };
+
+    <span class="tok-kw">const</span> S = <span class="tok-kw">extern</span> <span class="tok-kw">struct</span> {
+        a: <span class="tok-type">u8</span>,
+        b: <span class="tok-type">u16</span>,
+        c: <span class="tok-type">u8</span>,
+    };
+
+    <span class="tok-kw">var</span> ptr = <span class="tok-builtin">@ptrCast</span>(*<span class="tok-kw">const</span> S, &amp;bytes);
+    <span class="tok-kw">var</span> val = ptr.c;
+    expect(val == <span class="tok-number">5</span>);
+}</code></pre><pre><code class="shell">$ zig test bitcast.zig
+Test 1/2 @bitCast extern structs at runtime and comptime...OK
+Test 2/2 reinterpret bytes of an array into an extern struct...OK
+All tests passed.
+</code></pre>
+
+    <p>These examples work because <code class="zig"><span class="tok-kw">extern</span> <span class="tok-kw">struct</span></code> and <code class="zig"><span class="tok-kw">packed</span> <span class="tok-kw">struct</span></code> have guaranteed in-memory layout.</p>
+    <p>
+    In addition, as long as the memory is never accessed, pointers with hard coded addresses
+    and pointer arithmetic are supported at <code class="zig"><span class="tok-kw">comptime</span></code>:
+    </p>
+    <p class="file">comptime_ptrs.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;C pointer comparison and arithmetic&quot;</span> {
+    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">fn</span> <span class="tok-fn">doTheTest</span>() <span class="tok-type">void</span> {
+            <span class="tok-kw">var</span> one: <span class="tok-type">usize</span> = <span class="tok-number">1</span>;
+            <span class="tok-kw">var</span> ptr1: [*c]<span class="tok-type">u32</span> = <span class="tok-number">0</span>;
+            <span class="tok-kw">var</span> ptr2 = ptr1 + <span class="tok-number">10</span>;
+            expect(ptr1 == <span class="tok-number">0</span>);
+            expect(ptr1 &gt;= <span class="tok-number">0</span>);
+            expect(ptr1 &lt;= <span class="tok-number">0</span>);
+            expect(ptr1 &lt; <span class="tok-number">1</span>);
+            expect(ptr1 &lt; one);
+            expect(<span class="tok-number">1</span> &gt; ptr1);
+            expect(one &gt; ptr1);
+            expect(ptr1 &lt; ptr2);
+            expect(ptr2 &gt; ptr1);
+            expect(ptr2 &gt;= <span class="tok-number">40</span>);
+            expect(ptr2 == <span class="tok-number">40</span>);
+            expect(ptr2 &lt;= <span class="tok-number">40</span>);
+            ptr2 -= <span class="tok-number">10</span>;
+            expect(ptr1 == ptr2);
+        }
+    };
+    S.doTheTest();
+    <span class="tok-kw">comptime</span> S.doTheTest();
+}</code></pre><pre><code class="shell">$ zig test comptime_ptrs.zig
+Test 1/1 C pointer comparison and arithmetic...OK
+All tests passed.
+</code></pre>
+
     
 
     <h2 id="Thread-Local-Variables"><a href="#toc-Thread-Local-Variables">Thread-Local Variables</a> <a class="hdr" href="#Thread-Local-Variables">§</a></h2>
 
-    <p>TODO</p>
+    <p>A variable may be specified to be a thread-local variable using the
+      <code class="zig"><span class="tok-kw">threadlocal</span></code> keyword:</p>
+    <p class="file">tls.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> assert = std.debug.assert;
 
-    fix thread local variables for non- position independent code
-    
-    This fixes comes thanks to Rich Felker from the musl libc project,
+<span class="tok-kw">threadlocal</span> <span class="tok-kw">var</span> x: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;thread local storage&quot;</span> {
+    <span class="tok-kw">const</span> thread1 = <span class="tok-kw">try</span> std.os.spawnThread({}, testTls);
+    <span class="tok-kw">const</span> thread2 = <span class="tok-kw">try</span> std.os.spawnThread({}, testTls);
+    testTls({});
+    thread1.wait();
+    thread2.wait();
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">testTls</span>(context: <span class="tok-type">void</span>) <span class="tok-type">void</span> {
+    assert(x == <span class="tok-number">1234</span>);
+    x += <span class="tok-number">1</span>;
+    assert(x == <span class="tok-number">1235</span>);
+}</code></pre><pre><code class="shell">$ zig test tls.zig
+Test 1/1 thread local storage...OK
+All tests passed.
+</code></pre>
+
+    <p>
+      For <a href="#Single-Threaded-Builds">Single-Threaded Builds</a>, all thread local variables are treated
+      as <a href="/documentation/0.4.0/#Global-Variables">Global Variables</a>.
+    </p>
+    <p>
+    Thread local variables may not be <code class="zig"><span class="tok-kw">const</span></code>.
+    </p>
+    <p>
+    Note that thread local variables have better performance for
+    non- position independent code, which is one reason for
+    <a href="#Static-by-Default">Static by Default</a>.
+    </p>
+    <p>
+    Thanks to Rich Felker from the musl libc project,
     who gave me this crucial information:
-    
-    "to satisfy the abi, your init code has to write the same value
+    </p>
+    <blockquote>
+    to satisfy the abi, your init code has to write the same value
     to that memory location as the value passed to the [arch_prctl]
-    syscall"
-    
-    This commit also changes the rules for when to build statically
-    by default. When building objects and static libraries, position
-    independent code is disabled if no libraries will be dynamically
-    linked and the target does not require position independent code.
-    
-    closes <a href="https://github.com/ziglang/zig/issues/2063">#2063</a>
-
+    syscall
+    </blockquote>
     <h3 id="Avoid-Creating-Unnecessary-Global-Constants"><a href="#toc-Avoid-Creating-Unnecessary-Global-Constants">Avoid Creating Unnecessary Global Constants</a> <a class="hdr" href="#Avoid-Creating-Unnecessary-Global-Constants">§</a></h3>
 
     <p>

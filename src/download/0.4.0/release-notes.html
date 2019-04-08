@@ -1667,32 +1667,145 @@ test "vector bit operators" {
     {#header_close#}
 
     {#header_open|comptime memory reinterpretation#}
-    <p>TODO</p>
-    <p>comptime: ability to @ptrCast to an extern struct and read fields</p>
-    <p>demo comptime support for pointer arithmetic with hard coded addresses. 57a7ab0d330416f15c0288004b67101c1c3e9629</p>
-    <p>TODO demo packed structs and extern structs</p>
-    <p>TODO mention @sliceToBytes</p>
+    <p>Zig's {#syntax#}comptime{#endsyntax#} facilities are improved to support
+    reinterpreting memory, as long as the types in question have guaranteed
+    in-memory representation.</p>
+    {#code_begin|test|bitcast#}
+const builtin = @import("builtin");
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "@bitCast extern structs at runtime and comptime" {
+    const Full = extern struct {
+        number: u16,
+    };
+    const TwoHalves = extern struct {
+        half1: u8,
+        half2: u8,
+    };
+    const S = struct {
+        fn doTheTest() void {
+            var full = Full{ .number = 0x1234 };
+            var two_halves = @bitCast(TwoHalves, full);
+            switch (builtin.endian) {
+                builtin.Endian.Big => {
+                    expect(two_halves.half1 == 0x12);
+                    expect(two_halves.half2 == 0x34);
+                },
+                builtin.Endian.Little => {
+                    expect(two_halves.half1 == 0x34);
+                    expect(two_halves.half2 == 0x12);
+                },
+            }
+        }
+    };
+    S.doTheTest();
+    comptime S.doTheTest();
+}
+
+test "reinterpret bytes of an array into an extern struct" {
+    testReinterpretBytesAsExternStruct();
+    comptime testReinterpretBytesAsExternStruct();
+}
+
+fn testReinterpretBytesAsExternStruct() void {
+    var bytes align(2) = []u8{ 1, 2, 3, 4, 5, 6 };
+
+    const S = extern struct {
+        a: u8,
+        b: u16,
+        c: u8,
+    };
+
+    var ptr = @ptrCast(*const S, &bytes);
+    var val = ptr.c;
+    expect(val == 5);
+}
+
+    {#code_end#}
+    <p>These examples work because {#syntax#}extern struct{#endsyntax#} and {#syntax#}packed struct{#endsyntax#} have guaranteed in-memory layout.</p>
+    <p>
+    In addition, as long as the memory is never accessed, pointers with hard coded addresses
+    and pointer arithmetic are supported at {#syntax#}comptime{#endsyntax#}:
+    </p>
+    {#code_begin|test|comptime_ptrs#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "C pointer comparison and arithmetic" {
+    const S = struct {
+        fn doTheTest() void {
+            var one: usize = 1;
+            var ptr1: [*c]u32 = 0;
+            var ptr2 = ptr1 + 10;
+            expect(ptr1 == 0);
+            expect(ptr1 >= 0);
+            expect(ptr1 <= 0);
+            expect(ptr1 < 1);
+            expect(ptr1 < one);
+            expect(1 > ptr1);
+            expect(one > ptr1);
+            expect(ptr1 < ptr2);
+            expect(ptr2 > ptr1);
+            expect(ptr2 >= 40);
+            expect(ptr2 == 40);
+            expect(ptr2 <= 40);
+            ptr2 -= 10;
+            expect(ptr1 == ptr2);
+        }
+    };
+    S.doTheTest();
+    comptime S.doTheTest();
+}
+
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Thread-Local Variables#}
-    <p>TODO</p>
+    <p>A variable may be specified to be a thread-local variable using the
+      {#syntax#}threadlocal{#endsyntax#} keyword:</p>
+    {#code_begin|test|tls#}
+const std = @import("std");
+const assert = std.debug.assert;
 
-    fix thread local variables for non- position independent code
-    
-    This fixes comes thanks to Rich Felker from the musl libc project,
-    who gave me this crucial information:
-    
-    "to satisfy the abi, your init code has to write the same value
+threadlocal var x: i32 = 1234;
+
+test "thread local storage" {
+    const thread1 = try std.os.spawnThread({}, testTls);
+    const thread2 = try std.os.spawnThread({}, testTls);
+    testTls({});
+    thread1.wait();
+    thread2.wait();
+}
+
+fn testTls(context: void) void {
+    assert(x == 1234);
+    x += 1;
+    assert(x == 1235);
+}
+    {#code_end#}
+    <p>
+      For {#link|Single-Threaded Builds#}, all thread local variables are treated
+      as <a href="/documentation/0.4.0/#Global-Variables">Global Variables</a>.
+    </p>
+    <p>
+    Thread local variables may not be {#syntax#}const{#endsyntax#}.
+    </p>
+    <p>
+    Note that thread local variables have better performance for
+    non- position independent code, which is one reason for
+    {#link|Static by Default#}.
+    </p>
+    <p>
+    Thanks to Rich Felker from the musl libc project,
+    who gave me this crucial information, when I was implementing
+    thread local storage for static builds:
+    </p>
+    <blockquote>
+    to satisfy the abi, your init code has to write the same value
     to that memory location as the value passed to the [arch_prctl]
-    syscall"
-    
-    This commit also changes the rules for when to build statically
-    by default. When building objects and static libraries, position
-    independent code is disabled if no libraries will be dynamically
-    linked and the target does not require position independent code.
-    
-    closes <a href="https://github.com/ziglang/zig/issues/2063">#2063</a>
-
+    syscall
+    </blockquote>
     {#header_open|Avoid Creating Unnecessary Global Constants#}
     <p>
     This deletes some legacy cruft, and produces leaner object files.
