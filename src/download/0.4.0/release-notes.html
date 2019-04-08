@@ -2156,40 +2156,146 @@ fn print(x: i32, mode: enum { normal, hex }) void {
     {#header_close#}
 
     {#header_open|std.debug.captureStackTrace#}
-    <p>TODO demo usage</p>
-    <p>TODO explain general purpose debug allocator</p>
+    <p>Zig code can use {#syntax#}std.debug.captureStackTrace{#endsyntax#} at any time
+    for debugging purposes:</p>
+    {#code_begin|exe|stack-traces#}
+const std = @import("std");
+const builtin = @import("builtin");
+
+var address_buffer: [8]usize = undefined;
+
+var trace1 = builtin.StackTrace{
+    .instruction_addresses = address_buffer[0..4],
+    .index = 0,
+};
+
+var trace2 = builtin.StackTrace{
+    .instruction_addresses = address_buffer[4..],
+    .index = 0,
+};
+
+pub fn main() void {
+    foo();
+    bar();
+
+    std.debug.warn("first one:\n");
+    std.debug.dumpStackTrace(trace1);
+    std.debug.warn("\n\nsecond one:\n");
+    std.debug.dumpStackTrace(trace2);
+}
+
+fn foo() void {
+    std.debug.captureStackTrace(null, &trace1);
+}
+
+fn bar() void {
+    std.debug.captureStackTrace(null, &trace2);
+}
+    {#code_end#}
+    <p>This feature is used in the
+    <a href="https://github.com/andrewrk/zig-general-purpose-allocator/">GeneralPurposeDebugAllocator project</a> for helping detect and diagnose memory issues.
+    </p>
     {#header_close#}
 
     {#header_open|Allocator interface#}
-    TODO
-    breaking changes to std.mem.Allocator interface API
-    
-    Before, allocator implementations had to provide `allocFn`,
-    `reallocFn`, and `freeFn`.
-    
-    Now, they must provide only `reallocFn` and `shrinkFn`.
+    <p>Zig 0.4.0 brings breaking changes to the {#syntax#}std.mem.Allocator{#endsyntax#} interface
+    and API.</p>
+    <p>
+    Before, allocator implementations had to provide {#syntax#}allocFn{#endsyntax#},
+    {#syntax#}reallocFn{#endsyntax#}, and {#syntax#}freeFn{#endsyntax#}.
+    </p>
+    <p>
+    Now, they must provide only {#syntax#}reallocFn{#endsyntax#} and {#syntax#}shrinkFn{#endsyntax#}.
     Reallocating from a zero length slice is allocation, and
     shrinking to a zero length slice is freeing.
-    
+    </p>
+    <p>
     When the new memory size is less than or equal to the
-    previous allocation size, `reallocFn` now has the option
-    to return `error.OutOfMemory` to indicate that the allocator
+    previous allocation size, {#syntax#}reallocFn{#endsyntax#} now has the option
+    to return {#syntax#}error.OutOfMemory{#endsyntax#} to indicate that the allocator
     would not be able to take advantage of the new size.
-    
-    For more details see <a href="https://github.com/ziglang/zig/issues/1306">#1306</a>. This commit closes <a href="https://github.com/ziglang/zig/issues/1306">#1306</a>.
-    
-    This commit paves the way to solving <a href="https://github.com/ziglang/zig/issues/2009">#2009</a>.
-    
-    This commit also introduces a memory leak to all coroutines.
-    There is an issue where a coroutine calls the function and it
-    frees its own stack frame, but then the return value of `shrinkFn`
-    is a slice, which is implemented as an sret struct. Writing to
-    the return pointer causes invalid memory write. We could work
-    around it by having a global helper function which has a void
-    return type and calling that instead. But instead this hack will
-    suffice until I rework coroutines to be non-allocating. Basically
-    coroutines are not supported right now until they are reworked as
-    in <a href="https://github.com/ziglang/zig/issues/1194">#1194</a>.
+    </p>
+    <p>
+    For more details see <a href="https://github.com/ziglang/zig/issues/1306">#1306</a>.
+    </p>
+    <p>I have reproduced the documentation comments here:</p>
+    {#code_begin|syntax#}
+pub const Allocator = struct {
+    pub const Error = error{OutOfMemory};
+
+    /// Realloc is used to modify the size or alignment of an existing allocation,
+    /// as well as to provide the allocator with an opportunity to move an allocation
+    /// to a better location.
+    /// When the size/alignment is greater than the previous allocation, this function
+    /// returns `error.OutOfMemory` when the requested new allocation could not be granted.
+    /// When the size/alignment is less than or equal to the previous allocation,
+    /// this function returns `error.OutOfMemory` when the allocator decides the client
+    /// would be better off keeping the extra alignment/size. Clients will call
+    /// `shrinkFn` when they require the allocator to track a new alignment/size,
+    /// and so this function should only return success when the allocator considers
+    /// the reallocation desirable from the allocator's perspective.
+    /// As an example, `std.ArrayList` tracks a "capacity", and therefore can handle
+    /// reallocation failure, even when `new_n` <= `old_mem.len`. A `FixedBufferAllocator`
+    /// would always return `error.OutOfMemory` for `reallocFn` when the size/alignment
+    /// is less than or equal to the old allocation, because it cannot reclaim the memory,
+    /// and thus the `std.ArrayList` would be better off retaining its capacity.
+    /// When `reallocFn` returns,
+    /// `return_value[0..min(old_mem.len, new_byte_count)]` must be the same
+    /// as `old_mem` was when `reallocFn` is called. The bytes of
+    /// `return_value[old_mem.len..]` have undefined values.
+    /// The returned slice must have its pointer aligned at least to `new_alignment` bytes.
+    reallocFn: fn (
+        self: *Allocator,
+    /// Guaranteed to be the same as what was returned from most recent call to
+    /// `reallocFn` or `shrinkFn`.
+    /// If `old_mem.len == 0` then this is a new allocation and `new_byte_count`
+    /// is guaranteed to be >= 1.
+        old_mem: []u8,
+    /// If `old_mem.len == 0` then this is `undefined`, otherwise:
+    /// Guaranteed to be the same as what was returned from most recent call to
+    /// `reallocFn` or `shrinkFn`.
+    /// Guaranteed to be >= 1.
+    /// Guaranteed to be a power of 2.
+        old_alignment: u29,
+    /// If `new_byte_count` is 0 then this is a free and it is guaranteed that
+    /// `old_mem.len != 0`.
+        new_byte_count: usize,
+    /// Guaranteed to be >= 1.
+    /// Guaranteed to be a power of 2.
+    /// Returned slice's pointer must have this alignment.
+        new_alignment: u29,
+    ) Error![]u8,
+
+    /// This function deallocates memory. It must succeed.
+    shrinkFn: fn (
+        self: *Allocator,
+    /// Guaranteed to be the same as what was returned from most recent call to
+    /// `reallocFn` or `shrinkFn`.
+        old_mem: []u8,
+    /// Guaranteed to be the same as what was returned from most recent call to
+    /// `reallocFn` or `shrinkFn`.
+        old_alignment: u29,
+    /// Guaranteed to be less than or equal to `old_mem.len`.
+        new_byte_count: usize,
+    /// If `new_byte_count == 0` then this is `undefined`, otherwise:
+    /// Guaranteed to be less than or equal to `old_alignment`.
+        new_alignment: u29,
+    ) []u8,
+};
+    {#code_end#}
+    <p>
+    This allows allocators and data structures to "negotiate" with each other. For example,
+    here is {#syntax#}std.ArrayList.shrink{#endsyntax#}:
+    </p>
+    {#code_begin|syntax#}
+pub fn shrink(self: *Self, new_len: usize) void {
+    assert(new_len <= self.len);
+    self.len = new_len;
+    self.items = self.allocator.realloc(self.items, new_len) catch |e| switch (e) {
+        error.OutOfMemory => return, // no problem, capacity is still correct then.
+    };
+}
+    {#code_end#}
     {#header_close#}
     {#header_close#}
 
@@ -2542,32 +2648,80 @@ test "fn types" {
    been considerable progress, none of these items are complete. And so the roadmap for 0.4.0 is
    the same.
    </p>
-   <p>
-   TODO explain my 2 failed attempts at no-copy semantics
-   </p>
     {#header_open|Type-Based Alias Analysis Status#}
-    <p>TODO no more TBAA</p>
-    <p>TODO talk about the open aliasing issues</p>
+    <p>
+    It's no longer planned for Zig to have Type Based Alias Analysis. However,
+    there are some open research topics on potentially outlawing all kinds of aliasing
+    unless explicitly declared.
+    Subscribe to <a href="https://github.com/ziglang/zig/issues/1108">#1108</a>
+    for more details.
+    </p>
+    <p>
+    For now, Zig has a
+    {#link|well-defined memory model|comptime memory reinterpretation#},
+    and aliasing is always allowed. Note, however,
+    that not all types have a guaranteed in-memory layout.
+    </p>
     {#header_close#}
 
     {#header_open|macOS/Mach-O Linker Status#}
-    <p>TODO LLD doesn't really support macos</p>
-    <p>TODO talk about plan to create our own linker <a href="https://github.com/ziglang/zig/issues/1535">#1535</a></p>
-    <p>TODO we had to disable C ABI tests on macos due to LLD deficiency</p>
-    <p>TODO using --system-linker-hack for the self hosted compiler</p>
-    TODO 81c6f087241b6b7a1c12de72a2061cb02df0f93f workaround in building compiler-rt.a and builtin.a
+    <p>
+    Linking macOS/COFF files is still in a sad state. The Mach-O code in
+    <a href="http://lld.llvm.org/">LLD</a>, Zig's linker, has been barely maintained for several
+    years now. Zig has a fork of LLD in its source tree with a hacky patch to fix linking "Hello World"
+    on macOS.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/issues/1535">It's now planned for the Zig project to have its own linker</a>.
+    This is in part due to the lack of Mach-O maintenance, and in part because LLD has no
+    plans to do incremental linking - a feature that I foresee to be necessary to achieve
+    the performance we want to have for large projects in the self-hosted compiler.
+    </p>
+    <p>For now the self-hosted compiler uses <code>--system-linker-hack</code>
+    to be able to link successfully, which is a compromise of Zig's promise that it can build
+    on any target, for any target.</p>
+    <p>
+    There is also a workaround in the linker phase of Zig for compiler-rt.a and builtin.a.
+    I had to make them object files rather than archive files to avoid crashing LLD.
+    </p>
     {#header_close#}
 
     {#header_open|Self-Hosted Compiler Status#}
-    <p>TODO</p>
+    <p>
+    There has been no progress on the self-hosted compiler in this release cycle.
+    Progress is blocked on the volume of core language changes still happening, as
+    well as <a href="https://github.com/ziglang/zig/issues/287">no-copy semantics</a>,
+    and {#link|Reworking Coroutines|Coroutine Status#}.
+    </p>
     {#header_close#}
 
     {#header_open|Package Manager Status#}
-    <p>TODO</p>
+    <p>
+    The package manager will be one of the focus areas of the 0.5.0 release cycle.
+    It depends on networking, which depends on {#link|Reworking Coroutines|Coroutine Status#},
+    which depends on <a href="https://github.com/ziglang/zig/issues/287">no-copy semantics</a>.
+    </p>
     {#header_close#}
 
     {#header_open|Coroutine Status#}
-    <p>TODO</p>
+    <p>
+    There is no progress on coroutines in this release cycle. In fact there has been anti-progress.
+    </p>
+    <p>Zig 0.4.0 introduces a memory leak to all coroutines.
+    There is an issue where a coroutine calls the function and it
+    frees its own stack frame, but then the return value of {#syntax#}shrinkFn{#endsyntax#}
+    is a slice, which is implemented as an sret struct. Writing to
+    the return pointer causes invalid memory write. We could work
+    around it by having a global helper function which has a void
+    return type and calling that instead. But instead this hack will
+    suffice until I rework coroutines to be non-allocating. Basically
+    coroutines are not supported right now until they are reworked as
+    in <a href="https://github.com/ziglang/zig/issues/1194">#1194</a>.
+    </p>
+    <p>
+    Reworking coroutines is to be a major focus of 0.5.0 as it is blocking networking,
+    the {#link|Package Manager|Package Manager Status#}, and the {#link|Self-Hosted Compiler|Self-Hosted Compiler Status#}.
+    </p>
     {#header_close#}
 
     {#header_open|Accepted Proposals#}
