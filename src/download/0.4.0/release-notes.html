@@ -1893,32 +1893,80 @@ test "cast null C pointer to Zig pointer" {
     {#header_close#}
 
     {#header_open|Removal of the Namespace Type#}
-    <p>TODO remove namespace type; files are empty structs. <a href="https://github.com/ziglang/zig/issues/1047">#1047</a></p>
-    struct types get fully qualified names and function symbol names become fully qualified
-
-    compile error for import outside package path
-    
-    closes <a href="https://github.com/ziglang/zig/issues/2024">#2024</a>
-    
-    there's a new cli option `--main-pkg-path` which you can use to choose
+    <p>
+    In Zig 0.3.0, {#syntax#}@typeOf(@import("builtin")){#endsyntax#} is <code>(import)</code>,
+    which was a special "namespace" type. In Zig 0.4.0,
+    {#syntax#}@typeOf(@import("builtin")){#endsyntax#} is {#syntax#}type{#endsyntax#}.
+    The special "namespace" type is removed; instead all files are structs with no fields.
+    </p>
+    <p>
+    This makes the language smaller and simpler, and makes imported files easier to inspect
+    with reflection, since they are structs.
+    </p>
+    <p>
+    With this change, struct types get fully qualified names and function symbol names
+    become fully qualified. This means that when using <code>zig test</code> it's no longer
+    necessary to manually namespace test names as they will be automatically namespaced.
+    </p>
+    <p>
+    There is a new compile error for importing a file outside the package path.
+    The new CLI option <code>--main-pkg-path</code> can be used to choose
     a different root package directory besides the one inferred from the
-    root source file
-    
-    and a corresponding build.zig API:
-    foo.setMainPkgPath(path)
-
-    rename std lib files to new convention
-
-    this empty import workaround no longer necessary
-
+    root source file. The corresponding {#link|Zig Build System#} API is 
+    {#syntax#}artifact.setMainPkgPath(path){#endsyntax#}.
+    </p>
     {#header_close#}
 
     {#header_open|Anonymous Enum Literal Type#}
-    <p>TODO introduce the enum literal type. <a href="https://github.com/ziglang/zig/issues/683">#683</a></p>
-    implement implicit cast from enum literal to enum
-    make switch expressions allow enum literal types
-    implement peer type resolution for enum literals
-    add compile error test for invalid enum literal implicit cast
+    <p>
+    Zig has a new type to make dealing with enums more attractive. It can be thought of as the
+    {#syntax#}enum{#endsyntax#} equivalent of {#syntax#}comptime_int{#endsyntax#}. The {#syntax#}enum{#endsyntax#}
+    equivalent of a number literal.
+    </p>
+    {#code_begin|exe|enum-lit#}
+const std = @import("std");
+
+pub fn main() void {
+    print(1234, .hex);
+    print(1234, .normal);
+}
+
+fn print(x: i32, mode: enum { normal, hex }) void {
+    switch (mode) {
+        .normal => std.debug.warn("{}\n", x),
+        .hex => std.debug.warn("0x{x}\n", x),
+    }
+}
+    {#code_end#}
+    <p>
+    Here you can see an anonymous
+    {#syntax#}enum{#endsyntax#} was used rather than an opaque {#syntax#}bool{#endsyntax#} parameter.
+    The idea here is to make it so easy to have meaningful values, that programmers will want
+    to use them, even if they're feeling lazy.
+    </p>
+    <p>
+    The ergonomics of this feature feel great. Here's
+    <a href="https://github.com/ziglang/zig/pull/2175/files">tgschultz updating some of the standard
+      library API to use anonymous enum literals</a>.
+    </p>
+    <p>
+    Note that this feature is checked by the compiler. It's completely safe:
+    </p>
+    {#code_begin|test_err|has no field#}
+const std = @import("std");
+
+test "invalid enum literal" {
+    print(1234, .hex);
+    print(1234, .invalid);
+}
+
+fn print(x: i32, mode: enum { normal, hex }) void {
+    switch (mode) {
+        .normal => std.debug.warn("{}\n", x),
+        .hex => std.debug.warn("0x{x}\n", x),
+    }
+}
+    {#code_end#}
     {#header_close#}
     {#header_close#}
 

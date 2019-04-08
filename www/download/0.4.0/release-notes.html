@@ -2005,7 +2005,7 @@ All tests passed.
     <p>It's planned to <a href="https://github.com/ziglang/zig/issues/1967">support `if`, `orelse`, `null`, and `.?` for C pointers</a>.</p>
     <p>
     While C pointers themselves have all the footguns associated with, well, C pointers, there
-    is safety when casting to Zig pointers:
+    is safety when converting to Zig pointers:
     </p>
     <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;cast null C pointer to Zig pointer&quot;</span> {
     <span class="tok-kw">var</span> c_ptr: [*c]<span class="tok-type">i32</span> = <span class="tok-number">0</span>;
@@ -2033,33 +2033,90 @@ Tests failed. Use the following command to reproduce the failure:
 
     <h2 id="Removal-of-the-Namespace-Type"><a href="#toc-Removal-of-the-Namespace-Type">Removal of the Namespace Type</a> <a class="hdr" href="#Removal-of-the-Namespace-Type">§</a></h2>
 
-    <p>TODO remove namespace type; files are empty structs. <a href="https://github.com/ziglang/zig/issues/1047">#1047</a></p>
-    struct types get fully qualified names and function symbol names become fully qualified
-
-    compile error for import outside package path
-    
-    closes <a href="https://github.com/ziglang/zig/issues/2024">#2024</a>
-    
-    there's a new cli option `--main-pkg-path` which you can use to choose
+    <p>
+    In Zig 0.3.0, <code class="zig"><span class="tok-builtin">@typeOf</span>(<span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>))</code> is <code>(import)</code>,
+    which was a special "namespace" type. In Zig 0.4.0,
+    <code class="zig"><span class="tok-builtin">@typeOf</span>(<span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>))</code> is <code class="zig"><span class="tok-type">type</span></code>.
+    The special "namespace" type is removed; instead all files are structs with no fields.
+    </p>
+    <p>
+    This makes the language smaller and simpler, and makes imported files easier to inspect
+    with reflection, since they are structs.
+    </p>
+    <p>
+    With this change, struct types get fully qualified names and function symbol names
+    become fully qualified. This means that when using <code>zig test</code> it's no longer
+    necessary to manually namespace test names as they will be automatically namespaced.
+    </p>
+    <p>
+    There is a new compile error for importing a file outside the package path.
+    The new CLI option <code>--main-pkg-path</code> can be used to choose
     a different root package directory besides the one inferred from the
-    root source file
-    
-    and a corresponding build.zig API:
-    foo.setMainPkgPath(path)
-
-    rename std lib files to new convention
-
-    this empty import workaround no longer necessary
-
+    root source file. The corresponding <a href="#Zig-Build-System">Zig Build System</a> API is 
+    <code class="zig">artifact.setMainPkgPath(path)</code>.
+    </p>
     
 
     <h2 id="Anonymous-Enum-Literal-Type"><a href="#toc-Anonymous-Enum-Literal-Type">Anonymous Enum Literal Type</a> <a class="hdr" href="#Anonymous-Enum-Literal-Type">§</a></h2>
 
-    <p>TODO introduce the enum literal type. <a href="https://github.com/ziglang/zig/issues/683">#683</a></p>
-    implement implicit cast from enum literal to enum
-    make switch expressions allow enum literal types
-    implement peer type resolution for enum literals
-    add compile error test for invalid enum literal implicit cast
+    <p>
+    Zig has a new type to make dealing with enums more attractive. It can be thought of as the
+    <code class="zig"><span class="tok-kw">enum</span></code> equivalent of <code class="zig"><span class="tok-type">comptime_int</span></code>. The <code class="zig"><span class="tok-kw">enum</span></code>
+    equivalent of a number literal.
+    </p>
+    <p class="file">enum-lit.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    print(<span class="tok-number">1234</span>, .hex);
+    print(<span class="tok-number">1234</span>, .normal);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">print</span>(x: <span class="tok-type">i32</span>, mode: <span class="tok-kw">enum</span> { normal, hex }) <span class="tok-type">void</span> {
+    <span class="tok-kw">switch</span> (mode) {
+        .normal =&gt; std.debug.warn(<span class="tok-str">&quot;{}\n&quot;</span>, x),
+        .hex =&gt; std.debug.warn(<span class="tok-str">&quot;0x{x}\n&quot;</span>, x),
+    }
+}</code></pre><pre><code class="shell">$ zig build-exe enum-lit.zig
+$ ./enum-lit
+0x4d2
+1234
+</code></pre>
+
+    <p>
+    Here you can see an anonymous
+    <code class="zig"><span class="tok-kw">enum</span></code> was used rather than an opaque <code class="zig"><span class="tok-type">bool</span></code> parameter.
+    The idea here is to make it so easy to have meaningful values, that programmers will want
+    to use them, even if they're feeling lazy.
+    </p>
+    <p>
+    The ergonomics of this feature feel great. Here's
+    <a href="https://github.com/ziglang/zig/pull/2175/files">tgschultz updating some of the standard
+      library API to use anonymous enum literals</a>.
+    </p>
+    <p>
+    Note that this feature is checked by the compiler. It's completely safe:
+    </p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;invalid enum literal&quot;</span> {
+    print(<span class="tok-number">1234</span>, .hex);
+    print(<span class="tok-number">1234</span>, .invalid);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">print</span>(x: <span class="tok-type">i32</span>, mode: <span class="tok-kw">enum</span> { normal, hex }) <span class="tok-type">void</span> {
+    <span class="tok-kw">switch</span> (mode) {
+        .normal =&gt; std.debug.warn(<span class="tok-str">&quot;{}\n&quot;</span>, x),
+        .hex =&gt; std.debug.warn(<span class="tok-str">&quot;0x{x}\n&quot;</span>, x),
+    }
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:5:17: </span><span class="t31_1">error:</span><span class="t0_1"> enum 'enum:8:24' has no field named 'invalid'</span>
+    print(1234, .invalid);
+                <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:8:24: </span><span class="t36_1">note:</span><span class="t0_1"> 'enum:8:24' declared here</span>
+fn print(x: i32, mode: enum { normal, hex }) void {
+                       <span class="t32_1">^</span>
+</code></pre>
+
     
     
 
