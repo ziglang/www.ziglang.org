@@ -1694,9 +1694,92 @@ All tests passed.
 
     <h2 id="Vectors-and-SIMD"><a href="#toc-Vectors-and-SIMD">Vectors and SIMD</a> <a class="hdr" href="#Vectors-and-SIMD">§</a></h2>
 
-    <p>TODO</p>
-    <p>TODO issue <a href="https://github.com/ziglang/zig/issues/903">#903</a></p>
-    <p>TODO Jimmi helped a lot</p>
+    <p>
+    Zig 0.4.0 ships with a new <a href="/documentation/0.4.0/#Vector">Vector</a> type.
+    This feature is brand new and <a href="/documentation/0.4.0/#SIMD">not well documented yet</a>.
+    Here are some example tests:
+    </p>
+    <p class="file">vectors.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> mem = std.mem;
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector wrap operators&quot;</span> {
+    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">fn</span> <span class="tok-fn">doTheTest</span>() <span class="tok-type">void</span> {
+            <span class="tok-kw">var</span> v: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">2147483647</span>, -<span class="tok-number">2</span>, <span class="tok-number">30</span>, <span class="tok-number">40</span> };
+            <span class="tok-kw">var</span> x: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2147483647</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(v +% x), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ -<span class="tok-number">2147483648</span>, <span class="tok-number">2147483645</span>, <span class="tok-number">33</span>, <span class="tok-number">44</span> }));
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(v -% x), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">2147483646</span>, <span class="tok-number">2147483647</span>, <span class="tok-number">27</span>, <span class="tok-number">36</span> }));
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(v *% x), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">2147483647</span>, <span class="tok-number">2</span>, <span class="tok-number">90</span>, <span class="tok-number">160</span> }));
+            <span class="tok-kw">var</span> z: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, -<span class="tok-number">2147483648</span> };
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(-%z), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ -<span class="tok-number">1</span>, -<span class="tok-number">2</span>, -<span class="tok-number">3</span>, -<span class="tok-number">2147483648</span> }));
+        }
+    };
+    S.doTheTest();
+    <span class="tok-kw">comptime</span> S.doTheTest();
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector int operators&quot;</span> {
+    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">fn</span> <span class="tok-fn">doTheTest</span>() <span class="tok-type">void</span> {
+            <span class="tok-kw">var</span> v: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">10</span>, <span class="tok-number">20</span>, <span class="tok-number">30</span>, <span class="tok-number">40</span> };
+            <span class="tok-kw">var</span> x: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(v + x), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">11</span>, <span class="tok-number">22</span>, <span class="tok-number">33</span>, <span class="tok-number">44</span> }));
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(v - x), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">9</span>, <span class="tok-number">18</span>, <span class="tok-number">27</span>, <span class="tok-number">36</span> }));
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(v * x), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">10</span>, <span class="tok-number">40</span>, <span class="tok-number">90</span>, <span class="tok-number">160</span> }));
+            expect(mem.eql(<span class="tok-type">i32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">i32</span>)(-v), [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ -<span class="tok-number">10</span>, -<span class="tok-number">20</span>, -<span class="tok-number">30</span>, -<span class="tok-number">40</span> }));
+        }
+    };
+    S.doTheTest();
+    <span class="tok-kw">comptime</span> S.doTheTest();
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector float operators&quot;</span> {
+    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">fn</span> <span class="tok-fn">doTheTest</span>() <span class="tok-type">void</span> {
+            <span class="tok-kw">var</span> v: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">f32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">f32</span>{ <span class="tok-number">10</span>, <span class="tok-number">20</span>, <span class="tok-number">30</span>, <span class="tok-number">40</span> };
+            <span class="tok-kw">var</span> x: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">f32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">f32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };
+            expect(mem.eql(<span class="tok-type">f32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">f32</span>)(v + x), [<span class="tok-number">4</span>]<span class="tok-type">f32</span>{ <span class="tok-number">11</span>, <span class="tok-number">22</span>, <span class="tok-number">33</span>, <span class="tok-number">44</span> }));
+            expect(mem.eql(<span class="tok-type">f32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">f32</span>)(v - x), [<span class="tok-number">4</span>]<span class="tok-type">f32</span>{ <span class="tok-number">9</span>, <span class="tok-number">18</span>, <span class="tok-number">27</span>, <span class="tok-number">36</span> }));
+            expect(mem.eql(<span class="tok-type">f32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">f32</span>)(v * x), [<span class="tok-number">4</span>]<span class="tok-type">f32</span>{ <span class="tok-number">10</span>, <span class="tok-number">40</span>, <span class="tok-number">90</span>, <span class="tok-number">160</span> }));
+            expect(mem.eql(<span class="tok-type">f32</span>, ([<span class="tok-number">4</span>]<span class="tok-type">f32</span>)(-x), [<span class="tok-number">4</span>]<span class="tok-type">f32</span>{ -<span class="tok-number">1</span>, -<span class="tok-number">2</span>, -<span class="tok-number">3</span>, -<span class="tok-number">4</span> }));
+        }
+    };
+    S.doTheTest();
+    <span class="tok-kw">comptime</span> S.doTheTest();
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector bit operators&quot;</span> {
+    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">fn</span> <span class="tok-fn">doTheTest</span>() <span class="tok-type">void</span> {
+            <span class="tok-kw">var</span> v: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">u8</span>) = [<span class="tok-number">4</span>]<span class="tok-type">u8</span>{ <span class="tok-number">0b10101010</span>, <span class="tok-number">0b10101010</span>, <span class="tok-number">0b10101010</span>, <span class="tok-number">0b10101010</span> };
+            <span class="tok-kw">var</span> x: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">u8</span>) = [<span class="tok-number">4</span>]<span class="tok-type">u8</span>{ <span class="tok-number">0b11110000</span>, <span class="tok-number">0b00001111</span>, <span class="tok-number">0b10101010</span>, <span class="tok-number">0b01010101</span> };
+            expect(mem.eql(<span class="tok-type">u8</span>, ([<span class="tok-number">4</span>]<span class="tok-type">u8</span>)(v ^ x), [<span class="tok-number">4</span>]<span class="tok-type">u8</span>{ <span class="tok-number">0b01011010</span>, <span class="tok-number">0b10100101</span>, <span class="tok-number">0b00000000</span>, <span class="tok-number">0b11111111</span> }));
+            expect(mem.eql(<span class="tok-type">u8</span>, ([<span class="tok-number">4</span>]<span class="tok-type">u8</span>)(v | x), [<span class="tok-number">4</span>]<span class="tok-type">u8</span>{ <span class="tok-number">0b11111010</span>, <span class="tok-number">0b10101111</span>, <span class="tok-number">0b10101010</span>, <span class="tok-number">0b11111111</span> }));
+            expect(mem.eql(<span class="tok-type">u8</span>, ([<span class="tok-number">4</span>]<span class="tok-type">u8</span>)(v &amp; x), [<span class="tok-number">4</span>]<span class="tok-type">u8</span>{ <span class="tok-number">0b10100000</span>, <span class="tok-number">0b00001010</span>, <span class="tok-number">0b10101010</span>, <span class="tok-number">0b00000000</span> }));
+        }
+    };
+    S.doTheTest();
+    <span class="tok-kw">comptime</span> S.doTheTest();
+}</code></pre><pre><code class="shell">$ zig test vectors.zig
+Test 1/4 vector wrap operators...OK
+Test 2/4 vector int operators...OK
+Test 3/4 vector float operators...OK
+Test 4/4 vector bit operators...OK
+All tests passed.
+</code></pre>
+
+    <p>Note that Zig of course supports vectors at <code class="zig"><span class="tok-kw">comptime</span></code> and likewise
+    all the safety features of arithmetic operators are available for vectors as well.</p>
+    <p>
+    Vectors provide a way to do Single Instruction Multiple Data in a portable and efficient way.
+    It's much easier for the optimizer to break vectors into scalars than it is to
+    turn scalars into vectors. Even in debug builds which have safety checks, vector operations
+    provide more data throughput than scalar operations.
+    </p>
+    <p>Thanks to Jimmi Holst Christensen for many contributions to vector support.</p>
+    <p>To follow progress on vectors and SIMD in Zig, watch issue
+    <a href="https://github.com/ziglang/zig/issues/903">#903</a>.</p>
     
 
     <h2 id="comptime-memory-reinterpretation"><a href="#toc-comptime-memory-reinterpretation">comptime memory reinterpretation</a> <a class="hdr" href="#comptime-memory-reinterpretation">§</a></h2>
