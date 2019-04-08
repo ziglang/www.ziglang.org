@@ -1349,23 +1349,29 @@ pub fn main() void {
     {#header_close#}
 
     {#header_open|zig fmt#}
-    TODO available in stage1
-    TODO improvements
-
-    <p>TODO Mention the discussion about alignment.</p>
-    <p>hryx: Vertically align array literal columns</p>
-    hryx: Always write a multiline struct literal if a field expr is multiline
-    Shritesh Bhattarai: fmt: fix first line comment indent in struct init
-    hryx: zig fmt: Allow one-line for loops
-    Shritesh Bhattarai fmt: format multi line only on trailing comma (<a href="https://github.com/ziglang/zig/issues/2184">#2184</a>)
-    Shritesh Bhattarai: fmt: support trailing comma after var_args
-
+    <p><code>zig fmt</code> is a tool to format your Zig code to a canonical style.
+    It's implemented in Zig and it's been available as a
+    {#link|self-hosted compiler|Self-Hosted Compiler Status#} subcommand for a while,
+    but the self-hosted compiler is not done yet and it's not what's available on
+    <a href="/download">the download page</a>.
+    </p>
     <p>
-    <code>zig fmt</code> now has a <code>--check</code> flag, which does everything
+    Zig 0.4.0 ships with <code>zig fmt</code> capabilities. Under the hood, it uses
+    <code>zig run</code> and the {#link|Build Artifact Caching#} system, to lazily build
+    <code>zig fmt</code> from source, and then run it.
+    That means even the stage1 C++ Zig compiler is a sort of hybrid - part C++, and part Zig.
+    </p>
+    <p>
+    Several editors have <code>zig fmt</code> integration available, such as the
+    <a href="https://github.com/ziglang/zig.vim">vim plugin</a> that I use.
+    I believe the <a href="https://github.com/ziglang/vscode-zig/">VSCode plugin</a> does as well.
+    </p>
+    <p>
+    There is now has a <code>--check</code> flag, which does everything
     except modify file contents. That is, it lists non-conforming files on stdout,
     and then exits with an error if the list is non-empty. <a href="https://github.com/ziglang/zig/issues/1558">#1558</a> <a href="https://github.com/ziglang/zig/issues/1555">#1555</a>
     </p>
-    <p>More improvements:</p>
+    <p>Other improvements during this release cycle:</p>
     <ul>
       <li>Fixed infix operator before multiline string literal.</li>
       <li>Fixed argv[0] handled incorrectly.</li>
@@ -1375,14 +1381,39 @@ pub fn main() void {
         of a file. <a href="https://github.com/ziglang/zig/issues/2074">#2074</a></li>
       <li>Shritesh Bhattarai implemented support for documentation comments on 
         parameter declarations.</li>
+      <li>hryx implemented vertically aligning array literal columns.</li>
+      <li>hryx implemented Always write a multiline struct literal if a field expr is multiline.</li>
+      <li>Shritesh Bhattarai fixed first line comment indent in struct init.</li>
+      <li>hryx implemented allowing one-line for loops.</li>
+      <li>Shritesh Bhattarai implemented formatting multi line only on trailing comma.
+        (<a href="https://github.com/ziglang/zig/issues/2184">#2184</a>)</li>
+      <li>Shritesh Bhattarai implemented support for trailing comma after var_args.</a>
     </ul>
+    <p>
+    There is also a
+    <a href="https://github.com/ziglang/zig/issues/2196">discussion about whether or not to align struct fields</a>,
+    which has some interesting arguments on either side.
+    </p>
     {#header_close#}
 
     {#header_open|C Translation Status#}
-    TODO explain <a href="https://github.com/ziglang/zig/issues/1964">#1964</a>
+    <p>
+    I have come up with <a href="https://github.com/ziglang/zig/issues/1964">a plan to migrate translate-c to userland</a>:
+    </p>
+    <ol>
+      <li>Create a C API wrapper for Clang's C++ API.</li>
+      <li>Implement translate-c in Zig with a C API, using the C API wrapper for libclang.</li>
+      <li>The build process for stage1 will link zig.exe without translate-c support,
+        build the translate-c userland library, and then re-link zig.exe with translate-c support.</li>
+    </ol>
+    <p>This will allow us to move thousands of lines of C++ to Zig, and to only have to maintain
+    one implementation of C translation rather than two. This same strategy could be used
+    for other pieces of the Zig project, such as the {#link|package manager|Package Manager Status#}.</p>
+    <p>I started this effort with a proof of concept, but there is still a long way to go before this is done.</p>
 
     <p>In addition the following improvements were made:</p>
     <ul>
+    <li>Much of translated C code looks cleaner thanks to {#link|C Pointers#}.</li>
     <li>support no-op cast</li>
     <li><code>--verbose-cimport</code> prints clang command</li>
     <li>Avoid array concatenation if the init node is empty, for clarity. -Antoine Vugliano</li>
@@ -1392,21 +1423,12 @@ pub fn main() void {
     <li>LemonBoy implemented translation of parameterless C functions (<a href="https://github.com/ziglang/zig/issues/1978">#1978</a>).
       This solves <a href="https://stackoverflow.com/questions/49892119/zig-translate-c-doesnt-translate-main-function">the only StackOverflow question tagged "Zig"</a>.
     </li>
+    <li>Antoine Vugliano added support for integer suffixes on 0 (zero) litteral inside
+      macro definitions.</li>
+    <li>Jimmi Holst Christensen implemented a workaround for <a href="https://github.com/ziglang/zig/issues/2043">#2043</a>.</li>
+    <li>Jimmi Holst Christensen implemented enough of translate-c to translate the <code>assert</code>
+      macro from glibc.</li>
     </ul>
-
-    Sahnvour translate-c: add support for integer suffixes on 0 (zero) litteral inside macro definitions
-    Sahnvour translate-c: additional test case for integer suffixes on 0
-
-    Jimmi Holst Christensen: workaround for <a href="https://github.com/ziglang/zig/issues/2043">#2043</a>
-
-          Jimmi Holst Christensen Implemented enough of translate-c to translate assert
-          This required the following
-          * __extention__
-          * ({})
-          * Fixing if (0) ; else ;
-
-    Jimmi fixed void cast and added the last tests 5ae400fb393b4a7f
-
     {#header_close#}
 
     {#header_open|Grammar Formalization and Specification#}
