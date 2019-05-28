@@ -1,5 +1,5 @@
 const std = @import("std");
-const path = std.os.path;
+const path = std.fs.path;
 const mem = std.mem;
 
 pub fn main() !void {
@@ -12,7 +12,7 @@ pub fn main() !void {
     const allocator = &arena.allocator;
 
     const download_dir = "www" ++ path.sep_str ++ "download";
-    try std.os.makePath(allocator, download_dir);
+    try std.fs.makePath(allocator, download_dir);
     {
         const out_file = download_dir ++ path.sep_str ++ "index.html";
         const in_file = "src" ++ path.sep_str ++ "download" ++ path.sep_str ++ "index.html";
@@ -36,7 +36,7 @@ fn render(
 ) !void {
     const in_contents = try std.io.readFileAlloc(allocator, in_file);
 
-    var vars = try std.os.getEnvMap(allocator);
+    var vars = try std.process.getEnvMap(allocator);
 
     var buffer = try std.Buffer.initSize(allocator, 0);
     errdefer buffer.deinit();
@@ -94,7 +94,7 @@ fn render(
                 },
                 else => {
                     std.debug.warn("line {}: invalid byte: '0x{x}'", line, byte);
-                    std.os.exit(1);
+                    std.process.exit(1);
                 },
             },
         }
