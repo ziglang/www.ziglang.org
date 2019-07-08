@@ -419,23 +419,20 @@ pub fn main() void {
 }
       {#code_end#}
       <p>
-      When compiled with <a href="/documentation/master/#ReleaseSmall">--release-small</a>
-      this produces a 49 KiB static executable
-      for the x86_64-linux target:
+      When compiled with <a href="/documentation/master/#ReleaseSmall">--release-small</a>,
+      debug symbols stripped, single-threaded mode,
+      this produces a 9.8 KiB static executable for the x86_64-linux target:
       </p>
-      <pre><code>$ zig build-exe hello.zig --release-small
+      <pre><code>$ zig build-exe hello.zig --release-small --strip --single-threaded
 $ wc -c hello
-50552 hello
+9944 hello
 $ ldd hello
   not a dynamic executable</code></pre>
-      <p>Note: There is an <a href="https://github.com/ziglang/zig/issues/2062">open issue</a> to figure out why this isn't
-      omitting unused builtin functions such as <code>memset</code>.</p>
-      <p>
-      A Windows build is even smaller, coming out to 7 KiB:
+      A Windows build is even smaller, coming out to 4096 bytes:
       </p>
-      <pre><code>$ zig build-exe hello.zig --release-small -target x86_64-windows
+      <pre><code>$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
-6656 hello.exe
+4096 hello.exe
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows</code></pre>
       {#header_close#}
@@ -582,7 +579,7 @@ const Device = struct {
       <p>Errors are values, and may not be ignored:</p>
       {#code_begin|exe_build_err|discard#}
 const std = @import("std");
-const File = std.os.File;
+const File = std.fs.File;
 
 pub fn main() void {
     _ = File.openRead("does_not_exist/foo.txt");
@@ -593,7 +590,7 @@ pub fn main() void {
       </p>
       {#code_begin|exe|catch#}
 const std = @import("std");
-const File = std.os.File;
+const File = std.fs.File;
 
 pub fn main() void {
     const file = File.openRead("does_not_exist/foo.txt") catch |err| label: {
@@ -610,7 +607,7 @@ pub fn main() void {
       </p>
       {#code_begin|exe_err|try#}
 const std = @import("std");
-const File = std.os.File;
+const File = std.fs.File;
 
 pub fn main() !void {
     const file = try File.openRead("does_not_exist/foo.txt");
@@ -667,7 +664,7 @@ fn charToDigit(c: u8) !u8 {
       </p>
       {#code_begin|exe_err|unreachable#}
 const std = @import("std");
-const File = std.os.File;
+const File = std.fs.File;
 
 pub fn main() void {
     const file = File.openRead("does_not_exist/foo.txt") catch unreachable;
