@@ -412,16 +412,16 @@ bar();</code></pre>
     x += <span class="tok-number">1</span>;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 1/1 test &quot;integer overflow at runtime&quot;...integer overflow
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:3:7</span>: <span class="t2_0">0x2040f0 in test &quot;integer overflow at runtime&quot; (test)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:3:7</span>: <span class="t2_0">0x2045f0 in test &quot;integer overflow at runtime&quot; (test)</span>
     x += 1;
       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x22752a in std.special.main (test)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/test_runner.zig:13:25</span>: <span class="t2_0">0x224ddd in std.special.main (test)</span>
         if (test_fn.func()) |_| {
                         <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:126:22</span>: <span class="t2_0">0x226cb5 in std.special.posixCallMainAndExit (test)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:146:22</span>: <span class="t2_0">0x223c46 in std.special.posixCallMainAndExit (test)</span>
             root.main() catch |err| {
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:47:5</span>: <span class="t2_0">0x226a20 in std.special._start (test)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:66:5</span>: <span class="t2_0">0x223ac0 in std.special._start (test)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
@@ -487,23 +487,20 @@ Hello, world!
 </code></pre>
 
       <p>
-      When compiled with <a href="/documentation/master/#ReleaseSmall">--release-small</a>
-      this produces a 49 KiB static executable
-      for the x86_64-linux target:
+      When compiled with <a href="/documentation/master/#ReleaseSmall">--release-small</a>,
+      debug symbols stripped, single-threaded mode,
+      this produces a 9.8 KiB static executable for the x86_64-linux target:
       </p>
-      <pre><code>$ zig build-exe hello.zig --release-small
+      <pre><code>$ zig build-exe hello.zig --release-small --strip --single-threaded
 $ wc -c hello
-50552 hello
+9944 hello
 $ ldd hello
   not a dynamic executable</code></pre>
-      <p>Note: There is an <a href="https://github.com/ziglang/zig/issues/2062">open issue</a> to figure out why this isn't
-      omitting unused builtin functions such as <code>memset</code>.</p>
-      <p>
-      A Windows build is even smaller, coming out to 7 KiB:
+      A Windows build is even smaller, coming out to 4096 bytes:
       </p>
-      <pre><code>$ zig build-exe hello.zig --release-small -target x86_64-windows
+      <pre><code>$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
-6656 hello.exe
+4096 hello.exe
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows</code></pre>
       
@@ -659,7 +656,7 @@ dog
 
       <p>Errors are values, and may not be ignored:</p>
       <p class="file">discard.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> File = std.os.File;
+<span class="tok-kw">const</span> File = std.fs.File;
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     _ = File.openRead(<span class="tok-str">&quot;does_not_exist/foo.txt&quot;</span>);
@@ -673,7 +670,7 @@ dog
       Errors can be handled with <a href="/documentation/master/#catch">catch</a>:
       </p>
       <p class="file">catch.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> File = std.os.File;
+<span class="tok-kw">const</span> File = std.fs.File;
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> file = File.openRead(<span class="tok-str">&quot;does_not_exist/foo.txt&quot;</span>) <span class="tok-kw">catch</span> |err| label: {
@@ -693,7 +690,7 @@ all your codebase are belong to us
       <code class="zig"><span class="tok-kw">catch</span> |err| <span class="tok-kw">return</span> err</code>:
       </p>
       <p class="file">try.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> File = std.os.File;
+<span class="tok-kw">const</span> File = std.fs.File;
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {
     <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> File.openRead(<span class="tok-str">&quot;does_not_exist/foo.txt&quot;</span>);
@@ -702,16 +699,16 @@ all your codebase are belong to us
 }</code></pre><pre><code class="shell">$ zig build-exe try.zig
 $ ./try
 error: FileNotFound
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/os.zig:530:33</span>: <span class="t2_0">0x206411 in std.os.posixOpenC (try)</span>
-                posix.ENOENT =&gt; return PosixOpenError.FileNotFound,
-                                <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/os/file.zig:37:24</span>: <span class="t2_0">0x2061c7 in std.os.file.File.openReadC (try)</span>
-            const fd = try os.posixOpenC(path, flags, 0);
-                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/os/file.zig:50:13</span>: <span class="t2_0">0x21c8e3 in std.os.file.File.openRead (try)</span>
-            return openReadC(&amp;path_c);
-            <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/try.zig:5:18</span>: <span class="t2_0">0x22731d in main (try)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/os.zig:537:23</span>: <span class="t2_0">0x21c59f in std.os.openC (try)</span>
+            ENOENT =&gt; return error.FileNotFound,
+                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/fs/file.zig:45:20</span>: <span class="t2_0">0x206c2a in std.fs.file.File.openReadC (try)</span>
+        const fd = try os.openC(path, flags, 0);
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/fs/file.zig:35:9</span>: <span class="t2_0">0x21a6d0 in std.fs.file.File.openRead (try)</span>
+        return openReadC(&amp;path_c);
+        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/try.zig:5:18</span>: <span class="t2_0">0x224c8d in main (try)</span>
     const file = try File.openRead(&quot;does_not_exist/foo.txt&quot;);
                  <span class="t32_1">^</span>
 </code></pre>
@@ -773,7 +770,7 @@ error: FileNotFound
       The keyword <a href="/documentation/master/#unreachable">unreachable</a> is used to assert that no errors will occur:
       </p>
       <p class="file">unreachable.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> File = std.os.File;
+<span class="tok-kw">const</span> File = std.fs.File;
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> file = File.openRead(<span class="tok-str">&quot;does_not_exist/foo.txt&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
@@ -781,25 +778,25 @@ error: FileNotFound
 }</code></pre><pre><code class="shell">$ zig build-exe unreachable.zig
 $ ./unreachable
 attempt to unwrap error: FileNotFound
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/os.zig:530:33</span>: <span class="t2_0">0x206411 in std.os.posixOpenC (unreachable)</span>
-                posix.ENOENT =&gt; return PosixOpenError.FileNotFound,
-                                <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/os/file.zig:37:24</span>: <span class="t2_0">0x2061c7 in std.os.file.File.openReadC (unreachable)</span>
-            const fd = try os.posixOpenC(path, flags, 0);
-                       <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/os/file.zig:50:13</span>: <span class="t2_0">0x21c8e3 in std.os.file.File.openRead (unreachable)</span>
-            return openReadC(&amp;path_c);
-            <span class="t32_1">^</span>
-???:?:?: <span class="t2_0">0x2272a7 in ??? (???)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/os.zig:537:23</span>: <span class="t2_0">0x21c59f in std.os.openC (unreachable)</span>
+            ENOENT =&gt; return error.FileNotFound,
+                      <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/fs/file.zig:45:20</span>: <span class="t2_0">0x206c2a in std.fs.file.File.openReadC (unreachable)</span>
+        const fd = try os.openC(path, flags, 0);
+                   <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/fs/file.zig:35:9</span>: <span class="t2_0">0x21a6d0 in std.fs.file.File.openRead (unreachable)</span>
+        return openReadC(&amp;path_c);
+        <span class="t32_1">^</span>
+???:?:?: <span class="t2_0">0x224e86 in ??? (???)</span>
 
 
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/unreachable.zig:5:58</span>: <span class="t2_0">0x2271d5 in main (unreachable)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/unreachable.zig:5:58</span>: <span class="t2_0">0x224b75 in main (unreachable)</span>
     const file = File.openRead(&quot;does_not_exist/foo.txt&quot;) catch unreachable;
                                                          <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:116:22</span>: <span class="t2_0">0x226bda in std.special.posixCallMainAndExit (unreachable)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:136:22</span>: <span class="t2_0">0x223b89 in std.special.posixCallMainAndExit (unreachable)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:47:5</span>: <span class="t2_0">0x2269d0 in std.special._start (unreachable)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:66:5</span>: <span class="t2_0">0x223a70 in std.special._start (unreachable)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -854,31 +851,31 @@ attempt to unwrap error: FileNotFound
 }</code></pre><pre><code class="shell">$ zig build-exe stack_traces.zig
 $ ./stack_traces
 first one:
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:27:32</span>: <span class="t2_0">0x2271bc in foo (stack_traces)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:27:32</span>: <span class="t2_0">0x224d6c in foo (stack_traces)</span>
     std.debug.captureStackTrace(null, &amp;trace1);
                                <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:17:8</span>: <span class="t2_0">0x227168 in main (stack_traces)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:17:8</span>: <span class="t2_0">0x224b08 in main (stack_traces)</span>
     foo();
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:116:22</span>: <span class="t2_0">0x226bda in std.special.posixCallMainAndExit (stack_traces)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:136:22</span>: <span class="t2_0">0x223b89 in std.special.posixCallMainAndExit (stack_traces)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:47:5</span>: <span class="t2_0">0x2269d0 in std.special._start (stack_traces)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:66:5</span>: <span class="t2_0">0x223a70 in std.special._start (stack_traces)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 
 
 second one:
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:31:32</span>: <span class="t2_0">0x2271dc in bar (stack_traces)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:31:32</span>: <span class="t2_0">0x224d8c in bar (stack_traces)</span>
     std.debug.captureStackTrace(null, &amp;trace2);
                                <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:18:8</span>: <span class="t2_0">0x22716d in main (stack_traces)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/stack_traces.zig:18:8</span>: <span class="t2_0">0x224b0d in main (stack_traces)</span>
     bar();
        <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:116:22</span>: <span class="t2_0">0x226bda in std.special.posixCallMainAndExit (stack_traces)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:136:22</span>: <span class="t2_0">0x223b89 in std.special.posixCallMainAndExit (stack_traces)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t37_1">/home/andy/dev/zig/build/lib/zig/std/special/bootstrap.zig:47:5</span>: <span class="t2_0">0x2269d0 in std.special._start (stack_traces)</span>
+<span class="t37_1">/home/andy/downloads/zig/build/lib/zig/std/special/start.zig:66:5</span>: <span class="t2_0">0x223a70 in std.special._start (stack_traces)</span>
     @noInlineCall(posixCallMainAndExit);
     <span class="t32_1">^</span>
 </code></pre>
@@ -993,7 +990,7 @@ Header has a field called name with type []const u8
         assert(array.len == <span class="tok-number">12345</span>);
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">/home/andy/dev/zig/build/lib/zig/std/debug.zig:169:14: </span><span class="t31_1">error:</span><span class="t0_1"> unable to evaluate constant expression</span>
+<span class="t0_1">/home/andy/downloads/zig/build/lib/zig/std/debug.zig:205:14: </span><span class="t31_1">error:</span><span class="t0_1"> unable to evaluate constant expression</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
 <span class="t0_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:13:15: </span><span class="t36_1">note:</span><span class="t0_1"> called from here</span>
@@ -1400,7 +1397,7 @@ Next, try `zig build --help` or `zig build run`</code></pre>
       <p class="file">src/main.zig</p>
       <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
-<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-kw">anyerror</span>!<span class="tok-type">void</span> {
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
     std.debug.warn(<span class="tok-str">&quot;All your base are belong to us.\n&quot;</span>);
 }</code></pre>
       <p class="file">build.zig</p>
