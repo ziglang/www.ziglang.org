@@ -827,27 +827,25 @@ test "compile-time evaluation" {
       <pre>{#syntax#}
 const c = @cImport(@cInclude("soundio/soundio.h"));
 const std = @import("std");
-const panic = std.debug.panic;
-const math = std.math;
 
 fn sio_err(err: c_int) !void {
     switch (@intToEnum(c.SoundIoError, err)) {
-        c.SoundIoError.None => {},
-        c.SoundIoError.NoMem => return error.NoMem,
-        c.SoundIoError.InitAudioBackend => return error.InitAudioBackend,
-        c.SoundIoError.SystemResources => return error.SystemResources,
-        c.SoundIoError.OpeningDevice => return error.OpeningDevice,
-        c.SoundIoError.NoSuchDevice => return error.NoSuchDevice,
-        c.SoundIoError.Invalid => return error.Invalid,
-        c.SoundIoError.BackendUnavailable => return error.BackendUnavailable,
-        c.SoundIoError.Streaming => return error.Streaming,
-        c.SoundIoError.IncompatibleDevice => return error.IncompatibleDevice,
-        c.SoundIoError.NoSuchClient => return error.NoSuchClient,
-        c.SoundIoError.IncompatibleBackend => return error.IncompatibleBackend,
-        c.SoundIoError.BackendDisconnected => return error.BackendDisconnected,
-        c.SoundIoError.Interrupted => return error.Interrupted,
-        c.SoundIoError.Underflow => return error.Underflow,
-        c.SoundIoError.EncodingString => return error.EncodingString,
+        .None => {},
+        .NoMem => return error.NoMem,
+        .InitAudioBackend => return error.InitAudioBackend,
+        .SystemResources => return error.SystemResources,
+        .OpeningDevice => return error.OpeningDevice,
+        .NoSuchDevice => return error.NoSuchDevice,
+        .Invalid => return error.Invalid,
+        .BackendUnavailable => return error.BackendUnavailable,
+        .Streaming => return error.Streaming,
+        .IncompatibleDevice => return error.IncompatibleDevice,
+        .NoSuchClient => return error.NoSuchClient,
+        .IncompatibleBackend => return error.IncompatibleBackend,
+        .BackendDisconnected => return error.BackendDisconnected,
+        .Interrupted => return error.Interrupted,
+        .Underflow => return error.Underflow,
+        .EncodingString => return error.EncodingString,
     }
 }
 
@@ -872,15 +870,15 @@ extern fn write_callback(
             maybe_outstream,
             @ptrCast([*]?[*]c.SoundIoChannelArea, &areas),
             &frame_count,
-        )) catch |err| panic("write failed: {}", @errorName(err));
+        )) catch |err| std.debug.panic("write failed: {}", @errorName(err));
 
         if (frame_count == 0) break;
 
         const pitch = 440.0;
-        const radians_per_second = pitch * 2.0 * math.pi;
+        const radians_per_second = pitch * 2.0 * std.math.pi;
         var frame: c_int = 0;
         while (frame < frame_count) : (frame += 1) {
-            const sample = math.sin((seconds_offset + @intToFloat(f32, frame) *
+            const sample = std.math.sin((seconds_offset + @intToFloat(f32, frame) *
                 seconds_per_frame) * radians_per_second);
             {
                 var channel: usize = 0;
@@ -893,50 +891,47 @@ extern fn write_callback(
         }
         seconds_offset += seconds_per_frame * @intToFloat(f32, frame_count);
 
-        sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| panic("end write failed: {}", @errorName(err));
+        sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {}", @errorName(err));
 
         frames_left -= frame_count;
     }
 }
 
-pub fn main() void {
+pub fn main() !void {
     const soundio = c.soundio_create();
     defer c.soundio_destroy(soundio);
 
-    sio_err(c.soundio_connect(soundio)) catch |err| panic("unable to connect: {}", @errorName(err));
+    try sio_err(c.soundio_connect(soundio));
 
     c.soundio_flush_events(soundio);
 
     const default_output_index = c.soundio_default_output_device_index(soundio);
-    if (default_output_index < 0) panic("no output device found");
+    if (default_output_index < 0) return error.NoOutputDeviceFound;
 
-    const device = c.soundio_get_output_device(soundio, default_output_index);
+    const device = c.soundio_get_output_device(soundio, default_output_index) orelse return error.OutOfMemory;
     defer c.soundio_device_unref(device);
 
     std.debug.warn("Output device: {s}\n", ([*]const u8)(device.*.name));
 
-    const outstream = c.soundio_outstream_create(device);
+    const outstream = c.soundio_outstream_create(device) orelse return error.OutOfMemory;
     defer c.soundio_outstream_destroy(outstream);
 
     outstream.*.format = c.SoundIoFormatFloat32NE;
     outstream.*.write_callback = write_callback;
 
-    sio_err(c.soundio_outstream_open(outstream)) catch |err| panic("unable to open stream: {}", @errorName(err));
+    try sio_err(c.soundio_outstream_open(outstream));
 
-    sio_err(c.soundio_outstream_start(outstream)) catch |err| panic("unable to start stream: {}", @errorName(err));
+    try sio_err(c.soundio_outstream_start(outstream));
 
     while (true) c.soundio_wait_events(soundio);
 }
       {#endsyntax#}</pre>
-      <pre><code class="shell">$ zig build-exe sine.zig --library soundio --library c
+      <pre><code class="shell">$ zig build-exe sine.zig -lsoundio -lc
 $ ./sine
 Output device: Built-in Audio Analog Stereo
 ^C</code></pre>
       <p>
-      There are a few open issues which will clean up some of this code, such as
-      <a href="https://github.com/ziglang/zig/issues/1967">supporting if, orelse, null, and .? for C pointers</a>.
-      But even as is,
-      <a href="https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8">this Zig code is significantly simpler than the equivalent C code</a>,
+      <a href="https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8">This Zig code is significantly simpler than the equivalent C code</a>,
       as well as having more safety protections, and all this is accomplished by directly importing the C header file - no API bindings.
       </p>
       <p>
