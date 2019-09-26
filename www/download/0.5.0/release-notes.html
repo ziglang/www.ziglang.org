@@ -279,13 +279,17 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
         </ul></li>
         <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
         <ul>
+            <li><a id="toc-usingnamespace" href="#usingnamespace">usingnamespace</a></li>
             <li><a id="toc-External-Thread-Local-Variables" href="#External-Thread-Local-Variables">External Thread Local Variables</a></li>
             <li><a id="toc-hasField-and-hasDecl" href="#hasField-and-hasDecl">@hasField and @hasDecl</a></li>
             <li><a id="toc-C-Pointers-Support-Optional-Syntax" href="#C-Pointers-Support-Optional-Syntax">C Pointers Support Optional Syntax</a></li>
             <li><a id="toc-Switching-on-Error-Sets" href="#Switching-on-Error-Sets">Switching on Error Sets</a></li>
             <li><a id="toc-Bit-Manipulation-Builtin-Functions" href="#Bit-Manipulation-Builtin-Functions">Bit Manipulation Builtin Functions</a></li>
-            <li><a id="toc-unionInit" href="#unionInit">@unionInit</a></li>
+            <li><a id="toc-Undeclared-Identifiers-in-Compile-Time-Dead-Branches" href="#Undeclared-Identifiers-in-Compile-Time-Dead-Branches">Undeclared Identifiers in Compile-Time Dead Branches</a></li>
+            <li><a id="toc-Default-Struct-Field-Values" href="#Default-Struct-Field-Values">Default Struct Field Values</a></li>
+            <li><a id="toc-Array-Literal-Syntax" href="#Array-Literal-Syntax">Array Literal Syntax</a></li>
             <li><a id="toc-Result-Location-Semantics" href="#Result-Location-Semantics">Result Location Semantics</a></li>
+            <li><a id="toc-unionInit" href="#unionInit">@unionInit</a></li>
             <li><a id="toc-Async-Functions" href="#Async-Functions">Async Functions</a></li>
         </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
@@ -302,6 +306,7 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
             </ul></li>
         </ul></li>
         <li><a id="toc-Documentation" href="#Documentation">Documentation</a></li>
+        <li><a id="toc-SIMD" href="#SIMD">SIMD</a></li>
         <li><a id="toc-zig-build" href="#zig-build">zig build</a></li>
         <li><a id="toc-zig-fmt" href="#zig-fmt">zig fmt</a></li>
         <li><a id="toc-libc" href="#libc">libc</a>
@@ -835,6 +840,7 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
     <p>LemonBoy made several improvements to <a href="#Thread-Local-Storage">Thread Local Storage</a> for 64-bit ARM.</p>
     <ul>
       <li>LemonBoy fixed the definition of <code>epoll_*</code> struct on non x86_64 arches.</li>
+      <li>LemonBoy fixed some syscalls and flag definitions on arm64.</li>
     </ul>
     
 
@@ -948,6 +954,68 @@ Date:   Sat Apr 27 16:17:07 2019 -0500
         symbols get properly garbage collected, resulting in smaller wasm binaries.</li>
       <li>LemonBoy implemented <a href="#compiler-rt">compiler-rt</a> builtins for WebAssembly.</li>
     </ul>
+    TODO
+commit 14cdb01f35b35972b06e95a3a438f9f7910b97f8
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed May 15 16:20:16 2019 -0400
+
+    improvements to zig's implementation of libc and WebAssembly
+    
+     * rename std/special/builtin.zig to std/special/c.zig
+       not to be confused with @import("builtin") which is entirely
+       different, this is zig's multi-target libc implementation.
+     * WebAssembly: build-exe is for executables which have a main().
+       build-lib is for building libraries of functions to use from,
+       for example, a web browser environment.
+       - for now pass --export-all for libraries when there are any
+         C objects because we have no way to detect the list of exports
+         when compiling C code.
+       - stop passing --no-entry for executables. if you want --no-entry
+         then use build-lib.
+     * make the "musl" ABI the default ABI for wasm32-freestanding.
+     * zig provides libc for wasm32-freestanding-musl.
+
+commit 01a4897da54d6c789b0a5232188bbafbbd660946
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu May 16 19:40:12 2019 -0400
+
+    improve the libc of wasm32-freestanding target
+    
+     * introduce wasm32-freestanding-musl .h files to fix
+       conflicts with stddef.h and errno.h
+     * fix an issue with zig build system regarding installation of
+       webassembly libraries
+     * add implementations to zig's libc:
+       - strcmp
+       - strncmp
+       - strerror
+       - strlen
+    
+    See #514
+
+commit 81e960eb748fdb37d1d61da262ec343e2fdb2511
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu May 16 13:56:56 2019 -0400
+
+    improvements to build-lib use case of WebAssembly
+    
+     * build-exe does include the startup code that supplies _start for the
+       wasm32-freestanding target. Previously this did not occur because
+       of logic excluding "freestanding".
+     * build-lib for wasm32-freestanding target gets linked by LLD. To avoid
+       infinite recursion, compiler_rt and zig libc are built as objects
+       rather than libraries.
+       - no "lib" prefix and ".wasm" extension instead of ".a". Rather than
+       build-lib foo.zig producing "libfoo.a", now it produces "foo.wasm".
+     * zig libc only provides _start symbol for wasm when linking libc.
+
+
+commit 978fab817caacb7bb3ba96fe3ec08bab1c78c1da
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu May 16 14:17:00 2019 -0400
+
+    the wasm freestanding _start function is return value void
+
     
 
     <h2 id="UEFI-Support"><a href="#toc-UEFI-Support">UEFI Support</a> <a class="hdr" href="#UEFI-Support">§</a></h2>
@@ -986,6 +1054,58 @@ Date:   Sat Apr 27 16:17:07 2019 -0500
       <li>Enum literals now implicit cast to tagged unions. TODO make code example of this</li>
       <li>Allow implicit casting optional pointer to optional <code class="zig"><span class="tok-type">c_void</span></code> pointer.</li>
     </ul>
+
+    <h2 id="usingnamespace"><a href="#toc-usingnamespace">usingnamespace</a> <a class="hdr" href="#usingnamespace">§</a></h2>
+
+      <p>
+      <code class="zig"><span class="tok-kw">usingnamespace</span></code> is a top level declaration that imports all the declarations of
+      the operand, which must be a <code class="zig"><span class="tok-kw">struct</span></code>, <code class="zig"><span class="tok-kw">union</span></code>, or
+      <code class="zig"><span class="tok-kw">enum</span></code>, into the current scope:
+      </p>
+      <p class="file">usingnamespace.zig</p><pre><code class="zig"><span class="tok-kw">usingnamespace</span> <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;using std namespace&quot;</span> {
+    debug.assert(<span class="tok-null">true</span>);
+}</code></pre><pre><code class="shell">$ zig test usingnamespace.zig
+1/1 test &quot;using std namespace&quot;...OK
+All tests passed.
+</code></pre>
+
+      <p>
+      Instead of the above pattern, it is generally recommended to explicitly alias individual declarations.
+      However, <code class="zig"><span class="tok-kw">usingnamespace</span></code> has an important use case when organizing the public
+      API of a file or package. For example, one might have <code>c.zig</code> with all of the
+      <a href="https://ziglang.org/documentation/master/#Import-from-C-Header-File">C imports</a>:
+      </p>
+      <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">usingnamespace</span> <span class="tok-builtin">@cImport</span>({
+    <span class="tok-builtin">@cInclude</span>(<span class="tok-str">&quot;epoxy/gl.h&quot;</span>);
+    <span class="tok-builtin">@cInclude</span>(<span class="tok-str">&quot;GLFW/glfw3.h&quot;</span>);
+    <span class="tok-builtin">@cDefine</span>(<span class="tok-str">&quot;STBI_ONLY_PNG&quot;</span>, <span class="tok-str">&quot;&quot;</span>);
+    <span class="tok-builtin">@cDefine</span>(<span class="tok-str">&quot;STBI_NO_STDIO&quot;</span>, <span class="tok-str">&quot;&quot;</span>);
+    <span class="tok-builtin">@cInclude</span>(<span class="tok-str">&quot;stb_image.h&quot;</span>);
+});</code></pre>
+      <p>
+      The above example demonstrates using <code class="zig"><span class="tok-kw">pub</span></code> to qualify the
+      <code class="zig"><span class="tok-kw">usingnamespace</span></code> additionally makes the imported declarations
+      <code class="zig"><span class="tok-kw">pub</span></code>. This can be used to forward declarations, giving precise control
+      over what declarations a given file exposes.
+      </p>
+      <p>
+      In Zig 0.4.0, this feature existed as <code>use</code>, but it only worked at the top-level
+      scope, and only for structs. The feature was also considered unstable.
+      </p>
+      <p>Thank you LemonBoy for fixing <code class="zig"><span class="tok-kw">usingnamespace</span></code> outside the top-level scope, and
+      making it work with arbitrary structs.</p>
+      <p>
+      In Zig 0.5.0, both <code>use</code> and <code class="zig"><span class="tok-kw">usingnamespace</span></code> are accepted, and
+      <a href="#zig-fmt">zig fmt</a> automatically converts to the canonical syntax. The next release of Zig after this
+      one will remove the old syntax.
+      </p>
+      <p>
+      This feature is now stable and planned to be included in
+      <a href="https://github.com/ziglang/zig/issues/75">the language specification</a>.
+      </p>
+    
 
     <h2 id="External-Thread-Local-Variables"><a href="#toc-External-Thread-Local-Variables">External Thread Local Variables</a> <a class="hdr" href="#External-Thread-Local-Variables">§</a></h2>
 
@@ -1148,14 +1268,100 @@ All tests passed.
     </p>
     
 
-    <h2 id="unionInit"><a href="#toc-unionInit">@unionInit</a> <a class="hdr" href="#unionInit">§</a></h2>
+    <h2 id="Undeclared-Identifiers-in-Compile-Time-Dead-Branches"><a href="#toc-Undeclared-Identifiers-in-Compile-Time-Dead-Branches">Undeclared Identifiers in Compile-Time Dead Branches</a> <a class="hdr" href="#Undeclared-Identifiers-in-Compile-Time-Dead-Branches">§</a></h2>
 
-    <p>Robert Scott implemented @unionInit.</p>
+    <p>
+    Zig no longer validates whether identifiers exist in dead <code class="zig"><span class="tok-kw">comptime</span></code> branches:
+    </p>
+    <p class="file">dead_comptime_branch.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;dead comptime branch&quot;</span> {
+    <span class="tok-kw">if</span> (<span class="tok-null">false</span>) {
+        does_not_exist = thisFunctionAlsoDoesNotExist();
+    }
+}</code></pre><pre><code class="shell">$ zig test dead_comptime_branch.zig
+1/1 test &quot;dead comptime branch&quot;...OK
+All tests passed.
+</code></pre>
+
+    <p>
+    This is counter-intuitive, but consider that the set of available identifiers may depend on
+    <code class="zig"><span class="tok-kw">comptime</span></code> parameters, such as the target OS:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);
+
+<span class="tok-kw">usingnamespace</span> <span class="tok-kw">switch</span> (builtin.os) {
+    .windows =&gt; <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;windows_stuff.zig&quot;</span>),
+    <span class="tok-kw">else</span> =&gt; <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;posix_stuff.zig&quot;</span>),
+};
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;example&quot;</span> {
+    <span class="tok-kw">if</span> (builtin.os == .windows) {
+        ExitProcess(<span class="tok-number">0</span>);
+    } <span class="tok-kw">else</span> {
+        exit(<span class="tok-number">0</span>);
+    }
+}</code></pre>
+    <p>
+    In practice, this has resulted in various code cleanups throughout the standard library.
+    </p>
+    <p>
+    Zig's lazy analysis, while convenient, surfaces the inherent problems of conditional compilation.
+    See the related proposal:
+    <a href="https://github.com/ziglang/zig/issues/3028">"multibuilds" - a plan to harmonize conditional compilation with compile errors, documentation, and IDEs</a>
+    </p>
+    
+
+    <h2 id="Default-Struct-Field-Values"><a href="#toc-Default-Struct-Field-Values">Default Struct Field Values</a> <a class="hdr" href="#Default-Struct-Field-Values">§</a></h2>
+
+    <p>
+    Each struct field may now have an expression indicating the default field value. Such expressions
+    are executed at <code class="zig"><span class="tok-kw">comptime</span></code>, and allow the field to be omitted in a struct
+    literal expression:
+    </p>
+    <p class="file">default_fields.zig</p><pre><code class="zig"><span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {
+    a: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>,
+    b: <span class="tok-type">i32</span>,
+};
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;default struct field values&quot;</span> {
+    <span class="tok-kw">const</span> x = Foo{
+        .b = <span class="tok-number">5</span>,
+    };
+    <span class="tok-kw">if</span> (x.a + x.b != <span class="tok-number">1239</span>) {
+        <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;it's even comptime known!&quot;</span>);
+    }
+}</code></pre><pre><code class="shell">$ zig test default_fields.zig
+1/1 test &quot;default struct field values&quot;...OK
+All tests passed.
+</code></pre>
+
+    
+
+    <h2 id="Array-Literal-Syntax"><a href="#toc-Array-Literal-Syntax">Array Literal Syntax</a> <a class="hdr" href="#Array-Literal-Syntax">§</a></h2>
+
     TODO
+commit b735764898412c5b9388fdf729c8ad8db43ddde5
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Jun 9 19:24:24 2019 -0400
+
+    different array literal syntax when inferring the size
+    
+    old syntax:  []i32{1, 2, 3}
+    new syntax: [_]i32{1, 2, 3}
+    
+    closes #1797
     
 
     <h2 id="Result-Location-Semantics"><a href="#toc-Result-Location-Semantics">Result Location Semantics</a> <a class="hdr" href="#Result-Location-Semantics">§</a></h2>
 
+    TODO
+    TODO short examples
+    TODO function forwarding results
+    TODO segway into async functions
+    
+
+    <h2 id="unionInit"><a href="#toc-unionInit">@unionInit</a> <a class="hdr" href="#unionInit">§</a></h2>
+
+    <p>Robert Scott implemented @unionInit.</p>
     TODO
     
 
@@ -1163,7 +1369,6 @@ All tests passed.
 
     TODO
     
-
     
 
     <h1 id="Standard-Library"><a href="#toc-Standard-Library">Standard Library</a> <a class="hdr" href="#Standard-Library">§</a></h1>
@@ -1205,9 +1410,31 @@ All tests passed.
       </li>
       <li>LemonBoy implemented <code class="zig">dl_iterate_phdr</code>.</li>
       <li>LemonBoy added <code>ARCH_SET_*</code> definitions for x86_64.</li>
-      <li>daurnimator updated Linux syscalls to 5.1.</li>
+      <li>daurnimator updated Linux syscalls and bits to 5.3. Notably this includes definitions for
+        <code>io_uring</code>.</li>
       <li><code class="zig">std.os.close</code> now uses <code>close$NOCANCEL</code> on Darwin,
         so that it is impossible to fail.</li>
+      <li>LemonBoy added sigaltstack syscall.</li>
+      <li>LemonBoy fixed <code class="zig">std.os.mprotect</code> syscall.</li>
+      <li>emekoi updated std.dynamic_library implementation and improved it to not require an allocator.</li>
+      <li>LemonBoy added guard pages for each new thread spawned.</li>
+      <li>NBonaparte removed the <code>MAP_LOCKED</code> flag from load_dynamic_library and enabled the now passing tests.</li>
+      <li>tgschultz updated <code class="zig">std.meta</code> and <code class="zig">std.meta.trait</code>
+        "definition" renamed to "declaration", to be inline with the newly clarified semantics of
+        @hasDecl and @hasField.</li>
+      <li>tgschultz fixed <code class="zig">Deserializer.alignToByte()</code> and added test coverage.</li>
+      <li>emekoi made <code class="zig">windows.unexpectedError</code> print a human friendly string and
+        fixed Windows API function prototypes.</li>
+      <li>Ryan Liptak optimized <code class="zig">std.HashMap</code> indexing by avoiding modulo operator.
+        <code class="zig">x % y</code> can be optimized if y is a power of two by doing
+        <code class="zig">x &amp; (y-<span class="tok-number">1</span>)</code> instead. HashMap already enforces power of two capacity,
+        so we can take advantage of this optimization.</li>
+      <li>Shawn Landden added a <code>bcmp</code> implementation to zig's multi-target libc implementation.
+        This is especially useful because LLVM 9 now emits calls to bcmp.</li>
+      <li>daurnimator improved <code class="zig">std.testing.expectEqual</code> for structs.</li>
+      <li>daurnimator renamed <code class="zig">std.LinkedList</code> to <code class="zig">std.TailQueue</code>.</li>
+      <li>daurnimator added <code class="zig">std.SinglyLinkedList</code>, and improved
+        <code class="zig">std.heap.ArenaAllocator</code> to use a singly linked list instead of double.</li>
     </ul>
 
     <h2 id="Debug-Info-and-Stack-Traces"><a href="#toc-Debug-Info-and-Stack-Traces">Debug Info and Stack Traces</a> <a class="hdr" href="#Debug-Info-and-Stack-Traces">§</a></h2>
@@ -1229,6 +1456,9 @@ All tests passed.
       <li>Distinguish between absolute/relative addresses.</li>
       <li>Fix bug in LEB128 parsing.</li>
       <li>Stop emitting <code>DW_TAG_lexical_block</code> for variable declarations.</li>
+      <li>Made <code class="zig"><span class="tok-type">void</span></code> a signed type according to DWARF. This follows the
+        convention set by C so that lldb stops complaining about it.</li>
+      <li>Fixed DIFlags not getting propagated to LLVM.</li>
     </ul>
     <p>
     Thanks to this, and some other debug info fixes from LemonBoy, stack traces now work in release builds:
@@ -1264,6 +1494,13 @@ All tests passed.
         recursion from self-references.</li>
     </ul>
     TODO https://github.com/ziglang/zig/issues/1358
+commit 8eaf1387c712c62e96fa165ac3390c8f8f924daa
+Author: tgschultz <tgschultz@gmail.com>
+Date:   Wed May 29 10:23:21 2019 -0500
+
+    Fix fmt.zig handling of slices of slices
+    
+    Discovered while calling testing.expectError on an error union with payload [][]const u8. Even though the payload was not going to be printed, the current format handling caused a compile error anyway because it couldn't be casted to []const u8. The new handling treats a []u8 as a string but otherwise treats the slice as a pointer.
     
 
     <h2 id="Math"><a href="#toc-Math">Math</a> <a class="hdr" href="#Math">§</a></h2>
@@ -1285,6 +1522,12 @@ All tests passed.
       <li>Marc Tiehuis added documentation for all functions and algorithm sources.</li>
       <li>Marc Tiehuis corrected <code class="zig">math.nan</code> usage in cos.</li>
       <li>Marc Tiehuis fixed exponent calculation in <code class="zig">std.fmt.parseFloat</code>.</li>
+      <li>Ryan Liptak added <code class="zig">std.math.ceilPowerOfTwo</code> and
+        <code class="zig">std.math.ceilPowerOfTwoPromote</code>. #2426</li>
+      <li>Sahnvour allowed parameters of type <code class="zig"><span class="tok-type">comptime_int</span></code> in
+        <code class="zig">std.math.shl</code> and <code class="zig">std.math.shr</code>.</li>
+      <li>daurnimator added <code class="zig">std.math.isPowerOfTwo</code>, and
+        Ryan Liptak updated the standard library to take advantage of it.</li>
     </ul>
     
 
@@ -1347,6 +1590,7 @@ All tests passed.
 
     <p>
     Zig's self-hosted parser is in the standard library - <code class="zig">std.zig.parse</code>.
+    It's the backbone of <a href="#zig-fmt">zig fmt</a>.
     </p>
     <p>
     I've <a href="https://www.recurse.com/events/localhost-andrew-kelley">said before</a> that
@@ -1445,7 +1689,17 @@ source lines of code:      3399 | source lines of code:      2389</pre>
       command line argument.</li>
       <li>Many contributors fixed typos in small, easy-to-merge pull requests. Thank you for that.</li>
       <li>Shritesh Bhattarai added lib codeblock type to docgen and used it for wasm32-freestanding.</li>
+      <li>Shritesh Bhattarai added recommendation to use optional pointers for nullptrs instead of
+        <code class="zig"><span class="tok-kw">allowzero</span></code>.</li>
+      <li>Shritesh Bhattarai added a comment about <code class="zig"><span class="tok-kw">for</span> <span class="tok-kw">else</span></code> and <code class="zig"><span class="tok-kw">break</span></code>.</li>
+      <li>Jonathan Pentecost updated <code class="zig"><span class="tok-kw">for</span> <span class="tok-kw">else</span></code> example. #2614</li>
+
     </ul>
+    
+
+    <h1 id="SIMD"><a href="#toc-SIMD">SIMD</a> <a class="hdr" href="#SIMD">§</a></h1>
+
+    TODO
     
 
     <h1 id="zig-build"><a href="#toc-zig-build">zig build</a> <a class="hdr" href="#zig-build">§</a></h1>
@@ -1457,6 +1711,9 @@ source lines of code:      3399 | source lines of code:      2389</pre>
 
     <ul>
       <li>Raul Leal added support for comptime blocks in containers. #2308</li>
+      <li>Various bugs fixed, more test coverage.</li>
+      <li>Timon Kruiper corrected formatting for multiline string in arrays.</li>
+      <li>Timon Kruiper added LineComment support and test case for when MultiLines are used in ArrayInit.</li>
     </ul>
     <p>
     Thanks to <a href="#WebAssembly-Support">WebAssembly Support</a> improvements, there is also a
@@ -1522,6 +1779,18 @@ source lines of code:      3399 | source lines of code:      2389</pre>
     <h2 id="musl-1123"><a href="#toc-musl-1123">musl 1.1.23</a> <a class="hdr" href="#musl-1123">§</a></h2>
 
     TODO
+commit 291aaee97773e2f9c40e061410db52ca00f4d651
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Jun 1 16:59:12 2019 +0200
+
+    Stop the musl builder from skipping necessary files
+    
+    The code assumed that the architecture-specific bits, found in the arch/
+    subfolder, were only overrides for the generic .c files.
+    
+    Changed the logic to always include the whole architecture-specific
+    implementations and discard the generic ones, this way we won't exclude
+    files with no .c counterpart.
     
     <h2 id="glibc-230"><a href="#toc-glibc-230">glibc 2.30</a> <a class="hdr" href="#glibc-230">§</a></h2>
 
@@ -1731,9 +2000,14 @@ source lines of code:      3399 | source lines of code:      2389</pre>
     path.
         <br><br>
     Before this change, Zig incorrectly exited with an error if there was
-    no c compiler installed. Now, Zig falls back to the dynamic linker
+    no C compiler installed. Now, Zig falls back to the dynamic linker
     determined based on the arch and os when no C compiler can be found.
         </li>
+        <li>LemonBoy added a warning for when run/test is paired with emit options.</li>
+        <li>emekoi added Windows subsystem to <code class="zig"><span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>)</code>.</li>
+        <li>mrkishi added cache-control headers to tarballs on CI, making downloads faster and
+            saving server costs.</li>
+        <li>Sahnvour implemented the Sfc64 RNG from PractRand.</li>
     </ul>
 
     <h2 id="Self-Hosted-d-File-Parsing"><a href="#toc-Self-Hosted-d-File-Parsing">Self-Hosted .d File Parsing</a> <a class="hdr" href="#Self-Hosted-d-File-Parsing">§</a></h2>
@@ -1744,7 +2018,7 @@ source lines of code:      3399 | source lines of code:      2389</pre>
     </p>
     <p>
     Previously, Zig's .d file parser was written in C++ and a bit brittle. Michael Dusan dove
-    head-first into this and re-implemented a robust .d file parser, in self-hosted Zig code,
+    head-first into this and implemented a robust .d file parser, in self-hosted Zig code,
     <a href="https://github.com/ziglang/zig/blob/0.5.0/src-self-hosted/dep_tokenizer.zig#L362-L836">complete with unit tests</a>.
     </p>
     <p>
@@ -1752,7 +2026,7 @@ source lines of code:      3399 | source lines of code:      2389</pre>
     <a href="https://github.com/ziglang/zig/issues/2046">an open issue regarding this</a>,
     because the first line Clang outputs cannot be parsed unambiguously.
     <a href="https://bugs.llvm.org/show_bug.cgi?id=41379">Clang Bug Report</a>.
-    If you the reader of these release notes are a Clang developer, please fix 🙏
+    If you, the reader of these release notes, are a Clang developer, please fix 🙏
     </p>
     
     
@@ -1801,12 +2075,17 @@ source lines of code:      3399 | source lines of code:      2389</pre>
       <li>SamTebbs33 fixed zig crashing after a tokenization error.</li>
       <li>LemonBoy fixed VDSO calls not using the C calling convention.</li>
       <li>LemonBoy fixed load/store of non-integer fields in packed struct.</li>
-      <li>LemonBoy fixed <code class="zig"><span class="tok-kw">usingnamespace</span></code> outside the top-level scope, and
-      made it work with arbitrary structs.</li>
       <li>LemonBoy fixed too eager comptime evaluation of error ptr.</li>
       <li>LemonBoy fixed build-lib on macOS. Due to a typo, Zig was not setting <code>K_DARWIN</code>
       as expected on the archive file. This allowed removing macOS-specific linking hacks.</li>
       <li>LemonBoy fixed signedness mismatch in comparison in os.cpp.</li>
+      <li>emekoi fixed Zig not respecting the subsystem flag in all cases.</li>
+      <li>Fix invalid LLVM IR generated for <code class="zig">?*<span class="tok-type">void</span></code> const casts. #2578</li>
+      <li>LemonBoy fixed a crash when there are no namespace components. #2500</li>
+      <li>LemonBoy added a compile error for <code class="zig"><span class="tok-null">undefined</span></code> used as a type. #2436</li>
+      <li>Nick Erdmann fixed debug rendering of character literals &lt;= 0x0f.</li>
+      <li>SamTebbs33 added a parser check for null body in <code class="zig"><span class="tok-kw">if</span></code>, <code class="zig"><span class="tok-kw">for</span></code>,
+        and <code class="zig"><span class="tok-kw">while</span></code>.</li>
     </ul>
 
     <h2 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h2>
@@ -1972,50 +2251,6 @@ Date:   Sun Apr 14 22:47:53 2019 -0400
     stage1 assertions always on, and have stack traces
 
 
-
-commit 14cdb01f35b35972b06e95a3a438f9f7910b97f8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed May 15 16:20:16 2019 -0400
-
-    improvements to zig's implementation of libc and WebAssembly
-    
-     * rename std/special/builtin.zig to std/special/c.zig
-       not to be confused with @import("builtin") which is entirely
-       different, this is zig's multi-target libc implementation.
-     * WebAssembly: build-exe is for executables which have a main().
-       build-lib is for building libraries of functions to use from,
-       for example, a web browser environment.
-       - for now pass --export-all for libraries when there are any
-         C objects because we have no way to detect the list of exports
-         when compiling C code.
-       - stop passing --no-entry for executables. if you want --no-entry
-         then use build-lib.
-     * make the "musl" ABI the default ABI for wasm32-freestanding.
-     * zig provides libc for wasm32-freestanding-musl.
-
-
-commit 81e960eb748fdb37d1d61da262ec343e2fdb2511
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu May 16 13:56:56 2019 -0400
-
-    improvements to build-lib use case of WebAssembly
-    
-     * build-exe does include the startup code that supplies _start for the
-       wasm32-freestanding target. Previously this did not occur because
-       of logic excluding "freestanding".
-     * build-lib for wasm32-freestanding target gets linked by LLD. To avoid
-       infinite recursion, compiler_rt and zig libc are built as objects
-       rather than libraries.
-       - no "lib" prefix and ".wasm" extension instead of ".a". Rather than
-       build-lib foo.zig producing "libfoo.a", now it produces "foo.wasm".
-     * zig libc only provides _start symbol for wasm when linking libc.
-
-
-commit 978fab817caacb7bb3ba96fe3ec08bab1c78c1da
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu May 16 14:17:00 2019 -0400
-
-    the wasm freestanding _start function is return value void
 
 commit 99ee0608f74268248a2dc684cb9e6e9b03e3a9f5
 Author: Sahnvour <sahnvour@pm.me>
