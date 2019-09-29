@@ -240,10 +240,9 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
     Zig intends to be so practical that people find themselves using it, because it "just works".
     </p>
     <p>
-    TODO update numbers
     This release features <strong>6 months of work</strong> and
     changes from <strong>67 different contributors</strong>, spread among
-    <strong>1336 commits</strong>.
+    <strong>1534 commits</strong>.
     </p>
     <p>
     Special thanks to my
@@ -755,42 +754,75 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
 
     {#header_open|RISC-V Support#}
     <p>
-    TODO
+    This release updates to {#link|LLVM 9#}, {#link|musl 1.1.23#} with patches, and
+    {#link|glibc 2.30#}. This plus updates to the {#link|Standard Library#} means
+    that Zig's (64-bit) RISC-V support has gone from {#link|Tier 4 Support#} to
+    {#link|Tier 3 Support#} in this release.
     </p>
-commit edea0d431bd3c2a1505a1f761fcaf505ed5a8b4f
-Author: daurnimator <quae@daurnimator.com>
-Date:   Fri Sep 20 21:36:47 2019 +1000
+    <ul>
+      <li>daurnimator updated riscv64 syscalls in the std lib.</li>
+      <li>LemonBoy updated thread-local storage startup code to take into account DTP bias
+          according to the RISCV ABI. He also corrected some of the bits in the std lib.
+          Thanks to this the {#link|compiler-rt#} tests are passing for RISC-V.
+      </li>
+    </ul>
+    <p>
+    RISC-V is a very flexible target, with features such as atomics, and even integer multiplication
+    being optional. Since Zig does not yet have
+    <a href="https://github.com/ziglang/zig/issues/2883">ability to specify target CPU features</a>,
+    the default set of cross-compilation features are <code>"+a,+c,+d,+f,+m,+relax"</code>,
+    which matches Clang.
+    </p>
+    <p>
+    The RISC-V target does not yet pass Zig's test suite:
+    </p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/3338">LLVM ERROR: Named registers not implemented for this target</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/3338">LLVM unable to perform f16 widening</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/3339">LLD silent failure linking behavior tests</a></li>
+    </ul>
+    <p>
+    The next step for all these issues is to create test case reductions and then
+    file upstream bug reports.
+    </p>
+    <p>
+    However, I did work with <a href="https://github.com/users/richfelker/sponsorship">Rich Felker</a>
+    to get musl building with Clang for the RISC-V target, which means that we can do this:
+    </p>
+    <p class="file">hello.c</p>
+    <pre><code>#include &lt;stdio.h&gt;
 
-    std: update riscv64 syscalls
-commit 53210b2304990e9b3b0f35f847e13d4ea4ae4ced
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Sep 24 20:56:04 2019 -0400
+int main(int argc, char **argv) {
+    printf("Hello world\n");
+    return 0;
+}</code></pre>
+<pre><code>$ zig build-exe --c-source hello.c -lc -target riscv64-linux-musl
+$ qemu-riscv64 ./hello
+Hello world</code></pre>
+    <p>
+    Zig 0.5.0 carries a few patches to musl which makes this work. A new musl release is expected soon which
+    contains these patches.
+    </p>
+    <p>
+    To be clear - the above simple example also works in Zig - it's just that all the language features
+    such as {#syntax#}f16{#endsyntax#} are not working, and there is no automated {#link|Test Coverage#}
+    for this target.
+    </p>
+    {#code_begin|exe|hello#}
+    {#target_linux_riscv64#}
+const std = @import("std");
 
-    better default enabled features for riscv
-    
-    Until ability to specify target CPU features (#2883) is done, this
-    commit gives riscv target better default features.
-    
-    This side-steps #3275 which is a deficiency in compiler-rt when features
-    do not include 32 bit integer division.
-    
-    With this commit, RISC-V compiler-rt tests pass and Hello World works
-    both pure-zig and with musl libc.
-
-
-    TODO note that we carry musl patches for RISC-V
-
-commit a56b767c35b96f76f315e5deeddae62e6891a440
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Sep 25 09:42:13 2019 +0200
-
-    Add DTP bias according to RISCV ABI
-
-commit 453157595ee3c8daf017add9387b508224aa3f8f
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Sep 25 09:30:44 2019 +0200
-
-    Correct some RISCV64 bits
+pub fn main() void {
+    std.debug.warn("Hello from zig\n");
+}
+    {#code_end#}
+<pre><code>$ qemu-riscv64 ./hello
+Hello from zig</code></pre>
+    <p>
+    Although {#link|glibc 2.30#} gained RISC-V support, Zig is not able to build
+    glibc for this target yet. See #3340 for more details. Looks like it could be
+    as simple as importing a couple more .h files from the glibc source tree.
+    </p>
     {#header_close#}
 
     {#header_open|64-bit ARM Support#}
@@ -1238,7 +1270,7 @@ Date:   Fri Sep 27 16:51:42 2019 -0400
         Instead, use {#syntax#}@typeInfo(Slice).Pointer.child{#endsyntax#}.</li>
       <li>Enum literals now implicit cast to tagged unions. TODO make code example of this</li>
       <li>Allow implicit casting optional pointer to optional {#syntax#}c_void{#endsyntax#} pointer.</li>
-      <li>SamTebbs33 added implicit cast for {#syntax#}*[N]T{#endsyntax#} to {#syntax#}[*c]T{#endsyntax#}.</li>
+      <li>Sam Tebbs added implicit cast for {#syntax#}*[N]T{#endsyntax#} to {#syntax#}[*c]T{#endsyntax#}.</li>
       <li>Stevie Hryciw made {#syntax#}anyerror{#endsyntax#} no longer a keyword. #2835</li>
       <li>@cmpxchgStrong and @cmpxchgWeak now support 128-bit integers on x86_64.</li>
       <li>{#syntax#}comptime_int{#endsyntax#} now implicit casts to {#syntax#}comptime_float{#endsyntax#}.</li>
@@ -2175,10 +2207,10 @@ Date:   Tue Sep 24 17:53:05 2019 -0400
       <li>Added missing {#syntax#}error.FileBusy{#endsyntax#} to {#syntax#}DeleteFileW{#endsyntax#}'s error set.</li>
       <li>emekoi added missing {#syntax#}error.FileNotFound{#endsyntax#} for <code>PATH_NOT_FOUND</code> in
         {#syntax#}DeleteFileW{#endsyntax#}'s error set.</li>
-      <li>SamTebbs33 added doc comments to alignment functions.</li>
+      <li>Sam Tebbs added doc comments to alignment functions.</li>
       <li>Update the default panic handler on freestanding. Now the infinite loop has a
         {#syntax#}@breakpoint(){#endsyntax#} in there.</li>
-      <li>SamTebbs33 added support for returning {#syntax#}!u8{#endsyntax#} from <code>main()</code>.</li>
+      <li>Sam Tebbs added support for returning {#syntax#}!u8{#endsyntax#} from <code>main()</code>.</li>
       <li>{#syntax#}std.os.abort{#endsyntax#} no longer calls msvcrt abort() when linking libc. #2071</li>
       <li>Added {#syntax#}std.os.windows.subsystem{#endsyntax#}.</li>
       <li>daurnimator consolidated Linux <code>AT_</code> constants because they are the same across
@@ -3765,7 +3797,7 @@ $ ls -ahl ./hello.exe
         for a nice explanation.
       </li>
       <li>LemonBoy fixed fixed formatting for multiline asm expressions.</li>
-      <li>SamTebbs33 fixed zig crashing after a tokenization error.</li>
+      <li>Sam Tebbs fixed zig crashing after a tokenization error.</li>
       <li>LemonBoy fixed VDSO calls not using the C calling convention.</li>
       <li>LemonBoy fixed load/store of non-integer fields in packed struct.</li>
       <li>LemonBoy fixed too eager comptime evaluation of error ptr.</li>
@@ -3777,7 +3809,7 @@ $ ls -ahl ./hello.exe
       <li>LemonBoy fixed a crash when there are no namespace components. #2500</li>
       <li>LemonBoy added a compile error for {#syntax#}undefined{#endsyntax#} used as a type. #2436</li>
       <li>Nick Erdmann fixed debug rendering of character literals &lt;= 0x0f.</li>
-      <li>SamTebbs33 added a parser check for null body in {#syntax#}if{#endsyntax#}, {#syntax#}for{#endsyntax#},
+      <li>Sam Tebbs added a parser check for null body in {#syntax#}if{#endsyntax#}, {#syntax#}for{#endsyntax#},
         and {#syntax#}while{#endsyntax#}.</li>
       <li>Fixed @export not working for arrays, and allow specifying link sections on {#syntax#}extern{#endsyntax#}
         variables. Additionally fixed @export not respecting the name parameter. Previously, the variable
