@@ -826,38 +826,51 @@ Hello from zig</code></pre>
     {#header_close#}
 
     {#header_open|64-bit ARM Support#}
-    <p>TODO</p>
-    <p>LemonBoy made several improvements to {#link|Thread Local Storage#} for 64-bit ARM.</p>
+    <p>LemonBoy worked on {#link|Standard Library#} support for aarch64 during this release cycle:</p>
     <ul>
-      <li>LemonBoy fixed the definition of <code>epoll_*</code> struct on non x86_64 arches.</li>
-      <li>LemonBoy fixed some syscalls and flag definitions on arm64.</li>
+      <li>Several improvements to {#link|Thread Local Storage#}.</li>
+      <li>Fixed the definition of <code>epoll_*</code> struct on non x86_64 arches.</li>
+      <li>Fixed some syscalls and flag definitions.</li>
     </ul>
-    TODO zig helped llvm discover miscompilation, fixed in trunk, scheduled for 9.0.1: https://bugs.llvm.org/show_bug.cgi?id=43383#c7
-
-commit 34d02f249b8c0742d5d575c439c38a3ed78f9583
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Sep 21 11:35:29 2019 +0200
-
-    Fix a test on ARM due to the use of `undefined` ptr
-
-commit 57f751a864613cc7c6b53774044d6f8742e05378
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Sep 21 11:20:41 2019 +0200
-
-    Adjust tests for AArch64
-
-
-    TODO mention that there are open bugs
-    TODO mention the bug about llvm miscompiling and it's fixed upstream, 9.0.1
-
-
-commit 2510edeb71cad68bd133fd1e3dce08f3a74bbdc7
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Sep 22 11:10:28 2019 -0400
-
-    fix linux stat struct on aarch64
-    
-    The ABI was incorrect.
+    <p>
+    After this work, and improvements made to {#link|Test Coverage#}, the following targets are now
+    covered by the Zig test suite:
+    </p>
+    <ul>
+      <li><strong>aarch64v8_5a-linux-none</strong> (no libc)</li>
+      <li><strong>aarch64v8_5a-linux-musl</strong> (building {#link|musl 1.1.23#} from source,
+        statically linking against it, and using it for OS APIs)</li>
+      <li><strong>aarch64v8_5a-linux-gnu</strong> (building {#link|glibc 2.30#} from source,
+        dynamically linking against it, and using it for OS APIs)</li>
+    </ul>
+    <p>
+    This test coverage led to the following bug fixes:
+    </p>
+    <ul>
+      <li>LemonBoy fixed a test on ARM due to the use of {#syntax#}undefined{#endsyntax#} ptr. </li>
+      <li>Fixed Linux stat struct on aarch64. The ABI was incorrect.</li>
+      <li>Fixed {#link|glibc 2.30#} builds on aarch64-linux-gnu. There was a missing include path in the
+        compilation line, leading to incorrect fstat ABI. #3291</li>
+    </ul>
+    <p>
+    However, due to
+    <a href="https://github.com/ziglang/zig/issues/3271">LLVM miscompiling trivial switch for AArch64</a>,
+    some failing tests are disabled, which means 64-bit ARM remains a {#link|Tier 2 Support#} target.
+    The good news is we filed an <a href="https://bugs.llvm.org/show_bug.cgi?id=43383">LLVM bug report</a>,
+    and it has already been solved in LLVM trunk, scheduled to be included in LLVM 9.0.1.
+    </p>
+    <p>
+    After that, the only remaining issues standing in the way of
+    <a href="https://github.com/ziglang/zig/issues/2443">Tier 1 Support for ARM 64-bit (aarch64) Linux</a>
+    are:
+    </p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/3282">When targeting AArch64, unable to widen cast f16 to f128</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/2934">fn return struct - aarch64 stack alignment exception</a></li>
+      <li>Add {#link|Test Coverage#} for {#link|Debug Info and Stack Traces#} for this target.</li>
+      <li>Come up with a way for the Continuous Integration service to create 64-bit ARM binaries
+        for the <a href="/download">download page</a>.</li>
+    </ul>
     {#header_close#}
 
     {#header_open|32-bit ARM Support#}
