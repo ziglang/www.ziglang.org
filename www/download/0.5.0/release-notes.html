@@ -986,95 +986,55 @@ Hello from zig</code></pre>
     32-bit ARM support is much stronger in version 0.5.0.
     </p>
     <p>
-    Alongside these efforts, LemonBoy improved the standard library by making
+    Alongside these efforts, LemonBoy improved the <a href="#Standard-Library">Standard Library</a> by making
     I/O offsets and sizes <code class="zig"><span class="tok-type">u64</span></code> instead of <code class="zig"><span class="tok-type">usize</span></code>,
     decoupling the concepts of address-space size and file size. This solved many compile errors
     when trying to target 32-bit ARM, as well as any other 32-bit architecture. #637
     </p>
     <p>He also made several improvements to <a href="#Thread-Local-Storage">Thread Local Storage</a> for 32-bit ARM.</p>
-    TODO Tier 2 support for arm32, thanks to Snektron == Robin Voetter. #3152
+    <p>Robin Voetter joined the Zig community during this release cycle, and hammered away
+    at the <a href="#Standard-Library">Standard Library</a>:</p>
+    <ul>
+      <li>Added arm32 linux bits definitions and syscall conventions.</li>
+      <li>TLS initialization, clone definition and _start functionality.</li>
+      <li>Made <code class="zig">std.os.linux.mmap</code> use <code>SYS_mmap2</code> if it exists.</li>
+      <li>Used <code>sys_*stat*64</code> instead of <code>sys_*stat*</code> where appropriate.</li>
+      <li>Fixed overflow when calculating atime, ctime and mtime on File.stat().</li>
+      <li>Fixed compilation error casting getEndPos to usize.</li>
+      <li>Fixed preadv, preadv2, pwritev and pwritev2.</li>
+      <li>Fixed seteuid and setegid.</li>
+      <li>Replaced legacy 16-bit syscalls with 32-bit versions when appropriate.</li>
+      <li>Added missing clobbers on arm-eabi and arm64 syscall conventions.</li>
+    </ul>
+    <p>
+    After all these improvements, 32-bit ARM support is leveled-up to <a href="#Tier-2-Support">Tier 2 Support</a>.
+    Along with improvements made to <a href="#Test-Coverage">Test Coverage</a>, the following targets are
+    now covered by the Zig test suite:
+    </p>
+    <ul>
+      <li><strong>armv8_5a-linux-none</strong> (no libc)</li>
+      <li><strong>armv8_5a-linux-musl</strong> (building <a href="#musl-1123">musl 1.1.23</a> from source,
+        statically linking against it, and using it for OS APIs)</li>
+      <li><a href="https://github.com/ziglang/zig/issues/3287">armv8_5a-linux-gnu test coverage is not passing yet</a></li>
+    </ul>
+    <p>
+    After updating to <a href="#musl-1123">musl 1.1.23</a>, Zig's <code>clone</code> on arm32 is updated to
+    latest musl implementation.
+    </p>
+    <p>
+    Remaining issues to solve in order to achieve
+    <a href="https://github.com/ziglang/zig/issues/3174">Tier 1 Support for ARM 32-bit Linux</a>:
+    </p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/3322">armv7 __aeabi_uidivmod produces undefined instruction exception</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/3289">std lib tests failing on arm 32-bit</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/3287">unable to build glibc for target armv8-linux-gnueabihf </a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/2767">Constant packed struct instantiations can generate incorrect unaligned loads on armv4t/armv5</a></li>
+      <li>Add <a href="#Test-Coverage">Test Coverage</a> for <a href="#Debug-Info-and-Stack-Traces">Debug Info and Stack Traces</a> for this target.</li>
+      <li>Come up with a way for the Continuous Integration service to create 32-bit ARM binaries
+        for the <a href="/download">download page</a>.</li>
+    </ul>
 
-commit 32f4606cece09b6bcf4f553c06c3aaab34f784c6
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Wed Aug 28 16:35:23 2019 +0200
-
-    add arm32 linux bits definitions
-commit 50c37c75d1208bb8a0bf5b2792e4a1d69d6f7110
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Wed Aug 28 17:41:49 2019 +0200
-
-    add arm32 syscall conventions
-
-commit b3ac323a448e1e8a816eab64777b855396afe6c8
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Thu Aug 29 01:14:43 2019 +0200
-
-    TLS initialization, clone definition and _start functionality
-
-      <li>TODO Robin Voetter made <code class="zig">std.os.linux.mmap</code> use <code>SYS_mmap2</code> if it exists.
-commit 108a51b11032ba3ed7864a653f87283853e6e318
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Thu Aug 29 10:34:05 2019 +0200
-
-    fix issues with debug.zig
-    
-    - Use sys_*stat*64 instead of sys_*stat* where appropriate
-    - Fix overflow when calculating atime, ctime and mtime on File.stat()
-    - Fix compilation error casting getEndPos to usize.
-
-commit e7912dee9bd63b03415f441b4de9b3babc79c859
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Sun Sep 1 16:10:36 2019 +0200
-
-    Fix up preadv, preadv2, pwritev and pwritev2
-
-commit e9d795b025e55dcd9d8c4378141b996358634863
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Sun Sep 1 12:08:02 2019 +0200
-
-    Fix up seteuid and setegid
-
-commit e39c93a2f346e4bfb2653ccf231d736dfb9bce6e
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Sun Sep 1 11:54:57 2019 +0200
-
-    Replace legacy 16-bit syscalls with 32-bit versions when appropriate
-
-commit 6a76298740344ba6d82c33b19914238a1233eaa0
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Wed Sep 4 15:59:51 2019 +0200
-
-    Add missing clobbers on arm-eabi and arm64 syscall conventions
-commit fec795cd29909f0e43ba9de303b93309db8858b5
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Mon Sep 9 21:57:35 2019 +0200
-
-    Adjust the stdlib to be 32bit compatible
-
-commit 1cefe1442450961a7960fa3b4b488ae50d5abbef
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Sep 16 14:22:32 2019 -0400
-
-    update clone on arm32 to latest musl implementation
-    
-    See musl commit 05870abeaac0588fb9115cfd11f96880a0af2108
-    by Rich Felker.
-    
-    Commit message from musl reproduced here:
-    
-    fix code path where child function returns in arm __clone built as thumb
-    
-    mov lr,pc is not a valid way to save the return address in thumb mode
-    since it omits the thumb bit. use a chain of bl and bx to emulate blx.
-    this could be avoided by converting to a .S file with preprocessor
-    conditions to use blx if available, but the time cost here is
-    dominated by the syscall anyway.
-    
-    while making this change, also remove the remnants of support for
-    pre-bx ISA levels. commit 9f290a49bf9ee247d540d3c83875288a7991699c
-    removed the hack from the parent code paths, but left the unnecessary
-    code in the child. keeping it would require rewriting two code paths
-    rather than one, and is useless for reasons described in that commit.
     
 
     <h2 id="MSYS2-Support"><a href="#toc-MSYS2-Support">MSYS2 Support</a> <a class="hdr" href="#MSYS2-Support">§</a></h2>
