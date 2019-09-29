@@ -240,10 +240,9 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
     Zig intends to be so practical that people find themselves using it, because it "just works".
     </p>
     <p>
-    TODO update numbers
     This release features <strong>6 months of work</strong> and
     changes from <strong>67 different contributors</strong>, spread among
-    <strong>1336 commits</strong>.
+    <strong>1534 commits</strong>.
     </p>
     <p>
     Special thanks to my
@@ -862,42 +861,73 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
     <h2 id="RISC-V-Support"><a href="#toc-RISC-V-Support">RISC-V Support</a> <a class="hdr" href="#RISC-V-Support">§</a></h2>
 
     <p>
-    TODO
+    This release updates to <a href="#LLVM-9">LLVM 9</a>, <a href="#musl-1123">musl 1.1.23</a> with patches, and
+    <a href="#glibc-230">glibc 2.30</a>. This plus updates to the <a href="#Standard-Library">Standard Library</a> means
+    that Zig's (64-bit) RISC-V support has gone from <a href="#Tier-4-Support">Tier 4 Support</a> to
+    <a href="#Tier-3-Support">Tier 3 Support</a> in this release.
     </p>
-commit edea0d431bd3c2a1505a1f761fcaf505ed5a8b4f
-Author: daurnimator <quae@daurnimator.com>
-Date:   Fri Sep 20 21:36:47 2019 +1000
+    <ul>
+      <li>daurnimator updated riscv64 syscalls in the std lib.</li>
+      <li>LemonBoy updated thread-local storage startup code to take into account DTP bias
+          according to the RISCV ABI. He also corrected some of the bits in the std lib.
+          Thanks to this the <a href="#compiler-rt">compiler-rt</a> tests are passing for RISC-V.
+      </li>
+    </ul>
+    <p>
+    RISC-V is a very flexible target, with features such as atomics, and even integer multiplication
+    being optional. Since Zig does not yet have
+    <a href="https://github.com/ziglang/zig/issues/2883">ability to specify target CPU features</a>,
+    the default set of cross-compilation features are <code>"+a,+c,+d,+f,+m,+relax"</code>,
+    which matches Clang.
+    </p>
+    <p>
+    The RISC-V target does not yet pass Zig's test suite:
+    </p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/3338">LLVM ERROR: Named registers not implemented for this target</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/3338">LLVM unable to perform f16 widening</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/3339">LLD silent failure linking behavior tests</a></li>
+    </ul>
+    <p>
+    The next step for all these issues is to create test case reductions and then
+    file upstream bug reports.
+    </p>
+    <p>
+    However, I did work with <a href="https://github.com/users/richfelker/sponsorship">Rich Felker</a>
+    to get musl building with Clang for the RISC-V target, which means that we can do this:
+    </p>
+    <p class="file">hello.c</p>
+    <pre><code>#include &lt;stdio.h&gt;
 
-    std: update riscv64 syscalls
-commit 53210b2304990e9b3b0f35f847e13d4ea4ae4ced
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Sep 24 20:56:04 2019 -0400
+int main(int argc, char **argv) {
+    printf("Hello world\n");
+    return 0;
+}</code></pre>
+<pre><code>$ zig build-exe --c-source hello.c -lc -target riscv64-linux-musl
+$ qemu-riscv64 ./hello
+Hello world</code></pre>
+    <p>
+    Zig 0.5.0 carries a few patches to musl which makes this work. A new musl release is expected soon which
+    contains these patches.
+    </p>
+    <p>
+    To be clear - the above simple example also works in Zig - it's just that all the language features
+    such as <code class="zig"><span class="tok-type">f16</span></code> are not working, and there is no automated <a href="#Test-Coverage">Test Coverage</a>
+    for this target.
+    </p>
+    <p class="file">hello.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
-    better default enabled features for riscv
-    
-    Until ability to specify target CPU features (#2883) is done, this
-    commit gives riscv target better default features.
-    
-    This side-steps #3275 which is a deficiency in compiler-rt when features
-    do not include 32 bit integer division.
-    
-    With this commit, RISC-V compiler-rt tests pass and Hello World works
-    both pure-zig and with musl libc.
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    std.debug.warn(<span class="tok-str">&quot;Hello from zig\n&quot;</span>);
+}</code></pre><pre><code class="shell">$ zig build-exe hello.zig -target riscv64-linux</code></pre>
 
-
-    TODO note that we carry musl patches for RISC-V
-
-commit a56b767c35b96f76f315e5deeddae62e6891a440
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Sep 25 09:42:13 2019 +0200
-
-    Add DTP bias according to RISCV ABI
-
-commit 453157595ee3c8daf017add9387b508224aa3f8f
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Sep 25 09:30:44 2019 +0200
-
-    Correct some RISCV64 bits
+<pre><code>$ qemu-riscv64 ./hello
+Hello from zig</code></pre>
+    <p>
+    Although <a href="#glibc-230">glibc 2.30</a> gained RISC-V support, Zig is not able to build
+    glibc for this target yet. See #3340 for more details. Looks like it could be
+    as simple as importing a couple more .h files from the glibc source tree.
+    </p>
     
 
     <h2 id="64-bit-ARM-Support"><a href="#toc-64-bit-ARM-Support">64-bit ARM Support</a> <a class="hdr" href="#64-bit-ARM-Support">§</a></h2>
@@ -1355,7 +1385,7 @@ Date:   Fri Sep 27 16:51:42 2019 -0400
         Instead, use <code class="zig"><span class="tok-builtin">@typeInfo</span>(Slice).Pointer.child</code>.</li>
       <li>Enum literals now implicit cast to tagged unions. TODO make code example of this</li>
       <li>Allow implicit casting optional pointer to optional <code class="zig"><span class="tok-type">c_void</span></code> pointer.</li>
-      <li>SamTebbs33 added implicit cast for <code class="zig">*[N]T</code> to <code class="zig">[*c]T</code>.</li>
+      <li>Sam Tebbs added implicit cast for <code class="zig">*[N]T</code> to <code class="zig">[*c]T</code>.</li>
       <li>Stevie Hryciw made <code class="zig"><span class="tok-type">anyerror</span></code> no longer a keyword. #2835</li>
       <li>@cmpxchgStrong and @cmpxchgWeak now support 128-bit integers on x86_64.</li>
       <li><code class="zig"><span class="tok-type">comptime_int</span></code> now implicit casts to <code class="zig"><span class="tok-type">comptime_float</span></code>.</li>
@@ -2317,10 +2347,10 @@ Date:   Tue Sep 24 17:53:05 2019 -0400
       <li>Added missing <code class="zig"><span class="tok-kw">error</span>.FileBusy</code> to <code class="zig">DeleteFileW</code>'s error set.</li>
       <li>emekoi added missing <code class="zig"><span class="tok-kw">error</span>.FileNotFound</code> for <code>PATH_NOT_FOUND</code> in
         <code class="zig">DeleteFileW</code>'s error set.</li>
-      <li>SamTebbs33 added doc comments to alignment functions.</li>
+      <li>Sam Tebbs added doc comments to alignment functions.</li>
       <li>Update the default panic handler on freestanding. Now the infinite loop has a
         <code class="zig"><span class="tok-builtin">@breakpoint</span>()</code> in there.</li>
-      <li>SamTebbs33 added support for returning <code class="zig">!<span class="tok-type">u8</span></code> from <code>main()</code>.</li>
+      <li>Sam Tebbs added support for returning <code class="zig">!<span class="tok-type">u8</span></code> from <code>main()</code>.</li>
       <li><code class="zig">std.os.abort</code> no longer calls msvcrt abort() when linking libc. #2071</li>
       <li>Added <code class="zig">std.os.windows.subsystem</code>.</li>
       <li>daurnimator consolidated Linux <code>AT_</code> constants because they are the same across
@@ -3947,7 +3977,7 @@ $ ls -ahl ./hello.exe
         for a nice explanation.
       </li>
       <li>LemonBoy fixed fixed formatting for multiline asm expressions.</li>
-      <li>SamTebbs33 fixed zig crashing after a tokenization error.</li>
+      <li>Sam Tebbs fixed zig crashing after a tokenization error.</li>
       <li>LemonBoy fixed VDSO calls not using the C calling convention.</li>
       <li>LemonBoy fixed load/store of non-integer fields in packed struct.</li>
       <li>LemonBoy fixed too eager comptime evaluation of error ptr.</li>
@@ -3959,7 +3989,7 @@ $ ls -ahl ./hello.exe
       <li>LemonBoy fixed a crash when there are no namespace components. #2500</li>
       <li>LemonBoy added a compile error for <code class="zig"><span class="tok-null">undefined</span></code> used as a type. #2436</li>
       <li>Nick Erdmann fixed debug rendering of character literals &lt;= 0x0f.</li>
-      <li>SamTebbs33 added a parser check for null body in <code class="zig"><span class="tok-kw">if</span></code>, <code class="zig"><span class="tok-kw">for</span></code>,
+      <li>Sam Tebbs added a parser check for null body in <code class="zig"><span class="tok-kw">if</span></code>, <code class="zig"><span class="tok-kw">for</span></code>,
         and <code class="zig"><span class="tok-kw">while</span></code>.</li>
       <li>Fixed @export not working for arrays, and allow specifying link sections on <code class="zig"><span class="tok-kw">extern</span></code>
         variables. Additionally fixed @export not respecting the name parameter. Previously, the variable
