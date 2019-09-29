@@ -1279,6 +1279,8 @@ pub usingnamespace @cImport({
     {#header_close#}
 
     {#header_open|@hasField and @hasDecl#}
+    <pre>{#syntax#}@hasField(comptime Container: type, comptime name: []const u8) bool{#endsyntax#}</pre>
+    <pre>{#syntax#}@hasDecl(comptime Container: type, comptime name: []const u8) bool{#endsyntax#}</pre>
     <p>
     The new builtin function @hasField returns whether the field name of a struct, union, or enum exists.
     The result is a compile time boolean. It does not include functions, variables, or constants.
@@ -1409,6 +1411,13 @@ test "C pointers with optional syntax" {
       <li>Rename <code>@bswap</code> to @byteSwap.</li>
       <li>@clz, @ctz, @popCount, @byteSwap, and @bitReverse now have an explicit type parameter.</li>
     </ul>
+    <pre>{#syntax#}@bitReverse(comptime T: type, integer: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@byteSwap(comptime T: type, operand: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@clz(comptime T: type, integer: T){#endsyntax#}</pre>
+    <pre>{#syntax#}@ctz(comptime T: type, integer: T){#endsyntax#}</pre>
+    <pre>{#syntax#}@popCount(comptime T: type, integer: T){#endsyntax#}</pre>
+    <pre>{#syntax#}@byteSwap(comptime T: type, operand: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@bitReverse(comptime T: type, integer: T) T{#endsyntax#}</pre>
     <p>
     #2119 #2120
     </p>
@@ -1573,7 +1582,7 @@ test "@mulAdd" {
     <p>
     Shawn Landden added:
     </p>
-    <ul>
+    <ul style="columns: 3">
       <li>@sin</li>
       <li>@cos</li>
       <li>@exp</li>
@@ -1587,6 +1596,18 @@ test "@mulAdd" {
       <li>@trunc</li>
       <li>@round</li>
     </ul>
+    <pre>{#syntax#}@sin(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@cos(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@exp(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@exp2(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@ln(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@log2(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@log10(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@fabs(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@floor(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@ceil(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@trunc(comptime T: type, value: T) T{#endsyntax#}</pre>
+    <pre>{#syntax#}@round(comptime T: type, value: T) T{#endsyntax#}</pre>
     <p>
     These are builtin functions because some architectures have hardware instructions for these.
     Furthermore, because these functions are well-defined, the optimizer may sometimes be able to
@@ -1622,6 +1643,7 @@ Date:   Thu Sep 5 14:50:27 2019 -0400
     {#header_close#}
 
     {#header_open|@unionInit#}
+    <pre>{#syntax#}@unionInit(comptime Union: type, comptime active_field_name: []const u8, init_expr) Union{#endsyntax#}</pre>
     TODO
     <p>Thank you Robert Scott for the initial implementation of @unionInit.</p>
     TODO update `@unionInit` to integrate with result location semantics
@@ -2207,7 +2229,18 @@ Date:   Tue Sep 24 17:53:05 2019 -0400
     <p>
     Thanks to this, and some other debug info fixes from LemonBoy, stack traces now work in release builds:
     </p>
-    TODO
+    {#code_begin|exe_err#}
+    {#code_release_safe#}
+const std = @import("std");
+
+fn foo() !void {
+    return error.TheSkyIsFalling;
+}
+
+pub fn main() !void {
+    try foo();
+}
+    {#code_end#}
     <p>
     LemonBoy additionally implemented reading symbol names from DWARF sections, so stack
     traces on Linux now have actual function names instead of <code>???</code>'s. You can see
@@ -2225,56 +2258,20 @@ Date:   Tue Sep 24 17:53:05 2019 -0400
     stack traces thanks to Marc Tiehuis switching to using <code>mmap</code> to read the debug info.
     Usually, such techniques are frowned upon due to making error handling difficult, however, this
     debug info code is currently designed for the use case of dumping a stack trace when
-    the application has already crashed. And so, an error in loading debug info from disk would be handled
-    by aborting anyway.
+    the application has already panicked, and is about to abort. And so, an error in loading debug
+    info from disk would be handled by aborting anyway.
     </p>
-    TODO organize this
-    <p>Michael Dusan fixed a regression where stack traces stopped working on macOS, and then
-    implemented {#link|Test Coverage#} for stack traces, to catch future regressions. #2485</p>
-commit b780dee3e845f5c8fb8ea7b7906685d5196261a4
-Author: emekoi <emekankurumeh@outlook.com>
-Date:   Fri Jun 28 18:22:02 2019 -0500
-
-    initialize sections in openSelfDebugInfoWindows
-
-commit fbb0c8d639ec205848f03099413c57f686c2d05d
-Author: emekoi <emekankurumeh@outlook.com>
-Date:   Fri Jun 28 17:59:34 2019 -0500
-
-    fixed debug info on windows
-commit c087525edae2db147c89c83513a0778f87bee30d
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Sun Jul 28 18:46:40 2019 +0200
-
-    pdb: improved stream reading performance, printing stack trace from a stage1 crash is now 10x faster
-
-commit 05032c869378e7c7e3da3a2770161266058aa320
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Sun Jul 28 19:03:36 2019 +0200
-
-    coff & pdb: improved correctness of our implementation, it is now able to handle stage1's pdb and print its stack traces
-    Merge pull request #2965 from Sahnvour/zig-stack-traces
-    Stage1 stack traces on windows
-
-commit e673d865fb2dfa6588505d572765ea8c5b4470ee
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Sep 3 13:02:46 2019 -0400
-
-    fix stack traces on macos when passing absolute path to root source file
-    
-    The comment added by this commit is copied here:
-    
-    For macOS stack traces, we want to avoid having to parse the compilation unit debug
-    info. As long as each debug info file has a path independent of the compilation unit
-    directory (DW_AT_comp_dir), then we never have to look at the compilation unit debug
-    info. If we provide an absolute path to LLVM here for the compilation unit debug info,
-    LLVM will emit DWARF info that depends on DW_AT_comp_dir. To avoid this, we pass "."
-    for the compilation unit directory. This forces each debug file to have a directory
-    rather than be relative to DW_AT_comp_dir. According to DWARF 5, debug files will
-    no longer reference DW_AT_comp_dir, for the purpose of being able to support the
-    common practice of stripping all but the line number sections from an executable.
-    
-    closes #2700
+    <p>In addition, the following improvements were made:</p>
+    <ul>
+      <li>emekoi fixed debug info on Windows.</li>
+      <li>Sahnvour improved correctness of Zig's coff and pdb implementation. It is now able to handle
+        stage1 C++ compiler's PDB and print its stack traces. #2965</li>
+      <li>Sahnvour improved stream reading performance of PDB code. Printing stack trace from a
+        stage1 C++ compiler crash is now 10x faster.</li>
+      <li>Fixed stack traces on macOS when passing absolute path to root source file. #2700</li>
+      <li>Michael Dusan fixed a regression where stack traces stopped working on macOS, and then
+        implemented {#link|Test Coverage#} for stack traces, to catch future regressions. #2485</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Formatted Printing#}
