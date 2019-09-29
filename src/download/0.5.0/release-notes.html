@@ -1010,7 +1010,7 @@ Hello from zig</code></pre>
     <a href="https://wasi.dev/">WASI (Web Assembly System Interface)</a> support.
     </p>
     <p>
-    He got compiler_rt working and tweaked the target settings such as:
+    He got {#link|compiler-rt#} working and tweaked the target settings such as:
     </p>
     <ul>
       <li>disabling error return traces</li>
@@ -1046,68 +1046,42 @@ Hello from zig</code></pre>
       <li>LemonBoy implemented {#link|compiler-rt#} builtins for WebAssembly.</li>
       <li>Benjamin Feng updated the library prefix to be empty for WebAssembly rather than "lib".</li>
     </ul>
-    TODO
-commit 14cdb01f35b35972b06e95a3a438f9f7910b97f8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed May 15 16:20:16 2019 -0400
-
-    improvements to zig's implementation of libc and WebAssembly
-    
-     * rename std/special/builtin.zig to std/special/c.zig
-       not to be confused with @import("builtin") which is entirely
-       different, this is zig's multi-target libc implementation.
-     * WebAssembly: build-exe is for executables which have a main().
-       build-lib is for building libraries of functions to use from,
-       for example, a web browser environment.
-       - for now pass --export-all for libraries when there are any
+    <p>
+    Zig now provides a {#link|Freestanding libc#}, which is available when linking libc
+    for the WebAssembly target. It is not yet fully complete, but you can get a sense of the
+    use case for it with this demo project:
+    <a href="https://github.com/andrewrk/lua-in-the-browser">lua-in-the-browser</a>
+    </p>
+    <p>This use case led to several improvements to Zig's WebAssembly support:</p>
+    <ul>
+      <li><code>build-exe</code> is for executables which have a <code>main()</code>.
+        <code>build-lib</code> is for building libraries of functions to use from,
+        for example, a web browser environment.</li>
+      <li>For now pass <code>--export-all</code> for libraries when there are any
          C objects because we have no way to detect the list of exports
-         when compiling C code.
-       - stop passing --no-entry for executables. if you want --no-entry
-         then use build-lib.
-     * make the "musl" ABI the default ABI for wasm32-freestanding.
-     * zig provides libc for wasm32-freestanding-musl.
-
-commit 01a4897da54d6c789b0a5232188bbafbbd660946
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu May 16 19:40:12 2019 -0400
-
-    improve the libc of wasm32-freestanding target
-    
-     * introduce wasm32-freestanding-musl .h files to fix
-       conflicts with stddef.h and errno.h
-     * fix an issue with zig build system regarding installation of
-       webassembly libraries
-     * add implementations to zig's libc:
-       - strcmp
-       - strncmp
-       - strerror
-       - strlen
-    
-    See #514
-
-commit 81e960eb748fdb37d1d61da262ec343e2fdb2511
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu May 16 13:56:56 2019 -0400
-
-    improvements to build-lib use case of WebAssembly
-    
-     * build-exe does include the startup code that supplies _start for the
-       wasm32-freestanding target. Previously this did not occur because
-       of logic excluding "freestanding".
-     * build-lib for wasm32-freestanding target gets linked by LLD. To avoid
-       infinite recursion, compiler_rt and zig libc are built as objects
-       rather than libraries.
-       - no "lib" prefix and ".wasm" extension instead of ".a". Rather than
-       build-lib foo.zig producing "libfoo.a", now it produces "foo.wasm".
-     * zig libc only provides _start symbol for wasm when linking libc.
-
-
-commit 978fab817caacb7bb3ba96fe3ec08bab1c78c1da
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu May 16 14:17:00 2019 -0400
-
-    the wasm freestanding _start function is return value void
-
+         when compiling C code.</li>
+      <li>Zig no longer passes <code>--no-entry</code> to the linker for executables.
+        If you want <code>--no-entry</code> then use <code>build-lib</code>.</li>
+      <li>Made the "musl" ABI the default ABI for wasm32-freestanding.</li>
+      <li><code>build-exe</code> does include the startup code that supplies <code>_start</code> for the
+        <code>wasm32-freestanding</code> target. Previously this did not occur because
+        of logic excluding "freestanding".</li>
+      <li><code>build-lib</code> for <code>wasm32-freestanding</code> target gets
+        linked by LLD. To avoid infinite recursion, {#link|compiler-rt#} and
+        {#link|Freestanding libc#} are built as objects rather than libraries.</li>
+      <li>"lib" prefix and ".wasm" extension instead of ".a". Rather than
+        <code>build-lib foo.zig</code> producing "libfoo.a", now it produces "foo.wasm".</li>
+      <li>{#link|Freestanding libc#} only provides <code>_start</code> symbol for wasm when linking libc.</li>
+    </ul>
+    <p>
+    Zig is particularly well suited to creating reasonably small &amp; fast WebAssembly
+    binaries. Here are some demos of WebAssembly projects from Zig community members:
+    </p>
+    <ul>
+      <li><a href="https://dbandstra.github.io/oxid/">Oxid</a> - an arcade-style game where you fight waves of monsters in a fixed-screen maze.</li>
+      <li><a href="https://fengb.github.io/fundude/">FUN✜DUDE</a> - gameboy emulator.</li>
+      <li><a href="https://raulgrell.github.io/tetris/">Tetris</a> - WebGL tetris.</li>
+    </ul>
     {#header_close#}
 
     {#header_open|UEFI Support#}
