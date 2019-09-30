@@ -2769,200 +2769,112 @@ fn dereferenceAPointer(ptr: *i32) void {
       <li>Timon Kruiper fixed using {#syntax#}std.AutoHashMap{#endsyntax#} with an {#syntax#}enum{#endsyntax#}
         key. #2669</li>
       <li>andersfr added CityHash and Murmur hashing algorithms. #2887</li>
+      <li>Sahnvour added forced inlining of integer hashing so that the optimizer
+        can see the fast path based on key's size which is known at comptime.
+        Otherwise it will always outline the call to hasher.update, resulting in much worse performance.</li>
+      <li>Sahnvour made wyhash stateless for iterative hashing and small keys.</li>
+      <li>Sahnvour made <code>autoHash</code> make use of hashing streaming interface.</li>
+      <li>Sahnvour adapted http/headers.zig to wyhash's new interface.</li>
+      <li>Marc Tiehuis added a throughput test program for hash functions.</li>
+      <li>Marc Tiehuis added an iterative wyhash API.</li>
     </ul>
-    Merge pull request #2797 from Sahnvour/hashing hash algorithm improvements
-commit 54255ee32e1e6c83b04c3e5f2f1dd7e8aa5e0dd7
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Jul 16 22:32:10 2019 +0200
+    <p>
+    Notably, Sahnvour made <code>std.HashMap</code> consistent about whether or not it will
+    dereference keys. <code>std.AutoHashMap</code> no longer will dereference slices
+    ({#syntax#}[]const u8{#endsyntax#} or {#syntax#}[]u8{#endsyntax#}), or any pointer type
+    for that matter:
+    </p>
+    {#code_begin|test_err|not allow slices#}
+const std = @import("std");
 
-    autohash: force inlining of integer hashing so that the optimizer can see the fast path based on key's size which is known at comptime
-    
-    otherwise it will always outline the call to hasher.update, resulting in much worse performance
+test "AutoHashMap with slices" {
+    var map = std.AutoHashMap([]const u8, bool).init(std.heap.direct_allocator);
+}
+    {#code_end#}
+    <p>
+    {#syntax#}std.StringHashMap{#endsyntax#} is provided for this use case
+    instead:
+    </p>
+    {#code_begin|test|string_hash_map#}
+const std = @import("std");
 
-commit 3faf5d38576616d033c343130607189eb9fe613c
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Jul 16 20:31:02 2019 +0200
-
-    wyhash: stateless is faster for both iterative hashing and small keys.
-
-commit 4b5172d2879742b98e3e34b90b05ac28da9f39fe
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Jul 2 19:46:51 2019 +0200
-
-    move autoHash into its own module since it can be used with any hash function implementing a streaming interface
-
-commit 5bf63bfbf113d3921101311f1e3040890b94e798
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Jul 2 18:40:01 2019 +0200
-
-    make use of hashing streaming interface in autoHash
-
-commit 8805a7b50985fca23969beab8636fbfbecd857ee
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Jul 2 18:38:46 2019 +0200
-
-    adapt http/headers.zig to wyhash's new interface
-
-commit 4c93ccab5ad48ce61e4136c646b3123a06150083
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Mon Jul 1 23:23:40 2019 +1200
-
-    Add throughput test program for hash functions
-
-commit 83dffc70afe4956c56f570ce5c854b17cbd6f218
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Mon Jul 1 23:23:26 2019 +1200
-
-    Add iterative wyhash api
-
-commit c9ce43f59fc777055612aeea58db0849390bc204
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Sun Jun 30 20:46:43 2019 +0200
-
-    fix hashmap using strings as keys
-
-commit 5bd407b27890fbed82891289e6a2bf2da93c2a41
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Sun Jun 30 11:35:57 2019 +0200
-
-    use wyhash in std's hashmap, and improve autoHash to handle more types and behave more correctly
-
-commit 6150da3df99b41f89ea01a72e6c1b76fe4c36f89
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Thu Jun 27 23:21:35 2019 +0200
-
-    direct port of wyhash v2
-    also inspired by https://github.com/ManDeJan/zig-wyhash
-
-commit 16fa255f48ae2d290bc26ceb41489f2c3e21b96d
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Wed Aug 21 21:34:42 2019 +1200
-
-    Inline full slice hashing
-    
-    This gives moderate speed improvements when hashing small keys.
+test "StringHashMap" {
+    var map = std.StringHashMap(bool).init(std.heap.direct_allocator);
+    _ = try map.put("hello", true);
+}
+    {#code_end#}
+    <p>
+    Additionally:
+    </p>
+    <ul>
+      <li>Sahnvour used wyhash in {#syntax#}std.HashMap{#endsyntax#}, and improve <code>autoHash</code>
+        to handle more types and behave more correctly.</li>
+      <li>Sahnvour added fastpath for <code>std.mem.eql</code> and simplified
+        {#syntax#}std.hash_map.eqlString{#endsyntax#}.</li>
+    </ul>
+    <p>Marc Tiehuis made a series of improvements to hashing performance:</p>
+    <p>Inline full slice hashing - this gives moderate speed improvements when hashing small keys.
     The crc/adler/fnv inlining did not provide enough speed up to warrant
-    the change.
-    
-    OLD:
-    
-    wyhash
-      small keys: 2277 MiB/s [c14617a1e3800000]
-    siphash(1,3)
-      small keys:  937 MiB/s [b2919222ed400000]
-    siphash(2,4)
-      small keys:  722 MiB/s [3c3d974cc2800000]
-    fnv1a
-      small keys: 1580 MiB/s [70155e1cb7000000]
-    adler32
-      small keys: 1898 MiB/s [00013883ef800000]
-    crc32-slicing-by-8
-      small keys: 2323 MiB/s [0035bf3dcac00000]
-    crc32-half-byte-lookup
-      small keys:  218 MiB/s [0035bf3dcac00000]
-    
-    NEW:
-    
-    wyhash
-      small keys: 2775 MiB/s [c14617a1e3800000]
-    siphash(1,3)
-      small keys: 1086 MiB/s [b2919222ed400000]
-    siphash(2,4)
-      small keys:  789 MiB/s [3c3d974cc2800000]
-    fnv1a
-      small keys: 1604 MiB/s [70155e1cb7000000]
-    adler32
-      small keys: 1856 MiB/s [00013883ef800000]
-    crc32-slicing-by-8
-      small keys: 2336 MiB/s [0035bf3dcac00000]
-    crc32-half-byte-lookup
-      small keys:  218 MiB/s [0035bf3dcac00000]
-commit 90e921f7a7356cda56e98367687889eb34ce0384
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Sat Aug 24 12:52:00 2019 +0200
-
-    wyhash: readd the stateful streaming version so that both are available
-    
-    and rename the stateless one so that's it is not the default option
-
-commit 4c882e731f26aa595a2b6c17725f01bbc1974e37
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Thu Aug 22 22:46:37 2019 +0200
-
-    hash_map: adding a StringHashMap for convenience
-
-commit 1498ccac2a7c4370ae09cd69a0f2ade7758fcd64
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Aug 13 21:14:21 2019 +0200
-
-    auto_hash: better generic hashing implementation
-    
-    autoHash forbids slices as input
-    hash was added to handle all types from autoHash plus slices, with a specified strategy
-
-commit 326b7b794b01a1194df3785e497460bada756c29
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Tue Aug 27 20:13:57 2019 +1200
-
-    Improve siphash performance for small keys by up to 30% (#3124)
-    
-    This removes the partial buffer handling from the full slice api.
-    
-    `./benchmark --filter siphash --count 1024`
-    
-    old
-    
-        siphash(1,3)
-           iterative: 3388 MiB/s [67532e53a0d210bf]
-          small keys: 1258 MiB/s [948c91176a000000]
-        siphash(2,4)
-           iterative: 2061 MiB/s [f792d39bff42f819]
-          small keys:  902 MiB/s [e1ecba6614000000]
-    
-    new
-    
-        siphash(1,3)
-           iterative: 3410 MiB/s [67532e53a0d210bf]
-          small keys: 1639 MiB/s [948c91176a000000]
-        siphash(2,4)
-           iterative: 2053 MiB/s [f792d39bff42f819]
-          small keys: 1074 MiB/s [e1ecba6614000000]
-commit fbcdf78cbd5ff955d1aec0e55026168eed8d43f6
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Mon Aug 26 22:32:39 2019 +1200
-
-    Simplify wyhash and improve speed
-    
-    This removes the exposed stateless variant since the standard variant
-    has similar speed now.
-    
-    Using `./benchmark --filter wyhash --count 1024`, the speed change has
-    changed from:
-    
-        wyhash
-           iterative: 4093 MiB/s [6f76b0d5db7db34c]
-          small keys: 3132 MiB/s [28c2f43c70000000]
-    
-    to
-    
-        wyhash
-           iterative: 6515 MiB/s [673e9bb86da93ea4]
-          small keys: 10487 MiB/s [28c2f43c70000000]
-
-commit 9d6f236728cf433b44048e21f81efdd167fe0098
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Sep 3 23:56:04 2019 +0200
-
-    add fastpath for std.mem.eql and simplify std.hash_map.eqlString
-    
-    this should also be friendlier to the optimizer
-
-commit f08c6e4fe6ad63145ef69377f36f34e9f04cadec
-Author: Sahnvour <sahnvour@pm.me>
-Date:   Tue Sep 3 23:53:05 2019 +0200
-
-    changing occurrences of HashMap with []const u8 as keys for StringHashMap
-
+    the change.</p>
+    <p><strong>Old:</strong></p>
+    <pre><code>wyhash
+  small keys: 2277 MiB/s [c14617a1e3800000]
+siphash(1,3)
+  small keys:  937 MiB/s [b2919222ed400000]
+siphash(2,4)
+  small keys:  722 MiB/s [3c3d974cc2800000]
+fnv1a
+  small keys: 1580 MiB/s [70155e1cb7000000]
+adler32
+  small keys: 1898 MiB/s [00013883ef800000]
+crc32-slicing-by-8
+  small keys: 2323 MiB/s [0035bf3dcac00000]
+crc32-half-byte-lookup
+  small keys:  218 MiB/s [0035bf3dcac00000]</code></pre>
+    <p><strong>New:</strong></p>
+    <pre><code>wyhash
+  small keys: 2775 MiB/s [c14617a1e3800000]
+siphash(1,3)
+  small keys: 1086 MiB/s [b2919222ed400000]
+siphash(2,4)
+  small keys:  789 MiB/s [3c3d974cc2800000]
+fnv1a
+  small keys: 1604 MiB/s [70155e1cb7000000]
+adler32
+  small keys: 1856 MiB/s [00013883ef800000]
+crc32-slicing-by-8
+  small keys: 2336 MiB/s [0035bf3dcac00000]
+crc32-half-byte-lookup
+  small keys:  218 MiB/s [0035bf3dcac00000]</code></pre>
+    <p>Improve siphash performance for small keys by up to 30% (#3124) -
+    this removes the partial buffer handling from the full slice API.</p>
+    <p><code>./benchmark --filter siphash --count 1024</code></p>
+    <p><strong>Old:</strong></p>
+    <pre><code>siphash(1,3)
+   iterative: 3388 MiB/s [67532e53a0d210bf]
+  small keys: 1258 MiB/s [948c91176a000000]
+siphash(2,4)
+   iterative: 2061 MiB/s [f792d39bff42f819]
+  small keys:  902 MiB/s [e1ecba6614000000]</code></pre>
+    <p><strong>New:</strong></p>
+    <pre><code>siphash(1,3)
+   iterative: 3410 MiB/s [67532e53a0d210bf]
+  small keys: 1639 MiB/s [948c91176a000000]
+siphash(2,4)
+   iterative: 2053 MiB/s [f792d39bff42f819]
+  small keys: 1074 MiB/s [e1ecba6614000000]</code></pre>
+    <p>Simplify wyhash and improve speed -
+    this removes the exposed stateless variant since the standard variant
+    has similar speed now.</p>
+    <p>Using <code>./benchmark --filter wyhash --count 1024</code>, the speed change has
+    changed from:</p>
+    <pre><code>wyhash
+   iterative: 4093 MiB/s [6f76b0d5db7db34c]
+  small keys: 3132 MiB/s [28c2f43c70000000]</code></pre>
+    <p>to</p>
+    <pre><code>wyhash
+   iterative: 6515 MiB/s [673e9bb86da93ea4]
+  small keys: 10487 MiB/s [28c2f43c70000000]</code></pre>
     {#header_close#}
     {#header_close#}
 
