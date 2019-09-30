@@ -1957,250 +1957,287 @@ test "result location type resolution" {
     {#header_close#}
 
     {#header_open|Async Functions#}
-    TODO
-    TODO mention @frameSize, @frame, and @Frame
-    TODO     avoid the word "coroutine", they're "async functions" 
-    TODO mention the cancel issue
-    TODO I/O mode
-    TODO zig-window example
-    TODO demo -fstack-report
-commit 0489d06c249d16457d66523b5c407fc7ddeca45a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Sep 10 00:25:37 2019 -0400
+    <p>
+    {#syntax#}async{#endsyntax#} functions have been completely reworked in Zig 0.5.0. Previously,
+    I was calling these "stackless coroutines". However I'm now avoiding the word "coroutine" since
+    it means different things to different people, and instead using the phrase "async functions".
+    </p>
+    <p>
+    In Zig 0.4.0, all async functions were generic across an allocator type, all async functions took
+    an allocator parameter, and calling an async function could fail. Additionally, async functions
+    were required to be annotated as such.
+    </p>
+    <p>
+    In Zig 0.5.0, calling an async function can no longer fail. The async function frame is provided
+    by the caller via {#link|Result Location Semantics#}, and can be in the caller's stack frame. Async
+    functions are no longer generic, and do not require the {#syntax#}async{#endsyntax#} keyword.
+    Zig infers that a function is {#syntax#}async{#endsyntax#} when it observes that the function contains
+    a <strong>suspension point</strong>. Async functions can be called the same as normal functions. A
+    function call of an async function is a suspend point.
+    </p>
+    <p>
+    When a regular function is called, a frame is pushed to the stack,
+    the function runs until it reaches a return statement, and then the frame is popped from the stack.
+    At the callsite, the following code does not run until the function returns.
+    </p>
+    <p>
+    An async function is a function whose callsite is split into an {#syntax#}async{#endsyntax#} initiation,
+    followed by an {#syntax#}await{#endsyntax#} completion. Its frame is
+    provided explicitly by the caller, and it can be suspended and resumed any number of times.
+    </p>
+    <p>
+    Here's a simple example of an async function:
+    </p>
+    {#code_begin|exe|async_fn#}
+const std = @import("std");
 
-    make the std lib support event-based I/O
-    
-    also add -fstack-report -fstack-report outputs JSON See #3069
+var frame: anyframe = undefined;
 
-commit 3dce41b61a20c23c494a485b1d3092e7c67dd97f
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 16 21:29:29 2019 -0400
+pub fn main() void {
+    std.debug.warn("begin main\n");
+    _ = async func();
+    std.debug.warn("resume func\n");
+    resume frame;
+    std.debug.warn("end main\n");
+}
 
-    improvements to std lib for event-based I/O
+fn func() void {
+    std.debug.warn("begin func\n");
+    frame = @frame();
+    suspend;
+    std.debug.warn("end func\n");
+}
+    {#code_end#}
+    <p>
+    Here we have a seam between non-async (main) and async (func) code.
+    A more typical usage of this feature:
+    </p>
+    {#code_begin|exe|typical_async_await#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-commit e657b73f30e3380b14caf3a115a4c7a97c510d77
-Merge: a29ce786 ff051f8f
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Sep 10 10:39:27 2019 -0400
+// Try toggling these
+const simulate_fail_download = false;
+const simulate_fail_file = false;
+const suspend_download = true;
+const suspend_file = true;
 
-    Merge branch 'async-std-lib'
-    
+pub fn main() void {
+    _ = async amainWrap();
+    // This simulates an event loop
+    if (suspend_file) {
+        resume global_file_frame;
+    }
+    if (suspend_download) {
+        resume global_download_frame;
+    }
+}
+fn amainWrap() void {
+    if (amain()) |_| {
+        expect(!simulate_fail_download);
+        expect(!simulate_fail_file);
+    } else |e| switch (e) {
+        error.NoResponse => expect(simulate_fail_download),
+        error.FileNotFound => expect(simulate_fail_file),
+        else => @panic("test failure"),
+    }
+}
+
+fn amain() !void {
+    const allocator = std.heap.direct_allocator;
+    var download_frame = async fetchUrl(allocator, "https://example.com/");
+    var download_awaited = false;
+    errdefer if (!download_awaited) {
+        if (await download_frame) |x| allocator.free(x) else |_| {}
+    };
+
+    var file_frame = async readFile(allocator, "something.txt");
+    var file_awaited = false;
+    errdefer if (!file_awaited) {
+        if (await file_frame) |x| allocator.free(x) else |_| {}
+    };
+
+    download_awaited = true;
+    const download_text = try await download_frame;
+    defer allocator.free(download_text);
+
+    file_awaited = true;
+    const file_text = try await file_frame;
+    defer allocator.free(file_text);
+
+    expect(std.mem.eql(u8, "expected download text", download_text));
+    expect(std.mem.eql(u8, "expected file text", file_text));
+    std.debug.warn("OK!\n");
+}
+
+var global_download_frame: anyframe = undefined;
+fn fetchUrl(allocator: *std.mem.Allocator, url: []const u8) anyerror![]u8 {
+    const result = try std.mem.dupe(allocator, u8, "expected download text");
+    errdefer allocator.free(result);
+    if (suspend_download) {
+        suspend {
+            global_download_frame = @frame();
+        }
+    }
+    if (simulate_fail_download) return error.NoResponse;
+    std.debug.warn("fetchUrl returning\n");
+    return result;
+}
+
+var global_file_frame: anyframe = undefined;
+fn readFile(allocator: *std.mem.Allocator, filename: []const u8) anyerror![]u8 {
+    const result = try std.mem.dupe(allocator, u8, "expected file text");
+    errdefer allocator.free(result);
+    if (suspend_file) {
+        suspend {
+            global_file_frame = @frame();
+        }
+    }
+    if (simulate_fail_file) return error.FileNotFound;
+    std.debug.warn("readFile returning\n");
+    return result;
+}
+    {#code_end#}
+    <p>
+    The important thing to note here is that the {#syntax#}async{#endsyntax#}/{#syntax#}await{#endsyntax#}
+    mechanism did not bring in a dependency on the host OS, and it did not bring in a dependency on
+    an allocator.
+    </p>
+    <p>
+    Now watch what happens when we do this:
+    </p>
+    <pre>{#syntax#}
+const suspend_download = false;
+const suspend_file = false;
+    {#endsyntax#}</pre>
+    <pre><code class="shell">$ zig build-exe typical_async_await.zig
+$ ./typical_async_await
+fetchUrl returning
+readFile returning
+OK!</code></pre>
+    <p>
+    It's the same output, except in reversed order. With these modifications, <em>there are no async
+      functions in the entire program</em>! The expression
+    {#syntax#}async fetchUrl(allocator, "https://example.com/"){#endsyntax#} is evaluated as a normal,
+    blocking function, as is {#syntax#}async readFile(allocator, "something.txt"){#endsyntax#}.
+    The {#syntax#}await{#endsyntax#}s are no-ops.
+    </p>
+    <p>
+    The point here is that the <code>amain</code> function, which is the demo of typical async/await usage,
+    works in both an async context and blocking context. The programmer was able to express the inherent
+    parallelism of the logic, without resorting to
+    <a href="http://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/">function coloring</a>.
+    </p>
+    <p>
+    There is admittedly a bit of boilerplate in the example.
+    <a href="https://github.com/ziglang/zig/issues/3164">Here's the tracking issue for that</a>.
+    </p>
+    <p>Now for the related {#link|Standard Library#} updates:</p>
+    <p>
     This introduces the concept of "IO mode" which is configurable by the
-    root source file (e.g. next to `pub fn main`). Applications can put this
-    in their root source file:
-    
-    ```
+    <a href="https://ziglang.org/documentation/0.5.0/#Root-Source-File">Root Source File</a> (e.g. next to
+    {#syntax#}pub fn main{#endsyntax#}). Applications can put this in their root source file:
+    </p>
+    <pre>{#syntax#}
     pub const io_mode = .evented;
-    ```
-    
-    This will populate `std.io.mode` to be `std.io.Mode.evented`. When I/O
-    mode is evented, `std.os.read` handles EAGAIN by suspending until the
+    {#endsyntax#}</pre>
+    <p>
+    This will populate {#syntax#}std.io.mode{#endsyntax#} to be {#syntax#}std.io.Mode.evented{#endsyntax#}.
+    When I/O mode is evented, {#syntax#}std.os.read{#endsyntax#} handles EAGAIN by suspending until the
     file descriptor becomes available for reading. Although the std lib
     event loop supports epoll, kqueue, and Windows I/O Completion Ports,
-    this integration with `std.os.read` currently only works on Linux.
-    
-    This integration is currently only hooked up to `std.os.read`, and not,
-    for example, `std.os.write`, child processes, and timers. The fact that
+    this integration with {#syntax#}std.os.read{#endsyntax#} currently only works on Linux.
+    </p>
+    <p>
+    This integration is currently only hooked up to {#syntax#}std.os.read{#endsyntax#}, and not,
+    for example, {#syntax#}std.os.write{#endsyntax#}, child processes, and timers. The fact that
     we can do this and still have a working master branch is thanks to Zig's
     lazy analysis, comptime, and inferred async. We can continue to make
     incremental progress on async std lib features, enabling more and more
     test cases and coverage.
-    
-    In addition to `std.io.mode` there is `std.io.is_async` which is equal
-    to `std.io.mode == .evented`. In case I/O mode is async, `std.io.InStream`
-    notices this and the read function pointer becomes an async function
+    </p>
+    <p>
+    In addition to {#syntax#}std.io.mode{#endsyntax#} there is {#syntax#}std.io.is_async{#endsyntax#}
+    which is equal to {#syntax#}std.io.mode == .evented{#endsyntax#}. In case I/O mode is async,
+    {#syntax#}std.io.InStream{#endsyntax#} notices this and the read function pointer becomes an async function
     pointer rather than a blocking function pointer. Even in this case,
-    `std.io.InStream` can *still be used as a blocking input stream*.
+    {#syntax#}std.io.InStream{#endsyntax#} can <em>still be used as a blocking input stream</em>.
     Users of the API control whether it is blocking or async at runtime by whether
     or not the read function suspends. In case of file descriptors, for
-    example, this might correspond to whether it was opened with `O_NONBLOCK`.
-    The `noasync` keyword makes a function call or `await` assert that no
-    suspension happens. This assertion has runtime safety enabled.
-    
-    `std.io.InStream`, in the case of async I/O, uses by default a 4 MiB
+    example, this might correspond to whether it was opened with {#syntax#}O_NONBLOCK{#endsyntax#}.
+    The {#syntax#}noasync{#endsyntax#} keyword makes a function call or {#syntax#}await{#endsyntax#} assert
+    that no suspension happens. This assertion has runtime safety enabled.
+    </p>
+    <p>
+    {#syntax#}std.io.InStream{#endsyntax#}, in the case of async I/O, uses by default a 1 MiB
     frame size for calling the read function. If this is too large or too
     small, the application can globally increase the frame size used by
-    declaring `pub const stack_size_std_io_InStream = 1234;` in their root
-    source file. This way, `std.io.InStream` will only be generated once,
+    declaring {#syntax#}pub const stack_size_std_io_InStream = 1234;{#endsyntax#} in their root
+    source file. This way, {#syntax#}std.io.InStream{#endsyntax#} will only be generated once,
     avoiding bloat, and as long as this number is configured to be high
     enough, everything works fine. Zig has runtime safety to detect when
-    `@asyncCall` is given too small of a buffer for the frame size.
-    
+    @asyncCall is given too small of a buffer for the frame size.
+    </p>
+    <p>
     This merge introduces -fstack-report which can help identify large async
-    function frame sizes and explain what is making them so big. Until #3069 is
-    solved, it's recommended to stick with blocking IO mode.
-    
+    function frame sizes and explain what is making them so big.
+    </p>
+    <p>
     -fstack-report outputs JSON format, which can then be viewed in a GUI
     that represents the tree structure. As an example, Firefox does a decent
     job of this.
-    
+    </p>
+    <p>
     One feature that is currently missing is detecting that the call stack
     upper bound is greater than the default for a given target, and passing
     this upper bound to the linker. As an example, if Zig detects that 20
     MiB stack upper bound is needed - which would be quite reasonable -
     currently on Linux the application would only be given the default of 16
     MiB.
-    
-    Unrelated miscellaneous change: added std.c.readv
-commit cf4bccf76566ac112f9142863c3e4dbf81e71d08
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Sep 11 20:22:49 2019 -0400
-
-    improvements targeted at improving async functions
-    
-     * Reuse bytes of async function frames when non-async functions
-       make `noasync` calls. This prevents explosive stack growth.
-     * Zig now passes a stack size argument to the linker when linking ELF
-       binaries. Linux ignores this value, but it is available as a program
-       header called GNU_STACK. I prototyped some code that memory maps
-       extra space to the stack using this program header, but there was
-       still a problem when accessing stack memory very far down. Stack
-       probing is needed or not working or something. I also prototyped
-       using `@newStackCall` to call main and that does work around the
-       issue but it also brings its own issues. That code is commented out
-       for now in std/special/start.zig. I'm on a plane with no Internet,
-       but I plan to consult with the musl community for advice when I get a
-       chance.
-     * Added `noasync` to a bunch of function calls in std.debug. It's very
-       messy but it's a workaround that makes stack traces functional with
-       evented I/O enabled. Eventually these will be cleaned up as the root
-       bugs are found and fixed. Programs built in blocking mode are
-       unaffected.
-     * Lowered the default stack size of std.io.InStream (for the async
-       version) to 1 MiB instead of 4. Until we figure out how to get
-       choosing a stack size working (see 2nd bullet point above), 4 MiB
-       tends to cause segfaults due to stack size running out, or usage of
-       stack memory too far apart, or something like that.
-     * Default thread stack size is bumped from 8 MiB to 16 to match the
-       size we give for the main thread. It's planned to eventually remove
-       this hard coded value and have Zig able to determine this value
-       during semantic analysis, with call graph analysis and function
-       pointer annotations and extern function annotations.
+    </p>
+    <p>
+    There is so much to go over with this feature, and these release notes are already ridiculously
+    long. I'm going to have to resort to listing out some things here, and rely on a future post
+    to elaborate on these features.
+    </p>
+    <ul>
+      <li>@frameSize</li>
+      <li>@frame</li>
+      <li>@Frame</li>
+    </ul>
+    <pre>{#syntax#}@frameSize() usize{#endsyntax#}</pre>
+    <pre>{#syntax#}@frame() *@Frame(func){#endsyntax#}</pre>
+    <pre>{#syntax#}@Frame(func: var) type{#endsyntax#}</pre>
+    <p>
+    It is confirmed that async functions will solve
+    <a href="https://github.com/ziglang/zig/issues/1006">safe recursion</a> in Zig.
+    </p>
     {#header_close#}
 
     {#header_open|SIMD#}
-    TODO
-    TODO mention Shawn's LLVM talk
-commit 0e3ca4c63ecb8e43af8261020d21bc6888d18fc0
-Author: Shawn Landden <shawn@git.icu>
-Date:   Thu Jul 25 11:11:37 2019 -0500
-
-    Fix array->vector and vector->array for many types. Allow vector of bool.
-    
-    Vectors do not have the same packing as arrays, and just bitcasting
-    is not the correct way to convert them.
-commit 558b4ac1f0fd7123ebe25f3e59eef275b066c50a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Sep 18 10:24:28 2019 -0400
-
-    adjust codegen of casting between arrays and vectors
-    
-     * bitcasting is still better when the size_in_bits aligns with the ABI
-       size of the element type. Logic is reworked to do bitcasting when
-       possible
-     * rather than using insertelement/extractelement to work with arrays,
-       store/load elements directly. This matches codegen for arrays
-       elsewhere.
-commit 74ce5e9e13014d2657bf00b5893fd4687c7f0359
-Author: Shawn Landden <shawn@git.icu>
-Date:   Wed Jul 31 10:55:53 2019 -0500
-
-    stage1: proper return type on vector comparisons
-
-commit 2038f4d45a597cc672380c0a5fc8dd98e928d24c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Sep 18 15:41:56 2019 -0400
-
-    rework the implementation
-    
-     * update documentation
-       - move `@shuffle` to be sorted alphabetically
-       - remove mention of LLVM
-       - minor clarifications & rewording
-     * introduce ir_resolve_vector_elem_type to avoid duplicate compile
-       error message and duplicate vector element checking logic
-     * rework ir_analyze_shuffle_vector to solve various issues
-     * improve `@shuffle` to allow implicit cast of arrays
-     * the shuffle tests weren't being run
-
-commit 193604c837df75ab0c3fa5860f8b234263fe5b50
-Author: Shawn Landden <shawn@git.icu>
-Date:   Sat Jun 29 11:32:26 2019 -0500
-
-    stage1: add @shuffle() shufflevector support
-    
-    I change the semantics of the mask operand, to make it a little more
-    flexible. There is no real danger in this because it is a compile-error
-    if you do it the LLVM way (and there is an appropiate error to tell you
-    this).
-    
-    v2: avoid problems with double-free
-commit ef0f3ba905e992556a60f935cbb7cb30cf1f27db
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Sep 18 16:34:36 2019 -0400
-
-    relax std.auto_hash requirements regarding vectors
-    
-    Previously, auto hash tests required vectors of different types to not
-    hash to the same value. Now, this is allowed.
-
-commit 380c8ec2c95fa8d732c141c705d9940629eb2012
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 19 00:59:04 2019 -0400
-
-    implement runtime `@byteSwap` and other fixups
-    
-     * update docs for `@byteSwap`.
-     * fix hash & eql functions for ZigLLVMFnIdBswap not updated to
-       include vector len. this was causing incorrect bswap function
-       being called in unrelated code
-     * fix `@byteSwap` behavior tests only testing comptime and not
-       runtime operations
-     * implement runtime `@byteSwap`
-     * fix incorrect logic in ir_render_vector_to_array and
-       ir_render_array_to_vector with regards to whether or not to bitcast
-     * `@byteSwap` accepts an array operand which it will cast to vector
-     * simplify `@byteSwap` semantic analysis code and various fixes
-
-commit 76f53960778e84ab49730edb77b85490b07fbea2
-Author: Shawn Landden <shawn@git.icu>
-Date:   Sun Jul 14 09:22:37 2019 -0500
-
-    @byteSwap on vectors
-
-commit 28c7fe60b6de6e3c32e082a0abfb5a7bac8fc45a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 19 11:14:42 2019 -0400
-
-    add docs for `@splat`
-
-commit 005a54a853a77b9c28551490fc08dc37cd7d7715
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 19 10:48:04 2019 -0400
-
-    fixups for `@splat`
-    
-     * Fix codegen for splat - instead of giving vectors of length N
-       to shufflevector for both of the operands, it gives vectors of length
-       1. The mask vector is the only one that needs N elements.
-     * Separate Splat into SplatSrc and SplatGen; the `len` is not needed
-       once it gets to codegen since it is redundant with the result type.
-     * Refactor compile error for wrong vector element type so that the
-       compile error message is not duplicated in zig source code
-     * Improve implementation to correctly handle comptime values such as
-       undefined and lazy values.
-     * Improve compile error for bad vector element type to point to the
-       correct place.
-     * Delete dead code.
-     * Modify behavior test to use an array cast instead of vector element
-       indexing since I'm merging this splat commit out-of-order from
-       Shawn's patch set.
-
-commit 01577a3af480cff02c5f78864f8056487b3d3b44
-Author: Shawn Landden <shawn@git.icu>
-Date:   Sun Jul 21 10:41:43 2019 -0500
-
-    `@splat`
+    <p>
+    Zig's SIMD support in 0.5.0 is still far from complete, but significant progress has been made.
+    </p>
+    <p>
+    <a href="https://www.subscribestar.com/slandden">Shawn Landden</a> has a
+    <a href="https://github.com/ziglang/zig/pull/2945">branch of Zig</a> with SIMD fairly complete,
+    and has been maintaining this patchset, as I slowly upstream the commits one-by-one (with
+    adjustments, fixups, etc). Shawn is giving a talk on his work at the October LLVM Dev Meeting:
+    <a href="https://llvm.org/devmtg/2019-10/talk-abstracts.html#tech1">Using LLVM's portable SIMD with Zig</a>
+    </p>
+    <ul>
+      <li>Shawn Landden fixed array to vector and vector to array for many types, and
+          allowed vector of {#syntax#}bool{#endsyntax#}.</li>
+      <li>Shawn Landden improved comparisons of vectors to return vectors instead of
+          {#syntax#}bool{#endsyntax#}.</li>
+      <li>Shawn Landden added @shuffle.</li>
+      <li>Added @byteSwap support to vectors.
+        Thanks Shawn Landden for the {#syntax#}comptime{#endsyntax#} implementation.</li>
+      <li>Shawn Landden added @splat.</li>
+    </ul>
+    <p>
+    See #903 for more details.
+    </p>
     {#header_close#}
 
     {#header_open|Alignment of Struct Fields#}
