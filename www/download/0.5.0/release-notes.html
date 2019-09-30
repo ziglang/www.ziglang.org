@@ -1886,26 +1886,138 @@ All tests passed.
 
     <h2 id="Result-Location-Semantics"><a href="#toc-Result-Location-Semantics">Result Location Semantics</a> <a class="hdr" href="#Result-Location-Semantics">§</a></h2>
 
-    TODO
-    TODO this was a large branch, third attempt, finally succeeded. During this work many contributors
-         continued to improve master branch while I worked on this feature, thanks for that yo
-    TODO short examples
-    TODO function forwarding results
-    TODO segway into async functions
-    TODO mention Michael Dusan helping by creating reductions and even some contributions
-      Michael Dusan fixed vector to array conversion not being aligned properly.
+    <p>
+    What I'm calling <strong>Result Location Semantics</strong> was a large branch of Zig that
+    fundamentally changed the way that expressions are semantically analyzed. This was the
+    third attempt, which finally succeeded. I abandoned the
+    <a href="https://github.com/ziglang/zig/pull/1652">first attempt</a> after
+    1 week. The <a href="https://github.com/ziglang/zig/pull/1682">second attempt</a>, which took
+    place during the <a href="/download/0.4.0/release-notes.html">0.4.0 release cycle</a>,
+    lasted 2 months, but again was regretfully abandoned. However, there were significant parts of the
+    second attempt that landed in the eventual implementation.
+    </p>
+    <p>
+    During my work on this branch, the Zig community stepped up and continued to improve master branch
+    all the while. You can observe this by seeing how many names are mentioned in these release
+    notes. I am proud and grateful of the Zig community for this.
+    </p>
+    <p>
+    Although the implementation was difficult, the user-facing differences of
+    <strong>Result Location Semantics</strong> are nearly impossible to detect. The main purpose
+    was to pave the way for the redesign of <a href="#Async-Functions">Async Functions</a>.
+    </p>
+    <p>
+    The main thing that this change does is semantically guarantee that no copying happens
+    in expressions. As an example:
+    </p>
+    <p class="file">result_loc.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
-      it fixed #961. add test case for defer modifying return value before returned
-      also fixed #2725
-    
-commit 2045b4d93240cd95eee7143f2cfc360eb63c5802
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 5 14:50:27 2019 -0400
+<span class="tok-kw">const</span> Object = <span class="tok-kw">struct</span> {
+    tag: <span class="tok-type">i32</span>,
+    pt: [<span class="tok-number">2</span>]Point,
+};
 
-    prefer result type casting to peer type resolution See #2749
+<span class="tok-kw">const</span> Point = <span class="tok-kw">struct</span> {
+    x: <span class="tok-type">i32</span>,
+    y: <span class="tok-type">i32</span>,
+};
 
+<span class="tok-kw">test</span> <span class="tok-str">&quot;result location semantics&quot;</span> {
+    <span class="tok-kw">const</span> result = <span class="tok-kw">if</span> (condition()) foo(<span class="tok-number">10</span>) <span class="tok-kw">else</span> bar();
+    std.testing.expect(result.tag == <span class="tok-number">10</span>);
+    std.testing.expect(result.pt[<span class="tok-number">0</span>].x == <span class="tok-number">69</span>);
+    std.testing.expect(result.pt[<span class="tok-number">1</span>].y == <span class="tok-number">420</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">condition</span>() <span class="tok-type">bool</span> {
+    <span class="tok-kw">return</span> <span class="tok-null">true</span>;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(arg: <span class="tok-type">i32</span>) Object {
+    <span class="tok-kw">return</span> baz(arg);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() Object {
+    <span class="tok-kw">return</span> Object{
+        .tag = <span class="tok-number">1</span>,
+        .pt = <span class="tok-null">undefined</span>,
+    };
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">baz</span>(arg: <span class="tok-type">i32</span>) Object {
+    <span class="tok-kw">return</span> Object{
+        .tag = arg,
+        .pt = [_]Point{ nice(), blazet() },
+    };
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">nice</span>() Point {
+    <span class="tok-kw">return</span> Point{
+        .x = <span class="tok-number">69</span>,
+        .y = <span class="tok-number">69</span>,
+    };
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">blazet</span>() Point {
+    <span class="tok-kw">return</span> Point{
+        .x = <span class="tok-number">420</span>,
+        .y = <span class="tok-number">420</span>,
+    };
+}</code></pre><pre><code class="shell">$ zig test result_loc.zig
+1/1 test &quot;result location semantics&quot;...OK
+All tests passed.
+</code></pre>
+
+    <p>
+    The important thing to note here is that the functions <code class="zig">nice()</code> and
+    <code class="zig">blazet()</code> <em>write directly to <strong>result</strong></em> in the
+    main test function. There are no intermediate copies, and this is semantically guaranteed
+    by the language.
+    </p>
+    <p>
+    With Zig's current semantics, it is actually not possible to observe the difference between
+    0.4.0 and 0.5.0 (except with <a href="#Async-Functions">async function calls</a>). However, with
+    future proposals to the language it would matter a great deal:
+    </p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/2765">result location: ability to refer to the return result location before the `return` statement</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/2761">result locations: unwrap optional and error unions so that the payload can be non-copied</a></li>
+    </ul>
+    <p>
+    The point here is that initialization functions would be able to set up pointer references relative to
+    the return value, and have the value be guaranteed to be valid.
+    </p>
+    <p>
+    Before moving on to the next section I want to say a huge thank you to <strong>Michael Dusan</strong>.
+    This branch was a dizzying amount of effort, and towards the end of it, Michael
+    started contributing. He created test case reductions and even solved some of the regressions,
+    such as vector to array conversion not being aligned correctly. This was both unexpected and 
+    helpful. It made a serious difference in getting me through to the end of the branch, so that
+    we could merge it into master.
+    </p>
+    <p>
+    The other thing that came out of this branch was preferring the "result type" to
+    <a href="https://ziglang.org/documentation/0.5.0/#Peer-Type-Resolution">Peer Type Resolution</a>:
+    </p>
+    <p class="file">result_loc_peer.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;result location type resolution&quot;</span> {
+      <span class="tok-kw">var</span> f = <span class="tok-null">false</span>;
+      <span class="tok-kw">var</span> x: <span class="tok-type">i32</span> = <span class="tok-number">0</span>;
+      x = <span class="tok-kw">if</span> (f) <span class="tok-number">1</span> <span class="tok-kw">else</span> <span class="tok-number">2</span>;
+      expect(x == <span class="tok-number">2</span>);
+}</code></pre><pre><code class="shell">$ zig test result_loc_peer.zig
+1/1 test &quot;result location type resolution&quot;...OK
+All tests passed.
+</code></pre>
+
+    <p>
+    Additionally:
+    </p>
+    <ul>
       <li>LemonBoy fixed result loc unwrapping with optional in error union. #2899</li>
-
+    </ul>
     
 
     <h2 id="unionInit"><a href="#toc-unionInit">@unionInit</a> <a class="hdr" href="#unionInit">§</a></h2>

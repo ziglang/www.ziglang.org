@@ -1756,26 +1756,134 @@ test "@mulAdd" {
     {#header_close#}
 
     {#header_open|Result Location Semantics#}
-    TODO
-    TODO this was a large branch, third attempt, finally succeeded. During this work many contributors
-         continued to improve master branch while I worked on this feature, thanks for that yo
-    TODO short examples
-    TODO function forwarding results
-    TODO segway into async functions
-    TODO mention Michael Dusan helping by creating reductions and even some contributions
-      Michael Dusan fixed vector to array conversion not being aligned properly.
+    <p>
+    What I'm calling <strong>Result Location Semantics</strong> was a large branch of Zig that
+    fundamentally changed the way that expressions are semantically analyzed. This was the
+    third attempt, which finally succeeded. I abandoned the
+    <a href="https://github.com/ziglang/zig/pull/1652">first attempt</a> after
+    1 week. The <a href="https://github.com/ziglang/zig/pull/1682">second attempt</a>, which took
+    place during the <a href="/download/0.4.0/release-notes.html">0.4.0 release cycle</a>,
+    lasted 2 months, but again was regretfully abandoned. However, there were significant parts of the
+    second attempt that landed in the eventual implementation.
+    </p>
+    <p>
+    During my work on this branch, the Zig community stepped up and continued to improve master branch
+    all the while. You can observe this by seeing how many names are mentioned in these release
+    notes. I am proud and grateful of the Zig community for this.
+    </p>
+    <p>
+    Although the implementation was difficult, the user-facing differences of
+    <strong>Result Location Semantics</strong> are nearly impossible to detect. The main purpose
+    was to pave the way for the redesign of {#link|Async Functions#}.
+    </p>
+    <p>
+    The main thing that this change does is semantically guarantee that no copying happens
+    in expressions. As an example:
+    </p>
+    {#code_begin|test|result_loc#}
+const std = @import("std");
 
-      it fixed #961. add test case for defer modifying return value before returned
-      also fixed #2725
-    
-commit 2045b4d93240cd95eee7143f2cfc360eb63c5802
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 5 14:50:27 2019 -0400
+const Object = struct {
+    tag: i32,
+    pt: [2]Point,
+};
 
-    prefer result type casting to peer type resolution See #2749
+const Point = struct {
+    x: i32,
+    y: i32,
+};
 
+test "result location semantics" {
+    const result = if (condition()) foo(10) else bar();
+    std.testing.expect(result.tag == 10);
+    std.testing.expect(result.pt[0].x == 69);
+    std.testing.expect(result.pt[1].y == 420);
+}
+
+fn condition() bool {
+    return true;
+}
+
+fn foo(arg: i32) Object {
+    return baz(arg);
+}
+
+fn bar() Object {
+    return Object{
+        .tag = 1,
+        .pt = undefined,
+    };
+}
+
+fn baz(arg: i32) Object {
+    return Object{
+        .tag = arg,
+        .pt = [_]Point{ nice(), blazet() },
+    };
+}
+
+fn nice() Point {
+    return Point{
+        .x = 69,
+        .y = 69,
+    };
+}
+
+fn blazet() Point {
+    return Point{
+        .x = 420,
+        .y = 420,
+    };
+}
+    {#code_end#}
+    <p>
+    The important thing to note here is that the functions {#syntax#}nice(){#endsyntax#} and
+    {#syntax#}blazet(){#endsyntax#} <em>write directly to <strong>result</strong></em> in the
+    main test function. There are no intermediate copies, and this is semantically guaranteed
+    by the language.
+    </p>
+    <p>
+    With Zig's current semantics, it is actually not possible to observe the difference between
+    0.4.0 and 0.5.0 (except with {#link|async function calls|Async Functions#}). However, with
+    future proposals to the language it would matter a great deal:
+    </p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/2765">result location: ability to refer to the return result location before the `return` statement</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/2761">result locations: unwrap optional and error unions so that the payload can be non-copied</a></li>
+    </ul>
+    <p>
+    The point here is that initialization functions would be able to set up pointer references relative to
+    the return value, and have the value be guaranteed to be valid.
+    </p>
+    <p>
+    Before moving on to the next section I want to say a huge thank you to <strong>Michael Dusan</strong>.
+    This branch was a dizzying amount of effort, and towards the end of it, Michael
+    started contributing. He created test case reductions and even solved some of the regressions,
+    such as vector to array conversion not being aligned correctly. This was both unexpected and 
+    helpful. It made a serious difference in getting me through to the end of the branch, so that
+    we could merge it into master.
+    </p>
+    <p>
+    The other thing that came out of this branch was preferring the "result type" to
+    <a href="https://ziglang.org/documentation/0.5.0/#Peer-Type-Resolution">Peer Type Resolution</a>:
+    </p>
+    {#code_begin|test|result_loc_peer#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "result location type resolution" {
+      var f = false;
+      var x: i32 = 0;
+      x = if (f) 1 else 2;
+      expect(x == 2);
+}
+    {#code_end#}
+    <p>
+    Additionally:
+    </p>
+    <ul>
       <li>LemonBoy fixed result loc unwrapping with optional in error union. #2899</li>
-
+    </ul>
     {#header_close#}
 
     {#header_open|@unionInit#}
