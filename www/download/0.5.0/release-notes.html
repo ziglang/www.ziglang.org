@@ -2300,159 +2300,58 @@ Date:   Sun Jul 21 10:41:43 2019 -0500
 
     <h2 id="Alignment-of-Struct-Fields"><a href="#toc-Alignment-of-Struct-Fields">Alignment of Struct Fields</a> <a class="hdr" href="#Alignment-of-Struct-Fields">§</a></h2>
 
-    TODO note that lazy values paved the way for standard library integrations with <a href="#Async-Functions">Async Functions</a>.
-    TODO
-commit efdbede7abf91d5fe2836d95987a83e95e9fcf8e
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Aug 21 19:20:18 2019 -0400
+    <p>
+    In Zig 0.4.0 there was <a href="https://github.com/ziglang/zig/blob/85edf55b73acda669a2388949d7cf31118d70764/src/analyze.cpp#L2249-L2258">this ugly kludge in the C++ stage1 compiler</a>:
+    </p>
+    <pre><code>// TODO If we have no type_entry for the field, we've already failed to
+// compile the program correctly. This stage1 compiler needs a deeper
+// reworking to make this correct, or we can ignore the problem
+// and make sure it is fixed in stage2. This workaround is for when
+// there is a false positive of a dependency loop, of alignment depending
+// on itself. When this false positive happens we assume a pointer-aligned
+// field, which is usually fine but could be incorrectly over-aligned or
+// even under-aligned. See https://github.com/ziglang/zig/issues/1512
+} else if (field-&gt;type_entry == nullptr) {
+    this_field_align = g-&gt;builtin_types.entry_usize-&gt;abi_align;</code></pre>
+    <p>
+    It was a mistake to ever let this kludge into the C++ stage1 compiler, and it was difficult
+    to remove this kludge in 0.5.0. But it's gone now.
+    </p>
+    <p>
+    In Zig 0.5.0, the C++ stage1 compiler has the concept of "Lazy Values". This solved the problem
+    of false positive dependencies without a kludge such as this. It also enabled Zig programs
+    to explicitly specify <code class="zig"><span class="tok-kw">struct</span></code> field alignment:
+    </p>
+    <p class="file">field_align.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-    breaking: remove field alignment kludge
-    
-    This breaks behavior tests as well as compile error notes for generic
-    function calls. However it introduces better circular dependency compile
-    errors.
-    
-    The next step is to add Lazy Values to fix the regressions.
+<span class="tok-kw">const</span> Node = <span class="tok-kw">struct</span> {
+    next: *Node,
+    massive_byte: <span class="tok-type">u8</span> <span class="tok-kw">align</span>(<span class="tok-number">64</span>),
+};
 
-commit 8460d5617cc12d614abf39f55ab85c783c4b35a8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Aug 22 12:07:56 2019 -0400
+<span class="tok-kw">test</span> <span class="tok-str">&quot;struct field explicit alignment&quot;</span> {
+    <span class="tok-kw">var</span> node: Node = <span class="tok-null">undefined</span>;
+    node.massive_byte = <span class="tok-number">100</span>;
+    expect(node.massive_byte == <span class="tok-number">100</span>);
+    <span class="tok-kw">comptime</span> expect(<span class="tok-builtin">@typeOf</span>(&amp;node.massive_byte) == *<span class="tok-kw">align</span>(<span class="tok-number">64</span>) <span class="tok-type">u8</span>);
+    expect(<span class="tok-builtin">@ptrToInt</span>(&amp;node.massive_byte) % <span class="tok-number">64</span> == <span class="tok-number">0</span>);
+}</code></pre><pre><code class="shell">$ zig test field_align.zig
+1/1 test &quot;struct field explicit alignment&quot;...OK
+All tests passed.
+</code></pre>
 
-    introduce lazy values
-    
-    see #2174
-
-commit 43587af01acba98d9c09c4e0cf20343be8d7c81b
-Author: Tetralux <tetralux@teknik.io>
-Date:   Thu Aug 22 22:58:38 2019 +0000
-
-    rendering of align(N) on struct fields
-
-commit 3ec10ea174d5738098e9bd1ef709b552603cc3b4
-Author: Tetralux <tetralux@teknik.io>
-Date:   Thu Aug 22 20:41:33 2019 +0000
-
-    parsing of align(N) on struct fields
-
-commit ac4dd9d665ba195a6b21b3b033f27c865015ccac
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 23 15:54:51 2019 -0400
-
-    better handling of lazy structs
-    
-    this case works now:
-    
-    ```zig
-    const A = struct {
-        b_list_pointer: *const []B,
-    };
-    const B = struct {
-        a_pointer: *const A,
-    };
-    
-    const b_list: []B = [_]B{};
-    const a = A{ .b_list_pointer = &b_list };
-    const obj = B{ .a_pointer = &a };
-    ```
-
-commit be0a9a72772566667d4c225972c6bc7c17b751ef
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 23 15:05:15 2019 -0400
-
-    pointer types lazily evaluate their element type
-
-commit 1dd658d1d02f8dfc432bcda88fdb542189c31725
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 23 14:07:34 2019 -0400
-
-    allow top level declarations to be lazy
-    
-    this case now works:
-    
-    ```zig
-    const A = struct {
-        b: B,
-    };
-    const B = fn (A) void;
-    ```
-
-commit 20049caaba0354754811ae0d36a773c31cf4578a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 23 13:28:26 2019 -0400
-
-    add lazy value for fn prototypes
-    
-    this case now works:
-    
-    ```zig
-    const Node = struct {
-        field: fn (*Node) *Node,
-    };
-    ```
-commit 101440c1990de653bbfb19713915d86d7a5bc182
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 23 17:14:51 2019 -0400
-
-    add lazy value support for optional types
-    
-    this case works now:
-    
-    ```zig
-    const Node = struct {
-        node: ?*Node,
-    };
-    ```
-commit 7d34e55a71b1d929c6e847337a3639f3e65a547e
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 10:45:15 2019 -0400
-
-    add a TODO compile error for union field alignment syntax See #3125
-
-commit 8fef23a5250efc38b16b720f298a61d793ace4e3
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 13:36:42 2019 -0400
-
-    add regression test for bug fixed by lazy values closes #1310
-commit e1b258f39fcb4fff97a4fcf6ee9db10bb71646cc
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 13:44:04 2019 -0400
-
-    add regression test for bug fixed by lazy values closes #624
-
-commit 47fcbfdc51bcb9c9d518a76b8eee122833893660
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 17:39:06 2019 -0400
-
-    add regression test for already fixed bug
-    
-    closes #3112
-
-commit f4519c520a81439e524428258ad5aa441c9b0687
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 16:55:58 2019 -0400
-
-    support self-referential struct through a slice of optional
-    
-    by making optionals even more lazy
-    
-    closes #1805
-
-commit c1fd7ed6e2815b3317b4cb82ce85bf44149d7002
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 14:06:17 2019 -0400
-
-    add regression test for struct with optional list of self
-    
-    closes #1735
-
-commit 428a2fdedd1d2d9ce6c7a3b28a379e4484468b9c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 27 13:59:18 2019 -0400
-
-    better handle struct depends on itself via optional field
-    
-    closes #1995
-
+    <p>In addition to this, "Lazy Values" solved the following bugs:</p>
+    <ul style="columns: 2">
+      <li>#624</li>
+      <li>#1310</li>
+      <li>#1735</li>
+      <li>#1805</li>
+      <li>#1995</li>
+      <li>#3112</li>
+    </ul>
+    <p>"Lazy Values" also paved the way for <a href="#Standard-Library">Standard Library</a> integrations with
+    <a href="#Async-Functions">Async Functions</a>.</p>
     
 
     <h2 id="Type"><a href="#toc-Type">@Type</a> <a class="hdr" href="#Type">§</a></h2>
