@@ -2974,6 +2974,10 @@ siphash(2,4)
       <li>Made install prefix available to build.zig and prevented accident of <code>'/'</code>
         showing up in application/library names.</li>
       <li><code>linkSystemLibrary</code> integrates with <code>pkg-config</code>.</li>
+      <li>Build scripts can now take advantage of QEMU and Wine integration by doing
+          {#syntax#}artifact.enable_qemu = true;{#endsyntax#} and
+          {#syntax#}artifact.enable_wine = true;{#endsyntax#}, respectively.</li>
+      <li>Added ability to override the dynamic linker of an executable artifact.</li>
     </ul>
     {#header_close#}
 
@@ -3339,154 +3343,44 @@ legend-of-swarkland_headless.exe  legend-of-swarkland.pdb</code></pre>
     {#header_close#}
 
     {#header_open|Test Coverage#}
-    TODO
-     * add -Dskip-non-native build option to build script
-
-     TODO link to coverage report?
-
-    <p>Michael Dusan implemented a new kind of test coverage for stack traces, to catch future regressions
-    of stack traces.</p>
-commit a19e73d8ae0bc5b7ac19b1bc72aa1fdb8f86d80f
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Mon May 27 20:07:05 2019 -0400
-
-    test: add compare-panic
-    
-    `zig build test-compare-panic`
-    
-    Create basic tests to compare panic output. The address field
-    is replaced by a symbolic constant and each expected output is
-    specific to os. Tests will only run for explicitly defined
-    platforms.
-    
-    see also #2485
-
-     <ul>
-     <li>Sahnvour implemented slightly better output for failure of tests based on text comparison.</li>
-     </ul>
-     TODO mention running out of RAM
-
-    compile error tests only for debug mode
-
-    stage1 assertions always on, and have stack traces
-
-    disable building self hosted compiler in test suite
-    
-    Rather than fixing regressions with deprecated coroutines, I'm going
-    to let them regress more until #2377 is solved.
-
-
-    avoid std.debug.global_allocator in http headers tests
-
-    release builds of stage1 have llvm ir verification. the stage2 zig code however gets compiled in release mode,
-    and stripped.
-commit 8bd5681651f64c7ebe059e6d7b288ddc60658cd5
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Mon Sep 9 17:57:32 2019 -0400
-
-    fix tests.addPkgTests to always run native target
-    
-    - include native-target when native-target ∉ cross_targets
-    
-    old behavior:
-    
-    - do nothing when `-Dskip-non-native`
-    - never execute pkg tests for non-members of cross_targets
-commit ffef5d26b6bbaf52d80c74ac3879a233a7a1a513
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Sep 21 23:55:56 2019 -0400
-
-    significantly increase test coverage
-    
-     * add zig build option `-Dskip-libc` to skip tests that build libc
-       (e.g. if you don't want to wait for musl to build)
-     * add `-Denable-wine` option which uses wine to run cross compiled
-       windows tests on non-windows hosts
-     * add `-Denable-qemu` option which uses qemu to run cross compiled
-       foreign architecture tests
-     * add `-Denable-foreign-glibc=path` option which combined with
-       `-Denable-qemu` enables running cross compiled tests that link
-       against glibc. See
-       https://github.com/ziglang/zig/wiki/Updating-libc#glibc for how to
-       produce this directory.
-     * the test matrix is done manually. release test builds are only
-       enabled by default for the native target. this should save us some CI
-       time, while still providing decent coverage of release builds.
-       - add test coverage for `x86_64-linux-musl -lc` (building musl libc)
-       - add test coverage for `x86_64-linux-gnu -lc` (building glibc)
-       - add test coverage for `aarch64v8_5a-linux-none`
-       - add test coverage for `aarch64v8_5a-linux-musl -lc` (building musl libc)
-       - add test coverage for `aarch64v8_5a-linux-gnu -lc` (building glibc)
-       - add test coverage for `arm-linux-none`
-       - test coverage for `arm-linux-musleabihf -lc` (building musl libc) is
-         disabled due to #3286
-       - test coverage for `arm-linux-gnueabihf -lc` (building glibc) is disabled
-         due to #3287
-       - test coverage for `x86_64-windows-gnu -lc` (building mingw-w64) is
-         disabled due to #3285
-     * enable qemu testing on the Linux CI job. There's not really a good
-       reason to enable wine, since we have a Windows CI job as well.
-     * remove the no longer needed `--build-file ../build.zig` from CI
-       scripts
-     * fix bug in glibc compilation where it wasn't properly reading the abi
-       list txt files, resulting in "key not found" error.
-     * std.build.Target gains:
-       - isNetBSD
-       - isLinux
-       - osRequiresLibC
-       - getArchPtrBitWidth
-       - getExternalExecutor
-     * zig build system gains support for enabling wine and enabling qemu.
-       `artifact.enable_wine = true;`, `artifact.enable_qemu = true;`. This
-       communicates that the system has these tools installed and the build
-       system will use them to run tests.
-     * zig build system gains support for overriding the dynamic linker of
-       an executable artifact.
-     * fix std.c.lseek prototype. makes behavior tests for
-       arm-linux-musleabihf pass.
-     * disable std lib tests that are failing on ARM. See #3288, #3289
-     * provide `std.os.off_t`.
-     * disable some of the compiler_rt symbols for arm 32 bit. Fixes
-       compiler_rt tests for arm 32 bit
-     * add __stack_chk_guard when linking against glibc. Fixes std lib tests
-       for aarch64-linux-gnu
-     * workaround for "unable to inline function" using `@inlineCall`. Fixes
-       compiler_rt tests for arm 32 bit.
-
-commit 786052c7d33973bf0bb34483301142b07bd48880
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Sep 22 14:40:54 2019 -0400
-
-    disable running cross compiled macos tests
-    
-    due to #3295
-commit cf4cc9b148e069b46a197d0423e4d25654aea26c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Sep 22 14:41:47 2019 -0400
-
-    do the release tests last because they take longer
-
-commit 12b195f9d507bfc0aa4d0199972ae32d096ef1ad
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Sep 22 15:32:52 2019 -0400
-
-    ci: update windows image to MSVC 2019
-
-commit 65b495af58bcd010b997d9036ee39808451ef76c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Sep 22 15:59:06 2019 -0400
-
-    windows CI: use MinSizeRel to work around MSVC bug
-    
-    See #3024
-
-commit 96affd683a302402d470f9a41b801f2e42639859
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Sep 22 19:11:41 2019 -0400
-
-    enable test coverage for cross compiling windows mingw-w64
-    
-    closes #3285
+    <p>
+    Zig now has much more exhaustive test coverage of foreign architectures, thanks to
+    <a href="https://www.qemu.org/">QEMU</a>. These new options are available to {#link|zig build#}
+    when running the Zig test suite:
+    </p>
+    <ul>
+      <li><code>-Denable-qemu</code> - runs cross-compiled compiler-rt, behavior, and std lib tests on
+        foreign architectures.</li>
+      <li><code>-Denable-wine</code> - runs cross-compiled compiler-rt, behavior, and std lib tests
+        with Wine.</li>
+      <li><code>-Denable-foreign-glibc=path</code> - if you have builds of glibc for other architectures
+        available, this enables testing cross-compiled compiler-rt, behavior, and std lib tests
+        on foreign architectures, dynamically linking glibc.</li>
+      <li><code>-Dskip-non-native</code> - skips all non-native tests.</li>
+      <li><code>-Dskip-libc</code> - if you don't want to wait for e.g. {#link|musl|musl 1.1.23#} to build.</li>
+    </ul>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.5.0/CONTRIBUTING.md">CONTRIBUTING.md</a>
+    for more details.</p>
+    <p>Michael Dusan implemented a new kind of test coverage for stack traces,
+    to catch future regressions in {#link|Debug Info and Stack Traces#}.</p>
+    <p>Additionally:</p>
+    <ul>
+      <li>Sahnvour implemented slightly better output for failure of tests based on text comparison.</li>
+      <li>Compile error tests no longer pointlessly run in all build modes, speeding up tests.</li>
+      <li>Assertions are now always enabled in the stage1 C++ compiler, and have stack traces when
+          there is debug info available.</li>
+      <li>LLVM IR verification is now always enabled in the stage1 C++ compiler.</li>
+      <li>The self-hosted compiler is no longer being built. It's planned to resume work on the self-hosted
+        compiler in the next release cycle.</li>
+      <li>{#link|zig build#} scripts can take advantage of QEMU and Wine integration by doing
+          {#syntax#}artifact.enable_qemu = true;{#endsyntax#} and
+          {#syntax#}artifact.enable_wine = true;{#endsyntax#}, respectively.</li>
+      <li>Windows CI image is updated to MSVC 2019. Build mode is changed to MinSizeRel to work
+        around an MSVC bug. #3024</li>
+    </ul>
+    <p>{#syntax#}std.debug.global_allocator{#endsyntax#} is deprecated as far as being used in tests
+    is concerned. Tests should use {#syntax#}std.heap.FixedBufferAllocator{#endsyntax#} and stack memory
+    instead.</p>
     {#header_close#}
 
     {#header_open|Miscellaneous Improvements#}
