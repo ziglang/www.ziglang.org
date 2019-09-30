@@ -1258,7 +1258,7 @@ test "using std namespace" {
       Instead of the above pattern, it is generally recommended to explicitly alias individual declarations.
       However, {#syntax#}usingnamespace{#endsyntax#} has an important use case when organizing the public
       API of a file or package. For example, one might have <code>c.zig</code> with all of the
-      <a href="https://ziglang.org/documentation/master/#Import-from-C-Header-File">C imports</a>:
+      <a href="https://ziglang.org/documentation/0.5.0/#Import-from-C-Header-File">C imports</a>:
       </p>
       <pre>{#syntax#}
 pub usingnamespace @cImport({
@@ -1355,7 +1355,7 @@ test "@hasDecl and @hasField" {
     <p>
     When {#link|translating C code|C Translation#}, Zig does not know whether pointer types
     should be translated to <code>*</code> or <code>[*]</code> pointers. Instead, they
-    are translated to <a href="https://ziglang.org/documentation/master/#C-Pointers">C Pointers</a>.
+    are translated to <a href="https://ziglang.org/documentation/0.5.0/#C-Pointers">C Pointers</a>.
     </p>
     <p>
     As the documentation notes, this type is to be avoided whenever possible. The only valid reason
@@ -1429,17 +1429,120 @@ test "C pointers with optional syntax" {
     {#header_open|Switching on Error Sets#}
     <p>
     Using {#syntax#}switch{#endsyntax#} on an
-    <a href="https://ziglang.org/documentation/master/#Error-Set-Type">error set</a> now provides a way
+    <a href="https://ziglang.org/documentation/0.5.0/#Error-Set-Type">error set</a> now provides a way
     to capture an error value with a subset type:
     </p>
-    TODO #769
+    {#code_begin|exe|switch_err_set_1#}
+const std = @import("std");
+const os = std.os;
+
+const Error = error{
+    AccessDenied,
+    FileTooBig,
+    IsDir,
+    SymLinkLoop,
+    ProcessFdQuotaExceeded,
+    NameTooLong,
+    SystemFdQuotaExceeded,
+    NoDevice,
+    FileNotFound,
+    SystemResources,
+    NoSpaceLeft,
+    NotDir,
+    PathAlreadyExists,
+    DeviceBusy,
+    InputOutput,
+    OperationAborted,
+    BrokenPipe,
+    Unexpected,
+};
+
+pub fn main() Error!void {
+    // open a normal, blocking file descriptor.
+    const fd = try os.open("/dev/urandom", os.O_RDONLY, 0);
+    defer os.close(fd);
+
+    // we did *not* use O_NONBLOCK, so the OS will not give us
+    // EWOULDBLOCK.
+    var buf: [100]u8 = undefined;
+    const nbytes = try readBlocking(fd, &buf);
+}
+
+/// Asserts that fd was opened in a blocking fashion.
+fn readBlocking(fd: os.fd_t, buffer: []u8) !usize {
+    return std.os.read(fd, buffer) catch |err| switch (err) {
+        error.WouldBlock => unreachable, // Remove this to observe compile error
+        else => |e| return e,
+    };
+}
+    {#code_end#}
+    <p>
+    Here you can see that the program compiled just fine, even though {#syntax#}error.WouldBlock{#endsyntax#}
+    is not found in the error set. This is because the function {#syntax#}readBlocking{#endsyntax#}
+    switched on the error set, and handled the {#syntax#}error.WouldBlock{#endsyntax#} case. This means
+    the error set type of value captured by the {#syntax#}else{#endsyntax#} does not include the value
+    {#syntax#}error.WouldBlock{#endsyntax#}.
+    </p>
+    <p>
+    In addition to this, Zig allows capturing the payload from multiple error set values:
+    </p>
+    {#code_begin|exe|switch_err_set_2#}
+const std = @import("std");
+const os = std.os;
+
+const Error = error{
+    AccessDenied,
+    FileTooBig,
+    IsDir,
+    SymLinkLoop,
+    ProcessFdQuotaExceeded,
+    NameTooLong,
+    SystemFdQuotaExceeded,
+    NoDevice,
+    FileNotFound,
+    SystemResources,
+    NoSpaceLeft,
+    NotDir,
+    PathAlreadyExists,
+    DeviceBusy,
+    OperationAborted,
+    BrokenPipe,
+    Unexpected,
+};
+
+pub fn main() Error!void {
+    // open a normal, blocking file descriptor.
+    const fd = try os.open("/dev/urandom", os.O_RDONLY, 0);
+    defer os.close(fd);
+
+    // we did *not* use O_NONBLOCK, so the OS will not give us
+    // EWOULDBLOCK.
+    var buf: [100]u8 = undefined;
+    const nbytes = try readBlocking(fd, &buf);
+}
+
+/// Asserts that fd was opened in a blocking fashion.
+fn readBlocking(fd: os.fd_t, buffer: []u8) !usize {
+    return std.os.read(fd, buffer) catch |err| switch (err) {
+        error.WouldBlock, error.InputOutput => |e| {
+            std.debug.panic("unexpected: {}\n", e);
+        },
+        else => |e| return e,
+    };
+}
+    {#code_end#}
+    <p>
+    In this example, {#syntax#}error.InputOutput{#endsyntax#} was lifted out of {#syntax#}Error{#endsyntax#}
+    since it is handled inside {#syntax#}readBlocking{#endsyntax#}. The {#syntax#}e{#endsyntax#} capture value
+    has type {#syntax#}error{WouldBlock,InputOutput}{#endsyntax#}.
+    </p>
     {#header_close#}
 
     {#header_open|Bit Manipulation Builtin Functions#}
     <p>Shawn Landden improved the consistency of the names and parameters of bit manipulation intrinsics.</p>
     <ul>
       <li>Rename <code>@bitreverse</code> to @bitReverse to adhere to
-        <a href="https://ziglang.org/documentation/master/#Style-Guide">naming conventions</a>.</li>
+        <a href="https://ziglang.org/documentation/0.5.0/#Style-Guide">naming conventions</a>.</li>
       <li>Rename <code>@bswap</code> to @byteSwap.</li>
       <li>@clz, @ctz, @popCount, @byteSwap, and @bitReverse now have an explicit type parameter.</li>
     </ul>
