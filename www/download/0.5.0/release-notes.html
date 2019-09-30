@@ -1749,17 +1749,18 @@ All tests passed.
 
     <h2 id="Array-Literal-Syntax"><a href="#toc-Array-Literal-Syntax">Array Literal Syntax</a> <a class="hdr" href="#Array-Literal-Syntax">§</a></h2>
 
-    TODO
-commit b735764898412c5b9388fdf729c8ad8db43ddde5
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Jun 9 19:24:24 2019 -0400
-
-    different array literal syntax when inferring the size
-    
-    old syntax:  []i32{1, 2, 3}
-    new syntax: [_]i32{1, 2, 3}
-    
-    closes #1797
+    <p>
+    The array literal syntax has changed, when inferring the size.
+    </p>
+    <p>Old syntax:</p>
+    <pre><code>[]i32{1, 2, 3}</code></pre>
+    <p>New syntax:</p>
+    <pre><code class="zig">[_]<span class="tok-type">i32</span>{<span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>}</code></pre>
+    <p>
+    The previous syntax used to look too much like instantiating a slice. This caused all kinds
+    of confusion. Now it's pretty clear that the type is an array.
+    </p>
+    #1797
     
 
     <h2 id="importroot"><a href="#toc-importroot">@import("root")</a> <a class="hdr" href="#importroot">§</a></h2>
@@ -1917,25 +1918,23 @@ Date:   Thu Sep 5 14:50:27 2019 -0400
 
     <h2 id="Unicode-Escapes"><a href="#toc-Unicode-Escapes">Unicode Escapes</a> <a class="hdr" href="#Unicode-Escapes">§</a></h2>
 
-    TODO
-commit e35d49c4d03ea7a84a2d588be8f97108ea616dd7
-Author: hryx <codroid@gmail.com>
-Date:   Thu Jul 4 22:52:17 2019 -0700
-
-    Unicode escapes: documentation and grammar
-
-commit 6bfa8546bbdf6dd644a65876135893339b767bba
-Author: hryx <codroid@gmail.com>
-Date:   Thu Jul 4 22:40:19 2019 -0700
-
-    Unicode escapes: stage1 tokenizer and behavior tests
-
-commit 8365a7aab49938ff77228b72388301f562287415
-Author: hryx <codroid@gmail.com>
-Date:   Thu Jul 4 14:48:23 2019 -0700
-
-    Unicode escapes: stage2 tokenizer and parser test
-    TODO note about unicode character literal
+    <p>
+    Zig's unicode escape syntax is changed to match most other popular programming languages.
+    </p>
+    <p>Old syntax:</p>
+    <pre><code>"\U01f4a9"</code></pre>
+    <p>New syntax:</p>
+    <pre><code class="zig"><span class="tok-str">&quot;\u{1f4a9}&quot;</span></code></pre>
+    <p>This matches JavaScript (since ES6), Lua (since 5.3), Swift (who swapped from our previous syntax!),
+    and Rust.</p>
+    <p>Thank you daurnimator for doing the research on other languages, and
+      Shawn Landden for the implementation.</p>
+    <p>
+    It is
+    <a href="https://github.com/ziglang/zig/issues/2097">planned to additionally allow unicode escapes in character literals</a>,
+    since character literals have type <code class="zig"><span class="tok-type">comptime_int</span></code>. That accepted proposal is marked
+    "Contributor Friendly" because it is limited in scope and/or knowledge of Zig internals.
+    </p>
     
 
     <h2 id="Async-Functions"><a href="#toc-Async-Functions">Async Functions</a> <a class="hdr" href="#Async-Functions">§</a></h2>
@@ -3227,46 +3226,14 @@ Date:   Mon Sep 23 13:33:43 2019 -0400
       <li>Benjamin Feng fixed zig fmt reinterpreting <code>a &amp;&amp; b</code> as <code class="zig">a &amp; &amp;b</code>. Now it has a helpful error message: "`&amp;&amp;` is invalid. Note that `and` is boolean AND.". #2660</li>
       <li>Timon Kruiper fixed an integer overflow in zig fmt and added testcase.</li>
       <li>Vexu implemented <a href="#Async-Functions">Async Functions</a> syntax, including <code class="zig"><span class="tok-kw">noasync</span></code>.</li>
+      <li>yvt improved the handling of <code class="zig"><span class="tok-comment">// zig fmt: off/on</span></code>.</li>
+      <li>Hang Shick Pak fixed nested <code class="zig"><span class="tok-kw">if</span></code>.</li>
     </ul>
     <p>
     Thanks to <a href="#WebAssembly-Support">WebAssembly Support</a> improvements, there is also a
     <a href="https://shritesh.github.io/zigfmt-web/">web-based formatter</a> made
     by Shritesh Bhattarai.
     </p>
-commit c98f792ff8ed7af0d5e427836600c2ed7b30965e
-Author: yvt
-Date:   Wed Aug 28 15:35:49 2019 +0900
-
-    Improve the handling of `zig fmt: off/on`
-    
-    This commit reworks the handling of `zig fmt: off/on`. A motivating
-    example is shown below:
-    
-        const c = d;
-        // zig fmt: off
-        // comment
-        const a = b;
-        // zig fmt: on
-    
-    Before processing the decl `const a = b;`, `renderRoot` looks for
-    `zig fmt: off` that appears between this decl and the previous one. If
-    it finds one, it searches for the next `zig fmt: on` that re-enables
-    reformatting (or EOF if none was found), and copies the input code
-    between `zig fmt: off` and `zig fmt: on` to the output stream. After
-    that, it proceeds to the next decl.
-    
-    The important thing to notice here is that `renderTopLevelDecl` emits
-    line comment tokens that follow the decl. Therefore, when copying code,
-    we must be careful not to copy the line comment tokens that already have
-    been written to the output stream. The original code failed to take this
-    fact into consideration. It did skip `// zig fmt: off`, but not the
-    remaining ones. As a result, when the above example is fed as input, it
-    duplicated the line `// comment`.
-commit 9f4d44bc491b907dbe11fbc8cd70749606b2236c
-Author: Hong Shick Pak <hong@hspak.com>
-Date:   Thu Aug 29 21:10:26 2019 -0700
-
-    zig fmt: fix nested if
     
 
     <h1 id="libc"><a href="#toc-libc">libc</a> <a class="hdr" href="#libc">§</a></h1>
