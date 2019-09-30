@@ -1372,7 +1372,7 @@ All tests passed.
       Instead of the above pattern, it is generally recommended to explicitly alias individual declarations.
       However, <code class="zig"><span class="tok-kw">usingnamespace</span></code> has an important use case when organizing the public
       API of a file or package. For example, one might have <code>c.zig</code> with all of the
-      <a href="https://ziglang.org/documentation/master/#Import-from-C-Header-File">C imports</a>:
+      <a href="https://ziglang.org/documentation/0.5.0/#Import-from-C-Header-File">C imports</a>:
       </p>
       <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">usingnamespace</span> <span class="tok-builtin">@cImport</span>({
     <span class="tok-builtin">@cInclude</span>(<span class="tok-str">&quot;epoxy/gl.h&quot;</span>);
@@ -1472,7 +1472,7 @@ All tests passed.
     <p>
     When <a href="#C-Translation">translating C code</a>, Zig does not know whether pointer types
     should be translated to <code>*</code> or <code>[*]</code> pointers. Instead, they
-    are translated to <a href="https://ziglang.org/documentation/master/#C-Pointers">C Pointers</a>.
+    are translated to <a href="https://ziglang.org/documentation/0.5.0/#C-Pointers">C Pointers</a>.
     </p>
     <p>
     As the documentation notes, this type is to be avoided whenever possible. The only valid reason
@@ -1547,10 +1547,115 @@ All tests passed.
 
     <p>
     Using <code class="zig"><span class="tok-kw">switch</span></code> on an
-    <a href="https://ziglang.org/documentation/master/#Error-Set-Type">error set</a> now provides a way
+    <a href="https://ziglang.org/documentation/0.5.0/#Error-Set-Type">error set</a> now provides a way
     to capture an error value with a subset type:
     </p>
-    TODO #769
+    <p class="file">switch_err_set_1.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> os = std.os;
+
+<span class="tok-kw">const</span> Error = <span class="tok-kw">error</span>{
+    AccessDenied,
+    FileTooBig,
+    IsDir,
+    SymLinkLoop,
+    ProcessFdQuotaExceeded,
+    NameTooLong,
+    SystemFdQuotaExceeded,
+    NoDevice,
+    FileNotFound,
+    SystemResources,
+    NoSpaceLeft,
+    NotDir,
+    PathAlreadyExists,
+    DeviceBusy,
+    InputOutput,
+    OperationAborted,
+    BrokenPipe,
+    Unexpected,
+};
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() Error!<span class="tok-type">void</span> {
+    <span class="tok-comment">// open a normal, blocking file descriptor.</span>
+    <span class="tok-kw">const</span> fd = <span class="tok-kw">try</span> os.open(<span class="tok-str">&quot;/dev/urandom&quot;</span>, os.O_RDONLY, <span class="tok-number">0</span>);
+    <span class="tok-kw">defer</span> os.close(fd);
+
+    <span class="tok-comment">// we did *not* use O_NONBLOCK, so the OS will not give us</span>
+    <span class="tok-comment">// EWOULDBLOCK.</span>
+    <span class="tok-kw">var</span> buf: [<span class="tok-number">100</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">const</span> nbytes = <span class="tok-kw">try</span> readBlocking(fd, &amp;buf);
+}
+
+<span class="tok-comment">/// Asserts that fd was opened in a blocking fashion.</span>
+<span class="tok-kw">fn</span> <span class="tok-fn">readBlocking</span>(fd: os.fd_t, buffer: []<span class="tok-type">u8</span>) !<span class="tok-type">usize</span> {
+    <span class="tok-kw">return</span> std.os.read(fd, buffer) <span class="tok-kw">catch</span> |err| <span class="tok-kw">switch</span> (err) {
+        <span class="tok-kw">error</span>.WouldBlock =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// Remove this to observe compile error</span>
+        <span class="tok-kw">else</span> =&gt; |e| <span class="tok-kw">return</span> e,
+    };
+}</code></pre><pre><code class="shell">$ zig build-exe switch_err_set_1.zig
+$ ./switch_err_set_1
+</code></pre>
+
+    <p>
+    Here you can see that the program compiled just fine, even though <code class="zig"><span class="tok-kw">error</span>.WouldBlock</code>
+    is not found in the error set. This is because the function <code class="zig">readBlocking</code>
+    switched on the error set, and handled the <code class="zig"><span class="tok-kw">error</span>.WouldBlock</code> case. This means
+    the error set type of value captured by the <code class="zig"><span class="tok-kw">else</span></code> does not include the value
+    <code class="zig"><span class="tok-kw">error</span>.WouldBlock</code>.
+    </p>
+    <p>
+    In addition to this, Zig allows capturing the payload from multiple error set values:
+    </p>
+    <p class="file">switch_err_set_2.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> os = std.os;
+
+<span class="tok-kw">const</span> Error = <span class="tok-kw">error</span>{
+    AccessDenied,
+    FileTooBig,
+    IsDir,
+    SymLinkLoop,
+    ProcessFdQuotaExceeded,
+    NameTooLong,
+    SystemFdQuotaExceeded,
+    NoDevice,
+    FileNotFound,
+    SystemResources,
+    NoSpaceLeft,
+    NotDir,
+    PathAlreadyExists,
+    DeviceBusy,
+    OperationAborted,
+    BrokenPipe,
+    Unexpected,
+};
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() Error!<span class="tok-type">void</span> {
+    <span class="tok-comment">// open a normal, blocking file descriptor.</span>
+    <span class="tok-kw">const</span> fd = <span class="tok-kw">try</span> os.open(<span class="tok-str">&quot;/dev/urandom&quot;</span>, os.O_RDONLY, <span class="tok-number">0</span>);
+    <span class="tok-kw">defer</span> os.close(fd);
+
+    <span class="tok-comment">// we did *not* use O_NONBLOCK, so the OS will not give us</span>
+    <span class="tok-comment">// EWOULDBLOCK.</span>
+    <span class="tok-kw">var</span> buf: [<span class="tok-number">100</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">const</span> nbytes = <span class="tok-kw">try</span> readBlocking(fd, &amp;buf);
+}
+
+<span class="tok-comment">/// Asserts that fd was opened in a blocking fashion.</span>
+<span class="tok-kw">fn</span> <span class="tok-fn">readBlocking</span>(fd: os.fd_t, buffer: []<span class="tok-type">u8</span>) !<span class="tok-type">usize</span> {
+    <span class="tok-kw">return</span> std.os.read(fd, buffer) <span class="tok-kw">catch</span> |err| <span class="tok-kw">switch</span> (err) {
+        <span class="tok-kw">error</span>.WouldBlock, <span class="tok-kw">error</span>.InputOutput =&gt; |e| {
+            std.debug.panic(<span class="tok-str">&quot;unexpected: {}\n&quot;</span>, e);
+        },
+        <span class="tok-kw">else</span> =&gt; |e| <span class="tok-kw">return</span> e,
+    };
+}</code></pre><pre><code class="shell">$ zig build-exe switch_err_set_2.zig
+$ ./switch_err_set_2
+</code></pre>
+
+    <p>
+    In this example, <code class="zig"><span class="tok-kw">error</span>.InputOutput</code> was lifted out of <code class="zig">Error</code>
+    since it is handled inside <code class="zig">readBlocking</code>. The <code class="zig">e</code> capture value
+    has type <code class="zig"><span class="tok-kw">error</span>{WouldBlock,InputOutput}</code>.
+    </p>
     
 
     <h2 id="Bit-Manipulation-Builtin-Functions"><a href="#toc-Bit-Manipulation-Builtin-Functions">Bit Manipulation Builtin Functions</a> <a class="hdr" href="#Bit-Manipulation-Builtin-Functions">§</a></h2>
@@ -1558,7 +1663,7 @@ All tests passed.
     <p>Shawn Landden improved the consistency of the names and parameters of bit manipulation intrinsics.</p>
     <ul>
       <li>Rename <code>@bitreverse</code> to @bitReverse to adhere to
-        <a href="https://ziglang.org/documentation/master/#Style-Guide">naming conventions</a>.</li>
+        <a href="https://ziglang.org/documentation/0.5.0/#Style-Guide">naming conventions</a>.</li>
       <li>Rename <code>@bswap</code> to @byteSwap.</li>
       <li>@clz, @ctz, @popCount, @byteSwap, and @bitReverse now have an explicit type parameter.</li>
     </ul>
