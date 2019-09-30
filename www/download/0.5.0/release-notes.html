@@ -2661,94 +2661,52 @@ error: TheSkyIsFalling
 
     <h2 id="Formatted-Printing"><a href="#toc-Formatted-Printing">Formatted Printing</a> <a class="hdr" href="#Formatted-Printing">§</a></h2>
 
-    TODO
+    <p>
+    Marc Tiehuis created
+    <a href="https://github.com/ziglang/zig/issues/1358">a plan to overhaul the std.fmt API</a>.
+    The plan is partially implemented in 0.5.0, but there is
+    <a href="https://github.com/ziglang/zig/issues/1358#issuecomment-511193492">remaining work</a>.
+    </p>
+    <p>
+    The main difference in 0.5.0 is the positional, precision, and width support.
+    This removes the odd width and precision specifiers found and replacing
+    them with the more consistent api described in #1358.
+    </p>
+    <p>
+    Take the following example:
+    </p>
+    <pre><code>{1:5.9}</code></pre>
+    <p>
+    This refers to the first argument (0-indexed) in the argument list. It
+    will be printed with a minimum width of 5 and will have a precision of 9
+    (if applicable).
+    </p>
+    <p>
+    Not all types correctly use these parameters just yet. There are still
+    some missing gaps to fill in. Fill characters and alignment have yet to
+    be implemented.
+    </p>
+    <p>In addition:</p>
     <ul>
       <li>Ryan Liptak added max_depth to <code class="zig">std.fmt.format</code> to avoid infinite
         recursion from self-references.</li>
       <li>Marc Tiehuis cleaned up fmt.zig with inferred enum literals and split the large test case up.</li>
+      <li>tgschultz fixed handling of slices of slices.</li>
+      <li>Evan Krause added support for zero-sized structs.</li>
+      <li>Michael Dusan fixed <code>std.fmt</code> to handle <code>std.SegmentedList</code>:<ul>
+          <li>add guards for use of prealloc_exp in SegmentedList.</li>
+          <li>define prealloc_exp even when invalid because std.fmt comptime triggers lazy-init.</li>
+          <li>fix std.fmt to print arrays of length 0 as style "[0]&lt;typename&gt;" because "&lt;typename&gt;@address" is n/a without address</li>
+      </ul></li>
+      <li>Marc Tiehuis moved pointer parsing out of main state machine. This allows us to
+        format a pointer with alignment/padding as we would with any other format specifier.
+        e.g. <code>{*:5}</code></li>
+      <li>Marc Tiehuis made <code>FormatOptions</code> arguments non-<code class="zig"><span class="tok-kw">comptime</span></code>.
+        No need and should help avoid exessive function monomorphizaton.</li>
+      <li>Marc Tiehuis passed full options struct to all internal functions.
+        The fill specifier is now handled in some cases. The default fill of '0' is now ' '
+        for integers and non-byte sequences.</li>
     </ul>
-    TODO https://github.com/ziglang/zig/issues/1358
-commit 8eaf1387c712c62e96fa165ac3390c8f8f924daa
-Author: tgschultz <tgschultz@gmail.com>
-Date:   Wed May 29 10:23:21 2019 -0500
-
-    Fix fmt.zig handling of slices of slices
-    
-    Discovered while calling testing.expectError on an error union with payload [][]const u8. Even though the payload was not going to be printed, the current format handling caused a compile error anyway because it couldn't be casted to []const u8. The new handling treats a []u8 as a string but otherwise treats the slice as a pointer.
-
-
-commit 11526b6e9da75ac682e59fbc2a37a738b8a23d6f
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Thu Jun 20 20:07:43 2019 +1200
-
-    breaking: Add positional, precision and width support to std.fmt
-    
-    This removes the odd width and precision specifiers found and replacing
-    them with the more consistent api described in #1358.
-    
-    Take the following example:
-    
-        {1:5.9}
-    
-    This refers to the first argument (0-indexed) in the argument list. It
-    will be printed with a minimum width of 5 and will have a precision of 9
-    (if applicable).
-    
-    Not all types correctly use these parameters just yet. There are still
-    some missing gaps to fill in. Fill characters and alignment have yet to
-    be implemented.
-commit 08e8d30dd642e42d8b8b16f43b487dbf42adb5ba
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Tue Jun 25 17:11:04 2019 +1200
-
-    Add parsing of fill and alignment in std.format
-    
-    These options are now available to use when printing, however nothing
-    currently makes use of these.
-commit a0ebfa64d9b8e98b31d37c80d118aab84f1a493e
-Author: Evan Krause <evangrayk@gmail.com>
-Date:   Sun Jul 28 18:37:35 2019 -0700
-
-    support zero-sized structs in zig.fmt.format
-
-commit bc982e65cf77aa6551029620ceaec8f3ae49202f
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Thu Jul 25 19:59:34 2019 -0400
-
-    fix std.fmt to handle std.SegmentedList
-    
-    - add guards for use of prealloc_exp in SegmentedList
-    - define prealloc_exp even when invalid because std.fmt comptime
-      triggers lazy-init
-    - fix std.fmt to print arrays of length 0 as style "[0]<typename>"
-      because "<typename>@address" is n/a without address
-
-commit 6844dafeca42daaf904bc4df0347c6fd625dbcaf
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Mon Aug 5 19:07:31 2019 +1200
-
-    std/fmt: Move pointer parsing out of main state machine
-    
-    This allows us to format a pointer with alignment/padding as we would
-    with any other format specifier.
-    
-    e.g. {*:5}
-commit e0447c6ddd71d400fc501bf33c4cb33dde4e3300
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Mon Aug 19 22:28:13 2019 +1200
-
-    std/fmt: Make FormatOptions arguments non-comptime
-    
-    No need and should help avoid exessive function monomorphizaton.
-
-commit 98859c885e8e66518c1081c56d203cdd77c51ce8
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Sun Aug 18 11:17:16 2019 +1200
-
-    std/fmt.zig: Pass full options struct to all internal functions
-    
-    The fill specifier is now handled in some cases. The default fill of '0'
-    is now ' ' for integers and non-byte sequences.
     
 
     <h2 id="Math"><a href="#toc-Math">Math</a> <a class="hdr" href="#Math">§</a></h2>
