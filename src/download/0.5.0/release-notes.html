@@ -229,7 +229,7 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
   <body>
     <div id="contents">
     <a href="/"><img src="../../zig-logo.svg"></a>
-    <h1>0.5.0 Release Notes (DRAFT, please don't publish yet)</h1>
+    <h1>0.5.0 Release Notes</h1>
     <p>
     <a href="/download">Download &amp; Documentation</a>
     </p>
@@ -794,7 +794,7 @@ int main(int argc, char **argv) {
     printf("Hello world\n");
     return 0;
 }</code></pre>
-<pre><code>$ zig build-exe --c-source hello.c -lc -target riscv64-linux-musl
+<pre><code class="shell">$ zig build-exe --c-source hello.c -lc -target riscv64-linux-musl
 $ qemu-riscv64 ./hello
 Hello world</code></pre>
     <p>
@@ -3095,12 +3095,52 @@ $</code></pre>
     {#header_close#}
 
     {#header_open|Zig ships with mingw-w64#}
-    TODO
-    TODO show cross compiling hello.c targeting windows, running with wine
-    TODO mention swarkland and zig package manager plans
-    ship with mingw-w64 v6.0.0 See #514
-    thank you to the IRC person who helped me a ton.
-    shout outs to mingw-w64 team for making their headers multi-arch
+    <p>
+    Zig now ships with the source code and header files to mingw-w64 (version 6.0.0),
+    and uses this to provide libc when targeting Windows.
+    </p>
+    <p>
+    Combining this with <a href="https://www.winehq.org/">Wine</a>, one can cross-compile
+    C code for Windows and run it, without even touching a Windows computer:
+    </p>
+    <p class="file">hello_windows.c</p>
+    <pre><code>#include &lt;stdio.h&gt;
+
+int main(int argc, char **argv) {
+    printf("Hello Windows\n");
+    return 0;
+}</code></pre>
+<pre><code class="shell">$ zig build-exe --c-source hello_windows.c -lc -target x86_64-windows-gnu
+$ wine hello_windows.exe
+Hello Windows</code></pre>
+    <p>Building and linking against mingw-w64 libc now has {#link|Test Coverage#}
+    for the <code>x86_64-windows-gnu</code> target.</p>
+    <p>
+    One of the use cases for this is creating {#link|Zig packages|Package Manager Status#}
+    out of C libraries, and there is now
+    <a href="https://github.com/andrewrk/zig-sdl">a proof of concept of this with SDL2</a>.
+    </p>
+    <p>
+    The open-source game <a href="https://wolfesoftware.com/legend-of-swarkland/">Legend of Swarkland</a>
+    is being written in Zig, and it uses this SDL2 package in order to support cross compiling
+    for Windows with nothing installed other than Zig. The developer, Josh, does not have a Windows
+    computer to test on, but has a brother who uses Windows he wants to be able to playtest his game.
+    Using only Zig and Wine, Josh can create Windows builds of his game and even test them, before sending
+    his brother an executable.
+    </p>
+<pre><code class="shell">$ git clone https://github.com/thejoshwolfe/legend-of-swarkland --recursive
+$ cd legend-of-swarkland
+$ zig build -Dtarget x86_64-windows-gnu
+$ ls zig-cache/bin
+legend-of-swarkland.exe           legend-of-swarkland_headless.pdb
+legend-of-swarkland_headless.exe  legend-of-swarkland.pdb</code></pre>
+    <p>
+    Integration with mingw-w64 is easy and clean, because their headers are already
+    multi-architecture. Thank you especially to IRC user <code>wbs</code>, who is
+    largely responsible for that, and for patiently helping me
+    work through my own issues caused by hacking up the mingw-w64 build system to
+    integrate into Zig.
+    </p>
     {#header_close#}
 
     {#header_open|Freestanding libc#}
