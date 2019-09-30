@@ -1269,13 +1269,65 @@ Hello from zig</code></pre>
 
     <h2 id="Android-Support"><a href="#toc-Android-Support">Android Support</a> <a class="hdr" href="#Android-Support">§</a></h2>
 
-    TODO
-    TODO tier 2 support for Android
-commit f7bf61a98349c7d888e8808047912c482a2d2560
-Author: meme <meme@users.noreply.github.com>
-Date:   Fri Sep 27 16:51:42 2019 -0400
+    <p><a href="https://github.com/meme">meme</a> joined the Zig community and contributed improvements
+    to the target <code>aarch64-linux-android</code>. Thanks to their efforts, Zig now has
+    <a href="#Tier-2-Support">Tier 2 Support</a> for Android.
+    </p>
+    <p>
+    Here's an example of building an Android executable with Zig:
+    </p>
+    <p class="file">hello_android.zig</p>
+    <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
-    support Android NDK and bionic
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    std.debug.warn(<span class="tok-str">&quot;Hello, Android!&quot;</span>);
+}</code></pre>
+<pre><code class="shell">$ zig build-exe hello_android.zig -target aarch64-linux-android
+$ file ./hello_android
+./hello_android: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, with debug_info, not stripped</code></pre>
+    <p>In this example, there is no <a href="#libc">libc</a> dependency. However, Zig does know how to integrate
+    with Android's libc. The first step is to create a libc text file describing where various paths
+    are. One can obtain a template for this file by executing <code>zig libc</code>. In this example,
+    I've taken the template and populated it based on the path to the Android NDK in my downloads
+    folder:</p>
+    <p class="file">android_libc.txt</p>
+    <pre><code># The directory that contains `stdlib.h`.
+# On POSIX-like systems, include directories be found with: `cc -E -Wp,-v -xc /dev/null`
+include_dir=/home/andy/Downloads/android-ndk-r20/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+
+# The system-specific include directory. May be the same as `include_dir`.
+# On Windows it's the directory that includes `vcruntime.h`.
+# On POSIX it's the directory that includes `sys/errno.h`.
+sys_include_dir=/home/andy/Downloads/android-ndk-r20/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+
+# The directory that contains `crt1.o` or `crt2.o`.
+# On POSIX, can be found with `cc -print-file-name=crt1.o`.
+# Not needed when targeting MacOS.
+crt_dir=/home/andy/Downloads/android-ndk-r20/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/21
+
+# The directory that contains `crtbegin.o`.
+# On POSIX, can be found with `cc -print-file-name=crtbegin.o`.
+# Not needed when targeting MacOS.
+static_crt_dir=/home/andy/Downloads/android-ndk-r20/toolchains/llvm/prebuilt/linux-x86_64/lib/gcc/aarch64-linux-android/4.9.x
+
+# The directory that contains `vcruntime.lib`.
+# Only needed when targeting MSVC on Windows.
+msvc_lib_dir=
+
+# The directory that contains `kernel32.lib`.
+# Only needed when targeting MSVC on Windows.
+kernel32_lib_dir=</code></pre>
+    <p class="file">hello_libc.zig</p>
+    <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">extern</span> <span class="tok-kw">fn</span> <span class="tok-fn">printf</span>(msg: [*]<span class="tok-kw">const</span> <span class="tok-type">u8</span>, ...) <span class="tok-type">c_int</span>;
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    _ = printf(<span class="tok-str">c&quot;hello android libc\n&quot;</span>);
+}</code></pre>
+<pre><code class="shell">$ zig build-exe hello_libc.zig -target aarch64-linux-android -lc --libc android_libc.txt
+$ file ./hello_libc
+./hello_libc: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped</code></pre>
     
     
 
