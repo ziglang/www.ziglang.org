@@ -1033,7 +1033,6 @@ Hello from zig</code></pre>
       <li>Come up with a way for the Continuous Integration service to create 32-bit ARM binaries
         for the <a href="/download">download page</a>.</li>
     </ul>
-
     
 
     <h2 id="MSYS2-Support"><a href="#toc-MSYS2-Support">MSYS2 Support</a> <a class="hdr" href="#MSYS2-Support">§</a></h2>
@@ -3212,67 +3211,33 @@ siphash(2,4)
 <li>x86_64-linux-musl</li>
 <li>x86_64-windows-gnu</li>
     </ul>
-    TODO libc headers before C language headers, and disable libunwind on arm32
     <h2 id="musl-1123"><a href="#toc-musl-1123">musl 1.1.23</a> <a class="hdr" href="#musl-1123">§</a></h2>
 
-    TODO 
-    TODO note that we have <a href="#Test-Coverage">Test Coverage</a> for building musl now.
-commit 291aaee97773e2f9c40e061410db52ca00f4d651
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Jun 1 16:59:12 2019 +0200
-
-    Stop the musl builder from skipping necessary files
-    
-    The code assumed that the architecture-specific bits, found in the arch/
-    subfolder, were only overrides for the generic .c files.
-    
-    Changed the logic to always include the whole architecture-specific
-    implementations and discard the generic ones, this way we won't exclude
-    files with no .c counterpart.
-commit ec92739022244154f4a7de7dab81dfad018a7954
-Merge: b1f8b53d d9943791
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Jul 16 20:07:05 2019 -0400
-
-    Merge branch 'update-musl'
-    
-    closes #2601
-
-commit d99437917363d0b550af5e20360bd07bc98367ba
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Jul 16 19:54:14 2019 -0400
-
-    update bundled musl source to 1.1.23
-
-commit f70ce707e2d35a5ed8349d03b6aa8d493792e180
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Jul 16 19:02:51 2019 -0400
-
-    update musl headers to musl v1.1.23
-commit fed5c12d9a2ab14c5bb66251ba6ee3e356bce8d3
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 30 15:02:23 2019 -0400
-
-    musl: fix alltypes.h and syscall.h not being correct
-    
-    The previous
-    [instructions](https://github.com/ziglang/zig/wiki/Updating-libc) for
-    updating musl libc headers had this (repeated for each architecture):
-    
-    make DESTDIR=build-all/arm install-headers ARCH=arm
-    
-    However musl's build system does not properly rebuild alltypes.h and
-    syscall.h from source, instead using whatever is cached from the
-    previous build. In the case of the previous time that I updated to musl
-    1.1.23, this happened to be the aarch64 architecture.
-    
-    As a workaround, one can remove the obj/ directory to force rebuilding
-    this file. Now the instructions say this (repeated for each architecture):
-    
-    rm -rf obj/ && make DESTDIR=build-all/arm install-headers ARCH=arm
-    
-    This commit updates the resulting headers after this workaround is
-    applied and the process headers tool is run again.
+    <p>
+    Zig ships with the source code to <a href="https://www.musl-libc.org/">musl</a>. Zig 0.5.0
+    updates to the 1.1.23 release of musl, plus a handful of patches to fix various issues
+    with <a href="#64-bit-ARM-Support">64-bit ARM Support</a> and <a href="#RISC-V-Support">RISC-V Support</a>. All these patches are merged
+    into musl upstream and will be part of the next release.
+    </p>
+    <p>
+    Previously, the way that Zig built musl from source skipped some necessary files.
+    LemonBoy solved this issue.
+    </p>
+    <p>
+    Additionally, the updating process for musl was brittle and confusing. Now, the process
+    is <a href="https://github.com/ziglang/zig/wiki/Updating-libc#musl">streamlined and fully documented</a>.
+    Unnecessary patches were dropped.
+    </p>
+    <p>
+    Now, Zig has excellent <a href="#Test-Coverage">Test Coverage</a> of musl. The Zig test suite tests building musl
+    for these targets:
+    </p>
+    <ul>
+      <li>x86_64-linux-musl</li>
+      <li>aarch64v8_5a-linux-musl</li>
+      <li>arm32v8_5a-linux-musleabihf</li>
+      <li>mipsel-linux-musl</li>
+    </ul>
     
 
     <h2 id="glibc-230"><a href="#toc-glibc-230">glibc 2.30</a> <a class="hdr" href="#glibc-230">§</a></h2>
@@ -4189,7 +4154,6 @@ One interesting thing here is that if the compiler was written in Zig this bug l
 TODO search for @builtinFunctions and replace with links to docs.
 TODO replace #xyz with issue links
 TODO change documentation links from master to 0.5.0
-TODO look at a diff of lang ref from 0.4.0..0.5.0 and do the improved/updated thing from 0.4.0 release notes
 TODO give emekoi credit for maintaining sublime text syntax
 TODO search for "commit" to make sure no more git commit logs in this document
 TODO run the HTML through an html validator, I probably messed up some tags
