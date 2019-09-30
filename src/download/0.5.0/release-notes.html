@@ -242,7 +242,7 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
     <p>
     This release features <strong>6 months of work</strong> and
     changes from <strong>67 different contributors</strong>, spread among
-    <strong>1534 commits</strong>.
+    <strong>1541 commits</strong>.
     </p>
     <p>
     Special thanks to my
@@ -690,7 +690,6 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
 </tr>
 </tbody>
 </table>
-
     {#header_open|Tier System#}
 
     {#header_open|Tier 1 Support#}
@@ -709,13 +708,13 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
 
     {#header_open|Tier 2 Support#}
     <ul>
-    <li> There may be some standard library implementations, but many abstractions
-   will give an "Unsupported OS" compile error. One can link with libc or other
-   libraries to fill in the gaps in the standard library.</li>
-   <li> These targets are known to work, but are not automatically tested, so there
-     are occasional regressions.</li>
-   <li> Some tests may be disabled for these targets as we work toward Tier 1
-     support.</li>
+    <li>There may be some standard library implementations, but many abstractions
+      will give an "Unsupported OS" compile error. One can link with libc or other
+      libraries to fill in the gaps in the standard library.</li>
+    <li>These targets are known to work, but are not automatically tested, so there
+      are occasional regressions.</li>
+    <li>Some tests may be disabled for these targets as we work toward Tier 1
+      support.</li>
     </ul>
     {#header_close#}
 
@@ -723,12 +722,11 @@ oo $ $ "$      o$$$$$$$$$    $$$$$$$$$$$$$    $$$$$$$$$o       $$$o$$o$
     <ul>
     <li>The standard library has little to no knowledge of the existence of this
         target.</li>
-   <li>Because Zig is based on LLVM, it has the capability to build for these
-     targets, and LLVM has the target enabled by default.</li>
-   <li>These targets are not frequently tested; one will likely need to contribute
-     to Zig in order to build for these targets.</li>
-   <li>The Zig compiler might need to be updated with a few things such as
-     <ul>
+    <li>Because Zig is based on LLVM, it has the capability to build for these
+      targets, and LLVM has the target enabled by default.</li>
+    <li>These targets are not frequently tested; one will likely need to contribute
+      to Zig in order to build for these targets.</li>
+    <li>The Zig compiler might need to be updated with a few things such as<ul>
        <li>what sizes are the C integer types</li>
        <li>C ABI calling convention for this target</li>
        <li>bootstrap code and default panic handler</li>
@@ -2273,12 +2271,54 @@ test "struct field explicit alignment" {
     {#header_close#}
 
     {#header_open|Variable Declarations as Methods#}
-    TODO
-commit 9983501ff2cccf828bb357dddefb21e36813046d
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Tue Sep 24 17:53:05 2019 -0400
+    <p>
+    Variable declarations can now be called as methods:
+    </p>
+    {#code_begin|test|var_decl_methods#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    add VarDecl support for struct-method call syntax implements #3306
+const Foo = struct {
+    a: u64 = 10,
+
+    fn one(self: Foo) u64 {
+        return self.a + 1;
+    }
+
+    const two = __two;
+
+    fn __two(self: Foo) u64 {
+        return self.a + 2;
+    }
+
+    const three = __three;
+
+    const four = custom(Foo, 4);
+};
+
+fn __three(self: Foo) u64 {
+    return self.a + 3;
+}
+
+fn custom(comptime T: type, comptime num: u64) fn (T) u64 {
+    return struct {
+        fn function(self: T) u64 {
+            return self.a + num;
+        }
+    }.function;
+}
+
+test "fn delegation" {
+    const foo = Foo{};
+    expect(foo.one() == 11);
+    expect(foo.two() == 12);
+    expect(foo.three() == 13);
+    expect(foo.four() == 14);
+}
+    {#code_end#}
+    <p>
+    Thank you to Michael Dusan for proposing and implementing this. #3306
+    </p>
     {#header_close#}
     {#header_close#}
 
