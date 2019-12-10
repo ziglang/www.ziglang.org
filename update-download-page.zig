@@ -78,7 +78,7 @@ fn render(
                             try out.write(trimmed);
                         }
                     } else {
-                        std.debug.warn("line {}: missing variable: {}\n", line, var_name);
+                        std.debug.warn("line {}: missing variable: {}\n", .{ line, var_name });
                         try out.write("(missing)");
                     }
                     state = State.EndBrace;
@@ -90,7 +90,7 @@ fn render(
                     state = State.Start;
                 },
                 else => {
-                    std.debug.warn("line {}: invalid byte: '0x{x}'", line, byte);
+                    std.debug.warn("line {}: invalid byte: '0x{x}'", .{ line, byte });
                     std.process.exit(1);
                 },
             },
