@@ -405,7 +405,7 @@ test "actually undefined behavior" {
 const std = @import("std");
 
 pub fn main() void {
-    std.debug.warn("Hello, world!\n");
+    std.debug.warn("Hello, world!\n", .{});
 }
       {#code_end#}
       <p>
@@ -514,7 +514,7 @@ pub fn main() void {
     const msg = "hello this is dog";
     var it = std.mem.tokenize(msg, " ");
     while (it.next()) |item| {
-        std.debug.warn("{}\n", item);
+        std.debug.warn("{}\n", .{item});
     }
 }
       {#code_end#}
@@ -570,10 +570,9 @@ const Device = struct {
       <p>Errors are values, and may not be ignored:</p>
       {#code_begin|exe_build_err|discard#}
 const std = @import("std");
-const File = std.fs.File;
 
 pub fn main() void {
-    _ = File.openRead("does_not_exist/foo.txt");
+    _ = std.fs.cwd().openRead("does_not_exist/foo.txt");
 }
       {#code_end#}
       <p>
@@ -581,12 +580,11 @@ pub fn main() void {
       </p>
       {#code_begin|exe|catch#}
 const std = @import("std");
-const File = std.fs.File;
 
 pub fn main() void {
-    const file = File.openRead("does_not_exist/foo.txt") catch |err| label: {
-        std.debug.warn("unable to open file: {}\n", err);
-        const stderr = std.io.getStdErr() catch @panic("unable to get stderr");
+    const file = std.fs.cwd().openRead("does_not_exist/foo.txt") catch |err| label: {
+        std.debug.warn("unable to open file: {}\n", .{err});
+        const stderr = std.io.getStdErr();
         break :label stderr;
     };
     file.write("all your codebase are belong to us\n") catch return;
@@ -598,10 +596,9 @@ pub fn main() void {
       </p>
       {#code_begin|exe_err|try#}
 const std = @import("std");
-const File = std.fs.File;
 
 pub fn main() !void {
-    const file = try File.openRead("does_not_exist/foo.txt");
+    const file = try std.fs.cwd().openRead("does_not_exist/foo.txt");
     defer file.close();
     try file.write("all your codebase are belong to us\n");
 }
@@ -655,10 +652,9 @@ fn charToDigit(c: u8) !u8 {
       </p>
       {#code_begin|exe_err|unreachable#}
 const std = @import("std");
-const File = std.fs.File;
 
 pub fn main() void {
-    const file = File.openRead("does_not_exist/foo.txt") catch unreachable;
+    const file = std.fs.cwd().openRead("does_not_exist/foo.txt") catch unreachable;
     file.write("all your codebase are belong to us\n") catch unreachable;
 }
       {#code_end#}
@@ -697,9 +693,9 @@ pub fn main() void {
     foo();
     bar();
 
-    std.debug.warn("first one:\n");
+    std.debug.warn("first one:\n", .{});
     std.debug.dumpStackTrace(trace1);
-    std.debug.warn("\n\nsecond one:\n");
+    std.debug.warn("\n\nsecond one:\n", .{});
     std.debug.dumpStackTrace(trace2);
 }
 
@@ -753,7 +749,7 @@ pub fn main() void {
         .len = 0,
     };
 
-    std.debug.warn("{}\n", list.items.len);
+    std.debug.warn("{}\n", .{list.items.len});
 }
       {#code_end#}
       {#header_close#}
@@ -777,9 +773,11 @@ fn printInfoAboutStruct(comptime T: type) void {
     inline for (info.Struct.fields) |field| {
         std.debug.warn(
             "{} has a field called {} with type {}\n",
-            @typeName(T),
-            field.name,
-            @typeName(field.field_type),
+            .{
+                @typeName(T),
+                field.name,
+                @typeName(field.field_type),
+            },
         );
     }
 }
@@ -912,7 +910,7 @@ pub fn main() !void {
     const device = c.soundio_get_output_device(soundio, default_output_index) orelse return error.OutOfMemory;
     defer c.soundio_device_unref(device);
 
-    std.debug.warn("Output device: {s}\n", ([*]const u8)(device.*.name));
+    std.debug.warn("Output device: {s}\n", .{([*]const u8)(device.*.name)});
 
     const outstream = c.soundio_outstream_create(device) orelse return error.OutOfMemory;
     defer c.soundio_outstream_destroy(outstream);
@@ -1063,7 +1061,7 @@ MATHTEST_EXPORT int32_t add(int32_t a, int32_t b);
 const std = @import("std");
 
 pub fn main() void {
-    std.debug.warn("Hello, world!\n");
+    std.debug.warn("Hello, world!\n", .{});
 }
       {#code_end#}
       <p>Now to build it for x86_64-windows, x86_64-macosx, and aarch64v8-linux:</p>
