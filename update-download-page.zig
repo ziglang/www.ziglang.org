@@ -35,12 +35,6 @@ fn render(
 
     var vars = try std.process.getEnvMap(allocator);
 
-    // FreeBSD is dealing with some weird upstream bug. Master is frozen here for now.
-    // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=244549
-    try vars.set("X86_64_FREEBSD_TARBALL", "zig-freebsd-x86_64-0.5.0+00be93456.tar.xz");
-    try vars.set("X86_64_FREEBSD_BYTESIZE", "34159892");
-    try vars.set("X86_64_FREEBSD_SHASUM", "3f4c2b55f13910950bf88d0dfe98565570366968b8d42c4cbf1353f3c636884d");
-
     var buffer = try std.Buffer.initSize(allocator, 0);
     errdefer buffer.deinit();
 
