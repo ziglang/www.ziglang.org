@@ -44,7 +44,7 @@ fn render(
         VarName,
         EndBrace,
     };
-    const out = &std.io.BufferOutStream.init(&buffer).stream;
+    const out = buffer.outStream();
     var state = State.Start;
     var var_name_start: usize = undefined;
     var line: usize = 1;
@@ -75,11 +75,11 @@ fn render(
                         if (fmt == .html and mem.endsWith(u8, var_name, "BYTESIZE")) {
                             try out.print("{Bi:.1}", .{try std.fmt.parseInt(u64, trimmed, 10)});
                         } else {
-                            try out.write(trimmed);
+                            try out.writeAll(trimmed);
                         }
                     } else {
                         std.debug.warn("line {}: missing variable: {}\n", .{ line, var_name });
-                        try out.write("(missing)");
+                        try out.writeAll("(missing)");
                     }
                     state = State.EndBrace;
                 },
