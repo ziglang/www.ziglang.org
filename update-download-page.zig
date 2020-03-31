@@ -3,7 +3,7 @@ const path = std.fs.path;
 const mem = std.mem;
 
 pub fn main() !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.direct_allocator);
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
     const allocator = &arena.allocator;
@@ -31,7 +31,7 @@ fn render(
         plain,
     },
 ) !void {
-    const in_contents = try std.io.readFileAlloc(allocator, in_file);
+    const in_contents = try std.fs.cwd().readFileAlloc(allocator, in_file, 1 * 1024 * 1024);
 
     var vars = try std.process.getEnvMap(allocator);
 
@@ -99,5 +99,5 @@ fn render(
             line += 1;
         }
     }
-    try std.io.writeFile(out_file, buffer.toSliceConst());
+    try std.fs.cwd().writeFile(out_file, buffer.span());
 }
