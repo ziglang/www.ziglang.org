@@ -199,7 +199,7 @@
     </style>
   </head>
   <!--
-                                .m//oooo/:.```h``y +/```.:/+++/oyo                                  
+                                 .m//oooo/:.```h``y +/```.:/+++/oyo                                  
                                `:yNy+-``       h` s +/       ``-/yds:`                              
                              -sdy/.            h` s +/            `:sho-                            
                            :yh+.               h` o +/               `/yy-                          
@@ -285,6 +285,20 @@
     <p>
     As far as Zig is concerned, the primary benefits of the new LLVM version are bug
     fixes, especially for {#link|ARM Support#} and {#link|MIPS Support#}.
+    </p>
+    <p>
+    This is the first release of <a href="https://lld.llvm.org/">LLD</a> that has all of Zig's patches
+    merged upstream. Consequently, Zig's source repository no longer includes a fork of LLD sources.
+    Amusingly, it also means that <a href="https://ziglang.org/download/0.6.0/zig-0.6.0.tar.xz">zig-0.6.0.tar.xz</a> is 0.5 MiB smaller than
+    <a href="https://ziglang.org/download/0.5.0/zig-0.5.0.tar.xz">zig-0.5.0.tar.xz</a>,
+    since the deletion of LLD sources saved more space than all the rest of the changes made
+    in this release cycle combined. Note that the {#link|Bootstrap Tarball#} bundles all dependencies
+    of the Zig compiler, which includes LLVM, LLD, and Clang.
+    </p>
+    <p>
+    Thanks to LemonBoy for submitting patches to update Zig's codebase to LLVM 10, as well as
+    submitting countless bug reports and patches upstream to LLVM and LLD, to get various
+    cross-compiling issues sorted out.
     </p>
     {#header_close#}
 
@@ -768,16 +782,141 @@
     {#header_close#}
     {#header_close#}
 
+    {#header_open|Windows Support#}
+commit 10f6176f3dea426d97b19e7d890947b5e07346af
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Oct 16 13:12:35 2019 -0400
+
+    only look for .defs when needed; remove samsrv.dll cross compiling support
+    
+    previously zig would look for all the .defs even when not needed,
+    wasting time. also, we only had samsrv definitions for some architectures.
+    remove cross compiling support for this.
+
+commit 5bfea3f1ea4b5c81321583af7aa7549e5a81cf3c
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Oct 16 12:43:57 2019 -0400
+
+    add more cross compiling support for windows system dlls
+
+commit cb8dacabd8826c8edde53d42df63a06891cbade7
+Author: emekoi <emekankurumeh@outlook.com>
+Date:   Tue Oct 22 19:34:34 2019 -0500
+
+    explicity linked ntdll on mingw-w64
+    {#header_open|32-bit Windows Support#}
+commit 6a687bda76a34775bde35ee386e59f53961341f7
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sun Oct 6 16:45:51 2019 +0200
+
+    Support for TLS on Win32
+
+commit 93a49076f725e6e64f05b6be8422312c7dcda6d0
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sun Oct 6 13:24:05 2019 +0200
+
+    Initial support for i386-windows-msvc target
+commit c9a3c945dbc8d431fa5bdaf672401c312ead480f
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Wed Oct 9 22:09:58 2019 +0200
+
+    Add a bunch of mingw lib32 .def files
+    
+    Possibly incomplete, but enough to let the test suite compile & pass.
+
+commit b96fa894625fc1aeb5f381dd52d291a6fc170fd1
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Wed Oct 9 22:08:49 2019 +0200
+
+    Compile the architecture-specific mingw sources
+
+commit 9ae293ae3bda918280a9ee254685ec9468e7d141
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Wed Oct 9 22:07:05 2019 +0200
+
+    Remove x86/Windows name mangling hack
+    
+    Let's fix this properly by generating the correct lib files from the
+    mingw sources.
+commit dfcbca8d2fed33c1fbd47b0b4e98ed0c214fa7e6
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Wed Oct 9 22:49:33 2019 +0200
+
+    Add i386/mingw to the test rooster
+
+commit 4de3f9d8537fb32017265a2228f9799481db11a0
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Thu Oct 10 09:25:39 2019 +0200
+
+    Fix stack-probe symbol redefinition
+
+commit 8aa20227ed45294da9606222d0b20eb922cecb2e
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Fri Oct 11 19:13:59 2019 +0200
+
+    Fix cross-compilation to i386-windows-msvc
+    
+    Use Mingw's .def files to build a .lib when possible and show an error
+    otherwise.
+commit 2b624fea84abdd963ea06aca648b4da1477ec65f
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Oct 12 10:56:16 2019 +0200
+
+    Add dlltool functionality
+    
+    {#header_close#}
+    {#header_close#}
+
     {#header_open|RISC-V Support#}
     <p>TODO</p>
+commit ba711f1115b76d85b13fc64636c4a4af8405cc1e
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sun Oct 13 12:12:33 2019 +0200
+
+    Add ELF architecture constant for RISC-V
+commit b1f3f59d660bbe163502daa6f0acd560782f49d8
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sun Oct 13 12:13:41 2019 +0200
+
+    Fix fp-based backtracing on RISC-V
+    
+    The fp points to the top of the frame instead of pointing to the old fp,
+    compensate this difference with an offset.
     {#header_close#}
 
     {#header_open|ARM Support#}
     <p>TODO</p>
+    TODO promote aarch64 to Tier 1 support. many bugs solved.
+commit ead9630c135b86c77de9774635f7b5c55ce62f41
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Oct 12 20:52:10 2019 +0200
+
+    Fix signedness for some fields in ARM stat definition
+commit f8bd1cd3b11802d3566d287167d79d3cfc3ef41d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Oct 24 19:13:21 2019 -0400
+
+    implement partial C ABI support for aarch64
+
+
+    TODO note that we gained aarch64 ci support and this release as well as 
+    master branch have aarch64 tarballs.
+
+    Thanks to the {#link|Bootstrap Tarball#} this release also has a 32-bit arm
+    binary available (armv7a).
     {#header_close#}
 
     {#header_open|FreeBSD Support#}
     <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|DragonFlyBSD Support#}
+    <p>TODO</p>
+commit 33cc2044811e41a74e3112fc0abcc5dc6fd34836
+Author: Tse <1@tse.gratis>
+Date:   Wed Oct 23 01:06:35 2019 +0300
+
+    DragonFlyBSD support
     {#header_close#}
 
     {#header_open|WebAssembly Support#}
@@ -786,6 +925,47 @@
 
     {#header_open|UEFI Support#}
     <p>TODO</p>
+commit 77104da43e7269791b9cb5d33a0f76f9a9f70e86
+Author: Nick Erdmann <n@nirf.de>
+Date:   Mon Oct 7 14:53:14 2019 +0200
+
+    std/os/uefi: add Guid format()
+
+commit e6eae25053581032f7b26cb86fa6c8c84465e1c8
+Author: Nick Erdmann <n@nirf.de>
+Date:   Wed Oct 16 19:42:44 2019 +0200
+
+    std/os/uefi: add documentation
+
+commit c8dec5729cabb90fa56fad2b6d77171189e01703
+Author: Nick Erdmann <n@nirf.de>
+Date:   Fri Oct 18 20:11:28 2019 +0200
+
+    std/build: make subsystem configurable
+
+commit 8774b1d9478139a8da0f43c49fc33e01c74a6a3f
+Author: Nick Erdmann <n@nirf.de>
+Date:   Fri Oct 18 19:49:02 2019 +0200
+
+    std/os/windows: remove subsystem detection for uefi
+commit 78b54d9c96c84e286b20a2a144eca0b9ddc3fba5
+Author: Nick Erdmann <n@nirf.de>
+Date:   Thu Nov 7 02:49:45 2019 +0100
+
+    std/os/uefi: protocol handling improvements
+
+commit cef51eaffb8fdb7257bc08a61f4fdc7eb7bac457
+Author: Nick Erdmann <n@nirf.de>
+Date:   Thu Nov 7 02:47:57 2019 +0100
+
+    std/os/uefi: snp, mnp, ip6, and udp6 support
+
+commit f4767186dd34118a27c205fe481b42c33e7ba0d3
+Author: Nick Erdmann <n@nirf.de>
+Date:   Mon Oct 28 23:12:28 2019 +0100
+
+    std/os/uefi: loading images
+
     {#header_close#}
 
     {#header_open|iOS Support#}
@@ -794,6 +974,21 @@
 
     {#header_open|MIPS Support#}
     <p>TODO</p>
+commit 17f2af10b56dd508ebd4a22834fd594cb5a49864
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Tue Oct 1 15:57:38 2019 +0200
+
+    Correct signal bits for MIPS
+    
+    Also enable the segfault handler for all the supported architectures
+    beside MIPS.
+
+commit 7640bec8e0e735eaba49087840b7f6e6b2dd74ab
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Thu Oct 3 15:32:47 2019 +0200
+
+    Fix pipe syscall for MIPS
+
     {#header_close#}
 
     {#header_open|Android Support#}
@@ -801,27 +996,420 @@
     {#header_close#}
     {#header_close#}
 
+    {#header_open|Bootstrap Tarball#}
+    <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Target Details#}
+    <p>TODO reorganization of std.Target and std.CrossTarget</p>
+    <p>TODO awareness of cpu models and cpu features</p>
+    <p>TODO detection of native target info, dynamic linker, cpu features</p>
+    <p>TODO show improved cli</p>
+commit 60cd11bd4b48e4dfdf11d1f25cb1ee842a49ee1d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Oct 24 01:06:03 2019 -0400
+
+    get rid of std.os.foo.is_the_target
+    
+    It had the downside of running all the comptime blocks and resolving
+    all the usingnamespaces of each system, when just trying to discover if
+    the current system is a particular one.
+    
+    For Darwin, where it's nice to use `std.Target.current.isDarwin()`, this
+    demonstrates the utility that #425 would provide.
+
+commit d91fc0fdd8f42dc8c38347e1a0ec87fd583c1d3d
+Author: Noam Preil <pleasantatk@gmail.com>
+Date:   Sat Oct 26 14:08:11 2019 -0400
+
+    Don't use SSE on freestanding
+    {#header_close#}
+
     {#header_open|Language Changes#}
     <ul>
-      <li>TODO</li>
+      <li>Improved names of error sets when using merge error sets operator ({#syntax#}||{#endsyntax#}).</li>
+      <li>Vexu removed pub syntax for container fields.</li>
+      <li>Type coercion from {#syntax#}*[0]T{#endsyntax#} to {#syntax#}E![]const T{#endsyntax#} is now allowed. This is an unambiguous, safe cast.</li>
     </ul>
+
+    {#header_open|Type Coercion Syntax#}
+    TODO
+    introduce `@as` builtin for type coercion
+    
+    This commit also hooks up type coercion (previously called implicit
+    casting) into the result location mechanism, and additionally hooks up
+    variable declarations, maintaining the property that:
+    
+        var a: T = b;
+    
+    is semantically equivalent to:
+    
+        var a = @as(T, b);
+    
+    See #1757
+    {#header_close#}
 
     {#header_open|SIMD#}
     <p>TODO</p>
+commit cb8af1c6d48d5fdb26484a070b8af069c4152049
+Merge: a26e9fa72 9a08de93b
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Nov 5 13:39:56 2019 -0500
+
+    Merge branch 'vector-element-access'
+    
+    This introduces the concept of vector index being part of a pointer
+    type. This avoids vectors having well-defined in-memory layout, and
+    allows vectors of any integer bit width to work the same way.
+    
+    When a vector is indexed with a scalar, this is vector element access,
+    which this branch implements. When a vector is indexed with a vector,
+    this is gather/scatter, which is not implemented in this branch.
+    
+    closes #3575
+    closes #3580
+    {#header_close#}
+
+    {#header_open|Unicode Character Literals#}
+commit ae7392e504e7765b05d98636cc249cbf92233f5c
+Author: Nick Erdmann <n@nirf.de>
+Date:   Sun Oct 6 19:52:35 2019 +0200
+
+    unicode character literals
+    {#header_close#}
+
+    {#header_open|@newStackCall Removed#}
+    TODO this builtin had serious flaws; didn't work as it was supposed to
+    TODO originally it was designed as a way to solve safe recursion, but now
+         we have a better solution
+    TODO whether it is revived before 1.0 or permanently gone is to be determined.
+    {#header_close#}
+
+    {#header_open|Non-Exhaustive Enums#}
+    TODO
     {#header_close#}
     {#header_close#}
 
     {#header_open|Standard Library#}
     <ul>
-      <li>TODO</li>
+      <li>LemonBoy added support for the statx syscall.</li>
+      <li>Jonathan Marler fixed accept function API.</li>
+      <li>std.os.accept4: improve docs and integrate with evented I/O</li>
+      <li>Jonathan Marler improved TTY detection to take into account TERM=dumb.</li>
+      <li>{#syntax#}std.os.dup2{#endsyntax#} makes EBADF more obvious in stack traces.</li>
+      <li>lukechampine added an AES implementation to {#syntax#}std.crypto{#endsyntax#}.
+      data-man improved the code, replacing variables with constants. lukechampine
+      additionally added support for AES-CTR.</li>
+      <li>daurnimator updated the standard library OS bits to Linux 5.6, added missing OS bits,
+        organized declarations, and swapped constants for {#link|Non-Exhaustive Enums#}.</li>
+      <li>Brendan Hansknecht improved big ints to use the more efficient karatsuba algorithm
+        for multiplication.</li>
+      <li>daurnimator contributed LinearFifo which is useful for buffers.</li>
+      <li>{#syntax#}std.ChildProcess.spawn{#endsyntax#} now has a consistent error set across targets.</li>
     </ul>
+
+commit 8cf3a4d586b675a239c9cfa1ea07fa9f59ebf0a4
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Oct 16 15:10:38 2019 -0400
+
+    [breaking] standardize std.os execve functions
+    
+     * `std.os.execve` had the wrong name; it should have been
+       `std.os.execvpe`. This is now corrected.
+     * introduce `std.os.execveC` which does not look at PATH, and uses
+       null terminated parameters, matching POSIX ABIs. It does not
+       require an allocator.
+     * fix typo nonsense doc comment in `std.fs.MAX_PATH_BYTES`.
+     * introduce `std.os.execvpeC`, which is like `execvpe` except it
+       uses null terminated parameters, matching POSIX ABIs, and thus
+       does not require an allocator.
+     * `std.os.execvpe` implementation is reworked to only convert
+       parameters and then delegate to `std.os.execvpeC`.
+     * `std.os.execvpeC` improved to handle `ENOTDIR`. See #3415
+
+commit 1b07ff7be04d9d193425302f79f5b2cfec02da0a
+Author: Sebsatian Keller <sebastiankeller@fastmail.net>
+Date:   Wed Oct 2 01:07:33 2019 +0200
+
+    Add 'missing' consts to math.zig
+    
+    The C library defines constants for log2e and sqrt2 etc. Those should also be available in zig.
+
+    {#header_open|Async I/O#}
+    TODO
+    startup code sets up event loop if I/O mode is declared evented
+    startup code respects root source file's event_loop if present
+
+
+    TODO go through kprotty's changes and explain it. I left out a lot of kprotty commits here
+
+commit 4530adbd3314c28e2cfe831e7a20b154614e2c9c
+Author: Vexu <15308111+Vexu@users.noreply.github.com>
+Date:   Wed Nov 6 21:41:35 2019 +0200
+
+    use global event loop in std.event types
+
+    {#header_close#}
 
     {#header_open|Debug Info and Stack Traces#}
     <p>TODO</p>
+    TODO mention LemonBoy's improvements which got stack traces working in release builds
+commit b164e0ae5599610e39804845331caab612010c13
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sun Oct 13 17:37:04 2019 +0200
+
+    Fix stack iteration stop condition
+
+commit c8b6e552991136e3a45095007ae4c3594be02ef9
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Mon Nov 4 09:58:02 2019 +0100
+
+    Make the `leb` module available to non-std code
     {#header_close#}
 
     {#header_open|Formatted Printing#}
     <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Filesystem#}
+    <p>TODO talk about all the file system API changes</p>
+    TODO Mention stratact's improvements to make directory iteration not require heap allocation.
+
+commit 5b1a492012241276a4b7539ca6664234f0629c79
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Oct 20 21:48:23 2019 -0400
+
+    breaking: improve std.fs directory handling API
+    
+     * Added `std.c.unlinkat` and `std.os.unlinkat`.
+     * Removed `std.fs.MAX_BUF_BYTES` (this declaration never made it to
+       master branch)
+     * Added `std.fs.Dir.deleteTree` to be used on an open directory handle.
+     * `std.fs.deleteTree` has better behavior for both relative and
+       absolute paths. For absolute paths, it opens the base directory
+       and uses that handle for subsequent operations. For relative paths,
+       it does a similar strategy, using the cwd handle.
+     * The error set of `std.fs.deleteTree` is improved to no longer have
+       these possible errors:
+       - OutOfMemory
+       - FileTooBig
+       - IsDir
+       - DirNotEmpty
+       - PathAlreadyExists
+       - NoSpaceLeft
+     * Added `std.fs.Dir.posix_cwd` which is a statically initialized
+       directory representing the current working directory.
+     * The error set of `std.Dir.open` is improved to no longer have these
+       possible errors:
+       - FileTooBig
+       - IsDir
+       - NoSpaceLeft
+       - PathAlreadyExists
+       - OutOfMemory
+     * Added more alternative functions to `std.fs` for when the path
+       parameter is a null terminated string. This can sometimes be more
+       effecient on systems which have an ABI based on  null terminated
+       strings.
+     * Added `std.fs.Dir.openDir`, `std.fs.Dir.deleteFile`, and
+       `std.fs.Dir.deleteDir` which all operate on an open directory handle.
+     * `std.fs.Walker.Entry` now has a `dir` field, which can be used to do
+       operations directly on `std.fs.Walker.Entry.basename`, avoiding
+       `error.NameTooLong` for deeply nested paths.
+     * Added more docs to `std.os.OpenError`
+    
+    This commit does the POSIX components for these changes. I plan to
+    follow up shortly with a commit for Windows.
+    {#header_close#}
+
+    {#header_open|Networking#}
+    TODO explain status
+commit bf16fc210bc765202489ae83e0ad1dce8d9b4e16
+Author: Luna <git@l4.pm>
+Date:   Sat Oct 26 22:00:50 2019 -0300
+
+    fix std.os.accept4
+    
+     - add WouldBlock to list of errors in AcceptError
+     - ptrCast addr_size to the system's socklen_t, instead of assuming it's
+        usize
+
+
+
+    TODO std.net.getAddressList - basic DNS address resolution for linux without libc
+    std.net: port the RFC 3484/6724 destination address selection from musl libc
+
+commit c3d816a98e1126f5de4ec1a45e5f65bb2ff2f43c
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Oct 29 22:59:30 2019 -0400
+
+    std lib networking improvements, especially non-blocking I/O
+    
+     * delete the std/event/net directory
+     * `std.event.Loop.waitUntilFdReadable` and related functions
+       no longer have possibility of failure. On Linux, they fall
+       back to poll() and then fall back to sleep().
+     * add some missing `noasync` decorations in `std.event.Loop`
+     * redo the `std.net.Server` API. it's quite nice now, but
+       shutdown does not work cleanly. There is a race condition with
+       close() that I am actively working on.
+     * move `std.io.OutStream` to its own file to match `std.io.InStream`.
+       I started working on making `write` integrated with evented I/O,
+       but it got tricky so I backed off and filed #3557. However
+       I did integrate `std.os.writev` and `std.os.pwritev` with evented I/O.
+     * add `std.Target.stack_align`
+     * move networking tests to `lib/std/net/test.zig`
+     * add `std.net.tcpConnectToHost` and `std.net.tcpConnectToAddress`.
+     * rename `error.UnknownName` to `error.UnknownHostName` within the
+       context of DNS resolution.
+     * add `std.os.readv`, which is integrated with evented I/O.
+     * `std.os.preadv`, is now integrated with evented I/O.
+     * `std.os.accept4` now asserts that ENOTSOCK and EOPNOTSUPP never
+        occur (misuse of API), instead of returning errors.
+     * `std.os.connect` is now integrated with evented I/O.
+       `std.os.connect_async` is gone. Just use `std.os.connect`.
+     * fix false positive dependency loop regarding async function frames
+     * add more compile notes to help when dependency loops occur
+       in determining whether a function is async.
+     * ir: change an assert to ir_assert to make it easier to find
+       workarounds for when such an assert is triggered. In this case
+       it was trying to parse an IPv4 address at comptime.
+commit 0de862e8bafce9a58c1018e9b6f81b3d17279c10
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Oct 30 19:27:42 2019 -0400
+
+    make std.net more portable
+    
+     * Delete `std.net.TmpWinAddr`. I don't think that was ever meant to
+       be a real thing.
+     * Delete `std.net.OsAddress`. This abstraction was not helpful.
+     * Rename `std.net.Address` to `std.net.IpAddress`. It is now an extern
+       union of IPv4 and IPv6 addresses.
+     * Move `std.net.parseIp4` and `std.net.parseIp6` to the
+       `std.net.IpAddress` namespace. They now return `IpAddress` instead of
+       `u32` and `std.net.Ip6Addr`, which is deleted.
+     * Add `std.net.IpAddress.parse` which accepts a port and parses either
+       an IPv4 or IPv6 address.
+     * Add `std.net.IpAddress.parseExpectingFamily` which additionally
+       accepts a `family` parameter.
+     * `std.net.IpAddress.initIp4` and `std.net.IpAddress.initIp6` are
+       improved to directly take the address fields instead of a weird
+       in-between type.
+     * `std.net.IpAddress.port` is renamed to `std.net.IpAddress.getPort`.
+     * Added `std.net.IpAddress.setPort`.
+     * `os.sockaddr` struct on all targets is improved to match the
+       corresponding system struct. Previously I had made it a union of
+       sockaddr_in, sockaddr_in6, and sockaddr_un. The new abstraction for
+       this is now `std.net.IpAddress`.
+     * `os.sockaddr` and related bits are added for Windows.
+     * `os.sockaddr` and related bits now have the `zero` fields default
+       to zero initialization, and `len` fields default to the correct size.
+       This is enough to abstract the differences across targets, and so
+       no more switch on the target OS is needed in `std.net.IpAddress`.
+     * Add the missing `os.sockaddr_un` on FreeBSD and NetBSD.
+     * `std.net.IpAddress.initPosix` now takes a pointer to `os.sockaddr`.
+
+    canonicalize std.os IPPROTO constants
+
+commit 2e0dd5733f9aec168f72167ca0a0e306b2810ae2
+Author: Luna <git@l4.pm>
+Date:   Sat Nov 2 16:46:48 2019 -0300
+
+    add FileNotFound to os.ConnectError error set
+
+commit d535bf2c7d22ff2039158bfa8d21bfb012a34c0c
+Author: Luna <git@l4.pm>
+Date:   Sat Nov 2 16:41:32 2019 -0300
+
+    add FileNotFound error to os.connect
+
+commit 9458620e18cb89b71cd0ad2755b9a7ae4f63e846
+Author: Luna <git@l4.pm>
+Date:   Fri Nov 8 19:59:30 2019 -0300
+
+    replace Address.parse Address.parseIp
+
+commit 5d05cfcfe6144a7f49f57cb376863edd0059d9ca
+Author: Luna <git@l4.pm>
+Date:   Fri Nov 8 19:35:04 2019 -0300
+
+    rename IpAddress to Address, add Address.unix
+
+commit 05ae21b78ed58e621fd2c10456a3f100a8107e3a
+Author: Luna <git@l4.pm>
+Date:   Sat Nov 9 12:51:33 2019 -0300
+
+    make StreamServer.listen family-agnostic
+    
+     - rename Address.parseUnix to Address.initUnix
+
+commit f4d8dc278b312fc3eccf33a37cfe89c7c012d6fd
+Author: Luna <git@l4.pm>
+Date:   Sat Nov 9 12:40:56 2019 -0300
+
+    rename TcpServer -> StreamServer
+    
+     - add AF_UNIX support to getOsSockLen
+
+commit 348c0232a5612eb9bdb445e80e6e201d24911dcc
+Author: Luna <git@l4.pm>
+Date:   Sat Nov 9 14:53:48 2019 -0300
+
+    miscellaneous fixes
+    
+     - make connextUnixSocket use std.net.Address
+     - fix StreamServer.listen giving wrong protocol for unix sockets
+
+commit c8a8da28049d2e9aece857359725b2a8f6d3732b
+Author: Luna <git@l4.pm>
+Date:   Sun Nov 10 16:44:18 2019 -0300
+
+    remove builtin.os check in Address.initUnix
+
+commit d1eabe81a99c3fe6c0e551e9bab90a3bbae509fe
+Author: Luna <git@l4.pm>
+Date:   Sun Nov 10 14:38:33 2019 -0300
+
+    add sockaddr_un to os/bits/windows
+
+    Luna: std.net: add unix socket support to Address and StreamServer
+
+commit 6e786b60d4fb3a39b717e077d034131be613d6aa
+Author: Vexu <15308111+Vexu@users.noreply.github.com>
+Date:   Mon Nov 4 19:54:36 2019 +0200
+
+    support ipv4-mapped ipv6 addresses
+
+commit 32ac1b5927ba9314b9fa0ec2bb21dba4b2e66c66
+Author: Vexu <15308111+Vexu@users.noreply.github.com>
+Date:   Mon Nov 4 18:59:14 2019 +0200
+
+    improve ipv6 parsing and formatting
+
+commit 6c1728206288264c4d2508a190d392ade68d115c
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Nov 4 14:39:59 2019 -0500
+
+    std.os.read can fail with ConnectionResetByPeer
+
+commit a26e9fa7238e972301f761db80434fa0205d1016
+Author: Vexu <15308111+Vexu@users.noreply.github.com>
+Date:   Mon Nov 4 23:11:52 2019 +0200
+
+    add special formatting for ipv4-mapped ipv6 addresses
+    {#header_close#}
+
+    {#header_open|JSON#}
+commit a0abd3be85a6c24a913ee650e1fd51bf3f457c68
+Author: xackus <14938807+xackus@users.noreply.github.com>
+Date:   Sun Oct 27 10:45:54 2019 +0100
+
+    fix json parser crashing on empty input
+    remove unreachable code
+    <ul>
+      <li>Sebastian Keller added {#syntax#}std.json.WriteStream.writeJson{#endsyntax#}.</li>
+      <li>Sebastian Keller fixed a leak in the json parser.</li>
+      <li>Sebastian Keller: std.json.Value: added dumpStream(), utilize WriteStream for dump().</li> 
+    </ul>
     {#header_close#}
     {#header_close#}
 
@@ -829,6 +1417,94 @@
     <ul>
       <li>TODO</li>
     </ul>
+
+commit dc080573d160a444e2e7c1fb88fac27c8060269f
+Author: Maximilian Hunt <max@huntw3.com>
+Date:   Fri Oct 11 09:41:21 2019 +0100
+
+    Add documentation on function parameter type inference.
+
+commit 8960e8090e2c5a5f491e09baf8df65f52d0daf77
+Author: xackus <14938807+xackus@users.noreply.github.com>
+Date:   Sun Oct 27 21:35:22 2019 +0100
+
+    make implicit cast of tagged unions to enums easier to find in docs
+    {#header_open|Standard Library Documentation#}
+    <p>TODO</p>
+    add -fdump-analysis to dump type information to json
+    
+    This commit adds -fdump-analysis which creates
+    a `$NAME-analysis.json` file with all of the finished
+    semantic analysis that the stage1 compiler produced.
+    It contains types, packages, declarations, and files.
+    
+    This is an initial implementation; some data will be
+    missing. However it's easy to improve the implementation,
+    which is in `src/dump_analysis.cpp`.
+    
+    The next step for #21 will be to create Zig code which parses
+    this json file and creates user-facing HTML documentation.
+    
+    This feature has other uses, however; for example, it could
+    be used for IDE integration features until the self-hosted
+    compiler is available.
+
+    proof of concept of stage1 doc generation
+    
+    This commit adds `-fgenerate-docs` CLI option, and it outputs:
+     * doc/index.html
+     * doc/data.js
+     * doc/main.js
+    
+    In this strategy, we have 1 static html page and 1 static javascript
+    file, which loads the semantic analysis dump directly and renders it
+    using dom manipulation.
+    
+    Currently, all it does is list the declarations. But there is a lot more
+    data available to work with. The next step would be making the
+    declarations hyperlinks, and handling page navigation.
+    
+    Another strategy would be to generate a static site with no javascript,
+    based on the semantic analysis dump that zig now provides. I invite the
+    Zig community to take on such a project. However this version which
+    heavily relies on javascript will also be a direction explored.
+    
+    I also welcome contributors to improve the html, css, and javascript of
+    what this commit started, as well as whatever improvements are necessary
+    to the static analysis dumping code to provide more information.
+    
+    See #21.
+
+    TODO use git log to find out who submitted patches to generated docs and thank them
+
+    TODO mention merging dumps tool
+
+commit c71857703f23979334b49f02a5dd4e4eb6f6dea7
+Author: Felix Queißner <felix@ib-queissner.de>
+Date:   Tue Oct 22 20:58:27 2019 +0200
+
+    Adds documentation for std.fmt.format grammar and customization. (#3474)
+
+commit 6fdeaac338f3a4a1f3455653ce29bf6ce4bbe335
+Author: Nathan Michaels <nathan@nmichaels.org>
+Date:   Mon Oct 28 03:57:23 2019 -0400
+
+    Add some documentation for standard library things. (#3540)
+    
+    * Add some documentation for standard library things.
+    
+    Added a bunch of descriptions for array_list.
+    Added some usage notes for failing_allocator.
+    Documented some of mem.Allocator.
+
+    <ul>
+      <li>Nathan Michaels documented PriorityQueue.</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Safety#}
+    TODO Resuming non-suspended functions now has runtime safety. #3469
     {#header_close#}
 
     {#header_open|zig build#}
@@ -837,10 +1513,34 @@
     that way until at least the {#link|package manager|Package Manager Status#} is complete.
     However, there were still improvements to <code>zig build</code> this release cycle:
     </p>
+    <ul>
+      <li>Bumped default max exec output size to 400 KB. #3415</li>
+      <li>{#syntax#}addIncludeDir{#endsyntax#} does <code>-I</code> instead of <code>-isystem</code>.</li>
+      <li>Sahnvour implemented initial support for using vcpkg libraries. However it is
+        <a href="https://github.com/ziglang/zig/issues/4510">not integrated automatically yet</a>.</li>
+    </ul>
+
+
     {#header_close#}
 
     {#header_open|zig fmt#}
     <p>TODO</p>
+commit 7495fd8cb9eea3d571ec62eff069b443ac0e3a6a
+Author: Vexu <15308111+Vexu@users.noreply.github.com>
+Date:   Tue Oct 15 14:06:08 2019 +0300
+
+    fix struct align fmt
+commit 7277670843d259d19093c8900b1f8445e41202ae
+Author: shiimizu <shiimizu@protonmail.com>
+Date:   Thu Oct 31 10:23:02 2019 -0700
+
+    Add error when too few arguments are provided to std.fmt
+    {#header_close#}
+
+    {#header_open|zig cc#}
+    TODO explain zig cc, zig c++. link to the blog post.
+    TODO explain how production ready is it
+    TODO mention follow up issues
     {#header_close#}
 
     {#header_open|libc#}
@@ -882,7 +1582,19 @@
     {#header_close#}
 
     {#header_open|C Translation#}
-    <p>TODO</p>
+    <p>TODO talk about Vexu</p>
+    <p>TODO talk about effort to self host it, C API wrapper, and it's done now</p>
+    related issue: #1964
+    note that it shaved 5 seconds off the build time of zig
+commit d04c58816d673208aae476e1cc2d223a26604c45
+Author: Timon Kruiper <timonkruiper@gmail.com>
+Date:   Thu Oct 24 15:57:34 2019 +0200
+
+    Translate-c: Fix a segfault when to many errors are emitted
+    
+    This was already fixed when doing `@cImport`, but not yet when
+    running `zig translate-c`.
+
     {#header_close#}
 
     {#header_open|compiler-rt#}
@@ -909,22 +1621,275 @@
 
     {#header_open|Test Coverage#}
     <p>TODO</p>
+    <p>TODO during this release cycle zig gained aarch64 test coverage</p>
+    {#header_close#}
+
+    {#header_open|Memory Usage Reduction#}
+commit 63dfca97159fd66563693039606c0bca30aa1f85
+Merge: e42d86b65 4e9851234
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Oct 19 12:42:32 2019 -0400
+
+    Merge pull request #3482 from ziglang/mem-usage-report
+    
+    add -DZIG_ENABLE_MEM_PROFILE option and -fmem-report flag
+
+commit 4e985123447dba40e282e9663e3ca669d3f9243a
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Oct 19 03:51:04 2019 -0400
+
+    reduce the size of IrInstruction by 8 bytes on 64 bit targets
+    
+    This brings the std lib tests down from 3.51 GiB memory usage
+    to 3.41 GiB, by making two fields that were 64 bits 32 bits.
+    This is a small thing; the bigger wins will come from the strategy
+    outlined in the previous commit.
+
+commit fa9f1d23968d3b9fe3ae35ed1306aec0cbcfd908
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Oct 19 03:23:23 2019 -0400
+
+    add -DZIG_ENABLE_MEM_PROFILE option and -fmem-report flag
+    
+    This can be used to find what's taking up memory in the compiler.
+    Here's an example of how to use it:
+    
+    ```
+    ./zig test ../lib/std/std.zig --cache off -fmem-report
+    ```
+    
+    And here's the output I get for this on x86_64-linux-gnu today:
+    
+    ```
+    Const: 6462833 items, 152 bytes each, total 936.84 MiB
+    ConstGlobalRefs: 17236534 items, 24 bytes each, total 394.51 MiB
+    ResetResult: 1698108 items, 160 bytes each, total 259.11 MiB
+    ConstExprValue: 3118299 items, 80 bytes each, total 237.91 MiB
+    EndExpr: 1345395 items, 168 bytes each, total 215.56 MiB
+    Unknown_8: 27370821 items, 8 bytes each, total 208.82 MiB
+    VarPtr: 1127866 items, 168 bytes each, total 180.70 MiB
+    IrBasicBlock: 794834 items, 120 bytes each, total 90.96 MiB
+    LoadPtr: 554024 items, 160 bytes each, total 84.54 MiB
+    Unknown_64: 1245715 items, 64 bytes each, total 76.03 MiB
+    Unknown_40: 1879218 items, 40 bytes each, total 71.69 MiB
+    Unknown_72: 989117 items, 72 bytes each, total 67.92 MiB
+    Return: 423783 items, 160 bytes each, total 64.66 MiB
+    Unknown_168: 332480 items, 168 bytes each, total 53.27 MiB
+    Unknown_152: 336890 items, 152 bytes each, total 48.84 MiB
+    AddImplicitReturnType: 230819 items, 168 bytes each, total 36.98 MiB
+    Br: 217835 items, 168 bytes each, total 34.90 MiB
+    Unknown_184: 179529 items, 184 bytes each, total 31.50 MiB
+    FieldPtr: 179388 items, 184 bytes each, total 31.48 MiB
+    BinOp: 171004 items, 176 bytes each, total 28.70 MiB
+    LoadPtrGen: 173287 items, 168 bytes each, total 27.76 MiB
+    CondBr: 137864 items, 192 bytes each, total 25.24 MiB
+    Unknown_720: 30918 items, 720 bytes each, total 21.23 MiB
+    CallSrc: 99320 items, 216 bytes each, total 20.46 MiB
+    Unknown_160: 129243 items, 160 bytes each, total 19.72 MiB
+    Unknown_1: 19339456 items, 1 bytes each, total 18.44 MiB
+    CheckStatementIsVoid: 119838 items, 160 bytes each, total 18.29 MiB
+    Unknown_48: 371178 items, 48 bytes each, total 16.99 MiB
+    TestComptime: 101443 items, 160 bytes each, total 15.48 MiB
+    DeclVarSrc: 72578 items, 184 bytes each, total 12.74 MiB
+    StorePtr: 72776 items, 176 bytes each, total 12.22 MiB
+    ZigVar: 79201 items, 160 bytes each, total 12.09 MiB
+    Unknown_16: 770643 items, 16 bytes each, total 11.76 MiB
+    Phi: 60482 items, 184 bytes each, total 10.61 MiB
+    TestErrSrc: 66177 items, 168 bytes each, total 10.60 MiB
+    Unknown_240: 45164 items, 240 bytes each, total 10.34 MiB
+    ElemPtr: 58232 items, 184 bytes each, total 10.22 MiB
+    AllocaSrc: 60053 items, 176 bytes each, total 10.08 MiB
+    CallGen: 44873 items, 224 bytes each, total 9.59 MiB
+    SaveErrRetAddr: 63787 items, 152 bytes each, total 9.25 MiB
+    Unknown_112: 82283 items, 112 bytes each, total 8.79 MiB
+    AllocaGen: 51909 items, 176 bytes each, total 8.71 MiB
+    Unknown_24: 373599 items, 24 bytes each, total 8.55 MiB
+    ResultLocPeer: 113683 items, 72 bytes each, total 7.81 MiB
+    DeclRef: 36343 items, 168 bytes each, total 5.82 MiB
+    UnwrapErrPayload: 34603 items, 168 bytes each, total 5.54 MiB
+    Ref: 33414 items, 168 bytes each, total 5.35 MiB
+    Unknown_104: 53882 items, 104 bytes each, total 5.34 MiB
+    DeclVarGen: 32540 items, 168 bytes each, total 5.21 MiB
+    StructFieldPtr: 30449 items, 176 bytes each, total 5.11 MiB
+    UnwrapErrCode: 31508 items, 168 bytes each, total 5.05 MiB
+    Unknown_56: 90256 items, 56 bytes each, total 4.82 MiB
+    SpillBegin: 28722 items, 168 bytes each, total 4.60 MiB
+    SpillEnd: 28722 items, 160 bytes each, total 4.38 MiB
+    ResultLocReturn: 64573 items, 48 bytes each, total 2.96 MiB
+    PtrType: 14702 items, 184 bytes each, total 2.58 MiB
+    SliceType: 15005 items, 176 bytes each, total 2.52 MiB
+    Unknown_176: 13326 items, 176 bytes each, total 2.24 MiB
+    RefGen: 12881 items, 168 bytes each, total 2.06 MiB
+    UnOp: 12102 items, 176 bytes each, total 2.03 MiB
+    SwitchBr: 9453 items, 200 bytes each, total 1.80 MiB
+    TestErrGen: 11143 items, 160 bytes each, total 1.70 MiB
+    Unknown_32: 52359 items, 32 bytes each, total 1.60 MiB
+    CheckSwitchProngs: 9094 items, 184 bytes each, total 1.60 MiB
+    TypeOf: 9259 items, 160 bytes each, total 1.41 MiB
+    IntCast: 8772 items, 168 bytes each, total 1.41 MiB
+    OptionalUnwrapPtr: 8755 items, 168 bytes each, total 1.40 MiB
+    SwitchTarget: 9094 items, 160 bytes each, total 1.39 MiB
+    Cast: 8198 items, 176 bytes each, total 1.38 MiB
+    WidenOrShorten: 8448 items, 160 bytes each, total 1.29 MiB
+    ErrorUnion: 7613 items, 176 bytes each, total 1.28 MiB
+    SliceSrc: 6249 items, 192 bytes each, total 1.14 MiB
+    ErrWrapCode: 7133 items, 168 bytes each, total 1.14 MiB
+    TypeName: 7328 items, 160 bytes each, total 1.12 MiB
+    ImplicitCast: 5480 items, 176 bytes each, total 941.88 KiB
+    ResolveResult: 5638 items, 168 bytes each, total 924.98 KiB
+    ResultLocInstruction: 22696 items, 40 bytes each, total 886.56 KiB
+    BitCastSrc: 4947 items, 168 bytes each, total 811.62 KiB
+    CompileErr: 5148 items, 160 bytes each, total 804.38 KiB
+    ReturnPtr: 5305 items, 152 bytes each, total 787.46 KiB
+    Unreachable: 5038 items, 152 bytes each, total 747.83 KiB
+    TestNonNull: 4716 items, 160 bytes each, total 736.88 KiB
+    BitCastGen: 4431 items, 160 bytes each, total 692.34 KiB
+    PtrToInt: 4289 items, 160 bytes each, total 670.16 KiB
+    SliceGen: 3573 items, 192 bytes each, total 669.94 KiB
+    ArrayType: 4081 items, 168 bytes each, total 669.54 KiB
+    IntType: 3868 items, 168 bytes each, total 634.59 KiB
+    Unknown_88: 7213 items, 88 bytes each, total 619.87 KiB
+    Truncate: 3771 items, 168 bytes each, total 618.68 KiB
+    TypeInfo: 3740 items, 160 bytes each, total 584.38 KiB
+    SwitchVar: 3385 items, 176 bytes each, total 581.80 KiB
+    ContainerInitFields: 3223 items, 184 bytes each, total 579.13 KiB
+    ContainerInitList: 2309 items, 192 bytes each, total 432.94 KiB
+    PtrCastGen: 2626 items, 168 bytes each, total 430.83 KiB
+    BoolNot: 2457 items, 160 bytes each, total 383.91 KiB
+    FnProto: 2054 items, 184 bytes each, total 369.08 KiB
+    MergeErrSets: 1927 items, 176 bytes each, total 331.20 KiB
+    Unknown_136: 2486 items, 136 bytes each, total 330.17 KiB
+    Unknown_80: 4059 items, 80 bytes each, total 317.11 KiB
+    Bswap: 1670 items, 168 bytes each, total 273.98 KiB
+    TypeId: 1680 items, 160 bytes each, total 262.50 KiB
+    PtrCastSrc: 1371 items, 176 bytes each, total 235.64 KiB
+    ErrName: 1193 items, 160 bytes each, total 186.41 KiB
+    UnionTag: 1120 items, 160 bytes each, total 175.00 KiB
+    TagName: 1050 items, 160 bytes each, total 164.06 KiB
+    SizeOf: 942 items, 160 bytes each, total 147.19 KiB
+    MemberName: 871 items, 168 bytes each, total 142.90 KiB
+    Import: 881 items, 160 bytes each, total 137.66 KiB
+    PtrOfArrayToSlice: 758 items, 168 bytes each, total 124.36 KiB
+    UnionFieldPtr: 710 items, 176 bytes each, total 122.03 KiB
+    EnumToInt: 778 items, 160 bytes each, total 121.56 KiB
+    CheckRuntimeScope: 700 items, 168 bytes each, total 114.84 KiB
+    FieldParentPtr: 632 items, 184 bytes each, total 113.56 KiB
+    BoolToInt: 719 items, 160 bytes each, total 112.34 KiB
+    ResultLocPeerParent: 904 items, 104 bytes each, total 91.81 KiB
+    IntToPtr: 537 items, 168 bytes each, total 88.10 KiB
+    AlignOf: 561 items, 160 bytes each, total 87.66 KiB
+    AtomicRmw: 356 items, 208 bytes each, total 72.31 KiB
+    MemberCount: 441 items, 160 bytes each, total 68.91 KiB
+    Memset: 342 items, 176 bytes each, total 58.78 KiB
+    PopCount: 321 items, 168 bytes each, total 52.66 KiB
+    AlignCast: 251 items, 168 bytes each, total 41.18 KiB
+    IrInstruction *: 5230 items, 8 bytes each, total 40.86 KiB
+    IrBasicBlock *: 5230 items, 8 bytes each, total 40.86 KiB
+    TagType: 261 items, 160 bytes each, total 40.78 KiB
+    HasDecl: 234 items, 168 bytes each, total 38.39 KiB
+    OverflowOp: 191 items, 200 bytes each, total 37.30 KiB
+    Export: 209 items, 176 bytes each, total 35.92 KiB
+    SetCold: 219 items, 160 bytes each, total 34.22 KiB
+    ReturnAddress: 216 items, 152 bytes each, total 32.06 KiB
+    FromBytes: 178 items, 176 bytes each, total 30.59 KiB
+    SetRuntimeSafety: 188 items, 160 bytes each, total 29.38 KiB
+    OptionalWrap: 151 items, 168 bytes each, total 24.77 KiB
+    Clz: 143 items, 168 bytes each, total 23.46 KiB
+    ResizeSlice: 135 items, 168 bytes each, total 22.15 KiB
+    UnionInitNamedField: 106 items, 184 bytes each, total 19.05 KiB
+    Panic: 102 items, 160 bytes each, total 15.94 KiB
+    SwitchElseVar: 93 items, 168 bytes each, total 15.26 KiB
+    ToBytes: 89 items, 168 bytes each, total 14.60 KiB
+    IntToFloat: 78 items, 168 bytes each, total 12.80 KiB
+    Unknown_4360: 3 items, 4360 bytes each, total 12.77 KiB
+    ErrWrapPayload: 72 items, 168 bytes each, total 11.81 KiB
+    FloatOp: 62 items, 176 bytes each, total 10.66 KiB
+    FloatToInt: 47 items, 168 bytes each, total 7.71 KiB
+    FloatCast: 46 items, 168 bytes each, total 7.55 KiB
+    ErrToInt: 47 items, 160 bytes each, total 7.34 KiB
+    Asm: 33 items, 216 bytes each, total 6.96 KiB
+    ErrSetCast: 40 items, 168 bytes each, total 6.56 KiB
+    Memcpy: 34 items, 176 bytes each, total 5.84 KiB
+    AtomicLoad: 17 items, 184 bytes each, total 3.05 KiB
+    AwaitSrc: 16 items, 168 bytes each, total 2.62 KiB
+    Resume: 14 items, 160 bytes each, total 2.19 KiB
+    AwaitGen: 12 items, 176 bytes each, total 2.06 KiB
+    ArgType: 12 items, 168 bytes each, total 1.97 KiB
+    AnyFrameType: 12 items, 160 bytes each, total 1.88 KiB
+    SuspendFinish: 10 items, 160 bytes each, total 1.56 KiB
+    SuspendBegin: 10 items, 160 bytes each, total 1.56 KiB
+    Ctz: 9 items, 168 bytes each, total 1.48 KiB
+    FrameHandle: 8 items, 152 bytes each, total 1.19 KiB
+    SetEvalBranchQuota: 7 items, 160 bytes each, total 1.09 KiB
+    AssertZero: 7 items, 160 bytes each, total 1.09 KiB
+    UndeclaredIdent: 7 items, 160 bytes each, total 1.09 KiB
+    CmpxchgSrc: 5 items, 216 bytes each, total 1.05 KiB
+    CmpxchgGen: 5 items, 200 bytes each, total 1000.00 bytes
+    IntToEnum: 4 items, 168 bytes each, total 672.00 bytes
+    VectorType: 4 items, 168 bytes each, total 672.00 bytes
+    ErrorReturnTrace: 2 items, 160 bytes each, total 320.00 bytes
+    Breakpoint: 2 items, 152 bytes each, total 304.00 bytes
+    FrameAddress: 2 items, 152 bytes each, total 304.00 bytes
+    Unknown_4: 61 items, 4 bytes each, total 244.00 bytes
+    VectorToArray: 1 items, 168 bytes each, total 168.00 bytes
+    SetAlignStack: 1 items, 160 bytes each, total 160.00 bytes
+    Unknown_12: 2 items, 12 bytes each, total 24.00 bytes
+    ErrorTableEntry *: 0 items, 8 bytes each, total 0.00 bytes
+    AstNode *: 0 items, 8 bytes each, total 0.00 bytes
+    Total bytes used: 3.51 GiB
+    ```
+    
+    You can see that most of the memory is taken up by IR instructions,
+    as well as comptime values. This points toward 2 changes which will
+    greatly reduce memory usage:
+    
+     * Rework semantic analysis so that IR instructions can be freed.
+       Currently the comptime value struct (ConstExprValue) is embedded
+       directly into the IrInstruction struct. If this is made to be
+       separate, at the very least pass 1 IR instructions can be freed.
+       This includes `Const` which is the largest usage of memory currently.
+    
+     * Rework the ConstExprValue struct to no longer be a tagged union.
+       For example, there's no need for an integer comptime value to be
+       80 bytes.
+    
+    From this you can also see that this eliminates some things from being
+    the culprit. Before doing this analysis, I considered whether doing
+    string interning would help. From the above output, you can see that all
+    strings in the compiler account for only 18 MiB, so string interning
+    would have been a dead end.
+
     {#header_close#}
 
     {#header_open|Miscellaneous Improvements#}
     <ul>
-      <li>TODO</li>
+      <li>Add <code>-I</code> command line parameter.</li>
+      <li>POSIX terminals now have a progress indicator when compilation takes a long time.
+        Thanks to Luna for the initial implementation.</li>
+      <li>
+        Logic involving startup code has been moved from being hard-coded in the compiler to
+        {#syntax#}comptime{#endsyntax#} logic inside the start.zig file from the standard library.
+      </li>
+      <li>Michael Dusan added linux XDG Base Directory integration to the cache system. #3573</li> 
     </ul>
     {#header_close#}
 
     {#header_open|Bug Fixes#}
     <p>
     Note: plenty of bugs were both introduced and resolved within this release cycle.
-    Listed here are bugs that were reported before the release cycle started, and fixed during
-    this release cycle.
+    Listed here are bugs that were reported on the issue tracker before the release cycle started,
+    and fixed during this release cycle. My sincere apologies to anyone who isn't properly credited
+    here; this release cycle was a lot to keep track of.
     </p>
     <ul>
-      <li>TODO</li>
+      <li>Better debug info for integers. Now we use ABI size * 8 instead of size_in_bits which makes
+        gdb work instead of hang for non-power-of-two integers.</li>
+      <li>LemonBoy fixed user-defined function alignment not getting propagated to LLVM IR.</li>
+      <li>LemonBoy fixed crash when generating constant unions with single field.</li>
+      <li>Various fixes related to 32-bit architectures.</li>
+      <li>Async function recursion is detected and compile error emitted.</li>
+      <li>Brendan Hansknecht fixed parsing of {#syntax#}.*={#endsyntax#}.</li>
+      <li>Vexu fixed NodeErrorSetDecl rendering.</li>
     </ul>
 
     {#header_open|This Release Contains Bugs#}
@@ -942,6 +1907,11 @@
 
     {#header_open|Package Manager Status#}
     <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Self-Hosted Compiler Status#}
+    <p>TODO</p>
+    TODO thanks Vexu for helping with the bitrot
     {#header_close#}
 
     {#header_open|Accepted Proposals#}
