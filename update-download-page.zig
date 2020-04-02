@@ -35,8 +35,8 @@ fn render(
 
     var vars = try std.process.getEnvMap(allocator);
 
-    var buffer = try std.Buffer.initSize(allocator, 0);
-    errdefer buffer.deinit();
+    var buffer = std.ArrayList(u8).init(allocator);
+    defer buffer.deinit();
 
     const State = enum {
         Start,
