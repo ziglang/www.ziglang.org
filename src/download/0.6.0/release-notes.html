@@ -820,6 +820,18 @@ Date:   Sun Nov 24 19:37:56 2019 +0300
 
     Call DllMain entry point if declared
 
+
+
+    note that the hack to disable CPU features for Windows is removed (#508)
+
+
+commit b55bc5eb266f2dc62cf520e8b572893adf5f979c
+Author: Jared Miller <1668550+Jared-Miller@users.noreply.github.com>
+Date:   Fri Feb 7 16:04:50 2020 -0500
+
+    Add wWinMain and wWinMainCRTStartup to fix #4376
+
+
     {#header_open|32-bit Windows Support#}
 commit 6a687bda76a34775bde35ee386e59f53961341f7
 Author: LemonBoy <thatlemon@gmail.com>
@@ -1036,6 +1048,16 @@ Date:   Sat Nov 30 16:13:33 2019 +0100
     linux-i386 support
 
     pull request #3808
+
+commit 0e7461d4a34272a94acba20b09aaee283e88a806
+Merge: eff50abce a779450fe
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Feb 7 22:51:43 2020 -0500
+
+    Merge pull request #4408 from LemonBoy/mmap-i386-fix
+    
+    handle SIGBUS, fix mmap on i386 linux
+
     {#header_close#}
 
     {#header_open|Android Support#}
@@ -1066,6 +1088,21 @@ Author: Noam Preil <pleasantatk@gmail.com>
 Date:   Sat Oct 26 14:08:11 2019 -0400
 
     Don't use SSE on freestanding
+
+
+    Thanks to Layne Gustafson for the initial exploration and implementation of this feature.
+    Thanks to LemonBoy for contributions related to this feature.
+
+    TODO note about `zig targets` outputting JSON now and it's self-hosted.
+
+    {#header_open|CPU Features#}
+    TODO
+    {#header_close#}
+
+    {#header_open|OS Version Ranges#}
+    TODO
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Language Changes#}
@@ -1086,6 +1123,7 @@ Date:   Sat Oct 26 14:08:11 2019 -0400
       <li>Zig language no longer requires the expression {#syntax#}a else unreachable{#endsyntax#} with
         {#syntax#}comptime{#endsyntax#} {#syntax#}a{#endsyntax#} to produce a
         {#syntax#}comptime{#endsyntax#} result.</li>
+      <li>Timon Kruiper implemented casting between {#syntax#}[*c]T{#endsyntax#} and {#syntax#}?[*:0]T{#endsyntax#} on {#syntax#}fn{#endsyntax#} parameter. (#4176)</li>
     </ul>
 
     <p>
@@ -1228,6 +1266,11 @@ Date:   Thu Jan 2 16:10:41 2020 -0500
     
     fix float ops with respect to vectors
 
+commit 4578d13b49d16463b870119005877f7b6e10092e
+Author: data-man <datamanrb@gmail.com>
+Date:   Tue Jan 7 19:14:37 2020 +0500
+
+    Vector comparison in meta and testing
 
     {#header_close#}
 
@@ -1273,8 +1316,9 @@ Date:   Fri Dec 6 15:25:00 2019 -0500
 
     {#header_open|Non-Exhaustive Enums#}
     TODO
+    TODO mention replacing various numerical constants with non-exhaustive enums.
     <p>
-    Thanks to Vexu for the initial implementation.
+    Thanks to Vexu, LemonBoy, and daurnimator for contributions related to this feature.
     </p>
     {#header_close#}
 
@@ -1390,6 +1434,17 @@ Date:   Thu Jan 9 10:36:51 2020 +0100
     </p>
     {#header_close#}
 
+    {#header_open|No More Capture Aliasing#}
+    TODO this is the thing where |x| is copied now
+    TODO note how it would interact with proposals for non-copyable data structures
+
+    TODO thanks LemonBoy for implementing
+    {#header_close#}
+
+    {#header_open|noasync#}
+    TODO
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1420,7 +1475,8 @@ Date:   Thu Jan 9 10:36:51 2020 +0100
       <li>Johan Bolmsjö improved {#syntax#}std.testing.expectEqual{#endsyntax#} to show differing pointer values, avoiding confusion when the values pointed to are the same.</li>
       <li>MCRusher added {#syntax#}std.ArrayList{#endsyntax#} and {#syntax#}std.ArrayListSentineled{#endsyntax#}.</li>
       <li>{#syntax#}std.heap.direct_allocator{#endsyntax#} is renamed to {#syntax#}std.heap.page_allocator{#endsyntax#}, to make it more clear that this is not an appropriate general-purpose allocator.</li>
-      <li>Benjamin Feng size-optimized the binary search algorithm.</li>
+      <li>Benjamin Feng size-optimized the std.sort internal binary search algorithm.</li>
+      <li>LemonBoy added {#syntax#}std.sort.binarySearch{#endsyntax#}. (#4337)</li>
       <li>{#syntax#}std.elf{#endsyntax#} API updated to remove redundant namespacing, and
         integrate with {#syntax#}std.Target.Arch{#endsyntax#}.</li>
       <li>Felix Queißner implemented {#syntax#}std.testing.expectEqual{#endsyntax#} for tagged unions. (#3773)
@@ -1454,7 +1510,36 @@ Date:   Thu Jan 9 10:36:51 2020 +0100
       <li>Nathan Michaels added removeIndex function to PriorityQueue. (#4070)</li>
       <li>Jonathan Marler added {#syntax#}std.os.windows.WaitForSingleObject{#endsyntax#}.</li>
       <li>Hersh Krishna added {#syntax#}std.math.clamp{#endsyntax#}.</li>
+      <li>Shawn Landden made breaking changes to {#syntax#}std.rb{#endsyntax#} to make it thread-safe.</li>
+      <li>daurnimator updated {#syntax#}std.mem.Allocator{#endsyntax#} interface to set
+        memory to undefined when freed (#4087). However note that it is
+        <a href="https://github.com/ziglang/zig/issues/4298">planned to revert this and implement this as part of allocator implementations rather than the interface</a>.
+      </li>
+      <li>LemonBoy made {#syntax#}writeByteNTimes{#endsyntax#} faster and leaner.</li>
+      <li>nofmal added a basic Linux termios implementation.</li>
+      <li>daurnimator added a Gimli based PRNG to {#syntax#}std.rand{#endsyntax#}, added
+        gimli to the crypto hash benchmark, and added AEAD modes for Gimli. (#4369)</li>
+      <li>Felix (xq) Queißner made {#syntax#}std.heap.ArenaAllocator.deinit{#endsyntax#} not require a mutable reference.</li>
+      <li>Implement {#syntax#}std.os.faccessat{#endsyntax#} for Windows.</li>
+      <li>Support the concept of a target not having a dynamic linker.</li>
     </ul>
+
+commit 44c14749a1063e5525b3249cddca6435d0654df4
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Feb 17 00:58:30 2020 -0500
+
+    expand argv[0] when spawning system C compiler
+    
+    Some C compilers, such as Clang, are known to rely on
+    argv[0] to find the path to their own executable,
+    without even bothering to resolve PATH. This results
+    in the message:
+    
+    error: unable to execute command: Executable "" doesn't exist!
+    
+    So we tell ChildProcess to expand argv[0] to the absolute path
+    to give them a helping hand.
+
 
 commit 8cf3a4d586b675a239c9cfa1ea07fa9f59ebf0a4
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1497,6 +1582,61 @@ Date:   Wed Nov 6 21:41:35 2019 +0200
 
     use global event loop in std.event types
 
+commit 704cd977bdcdfa8cff4e70aaad93857d9b622fc7
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Feb 5 16:53:29 2020 -0500
+
+    ability to run tests in evented I/O mode
+    
+    This adds `--test-evented-io` as a CLI parameter.
+    
+    see #3117
+
+commit 0b5bcd2f56a84e66d5c700744ec1838381893667
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Feb 6 17:56:40 2020 -0500
+
+    more std lib async I/O integration
+    
+     * `zig test` gainst `--test-evented-io` parameter and gains the ability
+       to seamlessly run async tests.
+     * `std.ChildProcess` opens its child process pipe with O_NONBLOCK when
+       using evented I/O
+     * `std.io.getStdErr()` gives a File that is blocking even in evented
+       I/O mode.
+     * Delete `std.event.fs`. The functionality is now merged into `std.fs`
+       and async file system access (using a dedicated thread) is
+       automatically handled.
+     * `std.fs.File` can be configured to specify whether its handle is
+       expected to block, and whether that is OK to block even when in
+       async I/O mode. This makes async I/O work correctly for e.g. the
+       file system as well as network.
+     * `std.fs.File` has some deprecated functions removed.
+     * Missing readv,writev,pread,pwrite,preadv,pwritev functions are added
+       to `std.os` and `std.fs.File`. They are all integrated with async
+       I/O.
+     * `std.fs.Watch` is still bit rotted and needs to be audited in light
+       of the new async/await syntax.
+     * `std.io.OutStream` integrates with async I/O
+     * linked list nodes in the std lib have default `null` values for
+       `prev` and `next`.
+     * Windows async I/O integration is enabled for reading/writing file
+       handles.
+     * Added `std.os.mode_t`. Integer sizes need to be audited.
+     * Fixed #4403 which was causing compiler to crash.
+    
+    This is working towards:
+    
+    ./zig test ../test/stage1/behavior.zig --test-evented-io
+    
+    Which does not successfully build yet. I'd like to enable behavioral
+    tests and std lib tests with --test-evented-io in the test matrix in the
+    future, to prevent regressions.
+
+    <p>
+    Thanks to Benjamin Feng for contributions related to this feature.
+    </p>
+
     {#header_close#}
 
     {#header_open|Debug Info and Stack Traces#}
@@ -1513,10 +1653,51 @@ Author: LemonBoy <thatlemon@gmail.com>
 Date:   Mon Nov 4 09:58:02 2019 +0100
 
     Make the `leb` module available to non-std code
+
+
+commit 3500b41bfed159b54b951b7cee5ff404ae5fbbda
+Author: Rocknest <35231115+Rocknest@users.noreply.github.com>
+Date:   Wed Jan 29 16:57:43 2020 +0200
+
+    Bring windows segfault handler on par with (#4319)
+
+commit 958f00f1c71f205ce738433d00e9da7dde060f14
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Feb 1 23:58:02 2020 +0100
+
+    Don't generate any type info for void return types
+    
+    Closely matches what the LLVM debug emitter expects, the generated DWARF
+    infos are now standard-compliant.
+
+commit cfcaf09cce38821f8b82b840db537d7082a7a8dc
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Wed Feb 5 23:40:36 2020 +0100
+
+    debug: Improve the frame-walking strategy
+    
+    Clean up the code a bit and introduce a few checks meant to avoid
+    overshooting the end of the frame chain.
+    The code is now stable enough not to cause panics during the call frame
+    walking.
+
+commit be02616c869c5fe089bc9a80ea44817df2f5c2ba
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Fri Feb 7 16:06:33 2020 +0100
+
+    debug: Show a nice error message on SIGBUS
+
+
     {#header_close#}
 
     {#header_open|Formatted Printing#}
-    <p>TODO</p>
+    <p>TODO look at git shortlog</p>
+
+    <p>
+    Thanks to daurnimator, LemonBoy, Benjamin Feng, Felix Queißner, Michael Dusan,
+    Nathan Michaels, data-man, frmdstryr, markfirmware, shiimizu, and vegecode for
+    contributions related to this feature.
+    </p>
     {#header_close#}
 
     {#header_open|Filesystem#}
@@ -1940,6 +2121,43 @@ Date:   Mon Jan 6 21:38:11 2020 +0100
 
     {#header_close#}
 
+    {#header_open|Crypto#}
+    TODO find other crypto refs here
+
+
+commit 4b86c1e3bbe65b8caa9c2e769af633fa8825bb94
+Author: Jay Petacat <jay@jayschwa.net>
+Date:   Sat Feb 1 22:29:51 2020 -0500
+
+    crypto: Add BLAKE3 hashing algorithm (#4366)
+    
+    This is a translation of the [official reference implementation][1] with
+    few other changes. The bad news is that the reference implementation is
+    designed for simplicity and not speed, so there's a lot of room for
+    performance improvement. The good news is that, according to the crypto
+    benchmark, the implementation is still fast relative to the other
+    hashing algorithms:
+    
+    ```
+             md5: 430 MiB/s
+            sha1: 386 MiB/s
+          sha256: 191 MiB/s
+          sha512: 275 MiB/s
+        sha3-256: 233 MiB/s
+        sha3-512: 137 MiB/s
+         blake2s: 464 MiB/s
+         blake2b: 526 MiB/s
+          blake3: 576 MiB/s
+        poly1305: 1479 MiB/s
+        hmac-md5: 653 MiB/s
+       hmac-sha1: 553 MiB/s
+     hmac-sha256: 222 MiB/s
+          x25519: 8685 exchanges/s
+    ```
+    
+    [1]: https://github.com/BLAKE3-team/BLAKE3
+    {#header_close#}
+
     {#header_open|Start Code#}
     <p>Logic involving startup code has been moved from being hard-coded in the compiler to
     {#syntax#}comptime{#endsyntax#} logic inside the start.zig file from the standard library.
@@ -2158,7 +2376,18 @@ Date:   Thu Dec 19 21:34:38 2019 +0800
 
     build support list options
 
+commit 32291ab70249c874e6941292de8611e619c838e5
+Author: frmdstryr <frmdstryr@protonmail.com>
+Date:   Fri Jan 31 13:02:12 2020 -0500
 
+    Add support for dependent packages when using build.zig
+
+commit 9b11e5e1f1e0debd1e5484883b2daad8b2b33cb7
+Author: Michaël Larouche <michael.larouche@gmail.com>
+Date:   Tue Jan 21 17:32:00 2020 -0500
+
+    Add InstallRawStep to Zig build system that does a similar job to llvm-objcopy. To use it, do 'exe.installRaw("kernel.bin");' where exe is a LibExeObjStep
+    Part of #2826
     {#header_close#}
 
     {#header_open|zig fmt#}
@@ -2247,6 +2476,7 @@ Date:   Thu Dec 5 14:45:36 2019 +0200
     <p>TODO talk about Vexu</p>
     <p>TODO talk about effort to self host it, C API wrapper, and it's done now</p>
     <p>TODO mention that vexu made a c tokenizer and as a result macro support is much better</p>
+    <p>TODO mention that the c tokenizer and c ast parser are in the std lib</p>
     related issue: #1964
     note that it shaved 5 seconds off the build time of zig
 commit d04c58816d673208aae476e1cc2d223a26604c45
@@ -2279,6 +2509,15 @@ Date:   Mon Dec 30 12:17:52 2019 +0100
     Don't crash when parsing invalid files
 
     ^ related: mention the (still ongoing) clang API problem
+    related: commit below:
+commit 5e37fc0746a75ed319fc57ae62d8cc966382c592
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Feb 16 01:45:48 2020 -0500
+
+    more user-friendly error message for some clang diagnostics
+    
+    See #4455
+
 
 
     There is now a build.zig step for translate-c
@@ -2317,6 +2556,61 @@ Date:   Wed Dec 11 02:08:33 2019 -0500
     Vexu: add default initializers to all ast.Node base values
     xackus: stage2 parser: fix segfault on extern block (#3957)
 
+
+    `zig targets` is now self-hosted
+
+commit eff50abce68ffc69d236fcc0b919bc63fcd0e89a
+Author: pwzk <pwzk@mailbox.org>
+Date:   Fri Feb 7 13:40:52 2020 +0000
+
+    Fixing library search path
+
+commit 4b02a39aa93b0043f05de0d90443051c019643ab
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Feb 16 13:25:30 2020 -0500
+
+    self-hosted libc detection
+    
+     * libc_installation.cpp is deleted.
+       src-self-hosted/libc_installation.zig is now used for both stage1 and
+       stage2 compilers.
+     * (breaking) move `std.fs.File.access` to `std.fs.Dir.access`. The API
+       now encourages use with an open directory handle.
+     * Add `std.os.faccessat` and related functions.
+     * Deprecate the "C" suffix naming convention for null-terminated
+       parameters. "C" should be used when it is related to libc. However
+       null-terminated parameters often have to do with the native system
+       ABI rather than libc. "Z" suffix is the new convention. For example,
+       `std.os.openC` is deprecated in favor of `std.os.openZ`.
+     * Add `std.mem.dupeZ` for using an allocator to copy memory and add a
+       null terminator.
+     * Remove dead struct field `std.ChildProcess.llnode`.
+     * Introduce `std.event.Batch`. This API allows expressing concurrency
+       without forcing code to be async. It requires no Allocator and does
+       not introduce any failure conditions. However it is not thread-safe.
+     * There is now an ongoing experiment to transition away from
+       `std.event.Group` in favor of `std.event.Batch`.
+     * `std.os.execvpeC` calls `getenvZ` rather than `getenv`. This is
+       slightly more efficient on most systems, and works around a
+       limitation of `getenv` lack of integration with libc.
+     * (breaking) `std.os.AccessError` gains `FileBusy`, `SymLinkLoop`, and
+       `ReadOnlyFileSystem`. Previously these error codes were all reported
+       as `PermissionDenied`.
+     * Add `std.Target.isDragonFlyBSD`.
+     * stage2: access to the windows_sdk functions is done with a manually
+       maintained .zig binding file instead of `@cImport`.
+     * Update src-self-hosted/libc_installation.zig with all the
+       improvements that stage1 has seen to src/libc_installation.cpp until
+       now. In addition, it now takes advantage of Batch so that evented I/O
+       mode takes advantage of concurrency, but it still works in blocking
+       I/O mode, which is how it is used in stage1.
+
+commit 2f9c5c0644dd516ec0d96f33333a35e6b4deea91
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Feb 17 15:23:59 2020 -0500
+
+    self-host dynamic linker detection
+
     {#header_close#}
 
     {#header_open|compiler-rt#}
@@ -2332,6 +2626,8 @@ Date:   Wed Dec 11 02:08:33 2019 -0500
     </p>
     <ul>
       <li>TODO do a git shortlog on the files</li>
+      <li>LemonBoy modified compiler_rt and freestanding libc to be built with optimizations, even
+      when used by Debug Mode Zig code.</li>
     </ul>
     <p>
     With Zig 0.6.0, compiler-rt is much more complete, but not fully. There are some
@@ -2348,6 +2644,36 @@ Date:   Wed Dec 11 02:08:33 2019 -0500
     regression test cases were added for them.
 
     mention run-translated-c tests
+
+
+commit 4d134a01f5a8baae346783f19d9b5db8c8256d32
+Author: Benjamin Feng <benjamin.feng@glassdoor.com>
+Date:   Wed Jan 29 12:21:29 2020 -0600
+
+    Move debug.global_allocator to testing.allocator
+
+    note about std.testing.allocator and how it leak checks and stuff
+    it found leaks in std and he fixed them
+
+    daurnimator helped migrate more tests to use testing allocator
+
+
+commit 058f38220afecb96d115143f8888496162029aed
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Feb 13 16:56:26 2020 -0500
+
+    enable passing freebsd tests
+    
+    See #3210 and #4455
+
+commit 64365bc5d7b1e2c507806ee8976acc3479ad7862
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Feb 17 00:06:19 2020 -0500
+
+    enable behavior and std lib tests for RISC-V 64-bit
+    
+    closes #3338
+
     {#header_close#}
 
     {#header_open|Memory Usage Reduction#}
@@ -2641,6 +2967,38 @@ Date:   Sat Nov 30 22:05:28 2019 -0500
     
     Total bytes used in stage1 std lib tests:
     3.443 GiB -> 3.418 GiB
+
+
+commit 6aac423964d10f9d884877a158f9604f7547b742
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Jan 25 21:49:32 2020 -0500
+
+    split IrInstruction into IrInst, IrInstSrc, IrInstGen
+    
+    This makes it so that less memory is used for IR instructions, as well
+    as catching bugs when one expected one kind of instruction and received
+    the other.
+
+
+commit edb210905dcbe666fa5222bceacd2e5bdb16bb89
+Author: Michael Dusan <michael.dusan@gmail.com>
+Date:   Mon Feb 10 21:08:08 2020 -0500
+
+    stage1: memory/report overhaul
+    
+    - split util_base.hpp from util.hpp
+    - new namespaces: `mem` and `heap`
+    - new `mem::Allocator` interface
+    - new `heap::CAllocator` impl with global `heap::c_allocator`
+    - new `heap::ArenaAllocator` impl
+    - new `mem::TypeInfo` extracts names without RTTI
+    - name extraction is enabled w/ ZIG_ENABLE_MEM_PROFILE=1
+    - new `mem::List` takes explicit `Allocator&` parameter
+    - new `mem::HashMap` takes explicit `Allocator&` parameter
+    - add Codegen.pass1_arena and use for all `ZigValue` allocs
+    - deinit Codegen.pass1_arena early in `zig_llvm_emit_output()`
+
+
     {#header_close#}
 
     {#header_open|Miscellaneous Improvements#}
@@ -2664,10 +3022,12 @@ Date:   Sat Nov 30 22:05:28 2019 -0500
       <li>LemonBoy improved the C++ compiler code internal debugging utilities.</li>
       <li>There is no longer a <code>native_libc.txt</code> file in zig-cache, and thus
         there is no longer a possibility for this file to become stale and cause problems.
-        The libc installation path detection code is always run when needed. (#3975, #4940)</li>
+        The libc installation path detection code is always run when needed. (#3975, #4186, #4940)</li>
       <li>Michael Dusan improved the development process on POSIX to support <code>make</code> without
         being required to <code>make install</code>. On Windows the INSTALL target is still a
         required part of the development process.</li>
+      <li>LemonBoy improved {#syntax#}@tagName{#endsyntax#} to work on enum literals. (#4214)</li>
+      <li>Valentin Anger added support for code model selection.</li>
     </ul>
     {#header_close#}
 
@@ -2701,6 +3061,12 @@ Date:   Sat Nov 30 22:05:28 2019 -0500
       <li>LemonBoy added missing validation for {#syntax#}switch{#endsyntax#} range endpoints. (#4172)</li>
       <li>Vexu fixed a crash when parsing a multiline library name.</li>
       <li>Michaël Larouche fixed {#syntax#}std.child_process.ChildProcess.spawnWindows{#endsyntax#} when looking in {#syntax#}PATH{#endsyntax#} environment variable, it applied cwd+app_name instead of just using the app_name.</li>
+      <li>daurnimator fixed bug in {#syntax#}std.http.headers{#endsyntax#} where .put captures user-held variable.</li>
+      <li>Fixed automatically created local variables sometimes having incorrect alignment.</li>
+      <li>LemonBoy fixed an edge case in {#syntax#}isAbsolute{#endsyntax#} path functions. Empty
+      strings are no longer considered absolute paths. (#4382)</li>
+      <li>Rocknest fixed a double close in {#syntax#}openElfDebugInfo{#endsyntax#}.</li>
+      <li>Fixed not checking type of return pointers. (#3224, #3269, #3327, #3422, #3646)</li>
     </ul>
 
     {#header_open|This Release Contains Bugs#}
