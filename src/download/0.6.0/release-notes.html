@@ -1095,12 +1095,103 @@ Date:   Sat Oct 26 14:08:11 2019 -0400
 
     TODO note about `zig targets` outputting JSON now and it's self-hosted.
 
+
+commit 84f1893c18c4ef12dbe268ed6d11a11966a9d447
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Feb 19 21:30:36 2020 -0500
+
+    remove the concept of "sub-architecture"
+    
+    in favor of CPU features. Also rearrange the `std.Target`
+    data structure.
+    
+     * note: `@import("builtin")` was already deprecated in favor of
+       `@import("std").builtin`.
+     * `std.builtin.arch` is now deprecated in favor of
+       `std.builtin.cpu.arch`.
+     * `std.Target.CpuFeatures.Cpu` is now `std.Target.Cpu.Model`.
+     * `std.Target.CpuFeatures` is now `std.Target.Cpu`.
+     * `std.Target` no longer has an `arch` field. Instead it has a
+       `cpu` field, which has `arch`, `model`, and `features`.
+     * `std.Target` no longer has a `cpu_features` field.
+     * `std.Target.Arch` is moved to `std.Target.Cpu.Arch` and
+       it is an enum instead of a tagged union.
+     * `std.Target.parseOs` is moved to `std.Target.Os.parse`.
+     * `std.Target.parseAbi` is moved to `std.Target.Abi.parse`.
+     * `std.Target.parseArchSub` is only for arch now and moved
+        to `std.Target.Cpu.Arch.parse`.
+     * `std.Target.parse` is improved to accept CPU name and features.
+     * `std.Target.Arch.getBaselineCpuFeatures` is moved to
+       `std.Target.Cpu.baseline`.
+     * `std.Target.allCpus` is renamed to `std.Target.allCpuModels`.
+     * `std.Target.defaultAbi` is moved to `std.Target.Abi.default`.
+     * Significant cleanup of aarch64 and arm CPU features, resulting in
+       the needed bit count for cpu feature set going from 174 to 138.
+     * Add `std.Target.Cpu.Feature.Set.addFeatureSet` for merging
+       feature sets together.
+    
+    `-target-feature` and `-target-cpu` are removed in favor of
+    `-mcpu`, to conform to established conventions, and it gains
+    additional power to support cpu features. The syntax is:
+    -mcpu=name+on1+on2-off1-off2
+    
+    closes #4261
+
     {#header_open|CPU Features#}
     TODO
     {#header_close#}
 
     {#header_open|OS Version Ranges#}
     TODO
+commit 4616af0ca459358ffa09ba27f9daa8527a38fd35
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Feb 25 01:52:27 2020 -0500
+
+    introduce operating system version ranges as part of the target
+    
+     * re-introduce `std.build.Target` which is distinct from `std.Target`.
+       `std.build.Target` wraps `std.Target` so that it can be annotated as
+       "the native target" or an explicitly specified target.
+     * `std.Target.Os` is moved to `std.Target.Os.Tag`. The former is now a
+       struct which has the tag as well as version range information.
+     * `std.elf` gains some more ELF header constants.
+     * `std.Target.parse` gains the ability to parse operating system
+       version ranges as well as glibc version.
+     * Added `std.Target.isGnuLibC()`.
+     * self-hosted dynamic linker detection and glibc version detection.
+       This also adds the improved logic using `/usr/bin/env` rather than
+       invoking the system C compiler to find the dynamic linker when zig
+       is statically linked. Related: #2084
+       Note: this `/usr/bin/env` code is work-in-progress.
+     * `-target-glibc` CLI option is removed in favor of the new `-target`
+       syntax. Example: `-target x86_64-linux-gnu.2.27`
+    
+    closes #1907
+
+commit ef24f2dd93729493531c427aaac54444597f6e66
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Feb 28 02:36:16 2020 -0500
+
+    remove special darwin os version min handling
+    
+    now it is integrated with zig's target OS range.
+
+commit f072b0c056768648eb56230036dc8c973116d066
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Feb 29 12:00:58 2020 +0100
+
+    target: Implement OS version detection for Windows
+    
+    Closes #4581
+
+commit 84549b39550014ca85d34c93381cadbd93080a0e
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Feb 29 21:46:07 2020 +0100
+
+    target: Implement OS version detection for OSX
+    
+    Closes #4583
+
     {#header_close#}
 
     {#header_close#}
@@ -1124,6 +1215,9 @@ Date:   Sat Oct 26 14:08:11 2019 -0400
         {#syntax#}comptime{#endsyntax#} {#syntax#}a{#endsyntax#} to produce a
         {#syntax#}comptime{#endsyntax#} result.</li>
       <li>Timon Kruiper implemented casting between {#syntax#}[*c]T{#endsyntax#} and {#syntax#}?[*:0]T{#endsyntax#} on {#syntax#}fn{#endsyntax#} parameter. (#4176)</li>
+      <li>Timon Kruiper improved {#syntax#}@typeInfo{#endsyntax#} to lazily resolve declarations.
+        This way all the declarations in a namespace won't be resolved until the user actually
+        uses the declarations slice in the builtin TypeInfo union. (#2594, #3893, #4435)</li>
     </ul>
 
     <p>
@@ -1228,7 +1322,7 @@ I expect this change to simplify the result location semantics, which should hel
     TODO remove var args is #208
     TODO remove no-longer-needed workaround for var args See #557
 
-    TODO Thanks to Vexu, LemonBoy, dbandstra for contributing fixes related to this feature.
+    TODO Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for contributing fixes related to this feature.
     {#header_close#}
 
     {#header_open|SIMD#}
@@ -1445,6 +1539,47 @@ Date:   Thu Jan 9 10:36:51 2020 +0100
     TODO
     {#header_close#}
 
+    {#header_open|@bytesToSlice and @sliceToBytes Removed#}
+    TODO xackus did this and implemented std lib fns. #4516
+    {#header_close#}
+
+    {#header_open|Deprecated Builtins Removed#}
+commit d56115ef4189a7716d9371ef87df9124a61f5ab1
+Author: Vexu <git@vexu.eu>
+Date:   Mon Feb 24 23:50:02 2020 +0200
+
+    remove `@IntType` and `@ArgType` (mostly) from the compiler
+
+commit 538d9a5dd8e0eca02d363bbd5f749405e003f1c6
+Author: Vexu <git@vexu.eu>
+Date:   Mon Feb 24 23:39:03 2020 +0200
+
+    remove uses of `@ArgType` and `@IntType`
+
+commit 3458fb891d8c7072a9bff6a32db9f3105ab72aa4
+Author: Vexu <git@vexu.eu>
+Date:   Mon Feb 24 23:21:11 2020 +0200
+
+    remove `@typeId`, `@memberCount`, `@memberName` and `@memberType` from the compiler
+
+commit 45da72c5b64069b7d5238465130a50f96678a148
+Author: Vexu <git@vexu.eu>
+Date:   Mon Feb 24 23:03:30 2020 +0200
+
+    remove usages of `@typeId`, `@memberCount`, `@memberName` and `@memberType`
+    {#header_close#}
+
+    {#header_open|Allow Empty Inferred Error Sets#}
+    TODO
+commit fd1eade4ca02b125b1a2ecea564f32af6a683248
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Wed Feb 26 23:17:44 2020 +0100
+
+    ir: Allow empty inferred error sets
+    
+    Closes #4564
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1473,7 +1608,6 @@ Date:   Thu Jan 9 10:36:51 2020 +0100
       to the standard input, output, and error streams without the possibility of failure.</li>
       <li>dbandstra added {#syntax#}std.math.tau{#endsyntax#} constant (equivalent to {#syntax#}2 * pi{#endsyntax#}).</li>
       <li>Johan Bolmsjö improved {#syntax#}std.testing.expectEqual{#endsyntax#} to show differing pointer values, avoiding confusion when the values pointed to are the same.</li>
-      <li>MCRusher added {#syntax#}std.ArrayList{#endsyntax#} and {#syntax#}std.ArrayListSentineled{#endsyntax#}.</li>
       <li>{#syntax#}std.heap.direct_allocator{#endsyntax#} is renamed to {#syntax#}std.heap.page_allocator{#endsyntax#}, to make it more clear that this is not an appropriate general-purpose allocator.</li>
       <li>Benjamin Feng size-optimized the std.sort internal binary search algorithm.</li>
       <li>LemonBoy added {#syntax#}std.sort.binarySearch{#endsyntax#}. (#4337)</li>
@@ -1522,7 +1656,51 @@ Date:   Thu Jan 9 10:36:51 2020 +0100
       <li>Felix (xq) Queißner made {#syntax#}std.heap.ArenaAllocator.deinit{#endsyntax#} not require a mutable reference.</li>
       <li>Implement {#syntax#}std.os.faccessat{#endsyntax#} for Windows.</li>
       <li>Support the concept of a target not having a dynamic linker.</li>
+      <li>Improved handling of environment variables on Windows.<ul>
+          <li>
+            std.os.getenv and std.os.getenvZ have nice compile errors when not linking
+            libc and using Windows.
+          </li>
+          <li>
+            std.os.getenvW is provided as a Windows-only API that does not require
+            an allocator. It uses the Process Environment Block.
+            std.process.getEnvVarOwned is improved to be a simple wrapper on top of
+            std.os.getenvW.
+          </li>
+          <li>
+            std.process.getEnvMap is improved to use the Process Environment Block
+            rather than calling GetEnvironmentVariableW.
+          </li>
+          <li>
+            std.zig.system.NativePaths uses process.getEnvVarOwned instead of
+            std.os.getenvZ, which works on Windows as well as POSIX.
+          </li>
+        </ul>
+      </li>
+      <li>Heide Onas Auri improved {#syntax#}std.time.Timer.lap{#endsyntax#} to only
+      read system time once. (#4533)</li>
+      <li>{#syntax#}std.Thread.cpuCount{#endsyntax#} on Windows uses the PEB,
+        rather than calling GetSystemInfo from kernel32.dll. Also remove OutOfMemory
+        from the error set.</li>
     </ul>
+
+commit b0d2ebe529593566f209d34d5bbbfd72cde2a6b9
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Feb 20 13:43:05 2020 -0500
+
+    remove std.io.readLine
+    
+    This was deceptive. It was always meant to be sort of a "GNU readline"
+    sort of thing where it provides a Command Line Interface to input text.
+    However that functionality did not exist and it was basically a red
+    herring for people trying to read line-delimited input from a stream.
+    
+    In this commit the API is deleted, so that people can find the proper
+    API more easily.
+    
+    A CLI text input abstraction would be useful but may not even need to be
+    in the standard library. As you can see in this commit, the guess_number
+    CLI game gets by just fine by using `std.fs.File.read`.
 
 commit 44c14749a1063e5525b3249cddca6435d0654df4
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1687,6 +1865,14 @@ Date:   Fri Feb 7 16:06:33 2020 +0100
 
     debug: Show a nice error message on SIGBUS
 
+    TODO mention LemonBoy's work on multiple threads panicking (#4497)
+
+commit c8669a4cf834a6d1dadd9260e94f1781ceed0ec3
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Feb 26 14:33:10 2020 -0500
+
+    improve debug info for optionals
+
 
     {#header_close#}
 
@@ -1703,6 +1889,7 @@ Date:   Fri Feb 7 16:06:33 2020 +0100
     {#header_open|Filesystem#}
     <p>TODO talk about all the file system API changes</p>
     TODO Mention stratact's improvements to make directory iteration not require heap allocation.
+    TODO mention sendfile support (Thanks Terin Stock for contributing initial os.zig implementation)
 
 commit 5b1a492012241276a4b7539ca6664234f0629c79
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1776,6 +1963,10 @@ Date:   Thu Mar 19 14:38:21 2020 -0400
      * `std.fs.readLink`
      * `std.fs.readLinkC`
 
+
+
+
+     improvements to std.fs, std.os #4618
 
      <p>
      Thank you to contributors Jonathan S, daurnimator, LemonBoy,
@@ -2078,6 +2269,7 @@ Date:   Thu Dec 12 01:31:32 2019 +0000
     {#header_close#}
 
     {#header_open|ArrayList#}
+
 commit c3d8b1ffebb94d180c382bd74128d17dc21c1392
 Author: Andrew Kelley <andrew@ziglang.org>
 Date:   Tue Dec 10 15:08:10 2019 -0500
@@ -2093,9 +2285,21 @@ Date:   Tue Dec 10 15:08:10 2019 -0500
     
     Closes #3037.
 
+commit 1483ae37f2dae6a5b9db1f7851cf5dc9a86e57f3
+Author: Bas <BarabasGitHub@users.noreply.github.com>
+Date:   Wed Feb 19 17:33:35 2020 +0100
+
+    Add an appendValues method to ArrayList to append a value n times. (#4460)
+
 
     TODO mention deprecated API
     TODO mention std.ArrayList: make the slice field valid and public, and the capacity a separate field #4852
+    TODO mention outStream()
+
+    <ul>
+      <li>MCRusher added {#syntax#}initCapacity{#endsyntax#} to {#syntax#}std.ArrayList{#endsyntax#} and {#syntax#}std.ArrayListSentineled{#endsyntax#}.</li>
+    </ul>
+
     {#header_close#}
 
     {#header_open|Memory#}
@@ -2119,6 +2323,35 @@ Date:   Mon Jan 6 21:38:11 2020 +0100
     This zero initializes the type passed in. Can be used to zero
     initialize c structs.
 
+
+commit 5b26128bacddf594dfe45958a236bfa2459f878b
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Mar 1 13:07:55 2020 -0500
+
+    add new functions to std.mem and deprecate others
+    
+    add std.mem.Span
+    add std.mem.span
+    add std.mem.length
+    add std.mem.indexOfSentinel
+    
+    deprecate std.mem.len
+    deprecate std.mem.toSlice
+    deprecate std.mem.toSliceConst
+
+commit ef3d761da545a3a72928ed0e0ba3b749a4cb74d8
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Mar 1 13:21:29 2020 -0500
+
+    breaking: std.mem.len no longer takes a type argument
+    
+    also update fmt code to use std.mem.span.
+
+
+    <ul>
+      <li>Bas van den Berg made {#syntax#}std.mem.zeros{#endsyntax#} support more types besides
+        extern structs. (#4544)</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Crypto#}
@@ -2183,6 +2416,70 @@ Date:   Thu Dec 12 18:27:17 2019 -0500
 
 
     <p>Thanks to LemonBoy, Vexu, Jared Miller, and Nick Erdmann for contributions related to this.</p>
+    {#header_close#}
+
+    {#header_open|std.Target vs std.zig.CrossTarget#}
+commit dbe4d72bcfb20fc43713781679a0d23aea0a17d9
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Feb 26 01:18:23 2020 -0500
+
+    separate std.Target and std.zig.CrossTarget
+    
+    Zig now supports a more fine-grained sense of what is native and what is
+    not. Some examples:
+    
+    This is now allowed:
+    -target native
+    
+    Different OS but native CPU, default Windows C ABI:
+    -target native-windows
+    This could be useful for example when running in Wine.
+    
+    Different CPU but native OS, native C ABI.
+    -target x86_64-native -mcpu=skylake
+    
+    Different C ABI but otherwise native target:
+    -target native-native-musl
+    -target native-native-gnu
+    
+    Lots of breaking changes to related std lib APIs.
+    Calls to getOs() will need to be changed to getOsTag().
+    Calls to getArch() will need to be changed to getCpuArch().
+    
+    Usage of Target.Cross and Target.Native need to be updated to use
+    CrossTarget API.
+    
+    `std.build.Builder.standardTargetOptions` is changed to accept its
+    parameters as a struct with default values. It now has the ability to
+    specify a whitelist of targets allowed, as well as the default target.
+    Rather than two different ways of collecting the target, it's now always
+    a string that is validated, and prints helpful diagnostics for invalid
+    targets. This feature should now be actually useful, and contributions
+    welcome to further improve the user experience.
+    
+    `std.build.LibExeObjStep.setTheTarget` is removed.
+    `std.build.LibExeObjStep.setTarget` is updated to take a CrossTarget
+    parameter.
+    
+    `std.build.LibExeObjStep.setTargetGLibC` is removed. glibc versions are
+    handled in the CrossTarget API and can be specified with the `-target`
+    triple.
+    
+    `std.builtin.Version` gains a `format` method.
+
+
+commit 60f2f3457dd73772e7cd60bf5d90358079361d11
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Feb 27 16:38:10 2020 -0500
+
+    getStandardDynamicLinkerPath renamed and no allocator
+    
+     * `std.Target.getStandardDynamicLinkerPath` =>
+       `std.Target.standardDynamicLinkerPath`
+     * it now takes a pointer to fixed size array rather than an allocator
+     * `std.zig.system.NativeTargetInfo.detect` now supports reading
+       PT_INTERP from /usr/bin/env
+
     {#header_close#}
 
     {#header_close#}
@@ -2998,7 +3295,40 @@ Date:   Mon Feb 10 21:08:08 2020 -0500
     - add Codegen.pass1_arena and use for all `ZigValue` allocs
     - deinit Codegen.pass1_arena early in `zig_llvm_emit_output()`
 
+commit 770631cc79a655bc5e21184ca15bdb6192e905de
+Author: Michael Dusan <michael.dusan@gmail.com>
+Date:   Thu Feb 20 02:45:58 2020 -0500
 
+    stage1: free more heap after analysis
+    
+    - immediately free dangling IrInstGenConst after analysis
+    - fixup mem::List params `&Allocator` → `*Allocator`
+
+
+    {#header_close#}
+
+    {#header_open|Command Line Interface#}
+    TODO mention the transition to -femit-foo
+
+    TODO look at git shortlog for main.cpp to thank more contributors
+
+commit c664692bdd62765ab444a79a8704d2161c1809f1
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Feb 19 01:24:34 2020 -0500
+
+    make the CLI support depending on system headers and libraries
+    
+    (include and lib search paths)
+    
+    The detection of native system paths is self-hosted.
+    
+    closes #2041
+
+
+    TODO show when you pass a bad cpu feature or cpu model 
+
+
+    <p>Thanks to Noam Preil for contributions related to this.</p>
     {#header_close#}
 
     {#header_open|Miscellaneous Improvements#}
@@ -3028,6 +3358,8 @@ Date:   Mon Feb 10 21:08:08 2020 -0500
         required part of the development process.</li>
       <li>LemonBoy improved {#syntax#}@tagName{#endsyntax#} to work on enum literals. (#4214)</li>
       <li>Valentin Anger added support for code model selection.</li>
+      <li>Michael Dusan improved debuggability of the compiler by showing "Const" IR instructions
+          trailing after they are referenced. (#4511)</li>
     </ul>
     {#header_close#}
 
@@ -3067,6 +3399,12 @@ Date:   Mon Feb 10 21:08:08 2020 -0500
       strings are no longer considered absolute paths. (#4382)</li>
       <li>Rocknest fixed a double close in {#syntax#}openElfDebugInfo{#endsyntax#}.</li>
       <li>Fixed not checking type of return pointers. (#3224, #3269, #3327, #3422, #3646)</li>
+      <li>std lib updated to integrate with libc for environment variables, even
+        when building a static library. (#3511)</li>
+      <li>J.W fixed logic and index out of bounds in hashing algorithms.</li>
+      <li>Exported variables now respect linkage.</li>
+      <li>Alexandros Naskos fixed slicing of C pointers to no longer produce {#syntax#}allowzero{#endsyntax#} slices. Instead they insert a runtime assertion. (#4462)</li>
+      <li>Alexandros Naskos improved made the std lib VDSO code more robust and it now operates successfully inside Windows Subsystem for Linux. (#3997)</li>
     </ul>
 
     {#header_open|This Release Contains Bugs#}
