@@ -332,7 +332,7 @@
       <li><a href="https://ziglang.org/download/0.6.0/zig-linux-armv6kz-0.6.0.tar.xz">zig-linux-armv6kz-0.6.0.tar.xz</a> (older 32-bit ARM that notably works on Raspberry Pi 1 and RPi Zero)</li>
       <li><a href="https://ziglang.org/download/0.6.0/zig-linux-i386-0.6.0.tar.xz">zig-linux-i386-0.6.0.tar.xz</a> ({#link|32-bit x86|32-bit x86 Support#} Linux)</li>
       <li><a href="https://ziglang.org/download/0.6.0/zig-linux-riscv64-0.6.0.tar.xz">zig-linux-riscv64-0.6.0.tar.xz</a> ({#link|RISC-V|RISC-V Support#} Linux)</li>
-      <li><a href="https://ziglang.org/download/0.6.0/zig-windows-i386-0.6.0.tar.xz">zig-windows-i386-0.6.0.tar.xz</a> ({#link|32-bit x86 Windows|32-bit Windows Support#})</li>
+      <li><a href="https://ziglang.org/download/0.6.0/zig-windows-i386-0.6.0.zip">zig-windows-i386-0.6.0.zip</a> ({#link|32-bit x86 Windows|32-bit Windows Support#})</li>
     </ul>
     <p>
     See <a href="https://ziglang.org/download/">the download page</a> for a full list of
@@ -362,8 +362,6 @@
         nearing {#link|Tier 1|Tier 1 Support#}.</li>
       <li>All previously {#link|Tier 2|Tier 2 Support#} freestanding architectures are
         now {#link|Tier 1|Tier 1 Support#}.</li>
-      <li>Minimum supported Windows version is bumped from 7+ to 8.1+, following the
-        <a href="https://support.microsoft.com/en-us/help/13853/windows-lifecycle-fact-sheet">extended support lifecycle of Microsoft</a>.</li>
     </ul>
 <table>
 <thead>
@@ -692,7 +690,7 @@
 </tbody>
 </table>
 
-    {#header_open|WebAssembly Support Table#}
+    {#header_open|WebAssembly Support#}
 <table>
 <thead>
 <tr>
@@ -717,7 +715,16 @@
 </tr>
 </tbody>
 </table>
+    
+    <p>
+    Thanks to Benjamin Feng and Colin Svingen's contributions:
+    </p>
+    <ul>
+      <li>The WASI OS bits are audited and updated.</li>
+      <li>{#syntax#}std.heap.page_allocator{#endsyntax#} gains a WebAssembly implementation.</li>
+    </ul>
     {#header_close#}
+
     {#header_open|Tier System#}
 
     {#header_open|Tier 1 Support#}
@@ -792,12 +799,18 @@
     This is the <a href="https://github.com/ziglang/zig/issues/4952">only issue</a>
     holding Windows (both 32-bit and 64-bit) back from {#link|Tier 1|Tier 1 Support#}.
     </p>
+    <p>
+    In this release, the minimum supported Windows version is bumped from 7+ to 8.1+, following the
+    <a href="https://support.microsoft.com/en-us/help/13853/windows-lifecycle-fact-sheet">extended support lifecycle of Microsoft</a>.
+    </p>
+    <p>In addition:</p>
     <ul>
       <li>More cross compiling support for Windows system DLLs.</li>
       <li>{#syntax#}wWinMain{#endsyntax#}, {#syntax#}wWinMainCRTStartup{#endsyntax#},
         and {#syntax#}DllMain{#endsyntax#} are now recognized entrypoints. (#4376)</li>
       <li>Improved {#link|Debug Info and Stack Traces#}</li>
-      <li>The hack to disable native {#link|CPU Features#} on Windows is removed. (#508)</li>
+      <li>The hack to disable native {#link|CPU Features#} on Windows is removed
+          thanks to bug fixes in {#link|LLVM 10#}. (#508)</li>
     </ul>
     <p>
     Thanks Jared Miller, emekoi, syscall0, and LemonBoy for contributions related to this.
@@ -805,68 +818,26 @@
 
     {#header_open|32-bit Windows Support#}
     <p>
-    This release brings 32-bit Windows support!
+    In this release, i386-windows goes from
+    {#link|Tier 3|Tier 3 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}.
+    A {#link|pre-made .zip build of 32-bit Windows|Bootstrap Tarball#} is newly available.
     </p>
-      <li>i386-windows: {#link|Tier 3|Tier 3 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}.</li>
-commit 6a687bda76a34775bde35ee386e59f53961341f7
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sun Oct 6 16:45:51 2019 +0200
-
-    Support for TLS on Win32
-
-commit 93a49076f725e6e64f05b6be8422312c7dcda6d0
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sun Oct 6 13:24:05 2019 +0200
-
-    Initial support for i386-windows-msvc target
-commit c9a3c945dbc8d431fa5bdaf672401c312ead480f
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Oct 9 22:09:58 2019 +0200
-
-    Add a bunch of mingw lib32 .def files
-    
-    Possibly incomplete, but enough to let the test suite compile & pass.
-
-commit b96fa894625fc1aeb5f381dd52d291a6fc170fd1
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Oct 9 22:08:49 2019 +0200
-
-    Compile the architecture-specific mingw sources
-
-commit 9ae293ae3bda918280a9ee254685ec9468e7d141
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Oct 9 22:07:05 2019 +0200
-
-    Remove x86/Windows name mangling hack
-    
-    Let's fix this properly by generating the correct lib files from the
-    mingw sources.
-commit dfcbca8d2fed33c1fbd47b0b4e98ed0c214fa7e6
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Oct 9 22:49:33 2019 +0200
-
-    Add i386/mingw to the test rooster
-
-commit 4de3f9d8537fb32017265a2228f9799481db11a0
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Thu Oct 10 09:25:39 2019 +0200
-
-    Fix stack-probe symbol redefinition
-
-commit 8aa20227ed45294da9606222d0b20eb922cecb2e
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Fri Oct 11 19:13:59 2019 +0200
-
-    Fix cross-compilation to i386-windows-msvc
-    
-    Use Mingw's .def files to build a .lib when possible and show an error
-    otherwise.
-commit 2b624fea84abdd963ea06aca648b4da1477ec65f
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Oct 12 10:56:16 2019 +0200
-
-    Add dlltool functionality
-    
+    <p>
+    Thanks to LemonBoy's work on this:
+    </p>
+    <ul>
+      <li>Support for Win32 Thread-Local Storage.</li>
+      <li>Adding more lib32 .def files from {#link|mingw-w64|mingw-w64 7.0.0#}.</li>
+      <li>Removing x86/Windows name mangling hack and properly generating
+        correct .lib files from mingw-w64 sources, by adding dlltool functionality to Zig.</li>
+      <li>Adding {#link|Test Coverage#} for i386-windows.</li>
+      <li>Fixing stack-probe symbol redefinition.</li>
+    </ul>
+    <p>
+    The only thing holding 32-bit Windows back from {#link|Tier 1 Support#} is enabling
+    i386-windows CI builds of Zig that update the download page and the
+    <a href="https://github.com/ziglang/zig/issues/4952">same f16 vector issue from 64-bit Windows</a>.
+    </p>
     {#header_close#}
     {#header_close#}
 
@@ -984,20 +955,6 @@ Date:   Wed Mar 25 10:19:49 2020 -0400
     
     Netbsd forever
 
-    {#header_close#}
-
-    {#header_open|WebAssembly Support#}
-    <p>TODO</p>
-
-commit 4e6ad8efd9fcefb820acf4a03fc4ab9157f85c1b
-Author: Colin Svingen <swoogan@gmail.com>
-Date:   Sun Jan 5 20:30:28 2020 -0500
-
-    Removes proc_raise from WASI implementation
-    <ul>
-      <li>Benjamin Feng implemented {#syntax#}std.heap.page_allocator{#endsyntax#} for WebAssembly.</li>
-      <li>Benjamin Feng audited and updated the OS bits for WASI.</li>
-    </ul>
     {#header_close#}
 
     {#header_open|UEFI Support#}
