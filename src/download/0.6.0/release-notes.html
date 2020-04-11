@@ -1625,77 +1625,119 @@ Date:   Mon Mar 9 18:36:01 2020 -0400
     {#header_close#}
 
     {#header_open|Deprecated Builtins Removed#}
-commit d56115ef4189a7716d9371ef87df9124a61f5ab1
-Author: Vexu <git@vexu.eu>
-Date:   Mon Feb 24 23:50:02 2020 +0200
-
-    remove `@IntType` and `@ArgType` (mostly) from the compiler
-
-commit 538d9a5dd8e0eca02d363bbd5f749405e003f1c6
-Author: Vexu <git@vexu.eu>
-Date:   Mon Feb 24 23:39:03 2020 +0200
-
-    remove uses of `@ArgType` and `@IntType`
-
-commit 3458fb891d8c7072a9bff6a32db9f3105ab72aa4
-Author: Vexu <git@vexu.eu>
-Date:   Mon Feb 24 23:21:11 2020 +0200
-
-    remove `@typeId`, `@memberCount`, `@memberName` and `@memberType` from the compiler
-
-commit 45da72c5b64069b7d5238465130a50f96678a148
-Author: Vexu <git@vexu.eu>
-Date:   Mon Feb 24 23:03:30 2020 +0200
-
-    remove usages of `@typeId`, `@memberCount`, `@memberName` and `@memberType`
+    The following builtins have been removed:
+    <ul>
+      <li>{#syntax#}@typeId{#endsyntax#} becomes {#syntax#}@typeInfo{#endsyntax#} tag-type</li>
+      <li>{#syntax#}@memberCount{#endsyntax#} becomes {#syntax#}std.meta.fields(T).len{#endsyntax#}</li>
+      <li>{#syntax#}@memberName{#endsyntax#} becomes {#syntax#}std.meta.fields(T)[i].name{#endsyntax#}</li>
+      <li>{#syntax#}@memberType{#endsyntax#} becomes {#syntax#}std.meta.fields(T)[i].field_type{#endsyntax#}</li>
+      <li>{#syntax#}@ArgType{#endsyntax#} becomes {#syntax#}@typeInfo(T).Fn.args[i].arg_type.?{#endsyntax#}</li>
+      <li>{#syntax#}@IntType{#endsyntax#} becomes {#syntax#}std.meta.IntType{#endsyntax#}</li>
+    </ul>
+    <p>
+    Thanks to Vexu for implementing this.
+    </p>
     {#header_close#}
 
     {#header_open|Allow Empty Inferred Error Sets#}
-    TODO
-commit fd1eade4ca02b125b1a2ecea564f32af6a683248
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Feb 26 23:17:44 2020 +0100
+    The body of functions returning inferred error sets are no longer required
+    to return any possible errors.
+    {#code_begin|test#}
+fn foo() !void {}
 
-    ir: Allow empty inferred error sets
-    
-    Closes #4564
+test "" {
+    foo() catch |err| switch (err) {};
+}
+    {#code_end#}
+    <p>
+    Thanks to LemonBoy for implementing this.
+    </p>
     {#header_close#}
 
     {#header_open|@TypeOf Supports Multiple Parameters#}
-    TODO #439 thanks LemonBoy for the implementation
-    it's the return type for math.max / math.min
+    Multiple parameters can now be specified with {#syntax#}@TypeOf{#endsyntax#} in cases where
+    <a href="https://ziglang.org/documentation/0.6.0/#Peer-Type-Resolution">Peer Type Resolution</a>
+    is needed.
+    {#code_begin|syntax#}
+// std.math.max
+pub fn max(x: var, y: var) @TypeOf(x, y) {
+    return if (x > y) x else y;
+}
+    {#code_end#}
+    <p>
+    Thanks to Josh Wolfe for proposal and LemonBoy for implementing this.
+    </p>
     {#header_close#}
 
     {#header_open|Underscore Separators in Number Literals#}
-    TODO mention tiehuis original proposal
-
-commit 7aac21c6f59b70deea6ced617f7b6a550e92bab4
-Author: momumi <57862114+momumi@users.noreply.github.com>
-Date:   Sun Mar 15 11:37:36 2020 +1000
-
-    allow `_` separators in number literals (stage 1) #4741
-    
-    * Underscores `_` may be placed between two digits in a int/float literal
-    * Consecutive underscores are not allowed
-    * Fixed parsing bug in exponents of hexadecimal float literals.
-      Exponents should always be base 10, but hex characters would be parsed
-      inside the exponent and everything after them would be ignored. eg:
-      `0x1.0p1ab1` would be parsed as `0x1.0p1`.
+    Underscores may be placed between two digits as a visual separator.
+    Consecurity underscores are not allowed.
+    {#code_begin|syntax#}
+fn digits() void {
+    _ = 1_234_567;
+    _ = 0xff00_00ff;
+    _ = 0b10000000_10101010;
+    _ = 0b1000_0000_1010_1010;
+    _ = 0x123_190.109_038_018p102;
+    _ = 3.14159_26535_89793;
+}
+    {#code_end#}
+    <p>
+    Thanks to Marc Tiehuis for original proposal and momumi for implementing this.
+    </p>
     {#header_close#}
 
     {#header_open|Slicing with Comptime Indexes#}
-    TODO #863
+    When slicing and the length is comptime-known, the expression type is now
+    a single-item pointer to array {#syntax#}*[N]T{#endsyntax#} .
+    Prior to this change an error-prone {#syntax#}@ptrCast{#endsyntax#} was required.
+    {#code_begin|test#}
+const std = @import("std");
+const assert = std.debug.assert;
+
+test "slicing with comptime indexes" {
+    var a = "abcdefgh".*;
+    assert(@TypeOf(a) == [8:0]u8);
+
+    // both indices are comptime, thus length is comptime
+    var b = a[3..6];
+    assert(@TypeOf(b) == *[3]u8);
+
+    // length is runtime
+    var runtime_i: usize = 3;
+    var c = a[runtime_i..6];
+    assert(@TypeOf(c) == []u8);
+
+    // copy array
+    a[0..3].* = a[5..8].*;
+    assert(std.mem.eql(u8, &a, "fghdefgh"));
+}
+    {#code_end#}
+    <p>
+    Thanks to Jimmi Holst Christensen for proposing this.
+    </p>
     {#header_close#}
 
     {#header_open|errdefer Payload#}
-    TODO
-commit 128e70ff3a056e5b800c624f7157b00fd624509b
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Thu Mar 19 21:03:38 2020 +0100
+    <p>
+    {#syntax#}errdefer{#endsyntax#} now provides syntax to access the in-flight error.
+    </p>
+    {#code_begin|test#}
+const std = @import("std");
 
-    ir: Allow errdefer with payload
-    
-    Closes #1265
+fn perform() !void {
+    errdefer |err| std.debug.assert(err == error.Overflow);
+    _ = try std.math.add(u8, 255, 1);
+}
+
+test "errdefer with payload" {
+    perform() catch return;
+    unreachable;
+}
+    {#code_end#}
+    <p>
+    Thanks to Byron Heads for the proposal and LemonBoy for implementing this.
+    </p>
     {#header_close#}
 
     {#header_close#}
