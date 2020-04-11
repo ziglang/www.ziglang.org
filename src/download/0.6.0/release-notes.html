@@ -1362,51 +1362,26 @@ test "slice with sentinel" {
     {#header_close#}
 
     {#header_open|Remove Array-to-Reference Type Coercion#}
-    Now that {#link|Sentinel-Terminated Pointers#} is done, the main motivation for type coercion from array values to slices is gone. It's a footgun for Zig to automatically convert a value into a pointer to that value; such an operation should be explicit.
-
-```zig
+    <p>
+    Now that {#link|Sentinel-Terminated Pointers#} is done, the main motivation for type coercion
+    from array values to slices is gone. It's a footgun for Zig to automatically convert a value
+    into a pointer to that value; such an operation should be explicit.
+    </p>
+    {#code_begin|test_err|array literal requires#}
 test "coerce array value to slice" {
     var array: []const i32 = [_]i32{ 1, 2, 3, 4 };
 }
-```
-
-Expected output:
-
-```
-test.zig:2:30: error: expected type '[]const i32', found '[4]i32'
-    var array: []const i32 = [_]i32{ 1, 2, 3, 4 };
-                                   ^
-```
-
-Actual output: (test passes)
-
-How to upgrade code for these new semantics:
-
-```diff
--    var array: []const i32 = [_]i32{ 1, 2, 3, 4 };
-+    var array: []const i32 = &[_]i32{ 1, 2, 3, 4 };
-```
-
-
-I expect this change to simplify the result location semantics, which should help with reasoning about zig code, as well as reduce the complexity of a zig compiler.
-
-
-     * Implements #3768. This is a sweeping breaking change that requires
-       many (trivial) edits to Zig source code. Array values no longer
-       coerced to slices; however one may use `&` to obtain a reference to
-       an array value, which may then be coerced to a slice.
-    
-     * Adds `IrInstruction::dump`, for debugging purposes. It's useful to
-       call to inspect the instruction when debugging Zig IR.
-    
-     * Fixes bugs with result location semantics. See the new behavior test
-       cases, and compile error test cases.
-    
-     * Fixes bugs with `@typeInfo` not properly resolving const values.
-    
-     * Behavior tests are passing but std lib tests are not yet. There
-       is more work to do before merging this branch.
-
+    {#code_end#}
+    <p>
+    How to upgrade code for these new semantics:
+    </p>
+    {#code_begin|test|coerce_array_ptr#}
+test "coerce array pointer to slice" {
+    var array: []const i32 = &[_]i32{ 1, 2, 3, 4 };
+}
+    {#code_end#}
+    <p>This change to simplifies the result location semantics, which helps with reasoning about
+    Zig code, as well as reducing the complexity of a Zig compiler.</p>
     {#header_close#}
 
     {#header_open|Numerical Comparisons#}
