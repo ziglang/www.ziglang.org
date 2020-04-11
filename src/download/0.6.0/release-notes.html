@@ -348,21 +348,6 @@
     Zig uses a {#link|Tier System#} to communicate the level of support for different targets. 
     Notably, in this release:
     </p>
-    TODO move these to their own sections
-    <ul>
-      <li>x86_64-macOS: {#link|Tier 1|Tier 1 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}.<br>
-        This is not because Zig dropped any kind of support for macOS, but rather because
-        the bar for meeting {#link|Tier 1|Tier 1 Support#} requirements was raised,
-        to include "libc is available for this target even when cross-compiling."</li>
-      <li>i386-linux: {#link|Tier 3|Tier 3 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}, and nearing {#link|Tier 1|Tier 1 Support#}.</li>
-      <li>riscv64-freestanding: {#link|Tier 4|Tier 4 Support#} =&gt; {#link|Tier 1|Tier 1 Support#}.</li>
-      <li>aarch64-linux is very nearly {#link|Tier 1|Tier 1 Support#}. The only thing preventing it is
-        <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+label%3Aarch-arm64+label%3Abug">some behavior tests are disabled</a>.</li>
-      <li>riscv64-linux: {#link|Tier 4|Tier 4 Support#} =&gt; {#link|Tier 2|Tier 2 Support#} and is already
-        nearing {#link|Tier 1|Tier 1 Support#}.</li>
-      <li>All previously {#link|Tier 2|Tier 2 Support#} freestanding architectures are
-        now {#link|Tier 1|Tier 1 Support#}.</li>
-    </ul>
 <table>
 <thead>
 <tr>
@@ -842,95 +827,112 @@
     {#header_close#}
 
     {#header_open|RISC-V Support#}
-    <p>TODO</p>
-commit ba711f1115b76d85b13fc64636c4a4af8405cc1e
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sun Oct 13 12:12:33 2019 +0200
-
-    Add ELF architecture constant for RISC-V
-commit b1f3f59d660bbe163502daa6f0acd560782f49d8
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sun Oct 13 12:13:41 2019 +0200
-
-    Fix fp-based backtracing on RISC-V
-    
-    The fp points to the top of the frame instead of pointing to the old fp,
-    compensate this difference with an offset.
-
-commit 94f7c560015f7cb7ed8046339e2d0724dc86fcd6
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Mar 22 21:47:19 2020 -0400
-
-    riscv: add -mrelax arg for C to work around upstream issue
-    
-    See #4485
-
-
-    TODO upgrade risc-v to tier 2 support and other architectures too
-
-
-commit 11b50e3ad8781fd600961e80aad622c6f5616acc
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Apr 3 11:02:22 2020 -0400
-
-    change the default ABI of riscv64-linux-musl
-    
-    Before, this would cause a link failure when mixing Zig and C code for
-    RISC-V targets.
-    
-    Now, the ABIs match and Zig and C code can be mixed successfully.
-    
-    I will file a follow-up issue for the ability to deal more explicitly
-    with ABIs.
-    
-    closes #4863
-
+    <p>
+    RISC-V support in Zig is now excellent! We even have
+    riscv64 binary tarballs now thanks to the {#link|Bootstrap Tarball#}.
+    It does, however require
+    <a href="https://github.com/ziglang/bootstrap/issues/4#issuecomment-608549353">one workaround</a>
+    due to
+    <a href="https://bugs.llvm.org/show_bug.cgi?id=45419">clang crashing when it tries to build itself for self-hosted riscv64</a>.
+    </p>
+    <p>riscv64-freestanding went from
+    {#link|Tier 4|Tier 4 Support#} =&gt; {#link|Tier 1|Tier 1 Support#}.
+    </p>
+    <p>riscv64-linux went from {#link|Tier 4|Tier 4 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}
+    and is already nearing {#link|Tier 1|Tier 1 Support#}.</p>
+    <p>
+    {#link|Debug Info and Stack Traces#} on RISC-V is now working.
+    </p>
+    <p>
+    The default ABI of riscv32-linux and riscv64-linux is changed to be 
+    ilp32d and lp64d, respectively. Likewise, the default ABI of non-linux riscv32 and riscv64
+    are changed to be ilp32 and lp64. This matches Clang's behavior. (#4863)
+    </p>
+    <p>
+    Zig now has {#link|Test Coverage#} for riscv64 with no libc and riscv64 with
+    {#link|musl|musl 1.2.0#} libc. The issue for Zig providing {#link|glibc|glibc 2.31#} for
+    riscv64 is #3340.
+    </p>
+    <p>
+    Thanks to LemonBoy for contributions related to this, and to Luís Marques for fixing
+    RISC-V issues upstream, which landed in {#link|LLVM 10#}.
+    </p>
     {#header_close#}
 
     {#header_open|ARM Support#}
-    <p>TODO</p>
-    TODO promote aarch64 to Tier 1 support. many bugs solved.
-commit ead9630c135b86c77de9774635f7b5c55ce62f41
+    <p>
+    aarch64-linux is very nearly {#link|Tier 1|Tier 1 Support#}. The only thing preventing it is
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+label%3Aarch-arm64+label%3Abug">some behavior tests are disabled</a>.
+    </p>
+    <p>
+    In this release, Zig gained CI {#link|Test Coverage#} for aarch64, and the download page
+    is updated with every master branch commit with a binary tarball for aarch64.
+    </p>
+    <p>
+    Thanks to the {#link|Bootstrap Tarball#} this release additionally gains a
+    32-bit ARM binary available (armv7a), as well as another 32-bit slightly older ARM
+    binary (armv6kz) which notably works on Raspberry Pi 1 and RPi 0.
+    </p>
+    <p>
+    Thank you to Timon Kruiper and LemonBoy for working together to solve undefined behavior
+    bugs revealed by building Zig with {#link|zig cc#}.
+    </p>
+    <ul>
+      <li>Fix signedness for some fields in ARM stat definition</li>
+      <li>C ABI support is partially implemented.</li>
+      <li>Fix possible unaligned ptr from <code>getauxval</code>. This caused SIGILL on armv7a-linux. (#4796)</li>
+      <li>Fix multiplication overflow in <code>hash_const_val</code>. In some cases the compiler
+        was actually emitting an 64 bit signed multiplication, instead of a 32 bit unsigned one.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|32-bit x86 Support#}
+      <li>i386-linux: {#link|Tier 3|Tier 3 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}, and nearing {#link|Tier 1|Tier 1 Support#}.</li>
+    <p>TODO LemonBoy implemented support for this</p>
+commit e1e06e676666015faf733f70c6e1970999b5af9e
 Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Oct 12 20:52:10 2019 +0200
+Date:   Sat Nov 30 16:13:33 2019 +0100
 
-    Fix signedness for some fields in ARM stat definition
-commit f8bd1cd3b11802d3566d287167d79d3cfc3ef41d
+    linux-i386 support
+
+    pull request #3808
+
+commit 0e7461d4a34272a94acba20b09aaee283e88a806
+Merge: eff50abce a779450fe
 Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Oct 24 19:13:21 2019 -0400
+Date:   Fri Feb 7 22:51:43 2020 -0500
 
-    implement partial C ABI support for aarch64
-
-
-    TODO note that we gained aarch64 ci support and this release as well as 
-    master branch have aarch64 tarballs.
-
-    Thanks to the {#link|Bootstrap Tarball#} this release also has a 32-bit arm
-    binary available (armv7a).
-
-    TODO mention Timon Kruiper and LemonBoy working together to solve undefined
-    behavior that UBSAN found.
-
-commit 9e019ed26bf2ab46040099dadaf778dec436bc4a
-Author: Timon Kruiper <timonkruiper@gmail.com>
-Date:   Tue Mar 31 20:15:09 2020 +0200
-
-    Fix possible unaligned ptr from `getauxval`. This caused SIGILL on armv7a-linux
-
-    Merge pull request #4896 from FireFox317/fix-arm32-stuff fix some nullptr dereferences on arm-linux-musleabhif
-
-commit b5526d0b3bb0329ed9ba614d45a1b711b118c315
-Author: Timon Kruiper <timonkruiper@gmail.com>
-Date:   Thu Apr 2 21:32:38 2020 +0200
-
-    Fix multiplication overflow in `hash_const_val`
+    Merge pull request #4408 from LemonBoy/mmap-i386-fix
     
-    In some cases the compiler was actually emitting an 64 bit signed
-    multiplication, instead of a 32 bit unsigned one.
-
-
+    handle SIGBUS, fix mmap on i386 linux
 
     {#header_close#}
+
+    {#header_open|MIPS Support#}
+    <p>TODO</p>
+commit 17f2af10b56dd508ebd4a22834fd594cb5a49864
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Tue Oct 1 15:57:38 2019 +0200
+
+    Correct signal bits for MIPS
+    
+    Also enable the segfault handler for all the supported architectures
+    beside MIPS.
+
+commit 7640bec8e0e735eaba49087840b7f6e6b2dd74ab
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Thu Oct 3 15:32:47 2019 +0200
+
+    Fix pipe syscall for MIPS
+
+commit 6f105b5ae7b66ca7e46347b97e5630b866087b87
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Nov 30 21:14:32 2019 +0100
+
+    Implement target_dynamic_linker for mips
+    {#header_close#}
+
+
 
     {#header_open|FreeBSD Support#}
     <p>TODO</p>
@@ -980,53 +982,12 @@ Date:   Mon Dec 9 14:26:13 2019 +0900
     TODO do a git shortlog  for that subdir
     {#header_close#}
 
-    {#header_open|iOS Support#}
+    {#header_open|macOS Support#}
     <p>TODO</p>
-    {#header_close#}
-
-    {#header_open|MIPS Support#}
-    <p>TODO</p>
-commit 17f2af10b56dd508ebd4a22834fd594cb5a49864
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Tue Oct 1 15:57:38 2019 +0200
-
-    Correct signal bits for MIPS
-    
-    Also enable the segfault handler for all the supported architectures
-    beside MIPS.
-
-commit 7640bec8e0e735eaba49087840b7f6e6b2dd74ab
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Thu Oct 3 15:32:47 2019 +0200
-
-    Fix pipe syscall for MIPS
-
-commit 6f105b5ae7b66ca7e46347b97e5630b866087b87
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Nov 30 21:14:32 2019 +0100
-
-    Implement target_dynamic_linker for mips
-    {#header_close#}
-
-    {#header_open|32-bit x86 Support#}
-    <p>TODO LemonBoy implemented support for this</p>
-commit e1e06e676666015faf733f70c6e1970999b5af9e
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Nov 30 16:13:33 2019 +0100
-
-    linux-i386 support
-
-    pull request #3808
-
-commit 0e7461d4a34272a94acba20b09aaee283e88a806
-Merge: eff50abce a779450fe
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Feb 7 22:51:43 2020 -0500
-
-    Merge pull request #4408 from LemonBoy/mmap-i386-fix
-    
-    handle SIGBUS, fix mmap on i386 linux
-
+      <li>x86_64-macOS: {#link|Tier 1|Tier 1 Support#} =&gt; {#link|Tier 2|Tier 2 Support#}.<br>
+        This is not because Zig dropped any kind of support for macOS, but rather because
+        the bar for meeting {#link|Tier 1|Tier 1 Support#} requirements was raised,
+        to include "libc is available for this target even when cross-compiling."</li>
     {#header_close#}
 
     {#header_open|Android Support#}
