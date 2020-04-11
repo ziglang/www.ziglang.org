@@ -1258,39 +1258,24 @@
 
     <h2 id="Removal-of-Sub-Architecture"><a href="#toc-Removal-of-Sub-Architecture">Removal of Sub-Architecture</a> <a class="hdr" href="#Removal-of-Sub-Architecture">§</a></h2>
 
-commit 84f1893c18c4ef12dbe268ed6d11a11966a9d447
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Feb 19 21:30:36 2020 -0500
-
-    remove the concept of "sub-architecture"
-    
-    in favor of CPU features. Also rearrange the `std.Target`
-    data structure.
-    
-     * note: `@import("builtin")` was already deprecated in favor of
-       `@import("std").builtin`.
-     * `std.builtin.arch` is now deprecated in favor of
-       `std.builtin.cpu.arch`.
-     * `std.Target.CpuFeatures.Cpu` is now `std.Target.Cpu.Model`.
-     * `std.Target.CpuFeatures` is now `std.Target.Cpu`.
-     * `std.Target` no longer has an `arch` field. Instead it has a
-       `cpu` field, which has `arch`, `model`, and `features`.
-     * `std.Target` no longer has a `cpu_features` field.
-     * `std.Target.Arch` is moved to `std.Target.Cpu.Arch` and
-       it is an enum instead of a tagged union.
-     * `std.Target.parseOs` is moved to `std.Target.Os.parse`.
-     * `std.Target.parseAbi` is moved to `std.Target.Abi.parse`.
-     * `std.Target.parseArchSub` is only for arch now and moved
-        to `std.Target.Cpu.Arch.parse`.
-     * `std.Target.parse` is improved to accept CPU name and features.
-     * `std.Target.Arch.getBaselineCpuFeatures` is moved to
-       `std.Target.Cpu.baseline`.
-     * `std.Target.allCpus` is renamed to `std.Target.allCpuModels`.
-     * `std.Target.defaultAbi` is moved to `std.Target.Abi.default`.
-     * Significant cleanup of aarch64 and arm CPU features, resulting in
-       the needed bit count for cpu feature set going from 174 to 138.
-     * Add `std.Target.Cpu.Feature.Set.addFeatureSet` for merging
-       feature sets together.
+    <p>
+    The whole point of Zig is to re-examine the premises of system programming, and
+    rework abstractions that have shown to be less than ideal. Naturally, once Zig
+    gained CPU feature awareness, it raised the question, <em>what is the purpose of
+    sub-architectures?</em>
+    </p>
+    <p>
+    As it turns out, the answer is "none". Sub-architectures are rendered redundant by
+    the existence of CPU features. And so they no longer exist in Zig.
+    </p>
+    <p>
+    This has the happy consequence of making <code class="zig">std.Target.Cpu.Arch</code>
+    an enum rather than a tagged union.
+    </p>
+    <p>Rather than:</p>
+    <pre>-target armv7a-linux-gnu</pre>
+    <p>Now it is:</p>
+    <pre>-target arm-linux-gnu -mcpu=generic+v7a</pre>
     
 
     <h2 id="OS-Version-Ranges"><a href="#toc-OS-Version-Ranges">OS Version Ranges</a> <a class="hdr" href="#OS-Version-Ranges">§</a></h2>
