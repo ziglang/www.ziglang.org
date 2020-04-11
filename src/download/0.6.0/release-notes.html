@@ -950,104 +950,176 @@
     {#header_close#}
 
     {#header_open|Target Details#}
-    <p>TODO reorganization of std.Target and std.CrossTarget</p>
-    <p>TODO awareness of cpu models and cpu features</p>
-    <p>TODO detection of native target info, dynamic linker, cpu features</p>
-    <p>TODO show improved cli</p>
-commit dbe4d72bcfb20fc43713781679a0d23aea0a17d9
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Feb 26 01:18:23 2020 -0500
+    <p>
+    Zig's awareness of {#link|CPU model and features|CPU Features#} as well as
+    {#link|operating system versions|OS Version Ranges#} has broadened.
+    </p>
+    <p>
+    The standard library now has two distinct concepts:
+    {#syntax#}std.Target{#endsyntax#} and {#syntax#}std.zig.CrossTarget{#endsyntax#}.
+    </p>
+    <p>
+    CrossTarget is what Zig's command line options get parsed into. It contains the concept
+    of "native" and "default". Once this structure is populated, it can be <em>resolved</em>
+    into a Target.
+    </p>
+    <p>
+    A Target has all the information available; the CPU, OS, and ABI are all populated.
+    As an example, a CrossTarget might be set to "native", and then when it is resolved,
+    it turns into a Target which has the triple <code>riscv64-linux-musl</code>.
+    </p>
+    <p>
+    {#link|zig build#} scripts set the desired CrossTarget of a build artifact; the Zig
+    code being compiled only has access to the resolved Target as {#syntax#}std.Target.current{#endsyntax#}.
+    </p>
+    <p>
+    Zig now supports a more fine-grained sense of what is native and what is not.
+    Some examples:
+    </p>
+    <p>This is now allowed:</p>
+    <pre>-target native</pre>
+    <p>Different OS but native CPU, default Windows C ABI:</p>
+    <pre>-target native-windows</pre>
+    <p>This could be useful for example when running in Wine.</p>
+    
+    <p>Different CPU but native OS, native C ABI.</p>
+    <pre>-target x86_64-native -mcpu=skylake</pre>
+    
+    <p>Different C ABI but otherwise native target:</p>
+    <pre>-target native-native-musl</pre>
+    <pre>-target native-native-gnu</pre>
 
-    separate std.Target and std.zig.CrossTarget
-    
-    Zig now supports a more fine-grained sense of what is native and what is
-    not. Some examples:
-    
-    This is now allowed:
-    -target native
-    
-    Different OS but native CPU, default Windows C ABI:
-    -target native-windows
-    This could be useful for example when running in Wine.
-    
-    Different CPU but native OS, native C ABI.
-    -target x86_64-native -mcpu=skylake
-    
-    Different C ABI but otherwise native target:
-    -target native-native-musl
-    -target native-native-gnu
-    
-    Lots of breaking changes to related std lib APIs.
-    Calls to getOs() will need to be changed to getOsTag().
-    Calls to getArch() will need to be changed to getCpuArch().
-    
-    Usage of Target.Cross and Target.Native need to be updated to use
-    CrossTarget API.
-    
-    `std.build.Builder.standardTargetOptions` is changed to accept its
+    <p>
+    This is a <strong>breaking change</strong> to std lib APIs for checking the OS and CPU architecture. 
+    To update from 0.5.0 to 0.6.0:
+    </p>
+    <p>
+    {#syntax#}builtin.os{#endsyntax#} =&gt; {#syntax#}builtin.os.tag{#endsyntax#}
+    </p>
+    <p>
+    {#syntax#}builtin.arch{#endsyntax#} =&gt; {#syntax#}builtin.cpu.arch{#endsyntax#}
+    </p>
+    <p>{#syntax#}std.build.Builder.standardTargetOptions{#endsyntax#} is changed to accept its
     parameters as a struct with default values. It now has the ability to
     specify a whitelist of targets allowed, as well as the default target.
     Rather than two different ways of collecting the target, it's now always
     a string that is validated, and prints helpful diagnostics for invalid
     targets. This feature should now be actually useful, and contributions
-    welcome to further improve the user experience.
-    
-    `std.build.LibExeObjStep.setTheTarget` is removed.
-    `std.build.LibExeObjStep.setTarget` is updated to take a CrossTarget
-    parameter.
-    
-    `std.build.LibExeObjStep.setTargetGLibC` is removed. glibc versions are
-    handled in the CrossTarget API and can be specified with the `-target`
+    welcome to further improve the user experience.</p>
+    <p>{#syntax#}std.build.LibExeObjStep.setTheTarget{#endsyntax#} is removed.
+    {#syntax#}std.build.LibExeObjStep.setTarget{#endsyntax#} is updated to take a CrossTarget
+    parameter.</p>
+    <p>
+    {#syntax#}std.build.LibExeObjStep.setTargetGLibC{#endsyntax#} is removed. glibc versions are
+    handled in the CrossTarget API and can be specified with the <code>-target</code>
     triple.
-    
-    `std.builtin.Version` gains a `format` method.
+    </p>
+    <p>
+    {#syntax#}std.builtin.Version{#endsyntax#} gains a {#syntax#}format{#endsyntax#} method.
+    </p>
+    <p>Thanks to Timon Kruiper for contributions related to this.</p>
 
-commit eefb0a36c060fab2d9d2bf2a258f0fd5e8126fe8
-Author: Timon Kruiper <timonkruiper@gmail.com>
-Date:   Wed Apr 1 22:46:02 2020 +0200
+    {#header_open|CPU Features#}
+    <p>
+    Zig now has a database of CPU models and CPU features for every architecture.
+    Now that <code>zig targets</code> is {#link|self-hosted|Self-Hosted Compiler Progress#}
+    and outputs JSON, the easiest way to see this is to pipe <code>zig targets</code> into a JSON
+    file and inspect it with a graphical JSON viewer, such as Firefox. 
+    </p>
+    <p>
+    Here I will show you <code>zig targets | jq .native</code> on the laptop that I am typing
+    these release notes on:
+    </p>
+    <pre><code>{
+  "triple": "x86_64-linux.5.4.15...5.4.15-gnu.2.27",
+  "cpu": {
+    "arch": "x86_64",
+    "name": "skylake",
+    "features": [
+      "64bit",
+      "adx",
+      "aes",
+      "avx",
+      "avx2",
+      "bmi",
+      "bmi2",
+      "clflushopt",
+      "cmov",
+      "cx16",
+      "cx8",
+      "ermsb",
+      "f16c",
+      "false_deps_popcnt",
+      "fast_gather",
+      "fast_scalar_fsqrt",
+      "fast_shld_rotate",
+      "fast_variable_shuffle",
+      "fast_vector_fsqrt",
+      "fma",
+      "fsgsbase",
+      "fxsr",
+      "idivq_to_divl",
+      "invpcid",
+      "lzcnt",
+      "macrofusion",
+      "merge_to_threeway_branch",
+      "mmx",
+      "movbe",
+      "nopl",
+      "pclmul",
+      "popcnt",
+      "prfchw",
+      "rdrnd",
+      "rdseed",
+      "rtm",
+      "sahf",
+      "sgx",
+      "slow_3ops_lea",
+      "sse",
+      "sse2",
+      "sse3",
+      "sse4_1",
+      "sse4_2",
+      "ssse3",
+      "vzeroupper",
+      "x87",
+      "xsave",
+      "xsavec",
+      "xsaveopt",
+      "xsaves"
+    ]
+  },
+  "os": "linux",
+  "abi": "gnu"
+}</code></pre>
+    <p>
+    Here you can see the CPU model and set of CPU features Zig detected. The implementation
+    of this is <strong>fully self-hosted</strong>. Although Zig properly informs LLVM about
+    CPU features when it does code generation, the awareness of CPU features and detection of
+    CPU features is all implemented in Zig code. Currently, only x86 CPU feature detection is
+    implemented; Zig falls back to LLVM for detecting native CPU model and features on other
+    architectures. <a href="https://github.com/ziglang/zig/issues/4591">Contributions welcome</a>!
+    </p>
+    <p>
+    Zig now has the ability to parse CPU features as part of the target triple.
+    </p>
+    <p>Native architecture, OS, and ABI, but baseline CPU features:</p>
+    <pre>-target native -mcpu=baseline</pre>
+    <p>RISC-V 64-bit architecture, OS linux, default ABI, native CPU plus the rdpid feature, minus the sse3 feature:</p>
+    <pre>-target riscv64-linux -mcpu=native+rdpid-sse3</pre>
+    <p>Target the RPi Zero:</p>
+    <pre>-target arm-linux-musleabi -mcpu=arm1176jzf_s</pre>
+    <p>
+    Now that it is possible to select what CPU features are enabled, freestanding no longer
+    has SSE enabled by default.
+    </p>
+    <p>Thanks to Layne Gustafson for the initial exploration and implementation of
+    this feature, and to alichay for the initial implementation of x86 CPU feature detection.
+    </p>
+    <p>Thanks to LemonBoy, Michael Dusan, and Noam Preil for related contributions.</p>
+    {#header_close#}
 
-    Fix CrossTarget.parse test on platforms where abi != gnu
-    
-    Closes #4902
-
-commit 60f2f3457dd73772e7cd60bf5d90358079361d11
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Feb 27 16:38:10 2020 -0500
-
-    getStandardDynamicLinkerPath renamed and no allocator
-    
-     * `std.Target.getStandardDynamicLinkerPath` =>
-       `std.Target.standardDynamicLinkerPath`
-     * it now takes a pointer to fixed size array rather than an allocator
-     * `std.zig.system.NativeTargetInfo.detect` now supports reading
-       PT_INTERP from /usr/bin/env
-
-commit 60cd11bd4b48e4dfdf11d1f25cb1ee842a49ee1d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Oct 24 01:06:03 2019 -0400
-
-    get rid of std.os.foo.is_the_target
-    
-    It had the downside of running all the comptime blocks and resolving
-    all the usingnamespaces of each system, when just trying to discover if
-    the current system is a particular one.
-    
-    For Darwin, where it's nice to use `std.Target.current.isDarwin()`, this
-    demonstrates the utility that #425 would provide.
-
-commit d91fc0fdd8f42dc8c38347e1a0ec87fd583c1d3d
-Author: Noam Preil <pleasantatk@gmail.com>
-Date:   Sat Oct 26 14:08:11 2019 -0400
-
-    Don't use SSE on freestanding
-
-
-    Thanks to Layne Gustafson for the initial exploration and implementation of this feature.
-    Thanks to LemonBoy for contributions related to this feature.
-
-    TODO note about `zig targets` outputting JSON now and it's self-hosted.
-
-
+    {#header_open|Removal of Sub-Architecture#}
 commit 84f1893c18c4ef12dbe268ed6d11a11966a9d447
 Author: Andrew Kelley <andrew@ziglang.org>
 Date:   Wed Feb 19 21:30:36 2020 -0500
@@ -1081,27 +1153,35 @@ Date:   Wed Feb 19 21:30:36 2020 -0500
        the needed bit count for cpu feature set going from 174 to 138.
      * Add `std.Target.Cpu.Feature.Set.addFeatureSet` for merging
        feature sets together.
-    
-    `-target-feature` and `-target-cpu` are removed in favor of
-    `-mcpu`, to conform to established conventions, and it gains
-    additional power to support cpu features. The syntax is:
-    -mcpu=name+on1+on2-off1-off2
-    
-    closes #4261
-
-
-     * separate Stage2Target.is_native into Stage2Target.is_native_os and
-       Stage2Target.is_native_cpu.
-
-    {#header_open|CPU Features#}
-    TODO
-
-    TODO thanks to alichay for implementing x86 CPU feature detection and LemonBoy for bug fixes.
-    Thanks to Michael Dusan for contributions related to this feature.
     {#header_close#}
 
     {#header_open|OS Version Ranges#}
     TODO
+commit 60f2f3457dd73772e7cd60bf5d90358079361d11
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Feb 27 16:38:10 2020 -0500
+
+    getStandardDynamicLinkerPath renamed and no allocator
+    
+     * `std.Target.getStandardDynamicLinkerPath` =>
+       `std.Target.standardDynamicLinkerPath`
+     * it now takes a pointer to fixed size array rather than an allocator
+     * `std.zig.system.NativeTargetInfo.detect` now supports reading
+       PT_INTERP from /usr/bin/env
+
+commit 60cd11bd4b48e4dfdf11d1f25cb1ee842a49ee1d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Oct 24 01:06:03 2019 -0400
+
+    get rid of std.os.foo.is_the_target
+    
+    It had the downside of running all the comptime blocks and resolving
+    all the usingnamespaces of each system, when just trying to discover if
+    the current system is a particular one.
+    
+    For Darwin, where it's nice to use `std.Target.current.isDarwin()`, this
+    demonstrates the utility that #425 would provide.
+
 commit 4616af0ca459358ffa09ba27f9daa8527a38fd35
 Author: Andrew Kelley <andrew@ziglang.org>
 Date:   Tue Feb 25 01:52:27 2020 -0500
@@ -1150,7 +1230,6 @@ Date:   Sat Feb 29 21:46:07 2020 +0100
     target: Implement OS version detection for OSX
     
     Closes #4583
-
 
     {#header_close#}
 
