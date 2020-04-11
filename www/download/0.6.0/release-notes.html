@@ -1266,7 +1266,7 @@
     </p>
     <p>
     As it turns out, the answer is "none". Sub-architectures are rendered redundant by
-    the existence of CPU features. And so they no longer exist in Zig.
+    the existence of CPU features, and so they no longer exist in Zig.
     </p>
     <p>
     This has the happy consequence of making <code class="zig">std.Target.Cpu.Arch</code>
@@ -1275,86 +1275,113 @@
     <p>Rather than:</p>
     <pre>-target armv7a-linux-gnu</pre>
     <p>Now it is:</p>
-    <pre>-target arm-linux-gnu -mcpu=generic+v7a</pre>
+    <pre>-target arm-linux-gnu</pre>
+    <p><code>v7a</code> is considered baseline, so to target a different sub-architecture such as
+    v6kz, it would look like:</p>
+    <pre>-target arm-linux-gnu -mcpu=generic+v6kz</pre>
     
 
     <h2 id="OS-Version-Ranges"><a href="#toc-OS-Version-Ranges">OS Version Ranges</a> <a class="hdr" href="#OS-Version-Ranges">§</a></h2>
 
-    TODO
-commit 60f2f3457dd73772e7cd60bf5d90358079361d11
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Feb 27 16:38:10 2020 -0500
+    <p>Operating System version ranges are now part of the target. This means that
+    <code class="zig"><span class="tok-kw">comptime</span></code> code has access to exactly which version(s) of
+    an OS are being targeted. You can see this by looking at the output of <code>zig builtin</code>,
+    which displays the source code provided by <code class="zig">std.builtin</code>. Here's a snippet
+    of the output on the computer I'm using to type release notes:</p>
+    <pre><code class="zig"><span class="tok-comment">// ...</span>
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> os = Os{
+    .tag = .linux,
+    .version_range = .{ .linux = .{
+        .range = .{
+            .min = .{
+                .major = <span class="tok-number">5</span>,
+                .minor = <span class="tok-number">4</span>,
+                .patch = <span class="tok-number">15</span>,
+            },
+            .max = .{
+                .major = <span class="tok-number">5</span>,
+                .minor = <span class="tok-number">4</span>,
+                .patch = <span class="tok-number">15</span>,
+            },
+        },
+        .glibc = .{
+            .major = <span class="tok-number">2</span>,
+            .minor = <span class="tok-number">27</span>,
+            .patch = <span class="tok-number">0</span>,
+        },
+    }},
+};
+<span class="tok-comment">// ...</span></code></pre>
+    <p>Updated syntax for <code>-target</code> to take into account OS version ranges:</p>
+    <pre><code># still valid. default version range
+-target x86_64-windows-msvc
 
-    getStandardDynamicLinkerPath renamed and no allocator
-    
-     * `std.Target.getStandardDynamicLinkerPath` =>
-       `std.Target.standardDynamicLinkerPath`
-     * it now takes a pointer to fixed size array rather than an allocator
-     * `std.zig.system.NativeTargetInfo.detect` now supports reading
-       PT_INTERP from /usr/bin/env
+# minimum windows version: XP
+# maximum windows version: 10
+-target x86_64-windows.xp...win10-msvc
 
-commit 60cd11bd4b48e4dfdf11d1f25cb1ee842a49ee1d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Oct 24 01:06:03 2019 -0400
+# minimum windows version: 7
+# maximum windows version: latest
+-target x86_64-windows.win7-msvc
 
-    get rid of std.os.foo.is_the_target
-    
-    It had the downside of running all the comptime blocks and resolving
-    all the usingnamespaces of each system, when just trying to discover if
-    the current system is a particular one.
-    
-    For Darwin, where it's nice to use `std.Target.current.isDarwin()`, this
-    demonstrates the utility that #425 would provide.
+# linux example
+-target aarch64-linux.3.16...5.3.1-musl
 
-commit 4616af0ca459358ffa09ba27f9daa8527a38fd35
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Feb 25 01:52:27 2020 -0500
+# specifying glibc version
+-target mipsel-linux.4.10-gnu.2.1</code></pre>
+    <p>Here's what it will look like to populate a <code class="zig">CrossTarget</code>:</p>
+    <pre><code>-        tc.target = tests.Target{
+-            .Cross = .{
+-                .arch = .x86_64,
+-                .os = .linux,
+-                .abi = .gnu,
+-            },
++        tc.target = std.zig.CrossTarget{
++            .cpu_arch = .x86_64,
++            .os_tag = .linux,
++            .abi = .gnu,</code></pre>
+    <p>Code that used <code class="zig">Target.parse</code> need not be updated.</p>
+    <p>Checking for the OS when doing conditional compilation:</p>
+    <pre><code>--- a/lib/std/build/run.zig
++++ b/lib/std/build/run.zig
+@@ -82,7 +82,7 @@ pub const RunStep = struct {
+ 
+         var key: []const u8 = undefined;
+         var prev_path: ?[]const u8 = undefined;
+-        if (builtin.os == .windows) {
++        if (builtin.os.tag == .windows) {
+             key = "Path";
+             prev_path = env_map.get(key);
+             if (prev_path == null) {</code></pre>
 
-    introduce operating system version ranges as part of the target
-    
-     * re-introduce `std.build.Target` which is distinct from `std.Target`.
-       `std.build.Target` wraps `std.Target` so that it can be annotated as
-       "the native target" or an explicitly specified target.
-     * `std.Target.Os` is moved to `std.Target.Os.Tag`. The former is now a
-       struct which has the tag as well as version range information.
-     * `std.elf` gains some more ELF header constants.
-     * `std.Target.parse` gains the ability to parse operating system
-       version ranges as well as glibc version.
-     * Added `std.Target.isGnuLibC()`.
-     * self-hosted dynamic linker detection and glibc version detection.
-       This also adds the improved logic using `/usr/bin/env` rather than
-       invoking the system C compiler to find the dynamic linker when zig
-       is statically linked. Related: #2084
-       Note: this `/usr/bin/env` code is work-in-progress.
-     * `-target-glibc` CLI option is removed in favor of the new `-target`
-       syntax. Example: `-target x86_64-linux-gnu.2.27`
-    
-    closes #1907
+    <p><code class="zig">std.Target.getStandardDynamicLinkerPath</code> is renamed to
+    <code class="zig">std.Target.standardDynamicLinkerPath</code> and no longer requires an allocator.</p>
 
-commit ef24f2dd93729493531c427aaac54444597f6e66
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Feb 28 02:36:16 2020 -0500
+    <p>
+    Zig's method of detecting the native system ABI and dynamic linker is now simple but portable:
+    it inspects the dynamic linker path of its own executable. If statically linked, Zig looks at the
+    dynamic linker path of <code>/usr/bin/env</code>, which is ubiquitous due to its use in shebang
+    lines. Based on the dynamic linker file name, the ABI can be deduced. The same static Zig build
+    will correctly detect the native ABI and dynamic linker path on Debian, NixOS, and Apline Linux,
+    for example.
+    </p>
 
-    remove special darwin os version min handling
-    
-    now it is integrated with zig's target OS range.
-
-commit f072b0c056768648eb56230036dc8c973116d066
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Feb 29 12:00:58 2020 +0100
-
-    target: Implement OS version detection for Windows
-    
-    Closes #4581
-
-commit 84549b39550014ca85d34c93381cadbd93080a0e
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Feb 29 21:46:07 2020 +0100
-
-    target: Implement OS version detection for OSX
-    
-    Closes #4583
-
+     <p>No more <code class="zig">std.os.foo.is_the_target</code>.
+     It had the downside of running all the comptime blocks and resolving
+     all the usingnamespaces of each system, when just trying to discover if
+     the current system is a particular one.
+     For Darwin, where it's nice to use <code class="zig">std.Target.current.isDarwin()</code>, this
+     demonstrates the utility that the proposal #425 would provide.
+     </p>
+     <p>
+     This change allowed the removal of special Darwin OS version min handling. Now it is integrated
+     with Zig's target OS range. The command line options
+     <code>-mios-version-min</code> and <code>-mmacosx-version-min</code>
+     are removed.
+     </p>
+     <p>
+     Thanks LemonBoy for contributing OS version detection implementations for Windows and OSX.
+     </p>
     
 
     
@@ -1806,11 +1833,11 @@ Date:   Mon Mar 9 18:36:01 2020 -0400
 
     The body of functions returning inferred error sets are no longer required
     to return any possible errors.
-    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {}
+    <p class="file">empty_inferred_error_set.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {}
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;&quot;</span> {
     foo() <span class="tok-kw">catch</span> |err| <span class="tok-kw">switch</span> (err) {};
-}</code></pre><pre><code class="shell">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test empty_inferred_error_set.zig
 1/1 test &quot;&quot;...OK
 All 1 tests passed.
 </code></pre>
@@ -1847,7 +1874,8 @@ All 1 tests passed.
     _ = <span class="tok-number">3.14159_26535_89793</span>;
 }</code></pre>
     <p>
-    Thanks to Marc Tiehuis for original proposal and momumi for implementing this.
+    Thanks to Marc Tiehuis for original proposal and momumi for making a strong case
+    to re-open the proposal, and for implementing it.
     </p>
     
 
@@ -1856,7 +1884,7 @@ All 1 tests passed.
     When slicing and the length is comptime-known, the expression type is now
     a single-item pointer to array <code class="zig">*[N]T</code> .
     Prior to this change an error-prone <code class="zig"><span class="tok-builtin">@ptrCast</span></code> was required.
-    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+    <p class="file">slice_comptime_indexes.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 <span class="tok-kw">const</span> assert = std.debug.assert;
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;slicing with comptime indexes&quot;</span> {
@@ -1875,7 +1903,7 @@ All 1 tests passed.
     <span class="tok-comment">// copy array</span>
     a[<span class="tok-number">0</span>..<span class="tok-number">3</span>].* = a[<span class="tok-number">5</span>..<span class="tok-number">8</span>].*;
     assert(std.mem.eql(<span class="tok-type">u8</span>, &amp;a, <span class="tok-str">&quot;fghdefgh&quot;</span>));
-}</code></pre><pre><code class="shell">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test slice_comptime_indexes.zig
 1/1 test &quot;slicing with comptime indexes&quot;...OK
 All 1 tests passed.
 </code></pre>
@@ -1890,7 +1918,7 @@ All 1 tests passed.
     <p>
     <code class="zig"><span class="tok-kw">errdefer</span></code> now provides syntax to access the in-flight error.
     </p>
-    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+    <p class="file">errdefer_payload.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
 <span class="tok-kw">fn</span> <span class="tok-fn">perform</span>() !<span class="tok-type">void</span> {
     <span class="tok-kw">errdefer</span> |err| std.debug.assert(err == <span class="tok-kw">error</span>.Overflow);
@@ -1900,11 +1928,12 @@ All 1 tests passed.
 <span class="tok-kw">test</span> <span class="tok-str">&quot;errdefer with payload&quot;</span> {
     perform() <span class="tok-kw">catch</span> <span class="tok-kw">return</span>;
     <span class="tok-kw">unreachable</span>;
-}</code></pre><pre><code class="shell">$ zig test test.zig
+}</code></pre><pre><code class="shell">$ zig test errdefer_payload.zig
 1/1 test &quot;errdefer with payload&quot;...OK
 All 1 tests passed.
 </code></pre>
 
+    TODO show how you can use this with noreturn to make a function not have a possible error
     <p>
     Thanks to Byron Heads for the proposal and LemonBoy for implementing this.
     </p>
@@ -3051,6 +3080,8 @@ Date:   Thu Dec 19 23:42:27 2019 -0500
       <li>Michael Dusan fixed failure to recognize the PATH environment variable due to
           incorrectly treating the environment variable as case sensitive on Windows.</li>
     </ul>
+
+    TODO show how to update build scripts due to API breaking changes
 
 commit a690a5085ddbfb540cf07db146645a9f8a4e92f6
 Author: Andrew Kelley <andrew@ziglang.org>
