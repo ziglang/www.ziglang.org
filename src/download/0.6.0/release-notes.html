@@ -1279,18 +1279,85 @@ pub const os = Os{
     </p>
 
     {#header_open|Sentinel-Terminated Pointers#}
-    TODO
-    TODO note that C string literals are deleted
-    TODO note all the type coercions that work
-
-    TODO note about sentinel slicing syntax
-        -  runtime safety
-    TODO note     slicing sentinel-terminated slice without end now results in a sentinel-terminated slice.
-
-
-
     <p>
-    Thanks to LemonBoy, Raul Leal, daurnimator, and Michael Dusan for contributions related to this feature.
+    With this change, one feature was added to the language, and one feature was removed.
+    </p>
+    <p>
+    There are no longer any C string literals such as <code>c"hello"</code>. Instead,
+    the type of all string literals is changed from</p>
+    <p>{#syntax#}[]const u8{#endsyntax#}</p>
+    <p>to</p>
+    <p>{#syntax#}*const [N:0]u8{#endsyntax#}</p>
+    <p>Where N is the number of bytes in the string literal.</p>
+    <p>
+    Let's unpack that. Reading the type from left-to-right, this is a
+    <strong>reference, immutable-memory, array of N items, followed by an element with value {#syntax#}0{#endsyntax#}, element type {#syntax#}u8{#endsyntax#}</strong>.
+    </p>
+    <p>
+    Note that the sentinel value is <em>not counted in the length</em>.
+    </p>
+    <p>
+    This type has the length encoded in multiple ways. This means that it can automatically
+    coerce to both {#syntax#}[]const u8{#endsyntax#} (because the length is encoded in the type),
+    and it can also automatically coerce to {#syntax#}[*:0]const u8{#endsyntax#} (because both types
+    are null-terminated).
+    </p>
+    <p>
+    So, Zig string literals now can be passed directly to C functions which accept null-terminated
+    strings, and they can also be passed directly to Zig functions which accept slices.
+    </p>
+    {#code_begin|exe|sentinel_ptrs#}
+    {#link_libc#}
+const std = @import("std");
+
+pub fn main() void {
+    do_it_the_zig_way("world");
+    do_it_the_c_way("world");
+}
+
+fn do_it_the_zig_way(arg: []const u8) void {
+    std.debug.warn("hello {}\n", .{arg});
+}
+
+fn do_it_the_c_way(arg: [*:0]const u8) void {
+    _ = std.c.printf("hello %s\n", arg);
+}
+    {#code_end#}
+    <p>
+    Additionally, slicing syntax now supports a way to assert that a sentinel exists at a particular
+    element:
+    </p>
+    {#code_begin|test|slice_sentinel#}
+const std = @import("std");
+
+test "slice with sentinel" {
+    var array = [_]i32{ 'a', 'b', 'c', 'd', 'e' };
+    const slice = array[1..3 :'d'];
+    const result = foo(slice);
+    std.testing.expect(result == 'b' + 'c');
+}
+
+fn foo(s: [*:'d']i32) i32 {
+    var sum: i32 = 0;
+    var index: usize = 0;
+    while (s[index] != 'd') : (index += 1) {
+        sum += s[index];
+    }
+    return sum;
+}
+    {#code_end#}
+    <p>
+    If the sentinel is incorrect, a safety check is activated:
+    </p>
+    {#code_begin|test_err|sentinel mismatch#}
+test "slice with sentinel" {
+    var array = [_]i32{ 'a', 'b', 'c', 'd', 'e' };
+    const slice = array[1..3 :'f'];
+}
+    {#code_end#}
+    <p>
+    Thanks to LemonBoy, Raul Leal, daurnimator, and Michael Dusan for contributions
+    related to this feature.
     </p>
     {#header_close#}
 
