@@ -2789,6 +2789,12 @@ All 1 tests passed.
 
     <h1 id="Standard-Library"><a href="#toc-Standard-Library">Standard Library</a> <a class="hdr" href="#Standard-Library">§</a></h1>
 
+    <p>
+    There are so many breaking changes that it is not feasible to list them all here. Instead,
+    the release notes will cover contributions and high-level topics. In the future, it should
+    be possible to use the same backend of <a href="#Documentation-Generation">Documentation Generation</a> to make a tool
+    that detects all API changes - additions, removals, and modifications.
+    </p>
     <ul>
       <li>Various contributors updated the standard library to use newer Zig syntax, such as
       anonymous enum literals, and to fix regressions from breaking language changes.</li>
@@ -2898,146 +2904,311 @@ All 1 tests passed.
       <li>joachimschmidt557 moved <code class="zig">std.big.rational.gcd</code> to <code class="zig">std.big.int.gcd</code></li>
       <li>Phil Schumann improved <code class="zig">std.zig.parseStringLiteral</code> to support
         hex and unicode escapes. (#4678)</li>
-    </ul>
-
-commit 9e7ae062492d4b41564832d37408336e36165e67
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Mar 30 14:23:22 2020 -0400
-
-    std lib API deprecations for the upcoming 0.6.0 release
-    
-    See #3811
-
-commit b0d2ebe529593566f209d34d5bbbfd72cde2a6b9
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Feb 20 13:43:05 2020 -0500
-
-    remove std.io.readLine
-    
+      <li>
+        <code class="zig">std.io.readLine</code> is removed.
+    <br><br>
     This was deceptive. It was always meant to be sort of a "GNU readline"
     sort of thing where it provides a Command Line Interface to input text.
     However that functionality did not exist and it was basically a red
     herring for people trying to read line-delimited input from a stream.
-    
+    (See <a href="#IO-Streams">I/O Streams</a> for that.)
+    <br><br>
     In this commit the API is deleted, so that people can find the proper
     API more easily.
-    
+    <br><br>
     A CLI text input abstraction would be useful but may not even need to be
-    in the standard library. As you can see in this commit, the guess_number
-    CLI game gets by just fine by using `std.fs.File.read`.
-
-commit 44c14749a1063e5525b3249cddca6435d0654df4
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Feb 17 00:58:30 2020 -0500
-
-    expand argv[0] when spawning system C compiler
-    
-    Some C compilers, such as Clang, are known to rely on
-    argv[0] to find the path to their own executable,
-    without even bothering to resolve PATH. This results
-    in the message:
-    
-    error: unable to execute command: Executable "" doesn't exist!
-    
-    So we tell ChildProcess to expand argv[0] to the absolute path
-    to give them a helping hand.
-
-
-commit 8cf3a4d586b675a239c9cfa1ea07fa9f59ebf0a4
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Oct 16 15:10:38 2019 -0400
-
-    [breaking] standardize std.os execve functions
-    
-     * `std.os.execve` had the wrong name; it should have been
-       `std.os.execvpe`. This is now corrected.
-     * introduce `std.os.execveC` which does not look at PATH, and uses
-       null terminated parameters, matching POSIX ABIs. It does not
-       require an allocator.
-     * fix typo nonsense doc comment in `std.fs.MAX_PATH_BYTES`.
-     * introduce `std.os.execvpeC`, which is like `execvpe` except it
-       uses null terminated parameters, matching POSIX ABIs, and thus
-       does not require an allocator.
-     * `std.os.execvpe` implementation is reworked to only convert
-       parameters and then delegate to `std.os.execvpeC`.
-     * `std.os.execvpeC` improved to handle `ENOTDIR`. See #3415
-
-commit 1b07ff7be04d9d193425302f79f5b2cfec02da0a
-Author: Sebsatian Keller <sebastiankeller@fastmail.net>
-Date:   Wed Oct 2 01:07:33 2019 +0200
-
-    Add 'missing' consts to math.zig
-    
-    The C library defines constants for log2e and sqrt2 etc. Those should also be available in zig.
+    in the standard library. The guess_number CLI game example gets by just
+    fine by using <code class="zig">std.fs.File.read</code>.
+      </li>
+      <li>
+        std.os.execvpe related functions support optionally expanding argv[0] into the absolute
+        path based on the PATH environment variable. This can be useful to work around a third
+        party program which improperly using argv[0] to find the path to its own executable.
+      </li>
+      <li>
+        <code class="zig">std.os.execve</code> had the wrong name; it should have been
+        <code class="zig">std.os.execvpe</code>. This is now corrected. It is also
+        improved to handle <code class="zig">ENOTDIR</code> (#3415).
+      </li>
+      <li>
+        Introduce <code class="zig">std.os.execveZ</code> which does not look at PATH, and uses
+        null terminated parameters, matching POSIX ABIs. It does not require an allocator.
+      </li>
+      <li>
+        Introduce <code class="zig">std.os.execvpeZ</code>, which is like <code class="zig">execvpe</code>
+        except it uses null terminated parameters, matching POSIX ABIs, and thus
+        does not require an allocator.
+      </li>
+      <li>
+        Sebsatian Keller added std.math constants such as log2e and sqrt2.
+        Note that with #425 solved these would not be needed, and would be removed.
+      </li>
+    </ul>
 
     <h2 id="Async-IO"><a href="#toc-Async-IO">Async I/O</a> <a class="hdr" href="#Async-IO">§</a></h2>
 
-    TODO
-    startup code sets up event loop if I/O mode is declared evented
-    startup code respects root source file's event_loop if present
+    <p>
+    Async I/O in 0.6.0 is still experimental, but rapidly approaching usable. 
+    </p>
+    <p>
+    kprotty contributed significant improvements to synchronization primitives. kprotty writes:
+    </p>
+    <p><code class="zig">std.Mutex</code> uses a simple locking scheme for Linux,
+    relies on CriticalSection for Windows and falls back to spinlocking on other platforms.
+    There are two parts towards improving it:</p>
+    <p><strong>1) Adaptive Locking</strong></p>
+    <p>
+    For high contention cases, eager blocking mutexes incur a penalty of a syscall when they
+    may not need to. In order to address this, the mutex can spin for a little bit trying to
+    acquire the lock similar to a spinlock before deciding to block. This improves performance
+    when the time spent in the critical section is minimal and acquiring/releasing is done
+    frequently. The implementation chosen for this was that of lock_futex.go from Golang 1.13
+    as it provides a nice balance between spinning and deciding to block (another possibility
+    could be rust/webkit `parking_lot`). Because this implementation only needs a futex interface,
+    it can be reused:
+    </p>
+    <p><strong>2) Parker API</strong></p>
+    <p>
+    Most synchronization primitives such as Mutexes, RwLocks, Condvars, Events and Semaphores
+    can be built upon atomic instructions and futexes for handling blocking. Another point of
+    this change was to setup a cross-platform futex (Parker) interface in which other primitives
+    as listed above could be built off of. The default one provided is
+    <code class="zig">ThreadParker</code> which differs from the current blocking implementation scheme:
+    </p>
+    <ul>
+      <li>On Windows, it detects at runtime whether to use WaitOnAddress
+        (supported since Win8+ and most similar to linux futex) or NT Keyed Events
+        (supported since WinXP+ and is the inner backing of CriticalSection).
+        This allows the distinction between std.Mutex and std.StaticallyInitializedMutex to
+        dissapear as it can now be initialized statically
+      </li>
+      <li>On POSIX platforms, it uses <code class="zig">pthread_cond_t</code> for synchronization
+        which also supports static initialization. This fares better for longer blocking
+        critical sections compared to the spinlock default of the current std.Mutex implementation.
+      </li>
+      <li>On Linux, it still uses <code class="zig">linux_futex</code> so not many improvements
+        besides adaptive spinning there
+      </li>
+    </ul>
+    <p><strong>Results &amp; Future Implications</strong></p>
+    <p>
+    Because the Parker now has a standardized interface, one could replace
+    <code class="zig">ThreadParker</code> with something like <code class="zig">AsyncParker</code>
+    and reuse the synchronization primitive code for <code class="zig">std.event</code>
+    synchronization objects. In order to demonstrate this, I've provided some example
+    code for <code class="zig">AsyncParker</code> as well as a naive benchmark to test
+    the performance of <code class="zig">std.Mutex</code> in comparison to this new adaptive
+    mutex: <a href="https://github.com/kprotty/zig-adaptive-lock/">zig-adaptive-lock</a>
+    </p>
+    <p>
+    The results for high contended, small critical section cases are promising:
+    </p>
+    <ul>
+      <li>Windows 10: 7-8x speedup</li>
+      <li>MacOSX: 19-22x speedup</li>
+      <li>Linux (Pthread): 2x speedup</li>
+      <li>Linux (Futex): 2x speedup</li>
+    </ul>
+    <p>
+    These synchronization primitives are building blocks for an <strong>event loop</strong>,
+    which is what drives async I/O.
+    </p>
+    <p>
+    In 0.6.0, you can start to see the ideas behind the standard library's event loop
+    coming together. Notably, <a href="#Start-Code">Start Code</a> will set up an event loop before
+    calling main(), when the root source file defines:
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> io_mode = .evented;</code></pre>
+    This means that
+    <em>main() is now allowed to use <code class="zig"><span class="tok-kw">await</span></code></em>.
+    Same with tests, and <code>zig test</code> supports
+    <code>--test-evented-io</code> which affects whether the test runner sets
+    <code class="zig">io_mode</code> to evented or blocking.
+    </p>
+    <p>
+    The standard library's async I/O integration, together with <a href="#IO-Streams">I/O Streams</a> improvements, are
+    now capable of passing behavior tests with <code>--test-evented-io</code> enabled.
+    Standard library tests are now compiling successfully with evented I/O mode, but the
+    event loop implementation needs to be improved in order for tests to pass. Additionally,
+    "glue" code is needed to be added to the event loop implementation to support more
+    operating systems. It's not quite stable enough to be added to CI <a href="#Test-Coverage">Test Coverage</a>.
+    </p>
+    <p>
+    In previous versions of Zig, there was a <code class="zig">std.event</code> namespace for APIs
+    that only applied to evented I/O, but in this release, many of these APIs have been removed,
+    superceded by normal APIs integrating properly into async I/O. For example,
+    <code class="zig">std.event.fs</code> is removed and all the normal <code class="zig">std.fs</code>
+    (<a href="#Filesystem">Filesystem</a>) APIs work correctly for both blocking and evented I/O modes.
+    </p>
+    <p>
+    Here is an example of a simple program that writes to a file:
+    </p>
+    <p class="file">write_file_blocking.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> std.fs.cwd().createFile(<span class="tok-str">&quot;hello.txt&quot;</span>, .{});
+    <span class="tok-kw">defer</span> file.close();
 
-    TODO go through kprotty's changes and explain it. I left out a lot of kprotty commits here
-
-commit 4530adbd3314c28e2cfe831e7a20b154614e2c9c
-Author: Vexu <15308111+Vexu@users.noreply.github.com>
-Date:   Wed Nov 6 21:41:35 2019 +0200
-
-    use global event loop in std.event types
-
-commit 704cd977bdcdfa8cff4e70aaad93857d9b622fc7
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Feb 5 16:53:29 2020 -0500
-
-    ability to run tests in evented I/O mode
-    
-    This adds `--test-evented-io` as a CLI parameter.
-    
-    see #3117
-
-commit 0b5bcd2f56a84e66d5c700744ec1838381893667
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Feb 6 17:56:40 2020 -0500
-
-    more std lib async I/O integration
-    
-     * `zig test` gainst `--test-evented-io` parameter and gains the ability
-       to seamlessly run async tests.
-     * `std.ChildProcess` opens its child process pipe with O_NONBLOCK when
-       using evented I/O
-     * `std.io.getStdErr()` gives a File that is blocking even in evented
-       I/O mode.
-     * Delete `std.event.fs`. The functionality is now merged into `std.fs`
-       and async file system access (using a dedicated thread) is
-       automatically handled.
-     * `std.fs.File` can be configured to specify whether its handle is
-       expected to block, and whether that is OK to block even when in
-       async I/O mode. This makes async I/O work correctly for e.g. the
-       file system as well as network.
-     * `std.fs.File` has some deprecated functions removed.
-     * Missing readv,writev,pread,pwrite,preadv,pwritev functions are added
-       to `std.os` and `std.fs.File`. They are all integrated with async
-       I/O.
-     * `std.fs.Watch` is still bit rotted and needs to be audited in light
-       of the new async/await syntax.
-     * `std.io.OutStream` integrates with async I/O
-     * linked list nodes in the std lib have default `null` values for
-       `prev` and `next`.
-     * Windows async I/O integration is enabled for reading/writing file
-       handles.
-     * Added `std.os.mode_t`. Integer sizes need to be audited.
-     * Fixed #4403 which was causing compiler to crash.
-    
-    This is working towards:
-    
-    ./zig test ../test/stage1/behavior.zig --test-evented-io
-    
-    Which does not successfully build yet. I'd like to enable behavioral
-    tests and std lib tests with --test-evented-io in the test matrix in the
-    future, to prevent regressions.
+    <span class="tok-kw">try</span> file.writeAll(<span class="tok-str">&quot;hello\n&quot;</span>);
+}</code></pre><pre><code class="shell">$ zig build-exe write_file_blocking.zig
+$ ./write_file_blocking
+</code></pre>
 
     <p>
-    Thanks to Benjamin Feng for contributions related to this feature.
+    Looking at the strace, we can see it is quite simple:
+    </p>
+    <pre><code>arch_prctl(ARCH_SET_FS, 0x233190)       = 0
+rt_sigaction(SIGSEGV, {sa_handler=0x22a8d0, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART|SA_RESETHAND|SA_SIGINFO, sa_restorer=0x204310}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGILL, {sa_handler=0x22a8d0, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART|SA_RESETHAND|SA_SIGINFO, sa_restorer=0x204310}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGBUS, {sa_handler=0x22a8d0, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART|SA_RESETHAND|SA_SIGINFO, sa_restorer=0x204310}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+openat(AT_FDCWD, "hello.txt", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 3
+write(3, "hello\n", 6)                  = 6
+close(3)                                = 0
+exit_group(0)                           = ?</code></pre>
+    <p>
+    Set up thread-local storage, attach some signal handlers for
+    <a href="#Debug-Info-and-Stack-Traces">debugging</a>, openat, write, close, done.
+    Now we enable evented I/O:
+    </p>
+    <p class="file">write_file_evented.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> io_mode = .evented;
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> std.fs.cwd().createFile(<span class="tok-str">&quot;hello.txt&quot;</span>, .{});
+    <span class="tok-kw">defer</span> file.close();
+
+    <span class="tok-kw">try</span> file.writeAll(<span class="tok-str">&quot;hello\n&quot;</span>);
+}</code></pre><pre><code class="shell">$ zig build-exe write_file_evented.zig
+$ ./write_file_evented
+</code></pre>
+
+    <p>
+    I can't paste the full strace output here, because it is too long, but I'll highlight some
+    of the interesting parts:
+    </p>
+    <pre><code>clone(child_stack=0x7fe36dbdeff8, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|0x400000strace: Process 8891 attached
+, parent_tid=[8891], tls=0x7fe36dbdf028, child_tidptr=0x7fe36dbdf000) = 8891
+futex(0x7fe36dbdf000, FUTEX_WAIT, 8891, NULL <unfinished ...>
+[pid  8891] futex(0x260b50, FUTEX_WAIT, 0, NULL <unfinished ...>
+[pid  8891] <... futex resumed>)        = 0
+[pid  8891] openat(AT_FDCWD, "hello.txt", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 20
+[pid  8891] epoll_ctl(18, EPOLL_CTL_ADD, 17, {EPOLLIN|EPOLLOUT|EPOLLONESHOT|EPOLLET, {u32=1841168864, u64=140614775472608}}) = 0
+[pid  8891] futex(0x260b50, FUTEX_WAIT, 0, NULL <unfinished ...>
+[pid  8891] <... futex resumed>)        = 0
+[pid  8891] write(20, "hello\n", 6)     = 6
+[pid  8891] epoll_ctl(18, EPOLL_CTL_MOD, 17, {EPOLLIN|EPOLLOUT|EPOLLONESHOT|EPOLLET, {u32=1841168864, u64=140614775472608}}) = 0
+[pid  8891] futex(0x260b50, FUTEX_WAIT, 0, NULL <unfinished ...>
+[pid  8891] <... futex resumed>)        = -1 EAGAIN (Resource temporarily unavailable)
+[pid  8891] close(20 <unfinished ...>
+[pid  8891] <... close resumed>)        = 0
+[pid  8891] exit(0 <unfinished ...>
+[pid  8891] <... exit resumed>)         = ?
+<... futex resumed>)                    = -1 EAGAIN (Resource temporarily unavailable)
+exit_group(0)                           = ?</code></pre>
+    <p>
+    Here we can see that a separate thread is created, which ends up doing the file system I/O.
+    Some operating systems such as Linux do not have async file system support, and so the technique
+    used by evented I/O libraries is to have a thread pool for doing blocking operations. In this way,
+    you can make anything async by giving the task to another thread.
+    </p>
+    <p>
+    Now that Linux has <code>io_uring</code>, this could be improved. With Zig's
+    <a href="#OS-Version-Ranges">OS Version Ranges</a>, the event loop code could be improved to detect if io_uring is
+    within the target OS version range, and take advantage of it if so. If the minimum OS version
+    is high enough, the non-io_uring code could be omitted, and if the maximum OS version is low
+    enough, the io_uring code could be omitted. If the OS version range includes both, then the
+    code should try io_uring, and fall back at runtime to a non-io_uring strategy.
+    </p>
+    <p>
+    Anyway, the point here is that because evented I/O is enabled, it now becomes meaningful
+    to express concurrency:
+    </p>
+    <p class="file">concurrent.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> io_mode = .evented;
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> a_frame = <span class="tok-kw">async</span> doA();
+    <span class="tok-kw">var</span> b_frame = <span class="tok-kw">async</span> doB();
+
+    <span class="tok-kw">try</span> <span class="tok-kw">await</span> a_frame;
+    <span class="tok-kw">try</span> <span class="tok-kw">await</span> b_frame;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">doA</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> std.fs.cwd().createFile(<span class="tok-str">&quot;a.txt&quot;</span>, .{});
+    <span class="tok-kw">defer</span> file.close();
+
+    <span class="tok-kw">try</span> file.writeAll(<span class="tok-str">&quot;A\n&quot;</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">doB</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> std.fs.cwd().createFile(<span class="tok-str">&quot;b.txt&quot;</span>, .{});
+    <span class="tok-kw">defer</span> file.close();
+
+    <span class="tok-kw">try</span> file.writeAll(<span class="tok-str">&quot;B\n&quot;</span>);
+}</code></pre><pre><code class="shell">$ zig build-exe concurrent.zig
+$ ./concurrent
+</code></pre>
+
+    <p>
+    I'll refrain from pasting more strace output here, but now we can start to see
+    things happening in parallel (depending on the OS support for async file system I/O, or
+    the file system thread pool size).
+    </p>
+    <p>
+    Finally, I want to point out one crucial point about Zig's async I/O.
+    <strong>It still works if you switch back to blocking I/O</strong>:
+    </p>
+    <p class="file">async_blocking.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> a_frame = <span class="tok-kw">async</span> doA();
+    <span class="tok-kw">var</span> b_frame = <span class="tok-kw">async</span> doB();
+
+    <span class="tok-kw">try</span> <span class="tok-kw">await</span> a_frame;
+    <span class="tok-kw">try</span> <span class="tok-kw">await</span> b_frame;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">doA</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> std.fs.cwd().createFile(<span class="tok-str">&quot;a.txt&quot;</span>, .{});
+    <span class="tok-kw">defer</span> file.close();
+
+    <span class="tok-kw">try</span> file.writeAll(<span class="tok-str">&quot;A\n&quot;</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">doB</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> file = <span class="tok-kw">try</span> std.fs.cwd().createFile(<span class="tok-str">&quot;b.txt&quot;</span>, .{});
+    <span class="tok-kw">defer</span> file.close();
+
+    <span class="tok-kw">try</span> file.writeAll(<span class="tok-str">&quot;B\n&quot;</span>);
+}</code></pre><pre><code class="shell">$ zig build-exe async_blocking.zig
+$ ./async_blocking
+</code></pre>
+
+    <p>
+    This time I will show the strace since it's very short (this time
+    it's the strace of <code>--release-fast</code> mode to omit the debug stuff):
+    </p>
+    <pre><code>arch_prctl(ARCH_SET_FS, 0x203cf0)       = 0
+openat(AT_FDCWD, "a.txt", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 3
+write(3, "A\n", 2)                      = 2
+close(3)                                = 0
+openat(AT_FDCWD, "b.txt", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 3
+write(3, "B\n", 2)                      = 2
+close(3)                                = 0
+exit_group(0)                           = ?</code></pre>
+    <p>
+    You can see that the async stuff folded into simple, linear, blocking code.
+    </p>
+    <p>
+    This is a big deal. It means that Zig code can express concurrency, yet
+    be reusable in both a blocking I/O and an evented I/O environment. There is no
+    "async-std" in Zig.
+    <em>The Zig standard library supports both async and blocking I/O with the same codebase</em>.
+    </p>
+    <p>
+    Thanks to Benjamin Feng, Vexu, and Timon Kruiper for contributions related to this feature.
     </p>
 
     
