@@ -2245,17 +2245,132 @@ fn foo() i32 {
     {#header_close#}
 
     {#header_open|noasync#}
-    TODO
+    <p>
+    {#syntax#}noasync{#endsyntax#}, similar to {#syntax#}comptime{#endsyntax#}, creates a scope
+    in which the programmer asserts there will be no suspension points.
+    </p>
+    <p>
+    Normally, async function calls and awaiting an async function frame introduce a
+    <strong>suspension point</strong> at the callsite, causing the containing function
+    to have the {#syntax#}async{#endsyntax#} calling convention.
+    However, inside a {#syntax#}noasync{#endsyntax#} scope, async function calls and
+    awaiting async function frames do not cause a suspension point. Instead, the code
+    asserts that the callee never suspends, or in the case of {#syntax#}await{#endsyntax#},
+    that the function frame already has the result completed.
+    </p>
+    <p>
+    This allows a non-async function to call an async function:
+    </p>
+    {#code_begin|test|noasync#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-commit 638d5c3aca7ce1e4fd10060079caa0acb66144c0
-Merge: 52c01840c 3fd2cd436
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Mar 9 18:36:01 2020 -0400
+test "noasync function call" {
+    const result = noasync add(50, 100);
+    expect(result == 150);
+}
 
-    Merge pull request #4700 from Vexu/noasync
-    
-    Implement new noasync syntax
+fn add(a: i32, b: i32) i32 {
+    if (a > 100) {
+        suspend;
+    }
+    return a + b;
+}
+    {#code_end#}
+    <p>
+    This is especially useful for {#syntax#}main(){#endsyntax#} to set up
+    async functions initially:
+    </p>
+    {#code_begin|exe|async_main#}
+const std = @import("std");
+const expect = std.testing.expect;
 
+var global_frame_1: anyframe = undefined;
+var global_frame_2: anyframe = undefined;
+
+pub fn main() void {
+    var main_frame = async asyncMain();
+    resume global_frame_1;
+    resume global_frame_2;
+    const result = noasync await main_frame;
+    std.debug.warn("result: {}\n", .{result});
+}
+
+fn asyncMain() i32 {
+    var a = async foo();
+    var b = async bar();
+    return await a + await b;
+}
+
+fn foo() i32 {
+    global_frame_1 = @frame();
+    suspend;
+    return 1;
+}
+
+fn bar() i32 {
+    global_frame_2 = @frame();
+    suspend;
+    return 2;
+}
+    {#code_end#}
+    <p>
+    Notice that the function {#syntax#}asyncMain{#endsyntax#} is able to participate in the
+    async/await abstraction without having to care about the setup and teardown happening
+    in {#syntax#}main{#endsyntax#}.
+    </p>
+    <p>
+    For {#link|Async I/O#} in the {#link|Standard Library#}, Zig handles this setup and teardown
+    in the {#link|Start Code#} that calls {#syntax#}main{#endsyntax#}.
+    </p>
+    <p>
+    Now, watch what happens when we remove {#syntax#}noasync{#endsyntax#} from the above example:
+    </p>
+    {#code_begin|exe_build_err|oops_await#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+var global_frame_1: anyframe = undefined;
+var global_frame_2: anyframe = undefined;
+
+pub fn main() void {
+    var main_frame = async asyncMain();
+    resume global_frame_1;
+    resume global_frame_2;
+    const result = await main_frame;
+    std.debug.warn("result: {}\n", .{result});
+}
+
+fn asyncMain() i32 {
+    var a = async foo();
+    var b = async bar();
+    return await a + await b;
+}
+
+fn foo() i32 {
+    global_frame_1 = @frame();
+    suspend;
+    return 1;
+}
+
+fn bar() i32 {
+    global_frame_2 = @frame();
+    suspend;
+    return 2;
+}
+    {#code_end#}
+    <p>
+    Here, the {#syntax#}await{#endsyntax#} inside {#syntax#}main{#endsyntax#} is a
+    suspension point, which causes {#syntax#}main{#endsyntax#} to have the
+    async calling convention, which has a cascading effect, causing {#syntax#}_start{#endsyntax#}
+    to have the async calling convention. But {#syntax#}_start{#endsyntax#} already has the
+    "naked" calling convention, because it is the entry point from the kernel!
+    </p>
+    <p>
+    We can use {#syntax#}noasync{#endsyntax#} to create a "seam" between async code and blocking
+    code, because in this example, we know that {#syntax#}main_frame{#endsyntax#} has already
+    completed by the time we call {#syntax#}await{#endsyntax#}.
+    </p>
     <p>
     Thanks to Vexu for contributions related to this feature.
     </p>
