@@ -1399,8 +1399,6 @@
       <li><code>@typeOf</code> is renamed to <code class="zig"><span class="tok-builtin">@TypeOf</span></code>. <a href="#zig-fmt">zig fmt</a> automatically performs the conversion, and the next release of Zig after this one will remove the automatic conversion.</li>
       <li>Ability to switch on pointer types. (#4074)</li>
       <li>Multiline strings in test and library names are disallowed.</li>
-      <li>@typeInfo for struct fields now contains the default value. This is possible
-          because of <a href="#Untyped-Struct-Fields">Untyped Struct Fields</a>.</li>
       <li>Zig language no longer requires the expression <code class="zig">a <span class="tok-kw">else</span> <span class="tok-kw">unreachable</span></code> with
         <code class="zig"><span class="tok-kw">comptime</span></code> <code class="zig">a</code> to produce a
         <code class="zig"><span class="tok-kw">comptime</span></code> result.</li>
@@ -2267,8 +2265,73 @@ T = type
 
     <h2 id="Untyped-Struct-Fields"><a href="#toc-Untyped-Struct-Fields">Untyped Struct Fields</a> <a class="hdr" href="#Untyped-Struct-Fields">§</a></h2>
 
-    TODO when the struct field type is var
+    <p>
+    It's now possible to omit the type from struct fields. This allows the field
+    to have any value of any type. The catch is that it causes the entire struct
+    to be required to be <code class="zig"><span class="tok-kw">comptime</span></code>-known.
+    </p>
+    <p class="file">untyped_struct_fields.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
+<span class="tok-kw">test</span> <span class="tok-str">&quot;struct with var field&quot;</span> {
+    <span class="tok-kw">const</span> Point = <span class="tok-kw">struct</span> {
+        x: <span class="tok-kw">var</span>,
+        y: <span class="tok-kw">var</span>,
+    };
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> pt = Point {
+        .x = <span class="tok-number">1</span>,
+        .y = <span class="tok-number">2</span>,
+    };
+    expect(pt.x == <span class="tok-number">1</span>);
+    expect(pt.y == <span class="tok-number">2</span>);
+
+    pt.x = <span class="tok-null">true</span>;
+    pt.y = <span class="tok-str">&quot;hello&quot;</span>;
+    expect(pt.x);
+    expect(std.mem.eql(<span class="tok-type">u8</span>, pt.y, <span class="tok-str">&quot;hello&quot;</span>));
+}</code></pre><pre><code class="shell">$ zig test untyped_struct_fields.zig
+1/1 test &quot;struct with var field&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>
+    The motivation behind this feature is to expose default struct field initialization values
+    and sentinel values in <code class="zig"><span class="tok-builtin">@typeInfo</span></code>:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> StructField = <span class="tok-kw">struct</span> {
+    name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+    offset: ?<span class="tok-type">comptime_int</span>,
+    field_type: <span class="tok-type">type</span>,
+    default_value: <span class="tok-kw">var</span>,
+};</code></pre>
+    <p>
+    With Zig 0.6.0, this works now:
+    </p>
+    <p class="file">type_info_struct.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;access default initialization value&quot;</span> {
+    <span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {
+        x: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>,
+        y: <span class="tok-type">i32</span>,
+    };
+    <span class="tok-kw">const</span> info = <span class="tok-builtin">@typeInfo</span>(Foo).Struct;
+    expect(info.fields[<span class="tok-number">0</span>].default_value.? == <span class="tok-number">1234</span>);
+    expect(info.fields[<span class="tok-number">1</span>].default_value == <span class="tok-null">null</span>);
+}</code></pre><pre><code class="shell">$ zig test type_info_struct.zig
+1/1 test &quot;access default initialization value&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>
+    Similarly, the <code class="zig"><span class="tok-builtin">@typeInfo</span></code> for <a href="#Sentinel-Terminated-Pointers">Sentinel-Terminated Pointers</a>
+    now exposes the sentinel value.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/issues/4820">It is planned to rename
+    <code class="zig"><span class="tok-kw">var</span></code> to <code class="zig">anytype</code> in this context</a>,
+    to disambiguate it from variable declarations.
+    </p>
     <p>
     Thanks to LemonBoy for contributions related to this feature.
     </p>
