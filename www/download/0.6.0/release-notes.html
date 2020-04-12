@@ -1653,9 +1653,83 @@ All 1 tests passed.
 
     <h2 id="Anonymous-Struct-Literals"><a href="#toc-Anonymous-Struct-Literals">Anonymous Struct Literals</a> <a class="hdr" href="#Anonymous-Struct-Literals">§</a></h2>
 
-    TODO
+      <p>
+      Zig now allows omitting the struct type of a literal. When the result is
+      <a href="#Type-Coercion-Syntax">coerced</a>,
+      the struct literal will directly instantiate the result location, with no copy:
+      </p>
+      <p class="file">struct_result.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-    TODO Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for contributing fixes related to this feature.
+<span class="tok-kw">test</span> <span class="tok-str">&quot;anonymous struct literal&quot;</span> {
+    checkPoint(.{
+        .x = <span class="tok-number">13</span>,
+        .y = <span class="tok-number">67</span>,
+    });
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">checkPoint</span>(pt: <span class="tok-kw">struct</span> {x: <span class="tok-type">i32</span>, y: <span class="tok-type">i32</span>}) <span class="tok-type">void</span> {
+    expect(pt.x == <span class="tok-number">13</span>);
+    expect(pt.y == <span class="tok-number">67</span>);
+}</code></pre><pre><code class="shell">$ zig test struct_result.zig
+1/1 test &quot;anonymous struct literal&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+      <p>
+      The struct type can be inferred. Here the result location does not include a type, and
+      so Zig infers the type:
+      </p>
+      <p class="file">struct_anon.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;fully anonymous struct&quot;</span> {
+    dump(.{
+        .int = <span class="tok-number">1234</span>,
+        .float = <span class="tok-number">12.34</span>,
+        .b = <span class="tok-null">true</span>,
+        .s = <span class="tok-str">&quot;hi&quot;</span>,
+    });
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">dump</span>(args: <span class="tok-kw">var</span>) <span class="tok-type">void</span> {
+    expect(args.int == <span class="tok-number">1234</span>);
+    expect(args.float == <span class="tok-number">12.34</span>);
+    expect(args.b);
+    expect(args.s[<span class="tok-number">0</span>] == <span class="tok-str">'h'</span>);
+    expect(args.s[<span class="tok-number">1</span>] == <span class="tok-str">'i'</span>);
+}</code></pre><pre><code class="shell">$ zig test struct_anon.zig
+1/1 test &quot;fully anonymous struct&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+
+      <p>This syntax can also be used to initialize unions without specifying the type:</p>
+      <p class="file">anon_union.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">const</span> Number = <span class="tok-kw">union</span> {
+    int: <span class="tok-type">i32</span>,
+    float: <span class="tok-type">f64</span>,
+};
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;anonymous union literal syntax&quot;</span> {
+    <span class="tok-kw">var</span> i: Number = .{.int = <span class="tok-number">42</span>};
+    <span class="tok-kw">var</span> f = makeNumber();
+    expect(i.int == <span class="tok-number">42</span>);
+    expect(f.float == <span class="tok-number">12.34</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">makeNumber</span>() Number {
+    <span class="tok-kw">return</span> .{.float = <span class="tok-number">12.34</span>};
+}</code></pre><pre><code class="shell">$ zig test anon_union.zig
+1/1 test &quot;anonymous union literal syntax&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+
+    <p>Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for
+    contributing fixes related to this feature.</p>
     
 
     <h2 id="Tuples-Added-Var-Args-Removed"><a href="#toc-Tuples-Added-Var-Args-Removed">Tuples Added, Var Args Removed</a> <a class="hdr" href="#Tuples-Added-Var-Args-Removed">§</a></h2>
