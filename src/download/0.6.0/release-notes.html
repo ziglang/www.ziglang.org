@@ -2107,15 +2107,33 @@ test "access default initialization value" {
     {#header_close#}
 
     {#header_open|Pointer Arithmetic and Alignment#}
-commit e134e6c994d6ecd76dc6ae1a24b8de29c4147eab
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Fri Dec 20 10:48:03 2019 +0100
+    <p>
+    Pointer arithmetic now appropriately modifies the alignment of a pointer type:
+    </p>
+    {#code_begin|test|ptr_arith_align#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    Pointer arithmetic affects the alignment factor
-    
-    Closes #1528
-    PR is #3955
+test "pointer math alignment" {
+    var arr: [10]u8 align(4) = undefined;
+    var runtime_known_2: usize = 2;
 
+    const ptr: [*]u8 = &arr;
+    const ptr2 = ptr + 1;
+    const ptr3 = ptr + 2;
+    const ptr4 = ptr + runtime_known_2;
+
+    comptime {
+        expect(@TypeOf(ptr) == [*]align(4) u8);
+        expect(@TypeOf(ptr2) == [*]u8);
+        expect(@TypeOf(ptr3) == [*]align(2) u8);
+        expect(@TypeOf(ptr4) == [*]u8);
+    }
+}
+    {#code_end#}
+    <p>
+    Thanks to LemonBoy for implementing this (#1528).
+    </p>
     {#header_close#}
 
     {#header_open|@export#}
