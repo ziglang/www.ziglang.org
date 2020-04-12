@@ -2186,12 +2186,59 @@ pub const ExportOptions = struct {
     {#header_close#}
 
     {#header_open|No More Capture Aliasing#}
+    <p>
     Captured payloads from optionals and tagged-unions are no longer aliases to
     the same memory of the optional or tagged-union. The (unwrapped) payloads are
     copies.
+    </p>
+    {#code_begin|test|no_capture_aliasing#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    TODO note how it would interact with proposals for non-copyable data structures
+test "no capture value aliasing" {
+    // In Zig 0.5.0, foo() returns 5678.
+    expect(foo() == 1234);
+}
 
+fn foo() i32 {
+    var optional_x: ?i32 = 1234;
+
+    if (optional_x) |x| {
+        optional_x = 5678;
+        return x;
+    }
+
+    unreachable;
+}
+    {#code_end#}
+    <p>
+    There are two competing proposals for non-copyable data structures:
+    <a href="https://github.com/ziglang/zig/issues/3803">#3803</a>
+    <a href="https://github.com/ziglang/zig/issues/3804">#3804</a>
+    </p>
+    <p>
+    When one of these is accepted, it will be a compile error to copy some types.
+    to avoid copying, one can denote the capture value to make it a pointer:
+    </p>
+    {#code_begin|test|capture_aliasing#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "capture value aliasing" {
+    expect(foo() == 5678);
+}
+
+fn foo() i32 {
+    var optional_x: ?i32 = 1234;
+
+    if (optional_x) |*x| {
+        optional_x = 5678;
+        return x.*;
+    }
+
+    unreachable;
+}
+    {#code_end#}
     <p>
     Thanks to LemonBoy for implementing this.
     </p>
@@ -2210,12 +2257,14 @@ Date:   Mon Mar 9 18:36:01 2020 -0400
     Implement new noasync syntax
 
     <p>
-    Thanks to Vexu for implementing this.
+    Thanks to Vexu for contributions related to this feature.
     </p>
     {#header_close#}
 
     {#header_open|Deprecated Builtins Removed#}
+    <p>
     Many deprecated builtins have been removed.
+    </p>
     <p>
     Thanks to Maciej Walczak for removing these and implementing the corresponding std lib functions:
     </p>
@@ -2237,8 +2286,10 @@ Date:   Mon Mar 9 18:36:01 2020 -0400
     {#header_close#}
 
     {#header_open|Allow Empty Inferred Error Sets#}
+    <p>
     The body of functions returning inferred error sets are no longer required
     to return any possible errors.
+    </p>
     {#code_begin|test|empty_inferred_error_set#}
 fn foo() !void {}
 
@@ -2252,9 +2303,11 @@ test "" {
     {#header_close#}
 
     {#header_open|@TypeOf Supports Multiple Parameters#}
+    <p>
     Multiple parameters can now be specified with {#syntax#}@TypeOf{#endsyntax#} in cases where
     <a href="https://ziglang.org/documentation/0.6.0/#Peer-Type-Resolution">Peer Type Resolution</a>
     is needed.
+    </p>
     {#code_begin|syntax#}
 // std.math.max
 pub fn max(x: var, y: var) @TypeOf(x, y) {
@@ -2267,8 +2320,10 @@ pub fn max(x: var, y: var) @TypeOf(x, y) {
     {#header_close#}
 
     {#header_open|Underscore Separators in Number Literals#}
+    <p>
     Underscores may be placed between two digits as a visual separator.
     Consecurity underscores are not allowed.
+    </p>
     {#code_begin|syntax#}
 fn digits() void {
     _ = 1_234_567;
@@ -2286,9 +2341,11 @@ fn digits() void {
     {#header_close#}
 
     {#header_open|Slicing with Comptime Indexes#}
+    <p>
     When slicing and the length is comptime-known, the expression type is now
     a single-item pointer to array {#syntax#}*[N]T{#endsyntax#} .
     Prior to this change an error-prone {#syntax#}@ptrCast{#endsyntax#} was required.
+    </p>
     {#code_begin|test|slice_comptime_indexes#}
 const std = @import("std");
 const assert = std.debug.assert;
