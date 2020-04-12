@@ -1841,55 +1841,106 @@ Hello, World!
 
     <h2 id="SIMD"><a href="#toc-SIMD">SIMD</a> <a class="hdr" href="#SIMD">§</a></h2>
 
-    <p>TODO</p>
-commit cb8af1c6d48d5fdb26484a070b8af069c4152049
-Merge: a26e9fa72 9a08de93b
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 5 13:39:56 2019 -0500
-
-    Merge branch 'vector-element-access'
-    
+    <p>
+    Zig's SIMD support in 0.6.0 is still far from complete, but significant progress has been made.
+    </p>
+    <p>
+    Vectors gain element access syntax (#3575, #3580).
     This introduces the concept of vector index being part of a pointer
     type. This avoids vectors having well-defined in-memory layout, and
     allows vectors of any integer bit width to work the same way.
-    
+    </p>
+    <p>
     When a vector is indexed with a scalar, this is vector element access,
-    which this branch implements. When a vector is indexed with a vector,
-    this is gather/scatter, which is not implemented in this branch.
-    
-    closes #3575
-    closes #3580
+    which is implemented in 0.6.0. When a vector is indexed with a vector,
+    this is gather/scatter, which is not available in this release.
+    </p>
+    <p class="file">vector_elem.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector element access&quot;</span> {
+    <span class="tok-kw">var</span> v: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [_]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, <span class="tok-number">5</span>, <span class="tok-number">3</span>, <span class="tok-null">undefined</span> };
 
+    v[<span class="tok-number">2</span>] = <span class="tok-number">42</span>;
+    expect(v[<span class="tok-number">1</span>] == <span class="tok-number">5</span>);
+    v[<span class="tok-number">3</span>] = -<span class="tok-number">364</span>;
+    expect(v[<span class="tok-number">2</span>] == <span class="tok-number">42</span>);
+    expect(-<span class="tok-number">364</span> == v[<span class="tok-number">3</span>]);
 
-     * implement comparisons for vectors, which returns vector of
-       bools.
+    storev(&amp;v[<span class="tok-number">0</span>], <span class="tok-number">100</span>);
+    expect(v[<span class="tok-number">0</span>] == <span class="tok-number">100</span>);
+}
+<span class="tok-kw">fn</span> <span class="tok-fn">storev</span>(ptr: <span class="tok-kw">var</span>, x: <span class="tok-type">i32</span>) <span class="tok-type">void</span> {
+    ptr.* = x;
+}</code></pre><pre><code class="shell">$ zig test vector_elem.zig
+1/1 test &quot;vector element access&quot;...OK
+All 1 tests passed.
+</code></pre>
 
+    <p>
+    Vectors now support comparisons, which returns a vector of <code class="zig"><span class="tok-type">bool</span></code>:
+    </p>
+    <p class="file">vector_cmp.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+<span class="tok-kw">const</span> mem = std.mem;
 
-commit a90fa45ae146a72e2d54842eed15c4b50062eff1
-Merge: fe21d84c9 213ff939f
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Jan 2 16:10:41 2020 -0500
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector comparisons&quot;</span> {
+    <span class="tok-kw">var</span> v: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">2147483647</span>, -<span class="tok-number">2</span>, <span class="tok-number">30</span>, <span class="tok-number">40</span> };
+    <span class="tok-kw">var</span> x: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [<span class="tok-number">4</span>]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2147483647</span>, <span class="tok-number">30</span>, <span class="tok-number">4</span> };
+    expect(mem.eql(<span class="tok-type">bool</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">bool</span>, v == x), &amp;[<span class="tok-number">4</span>]<span class="tok-type">bool</span>{ <span class="tok-null">false</span>, <span class="tok-null">false</span>, <span class="tok-null">true</span>, <span class="tok-null">false</span> }));
+    expect(mem.eql(<span class="tok-type">bool</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">bool</span>, v != x), &amp;[<span class="tok-number">4</span>]<span class="tok-type">bool</span>{ <span class="tok-null">true</span>, <span class="tok-null">true</span>, <span class="tok-null">false</span>, <span class="tok-null">true</span> }));
+    expect(mem.eql(<span class="tok-type">bool</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">bool</span>, v &lt; x), &amp;[<span class="tok-number">4</span>]<span class="tok-type">bool</span>{ <span class="tok-null">false</span>, <span class="tok-null">true</span>, <span class="tok-null">false</span>, <span class="tok-null">false</span> }));
+    expect(mem.eql(<span class="tok-type">bool</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">bool</span>, v &gt; x), &amp;[<span class="tok-number">4</span>]<span class="tok-type">bool</span>{ <span class="tok-null">true</span>, <span class="tok-null">false</span>, <span class="tok-null">false</span>, <span class="tok-null">true</span> }));
+    expect(mem.eql(<span class="tok-type">bool</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">bool</span>, v &lt;= x), &amp;[<span class="tok-number">4</span>]<span class="tok-type">bool</span>{ <span class="tok-null">false</span>, <span class="tok-null">true</span>, <span class="tok-null">true</span>, <span class="tok-null">false</span> }));
+    expect(mem.eql(<span class="tok-type">bool</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">bool</span>, v &gt;= x), &amp;[<span class="tok-number">4</span>]<span class="tok-type">bool</span>{ <span class="tok-null">true</span>, <span class="tok-null">false</span>, <span class="tok-null">true</span>, <span class="tok-null">true</span> }));
+}</code></pre><pre><code class="shell">$ zig test vector_cmp.zig
+1/1 test &quot;vector comparisons&quot;...OK
+All 1 tests passed.
+</code></pre>
 
-    Merge pull request #4027 from ziglang/fix-float-ops
-    
-    fix float ops with respect to vectors
+    <p>
+    Floating-point vector operations were broken; now they are fixed and no
+    longer require a type parameter (#4027).
+    </p>
+    <p>
+    Vector division is now supported, including with runtime-safety checks for integer overflow (#4737):
+    </p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
-commit 4578d13b49d16463b870119005877f7b6e10092e
-Author: data-man <datamanrb@gmail.com>
-Date:   Tue Jan 7 19:14:37 2020 +0500
+<span class="tok-kw">test</span> <span class="tok-str">&quot;vector division safety&quot;</span> {
+    <span class="tok-kw">var</span> a: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i16</span>) = [_]<span class="tok-type">i16</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, -<span class="tok-number">32768</span>, <span class="tok-number">4</span> };
+    <span class="tok-kw">var</span> b: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i16</span>) = [_]<span class="tok-type">i16</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, -<span class="tok-number">1</span>, <span class="tok-number">4</span> };
+    <span class="tok-kw">const</span> x = div(a, b);
+    <span class="tok-kw">if</span> (x[<span class="tok-number">2</span>] == <span class="tok-number">32767</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Whatever;
+}
+<span class="tok-kw">fn</span> <span class="tok-fn">div</span>(a: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i16</span>), b: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i16</span>)) <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i16</span>) {
+    <span class="tok-kw">return</span> <span class="tok-builtin">@divTrunc</span>(a, b);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+1/1 test &quot;vector division safety&quot;...integer overflow
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:10:12</span>: <span class="t2_0">0x2053be in div (test)</span>
+    return @divTrunc(a, b);
+           <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:6:18</span>: <span class="t2_0">0x204bd6 in test &quot;vector division safety&quot; (test)</span>
+    const x = div(a, b);
+                 <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/special/test_runner.zig:47:28</span>: <span class="t2_0">0x22bc4e in std.special.main (test)</span>
+        } else test_fn.func();
+                           <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/start.zig:253:37</span>: <span class="t2_0">0x2057cd in std.start.posixCallMainAndExit (test)</span>
+            const result = root.main() catch |err| {
+                                    <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/start.zig:123:5</span>: <span class="t2_0">0x20550f in std.start._start (test)</span>
+    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
+    <span class="t32_1">^</span>
 
-    Vector comparison in meta and testing
+Tests failed. Use the following command to reproduce the failure:
+/home/andy/dev/www.ziglang.org/docgen_tmp/test
+</code></pre>
 
-commit 05b587fcdee91a7c9f170da4a186a512b51b39a8
-Merge: e2dc63644 e84b9b70f
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Apr 5 18:34:47 2020 -0400
-
-    Merge branch 'LemonBoy-vec-div'
-    
-    closes #4737
-
+    <p>See #903 for more details.</p>
+    <p>
+    Thanks to Shawn Landden, data-man, and LemonBoy for contributions related to SIMD.
+    </p>
     
 
     <h2 id="newStackCall-Removed"><a href="#toc-newStackCall-Removed">@newStackCall Removed</a> <a class="hdr" href="#newStackCall-Removed">§</a></h2>
