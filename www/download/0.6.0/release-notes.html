@@ -4033,147 +4033,78 @@ Date:   Sat Feb 1 22:29:51 2020 -0500
     <p>
     <code>zig build</code> is still in an experimental, proof-of-concept phase, and will remain
     that way until at least the <a href="#Package-Manager-Status">package manager</a> is complete.
-    However, there were still improvements to <code>zig build</code> this release cycle:
+    Nonetheless, there were plenty of improvements to <code>zig build</code> this release cycle:
+    </p>
+    <p>
+    The most notable changes to zig build have to do with the new <a href="#Target-Details">Target Details</a>.
+    See that section for how to use the new <code class="zig">setTarget</code> API.
+    </p>
+    <p>
+    One new trick that may be useful to Windows developers is to set the default target to be
+    <code>native-native-gnu</code>. This will use the native
+    <a href="#OS-Version-Ranges">OS and version range</a> as well as the
+    <a href="#CPU-Features">native CPU</a>, but take advantage of
+    <a href="#mingw-w64-700">mingw-w64</a> rather than trying to integrate with system MSVC.
+    This is more likely to "just work" for all your project contributors,
+    because it eliminates a problematic system dependency.
+    </p>
+    <p>
+    Additionally the following improvements were made:
     </p>
     <ul>
-      <li>Bumped default max exec output size to 400 KB. #3415</li>
+      <li>Bumped default max exec output size to 400 KB. (#3415)</li>
       <li><code class="zig">addIncludeDir</code> does <code>-I</code> instead of <code>-isystem</code>.</li>
-      <li>Sahnvour implemented initial support for using vcpkg libraries. However it is
+      <li>Initial support for using vcpkg libraries. However it is
         <a href="https://github.com/ziglang/zig/issues/4510">not integrated automatically yet</a>.</li>
-      <li>Michael Dusan fixed failure to recognize the PATH environment variable due to
+      <li>Fixed failure to recognize the PATH environment variable due to
           incorrectly treating the environment variable as case sensitive on Windows.</li>
-    </ul>
-
-    TODO show how to update build scripts due to API breaking changes
-
-commit a690a5085ddbfb540cf07db146645a9f8a4e92f6
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Jan 5 02:01:28 2020 -0500
-
-    rework and improve some of the zig build steps
-    
-     * `RunStep` moved to lib/std/build/run.zig and gains ability to compare
+      <li>Rework and improve some of the zig build steps<ul>
+          <li> RunStep gains ability to compare
        output and exit code against expected values. Multiple redundant
-       locations in the test harness code are replaced to use `RunStep`.
-     * `WriteFileStep` moved to lib/std/build/write_file.zig and gains
+       locations in the test harness code are replaced to use RunStep.</li>
+       <li> WriteFileStep gains
        ability to write more than one file into the cache directory, for
        when the files need to be relative to each other. This makes
-       usage of `WriteFileStep` no longer problematic when parallelizing
-       zig build.
-     * Added `CheckFileStep`, which can be used to validate that the output
+       usage of WriteFileStep no longer problematic when parallelizing
+       zig build.</li>
+       <li> Added CheckFileStep, which can be used to validate that the output
        of another step produced a valid file. Multiple redundant locations
-       in the test harness code are replaced to use `CheckFileStep`.
-     * Added `TranslateCStep`. This exposes `zig translate-c` to the build
+       in the test harness code are replaced to use CheckFileStep.</li>
+       <li> Added TranslateCStep. This exposes zig translate-c to the build
        system, which is likely to be rarely useful by most Zig users;
        however Zig's own test suite uses it both for translate-c tests and
-       for run-translated-c tests.
-     * Refactored ad-hoc code to handle source files coming from multiple
-       kinds of sources, into `std.build.FileSource`.
-     * Added `std.build.Builder.addExecutableFromWriteFileStep`.
-     * Added `std.build.Builder.addExecutableSource`.
-     * Added `std.build.Builder.addWriteFiles`.
-     * Added `std.build.Builder.addTranslateC`.
-     * Added `std.build.LibExeObjStep.addCSourceFileSource`.
-     * Added `std.build.LibExeObjStep.addAssemblyFileFromWriteFileStep`.
-     * Added `std.build.LibExeObjStep.addAssemblyFileSource`.
-     * Exposed `std.fs.base64_encoder`.
-
-commit 156e43b4633bdcd23913127c6b474ce2de3c4331
-Author: emekoi <emekankurumeh@outlook.com>
-Date:   Mon Dec 16 16:14:16 2019 -0600
-
-    added -- to pass args to zig build commands
-
-commit 688d02176c05763fc8dcb9e5f5b1e5a19dc98c50
-Author: mogud <mogud@qq.com>
-Date:   Thu Dec 19 21:34:38 2019 +0800
-
-    build support list options
-
-commit 32291ab70249c874e6941292de8611e619c838e5
-Author: frmdstryr <frmdstryr@protonmail.com>
-Date:   Fri Jan 31 13:02:12 2020 -0500
-
-    Add support for dependent packages when using build.zig
-
-commit 9b11e5e1f1e0debd1e5484883b2daad8b2b33cb7
-Author: Michaël Larouche <michael.larouche@gmail.com>
-Date:   Tue Jan 21 17:32:00 2020 -0500
-
-    Add InstallRawStep to Zig build system that does a similar job to llvm-objcopy. To use it, do 'exe.installRaw("kernel.bin");' where exe is a LibExeObjStep
-    Part of #2826
-
-commit 66d7370facc63648eb85fb7f1b94753ab0823ff3
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Mar 13 23:59:36 2020 -0400
-
-    special case when doing build-obj with just one source file
-    
-    When building an object file from only one source file, instead of
-    having a two-stage cache system, we special case it and use the cache
-    directory that the .o file is output to as the final cache directory for
-    all the build artifacts.
-    
-    When there are more than 1 source file, the linker has to merge objects
-    into one, and so the two stage approach makes sens. But in the case of
-    only one source file, this prevents needlessly copying the object file.
-    
-    This commit fixes an issue with the previous one, where zig with cache
-    enabled would print a directory that actually did not have any build
-    artifacts in it.
-
-commit 66e76a0209586000a78fe896071e73202a80b81f
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Mar 13 21:06:07 2020 -0400
-
-    zig build system: correctly handle multiple output artifacts (#4735)
-    
+       for run-translated-c tests.</li>
+       <li> Refactored ad-hoc code to handle source files coming from multiple
+         kinds of sources, into std.build.FileSource.</li>
+       <li> Added std.build.Builder.addExecutableFromWriteFileStep.</li>
+       <li> Added std.build.Builder.addExecutableSource.</li>
+       <li> Added std.build.Builder.addWriteFiles.</li>
+       <li> Added std.build.Builder.addTranslateC.</li>
+       <li> Added std.build.LibExeObjStep.addCSourceFileSource.</li>
+       <li> Added std.build.LibExeObjStep.addAssemblyFileFromWriteFileStep.</li>
+       <li> Added std.build.LibExeObjStep.addAssemblyFileSource.</li>
+      </ul></li>
+      <li><code>--</code> can be used to pass args to zig build commands.</li>
+      <li><code>-D</code> now supports "list" type options.</li>
+      <li>Nesting package dependencies is now supported.</li>
+      <li>InstallRawStep is available to do a similar job to objcopy. It can be
+        used with <code class="zig">exe.installRaw(<span class="tok-str">&quot;kernel.bin&quot;</span>);</code> where exe is a LibExeObjStep. (#2826)</li>
+      <li>zig build now correctly handles multiple output artifacts (#4733, #4735)<br>
     Previously the zig build system incorrectly assumed that the only build
     artifact was a binary. Now, when you enable the cache, only the output
     dir is printed to stdout, and the zig build system iterates over the
-    files in that directory, copying them to the output directory.
-    
-    To support this change:
-    
-     * Add `std.os.renameat`, `std.os.renameatZ`, and `std.os.renameatW`.
-     * Fix `std.os.linux.renameat` not compiling due to typos.
-     * Deprecate `std.fs.updateFile` and `std.fs.updateFileMode`.
-     * Add `std.fs.Dir.updateFile`, which supports using open directory
-       handles for both the source and destination paths, as well as an
-       options parameter which allows overriding the mode.
-     * Update `std.fs.AtomicFile` to support operating based on an open
-       directory handle. Instead of `std.fs.AtomicFile.init`, use
-       `std.fs.Dir.atomicFile`.
-     * `std.fs.AtomicFile` deinit() better handles the situation when the
-        rename fails but the temporary file still exists, by still
-        attempting to remove the temporary file.
-     * `std.fs.Dir.openFileWindows` is moved to `std.os.windows.OpenFileW`.
-     * `std.os.RenameError` gains the error codes `NoDevice`,
-       `SharingViolation`, and `PipeBusy` which have been observed from
-       Windows.
-    
-    Closes #4733
-
-
-commit 582991a5a818179881f7923c7e6cff10de50dfcf
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Mon Mar 16 09:54:11 2020 +0100
-
-    build: Expose function-sections switch
-
-commit 6a15d668ee1fd3cfc72b409e56a72b93ca46e1be
-Author: Timon Kruiper <timonkruiper@gmail.com>
-Date:   Mon Mar 16 22:10:07 2020 +0100
-
-    Change the default stdin behavior of RunStep to .Inherit
-    
-    This behaves the same as stdout and stderr behavior which also
-    default to .inherit. Also adds a field to RunStep to change the behavior.
-    
-    Since this is a breaking change, previous behavior can be restored by doing:
-    `RunStep.stdin_behavior = .Ignore`.
-
-
+    files in that directory, copying them to the output directory.</li>
+      <li>-ffunction-sections switch exposed to zig build scripts.</li>
+      <li>The default stdin behavior of RunStep is now .Inherit. Since this is a breaking change,
+        previous behavior can be restored by doing: <code class="zig">RunStep.stdin_behavior = .Ignore</code>.</li>
+      <li>Configuring the subsystem is exposed to build scripts.</li>
+    </ul>
+    <p>
+    Thanks to Benjamin Feng, David Cao, Layne Gustafson, LemonBoy, Michael Dusan,
+    Michaël Larouche, Nick Erdmann, Noam Preil, Sahnvour, Timon Kruiper,
+    Valentin Anger, dbandstra, emekoi, frmdstryr, meme, mogud, pwzk, stratact,
+    syscall0, and xackus for related contributions.
+    </p>
     
 
     <h1 id="zig-fmt"><a href="#toc-zig-fmt">zig fmt</a> <a class="hdr" href="#zig-fmt">§</a></h1>
@@ -4965,4 +4896,5 @@ TODO convert std.foo.bar to foo.bar (and make hyperlinks?)
 TODO search for "commit" as well as TODO
 TODO the commits to master since aaf99371b22e816a4162391d799b9d22bba21120
 TODO take a look at that wiki page by mike dusan, notable master branch commits
+TODO hyperlinkify issue numbers
 TODO run the html through the w3c validator to find html errors
