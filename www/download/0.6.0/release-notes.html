@@ -1520,20 +1520,21 @@ All 1 tests passed.
     <span class="tok-kw">const</span> slice = array[<span class="tok-number">1</span>..<span class="tok-number">3</span> :<span class="tok-str">'f'</span>];
 }</code></pre><pre><code class="shell">$ zig test test.zig
 1/1 test &quot;slice with sentinel&quot;...sentinel mismatch
-<span class="t37_1">/Users/mike/project/zig/www.ziglang.org/docgen_tmp/test.zig:3:24</span>: <span class="t2_0">0x1085bee89 in test &quot;slice with sentinel&quot; (test)</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/test.zig:3:24</span>: <span class="t2_0">0x204c07 in test &quot;slice with sentinel&quot; (test)</span>
     const slice = array[1..3 :'f'];
                        <span class="t32_1">^</span>
-<span class="t37_1">/Users/mike/project/zig/work/doc/lib/std/special/test_runner.zig:47:28</span>: <span class="t2_0">0x1085bfe48 in std.special.main (test)</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/special/test_runner.zig:47:28</span>: <span class="t2_0">0x22bb2e in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t37_1">/Users/mike/project/zig/work/doc/lib/std/start.zig:253:37</span>: <span class="t2_0">0x1085c19a2 in std.start.main (test)</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/start.zig:253:37</span>: <span class="t2_0">0x20565d in std.start.posixCallMainAndExit (test)</span>
             const result = root.main() catch |err| {
                                     <span class="t32_1">^</span>
-<span class="t37_1">???:?:?</span>: <span class="t2_0">0x7fff6acbccc8 in ??? (???)</span>
-<span class="t37_1">???:?:?</span>: <span class="t2_0">0x0 in ??? (???)</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/start.zig:123:5</span>: <span class="t2_0">0x20539f in std.start._start (test)</span>
+    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
+    <span class="t32_1">^</span>
 
 Tests failed. Use the following command to reproduce the failure:
-/Users/mike/project/zig/www.ziglang.org/docgen_tmp/test
+/home/andy/dev/www.ziglang.org/docgen_tmp/test
 </code></pre>
 
     <p>
@@ -1732,16 +1733,110 @@ All 1 tests passed.
 
     <h2 id="Tuples-Added-Var-Args-Removed"><a href="#toc-Tuples-Added-Var-Args-Removed">Tuples Added, Var Args Removed</a> <a class="hdr" href="#Tuples-Added-Var-Args-Removed">§</a></h2>
 
-    TODO
+    <p>Similar to
+    <a href="https://ziglang.org/documentation/0.6.0/#Enum-Literals">Anonymous Enum Literals</a>
+    and <a href="#Anonymous-Struct-Literals">Anonymous Struct Literals</a>, the type can be omitted from array literals.
+    In this example, tuple syntax directly populates the array elements:</p>
+      <p class="file">tuple.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-    TODO show tuple concatenation
+<span class="tok-kw">test</span> <span class="tok-str">&quot;tuple syntax&quot;</span> {
+    <span class="tok-kw">var</span> array: [<span class="tok-number">4</span>]<span class="tok-type">u8</span> = .{<span class="tok-number">11</span>, <span class="tok-number">22</span>, <span class="tok-number">33</span>, <span class="tok-number">44</span>};
+    expect(array[<span class="tok-number">0</span>] == <span class="tok-number">11</span>);
+    expect(array[<span class="tok-number">1</span>] == <span class="tok-number">22</span>);
+    expect(array[<span class="tok-number">2</span>] == <span class="tok-number">33</span>);
+    expect(array[<span class="tok-number">3</span>] == <span class="tok-number">44</span>);
+}</code></pre><pre><code class="shell">$ zig test tuple.zig
+1/1 test &quot;tuple syntax&quot;...OK
+All 1 tests passed.
+</code></pre>
 
-    TODO show std.fmt.format
+      <p>
+      A tuple is a <code class="zig"><span class="tok-kw">struct</span></code> with auto-numbered field names:
+      </p>
+      <p class="file">infer_tuple.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-    TODO remove var args is #208
-    TODO remove no-longer-needed workaround for var args See #557
+<span class="tok-kw">test</span> <span class="tok-str">&quot;fully anonymous tuple&quot;</span> {
+    dump(.{ <span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">1234</span>), <span class="tok-builtin">@as</span>(<span class="tok-type">f64</span>, <span class="tok-number">12.34</span>), <span class="tok-null">true</span>, <span class="tok-str">&quot;hi&quot;</span>});
+}
 
-    TODO Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for contributing fixes related to this feature.
+<span class="tok-kw">fn</span> <span class="tok-fn">dump</span>(args: <span class="tok-kw">var</span>) <span class="tok-type">void</span> {
+    expect(args.@&quot;0&quot; == <span class="tok-number">1234</span>);
+    expect(args.@&quot;1&quot; == <span class="tok-number">12.34</span>);
+    expect(args.@&quot;2&quot;);
+    expect(args.@&quot;3&quot;[<span class="tok-number">0</span>] == <span class="tok-str">'h'</span>);
+    expect(args.@&quot;3&quot;[<span class="tok-number">1</span>] == <span class="tok-str">'i'</span>);
+}</code></pre><pre><code class="shell">$ zig test infer_tuple.zig
+1/1 test &quot;fully anonymous tuple&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>
+    However, the <code class="zig">@&quot;&quot;</code> syntax is not needed, because
+    although tuples are structs, they also have array-like qualities:
+    </p>
+    <p class="file">tuples_are_array_like.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;tuples support element access and .len field&quot;</span> {
+    <span class="tok-kw">var</span> x: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>;
+    <span class="tok-kw">var</span> y: <span class="tok-type">i32</span> = <span class="tok-number">4567</span>;
+    <span class="tok-kw">var</span> tup = .{ x, y };
+    tup[<span class="tok-number">0</span>] += <span class="tok-number">1</span>; <span class="tok-comment">// works as long as the indexes are comptime-known</span>
+    tup[<span class="tok-number">1</span>] -= <span class="tok-number">1</span>;
+
+    expect(tup[<span class="tok-number">0</span>] == <span class="tok-number">1235</span>);
+    expect(tup[<span class="tok-number">1</span>] == <span class="tok-number">4566</span>);
+
+    <span class="tok-comment">// now we iterate over the fields</span>
+    <span class="tok-kw">var</span> sum: <span class="tok-type">i32</span> = <span class="tok-number">0</span>;
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> index = <span class="tok-number">0</span>;
+    <span class="tok-kw">inline</span> <span class="tok-kw">while</span> (index &lt; tup.len) : (index += <span class="tok-number">1</span>) {
+        sum += tup[index];
+    }
+    expect(sum == <span class="tok-number">1235</span> + <span class="tok-number">4566</span>);
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;tuple concatenation&quot;</span> {
+    <span class="tok-kw">var</span> one = .{ <span class="tok-str">&quot;hi&quot;</span>, <span class="tok-null">true</span> };
+    <span class="tok-kw">var</span> two = .{ <span class="tok-number">12.34</span>, .ok };
+    <span class="tok-kw">var</span> combined = one ++ two;
+
+    expect(combined[<span class="tok-number">3</span>] == .ok);
+}</code></pre><pre><code class="shell">$ zig test tuples_are_array_like.zig
+1/2 test &quot;tuples support element access and .len field&quot;...OK
+2/2 test &quot;tuple concatenation&quot;...OK
+All 2 tests passed.
+</code></pre>
+
+    <p>
+    Zig is determined to remain a small language.
+    With the addition of tuples comes the removal of variadic parameter functions (#208).
+    Printing and formatting are no exception. Formatted printing now uses tuples
+    for the parameters to print, rather than var args:
+    </p>
+    <p class="file">hello.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    std.debug.warn(<span class="tok-str">&quot;Hello, {}\n&quot;</span>, .{<span class="tok-str">&quot;World!&quot;</span>});
+}</code></pre><pre><code class="shell">$ zig build-exe hello.zig
+$ ./hello
+Hello, World!
+</code></pre>
+
+    <p>
+    Note: Zig still supports C ABI functions with var args. Nothing is changed there.
+    </p>
+    <p>
+    Zig's var args design was flawed, with many issues such as
+    <a href="https://github.com/ziglang/zig/issues/557">var args can't handle void or number literal arguments</a>. With tuples, these issues are resolved.
+    Zig's Tuples are much more robust and generally useful than its var args ever was.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/issues/4335">It is planned to add tuple type declaration syntax</a>.
+    </p>
+    <p>Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for fixes related to this feature.</p>
     
 
     <h2 id="SIMD"><a href="#toc-SIMD">SIMD</a> <a class="hdr" href="#SIMD">§</a></h2>
