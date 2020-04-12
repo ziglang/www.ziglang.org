@@ -1552,16 +1552,101 @@ fn makeNumber() Number {
     {#header_close#}
 
     {#header_open|Tuples Added, Var Args Removed#}
-    TODO
+    <p>Similar to
+    <a href="https://ziglang.org/documentation/0.6.0/#Enum-Literals">Anonymous Enum Literals</a>
+    and {#link|Anonymous Struct Literals#}, the type can be omitted from array literals.
+    In this example, tuple syntax directly populates the array elements:</p>
+      {#code_begin|test|tuple#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    TODO show tuple concatenation
+test "tuple syntax" {
+    var array: [4]u8 = .{11, 22, 33, 44};
+    expect(array[0] == 11);
+    expect(array[1] == 22);
+    expect(array[2] == 33);
+    expect(array[3] == 44);
+}
+      {#code_end#}
+      <p>
+      A tuple is a {#syntax#}struct{#endsyntax#} with auto-numbered field names:
+      </p>
+      {#code_begin|test|infer_tuple#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    TODO show std.fmt.format
+test "fully anonymous tuple" {
+    dump(.{ @as(u32, 1234), @as(f64, 12.34), true, "hi"});
+}
 
-    TODO remove var args is #208
-    TODO remove no-longer-needed workaround for var args See #557
+fn dump(args: var) void {
+    expect(args.@"0" == 1234);
+    expect(args.@"1" == 12.34);
+    expect(args.@"2");
+    expect(args.@"3"[0] == 'h');
+    expect(args.@"3"[1] == 'i');
+}
+      {#code_end#}
+    <p>
+    However, the {#syntax#}@""{#endsyntax#} syntax is not needed, because
+    although tuples are structs, they also have array-like qualities:
+    </p>
+    {#code_begin|test|tuples_are_array_like#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    TODO Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for contributing fixes related to this feature.
+test "tuples support element access and .len field" {
+    var x: i32 = 1234;
+    var y: i32 = 4567;
+    var tup = .{ x, y };
+    tup[0] += 1; // works as long as the indexes are comptime-known
+    tup[1] -= 1;
+
+    expect(tup[0] == 1235);
+    expect(tup[1] == 4566);
+
+    // now we iterate over the fields
+    var sum: i32 = 0;
+    comptime var index = 0;
+    inline while (index < tup.len) : (index += 1) {
+        sum += tup[index];
+    }
+    expect(sum == 1235 + 4566);
+}
+
+test "tuple concatenation" {
+    var one = .{ "hi", true };
+    var two = .{ 12.34, .ok };
+    var combined = one ++ two;
+
+    expect(combined[3] == .ok);
+}
+    {#code_end#}
+    <p>
+    Zig is determined to remain a small language.
+    With the addition of tuples comes the removal of variadic parameter functions (#208).
+    Printing and formatting are no exception. Formatted printing now uses tuples
+    for the parameters to print, rather than var args:
+    </p>
+    {#code_begin|exe|hello#}
+const std = @import("std");
+
+pub fn main() void {
+    std.debug.warn("Hello, {}\n", .{"World!"});
+}
+    {#code_end#}
+    <p>
+    Note: Zig still supports C ABI functions with var args. Nothing is changed there.
+    </p>
+    <p>
+    Zig's var args design was flawed, with many issues such as
+    <a href="https://github.com/ziglang/zig/issues/557">var args can't handle void or number literal arguments</a>. With tuples, these issues are resolved.
+    Zig's Tuples are much more robust and generally useful than its var args ever was.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/issues/4335">It is planned to add tuple type declaration syntax</a>.
+    </p>
+    <p>Thanks to Vexu, LemonBoy, dbandstra, and Alexander Naskos for fixes related to this feature.</p>
     {#header_close#}
 
     {#header_open|SIMD#}
