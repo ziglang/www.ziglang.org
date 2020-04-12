@@ -2485,17 +2485,163 @@ All 1 tests passed.
 
     <h2 id="noasync"><a href="#toc-noasync">noasync</a> <a class="hdr" href="#noasync">§</a></h2>
 
-    TODO
+    <p>
+    <code class="zig"><span class="tok-kw">noasync</span></code>, similar to <code class="zig"><span class="tok-kw">comptime</span></code>, creates a scope
+    in which the programmer asserts there will be no suspension points.
+    </p>
+    <p>
+    Normally, async function calls and awaiting an async function frame introduce a
+    <strong>suspension point</strong> at the callsite, causing the containing function
+    to have the <code class="zig"><span class="tok-kw">async</span></code> calling convention.
+    However, inside a <code class="zig"><span class="tok-kw">noasync</span></code> scope, async function calls and
+    awaiting async function frames do not cause a suspension point. Instead, the code
+    asserts that the callee never suspends, or in the case of <code class="zig"><span class="tok-kw">await</span></code>,
+    that the function frame already has the result completed.
+    </p>
+    <p>
+    This allows a non-async function to call an async function:
+    </p>
+    <p class="file">noasync.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-commit 638d5c3aca7ce1e4fd10060079caa0acb66144c0
-Merge: 52c01840c 3fd2cd436
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Mar 9 18:36:01 2020 -0400
+<span class="tok-kw">test</span> <span class="tok-str">&quot;noasync function call&quot;</span> {
+    <span class="tok-kw">const</span> result = <span class="tok-kw">noasync</span> add(<span class="tok-number">50</span>, <span class="tok-number">100</span>);
+    expect(result == <span class="tok-number">150</span>);
+}
 
-    Merge pull request #4700 from Vexu/noasync
-    
-    Implement new noasync syntax
+<span class="tok-kw">fn</span> <span class="tok-fn">add</span>(a: <span class="tok-type">i32</span>, b: <span class="tok-type">i32</span>) <span class="tok-type">i32</span> {
+    <span class="tok-kw">if</span> (a &gt; <span class="tok-number">100</span>) {
+        <span class="tok-kw">suspend</span>;
+    }
+    <span class="tok-kw">return</span> a + b;
+}</code></pre><pre><code class="shell">$ zig test noasync.zig
+1/1 test &quot;noasync function call&quot;...OK
+All 1 tests passed.
+</code></pre>
 
+    <p>
+    This is especially useful for <code class="zig">main()</code> to set up
+    async functions initially:
+    </p>
+    <p class="file">async_main.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">var</span> global_frame_1: <span class="tok-kw">anyframe</span> = <span class="tok-null">undefined</span>;
+<span class="tok-kw">var</span> global_frame_2: <span class="tok-kw">anyframe</span> = <span class="tok-null">undefined</span>;
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> main_frame = <span class="tok-kw">async</span> asyncMain();
+    <span class="tok-kw">resume</span> global_frame_1;
+    <span class="tok-kw">resume</span> global_frame_2;
+    <span class="tok-kw">const</span> result = <span class="tok-kw">noasync</span> <span class="tok-kw">await</span> main_frame;
+    std.debug.warn(<span class="tok-str">&quot;result: {}\n&quot;</span>, .{result});
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">asyncMain</span>() <span class="tok-type">i32</span> {
+    <span class="tok-kw">var</span> a = <span class="tok-kw">async</span> foo();
+    <span class="tok-kw">var</span> b = <span class="tok-kw">async</span> bar();
+    <span class="tok-kw">return</span> <span class="tok-kw">await</span> a + <span class="tok-kw">await</span> b;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">i32</span> {
+    global_frame_1 = <span class="tok-builtin">@frame</span>();
+    <span class="tok-kw">suspend</span>;
+    <span class="tok-kw">return</span> <span class="tok-number">1</span>;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() <span class="tok-type">i32</span> {
+    global_frame_2 = <span class="tok-builtin">@frame</span>();
+    <span class="tok-kw">suspend</span>;
+    <span class="tok-kw">return</span> <span class="tok-number">2</span>;
+}</code></pre><pre><code class="shell">$ zig build-exe async_main.zig
+$ ./async_main
+result: 3
+</code></pre>
+
+    <p>
+    Notice that the function <code class="zig">asyncMain</code> is able to participate in the
+    async/await abstraction without having to care about the setup and teardown happening
+    in <code class="zig">main</code>.
+    </p>
+    <p>
+    For <a href="#Async-IO">Async I/O</a> in the <a href="#Standard-Library">Standard Library</a>, Zig handles this setup and teardown
+    in the <a href="#Start-Code">Start Code</a> that calls <code class="zig">main</code>.
+    </p>
+    <p>
+    Now, watch what happens when we remove <code class="zig"><span class="tok-kw">noasync</span></code> from the above example:
+    </p>
+    <p class="file">oops_await.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">var</span> global_frame_1: <span class="tok-kw">anyframe</span> = <span class="tok-null">undefined</span>;
+<span class="tok-kw">var</span> global_frame_2: <span class="tok-kw">anyframe</span> = <span class="tok-null">undefined</span>;
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> main_frame = <span class="tok-kw">async</span> asyncMain();
+    <span class="tok-kw">resume</span> global_frame_1;
+    <span class="tok-kw">resume</span> global_frame_2;
+    <span class="tok-kw">const</span> result = <span class="tok-kw">await</span> main_frame;
+    std.debug.warn(<span class="tok-str">&quot;result: {}\n&quot;</span>, .{result});
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">asyncMain</span>() <span class="tok-type">i32</span> {
+    <span class="tok-kw">var</span> a = <span class="tok-kw">async</span> foo();
+    <span class="tok-kw">var</span> b = <span class="tok-kw">async</span> bar();
+    <span class="tok-kw">return</span> <span class="tok-kw">await</span> a + <span class="tok-kw">await</span> b;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">i32</span> {
+    global_frame_1 = <span class="tok-builtin">@frame</span>();
+    <span class="tok-kw">suspend</span>;
+    <span class="tok-kw">return</span> <span class="tok-number">1</span>;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() <span class="tok-type">i32</span> {
+    global_frame_2 = <span class="tok-builtin">@frame</span>();
+    <span class="tok-kw">suspend</span>;
+    <span class="tok-kw">return</span> <span class="tok-number">2</span>;
+}</code></pre><pre><code class="shell">$ zig build-exe oops_await.zig
+<span class="t0_1">/home/andy/Downloads/zig/lib/std/start.zig:83:1: </span><span class="t31_1">error: </span><span class="t0_1">function with calling convention 'Naked' cannot be async</span>
+fn _start() callconv(.Naked) noreturn {
+<span class="t32_1">^</span>
+<span class="t0_1">/home/andy/Downloads/zig/lib/std/start.zig:123:5: </span><span class="t36_1">note: </span><span class="t0_1">async function call here</span>
+    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
+    <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/Downloads/zig/lib/std/start.zig:179:17: </span><span class="t36_1">note: </span><span class="t0_1">async function call here</span>
+    std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
+                <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/Downloads/zig/lib/std/start.zig:188:36: </span><span class="t36_1">note: </span><span class="t0_1">async function call here</span>
+    return initEventLoopAndCallMain();
+                                   <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/Downloads/zig/lib/std/start.zig:225:12: </span><span class="t36_1">note: </span><span class="t0_1">async function call here</span>
+    return @call(.{ .modifier = .always_inline }, callMain, .{});
+           <span class="t32_1">^</span>
+<span class="t0_1">/home/andy/Downloads/zig/lib/std/start.zig:243:22: </span><span class="t36_1">note: </span><span class="t0_1">async function call here</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t0_1">./docgen_tmp/oops_await.zig:11:20: </span><span class="t36_1">note: </span><span class="t0_1">await here is a suspend point</span>
+    const result = await main_frame;
+                   <span class="t32_1">^</span>
+<span class="t0_1">./docgen_tmp/oops_await.zig:18:12: </span><span class="t36_1">note: </span><span class="t0_1">await here is a suspend point</span>
+    return await a + await b;
+           <span class="t32_1">^</span>
+<span class="t0_1">./docgen_tmp/oops_await.zig:22:22: </span><span class="t36_1">note: </span><span class="t0_1">@frame() causes function to be async</span>
+    global_frame_1 = @frame();
+                     <span class="t32_1">^</span>
+</code></pre>
+
+    <p>
+    Here, the <code class="zig"><span class="tok-kw">await</span></code> inside <code class="zig">main</code> is a
+    suspension point, which causes <code class="zig">main</code> to have the
+    async calling convention, which has a cascading effect, causing <code class="zig">_start</code>
+    to have the async calling convention. But <code class="zig">_start</code> already has the
+    "naked" calling convention, because it is the entry point from the kernel!
+    </p>
+    <p>
+    We can use <code class="zig"><span class="tok-kw">noasync</span></code> to create a "seam" between async code and blocking
+    code, because in this example, we know that <code class="zig">main_frame</code> has already
+    completed by the time we call <code class="zig"><span class="tok-kw">await</span></code>.
+    </p>
     <p>
     Thanks to Vexu for contributions related to this feature.
     </p>
