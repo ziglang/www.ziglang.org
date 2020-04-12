@@ -2094,8 +2094,58 @@ All 1 tests passed.
 
     <h2 id="Non-Exhaustive-Enums"><a href="#toc-Non-Exhaustive-Enums">Non-Exhaustive Enums</a> <a class="hdr" href="#Non-Exhaustive-Enums">§</a></h2>
 
-    TODO
-    TODO mention replacing various numerical constants with non-exhaustive enums.
+      <p>
+      A Non-exhaustive enum can be created by adding a trailing '_' field.
+      It must specify an integer tag type and may not consume every enumeration value.
+      </p>
+      <p>
+      <a href="https://ziglang.org/documentation/0.6.0/#intToEnum">@intToEnum</a>
+      on a non-exhaustive enum never fails.
+      </p>
+      <p>
+      A switch on a non-exhaustive enum can include a '_' prong as an alternative to an
+      <code class="zig"><span class="tok-kw">else</span></code> prong
+      with the difference being that it makes it a compile error if all the known tag names
+      are not handled by the switch.
+      </p>
+      <p class="file">switch_non_exhaustive_enum.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> assert = std.debug.assert;
+
+<span class="tok-kw">const</span> Number = <span class="tok-kw">enum</span>(<span class="tok-type">u8</span>) {
+    One,
+    Two,
+    Three,
+    _,
+};
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;switch on non-exhaustive enum&quot;</span> {
+    <span class="tok-kw">const</span> number = Number.One;
+    <span class="tok-kw">const</span> result = <span class="tok-kw">switch</span> (number) {
+        .One =&gt; <span class="tok-null">true</span>,
+        .Two,
+        .Three =&gt; <span class="tok-null">false</span>,
+        _ =&gt; <span class="tok-null">false</span>,
+    };
+    assert(result);
+    <span class="tok-kw">const</span> is_one = <span class="tok-kw">switch</span> (number) {
+        .One =&gt; <span class="tok-null">true</span>,
+        <span class="tok-kw">else</span> =&gt; <span class="tok-null">false</span>,
+    };
+    assert(is_one);
+}</code></pre><pre><code class="shell">$ zig test switch_non_exhaustive_enum.zig
+1/1 test &quot;switch on non-exhaustive enum&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+      <p>
+      Non-exhaustive enums are useful for future-proofing code, so that it will
+      continue to work correctly even when encountering values that were not
+      present at the time the code was written.
+      </p>
+      <p>
+      Various bits in the <a href="#Standard-Library">Standard Library</a> have been updated to use
+      non-exhaustive enums rather than numerical constants.
+      </p>
     <p>
     Thanks to Vexu, LemonBoy, and daurnimator for contributions related to this feature.
     </p>
