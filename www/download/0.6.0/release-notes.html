@@ -370,6 +370,7 @@
         <li><a id="toc-compiler-rt" href="#compiler-rt">compiler-rt</a></li>
         <li><a id="toc-Test-Coverage" href="#Test-Coverage">Test Coverage</a></li>
         <li><a id="toc-Memory-Usage-Reduction" href="#Memory-Usage-Reduction">Memory Usage Reduction</a></li>
+        <li><a id="toc-Advanced-IR-Debugging" href="#Advanced-IR-Debugging">Advanced IR Debugging</a></li>
         <li><a id="toc-Command-Line-Interface" href="#Command-Line-Interface">Command Line Interface</a></li>
         <li><a id="toc-Miscellaneous-Improvements" href="#Miscellaneous-Improvements">Miscellaneous Improvements</a></li>
         <li><a id="toc-Bug-Fixes" href="#Bug-Fixes">Bug Fixes</a>
@@ -3984,96 +3985,59 @@ Date:   Wed Oct 23 12:55:20 2019 +0200
 
     <h2 id="Documentation-Generation"><a href="#toc-Documentation-Generation">Documentation Generation</a> <a class="hdr" href="#Documentation-Generation">§</a></h2>
 
-    <p>TODO</p>
-    add -fdump-analysis to dump type information to json
-    
-    This commit adds -fdump-analysis which creates
-    a `$NAME-analysis.json` file with all of the finished
+    <p>This feature is still experimental.</p>
+    <p>There is a new <code>-fdump-analysis</code> command line option, which creates
+    a <code>$NAME-analysis.json</code> file with all of the finished
     semantic analysis that the stage1 compiler produced.
-    It contains types, packages, declarations, and files.
-    
-    This is an initial implementation; some data will be
-    missing. However it's easy to improve the implementation,
-    which is in `src/dump_analysis.cpp`.
-    
-    The next step for #21 will be to create Zig code which parses
-    this json file and creates user-facing HTML documentation.
-    
-    This feature has other uses, however; for example, it could
-    be used for IDE integration features until the self-hosted
-    compiler is available.
-
-    proof of concept of stage1 doc generation
-    
-    This commit adds `-fgenerate-docs` CLI option, and it outputs:
-     * doc/index.html
-     * doc/data.js
-     * doc/main.js
-    
+    It contains types, packages, declarations, and files.</p>
+    <p>
+    This feature can be used to power IDE integration features until such time
+    as the self-hosted compiler is available and supports such features more directly.
+    </p>
+    <p>
+    Additionally, there is a proof-of-concept documentation generation feature (#21):
+    </p>
+    <p>The new <code>-femit-docs</code> CLI option outputs:
+    <ul>
+      <li>doc/index.html</li>
+      <li>doc/data.js</li>
+      <li>doc/main.js</li>
+    </ul>
+    <p>
     In this strategy, we have 1 static html page and 1 static javascript
     file, which loads the semantic analysis dump directly and renders it
-    using dom manipulation.
-    
-    Currently, all it does is list the declarations. But there is a lot more
-    data available to work with. The next step would be making the
-    declarations hyperlinks, and handling page navigation.
-    
-    Another strategy would be to generate a static site with no javascript,
-    based on the semantic analysis dump that zig now provides. I invite the
-    Zig community to take on such a project. However this version which
-    heavily relies on javascript will also be a direction explored.
-    
-    I also welcome contributors to improve the html, css, and javascript of
-    what this commit started, as well as whatever improvements are necessary
-    to the static analysis dumping code to provide more information.
-    
-    See #21.
-
-    TODO use git log to find out who submitted patches to generated docs and thank them
-
-    TODO mention merging dumps tool
-
-commit c71857703f23979334b49f02a5dd4e4eb6f6dea7
-Author: Felix Queißner <felix@ib-queissner.de>
-Date:   Tue Oct 22 20:58:27 2019 +0200
-
-    Adds documentation for std.fmt.format grammar and customization. (#3474)
-
-commit 6fdeaac338f3a4a1f3455653ce29bf6ce4bbe335
-Author: Nathan Michaels <nathan@nmichaels.org>
-Date:   Mon Oct 28 03:57:23 2019 -0400
-
-    Add some documentation for standard library things. (#3540)
-    
-    * Add some documentation for standard library things.
-    
-    Added a bunch of descriptions for array_list.
-    Added some usage notes for failing_allocator.
-    Documented some of mem.Allocator.
-
-commit 33b5dbb82c3c68596ce41abcea6aea3834c0d3a7
-Author: Nathan Michaels <nathan@nmichaels.org>
-Date:   Thu Dec 19 23:42:27 2019 -0500
-
-    Document std.Mutex.
-    
-    Not sure what the build platform is for the generated documentation,
-    and it's worth thinking about how best to deal with this pattern. It
-    might be worth figuring out how to rewrite this to have a single
-    definition of the public API with the implementation chosen at compile
-    time.
-
+    using DOM manipulation.
+    </p>
+    <p>
+    There is now
+    <a href="https://ziglang.org/documentation/0.6.0/std/">experimental std lib documentation</a>.
+    </p>
+    <p>
+    There are still some missing features. For example, it does not handle generic types ideally,
+    multiple packages are not handled well, and some URLs are broken. Additionally, the
+    <a href="https://github.com/ziglang/zig/blob/0.6.0/tools/merge_anal_dumps.zig">merge_anal_dumps tool</a>
+    is not yet complete, so generated documentation can only apply to a single build configuration.
+    For example, if the generated docs targeted Windows, then Linux-only functions will not be
+    shown in the documentation, and vice-versa. Due to Zig's lazy analysis many declarations
+    are not semantically analyzed, causing them to be omitted in the generated documentation.
+    These are all open issues to be addressed.
+    </p>
+    <p>
+    Despite the flaws it can still be a useful way to explore the <a href="#Standard-Library">Standard Library</a>.
+    It has motivated some contributions to improve doc comments to various APIs:
+    </p>
     <ul>
+      <li>Felix Queißner added documentation for std.fmt.format grammar and customization. (#3474)</li>
+      <li>Nathan Michaels added docs for ArrayList, failing_allocator, and Allocator. (#3540)</li>
+      <li>Nathan Michaels documented std.Mutex.</li>
       <li>Nathan Michaels documented PriorityQueue.</li>
       <li>Josh Wolfe added documentation for mutable HashMap KV pointers.</li>
       <li>Felix (xq) Queißner added documentation to <code class="zig">std.atomic.Queue</code>.</li>
     </ul>
-
     <p>
     Thank you to Rocknest, Timon Kruiper, Henry Wu, Felix Queißner, Vexu, dtw-waleee,
     pfg, and xackus for contributions related to this feature.
     </p>
-
     
     
 
@@ -4674,6 +4638,35 @@ Date:   Sun Mar 29 10:33:37 2020 -0400
     The main goal of memory usage reduction is to ensure that
     <a href="#Bootstrap-Tarball">bootstrapping</a> takes 3.5 GiB or less
     on the host system (<a href="https://github.com/ziglang/zig/issues/471">#471</a>).
+    </p>
+    
+
+    <h1 id="Advanced-IR-Debugging"><a href="#toc-Advanced-IR-Debugging">Advanced IR Debugging</a> <a class="hdr" href="#Advanced-IR-Debugging">§</a></h1>
+
+    Andrew added native-debug helper functions for the Zig compiler.
+    <p>
+    Print triplet of (source:line:col) by calling member function <code>src()</code> for types
+    <code>IrExecutable{Src,Gen}</code>,
+    <code>AstNode</code>,
+    <code>IrInst</code>,
+    <code>IrInst{Src,Gen}</code> .
+    </p>
+    <p>
+    Dump IR segment by calling member function <code>dump()</code> for types
+    <code>IrExecutable{Src,Gen}</code>,
+    <code>AstNode</code>,
+    <code>IrInst</code>,
+    <code>IrInst{Src,Gen}</code> .
+    </p>
+    <p>
+    Dump <code>ZigValue</code> type-as-string by calling member function <code>Dump</code> .
+    </p>
+    <p>
+    When <code>--verbose-ir</code> is enabled,
+    call <code>dbg_ir_break(src_file_zig, line)</code> to breakpoint inside <code>ir_analyze()</code> .
+    </p>
+    <p>
+    Call <code>dbg_ir_clear()</code> to clear all breakpoints.
     </p>
     
 
