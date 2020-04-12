@@ -2046,11 +2046,47 @@ All 1 tests passed.
 
     <h2 id="callconv"><a href="#toc-callconv">callconv</a> <a class="hdr" href="#callconv">§</a></h2>
 
-    TODO replaces extern syntax, zig fmt auto fixes, will be removed in future releas
-
-
-    remove stdcallcc, extern, nakedcc from stage1; zig fmt rewrites
-
+    <p>
+    Old syntax for a function that has the C calling convention:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">extern</span> <span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">void</span> {}</code></pre>
+    <p>
+    New syntax:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-kw">callconv</span>(.C) <span class="tok-type">void</span> {}</code></pre>
+    <p>
+    In Zig 0.6.0, <a href="#zig-fmt">zig fmt</a> automatically transforms the old syntax to the new syntax.
+    In Zig 0.7.0, it will no longer do that.
+    </p>
+    <p>
+    Similarly the keywords <code class="zig"><span class="tok-kw">stdcallcc</span></code> and <code class="zig"><span class="tok-kw">nakedcc</span></code>
+    are obsoleted by <code class="zig"><span class="tok-kw">callconv</span>(.Stdcall)</code> and <code class="zig"><span class="tok-kw">callconv</span>(.Naked)</code>.
+    </p>
+    <p>
+    The enum that <code class="zig"><span class="tok-kw">callconv</span></code> takes as a parameter is defined in
+    <code class="zig">std.builtin.CallingConvention</code>:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> CallingConvention = <span class="tok-kw">enum</span> {
+    Unspecified,
+    C,
+    Cold,
+    Naked,
+    Async,
+    Interrupt,
+    Signal,
+    Stdcall,
+    Fastcall,
+    Vectorcall,
+    Thiscall,
+    APCS,
+    AAPCS,
+    AAPCSVFP,
+};</code></pre>
+    <p>
+    This allows the calling convention of a function to depend on
+    <code class="zig"><span class="tok-kw">comptime</span></code> logic, which can be useful for dealing with
+    code that works differently on different architectures.
+    </p>
     <p>
     Thanks to LemonBoy for implementing this.
     </p>

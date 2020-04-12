@@ -1829,11 +1829,51 @@ pub const CallOptions = struct {
     {#header_close#}
 
     {#header_open|callconv#}
-    TODO replaces extern syntax, zig fmt auto fixes, will be removed in future releas
-
-
-    remove stdcallcc, extern, nakedcc from stage1; zig fmt rewrites
-
+    <p>
+    Old syntax for a function that has the C calling convention:
+    </p>
+    <pre>{#syntax#}extern fn foo() void {}{#endsyntax#}</pre>
+    <p>
+    New syntax:
+    </p>
+    {#code_begin|syntax#}
+fn foo() callconv(.C) void {}
+    {#code_end#}
+    <p>
+    In Zig 0.6.0, {#link|zig fmt#} automatically transforms the old syntax to the new syntax.
+    In Zig 0.7.0, it will no longer do that.
+    </p>
+    <p>
+    Similarly the keywords {#syntax#}stdcallcc{#endsyntax#} and {#syntax#}nakedcc{#endsyntax#}
+    are obsoleted by {#syntax#}callconv(.Stdcall){#endsyntax#} and {#syntax#}callconv(.Naked){#endsyntax#}.
+    </p>
+    <p>
+    The enum that {#syntax#}callconv{#endsyntax#} takes as a parameter is defined in
+    {#syntax#}std.builtin.CallingConvention{#endsyntax#}:
+    </p>
+    {#code_begin|syntax#}
+pub const CallingConvention = enum {
+    Unspecified,
+    C,
+    Cold,
+    Naked,
+    Async,
+    Interrupt,
+    Signal,
+    Stdcall,
+    Fastcall,
+    Vectorcall,
+    Thiscall,
+    APCS,
+    AAPCS,
+    AAPCSVFP,
+};
+    {#code_end#}
+    <p>
+    This allows the calling convention of a function to depend on
+    {#syntax#}comptime{#endsyntax#} logic, which can be useful for dealing with
+    code that works differently on different architectures.
+    </p>
     <p>
     Thanks to LemonBoy for implementing this.
     </p>
