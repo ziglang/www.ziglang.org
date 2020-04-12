@@ -1385,9 +1385,75 @@ test "coerce array pointer to slice" {
     {#header_close#}
 
     {#header_open|Numerical Comparisons#}
-    TODO see 9468d6381997dedaf3330f0c6e1b4290a9af1345
-    thanks to Shawn Landden for the proposal.
-    all numerical comparisons allowed no matter the type combinations
+    <p>
+    All numerical comparisons are now allowed no matter the type combinations.
+    For example, small signed integers can be compared against large unsigned integers,
+    and floats can be compared against integers.
+    </p>
+    <p>
+    For a demonstration of this, you can look at the new {#syntax#}std.math.compare{#endsyntax#}
+    function added to the {#link|Standard Library#} and the test cases for it:
+    </p>
+    {#code_begin|test|compare#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+/// See also `Order`.
+pub const CompareOperator = enum {
+    /// Less than (`<`)
+    lt,
+
+    /// Less than or equal (`<=`)
+    lte,
+
+    /// Equal (`==`)
+    eq,
+
+    /// Greater than or equal (`>=`)
+    gte,
+
+    /// Greater than (`>`)
+    gt,
+
+    /// Not equal (`!=`)
+    neq,
+};
+
+/// This function does the same thing as comparison operators, however the
+/// operator is a runtime-known enum value. Works on any operands that
+/// support comparison operators.
+pub fn compare(a: var, op: CompareOperator, b: var) bool {
+    return switch (op) {
+        .lt => a < b,
+        .lte => a <= b,
+        .eq => a == b,
+        .neq => a != b,
+        .gt => a > b,
+        .gte => a >= b,
+    };
+}
+
+test "compare between signed and unsigned" {
+    expect(compare(@as(i8, -1), .lt, @as(u8, 255)));
+    expect(compare(@as(i8, 2), .gt, @as(u8, 1)));
+    expect(!compare(@as(i8, -1), .gte, @as(u8, 255)));
+    expect(compare(@as(u8, 255), .gt, @as(i8, -1)));
+    expect(!compare(@as(u8, 255), .lte, @as(i8, -1)));
+    expect(compare(@as(i8, -1), .lt, @as(u9, 255)));
+    expect(!compare(@as(i8, -1), .gte, @as(u9, 255)));
+    expect(compare(@as(u9, 255), .gt, @as(i8, -1)));
+    expect(!compare(@as(u9, 255), .lte, @as(i8, -1)));
+    expect(compare(@as(i9, -1), .lt, @as(u8, 255)));
+    expect(!compare(@as(i9, -1), .gte, @as(u8, 255)));
+    expect(compare(@as(u8, 255), .gt, @as(i9, -1)));
+    expect(!compare(@as(u8, 255), .lte, @as(i9, -1)));
+    expect(compare(@as(u8, 1), .lt, @as(u8, 2)));
+    expect(@bitCast(u8, @as(i8, -1)) == @as(u8, 255));
+    expect(!compare(@as(u8, 255), .eq, @as(i8, -1)));
+    expect(compare(@as(u8, 1), .eq, @as(u8, 1)));
+}
+    {#code_end#}
+    <p>Thanks to Shawn Landden for the proposal.</p>
     {#header_close#}
 
     {#header_open|Type Coercion Syntax#}

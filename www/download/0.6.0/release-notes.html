@@ -1556,9 +1556,77 @@ All 1 tests passed.
 
     <h2 id="Numerical-Comparisons"><a href="#toc-Numerical-Comparisons">Numerical Comparisons</a> <a class="hdr" href="#Numerical-Comparisons">§</a></h2>
 
-    TODO see 9468d6381997dedaf3330f0c6e1b4290a9af1345
-    thanks to Shawn Landden for the proposal.
-    all numerical comparisons allowed no matter the type combinations
+    <p>
+    All numerical comparisons are now allowed no matter the type combinations.
+    For example, small signed integers can be compared against large unsigned integers,
+    and floats can be compared against integers.
+    </p>
+    <p>
+    For a demonstration of this, you can look at the new <code class="zig">std.math.compare</code>
+    function added to the <a href="#Standard-Library">Standard Library</a> and the test cases for it:
+    </p>
+    <p class="file">compare.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-comment">/// See also `Order`.</span>
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> CompareOperator = <span class="tok-kw">enum</span> {
+    <span class="tok-comment">/// Less than (`&lt;`)</span>
+    lt,
+
+    <span class="tok-comment">/// Less than or equal (`&lt;=`)</span>
+    lte,
+
+    <span class="tok-comment">/// Equal (`==`)</span>
+    eq,
+
+    <span class="tok-comment">/// Greater than or equal (`&gt;=`)</span>
+    gte,
+
+    <span class="tok-comment">/// Greater than (`&gt;`)</span>
+    gt,
+
+    <span class="tok-comment">/// Not equal (`!=`)</span>
+    neq,
+};
+
+<span class="tok-comment">/// This function does the same thing as comparison operators, however the</span>
+<span class="tok-comment">/// operator is a runtime-known enum value. Works on any operands that</span>
+<span class="tok-comment">/// support comparison operators.</span>
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">compare</span>(a: <span class="tok-kw">var</span>, op: CompareOperator, b: <span class="tok-kw">var</span>) <span class="tok-type">bool</span> {
+    <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (op) {
+        .lt =&gt; a &lt; b,
+        .lte =&gt; a &lt;= b,
+        .eq =&gt; a == b,
+        .neq =&gt; a != b,
+        .gt =&gt; a &gt; b,
+        .gte =&gt; a &gt;= b,
+    };
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;compare between signed and unsigned&quot;</span> {
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>), .lt, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, <span class="tok-number">2</span>), .gt, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">1</span>)));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>), .gte, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>), .gt, <span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>)));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>), .lte, <span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>), .lt, <span class="tok-builtin">@as</span>(<span class="tok-type">u9</span>, <span class="tok-number">255</span>)));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>), .gte, <span class="tok-builtin">@as</span>(<span class="tok-type">u9</span>, <span class="tok-number">255</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u9</span>, <span class="tok-number">255</span>), .gt, <span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>)));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u9</span>, <span class="tok-number">255</span>), .lte, <span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i9</span>, -<span class="tok-number">1</span>), .lt, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>)));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">i9</span>, -<span class="tok-number">1</span>), .gte, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>), .gt, <span class="tok-builtin">@as</span>(<span class="tok-type">i9</span>, -<span class="tok-number">1</span>)));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>), .lte, <span class="tok-builtin">@as</span>(<span class="tok-type">i9</span>, -<span class="tok-number">1</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">1</span>), .lt, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">2</span>)));
+    expect(<span class="tok-builtin">@bitCast</span>(<span class="tok-type">u8</span>, <span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>)) == <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>));
+    expect(!compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">255</span>), .eq, <span class="tok-builtin">@as</span>(<span class="tok-type">i8</span>, -<span class="tok-number">1</span>)));
+    expect(compare(<span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">1</span>), .eq, <span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">1</span>)));
+}</code></pre><pre><code class="shell">$ zig test compare.zig
+1/1 test &quot;compare between signed and unsigned&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>Thanks to Shawn Landden for the proposal.</p>
     
 
     <h2 id="Type-Coercion-Syntax"><a href="#toc-Type-Coercion-Syntax">Type Coercion Syntax</a> <a class="hdr" href="#Type-Coercion-Syntax">§</a></h2>
