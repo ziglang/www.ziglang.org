@@ -2421,11 +2421,62 @@ All 1 tests passed.
 
     <h2 id="No-More-Capture-Aliasing"><a href="#toc-No-More-Capture-Aliasing">No More Capture Aliasing</a> <a class="hdr" href="#No-More-Capture-Aliasing">§</a></h2>
 
+    <p>
     Captured payloads from optionals and tagged-unions are no longer aliases to
     the same memory of the optional or tagged-union. The (unwrapped) payloads are
     copies.
+    </p>
+    <p class="file">no_capture_aliasing.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-    TODO note how it would interact with proposals for non-copyable data structures
+<span class="tok-kw">test</span> <span class="tok-str">&quot;no capture value aliasing&quot;</span> {
+    <span class="tok-comment">// In Zig 0.5.0, foo() returns 5678.</span>
+    expect(foo() == <span class="tok-number">1234</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">i32</span> {
+    <span class="tok-kw">var</span> optional_x: ?<span class="tok-type">i32</span> = <span class="tok-number">1234</span>;
+
+    <span class="tok-kw">if</span> (optional_x) |x| {
+        optional_x = <span class="tok-number">5678</span>;
+        <span class="tok-kw">return</span> x;
+    }
+
+    <span class="tok-kw">unreachable</span>;
+}</code></pre><pre><code class="shell">$ zig test no_capture_aliasing.zig
+1/1 test &quot;no capture value aliasing&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>
+    There are two competing proposals for non-copyable data structures:
+    <a href="https://github.com/ziglang/zig/issues/3803">#3803</a>
+    <a href="https://github.com/ziglang/zig/issues/3804">#3804</a>
+    </p>
+    <p>
+    When one of these is accepted, it will be a compile error to copy some types.
+    to avoid copying, one can denote the capture value to make it a pointer:
+    </p>
+    <p class="file">capture_aliasing.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;capture value aliasing&quot;</span> {
+    expect(foo() == <span class="tok-number">5678</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">i32</span> {
+    <span class="tok-kw">var</span> optional_x: ?<span class="tok-type">i32</span> = <span class="tok-number">1234</span>;
+
+    <span class="tok-kw">if</span> (optional_x) |*x| {
+        optional_x = <span class="tok-number">5678</span>;
+        <span class="tok-kw">return</span> x.*;
+    }
+
+    <span class="tok-kw">unreachable</span>;
+}</code></pre><pre><code class="shell">$ zig test capture_aliasing.zig
+1/1 test &quot;capture value aliasing&quot;...OK
+All 1 tests passed.
+</code></pre>
 
     <p>
     Thanks to LemonBoy for implementing this.
@@ -2446,13 +2497,15 @@ Date:   Mon Mar 9 18:36:01 2020 -0400
     Implement new noasync syntax
 
     <p>
-    Thanks to Vexu for implementing this.
+    Thanks to Vexu for contributions related to this feature.
     </p>
     
 
     <h2 id="Deprecated-Builtins-Removed"><a href="#toc-Deprecated-Builtins-Removed">Deprecated Builtins Removed</a> <a class="hdr" href="#Deprecated-Builtins-Removed">§</a></h2>
 
+    <p>
     Many deprecated builtins have been removed.
+    </p>
     <p>
     Thanks to Maciej Walczak for removing these and implementing the corresponding std lib functions:
     </p>
@@ -2475,8 +2528,10 @@ Date:   Mon Mar 9 18:36:01 2020 -0400
 
     <h2 id="Allow-Empty-Inferred-Error-Sets"><a href="#toc-Allow-Empty-Inferred-Error-Sets">Allow Empty Inferred Error Sets</a> <a class="hdr" href="#Allow-Empty-Inferred-Error-Sets">§</a></h2>
 
+    <p>
     The body of functions returning inferred error sets are no longer required
     to return any possible errors.
+    </p>
     <p class="file">empty_inferred_error_set.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {}
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;&quot;</span> {
@@ -2493,9 +2548,11 @@ All 1 tests passed.
 
     <h2 id="TypeOf-Supports-Multiple-Parameters"><a href="#toc-TypeOf-Supports-Multiple-Parameters">@TypeOf Supports Multiple Parameters</a> <a class="hdr" href="#TypeOf-Supports-Multiple-Parameters">§</a></h2>
 
+    <p>
     Multiple parameters can now be specified with <code class="zig"><span class="tok-builtin">@TypeOf</span></code> in cases where
     <a href="https://ziglang.org/documentation/0.6.0/#Peer-Type-Resolution">Peer Type Resolution</a>
     is needed.
+    </p>
     <pre><code class="zig"><span class="tok-comment">// std.math.max</span>
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">max</span>(x: <span class="tok-kw">var</span>, y: <span class="tok-kw">var</span>) <span class="tok-builtin">@TypeOf</span>(x, y) {
     <span class="tok-kw">return</span> <span class="tok-kw">if</span> (x &gt; y) x <span class="tok-kw">else</span> y;
@@ -2507,8 +2564,10 @@ All 1 tests passed.
 
     <h2 id="Underscore-Separators-in-Number-Literals"><a href="#toc-Underscore-Separators-in-Number-Literals">Underscore Separators in Number Literals</a> <a class="hdr" href="#Underscore-Separators-in-Number-Literals">§</a></h2>
 
+    <p>
     Underscores may be placed between two digits as a visual separator.
     Consecurity underscores are not allowed.
+    </p>
     <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">digits</span>() <span class="tok-type">void</span> {
     _ = <span class="tok-number">1_234_567</span>;
     _ = <span class="tok-number">0xff00_00ff</span>;
@@ -2525,9 +2584,11 @@ All 1 tests passed.
 
     <h2 id="Slicing-with-Comptime-Indexes"><a href="#toc-Slicing-with-Comptime-Indexes">Slicing with Comptime Indexes</a> <a class="hdr" href="#Slicing-with-Comptime-Indexes">§</a></h2>
 
+    <p>
     When slicing and the length is comptime-known, the expression type is now
     a single-item pointer to array <code class="zig">*[N]T</code> .
     Prior to this change an error-prone <code class="zig"><span class="tok-builtin">@ptrCast</span></code> was required.
+    </p>
     <p class="file">slice_comptime_indexes.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 <span class="tok-kw">const</span> assert = std.debug.assert;
 
