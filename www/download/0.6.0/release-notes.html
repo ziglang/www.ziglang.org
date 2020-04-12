@@ -2339,15 +2339,35 @@ All 1 tests passed.
 
     <h2 id="Pointer-Arithmetic-and-Alignment"><a href="#toc-Pointer-Arithmetic-and-Alignment">Pointer Arithmetic and Alignment</a> <a class="hdr" href="#Pointer-Arithmetic-and-Alignment">§</a></h2>
 
-commit e134e6c994d6ecd76dc6ae1a24b8de29c4147eab
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Fri Dec 20 10:48:03 2019 +0100
+    <p>
+    Pointer arithmetic now appropriately modifies the alignment of a pointer type:
+    </p>
+    <p class="file">ptr_arith_align.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
 
-    Pointer arithmetic affects the alignment factor
-    
-    Closes #1528
-    PR is #3955
+<span class="tok-kw">test</span> <span class="tok-str">&quot;pointer math alignment&quot;</span> {
+    <span class="tok-kw">var</span> arr: [<span class="tok-number">10</span>]<span class="tok-type">u8</span> <span class="tok-kw">align</span>(<span class="tok-number">4</span>) = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">var</span> runtime_known_2: <span class="tok-type">usize</span> = <span class="tok-number">2</span>;
 
+    <span class="tok-kw">const</span> ptr: [*]<span class="tok-type">u8</span> = &amp;arr;
+    <span class="tok-kw">const</span> ptr2 = ptr + <span class="tok-number">1</span>;
+    <span class="tok-kw">const</span> ptr3 = ptr + <span class="tok-number">2</span>;
+    <span class="tok-kw">const</span> ptr4 = ptr + runtime_known_2;
+
+    <span class="tok-kw">comptime</span> {
+        expect(<span class="tok-builtin">@TypeOf</span>(ptr) == [*]<span class="tok-kw">align</span>(<span class="tok-number">4</span>) <span class="tok-type">u8</span>);
+        expect(<span class="tok-builtin">@TypeOf</span>(ptr2) == [*]<span class="tok-type">u8</span>);
+        expect(<span class="tok-builtin">@TypeOf</span>(ptr3) == [*]<span class="tok-kw">align</span>(<span class="tok-number">2</span>) <span class="tok-type">u8</span>);
+        expect(<span class="tok-builtin">@TypeOf</span>(ptr4) == [*]<span class="tok-type">u8</span>);
+    }
+}</code></pre><pre><code class="shell">$ zig test ptr_arith_align.zig
+1/1 test &quot;pointer math alignment&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>
+    Thanks to LemonBoy for implementing this (#1528).
+    </p>
     
 
     <h2 id="export"><a href="#toc-export">@export</a> <a class="hdr" href="#export">§</a></h2>
