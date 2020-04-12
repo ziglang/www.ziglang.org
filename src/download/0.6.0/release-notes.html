@@ -4122,337 +4122,70 @@ Date:   Sun Mar 29 10:33:37 2020 -0400
     {#header_close#}
 
     {#header_open|Memory Usage Reduction#}
-commit 63dfca97159fd66563693039606c0bca30aa1f85
-Merge: e42d86b65 4e9851234
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Oct 19 12:42:32 2019 -0400
+    The large portion of Zig compiler that is (currently) implemented in C++ is memory
+    hungry and our continuous-integration process exacerbates the issue to the point
+    where the RAM/VRAM sizes of open-source CI providers are sometimes insufficient.
+    Additionally as we add more features and tests, yet more memory pressure is applied.
 
-    Merge pull request #3482 from ziglang/mem-usage-report
-    
-    add -DZIG_ENABLE_MEM_PROFILE option and -fmem-report flag
-
-commit 4e985123447dba40e282e9663e3ca669d3f9243a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Oct 19 03:51:04 2019 -0400
-
-    reduce the size of IrInstruction by 8 bytes on 64 bit targets
-    
-    This brings the std lib tests down from 3.51 GiB memory usage
-    to 3.41 GiB, by making two fields that were 64 bits 32 bits.
-    This is a small thing; the bigger wins will come from the strategy
-    outlined in the previous commit.
-
-commit fa9f1d23968d3b9fe3ae35ed1306aec0cbcfd908
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Oct 19 03:23:23 2019 -0400
-
-    add -DZIG_ENABLE_MEM_PROFILE option and -fmem-report flag
-    
-    This can be used to find what's taking up memory in the compiler.
-    Here's an example of how to use it:
-    
-    ```
-    ./zig test ../lib/std/std.zig --cache off -fmem-report
-    ```
-    
-    And here's the output I get for this on x86_64-linux-gnu today:
-    
-    ```
-    Const: 6462833 items, 152 bytes each, total 936.84 MiB
-    ConstGlobalRefs: 17236534 items, 24 bytes each, total 394.51 MiB
-    ResetResult: 1698108 items, 160 bytes each, total 259.11 MiB
-    ConstExprValue: 3118299 items, 80 bytes each, total 237.91 MiB
-    EndExpr: 1345395 items, 168 bytes each, total 215.56 MiB
-    Unknown_8: 27370821 items, 8 bytes each, total 208.82 MiB
-    VarPtr: 1127866 items, 168 bytes each, total 180.70 MiB
-    IrBasicBlock: 794834 items, 120 bytes each, total 90.96 MiB
-    LoadPtr: 554024 items, 160 bytes each, total 84.54 MiB
-    Unknown_64: 1245715 items, 64 bytes each, total 76.03 MiB
-    Unknown_40: 1879218 items, 40 bytes each, total 71.69 MiB
-    Unknown_72: 989117 items, 72 bytes each, total 67.92 MiB
-    Return: 423783 items, 160 bytes each, total 64.66 MiB
-    Unknown_168: 332480 items, 168 bytes each, total 53.27 MiB
-    Unknown_152: 336890 items, 152 bytes each, total 48.84 MiB
-    AddImplicitReturnType: 230819 items, 168 bytes each, total 36.98 MiB
-    Br: 217835 items, 168 bytes each, total 34.90 MiB
-    Unknown_184: 179529 items, 184 bytes each, total 31.50 MiB
-    FieldPtr: 179388 items, 184 bytes each, total 31.48 MiB
-    BinOp: 171004 items, 176 bytes each, total 28.70 MiB
-    LoadPtrGen: 173287 items, 168 bytes each, total 27.76 MiB
-    CondBr: 137864 items, 192 bytes each, total 25.24 MiB
-    Unknown_720: 30918 items, 720 bytes each, total 21.23 MiB
-    CallSrc: 99320 items, 216 bytes each, total 20.46 MiB
-    Unknown_160: 129243 items, 160 bytes each, total 19.72 MiB
-    Unknown_1: 19339456 items, 1 bytes each, total 18.44 MiB
-    CheckStatementIsVoid: 119838 items, 160 bytes each, total 18.29 MiB
-    Unknown_48: 371178 items, 48 bytes each, total 16.99 MiB
-    TestComptime: 101443 items, 160 bytes each, total 15.48 MiB
-    DeclVarSrc: 72578 items, 184 bytes each, total 12.74 MiB
-    StorePtr: 72776 items, 176 bytes each, total 12.22 MiB
-    ZigVar: 79201 items, 160 bytes each, total 12.09 MiB
-    Unknown_16: 770643 items, 16 bytes each, total 11.76 MiB
-    Phi: 60482 items, 184 bytes each, total 10.61 MiB
-    TestErrSrc: 66177 items, 168 bytes each, total 10.60 MiB
-    Unknown_240: 45164 items, 240 bytes each, total 10.34 MiB
-    ElemPtr: 58232 items, 184 bytes each, total 10.22 MiB
-    AllocaSrc: 60053 items, 176 bytes each, total 10.08 MiB
-    CallGen: 44873 items, 224 bytes each, total 9.59 MiB
-    SaveErrRetAddr: 63787 items, 152 bytes each, total 9.25 MiB
-    Unknown_112: 82283 items, 112 bytes each, total 8.79 MiB
-    AllocaGen: 51909 items, 176 bytes each, total 8.71 MiB
-    Unknown_24: 373599 items, 24 bytes each, total 8.55 MiB
-    ResultLocPeer: 113683 items, 72 bytes each, total 7.81 MiB
-    DeclRef: 36343 items, 168 bytes each, total 5.82 MiB
-    UnwrapErrPayload: 34603 items, 168 bytes each, total 5.54 MiB
-    Ref: 33414 items, 168 bytes each, total 5.35 MiB
-    Unknown_104: 53882 items, 104 bytes each, total 5.34 MiB
-    DeclVarGen: 32540 items, 168 bytes each, total 5.21 MiB
-    StructFieldPtr: 30449 items, 176 bytes each, total 5.11 MiB
-    UnwrapErrCode: 31508 items, 168 bytes each, total 5.05 MiB
-    Unknown_56: 90256 items, 56 bytes each, total 4.82 MiB
-    SpillBegin: 28722 items, 168 bytes each, total 4.60 MiB
-    SpillEnd: 28722 items, 160 bytes each, total 4.38 MiB
-    ResultLocReturn: 64573 items, 48 bytes each, total 2.96 MiB
-    PtrType: 14702 items, 184 bytes each, total 2.58 MiB
-    SliceType: 15005 items, 176 bytes each, total 2.52 MiB
-    Unknown_176: 13326 items, 176 bytes each, total 2.24 MiB
-    RefGen: 12881 items, 168 bytes each, total 2.06 MiB
-    UnOp: 12102 items, 176 bytes each, total 2.03 MiB
-    SwitchBr: 9453 items, 200 bytes each, total 1.80 MiB
-    TestErrGen: 11143 items, 160 bytes each, total 1.70 MiB
-    Unknown_32: 52359 items, 32 bytes each, total 1.60 MiB
-    CheckSwitchProngs: 9094 items, 184 bytes each, total 1.60 MiB
-    TypeOf: 9259 items, 160 bytes each, total 1.41 MiB
-    IntCast: 8772 items, 168 bytes each, total 1.41 MiB
-    OptionalUnwrapPtr: 8755 items, 168 bytes each, total 1.40 MiB
-    SwitchTarget: 9094 items, 160 bytes each, total 1.39 MiB
-    Cast: 8198 items, 176 bytes each, total 1.38 MiB
-    WidenOrShorten: 8448 items, 160 bytes each, total 1.29 MiB
-    ErrorUnion: 7613 items, 176 bytes each, total 1.28 MiB
-    SliceSrc: 6249 items, 192 bytes each, total 1.14 MiB
-    ErrWrapCode: 7133 items, 168 bytes each, total 1.14 MiB
-    TypeName: 7328 items, 160 bytes each, total 1.12 MiB
-    ImplicitCast: 5480 items, 176 bytes each, total 941.88 KiB
-    ResolveResult: 5638 items, 168 bytes each, total 924.98 KiB
-    ResultLocInstruction: 22696 items, 40 bytes each, total 886.56 KiB
-    BitCastSrc: 4947 items, 168 bytes each, total 811.62 KiB
-    CompileErr: 5148 items, 160 bytes each, total 804.38 KiB
-    ReturnPtr: 5305 items, 152 bytes each, total 787.46 KiB
-    Unreachable: 5038 items, 152 bytes each, total 747.83 KiB
-    TestNonNull: 4716 items, 160 bytes each, total 736.88 KiB
-    BitCastGen: 4431 items, 160 bytes each, total 692.34 KiB
-    PtrToInt: 4289 items, 160 bytes each, total 670.16 KiB
-    SliceGen: 3573 items, 192 bytes each, total 669.94 KiB
-    ArrayType: 4081 items, 168 bytes each, total 669.54 KiB
-    IntType: 3868 items, 168 bytes each, total 634.59 KiB
-    Unknown_88: 7213 items, 88 bytes each, total 619.87 KiB
-    Truncate: 3771 items, 168 bytes each, total 618.68 KiB
-    TypeInfo: 3740 items, 160 bytes each, total 584.38 KiB
-    SwitchVar: 3385 items, 176 bytes each, total 581.80 KiB
-    ContainerInitFields: 3223 items, 184 bytes each, total 579.13 KiB
-    ContainerInitList: 2309 items, 192 bytes each, total 432.94 KiB
-    PtrCastGen: 2626 items, 168 bytes each, total 430.83 KiB
-    BoolNot: 2457 items, 160 bytes each, total 383.91 KiB
-    FnProto: 2054 items, 184 bytes each, total 369.08 KiB
-    MergeErrSets: 1927 items, 176 bytes each, total 331.20 KiB
-    Unknown_136: 2486 items, 136 bytes each, total 330.17 KiB
-    Unknown_80: 4059 items, 80 bytes each, total 317.11 KiB
-    Bswap: 1670 items, 168 bytes each, total 273.98 KiB
-    TypeId: 1680 items, 160 bytes each, total 262.50 KiB
-    PtrCastSrc: 1371 items, 176 bytes each, total 235.64 KiB
-    ErrName: 1193 items, 160 bytes each, total 186.41 KiB
-    UnionTag: 1120 items, 160 bytes each, total 175.00 KiB
-    TagName: 1050 items, 160 bytes each, total 164.06 KiB
-    SizeOf: 942 items, 160 bytes each, total 147.19 KiB
-    MemberName: 871 items, 168 bytes each, total 142.90 KiB
-    Import: 881 items, 160 bytes each, total 137.66 KiB
-    PtrOfArrayToSlice: 758 items, 168 bytes each, total 124.36 KiB
-    UnionFieldPtr: 710 items, 176 bytes each, total 122.03 KiB
-    EnumToInt: 778 items, 160 bytes each, total 121.56 KiB
-    CheckRuntimeScope: 700 items, 168 bytes each, total 114.84 KiB
-    FieldParentPtr: 632 items, 184 bytes each, total 113.56 KiB
-    BoolToInt: 719 items, 160 bytes each, total 112.34 KiB
-    ResultLocPeerParent: 904 items, 104 bytes each, total 91.81 KiB
-    IntToPtr: 537 items, 168 bytes each, total 88.10 KiB
-    AlignOf: 561 items, 160 bytes each, total 87.66 KiB
-    AtomicRmw: 356 items, 208 bytes each, total 72.31 KiB
-    MemberCount: 441 items, 160 bytes each, total 68.91 KiB
-    Memset: 342 items, 176 bytes each, total 58.78 KiB
-    PopCount: 321 items, 168 bytes each, total 52.66 KiB
-    AlignCast: 251 items, 168 bytes each, total 41.18 KiB
-    IrInstruction *: 5230 items, 8 bytes each, total 40.86 KiB
-    IrBasicBlock *: 5230 items, 8 bytes each, total 40.86 KiB
-    TagType: 261 items, 160 bytes each, total 40.78 KiB
-    HasDecl: 234 items, 168 bytes each, total 38.39 KiB
-    OverflowOp: 191 items, 200 bytes each, total 37.30 KiB
-    Export: 209 items, 176 bytes each, total 35.92 KiB
-    SetCold: 219 items, 160 bytes each, total 34.22 KiB
-    ReturnAddress: 216 items, 152 bytes each, total 32.06 KiB
-    FromBytes: 178 items, 176 bytes each, total 30.59 KiB
-    SetRuntimeSafety: 188 items, 160 bytes each, total 29.38 KiB
-    OptionalWrap: 151 items, 168 bytes each, total 24.77 KiB
-    Clz: 143 items, 168 bytes each, total 23.46 KiB
-    ResizeSlice: 135 items, 168 bytes each, total 22.15 KiB
-    UnionInitNamedField: 106 items, 184 bytes each, total 19.05 KiB
-    Panic: 102 items, 160 bytes each, total 15.94 KiB
-    SwitchElseVar: 93 items, 168 bytes each, total 15.26 KiB
-    ToBytes: 89 items, 168 bytes each, total 14.60 KiB
-    IntToFloat: 78 items, 168 bytes each, total 12.80 KiB
-    Unknown_4360: 3 items, 4360 bytes each, total 12.77 KiB
-    ErrWrapPayload: 72 items, 168 bytes each, total 11.81 KiB
-    FloatOp: 62 items, 176 bytes each, total 10.66 KiB
-    FloatToInt: 47 items, 168 bytes each, total 7.71 KiB
-    FloatCast: 46 items, 168 bytes each, total 7.55 KiB
-    ErrToInt: 47 items, 160 bytes each, total 7.34 KiB
-    Asm: 33 items, 216 bytes each, total 6.96 KiB
-    ErrSetCast: 40 items, 168 bytes each, total 6.56 KiB
-    Memcpy: 34 items, 176 bytes each, total 5.84 KiB
-    AtomicLoad: 17 items, 184 bytes each, total 3.05 KiB
-    AwaitSrc: 16 items, 168 bytes each, total 2.62 KiB
-    Resume: 14 items, 160 bytes each, total 2.19 KiB
-    AwaitGen: 12 items, 176 bytes each, total 2.06 KiB
-    ArgType: 12 items, 168 bytes each, total 1.97 KiB
-    AnyFrameType: 12 items, 160 bytes each, total 1.88 KiB
-    SuspendFinish: 10 items, 160 bytes each, total 1.56 KiB
-    SuspendBegin: 10 items, 160 bytes each, total 1.56 KiB
-    Ctz: 9 items, 168 bytes each, total 1.48 KiB
-    FrameHandle: 8 items, 152 bytes each, total 1.19 KiB
-    SetEvalBranchQuota: 7 items, 160 bytes each, total 1.09 KiB
-    AssertZero: 7 items, 160 bytes each, total 1.09 KiB
-    UndeclaredIdent: 7 items, 160 bytes each, total 1.09 KiB
-    CmpxchgSrc: 5 items, 216 bytes each, total 1.05 KiB
-    CmpxchgGen: 5 items, 200 bytes each, total 1000.00 bytes
-    IntToEnum: 4 items, 168 bytes each, total 672.00 bytes
-    VectorType: 4 items, 168 bytes each, total 672.00 bytes
-    ErrorReturnTrace: 2 items, 160 bytes each, total 320.00 bytes
-    Breakpoint: 2 items, 152 bytes each, total 304.00 bytes
-    FrameAddress: 2 items, 152 bytes each, total 304.00 bytes
-    Unknown_4: 61 items, 4 bytes each, total 244.00 bytes
-    VectorToArray: 1 items, 168 bytes each, total 168.00 bytes
-    SetAlignStack: 1 items, 160 bytes each, total 160.00 bytes
-    Unknown_12: 2 items, 12 bytes each, total 24.00 bytes
-    ErrorTableEntry *: 0 items, 8 bytes each, total 0.00 bytes
-    AstNode *: 0 items, 8 bytes each, total 0.00 bytes
-    Total bytes used: 3.51 GiB
-    ```
-    
-    You can see that most of the memory is taken up by IR instructions,
-    as well as comptime values. This points toward 2 changes which will
-    greatly reduce memory usage:
-    
-     * Rework semantic analysis so that IR instructions can be freed.
-       Currently the comptime value struct (ConstExprValue) is embedded
-       directly into the IrInstruction struct. If this is made to be
-       separate, at the very least pass 1 IR instructions can be freed.
-       This includes `Const` which is the largest usage of memory currently.
-    
-     * Rework the ConstExprValue struct to no longer be a tagged union.
-       For example, there's no need for an integer comptime value to be
-       80 bytes.
-    
-    From this you can also see that this eliminates some things from being
-    the culprit. Before doing this analysis, I considered whether doing
-    string interning would help. From the above output, you can see that all
-    strings in the compiler account for only 18 MiB, so string interning
-    would have been a dead end.
-
-
-    Michael Dusan rename ConstExprValue → ZigValue
-        unembed ZigValue from IrInstruction
-        const interning for 1-possible-value types
-        (#3502)
-
-commit 4b6740e19d57454f3c4eac0c2e9a92ce08e7ec04
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Nov 30 23:54:15 2019 -0500
-
-    sometimes free stuff from Zig IR pass 1
-    
-    Total bytes used in stage1 std lib tests:
-    3.418 -> 3.198 GiB (saving 225 MiB)
-    
-    There's still this from pass 1 not getting freed:
-    Const: 6909049 items, 72 bytes each, total 474.407 MiB
-    
-    This is due to 2 things hanging on to references to IrAnalyze pointers:
-     * ZigVar->owner_exec->analysis
-     * LazyValue->ira
-    
-    The LazyValue one could be solved by memoizing the results after the
-    lazy value is resolved, and then it could unref the IrAnalyze.
-    
-    ZigVars that are determined to be comptime const, could have their
-    const_value set to that value, instead of using the mem_slot_index
-    mechanism. This would prevent an IrAnalyze ref in some cases.
-
-commit b5df18c8fd725a2993c520ddc8777ecad71e3d11
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Dec 1 00:29:16 2019 -0500
-
-    inline ConstGlobalRefs into ZigValue
-    
-    Having ConstGlobalRefs be a pointer in ZigValue was a hack that caused
-    plenty of bugs. It was used to work around difficulties in type coercing
-    array values into slices.
-    
-    However, after #3787 is merged, array values no longer type coerce into
-    slices, and so this provided an opportunity to clean up the code.
-    
-    This has the nice effect of reducing stage1 peak RAM usage during the
-    std lib tests from 3.443 GiB to 3.405 GiB (saving 39 MiB).
-    
-    There is one behavior test failing in this branch, which I plan to debug
-    after merging #3787.
-
-commit 5026b1aad550bd85d12480e0a356302e858f8eef
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Nov 30 22:05:28 2019 -0500
-
-    free IrAnalyze sometimes
-    
-    Total bytes used in stage1 std lib tests:
-    3.443 GiB -> 3.418 GiB
-
-
-commit 6aac423964d10f9d884877a158f9604f7547b742
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Jan 25 21:49:32 2020 -0500
-
-    split IrInstruction into IrInst, IrInstSrc, IrInstGen
-    
-    This makes it so that less memory is used for IR instructions, as well
-    as catching bugs when one expected one kind of instruction and received
-    the other.
-
-
-commit edb210905dcbe666fa5222bceacd2e5bdb16bb89
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Mon Feb 10 21:08:08 2020 -0500
-
-    stage1: memory/report overhaul
-    
-    - split util_base.hpp from util.hpp
-    - new namespaces: `mem` and `heap`
-    - new `mem::Allocator` interface
-    - new `heap::CAllocator` impl with global `heap::c_allocator`
-    - new `heap::ArenaAllocator` impl
-    - new `mem::TypeInfo` extracts names without RTTI
-    - name extraction is enabled w/ ZIG_ENABLE_MEM_PROFILE=1
-    - new `mem::List` takes explicit `Allocator&` parameter
-    - new `mem::HashMap` takes explicit `Allocator&` parameter
-    - add Codegen.pass1_arena and use for all `ZigValue` allocs
-    - deinit Codegen.pass1_arena early in `zig_llvm_emit_output()`
-
-commit 770631cc79a655bc5e21184ca15bdb6192e905de
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Thu Feb 20 02:45:58 2020 -0500
-
-    stage1: free more heap after analysis
-    
-    - immediately free dangling IrInstGenConst after analysis
-    - fixup mem::List params `&Allocator` → `*Allocator`
-
-
+    <p>
+    The following bits are related to reducing the max RSS footprint of the compiler.
+    Implementations by Andrew Kelley (ak) and Michael Dusan (md).
+    </p>
+    <ul>
+      <li>(ak)
+        Zig driver built with <code>-DZIG_ENABLE_MEM_PROFILE</code> accepts
+        command-line option -fmem-report to produce a list of objects
+        allocated by compiler code. Some useful invocations:
+        <ul>
+            <li><code>./zig test ../lib/std/std.zig --cache off -fmem-report</code></code></li>
+            <li><code>/usr/bin/time -v ./zig test ../lib/std/std.zig --cache off -fmem-report</code></li>
+        </ul>
+      </li>
+      <li>(ak)
+        Reduce the size of <code>IrInstruction</code> by 8 bytes on 64 bit targets.
+        RSS savings of ~3%
+      </li>
+      <li>(md)
+        Unembed <code>ZigValue</code> from <code>IrInstruction</code>.
+        Add const interning for 1-possible-value types.
+        RSS savings of ~6%
+      </li>
+      <li>(ak)
+        Sometimes free stuff from Zig IR pass 1.
+        RSS savings of ~6%
+      </li>
+      <li>(ak)
+        Inline <code>ConstGlobalRefs</code> into <code>ZigValue</code>.
+        RSS savings of ~1.1%
+      </li>
+      <li>(ak)
+        Free <code>IrAnalyze</code> sometimes.
+        RSS savings of ~1%
+      </li>
+      <li>(ak)
+        Split <code>IrInstruction</code> into <code>IrInst</code>, <code>IrInstSrc</code>, <code>IrInstGen</code>.
+        This makes it so that less memory is used for IR instructions, as well
+        as catching bugs when one expected one kind of instruction and received
+        the other.
+      </li>
+      <li>(md)
+        Overhaul C++ memory allocation:
+        <ul>
+          <li>new <code>mem::Allocator</code> interface</li>
+          <li>new <code>heap::CAllocator</code> impl with global <code>heap::c_allocator</code></li>
+          <li>new <code>heap::ArenaAllocator</code> impl</li>
+          <li>new <code>mem::List</code> takes explicit <code>Allocator&</code> parameter</li>
+          <li>new <code>mem::HashMap</code> takes explicit <code>Allocator&</code> parameter</li>
+          <li>add <code>Codegen.pass1_arena</code> and use for all <code>ZigValue</code> allocs</li>
+          <li>deinit <code>Codegen.pass1_arena</code> early in <code>zig_llvm_emit_output()</code></li>
+        </ul>
+        RSS savings of ~13-15%
+      </li>
+      <li>(md)
+        Free more heap after analysis.
+        RSS savings of ~5.5-6.3%
+      </li>
+    </ul>
     {#header_close#}
 
     {#header_open|Command Line Interface#}
