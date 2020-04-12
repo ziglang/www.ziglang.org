@@ -1880,8 +1880,56 @@ pub const CallingConvention = enum {
     {#header_close#}
 
     {#header_open|Non-Exhaustive Enums#}
-    TODO
-    TODO mention replacing various numerical constants with non-exhaustive enums.
+      <p>
+      A Non-exhaustive enum can be created by adding a trailing '_' field.
+      It must specify an integer tag type and may not consume every enumeration value.
+      </p>
+      <p>
+      <a href="https://ziglang.org/documentation/0.6.0/#intToEnum">@intToEnum</a>
+      on a non-exhaustive enum never fails.
+      </p>
+      <p>
+      A switch on a non-exhaustive enum can include a '_' prong as an alternative to an
+      {#syntax#}else{#endsyntax#} prong
+      with the difference being that it makes it a compile error if all the known tag names
+      are not handled by the switch.
+      </p>
+      {#code_begin|test|switch_non_exhaustive_enum#}
+const std = @import("std");
+const assert = std.debug.assert;
+
+const Number = enum(u8) {
+    One,
+    Two,
+    Three,
+    _,
+};
+
+test "switch on non-exhaustive enum" {
+    const number = Number.One;
+    const result = switch (number) {
+        .One => true,
+        .Two,
+        .Three => false,
+        _ => false,
+    };
+    assert(result);
+    const is_one = switch (number) {
+        .One => true,
+        else => false,
+    };
+    assert(is_one);
+}
+      {#code_end#}
+      <p>
+      Non-exhaustive enums are useful for future-proofing code, so that it will
+      continue to work correctly even when encountering values that were not
+      present at the time the code was written.
+      </p>
+      <p>
+      Various bits in the {#link|Standard Library#} have been updated to use
+      non-exhaustive enums rather than numerical constants.
+      </p>
     <p>
     Thanks to Vexu, LemonBoy, and daurnimator for contributions related to this feature.
     </p>
