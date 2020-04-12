@@ -1979,7 +1979,62 @@ const foo = bar;
     {#header_close#}
 
     {#header_open|Comptime Struct Fields#}
-    TODO (#3677)
+    {#code_begin|test|comptime_struct_field#}
+const std = @import("std");
+
+const Foo = struct {
+    a: i32,
+    comptime b: i32 = 1234,
+};
+
+test "example" {
+    var foo: Foo = undefined;
+    comptime std.debug.assert(foo.b == 1234);
+}
+    {#code_end#}
+    <p>
+    A comptime struct field requires a default initialization value.
+    Loads from a comptime struct field result in a comptime value of the
+    default initialization value.
+    Stores to a comptime struct field assert that the stored value is the
+    default initialization value.
+    </p>
+    <p>
+    Generally, one should use a global const instead of a comptime field.
+    The reason for using a comptime field is when you want reflection over
+    struct fields to find the data as a field. For example:
+    </p>
+    {#code_begin|exe|csf_example#}
+const std = @import("std");
+
+fn dump(args: var) void {
+    inline for (std.meta.fields(@TypeOf(args))) |field| {
+        std.debug.warn("{} = {}\n", .{field.name, @field(args, field.name)});
+    }
+}
+
+pub fn main() void {
+    var runtime_float: f32 = 12.34;
+    dump(.{
+        .int = 1234,
+        .float = runtime_float,
+        .b = true,
+        .s = "hi",
+        .T = [*]f32,
+    });
+}
+    {#code_end#}
+    <p>
+    This will construct an anonymous struct with all comptime fields
+    (except {#syntax#}float{#endsyntax#}) and pass it to {#syntax#}dump{#endsyntax#}.
+    Each iteration in the for loop will evaluate the {#syntax#}@field(...){#endsyntax#}
+    expression and produce a comptime value, except {#syntax#}float{#endsyntax#}, which will
+    be a runtime value.
+    </p>
+    <p>
+    This feature makes formatted printing, and {#link|tuples|Tuples Added, Var Args Removed#}
+    in general, support mixed comptime and runtime values (#3677).
+    </p>
     {#header_close#}
 
     {#header_open|Untyped Struct Fields#}
