@@ -2199,7 +2199,70 @@ All 1 tests passed.
 
     <h2 id="Comptime-Struct-Fields"><a href="#toc-Comptime-Struct-Fields">Comptime Struct Fields</a> <a class="hdr" href="#Comptime-Struct-Fields">§</a></h2>
 
-    TODO (#3677)
+    <p class="file">comptime_struct_field.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {
+    a: <span class="tok-type">i32</span>,
+    <span class="tok-kw">comptime</span> b: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>,
+};
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;example&quot;</span> {
+    <span class="tok-kw">var</span> foo: Foo = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">comptime</span> std.debug.assert(foo.b == <span class="tok-number">1234</span>);
+}</code></pre><pre><code class="shell">$ zig test comptime_struct_field.zig
+1/1 test &quot;example&quot;...OK
+All 1 tests passed.
+</code></pre>
+
+    <p>
+    A comptime struct field requires a default initialization value.
+    Loads from a comptime struct field result in a comptime value of the
+    default initialization value.
+    Stores to a comptime struct field assert that the stored value is the
+    default initialization value.
+    </p>
+    <p>
+    Generally, one should use a global const instead of a comptime field.
+    The reason for using a comptime field is when you want reflection over
+    struct fields to find the data as a field. For example:
+    </p>
+    <p class="file">csf_example.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">fn</span> <span class="tok-fn">dump</span>(args: <span class="tok-kw">var</span>) <span class="tok-type">void</span> {
+    <span class="tok-kw">inline</span> <span class="tok-kw">for</span> (std.meta.fields(<span class="tok-builtin">@TypeOf</span>(args))) |field| {
+        std.debug.warn(<span class="tok-str">&quot;{} = {}\n&quot;</span>, .{field.name, <span class="tok-builtin">@field</span>(args, field.name)});
+    }
+}
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> runtime_float: <span class="tok-type">f32</span> = <span class="tok-number">12.34</span>;
+    dump(.{
+        .int = <span class="tok-number">1234</span>,
+        .float = runtime_float,
+        .b = <span class="tok-null">true</span>,
+        .s = <span class="tok-str">&quot;hi&quot;</span>,
+        .T = [*]<span class="tok-type">f32</span>,
+    });
+}</code></pre><pre><code class="shell">$ zig build-exe csf_example.zig
+$ ./csf_example
+int = 1234
+float = 1.23400001e+01
+b = true
+s = hi
+T = type
+</code></pre>
+
+    <p>
+    This will construct an anonymous struct with all comptime fields
+    (except <code class="zig">float</code>) and pass it to <code class="zig">dump</code>.
+    Each iteration in the for loop will evaluate the <code class="zig"><span class="tok-builtin">@field</span>(...)</code>
+    expression and produce a comptime value, except <code class="zig">float</code>, which will
+    be a runtime value.
+    </p>
+    <p>
+    This feature makes formatted printing, and <a href="#Tuples-Added-Var-Args-Removed">tuples</a>
+    in general, support mixed comptime and runtime values (#3677).
+    </p>
     
 
     <h2 id="Untyped-Struct-Fields"><a href="#toc-Untyped-Struct-Fields">Untyped Struct Fields</a> <a class="hdr" href="#Untyped-Struct-Fields">§</a></h2>
