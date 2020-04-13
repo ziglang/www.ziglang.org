@@ -4029,17 +4029,47 @@ Hello World!</code></pre>
     the compiler, Zig builds compiler-rt on-the-fly, from source, as needed for the target platform.
     This release saw some improvements to Zig's compiler-rt implementation.
     </p>
-    TODO make note of LemonBoy's epic bug sleuthing
+    <p>
+    LemonBoy spent two days on an epic bug sleuthing quest, which was only reproducible
+    inside docker, on AArch64, and finally managed to
+    <a href="https://github.com/ziglang/zig/pull/4832">solve the problem</a>.
+    An unrelated change to compiler-rt had exposed a latent bug, where
+    {#syntax#}__floatunditf{#endsyntax#} was accidentally defined with
+    parameter type {#syntax#}u128{#endsyntax#} rather than {#syntax#}u64{#endsyntax#}.
+    Typos on the ABI boundary are especially nasty!
+    </p>
+    <p>In addition to that, LemonBoy contributed most of the improvements to compiler-rt
+    during this release cycle.</p>
     <ul>
-      <li>TODO do a git shortlog on the files</li>
-      <li>LemonBoy modified compiler_rt and freestanding libc to be built with optimizations, even
+      <li>compiler_rt and freestanding libc are always built with optimizations, even
       when used by Debug Mode Zig code.</li>
+      <li>Fix __stack_chk_guard emitted even when not linking libc.</li>
+      <li>Add __clzsi2 - it is required for using std.fmt.format on some ARM architecture.</li>
+      <li>Add clear_cache for aarch64, arm32-linux, and more.</li>
+      <li>Remove x86/Windows name mangling hack</li>
+      <li>Fix stack-probe symbol redefinition</li>
+      <li>Add more compiler-rt functions for ARM platform</li>
+      <li>Use the correct calling convention for AEABI intrinsics</li>
+      <li>Fix div builtins to use the correct calling convention</li>
+      <li>Remove useless wrappers around f32/f64 aeabi builtins</li>
+      <li>Export MSVC builtins unconditionally</li>
+      <li>Port __mulsi3 builtin</li>
+      <li>Export the AEABI builtins when targeting thumb</li>
+      <li>Add __divtf3</li>
+      <li>Fix __floatunditf</li>
+      <li>Implement all the shift builtins</li>
+      <li>Add the __atomic family of builtins</li>
+      <li>Separate max size allowed for load/store and CAS</li>
     </ul>
     <p>
     With Zig 0.6.0, compiler-rt is much more complete, but not fully. There are some
     <a href="https://github.com/ziglang/zig/issues/1290">missing functions</a>,
     and it's planned to do <a href="https://github.com/ziglang/zig/issues/1504">an audit</a>
     before 1.0.
+    </p>
+    <p>
+    Additional thanks to Michael Dusan, daurnimator, Michaël Larouche, and Timon Kruiper
+    for related contributions.
     </p>
     {#header_close#}
 
