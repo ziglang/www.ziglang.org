@@ -4044,80 +4044,28 @@ Hello World!</code></pre>
     {#header_close#}
 
     {#header_open|Self-Hosted Compiler Progress#}
-    <p>TODO</p>
-    TODO thanks Vexu for helping with the bitrot
-commit b92f42d1f4b91bb343558f72af84ea052da4ac98
-Author: Vexu <15308111+Vexu@users.noreply.github.com>
-Date:   Sat Oct 12 12:38:09 2019 +0300
-
-    implemented container doc comments in stage 2
-
-    TODO self-hosted tokenizer handles \r in string literals
-
-commit 7c1dbfab724291b492be5e64fd93ec14e48b202c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Dec 11 02:08:33 2019 -0500
-
-    self-hosted: manually parse args
-
-    Vexu: add default initializers to all ast.Node base values
-    xackus: stage2 parser: fix segfault on extern block (#3957)
-
-
-    `zig targets` is now self-hosted
-
-commit eff50abce68ffc69d236fcc0b919bc63fcd0e89a
-Author: pwzk <pwzk@mailbox.org>
-Date:   Fri Feb 7 13:40:52 2020 +0000
-
-    Fixing library search path
-
-commit 4b02a39aa93b0043f05de0d90443051c019643ab
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Feb 16 13:25:30 2020 -0500
-
-    self-hosted libc detection
-    
-     * libc_installation.cpp is deleted.
-       src-self-hosted/libc_installation.zig is now used for both stage1 and
-       stage2 compilers.
-     * (breaking) move `std.fs.File.access` to `std.fs.Dir.access`. The API
-       now encourages use with an open directory handle.
-     * Add `std.os.faccessat` and related functions.
-     * Deprecate the "C" suffix naming convention for null-terminated
-       parameters. "C" should be used when it is related to libc. However
-       null-terminated parameters often have to do with the native system
-       ABI rather than libc. "Z" suffix is the new convention. For example,
-       `std.os.openC` is deprecated in favor of `std.os.openZ`.
-     * Add `std.mem.dupeZ` for using an allocator to copy memory and add a
-       null terminator.
-     * Remove dead struct field `std.ChildProcess.llnode`.
-     * Introduce `std.event.Batch`. This API allows expressing concurrency
-       without forcing code to be async. It requires no Allocator and does
-       not introduce any failure conditions. However it is not thread-safe.
-     * There is now an ongoing experiment to transition away from
-       `std.event.Group` in favor of `std.event.Batch`.
-     * `std.os.execvpeC` calls `getenvZ` rather than `getenv`. This is
-       slightly more efficient on most systems, and works around a
-       limitation of `getenv` lack of integration with libc.
-     * (breaking) `std.os.AccessError` gains `FileBusy`, `SymLinkLoop`, and
-       `ReadOnlyFileSystem`. Previously these error codes were all reported
-       as `PermissionDenied`.
-     * Add `std.Target.isDragonFlyBSD`.
-     * stage2: access to the windows_sdk functions is done with a manually
-       maintained .zig binding file instead of `@cImport`.
-     * Update src-self-hosted/libc_installation.zig with all the
-       improvements that stage1 has seen to src/libc_installation.cpp until
-       now. In addition, it now takes advantage of Batch so that evented I/O
-       mode takes advantage of concurrency, but it still works in blocking
-       I/O mode, which is how it is used in stage1.
-
-commit 2f9c5c0644dd516ec0d96f33333a35e6b4deea91
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Feb 17 15:23:59 2020 -0500
-
-    self-host dynamic linker detection
-
+    <p>
+    Although there has been no progress during this release cycle directly on
+    self-hosted semantic analysis and code generation, there has been significant
+    progress towards self-hosting in other areas:
+    </p>
+    <ul>
+      <li>{#link|C Translation#} is now self-hosted. To be clear, it still uses
+        libclang to parse C code, however, 5,000 lines of C++ code were deleted
+        in favor of a zig implementation.
+      </li>
+      <li><code>zig targets</code> is now self-hosted, and outputs JSON.</li>
+      <li>Native system {#link|libc#} detection is now self-hosted.</li>
+      <li>Native system dynamic linker detection is now self-hosted.</li>
+      <li>Native system include search path detection is now self-hosted.</li>
+      <li>Native system {#link|CPU Features#} detection is now self-hosted for x86
+        (<a href="https://github.com/ziglang/zig/issues/4591">contributions welcome for other architectures</a>).</li>
+    </ul>
+    <p>
+    More and more of the compiler is moving to be implemented in Zig rather than in C++.
+    The C++ percent is shrinking and Zig percent is increasing. However,
+    {#link|bootstrapping|Bootstrap Tarball#} remains forever a fixed, four-step process.
+    </p>
     {#header_close#}
 
     {#header_open|compiler-rt#}
