@@ -2962,28 +2962,86 @@ exit_group(0)                           = ?</code></pre>
     {#header_close#}
 
     {#header_open|I/O Streams#}
-    TODO
-commit ba0e3be5cfa2f60f2f9d2a4eb319408f972796c2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Mar 10 15:27:45 2020 -0400
+    <p>
+    The bad news: there were breaking changes to I/O streams and you have to
+    update your code.
+    </p>
+    <p>
+    The good news:
+    </p>
+    <ul>
+      <li>The new API is objectively simpler and more ergonomic.</li>
+      <li>Empirically, it produces significantly faster runtime code.</li>
+      <li>It works with {#link|Async I/O#} with no hacks.</li>
+    </ul>
+    <p>
+    Example code using the old streams API (lifted from my
+    <a href="https://github.com/andrewrk/advent-of-code">advent-of-code</a> repository):
+    </p>
+    <pre>{#syntax#}const std = @import("std");
 
-    (breaking) rework stream abstractions #4710
-    
-    The main goal here is to make the function pointers comptime, so that we
-    don't have to do the crazy stuff with async function frames.
-    
-    Since InStream, OutStream, and SeekableStream are already generic
+pub fn main() anyerror!void {
+    var stdin_unbuf = std.io.getStdIn().inStream();
+    // damn that is pretty painful, isn't it?
+    const in = &std.io.BufferedInStream(@TypeOf(stdin_unbuf).Error).init(&stdin_unbuf.stream).stream;
+
+    var sum: u64 = 0;
+    var line_buf: [50]u8 = undefined;
+    while (try in.readUntilDelimiterOrEof(&line_buf, '\n')) |line| {
+        if (line.len == 0) break;
+        const module_mass = try std.fmt.parseInt(u64, line, 10);
+        const fuel_required = (module_mass / 3) - 2;
+        sum += fuel_required;
+    }
+
+    const out = &std.io.getStdOut().outStream().stream;
+    try out.print("{}\n", .{sum});
+}{#endsyntax#}</pre>
+    <p>
+    New streams API:
+    </p>
+    {#code_begin|syntax#}
+const std = @import("std");
+
+pub fn main() anyerror!void {
+    const in = std.io.bufferedInStream(std.io.getStdIn().inStream()).inStream();
+
+    var sum: u64 = 0;
+    var line_buf: [50]u8 = undefined;
+    while (try in.readUntilDelimiterOrEof(&line_buf, '\n')) |line| {
+        if (line.len == 0) break;
+        const module_mass = try std.fmt.parseInt(u64, line, 10);
+        const fuel_required = (module_mass / 3) - 2;
+        sum += fuel_required;
+    }
+
+    const out = std.io.getStdOut().outStream();
+    try out.print("{}\n", .{sum});
+}
+    {#code_end#}
+    <p>
+    And unlike before, it works if you utilize {#link|Async I/O#} with:
+    </p>
+    {#code_begin|syntax#}
+pub const io_mode = .evented;
+    {#code_end#}
+    <p>
+    InStream, OutStream, and SeekableStream were already generic
     across error sets, it's not really worse to make them generic across the
-    vtable as well.
-    
+    vtable as well, which is what this change did.
+    </p>
+    <p>
     See #764 for the open issue acknowledging that using generics for these
     abstractions is a design flaw.
-    
+    </p>
+    <p>
     See #130 for the efforts to make these abstractions non-generic.
-    
-    This commit also changes the OutStream API so that `write` returns
-    number of bytes written, and `writeAll` is the one that loops until the
+    </p>
+    <p>
+    This also changes the OutStream API so that {#syntax#}write{#endsyntax#} returns
+    number of bytes written, and {#syntax#}writeAll{#endsyntax#} is the one that loops until the
     whole buffer is written.
+    </p>
     {#header_close#}
 
     {#header_open|Filesystem#}
