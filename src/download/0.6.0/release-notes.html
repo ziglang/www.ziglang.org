@@ -2528,9 +2528,6 @@ test "errdefer with payload" {
       <li>std.os.accept4: improve docs and integrate with evented I/O</li>
       <li>Jonathan Marler improved TTY detection to take into account TERM=dumb.</li>
       <li>{#syntax#}std.os.dup2{#endsyntax#} makes EBADF more obvious in stack traces.</li>
-      <li>lukechampine added an AES implementation to {#syntax#}std.crypto{#endsyntax#}.
-      data-man improved the code, replacing variables with constants. lukechampine
-      additionally added support for AES-CTR.</li>
       <li>daurnimator updated the standard library OS bits to Linux 5.6, added missing OS bits,
         organized declarations, and swapped constants for {#link|Non-Exhaustive Enums#}.</li>
       <li>Brendan Hansknecht improved big ints to use the more efficient karatsuba algorithm
@@ -2588,8 +2585,6 @@ test "errdefer with payload" {
       </li>
       <li>LemonBoy made {#syntax#}writeByteNTimes{#endsyntax#} faster and leaner.</li>
       <li>nofmal added a basic Linux termios implementation.</li>
-      <li>daurnimator added a Gimli based PRNG to {#syntax#}std.rand{#endsyntax#}, added
-        gimli to the crypto hash benchmark, and added AEAD modes for Gimli. (#4369)</li>
       <li>Felix (xq) Queißner made {#syntax#}std.heap.ArenaAllocator.deinit{#endsyntax#} not require a mutable reference.</li>
       <li>Implement {#syntax#}std.os.faccessat{#endsyntax#} for Windows.</li>
       <li>Support the concept of a target not having a dynamic linker.</li>
@@ -3671,7 +3666,11 @@ Date:   Sat Apr 4 19:15:08 2020 +0200
     {#header_close#}
 
     {#header_open|Crypto#}
-    TODO find other crypto refs here
+      <li>lukechampine added an AES implementation to {#syntax#}std.crypto{#endsyntax#}.
+      data-man improved the code, replacing variables with constants. lukechampine
+      additionally added support for AES-CTR.</li>
+      <li>daurnimator added a Gimli based PRNG to {#syntax#}std.rand{#endsyntax#}, added
+        gimli to the crypto hash benchmark, and added AEAD modes for Gimli. (#4369)</li>
 
 
 commit 4b86c1e3bbe65b8caa9c2e769af633fa8825bb94
@@ -3816,7 +3815,45 @@ Date:   Sat Feb 1 22:29:51 2020 -0500
     {#header_close#}
 
     {#header_open|Safety#}
-    TODO Resuming non-suspended functions now has runtime safety. #3469
+    <p>
+    Related to {#link|Async I/O#}, resuming non-suspended functions now has runtime safety (#3469):
+    </p>
+    {#code_begin|exe_err|bad_resume#}
+const std = @import("std");
+
+fn foo() void {
+    var f = async bar(@frame());
+    std.process.exit(0);
+}
+
+fn bar(frame: anyframe) void {
+    suspend {
+        resume frame;
+    }
+    std.process.exit(0);
+}
+
+pub fn main() void {
+    _ = async foo();
+}
+    {#code_end#}
+    <p>
+    Additionally the following safety checks have been added:
+    </p>
+    <ul>
+      <li>Slicing operator with a {#link|sentinel|Sentinel-Terminated Pointers#} mismatch.</li>
+      <li>Shifting by an amount greater than the type size (for non-power-of-two integers).</li>
+      <li>{#syntax#}@intToPtr{#endsyntax#} with misaligned address.</li>
+      <li>Slicing a null C pointer.</li>
+    </ul>
+    <p>
+    Thanks LemonBoy, Alexandros Naskos, and xackus for related contributions.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/projects/3">Much more safety is planned</a>.
+    This was a relatively quiet release cycle as far as
+    safety is concerned, {#link|despite the ambitions of the 0.5.0 roadmap|Roadmap#}.
+    </p>
     {#header_close#}
 
     {#header_open|zig build#}

@@ -2809,9 +2809,6 @@ All 1 tests passed.
       <li>std.os.accept4: improve docs and integrate with evented I/O</li>
       <li>Jonathan Marler improved TTY detection to take into account TERM=dumb.</li>
       <li><code class="zig">std.os.dup2</code> makes EBADF more obvious in stack traces.</li>
-      <li>lukechampine added an AES implementation to <code class="zig">std.crypto</code>.
-      data-man improved the code, replacing variables with constants. lukechampine
-      additionally added support for AES-CTR.</li>
       <li>daurnimator updated the standard library OS bits to Linux 5.6, added missing OS bits,
         organized declarations, and swapped constants for <a href="#Non-Exhaustive-Enums">Non-Exhaustive Enums</a>.</li>
       <li>Brendan Hansknecht improved big ints to use the more efficient karatsuba algorithm
@@ -2869,8 +2866,6 @@ All 1 tests passed.
       </li>
       <li>LemonBoy made <code class="zig">writeByteNTimes</code> faster and leaner.</li>
       <li>nofmal added a basic Linux termios implementation.</li>
-      <li>daurnimator added a Gimli based PRNG to <code class="zig">std.rand</code>, added
-        gimli to the crypto hash benchmark, and added AEAD modes for Gimli. (#4369)</li>
       <li>Felix (xq) Queißner made <code class="zig">std.heap.ArenaAllocator.deinit</code> not require a mutable reference.</li>
       <li>Implement <code class="zig">std.os.faccessat</code> for Windows.</li>
       <li>Support the concept of a target not having a dynamic linker.</li>
@@ -3954,7 +3949,11 @@ Date:   Sat Apr 4 19:15:08 2020 +0200
 
     <h2 id="Crypto"><a href="#toc-Crypto">Crypto</a> <a class="hdr" href="#Crypto">§</a></h2>
 
-    TODO find other crypto refs here
+      <li>lukechampine added an AES implementation to <code class="zig">std.crypto</code>.
+      data-man improved the code, replacing variables with constants. lukechampine
+      additionally added support for AES-CTR.</li>
+      <li>daurnimator added a Gimli based PRNG to <code class="zig">std.rand</code>, added
+        gimli to the crypto hash benchmark, and added AEAD modes for Gimli. (#4369)</li>
 
 
 commit 4b86c1e3bbe65b8caa9c2e769af633fa8825bb94
@@ -4103,7 +4102,65 @@ Date:   Sat Feb 1 22:29:51 2020 -0500
 
     <h1 id="Safety"><a href="#toc-Safety">Safety</a> <a class="hdr" href="#Safety">§</a></h1>
 
-    TODO Resuming non-suspended functions now has runtime safety. #3469
+    <p>
+    Related to <a href="#Async-IO">Async I/O</a>, resuming non-suspended functions now has runtime safety (#3469):
+    </p>
+    <p class="file">bad_resume.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> f = <span class="tok-kw">async</span> bar(<span class="tok-builtin">@frame</span>());
+    std.process.exit(<span class="tok-number">0</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">bar</span>(frame: <span class="tok-kw">anyframe</span>) <span class="tok-type">void</span> {
+    <span class="tok-kw">suspend</span> {
+        <span class="tok-kw">resume</span> frame;
+    }
+    std.process.exit(<span class="tok-number">0</span>);
+}
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    _ = <span class="tok-kw">async</span> foo();
+}</code></pre><pre><code class="shell">$ zig build-exe bad_resume.zig
+$ ./bad_resume
+resumed a non-suspended function
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/bad_resume.zig:3:1</span>: <span class="t2_0">0x22ea7c in foo (bad_resume)</span>
+fn foo() void {
+<span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/bad_resume.zig:10:9</span>: <span class="t2_0">0x230419 in bar (bad_resume)</span>
+        resume frame;
+        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/bad_resume.zig:4:13</span>: <span class="t2_0">0x22ea4f in foo (bad_resume)</span>
+    var f = async bar(@frame());
+            <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/dev/www.ziglang.org/docgen_tmp/bad_resume.zig:16:9</span>: <span class="t2_0">0x22a875 in main (bad_resume)</span>
+    _ = async foo();
+        <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/start.zig:243:22</span>: <span class="t2_0">0x20476f in std.start.posixCallMainAndExit (bad_resume)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t37_1">/home/andy/Downloads/zig/lib/std/start.zig:123:5</span>: <span class="t2_0">0x20454f in std.start._start (bad_resume)</span>
+    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
+    <span class="t32_1">^</span>
+(process terminated by signal)</code></pre>
+
+    <p>
+    Additionally the following safety checks have been added:
+    </p>
+    <ul>
+      <li>Slicing operator with a <a href="#Sentinel-Terminated-Pointers">sentinel</a> mismatch.</li>
+      <li>Shifting by an amount greater than the type size (for non-power-of-two integers).</li>
+      <li><code class="zig"><span class="tok-builtin">@intToPtr</span></code> with misaligned address.</li>
+      <li>Slicing a null C pointer.</li>
+    </ul>
+    <p>
+    Thanks LemonBoy, Alexandros Naskos, and xackus for related contributions.
+    </p>
+    <p>
+    <a href="https://github.com/ziglang/zig/projects/3">Much more safety is planned</a>.
+    This was a relatively quiet release cycle as far as
+    safety is concerned, <a href="#Roadmap">despite the ambitions of the 0.5.0 roadmap</a>.
+    </p>
     
 
     <h1 id="zig-build"><a href="#toc-zig-build">zig build</a> <a class="hdr" href="#zig-build">§</a></h1>
