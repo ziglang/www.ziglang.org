@@ -3131,205 +3131,24 @@ while (try it.next()) |entry| {
     {#header_close#}
 
     {#header_open|Networking#}
-    TODO explain status
-commit bf16fc210bc765202489ae83e0ad1dce8d9b4e16
-Author: Luna <git@l4.pm>
-Date:   Sat Oct 26 22:00:50 2019 -0300
-
-    fix std.os.accept4
-    
-     - add WouldBlock to list of errors in AcceptError
-     - ptrCast addr_size to the system's socklen_t, instead of assuming it's
-        usize
-
-
-
-    TODO std.net.getAddressList - basic DNS address resolution for linux without libc
-    std.net: port the RFC 3484/6724 destination address selection from musl libc
-
-commit c3d816a98e1126f5de4ec1a45e5f65bb2ff2f43c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Oct 29 22:59:30 2019 -0400
-
-    std lib networking improvements, especially non-blocking I/O
-    
-     * delete the std/event/net directory
-     * `std.event.Loop.waitUntilFdReadable` and related functions
-       no longer have possibility of failure. On Linux, they fall
-       back to poll() and then fall back to sleep().
-     * add some missing `noasync` decorations in `std.event.Loop`
-     * redo the `std.net.Server` API. it's quite nice now, but
-       shutdown does not work cleanly. There is a race condition with
-       close() that I am actively working on.
-     * move `std.io.OutStream` to its own file to match `std.io.InStream`.
-       I started working on making `write` integrated with evented I/O,
-       but it got tricky so I backed off and filed #3557. However
-       I did integrate `std.os.writev` and `std.os.pwritev` with evented I/O.
-     * add `std.Target.stack_align`
-     * move networking tests to `lib/std/net/test.zig`
-     * add `std.net.tcpConnectToHost` and `std.net.tcpConnectToAddress`.
-     * rename `error.UnknownName` to `error.UnknownHostName` within the
-       context of DNS resolution.
-     * add `std.os.readv`, which is integrated with evented I/O.
-     * `std.os.preadv`, is now integrated with evented I/O.
-     * `std.os.accept4` now asserts that ENOTSOCK and EOPNOTSUPP never
-        occur (misuse of API), instead of returning errors.
-     * `std.os.connect` is now integrated with evented I/O.
-       `std.os.connect_async` is gone. Just use `std.os.connect`.
-     * fix false positive dependency loop regarding async function frames
-     * add more compile notes to help when dependency loops occur
-       in determining whether a function is async.
-     * ir: change an assert to ir_assert to make it easier to find
-       workarounds for when such an assert is triggered. In this case
-       it was trying to parse an IPv4 address at comptime.
-commit 0de862e8bafce9a58c1018e9b6f81b3d17279c10
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Oct 30 19:27:42 2019 -0400
-
-    make std.net more portable
-    
-     * Delete `std.net.TmpWinAddr`. I don't think that was ever meant to
-       be a real thing.
-     * Delete `std.net.OsAddress`. This abstraction was not helpful.
-     * Rename `std.net.Address` to `std.net.IpAddress`. It is now an extern
-       union of IPv4 and IPv6 addresses.
-     * Move `std.net.parseIp4` and `std.net.parseIp6` to the
-       `std.net.IpAddress` namespace. They now return `IpAddress` instead of
-       `u32` and `std.net.Ip6Addr`, which is deleted.
-     * Add `std.net.IpAddress.parse` which accepts a port and parses either
-       an IPv4 or IPv6 address.
-     * Add `std.net.IpAddress.parseExpectingFamily` which additionally
-       accepts a `family` parameter.
-     * `std.net.IpAddress.initIp4` and `std.net.IpAddress.initIp6` are
-       improved to directly take the address fields instead of a weird
-       in-between type.
-     * `std.net.IpAddress.port` is renamed to `std.net.IpAddress.getPort`.
-     * Added `std.net.IpAddress.setPort`.
-     * `os.sockaddr` struct on all targets is improved to match the
-       corresponding system struct. Previously I had made it a union of
-       sockaddr_in, sockaddr_in6, and sockaddr_un. The new abstraction for
-       this is now `std.net.IpAddress`.
-     * `os.sockaddr` and related bits are added for Windows.
-     * `os.sockaddr` and related bits now have the `zero` fields default
-       to zero initialization, and `len` fields default to the correct size.
-       This is enough to abstract the differences across targets, and so
-       no more switch on the target OS is needed in `std.net.IpAddress`.
-     * Add the missing `os.sockaddr_un` on FreeBSD and NetBSD.
-     * `std.net.IpAddress.initPosix` now takes a pointer to `os.sockaddr`.
-
-    canonicalize std.os IPPROTO constants
-
-commit 2e0dd5733f9aec168f72167ca0a0e306b2810ae2
-Author: Luna <git@l4.pm>
-Date:   Sat Nov 2 16:46:48 2019 -0300
-
-    add FileNotFound to os.ConnectError error set
-
-commit d535bf2c7d22ff2039158bfa8d21bfb012a34c0c
-Author: Luna <git@l4.pm>
-Date:   Sat Nov 2 16:41:32 2019 -0300
-
-    add FileNotFound error to os.connect
-
-commit 9458620e18cb89b71cd0ad2755b9a7ae4f63e846
-Author: Luna <git@l4.pm>
-Date:   Fri Nov 8 19:59:30 2019 -0300
-
-    replace Address.parse Address.parseIp
-
-commit 5d05cfcfe6144a7f49f57cb376863edd0059d9ca
-Author: Luna <git@l4.pm>
-Date:   Fri Nov 8 19:35:04 2019 -0300
-
-    rename IpAddress to Address, add Address.unix
-
-commit 05ae21b78ed58e621fd2c10456a3f100a8107e3a
-Author: Luna <git@l4.pm>
-Date:   Sat Nov 9 12:51:33 2019 -0300
-
-    make StreamServer.listen family-agnostic
-    
-     - rename Address.parseUnix to Address.initUnix
-
-commit f4d8dc278b312fc3eccf33a37cfe89c7c012d6fd
-Author: Luna <git@l4.pm>
-Date:   Sat Nov 9 12:40:56 2019 -0300
-
-    rename TcpServer -> StreamServer
-    
-     - add AF_UNIX support to getOsSockLen
-
-commit 348c0232a5612eb9bdb445e80e6e201d24911dcc
-Author: Luna <git@l4.pm>
-Date:   Sat Nov 9 14:53:48 2019 -0300
-
-    miscellaneous fixes
-    
-     - make connextUnixSocket use std.net.Address
-     - fix StreamServer.listen giving wrong protocol for unix sockets
-
-commit c8a8da28049d2e9aece857359725b2a8f6d3732b
-Author: Luna <git@l4.pm>
-Date:   Sun Nov 10 16:44:18 2019 -0300
-
-    remove builtin.os check in Address.initUnix
-
-commit d1eabe81a99c3fe6c0e551e9bab90a3bbae509fe
-Author: Luna <git@l4.pm>
-Date:   Sun Nov 10 14:38:33 2019 -0300
-
-    add sockaddr_un to os/bits/windows
-
-    Luna: std.net: add unix socket support to Address and StreamServer
-
-commit 6e786b60d4fb3a39b717e077d034131be613d6aa
-Author: Vexu <15308111+Vexu@users.noreply.github.com>
-Date:   Mon Nov 4 19:54:36 2019 +0200
-
-    support ipv4-mapped ipv6 addresses
-
-commit 32ac1b5927ba9314b9fa0ec2bb21dba4b2e66c66
-Author: Vexu <15308111+Vexu@users.noreply.github.com>
-Date:   Mon Nov 4 18:59:14 2019 +0200
-
-    improve ipv6 parsing and formatting
-
-commit 6c1728206288264c4d2508a190d392ade68d115c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Nov 4 14:39:59 2019 -0500
-
-    std.os.read can fail with ConnectionResetByPeer
-
-commit a26e9fa7238e972301f761db80434fa0205d1016
-Author: Vexu <15308111+Vexu@users.noreply.github.com>
-Date:   Mon Nov 4 23:11:52 2019 +0200
-
-    add special formatting for ipv4-mapped ipv6 addresses
-
-commit aa4e92f3b3dc4b349eeabf589f8b9047e7342f03
-Author: frmdstryr <frmdstryr@protonmail.com>
-Date:   Mon Nov 18 08:45:25 2019 -0500
-
-    Make StreamServer return address of accecpted client
-
-
-
-    Luna: net: add reuse_address option to StreamServer. (#3820)
-
-
-commit 778dbc17acce77588a46a27074ecb8b418786d94
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Tue Mar 24 19:14:01 2020 +0100
-
-    std: Fix setsockopt definition
-    
-    * Add socketpair definition
-
-
-     <p>
-     Thank you to contributors Luna, Vexu, Jonathan Marler, Sebastian,
-     and frmdstryr.
-     </p>
+    <p>
+    The basics of networking are starting to come together, at least on POSIX.
+    </p>
+    <p>Added {#syntax#}std.net.getAddressList{#endsyntax#} - basic DNS address resolution.</p>
+    <p>Added {#syntax#}std.net.StreamServer{#endsyntax#}.</p>
+    <p>Added {#syntax#}std.net.tcpConnectToHost{#endsyntax#}.</p>
+    <p>Added {#syntax#}std.net.tcpConnectToAddress{#endsyntax#}.</p>
+    <p>Added {#syntax#}std.net.Address.parseIp{#endsyntax#} which supports IPv4 and IPv6.</p>
+    <p>Added {#syntax#}std.net.Address.parseExpectingFamily{#endsyntax#} which additionally
+    accepts a family parameter.</p>
+    <p>std.os IPPROTO constants are canonicalized.</p>
+    <p>
+    <a href="https://gist.github.com/andrewrk/34c21bdc1600b0884a3ab9fa9aa485b8">Example of a simple TCP chat server</a> using {#link|Async I/O#}.
+    </p>
+    <p>
+    Thank you to contributors Luna, Vexu, Jonathan Marler, Sebastian,
+    frmdstryr, and LemonBoy.
+    </p>
     {#header_close#}
 
     {#header_open|JSON#}
