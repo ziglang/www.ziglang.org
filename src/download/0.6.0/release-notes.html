@@ -3374,49 +3374,183 @@ Date:   Sun Jan 5 23:16:38 2020 -0800
     {#header_close#}
 
     {#header_open|Bring-Your-Own-OS Abstraction Layer#}
-commit dcbd5ad1553c5994353de47babc0e07e02153bd8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Dec 2 12:01:49 2019 -0500
+    <p>In the previous release of Zig (0.5.0), the {#syntax#}std.Target.Os{#endsyntax#} enum recognized
+    the following operating systems:</p>
+    <pre><code>  freestanding
+  ananas
+  cloudabi
+  dragonfly
+  freebsd
+  fuchsia
+  ios
+  kfreebsd
+  linux
+  lv2
+  macosx
+  netbsd
+  openbsd
+  solaris
+  windows
+  haiku
+  minix
+  rtems
+  nacl
+  cnk
+  aix
+  cuda
+  nvcl
+  amdhsa
+  ps4
+  elfiamcu
+  tvos
+  watchos
+  mesa3d
+  contiki
+  amdpal
+  hermit
+  hurd
+  wasi
+  emscripten
+  zen
+  uefi</code></pre>
+    <p>This list was the list of targets that LLVM supported +
+    <a href="https://github.com/AndreaOrru/zen">zen</a>(a hobby OS not maintained for over 1 year) +
+    UEFI.
+    </p>
+    <p>
+    It doesn't make sense to put every hobby OS into this list, but it does make sense to support them!
+    It should be possible for people to take advantage of Zig's cross platform abstractions without
+    having to get support for their hobby OS upstreamed into Zig.
+    </p>
+    <p>
+    Zig 0.6.0 does two things:
+    </p>
+    <ul>
+      <li>Add an {#syntax#}other{#endsyntax#} tag to std.Target.Os</li>
+      <li>Support an OS layer struct exposed in the root source file (next to {#syntax#}pub fn main(){#endsyntax#})</li>
+    </ul>
+    <p>
+    This allows hobby OS developers to maintain a zig package that makes the Zig
+    {#link|Standard Library#} support their OS. Application developers could use it like this:
+    </p>
+    <pre>{#syntax#}pub const os = @import("my_hobby_os_package");
 
-    remove upstream support for Zen hobby OS
-    
-    The new plan to support hobby operating systems is #3784.
-    
-    And what kind of name is "Zen" anyway? There's already a
-    [Zen programming language](http://zenlang.sourceforge.net/)
-    and that's just confusing.
-commit ad214c7aa00fc82b243eb38061f41588a0c58867
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Dec 2 15:02:17 2019 -0500
+pub fn main() void {
+    // ...
+}{#endsyntax#}</pre>
+    <p>
+    Next, standard library abstractions will detect when they should utilize this.
+    If the operating system is POSIX compliant, then many things will Just Work.
+    For example, {#syntax#}std.os.read{#endsyntax#} was defined like this:
+    </p>
+    {#code_begin|syntax#}
+/// Returns the number of bytes that were read, which can be less than
+/// buf.len. If 0 bytes were read, that means EOF.
+/// If the application has a global event loop enabled, EAGAIN is handled
+/// via the event loop. Otherwise EAGAIN results in error.WouldBlock.
+pub fn read(fd: fd_t, buf: []u8) ReadError!usize {
+    if (builtin.os == .windows) {
+        return windows.ReadFile(fd, buf);
+    }
 
-    bring your own OS layer in the std lib
-    
-    closes #3784
+    if (builtin.os == .wasi and !builtin.link_libc) {
+        const iovs = [1]iovec{iovec{
+            .iov_base = buf.ptr,
+            .iov_len = buf.len,
+        }};
 
-commit 10e172b1d77619469653b0521d8f65604fa549c7
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Dec 4 14:42:18 2019 -0500
+        var nread: usize = undefined;
+        switch (wasi.fd_read(fd, &iovs, iovs.len, &nread)) {
+            0 => return nread,
+            else => |err| return unexpectedErrno(err),
+        }
+    }
 
-    add `other` OS and fix regression in build-exe for freestanding
-
-commit b375f6e027a159616e80906aa05e253fbe8cc9df
-Author: Christine Dodrill <me@christine.website>
-Date:   Wed Dec 11 18:37:52 2019 -0500
-
-    lib/std/io: let the bring-your-own OS package handle stdio (#3887)
-
-commit b37acc4d6870a090c3501d81d3f647bc30220e4b
-Author: Christine Dodrill <me@christine.website>
-Date:   Thu Dec 12 01:31:32 2019 +0000
-
-    allow custom OS entrypoint
-    
-    Also:
-    
-     * Expose `std.start.callMain`.
-     * Other fixes added to fix issues found in development.
-
-
+    while (true) {
+        const rc = system.read(fd, buf.ptr, buf.len);
+        switch (errno(rc)) {
+            0 => return @intCast(usize, rc),
+            EINTR => continue,
+            EINVAL => unreachable,
+            EFAULT => unreachable,
+            EAGAIN => if (std.event.Loop.instance) |loop| {
+                loop.waitUntilFdReadable(fd);
+                continue;
+            } else {
+                return error.WouldBlock;
+            },
+            EBADF => unreachable, // Always a race condition.
+            EIO => return error.InputOutput,
+            EISDIR => return error.IsDir,
+            ENOBUFS => return error.SystemResources,
+            ENOMEM => return error.SystemResources,
+            ECONNRESET => return error.ConnectionResetByPeer,
+            else => |err| return unexpectedErrno(err),
+        }
+    }
+    return index;
+}
+    {#code_end#}
+    <p>
+    {#syntax#}system{#endsyntax#} in this refered to:
+    </p>
+    {#code_begin|syntax#}
+/// When linking libc, this is the C API. Otherwise, it is the OS-specific system interface.
+pub const system = if (builtin.link_libc) std.c else switch (builtin.os) {
+    .macosx, .ios, .watchos, .tvos => darwin,
+    .freebsd => freebsd,
+    .linux => linux,
+    .netbsd => netbsd,
+    .dragonfly => dragonfly,
+    .wasi => wasi,
+    .windows => windows,
+    .zen => zen,
+    else => struct {},
+};
+    {#code_end#}
+    <p>
+    {#syntax#}else => struct{},{#endsyntax#} is modified to look for
+    {#syntax#}@import("root").os{#endsyntax#} if it is provided.
+    With this modification, as long as the OS package defines all the constants (such as
+    {#syntax#}fd_t{#endsyntax#} and {#syntax#}EISDIR{#endsyntax#}), then
+    {#syntax#}std.os.write{#endsyntax#} would end up calling the write function from the hobby OS
+    package, and everything Just Works.
+    </p>
+    <p>
+    Some abstractions do not work so smoothly; in this case there is code that looks
+    something like this:
+    </p>
+    {#code_begin|syntax#}
+fn doTheOsThing() void {
+    if (@hasDecl(root, "os") and @hasDecl(root.os, "doTheOsThing")) {
+        return @import("root").os.doTheOsThing();
+    }
+}
+    {#code_end#}
+    <p>
+    Note there is not even a check for "other" here. Allowing applications to override fundamental OS
+    functions is useful on any operating system.
+    </p>
+    <p>
+    Now that this is implemented, Zig has first class support for all operating systems.
+    The main difference between upstream-recognized OSes and "other" OSes would be where the support
+    is maintained - upstream zig std lib, or in a third party "OS layer" package.
+    </p>
+    <p>
+    With this new feature, upstream support for Zen hobby OS is removed.
+    This has the additional benefit of clearing up some confusion, since
+    there is already a <a href="http://zenlang.sourceforge.net/">Zen programming language</a>.
+    </p>
+    <p>
+    This feature is still experimental, and contributions are welcome if you need to tweak the
+    std lib to get it working for your hobby OS use case.
+    </p>
+    <p>
+    Thanks Christine Dodrill and Noam Preil for related contributions.
+    </p>
+    <p>
+    Follow-up proposal: <a href="https://github.com/ziglang/zig/issues/4166">BYO os should work at the zig level</a>
+    </p>
     {#header_close#}
 
     {#header_open|ArrayList#}

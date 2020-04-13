@@ -3660,49 +3660,177 @@ Date:   Sun Jan 5 23:16:38 2020 -0800
 
     <h2 id="Bring-Your-Own-OS-Abstraction-Layer"><a href="#toc-Bring-Your-Own-OS-Abstraction-Layer">Bring-Your-Own-OS Abstraction Layer</a> <a class="hdr" href="#Bring-Your-Own-OS-Abstraction-Layer">§</a></h2>
 
-commit dcbd5ad1553c5994353de47babc0e07e02153bd8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Dec 2 12:01:49 2019 -0500
+    <p>In the previous release of Zig (0.5.0), the <code class="zig">std.Target.Os</code> enum recognized
+    the following operating systems:</p>
+    <pre><code>  freestanding
+  ananas
+  cloudabi
+  dragonfly
+  freebsd
+  fuchsia
+  ios
+  kfreebsd
+  linux
+  lv2
+  macosx
+  netbsd
+  openbsd
+  solaris
+  windows
+  haiku
+  minix
+  rtems
+  nacl
+  cnk
+  aix
+  cuda
+  nvcl
+  amdhsa
+  ps4
+  elfiamcu
+  tvos
+  watchos
+  mesa3d
+  contiki
+  amdpal
+  hermit
+  hurd
+  wasi
+  emscripten
+  zen
+  uefi</code></pre>
+    <p>This list was the list of targets that LLVM supported +
+    <a href="https://github.com/AndreaOrru/zen">zen</a>(a hobby OS not maintained for over 1 year) +
+    UEFI.
+    </p>
+    <p>
+    It doesn't make sense to put every hobby OS into this list, but it does make sense to support them!
+    It should be possible for people to take advantage of Zig's cross platform abstractions without
+    having to get support for their hobby OS upstreamed into Zig.
+    </p>
+    <p>
+    Zig 0.6.0 does two things:
+    </p>
+    <ul>
+      <li>Add an <code class="zig">other</code> tag to std.Target.Os</li>
+      <li>Support an OS layer struct exposed in the root source file (next to <code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>()</code>)</li>
+    </ul>
+    <p>
+    This allows hobby OS developers to maintain a zig package that makes the Zig
+    <a href="#Standard-Library">Standard Library</a> support their OS. Application developers could use it like this:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> os = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;my_hobby_os_package&quot;</span>);
 
-    remove upstream support for Zen hobby OS
-    
-    The new plan to support hobby operating systems is #3784.
-    
-    And what kind of name is "Zen" anyway? There's already a
-    [Zen programming language](http://zenlang.sourceforge.net/)
-    and that's just confusing.
-commit ad214c7aa00fc82b243eb38061f41588a0c58867
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Dec 2 15:02:17 2019 -0500
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
+    <span class="tok-comment">// ...</span>
+}</code></pre>
+    <p>
+    Next, standard library abstractions will detect when they should utilize this.
+    If the operating system is POSIX compliant, then many things will Just Work.
+    For example, <code class="zig">std.os.read</code> was defined like this:
+    </p>
+    <pre><code class="zig"><span class="tok-comment">/// Returns the number of bytes that were read, which can be less than</span>
+<span class="tok-comment">/// buf.len. If 0 bytes were read, that means EOF.</span>
+<span class="tok-comment">/// If the application has a global event loop enabled, EAGAIN is handled</span>
+<span class="tok-comment">/// via the event loop. Otherwise EAGAIN results in error.WouldBlock.</span>
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">read</span>(fd: fd_t, buf: []<span class="tok-type">u8</span>) ReadError!<span class="tok-type">usize</span> {
+    <span class="tok-kw">if</span> (builtin.os == .windows) {
+        <span class="tok-kw">return</span> windows.ReadFile(fd, buf);
+    }
 
-    bring your own OS layer in the std lib
-    
-    closes #3784
+    <span class="tok-kw">if</span> (builtin.os == .wasi <span class="tok-kw">and</span> !builtin.link_libc) {
+        <span class="tok-kw">const</span> iovs = [<span class="tok-number">1</span>]iovec{iovec{
+            .iov_base = buf.ptr,
+            .iov_len = buf.len,
+        }};
 
-commit 10e172b1d77619469653b0521d8f65604fa549c7
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Dec 4 14:42:18 2019 -0500
+        <span class="tok-kw">var</span> nread: <span class="tok-type">usize</span> = <span class="tok-null">undefined</span>;
+        <span class="tok-kw">switch</span> (wasi.fd_read(fd, &amp;iovs, iovs.len, &amp;nread)) {
+            <span class="tok-number">0</span> =&gt; <span class="tok-kw">return</span> nread,
+            <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),
+        }
+    }
 
-    add `other` OS and fix regression in build-exe for freestanding
-
-commit b375f6e027a159616e80906aa05e253fbe8cc9df
-Author: Christine Dodrill <me@christine.website>
-Date:   Wed Dec 11 18:37:52 2019 -0500
-
-    lib/std/io: let the bring-your-own OS package handle stdio (#3887)
-
-commit b37acc4d6870a090c3501d81d3f647bc30220e4b
-Author: Christine Dodrill <me@christine.website>
-Date:   Thu Dec 12 01:31:32 2019 +0000
-
-    allow custom OS entrypoint
-    
-    Also:
-    
-     * Expose `std.start.callMain`.
-     * Other fixes added to fix issues found in development.
-
-
+    <span class="tok-kw">while</span> (<span class="tok-null">true</span>) {
+        <span class="tok-kw">const</span> rc = system.read(fd, buf.ptr, buf.len);
+        <span class="tok-kw">switch</span> (errno(rc)) {
+            <span class="tok-number">0</span> =&gt; <span class="tok-kw">return</span> <span class="tok-builtin">@intCast</span>(<span class="tok-type">usize</span>, rc),
+            EINTR =&gt; <span class="tok-kw">continue</span>,
+            EINVAL =&gt; <span class="tok-kw">unreachable</span>,
+            EFAULT =&gt; <span class="tok-kw">unreachable</span>,
+            EAGAIN =&gt; <span class="tok-kw">if</span> (std.event.Loop.instance) |loop| {
+                loop.waitUntilFdReadable(fd);
+                <span class="tok-kw">continue</span>;
+            } <span class="tok-kw">else</span> {
+                <span class="tok-kw">return</span> <span class="tok-kw">error</span>.WouldBlock;
+            },
+            EBADF =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// Always a race condition.</span>
+            EIO =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InputOutput,
+            EISDIR =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.IsDir,
+            ENOBUFS =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,
+            ENOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,
+            ECONNRESET =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.ConnectionResetByPeer,
+            <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),
+        }
+    }
+    <span class="tok-kw">return</span> index;
+}</code></pre>
+    <p>
+    <code class="zig">system</code> in this refered to:
+    </p>
+    <pre><code class="zig"><span class="tok-comment">/// When linking libc, this is the C API. Otherwise, it is the OS-specific system interface.</span>
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> system = <span class="tok-kw">if</span> (builtin.link_libc) std.c <span class="tok-kw">else</span> <span class="tok-kw">switch</span> (builtin.os) {
+    .macosx, .ios, .watchos, .tvos =&gt; darwin,
+    .freebsd =&gt; freebsd,
+    .linux =&gt; linux,
+    .netbsd =&gt; netbsd,
+    .dragonfly =&gt; dragonfly,
+    .wasi =&gt; wasi,
+    .windows =&gt; windows,
+    .zen =&gt; zen,
+    <span class="tok-kw">else</span> =&gt; <span class="tok-kw">struct</span> {},
+};</code></pre>
+    <p>
+    <code class="zig"><span class="tok-kw">else</span> =&gt; <span class="tok-kw">struct</span>{},</code> is modified to look for
+    <code class="zig"><span class="tok-builtin">@import</span>(<span class="tok-str">&quot;root&quot;</span>).os</code> if it is provided.
+    With this modification, as long as the OS package defines all the constants (such as
+    <code class="zig">fd_t</code> and <code class="zig">EISDIR</code>), then
+    <code class="zig">std.os.write</code> would end up calling the write function from the hobby OS
+    package, and everything Just Works.
+    </p>
+    <p>
+    Some abstractions do not work so smoothly; in this case there is code that looks
+    something like this:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">doTheOsThing</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">if</span> (<span class="tok-builtin">@hasDecl</span>(root, <span class="tok-str">&quot;os&quot;</span>) <span class="tok-kw">and</span> <span class="tok-builtin">@hasDecl</span>(root.os, <span class="tok-str">&quot;doTheOsThing&quot;</span>)) {
+        <span class="tok-kw">return</span> <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;root&quot;</span>).os.doTheOsThing();
+    }
+}</code></pre>
+    <p>
+    Note there is not even a check for "other" here. Allowing applications to override fundamental OS
+    functions is useful on any operating system.
+    </p>
+    <p>
+    Now that this is implemented, Zig has first class support for all operating systems.
+    The main difference between upstream-recognized OSes and "other" OSes would be where the support
+    is maintained - upstream zig std lib, or in a third party "OS layer" package.
+    </p>
+    <p>
+    With this new feature, upstream support for Zen hobby OS is removed.
+    This has the additional benefit of clearing up some confusion, since
+    there is already a <a href="http://zenlang.sourceforge.net/">Zen programming language</a>.
+    </p>
+    <p>
+    This feature is still experimental, and contributions are welcome if you need to tweak the
+    std lib to get it working for your hobby OS use case.
+    </p>
+    <p>
+    Thanks Christine Dodrill and Noam Preil for related contributions.
+    </p>
+    <p>
+    Follow-up proposal: <a href="https://github.com/ziglang/zig/issues/4166">BYO os should work at the zig level</a>
+    </p>
     
 
     <h2 id="ArrayList"><a href="#toc-ArrayList">ArrayList</a> <a class="hdr" href="#ArrayList">§</a></h2>
