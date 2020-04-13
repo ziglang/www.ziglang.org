@@ -3978,60 +3978,62 @@ Hello World!</code></pre>
     {#header_close#}
 
     {#header_open|C Translation#}
-    <p>TODO talk about Vexu</p>
-    <p>TODO talk about effort to self host it, C API wrapper, and it's done now</p>
-    <p>TODO mention that vexu made a c tokenizer and as a result macro support is much better</p>
-    <p>TODO mention that the c tokenizer and c ast parser are in the std lib</p>
-    related issue: #1964
-    note that it shaved 5 seconds off the build time of zig
-commit d04c58816d673208aae476e1cc2d223a26604c45
-Author: Timon Kruiper <timonkruiper@gmail.com>
-Date:   Thu Oct 24 15:57:34 2019 +0200
-
-    Translate-c: Fix a segfault when to many errors are emitted
-    
-    This was already fixed when doing `@cImport`, but not yet when
-    running `zig translate-c`.
-
-commit ed956b581283824da1f7d39b953f4d716928eee2
-Author: daurnimator <quae@daurnimator.com>
-Date:   Sun Nov 17 16:18:18 2019 +1100
-
-    translate-c: add support for MacroQualified definitions
-
-commit 69dee57d95271169898f8382f7e4846bf77a0040
-Author: Vexu <git@vexu.eu>
-Date:   Thu Dec 12 14:26:24 2019 +0200
-
-    remove concept of translate mode
-
-    mention run-translated-c tests
-
-commit cbfd66f68a5a390abcf99e8cc6923d056ee1e4fa
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Mon Dec 30 12:17:52 2019 +0100
-
-    Don't crash when parsing invalid files
-
-    ^ related: mention the (still ongoing) clang API problem
-    related: commit below:
-commit 5e37fc0746a75ed319fc57ae62d8cc966382c592
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Feb 16 01:45:48 2020 -0500
-
-    more user-friendly error message for some clang diagnostics
-    
-    See #4455
-
-
-
-    There is now a build.zig step for translate-c
-
-    translate-c supports caching so subsequent builds are fast
-
-
-    add "Improving Translate-C" section to CONTRIBUTING.md
-
+    <p>
+    During this release cycle, all of the Clang C++ API that Zig's translate-c feature relies on
+    has been extracted into:
+    </p>
+    <ul>
+      <li><code>zig_clang.h</code> (C)</li>
+      <li><code>zig_clang.cpp</code> (C++)</li>
+    </ul>
+    <p>
+    Next, <code>zig_clang.zig</code> was added to match the zig_clang.h C ABI.
+    </p>
+    <p>
+    Once translate_c.cpp was fully updated to use zig_clang.h instead of the C++ includes,
+    compilation of that source file went from 5 seconds to 0.5 seconds.
+    </p>
+    <p>
+    At this point the self-hosting effort began. I started
+    <code>src-self-hosted/translate-c.zig</code> and hooked up the translate-c test suite
+    to support adding cases that are intended to pass in the new implementation.
+    </p>
+    <p>
+    Slowly the contributions started coming in and gradually improving self-hosted translate-c,
+    and it started passing more and more test cases.
+    </p>
+    <p>
+    After a few individual contributions,
+    {#link|Vexu|Please Welcome Vexu to the Core Zig Team#} got the hang of things, and
+    <em>finished the entire self-hosted implementation of translate-c</em>,
+    ultimately deleting the 5,000 line C++ implementation in one final blow.
+    </p>
+    <p>
+    All the previous test cases pass now, plus new ones, and there is even a new kind
+    of test, <code>zig build test-run-translated-c</code>, which attempts to compile and
+    run the Zig code that was translated from C code.
+    </p>
+    <p>
+    Vexu didn't stop there. He implemented a full C tokenizer and a partial C AST parser,
+    which are both now available in the
+    {#link|Standard Library#} in the {#syntax#}std.c{#endsyntax#} namespace. As a result,
+    Zig's support for macro translation is much improved in 0.6.0.
+    </p>
+    <p>
+    This is as big deal for {#link|Self-Hosted Compiler Progress#}, because it means that
+    contributions to Zig's translate-c feature apply not only to the stage1 compiler, but
+    to the (incomplete) self-hosted compiler as well.
+    </p>
+    <p>
+    I won't list translate-c improvements or bug fixes because they are too numerous, but
+    the following things stick out:
+    </p>
+    <ul>
+      <li>There is now a {#link|zig build#} step for translate-c.</li>
+      <li>{#syntax#}@cImport{#endsyntax#} now automatically caches results, so subsequent builds are fast.</li>
+      <li>There is now an <a href="https://github.com/ziglang/zig/blob/0.6.0/CONTRIBUTING.md#improving-translate-c">Improving Translate-C</a>
+        section in CONTRIBUTING.md, to help contributors get started.</li>
+    </ul>
     <p>
     Additional thanks to LemonBoy, Merlyn Morgan-Graham, Feix Weiglhofer,
     Josh Wolfe, Lachlan Easton, Layne Gustafson, Michael Dusan, Rocknest,
