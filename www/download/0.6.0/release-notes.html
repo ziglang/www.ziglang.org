@@ -266,8 +266,8 @@
     Let's reboot systems programming.</p>
     <p>
     This release features <strong>6 months of work</strong> and
-    changes from <strong>112 different contributors</strong>, spread among
-    <strong>2510 commits</strong>.
+    changes from <strong>122 different contributors</strong>, spread among
+    <strong>2527 commits</strong>.
     </p>
 
     <h1 id="Table-of-Contents"><a href="#toc-Table-of-Contents">Table of Contents</a> <a class="hdr" href="#Table-of-Contents">§</a></h1>
@@ -3835,41 +3835,39 @@ Date:   Sun Jan 5 23:16:38 2020 -0800
 
     <h2 id="ArrayList"><a href="#toc-ArrayList">ArrayList</a> <a class="hdr" href="#ArrayList">§</a></h2>
 
-
-commit c3d8b1ffebb94d180c382bd74128d17dc21c1392
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Dec 10 15:08:10 2019 -0500
-
-    remove iterator API from std.ArrayList
-    
-    This is not a meaningful abstraction. Use a for loop on the result
-    of `toSlice` or `toSliceConst`.
-    
-    An iterator can be implemented on top of ArrayList by applications which
-    want additional functionality, such as removing elements while
-    iterating.
-    
-    Closes #3037.
-
-commit 1483ae37f2dae6a5b9db1f7851cf5dc9a86e57f3
-Author: Bas <BarabasGitHub@users.noreply.github.com>
-Date:   Wed Feb 19 17:33:35 2020 +0100
-
-    Add an appendValues method to ArrayList to append a value n times. (#4460)
-
-
-    TODO mention deprecated API
-    TODO mention std.ArrayList: make the slice field valid and public, and the capacity a separate field #4852
-    TODO mention outStream()
-    TODO mention daurnimator's efforts to reduce Buffer usage #4665
-    TODO git shortlog for this file
-
-    TODO Thanks xackus
-
+    <p>Apologies - when I first created the ArrayList API, I got it backwards.
+    I made <code class="zig">items</code> the slice of allocated memory, and
+    you had to call a function to get the slice of valid objects.</p>
+    <p>
+    Now, the <code class="zig">items</code> field is safe to use directly, and is
+    always the slice of valid objects, and the capacity is maintained separately.
+    </p>
+    <p>
+    This breaks callsites of ArrayList but it removes a footgun from this API.
+    It also allows removing a bunch of no-longer-needed API.
+    </p>
+    <p>Iterator API is removed from std.ArrayList, since it is now possible to use
+    a <code class="zig"><span class="tok-kw">for</span></code> loop on the <code class="zig">items</code> field.
+    </p>
+    <p>
+    Additionally:
+    </p>
     <ul>
-      <li>MCRusher added <code class="zig">initCapacity</code> to <code class="zig">std.ArrayList</code> and <code class="zig">std.ArrayListSentineled</code>.</li>
+      <li>There is now a function <code class="zig">appendNTimes</code> (#4460).</li>
+      <li>Many functions are deprecated, such as <code class="zig">toSlice</code> and
+        <code class="zig">toSliceConst</code>, and <code class="zig">at</code>. Instead,
+        access the <code class="zig">items</code> slice directly.</li>
+      <li>Added <code class="zig">outStream</code> - creates a stream to append to the ArrayList.</li>
     </ul>
-
+    <p>
+    Thanks daurnimator, xackus, Bas, MCRusher, and Benoit Giannangeli
+    for related contributions.
+    </p>
+    <p>
+    Special thanks to daurnimator for making the case to rename <code class="zig">std.Buffer</code>
+    to <code class="zig">std.ArrayListSentineled</code>, and replace usages of that API with
+    usages to <code class="zig">ArrayList</code> where applicable.
+    </p>
     
 
     <h2 id="Memory"><a href="#toc-Memory">Memory</a> <a class="hdr" href="#Memory">§</a></h2>
