@@ -3248,28 +3248,82 @@ exit_group(0)                           = ?</code></pre>
 
     <h2 id="IO-Streams"><a href="#toc-IO-Streams">I/O Streams</a> <a class="hdr" href="#IO-Streams">§</a></h2>
 
-    TODO
-commit ba0e3be5cfa2f60f2f9d2a4eb319408f972796c2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Mar 10 15:27:45 2020 -0400
+    <p>
+    The bad news: there were breaking changes to I/O streams and you have to
+    update your code.
+    </p>
+    <p>
+    The good news:
+    </p>
+    <ul>
+      <li>The new API is objectively simpler and more ergonomic.</li>
+      <li>Empirically, it produces significantly faster runtime code.</li>
+      <li>It works with <a href="#Async-IO">Async I/O</a> with no hacks.</li>
+    </ul>
+    <p>
+    Example code using the old streams API (lifted from my
+    <a href="https://github.com/andrewrk/advent-of-code">advent-of-code</a> repository):
+    </p>
+    <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
-    (breaking) rework stream abstractions #4710
-    
-    The main goal here is to make the function pointers comptime, so that we
-    don't have to do the crazy stuff with async function frames.
-    
-    Since InStream, OutStream, and SeekableStream are already generic
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> stdin_unbuf = std.io.getStdIn().inStream();
+    <span class="tok-comment">// damn that is pretty painful, isn't it?</span>
+    <span class="tok-kw">const</span> in = &amp;std.io.BufferedInStream(<span class="tok-builtin">@TypeOf</span>(stdin_unbuf).Error).init(&amp;stdin_unbuf.stream).stream;
+
+    <span class="tok-kw">var</span> sum: <span class="tok-type">u64</span> = <span class="tok-number">0</span>;
+    <span class="tok-kw">var</span> line_buf: [<span class="tok-number">50</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">while</span> (<span class="tok-kw">try</span> in.readUntilDelimiterOrEof(&amp;line_buf, <span class="tok-str">'\n'</span>)) |line| {
+        <span class="tok-kw">if</span> (line.len == <span class="tok-number">0</span>) <span class="tok-kw">break</span>;
+        <span class="tok-kw">const</span> module_mass = <span class="tok-kw">try</span> std.fmt.parseInt(<span class="tok-type">u64</span>, line, <span class="tok-number">10</span>);
+        <span class="tok-kw">const</span> fuel_required = (module_mass / <span class="tok-number">3</span>) - <span class="tok-number">2</span>;
+        sum += fuel_required;
+    }
+
+    <span class="tok-kw">const</span> out = &amp;std.io.getStdOut().outStream().stream;
+    <span class="tok-kw">try</span> out.print(<span class="tok-str">&quot;{}\n&quot;</span>, .{sum});
+}</code></pre>
+    <p>
+    New streams API:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> in = std.io.bufferedInStream(std.io.getStdIn().inStream()).inStream();
+
+    <span class="tok-kw">var</span> sum: <span class="tok-type">u64</span> = <span class="tok-number">0</span>;
+    <span class="tok-kw">var</span> line_buf: [<span class="tok-number">50</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">while</span> (<span class="tok-kw">try</span> in.readUntilDelimiterOrEof(&amp;line_buf, <span class="tok-str">'\n'</span>)) |line| {
+        <span class="tok-kw">if</span> (line.len == <span class="tok-number">0</span>) <span class="tok-kw">break</span>;
+        <span class="tok-kw">const</span> module_mass = <span class="tok-kw">try</span> std.fmt.parseInt(<span class="tok-type">u64</span>, line, <span class="tok-number">10</span>);
+        <span class="tok-kw">const</span> fuel_required = (module_mass / <span class="tok-number">3</span>) - <span class="tok-number">2</span>;
+        sum += fuel_required;
+    }
+
+    <span class="tok-kw">const</span> out = std.io.getStdOut().outStream();
+    <span class="tok-kw">try</span> out.print(<span class="tok-str">&quot;{}\n&quot;</span>, .{sum});
+}</code></pre>
+    <p>
+    And unlike before, it works if you utilize <a href="#Async-IO">Async I/O</a> with:
+    </p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> io_mode = .evented;</code></pre>
+    <p>
+    InStream, OutStream, and SeekableStream were already generic
     across error sets, it's not really worse to make them generic across the
-    vtable as well.
-    
+    vtable as well, which is what this change did.
+    </p>
+    <p>
     See #764 for the open issue acknowledging that using generics for these
     abstractions is a design flaw.
-    
+    </p>
+    <p>
     See #130 for the efforts to make these abstractions non-generic.
-    
-    This commit also changes the OutStream API so that `write` returns
-    number of bytes written, and `writeAll` is the one that loops until the
+    </p>
+    <p>
+    This also changes the OutStream API so that <code class="zig">write</code> returns
+    number of bytes written, and <code class="zig">writeAll</code> is the one that loops until the
     whole buffer is written.
+    </p>
     
 
     <h2 id="Filesystem"><a href="#toc-Filesystem">Filesystem</a> <a class="hdr" href="#Filesystem">§</a></h2>
