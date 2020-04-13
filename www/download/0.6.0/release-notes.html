@@ -4558,27 +4558,261 @@ Date:   Sun Mar 29 10:33:37 2020 -0400
 
     <h1 id="Command-Line-Interface"><a href="#toc-Command-Line-Interface">Command Line Interface</a> <a class="hdr" href="#Command-Line-Interface">§</a></h1>
 
-    TODO mention the transition to -femit-foo
-
-    TODO look at git shortlog for main.cpp to thank more contributors
-
-commit c664692bdd62765ab444a79a8704d2161c1809f1
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Feb 19 01:24:34 2020 -0500
-
-    make the CLI support depending on system headers and libraries
-    
-    (include and lib search paths)
-    
-    The detection of native system paths is self-hosted.
-    
-    closes #2041
-
-
-    TODO show when you pass a bad cpu feature or cpu model 
-
-
-    <p>Thanks to Noam Preil for contributions related to this.</p>
+    <p><strong>Added:</strong></p>
+    <ul>
+      <li><code>--eh-frame-hdr</code> - enable C++ exception handling by passing --eh-frame-hdr to link</li>
+      <li><code>-fsanitize-c</code> - enable C undefined behavior detection in unsafe builds</li>
+      <li><code>-fno-sanitize-c</code> - disable C undefined behavior detection in safe builds</li>
+      <li><code>-fmem-report</code> - print <a href="#Memory-Usage-Reduction">memory usage</a> diagnostics</li>
+      <li><code>-fdump-analysis</code> - write analysis.json file with type information</li>
+      <li><code>-femit-docs</code> - create a docs/ dir with <a href="#Documentation-Generation">html documentation</a></li>
+      <li><code>-fno-emit-docs</code> - do not produce docs/ dir with html documentation</li>
+      <li><code>-femit-bin</code> - (default) output machine code</li>
+      <li><code>-fno-emit-bin</code> - do not output machine code</li>
+      <li><code>-femit-asm</code> - output .s (assembly code)</li>
+      <li><code>-fno-emit-asm</code> - (default) do not output .s (assembly code)</li>
+      <li><code>-femit-llvm-ir</code> - produce a .ll file with LLVM IR</li>
+      <li><code>-fno-emit-llvm-ir</code> - (default) do not produce a .ll file with LLVM IR</li>
+      <li><code>-femit-h</code> -  generate a C header file (.h)</li>
+      <li><code>-fno-emit-h</code> - (default) do not generate a C header file (.h)</li>
+      <li><code>--verbose-llvm-cpu-features</code> - enable compiler debug output for LLVM CPU features</li>
+      <li><code>-I[dir]</code> - add directory to include search path</li>
+      <li><code>-mcpu [cpu]</code> - specify <a href="#CPU-Features">target CPU and feature set</a></li>
+      <li><code>-code-model [default|tiny|small|kernel|medium|large]</code> - set target code model</li>
+      <li><code>--test-evented-io</code> - runs the test in <a href="#Async-IO">evented I/O mode</a></li>
+    </ul>
+    <p><strong>Removed:</strong></p>
+    <ul>
+      <li><code>-target-glibc [version]</code> - now specified as part of <a href="#Target-Details">target triple</a></li>
+      <li><code>-mios-version-min [ver]</code> - obsoleted by <a href="#OS-Version-Ranges">OS Version Ranges</a></li>
+      <li><code>-mmacosx-version-min [ver]</code> - obsoleted by <a href="#OS-Version-Ranges">OS Version Ranges</a></li>
+    </ul>
+    <p><strong>Deprecated:</strong></p>
+    <ul>
+      <li><code>--emit [asm|bin|llvm-ir]</code> - prefer the new -femit-* or -fno-emit* options above.</li>
+    </ul>
+    <p>This will be removed once <a href="https://godbolt.org/">Compiler Explorer</a>
+    updates to the new CLI.</p>
+    <p>
+    The command line interface now supports detecting native system headers and libraries
+    (include/ and lib/ search paths). The implementation of this is <a href="#Self-Hosted-Compiler-Progress">self-hosted</a> (#2041).
+    </p>
+    <p>The error output is improved when an invalid CPU model or CPU feature is specified:</p>
+    <pre><code>andy@ark ~&gt; zig build-exe hello.zig -mcpu=bogus
+Unknown CPU: 'bogus'
+Available CPUs for architecture 'x86_64':
+ amdfam10
+ athlon
+ athlon_4
+ athlon_fx
+ athlon_mp
+ athlon_tbird
+ athlon_xp
+ athlon64
+ athlon64_sse3
+ atom
+ barcelona
+ bdver1
+ bdver2
+ bdver3
+ bdver4
+ bonnell
+ broadwell
+ btver1
+ btver2
+ c3
+ c3_2
+ cannonlake
+ cascadelake
+ cooperlake
+ core_avx_i
+ core_avx2
+ core2
+ corei7
+ corei7_avx
+ generic
+ geode
+ goldmont
+ goldmont_plus
+ haswell
+ _i386
+ _i486
+ _i586
+ _i686
+ icelake_client
+ icelake_server
+ ivybridge
+ k6
+ k6_2
+ k6_3
+ k8
+ k8_sse3
+ knl
+ knm
+ lakemont
+ nehalem
+ nocona
+ opteron
+ opteron_sse3
+ penryn
+ pentium
+ pentium_m
+ pentium_mmx
+ pentium2
+ pentium3
+ pentium3m
+ pentium4
+ pentium4m
+ pentiumpro
+ prescott
+ sandybridge
+ silvermont
+ skx
+ skylake
+ skylake_avx512
+ slm
+ tigerlake
+ tremont
+ westmere
+ winchip_c6
+ winchip2
+ x86_64
+ yonah
+ znver1
+ znver2
+andy@ark ~&gt; zig build-exe hello.zig -mcpu=x86_64+bogus
+Unknown CPU feature: 'bogus'
+Available CPU features for architecture 'x86_64':
+ 3dnow: Enable 3DNow! instructions
+ 3dnowa: Enable 3DNow! Athlon instructions
+ 64bit: Support 64-bit instructions
+ adx: Support ADX instructions
+ aes: Enable AES instructions
+ avx: Enable AVX instructions
+ avx2: Enable AVX2 instructions
+ avx512bf16: Support bfloat16 floating point
+ avx512bitalg: Enable AVX-512 Bit Algorithms
+ avx512bw: Enable AVX-512 Byte and Word Instructions
+ avx512cd: Enable AVX-512 Conflict Detection Instructions
+ avx512dq: Enable AVX-512 Doubleword and Quadword Instructions
+ avx512er: Enable AVX-512 Exponential and Reciprocal Instructions
+ avx512f: Enable AVX-512 instructions
+ avx512ifma: Enable AVX-512 Integer Fused Multiple-Add
+ avx512pf: Enable AVX-512 PreFetch Instructions
+ avx512vbmi: Enable AVX-512 Vector Byte Manipulation Instructions
+ avx512vbmi2: Enable AVX-512 further Vector Byte Manipulation Instructions
+ avx512vl: Enable AVX-512 Vector Length eXtensions
+ avx512vnni: Enable AVX-512 Vector Neural Network Instructions
+ avx512vp2intersect: Enable AVX-512 vp2intersect
+ avx512vpopcntdq: Enable AVX-512 Population Count Instructions
+ bmi: Support BMI instructions
+ bmi2: Support BMI2 instructions
+ branchfusion: CMP/TEST can be fused with conditional branches
+ cldemote: Enable Cache Demote
+ clflushopt: Flush A Cache Line Optimized
+ clwb: Cache Line Write Back
+ clzero: Enable Cache Line Zero
+ cmov: Enable conditional move instructions
+ cx16: 64-bit with cmpxchg16b
+ cx8: Support CMPXCHG8B instructions
+ enqcmd: Has ENQCMD instructions
+ ermsb: REP MOVS/STOS are fast
+ f16c: Support 16-bit floating point conversion instructions
+ false_deps_lzcnt_tzcnt: LZCNT/TZCNT have a false dependency on dest register
+ false_deps_popcnt: POPCNT has a false dependency on dest register
+ fast_11bytenop: Target can quickly decode up to 11 byte NOPs
+ fast_15bytenop: Target can quickly decode up to 15 byte NOPs
+ fast_bextr: Indicates that the BEXTR instruction is implemented as a single uop with good throughput
+ fast_gather: Indicates if gather is reasonably fast
+ fast_hops: Prefer horizontal vector math instructions (haddp, phsub, etc.) over normal vector instructions with shuffles
+ fast_lzcnt: LZCNT instructions are as fast as most simple integer ops
+ fast_scalar_fsqrt: Scalar SQRT is fast (disable Newton-Raphson)
+ fast_scalar_shift_masks: Prefer a left/right scalar logical shift pair over a shift+and pair
+ fast_shld_rotate: SHLD can be used as a faster rotate
+ fast_variable_shuffle: Shuffles with variable masks are fast
+ fast_vector_fsqrt: Vector SQRT is fast (disable Newton-Raphson)
+ fast_vector_shift_masks: Prefer a left/right vector logical shift pair over a shift+and pair
+ fma: Enable three-operand fused multiple-add
+ fma4: Enable four-operand fused multiple-add
+ fsgsbase: Support FS/GS Base instructions
+ fxsr: Support fxsave/fxrestore instructions
+ gfni: Enable Galois Field Arithmetic Instructions
+ idivl_to_divb: Use 8-bit divide for positive values less than 256
+ idivq_to_divl: Use 32-bit divide for positive values less than 2^32
+ invpcid: Invalidate Process-Context Identifier
+ lea_sp: Use LEA for adjusting the stack pointer
+ lea_uses_ag: LEA instruction needs inputs at AG stage
+ lwp: Enable LWP instructions
+ lzcnt: Support LZCNT instruction
+ macrofusion: Various instructions can be fused with conditional branches
+ merge_to_threeway_branch: Merge branches to a three-way conditional branch
+ mmx: Enable MMX instructions
+ movbe: Support MOVBE instruction
+ movdir64b: Support movdir64b instruction
+ movdiri: Support movdiri instruction
+ mpx: Deprecated. Support MPX instructions
+ mwaitx: Enable MONITORX/MWAITX timer functionality
+ nopl: Enable NOPL instruction
+ pad_short_functions: Pad short functions
+ pclmul: Enable packed carry-less multiplication instructions
+ pconfig: platform configuration instruction
+ pku: Enable protection keys
+ popcnt: Support POPCNT instruction
+ prefer_128_bit: Prefer 128-bit AVX instructions
+ prefer_256_bit: Prefer 256-bit AVX instructions
+ prefer_mask_registers: Prefer AVX512 mask registers over PTEST/MOVMSK
+ prefetchwt1: Prefetch with Intent to Write and T1 Hint
+ prfchw: Support PRFCHW instructions
+ ptwrite: Support ptwrite instruction
+ rdpid: Support RDPID instructions
+ rdrnd: Support RDRAND instruction
+ rdseed: Support RDSEED instruction
+ retpoline: Remove speculation of indirect branches from the generated code, either by avoiding them entirely or lowering them with a speculation blocking construct
+ retpoline_external_thunk: When lowering an indirect call or branch using a `retpoline`, rely on the specified user provided thunk rather than emitting one ourselves. Only has effect when combined with some other retpoline feature
+ retpoline_indirect_branches: Remove speculation of indirect branches from the generated code
+ retpoline_indirect_calls: Remove speculation of indirect calls from the generated code
+ rtm: Support RTM instructions
+ sahf: Support LAHF and SAHF instructions
+ sgx: Enable Software Guard Extensions
+ sha: Enable SHA instructions
+ shstk: Support CET Shadow-Stack instructions
+ slow_3ops_lea: LEA instruction with 3 ops or certain registers is slow
+ slow_incdec: INC and DEC instructions are slower than ADD and SUB
+ slow_lea: LEA instruction with certain arguments is slow
+ slow_pmaddwd: PMADDWD is slower than PMULLD
+ slow_pmulld: PMULLD instruction is slow
+ slow_shld: SHLD instruction is slow
+ slow_two_mem_ops: Two memory operand instructions are slow
+ slow_unaligned_mem_16: Slow unaligned 16-byte memory access
+ slow_unaligned_mem_32: Slow unaligned 32-byte memory access
+ soft_float: Use software floating point features
+ sse: Enable SSE instructions
+ sse_unaligned_mem: Allow unaligned memory operands with SSE instructions
+ sse2: Enable SSE2 instructions
+ sse3: Enable SSE3 instructions
+ sse4_1: Enable SSE 4.1 instructions
+ sse4_2: Enable SSE 4.2 instructions
+ sse4a: Support SSE 4a instructions
+ ssse3: Enable SSSE3 instructions
+ tbm: Enable TBM instructions
+ use_aa: Use alias analysis during codegen
+ use_glm_div_sqrt_costs: Use Goldmont specific floating point div/sqrt costs
+ vaes: Promote selected AES instructions to AVX512/AVX registers
+ vpclmulqdq: Enable vpclmulqdq instructions
+ vzeroupper: Should insert vzeroupper instructions
+ waitpkg: Wait and pause enhancements
+ wbnoinvd: Write Back No Invalidate
+ x87: Enable X87 float instructions
+ xop: Enable XOP instructions
+ xsave: Support xsave instructions
+ xsavec: Support xsavec instructions
+ xsaveopt: Support xsaveopt instructions
+ xsaves: Support xsaves instructions</code></pre>
+    <p>
+    Of course, this works for any architecture, not only x86_64.
+    </p>
+    <p>Thanks Noam Preil, Christine Dodrill, David Cao, and Layne Gustafson
+    for related contributions.</p>
     
 
     <h1 id="Miscellaneous-Improvements"><a href="#toc-Miscellaneous-Improvements">Miscellaneous Improvements</a> <a class="hdr" href="#Miscellaneous-Improvements">§</a></h1>
