@@ -3152,59 +3152,105 @@ while (try it.next()) |entry| {
     {#header_close#}
 
     {#header_open|JSON#}
-commit a0abd3be85a6c24a913ee650e1fd51bf3f457c68
-Author: xackus <14938807+xackus@users.noreply.github.com>
-Date:   Sun Oct 27 10:45:54 2019 +0100
-
-    fix json parser crashing on empty input
-    remove unreachable code
     <ul>
-      <li>Sebastian Keller added {#syntax#}std.json.WriteStream.writeJson{#endsyntax#}.</li>
-      <li>Sebastian Keller fixed a leak in the json parser.</li>
-      <li>Sebastian Keller: std.json.Value: added dumpStream(), utilize WriteStream for dump().</li> 
-      <li>xackus improved documentation for JSON APIs, fixed unescaping of strings, as well as
-      other bugs, and added more test coverage.</li> 
-      <li>daurnimator improved the {#syntax#}std.json{#endsyntax#} API. (#4007)</li>
+      <li>Added {#syntax#}std.json.WriteStream.writeJson{#endsyntax#}.</li>
+      <li>std.json.Value: added dumpStream(), utilize WriteStream for dump().</li> 
+      <li>std.json.Token is now a {#syntax#}union(enum){#endsyntax#}.</li>
+      <li>Improve json.unescapeString to no longer take an allocator</li>
+      <li>Add json.stringify to encode arbitrary values to JSON</li>
+      <li>Add json.parse to automatically decode json into a struct</li>
+      <li>Add json.WriteStream.stringify</li>
+      <li>Disallow overlong and out-of-range UTF-8</li>
+      <li>Support unescaping JSON strings</li>
+      <li>Surrogate pair support</li>
+      <li>Implement copy_strings=false</li>
     </ul>
-    TODO git audit this
+    <p>
+    Here is an example of parsing into an arbitrary struct:
+    </p>
+    {#code_begin|test|json_parse_struct#}
+const std = @import("std");
+const json = std.json;
 
-    xackus: json: implement copy_strings=false (#4091)
+test "parse into struct with misc fields" {
+    @setEvalBranchQuota(10000);
+    const options = json.ParseOptions{ .allocator = std.testing.allocator };
+    const T = struct {
+        int: i64,
+        float: f64,
+        @"with\\escape": bool,
+        @"withąunicode😂": bool,
+        language: []const u8,
+        optional: ?bool,
+        default_field: i32 = 42,
+        static_array: [3]f64,
+        dynamic_array: []f64,
 
-commit 2933a8241a54af436f2df5eac73aa2acf5eabd40
-Author: hryx <codroid@gmail.com>
-Date:   Sun Jan 5 23:16:38 2020 -0800
+        const Bar = struct {
+            nested: []const u8,
+        };
+        complex: Bar,
 
-    json: disallow overlong and out-of-range UTF-8
-    
-    Fixes #2379
-    
-    = Overlong (non-shortest) sequences
-    
-    UTF-8's unique encoding scheme allows for some Unicode codepoints
-    to be represented in multiple ways. For any of these characters,
-    the spec forbids all but the shortest form. These disallowed longer
-    sequences are called "overlong". As an interesting side effect of
-    this rule, the bytes C0 and C1 never appear in valid UTF-8.
-    
-    = Codepoint range
-    
-    UTF-8 disallows representation of codepoints beyond U+10FFFF,
-    which is the highest character which can be encoded in UTF-16.
-    Because a 4-byte sequence is capable of resulting in such characters,
-    they must be explicitly rejected. This rule also has an interesting
-    side effect, which is that bytes F5 to FF never appear.
-    
-    = References
-    
-    Detecting an overlong version of a codepoint could get gnarly, but
-    luckily The Unicode Consortium did the hard work by creating this
-    handy table of valid byte sequences:
-    
-    https://unicode.org/versions/corrigendum1.html
-    
-    I thought this mapped nicely to the parser's state machine, so I
-    rearranged the relevant states to make use of it.
+        const Baz = struct {
+            foo: []const u8,
+        };
+        veryComplex: []Baz,
 
+        const Union = union(enum) {
+            x: u8,
+            float: f64,
+            string: []const u8,
+        };
+        a_union: Union,
+    };
+    const r = try json.parse(T, &json.TokenStream.init(
+        \\{
+        \\  "int": 420,
+        \\  "float": 3.14,
+        \\  "with\\escape": true,
+        \\  "with\u0105unicode\ud83d\ude02": false,
+        \\  "language": "zig",
+        \\  "optional": null,
+        \\  "static_array": [66.6, 420.420, 69.69],
+        \\  "dynamic_array": [66.6, 420.420, 69.69],
+        \\  "complex": {
+        \\    "nested": "zig"
+        \\  },
+        \\  "veryComplex": [
+        \\    {
+        \\      "foo": "zig"
+        \\    }, {
+        \\      "foo": "rocks"
+        \\    }
+        \\  ],
+        \\  "a_union": 100000
+        \\}
+    ), options);
+    defer json.parseFree(T, r, options);
+    std.testing.expectEqual(@as(i64, 420), r.int);
+    std.testing.expectEqual(@as(f64, 3.14), r.float);
+    std.testing.expectEqual(true, r.@"with\\escape");
+    std.testing.expectEqual(false, r.@"withąunicode😂");
+    std.testing.expectEqualSlices(u8, "zig", r.language);
+    std.testing.expectEqual(@as(?bool, null), r.optional);
+    std.testing.expectEqual(@as(i32, 42), r.default_field);
+    std.testing.expectEqual(@as(f64, 66.6), r.static_array[0]);
+    std.testing.expectEqual(@as(f64, 420.420), r.static_array[1]);
+    std.testing.expectEqual(@as(f64, 69.69), r.static_array[2]);
+    std.testing.expectEqual(@as(usize, 3), r.dynamic_array.len);
+    std.testing.expectEqual(@as(f64, 66.6), r.dynamic_array[0]);
+    std.testing.expectEqual(@as(f64, 420.420), r.dynamic_array[1]);
+    std.testing.expectEqual(@as(f64, 69.69), r.dynamic_array[2]);
+    std.testing.expectEqualSlices(u8, r.complex.nested, "zig");
+    std.testing.expectEqualSlices(u8, "zig", r.veryComplex[0].foo);
+    std.testing.expectEqualSlices(u8, "rocks", r.veryComplex[1].foo);
+    std.testing.expectEqual(T.Union{ .float = 100000 }, r.a_union);
+}
+    {#code_end#}
+    <p>
+    Thank you daurnimator, Sebastian Keller, xackus, hryx, and Lachlan Easton
+    for related contributions.
+    </p>
     {#header_close#}
 
     {#header_open|Bring-Your-Own-OS Abstraction Layer#}
