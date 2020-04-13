@@ -3045,125 +3045,73 @@ pub const io_mode = .evented;
     {#header_close#}
 
     {#header_open|Filesystem#}
-    <p>TODO talk about all the file system API changes</p>
-    TODO Mention stratact's improvements to make directory iteration not require heap allocation.
-    TODO mention sendfile support (Thanks Terin Stock for contributing initial os.zig implementation)
+    <p>
+    The file system APIs are starting to come together. I think this is an
+    area where Zig really shines.
+    </p>
+    <p>
+    There were many breaking changes during this release cycle, however they are
+    all working directly towards a clear vision:
+    </p>
+    <ul>
+      <li>Operations which are relative to a directory, should be methods of the
+        {#syntax#}std.fs.Dir{#endsyntax#} namespace.</li>
+      <li>Filesystem functions should not take unnecessary Allocator parameters.</li>
+    </ul>
+    <p>
+    These goals go hand-in-hand. By avoiding string manipulation of paths, Zig code
+    simultaneously avoids the need for allocators, prevents {#syntax#}error.NameTooLong{#endsyntax#}
+    errors from the kernel, and avoids
+    <a href="https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use">TOCTOU</a> bugs.
+    </p>
+    <p>
+    Here is an example from {#link|zig build#} of what it looks like to
+    "install" all the files from a source directory into a destination directory:
+    </p>
+    <pre>{#syntax#}var src_dir = try std.fs.cwd().openDir(build_output_dir, .{ .iterate = true });
+defer src_dir.close();
 
-commit 5b1a492012241276a4b7539ca6664234f0629c79
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Oct 20 21:48:23 2019 -0400
+var dest_dir = try std.fs.cwd().openDir(output_dir, .{});
+defer dest_dir.close();
 
-    breaking: improve std.fs directory handling API
-    
-     * Added `std.c.unlinkat` and `std.os.unlinkat`.
-     * Removed `std.fs.MAX_BUF_BYTES` (this declaration never made it to
-       master branch)
-     * Added `std.fs.Dir.deleteTree` to be used on an open directory handle.
-     * `std.fs.deleteTree` has better behavior for both relative and
-       absolute paths. For absolute paths, it opens the base directory
-       and uses that handle for subsequent operations. For relative paths,
-       it does a similar strategy, using the cwd handle.
-     * The error set of `std.fs.deleteTree` is improved to no longer have
-       these possible errors:
-       - OutOfMemory
-       - FileTooBig
-       - IsDir
-       - DirNotEmpty
-       - PathAlreadyExists
-       - NoSpaceLeft
-     * Added `std.fs.Dir.posix_cwd` which is a statically initialized
-       directory representing the current working directory.
-     * The error set of `std.Dir.open` is improved to no longer have these
-       possible errors:
-       - FileTooBig
-       - IsDir
-       - NoSpaceLeft
-       - PathAlreadyExists
-       - OutOfMemory
-     * Added more alternative functions to `std.fs` for when the path
-       parameter is a null terminated string. This can sometimes be more
-       effecient on systems which have an ABI based on  null terminated
-       strings.
-     * Added `std.fs.Dir.openDir`, `std.fs.Dir.deleteFile`, and
-       `std.fs.Dir.deleteDir` which all operate on an open directory handle.
-     * `std.fs.Walker.Entry` now has a `dir` field, which can be used to do
-       operations directly on `std.fs.Walker.Entry.basename`, avoiding
-       `error.NameTooLong` for deeply nested paths.
-     * Added more docs to `std.os.OpenError`
-    
-    This commit does the POSIX components for these changes. I plan to
-    follow up shortly with a commit for Windows.
-
-commit 555a2c03286507ffe4bd3bea2154dbfb719ebef1
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Mar 19 14:38:21 2020 -0400
-
-    (breaking) std.fs.copyFile now integrates with Dir
-    
-    Removed:
-     * `std.fs.updateFile`
-     * `std.fs.updateFileMode`
-     * `std.fs.copyFile`
-     * `std.fs.copyFileMode`
-    
-    Added:
-     * `std.fs.Dir.copyFile`
-     * `std.fs.copyFileAbsolute`
-     * `std.fs.updateFileAbsolute`
-    
-    Moved:
-     * `std.fs.Dir.UpdateFileOptions` => `std.fs.CopyFileOptions`
-    
-    Deprecated:
-     * `std.fs.deleteDir`
-     * `std.fs.deleteDirC`
-     * `std.fs.deleteDirW`
-     * `std.fs.readLink`
-     * `std.fs.readLinkC`
-
-
-commit 6ab156ce7dd781875db4965361418d8cdf4b3771
-Merge: 9b1b44b41 25d9ab95d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Mar 9 13:01:26 2020 -0400
-
-    Merge pull request #4695 from leroycep/feature-inode-stat
-    
-    Expose file inode number on posix and file index on windows
-
-commit 11df0d0cf8c786d5b502c21a42d47631657a42f4
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Wed Mar 11 20:56:43 2020 +0100
-
-    std: Add setEndPos to fs.file #4716
-    
-    Allow the user to shrink/grow the file size as needed.
-
-commit 27affde592653ac7f92489cec404b4bf3e0d1b29
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Mar 18 14:45:01 2020 -0400
-
-    (breaking) clarify openDir API
-    
-     * remove deprecated `std.fs.Dir` APIs
-     * `std.fs.Dir.openDir` now takes a options struct with bool fields for
-       `access_sub_paths` and `iterate`. It's now much more clear how
-       opening directories works.
-     * fixed the std lib and various zig code calling the wrong openDir
-       function.
-     * the runtime safety check for dir flags is removed in favor of the
-       cheaper option of putting a comment on the same line as handling
-       EBADF / ACCESS_DENIED, since that will show up in stack traces.
-
-
-     improvements to std.fs, std.os #4618
-
-    add missing errors to std.os.windows.CreateDirectoryError
-      TODO Ryan Liptak fixed std.fs.realpath/os.realpathW for directories on Windows.
-
+var it = src_dir.iterate();
+while (try it.next()) |entry| {
+    _ = try src_dir.updateFile(entry.name, dest_dir, entry.name, .{});
+}{#endsyntax#}</pre>
+    <p>
+    No allocator needed. Resource management is trivial. Works correctly when
+    the file paths are so deeply nested that they would be longer than PATH_MAX.
+    Avoids copying the file when
+    the destination is already up-to-date. When a file copy does happen, it uses
+    {#syntax#}sendfile{#endsyntax#} if supported, so that the file copy happens in the kernel.
+    The ignored return value there is whether or not the destination file was found to be
+    out-of-date, so that the code could know which files were fresh and which were stale.
+    </p>
+    <p>
+    When upgrading your filesystem code to Zig 0.6.0, you should ask yourself the question,
+    <em>can I rework the logic to avoid path manipulation?</em>
+    </p>
+    <p>
+    I won't list all the functions added, removed, and changed here because it is too many,
+    but I will highlight some notable changes:
+    </p>
+    <ul>
+      <li>sendfile support. File system implementations which copy files now use this when possible.</li>
+      <li>Better support for writev, readv, pwritev, preadv, etc.</li>
+      <li>Various APIs and implementations improved to take advantage of directory handles.</li>
+      <li>Error sets of various functions are improved to no longer have some kinds of errors, such
+        as {#syntax#}error.OutOfMemory{#endsyntax#}, or in the case of deleting a file, {#syntax#}error.NoSpaceLeft{#endsyntax#}.</li>
+      <li>The new convention for APIs with null-terminated path parameters is the 'Z' suffix rather than 'C' suffix.</li>
+      <li>Some APIs are modified to take "options" structs which have default fields values.</li>
+      <li>inode number / file index is exposed into File.Stat.</li>
+      <li>Cross-platform file locking flags are supported.</li>
+      <li>fs.File supports setEndPos to grow/shrink the file size as needed. (#4716)</li>
+      <li>Filesystem APIs now integrate with {#link|Async I/O#}, including automatically performing
+        operations on a file system thread pool to avoid blocking.</li>
+    </ul>
      <p>
-     Thank you to contributors Jonathan S, daurnimator, LemonBoy,
-     dimenus, and stratact.
+     Thank you to contributors LeRoyce Pearson, Jonathan S, daurnimator,
+     LemonBoy, Terin Stock, dimenus, and stratact.
      </p>
     {#header_close#}
 
