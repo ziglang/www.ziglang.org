@@ -4128,48 +4128,101 @@ Date:   Sat Feb 1 22:29:51 2020 -0500
 
     <h1 id="zig-cc"><a href="#toc-zig-cc">zig cc</a> <a class="hdr" href="#zig-cc">§</a></h1>
 
-    TODO explain zig cc, zig c++. link to the blog post.
-    TODO explain how production ready is it
-    TODO mention follow up issues
-    TODO mention https://github.com/nim-lang/Nim/pull/13757
-
-
-    TODO use -fsanitize=undefined for C code in safe build modes closes #3569
-
-    expose the ability to disable C sanitization
-    
-    and disable C sanitization when building libcs.
-    Empirically, they seem to trigger undef-sanitization.
-
-
-    improved handling of native system directories
-    
-     * `-isystem` instead of `-I` for system include directories
-       fixes a problem with native system directories interfering with zig's
-       bundled libc.
-
-
-commit 6408766d6b55d228a305b877f28f45c1587f7d39
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Mar 30 15:50:53 2020 -0400
-
-    linking: remove check for target_supports_libunwind
-    
-    I'm not sure why this was ever there. Maybe it was working around a
-    problem with LLVM 9. Anyway this fixes linking C++ code for 32 bit
-    arm and riscv.
-
     <p>
-    Zig introduces support for drop-in replacement of GCC/Clang toolchains in blog post
-    <a href="https://andrewkelley.me/post/zig-cc-powerful-drop-in-replacement-gcc-clang.html">here</a> .
-    </p>
-    New sub-commands <code>zig cc</code> and <code>zig c++</code> provide
-    command-line compatibility with the corresponding GCC/Clang drivers.
+    Many people discovered this feature from the blog post,
+    <a href="https://andrewkelley.me/post/zig-cc-powerful-drop-in-replacement-gcc-clang.html">`zig cc`: a Powerful Drop-In Replacement for GCC/Clang</a>.
     </p>
     <p>
+    In summary, since Zig links against libclang, Zig has the ability
+    to act as a C compiler. And since Zig ships with <a href="#libc">libc</a>, it has the ability to act as a
+    cross-compiling C compiler. <a href="https://ziglang.org/download/0.4.0/release-notes.html#Zig-is-also-a-C-Compiler">This feature has been available since 0.4.0</a>, however, what's new is the
+    sub-command, <code>zig cc</code>, which has the ability to parse C compiler flags.
+    </p>
+    <p>
+    In this release, <code>zig cc</code> has full compatibility with
+    <a href="https://clang.llvm.org/docs/ClangCommandLineReference.html">Clang's command line options</a>.
+    Clang is not invoked directly; some components are replaced with Zig's own.
+    For example, Zig provides all the include paths for libc, and acts as the linker driver.
     Zig translates the semantics of the arguments to its own internal build logic.
     Clang options that Zig is not aware of are forwarded to Clang directly.
     Some parameters are handled specially.
+    </p>
+    <p>
+    Since the writing of the blog post a few weeks ago, this feature has been further improved
+    with more flag integration, as well as the ability to provide <code>-lc++</code>.
+    The sub-command <code>zig c++</code> is added for convenience.
+    </p>
+    <p>
+    Yes, that's right, <strong>Zig now acts as a C++ cross-compiler as well</strong>.
+    </p>
+    <p class="file">hello.cpp</p>
+    <pre><code>#include &lt;iostream&gt;
+
+int main() {
+    std::cout &lt;&lt; "Hello World!" &lt;&lt; std::endl;
+    return 0;
+}</code></pre>
+    <p>My host is currently x86-64 linux, but I'll build it for <a href="#Windows-Support">Windows</a>
+    as well as
+    <a href="#RISC-V-Support">RISC-V</a>:</p>
+<pre><code>$ zig c++ -o hello hello.cpp -lc
+$ ./hello
+Hello World!
+$ zig c++ -o hello hello.cpp -lc -target x86_64-windows-gnu
+$ wine64 hello.exe
+Hello World!
+$ zig c++ -o hello hello.cpp -lc -target riscv64-linux
+$ qemu-riscv64 ./hello
+Hello World!</code></pre>
+    <p>
+    Thanks to this new ability, Zig is now able to <a href="#Bootstrap-Tarball">bootstrap itself</a>.
+    Bootstrapping is not to be confused with <a href="#Self-Hosted-Compiler-Progress">self-hosting</a>.
+    </p>
+    <p>
+    I forgot to mention in the blog post, when you don't pass any optimization flags to
+    <code>zig cc</code>, Zig determines that
+    <a href="https://ziglang.org/documentation/0.6.0/#Debug">Debug Mode</a> is appropriate,
+    and enables <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">Clang's UBSAN</a>.
+    </p>
+    <p>
+    People are finding out now that their C code has undefined behavior: #4830 #4965
+    </p>
+    <p>
+    zig cc is intentionally an interface to the Zig compiler, a bit higher level than using Clang
+    directly.
+    With no optimization flags specified, zig cc infers debug mode.
+    As you know from writing Zig code, debug mode has safety checks to prevent undefined behavior
+    at runtime. This applies for C code as well, taking advantage of clang's UBSAN.
+    The fact that debug mode is "default" is entirely intentional.
+    I expect this to identify many bugs in existing codebases as people use zig cc out of
+    convenience or curiosity and their code gets vetted by UBSAN for the first time.
+    </p>
+    <p>
+    Note that the presence of -O2,-O3 will cause zig to select release-fast,
+    -Os will cause zig to select release-small, and optimization flags plus
+    -fsanitize=undefined will cause zig to select release-safe.
+    </p>
+    <p>
+    I wrote a FAQ entry so that people can easily link to it to help explain when this situation
+    comes up:
+    <a href="https://github.com/ziglang/zig/wiki/FAQ#why-do-i-get-illegal-instruction-when-using-with-zig-cc-to-build-c-code">Why do I get illegal instruction when using with zig cc to build C code?</a>
+    </p>
+    <p>
+    So - is it production ready?
+    </p>
+    <p>As long as you are aware of
+    <a href="https://github.com/ziglang/zig/labels/zig%20cc">the open issues</a>,
+    and you have tested <code>zig cc</code> for your use case, and it successfully builds
+    your project, then it should be safe to use <code>zig cc</code> with 0.6.0.
+    It's not expected for this feature to change much; it is already very nearly in its
+    final form.
+    </p>
+    <p>
+    However, this is not a guarantee. Until Zig 1.0, the project
+    reserves the right to make breaking changes as necessary.
+    </p>
+    <p>
+    <a href="https://github.com/nim-lang/Nim/pull/13757">Nim has added zig cc as one of the C compiler backend options</a>.
     </p>
     <p>
     Thank you to Michael Dusan and Ryan Liptak for contributions related to this feature.
