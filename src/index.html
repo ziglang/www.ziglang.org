@@ -1058,47 +1058,54 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically link
       libc targets with <code>zig targets</code>:
       </p>
     <pre><code>...
-Available libcs:
-  aarch64_be-linux-gnu
-  aarch64_be-linux-musl
-  aarch64-linux-gnu
-  aarch64-linux-musleabi
-  armeb-linux-gnueabi
-  armeb-linux-gnueabihf
-  armeb-linux-musleabi
-  armeb-linux-musleabihf
-  arm-linux-gnueabi
-  arm-linux-gnueabihf
-  arm-linux-musleabi
-  arm-linux-musleabihf
-  i386-linux-gnu
-  i386-linux-musl
-  mips64el-linux-gnuabi64
-  mips64el-linux-gnuabin32
-  mips64el-linux-musl
-  mips64-linux-gnuabi64
-  mips64-linux-gnuabin32
-  mips64-linux-musl
-  mipsel-linux-gnu
-  mipsel-linux-musl
-  mips-linux-gnu
-  mips-linux-musl
-  powerpc64le-linux-gnu
-  powerpc64le-linux-musl
-  powerpc64-linux-gnu
-  powerpc64-linux-musl
-  powerpc-linux-gnu
-  powerpc-linux-musl
-  riscv32-linux-musl
-  riscv64-linux-gnu
-  riscv64-linux-musl
-  s390x-linux-gnu
-  s390x-linux-musl
-  sparc-linux-gnu
-  sparcv9-linux-gnu
-  x86_64-linux-gnu
-  x86_64-linux-gnux32
-  x86_64-linux-musl</code></pre>
+ "libc": [
+  "aarch64_be-linux-gnu",
+  "aarch64_be-linux-musl",
+  "aarch64_be-windows-gnu",
+  "aarch64-linux-gnu",
+  "aarch64-linux-musl",
+  "aarch64-windows-gnu",
+  "armeb-linux-gnueabi",
+  "armeb-linux-gnueabihf",
+  "armeb-linux-musleabi",
+  "armeb-linux-musleabihf",
+  "armeb-windows-gnu",
+  "arm-linux-gnueabi",
+  "arm-linux-gnueabihf",
+  "arm-linux-musleabi",
+  "arm-linux-musleabihf",
+  "arm-windows-gnu",
+  "i386-linux-gnu",
+  "i386-linux-musl",
+  "i386-windows-gnu",
+  "mips64el-linux-gnuabi64",
+  "mips64el-linux-gnuabin32",
+  "mips64el-linux-musl",
+  "mips64-linux-gnuabi64",
+  "mips64-linux-gnuabin32",
+  "mips64-linux-musl",
+  "mipsel-linux-gnu",
+  "mipsel-linux-musl",
+  "mips-linux-gnu",
+  "mips-linux-musl",
+  "powerpc64le-linux-gnu",
+  "powerpc64le-linux-musl",
+  "powerpc64-linux-gnu",
+  "powerpc64-linux-musl",
+  "powerpc-linux-gnu",
+  "powerpc-linux-musl",
+  "riscv64-linux-gnu",
+  "riscv64-linux-musl",
+  "s390x-linux-gnu",
+  "s390x-linux-musl",
+  "sparc-linux-gnu",
+  "sparcv9-linux-gnu",
+  "wasm32-freestanding-musl",
+  "x86_64-linux-gnu",
+  "x86_64-linux-gnux32",
+  "x86_64-linux-musl",
+  "x86_64-windows-gnu"
+ ],</code></pre>
     <p>
     What this means is that <code>--library c</code> for these targets <em>does not depend
       on any system files</em>!
@@ -1205,10 +1212,9 @@ pub fn build(b: *Builder) void {
 Usage: zig build [steps] [options]
 
 Steps:
-  default            Build the project
-  run                Run the app
-  install            Copy build artifacts to prefix path
-  uninstall          Remove build artifacts from prefix path
+  install (default)      Copy build artifacts to prefix path
+  uninstall              Remove build artifacts from prefix path
+  run                    Run the app
 
 General Options:
   --help                 Print this help and exit
@@ -1217,22 +1223,23 @@ General Options:
   --search-prefix [path] Add a path to look for binaries, libraries, headers
 
 Project-Specific Options:
-  -Drelease-safe=[bool] optimizations on and safety on
-  -Drelease-fast=[bool] optimizations on and safety off
+  -Dtarget=[string]      The CPU architecture, OS, and ABI to build for.
+  -Drelease-safe=[bool]  optimizations on and safety on
+  -Drelease-fast=[bool]  optimizations on and safety off
   -Drelease-small=[bool] size optimizations on and safety off
 
 Advanced Options:
-  --build-file [file]      Override path to build.zig
-  --cache-dir [path]       Override path to zig cache directory
-  --override-std-dir [arg] Override path to Zig standard library
-  --override-lib-dir [arg] Override path to Zig lib directory
-  --verbose-tokenize       Enable compiler debug output for tokenization
-  --verbose-ast            Enable compiler debug output for parsing into an AST
-  --verbose-link           Enable compiler debug output for linking
-  --verbose-ir             Enable compiler debug output for Zig IR
-  --verbose-llvm-ir        Enable compiler debug output for LLVM IR
-  --verbose-cimport        Enable compiler debug output for C imports
-  --verbose-cc             Enable compiler debug output for C compilation</code></pre>
+  --build-file [file]         Override path to build.zig
+  --cache-dir [path]          Override path to zig cache directory
+  --override-lib-dir [arg]    Override path to Zig lib directory
+  --verbose-tokenize          Enable compiler debug output for tokenization
+  --verbose-ast               Enable compiler debug output for parsing into an AST
+  --verbose-link              Enable compiler debug output for linking
+  --verbose-ir                Enable compiler debug output for Zig IR
+  --verbose-llvm-ir           Enable compiler debug output for LLVM IR
+  --verbose-cimport           Enable compiler debug output for C imports
+  --verbose-cc                Enable compiler debug output for C compilation
+  --verbose-llvm-cpu-features Enable compiler debug output for LLVM CPU features</code></pre>
       <p>You can see that one of the available steps is <code>run</code>.</p>
       <pre><code class="shell">$ zig build run
 All your base are belong to us.</code></pre>
@@ -1724,13 +1731,13 @@ All your base are belong to us.</code></pre>
 
       {#header_open|Reading and Viewing Material#}
       <ul>
+        <li>2019-09-30 - <a href="download/0.6.0/release-notes.html">Zig 0.6.0 Release Notes</a></li>
         <li>2019-09-30 - <a href="download/0.5.0/release-notes.html">Zig 0.5.0 Release Notes</a></li>
         <li>2019-09-04 - <a href="https://www.youtube.com/watch?v=LlaNges4yt8">[Video] Replacing C: The Zig Programming Language by Shritesh Bhattarai</a></li>
         <li>2019-08-07 - <a href="https://kristoff.it/blog/what-is-zig-comptime/">What is Zig's Comptime?</a></li>
         <li>2019-05-09 - <a href="https://www.youtube.com/watch?v=Gv2I7qTux7g">[Video] Zig - a programming language for maintaining robust, reusable software</a></li>
         <li>2019-04-15 - <a href="https://www.youtube.com/watch?v=eCHM8-_poZY">[Video] The Right Tool for the Right Job: Redis Modules &amp; Zig</a></li>
         <li>2019-04-08 - <a href="download/0.4.0/release-notes.html">Zig 0.4.0 Release Notes</a></li>
-        <li>2019-02-11 - <a href="https://sjdh.us/posts/continuing-with-zig/">Moving to Zig for ARM Development</a></li>
         <li>2019-01-21 - <a href="https://habr.com/en/post/435872/">Язык программирования Zig</a></li>
         <li>2018-12-04 - <a href="https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html">Using Zig to Provide Stack Traces on Kernel Panic for a Bare Bones Operating System</a></li>
         <li>2018-09-28 - <a href="download/0.3.0/release-notes.html">Zig 0.3.0 Release Notes</a></li>
