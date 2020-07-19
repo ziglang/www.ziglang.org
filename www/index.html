@@ -483,7 +483,7 @@ Tests failed. Use the following command to reproduce the failure:
       <p class="file">hello.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
-    std.debug.warn(<span class="tok-str">&quot;Hello, world!\n&quot;</span>, .{});
+    std.debug.print(<span class="tok-str">&quot;Hello, world!\n&quot;</span>, .{});
 }</code></pre><pre><code class="shell">$ zig build-exe hello.zig
 $ ./hello
 Hello, world!
@@ -599,7 +599,7 @@ All 1 tests passed.
     <span class="tok-kw">const</span> msg = <span class="tok-str">&quot;hello this is dog&quot;</span>;
     <span class="tok-kw">var</span> it = std.mem.tokenize(msg, <span class="tok-str">&quot; &quot;</span>);
     <span class="tok-kw">while</span> (it.next()) |item| {
-        std.debug.warn(<span class="tok-str">&quot;{}\n&quot;</span>, .{item});
+        std.debug.print(<span class="tok-str">&quot;{}\n&quot;</span>, .{item});
     }
 }</code></pre><pre><code class="shell">$ zig build-exe iterator.zig
 $ ./iterator
@@ -676,7 +676,7 @@ dog
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> file = std.fs.cwd().openFile(<span class="tok-str">&quot;does_not_exist/foo.txt&quot;</span>, .{}) <span class="tok-kw">catch</span> |err| label: {
-        std.debug.warn(<span class="tok-str">&quot;unable to open file: {}\n&quot;</span>, .{err});
+        std.debug.print(<span class="tok-str">&quot;unable to open file: {}\n&quot;</span>, .{err});
         <span class="tok-kw">const</span> stderr = std.io.getStdErr();
         <span class="tok-kw">break</span> :label stderr;
     };
@@ -837,9 +837,9 @@ attempt to unwrap error: FileNotFound
     foo();
     bar();
 
-    std.debug.warn(<span class="tok-str">&quot;first one:\n&quot;</span>, .{});
+    std.debug.print(<span class="tok-str">&quot;first one:\n&quot;</span>, .{});
     std.debug.dumpStackTrace(trace1);
-    std.debug.warn(<span class="tok-str">&quot;\n\nsecond one:\n&quot;</span>, .{});
+    std.debug.print(<span class="tok-str">&quot;\n\nsecond one:\n&quot;</span>, .{});
     std.debug.dumpStackTrace(trace2);
 }
 
@@ -925,7 +925,7 @@ All 1 tests passed.
         .len = <span class="tok-number">0</span>,
     };
 
-    std.debug.warn(<span class="tok-str">&quot;{}\n&quot;</span>, .{list.items.len});
+    std.debug.print(<span class="tok-str">&quot;{}\n&quot;</span>, .{list.items.len});
 }</code></pre><pre><code class="shell">$ zig build-exe generics.zig
 $ ./generics
 10
@@ -950,7 +950,7 @@ $ ./generics
 <span class="tok-kw">fn</span> <span class="tok-fn">printInfoAboutStruct</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> info = <span class="tok-builtin">@typeInfo</span>(T);
     <span class="tok-kw">inline</span> <span class="tok-kw">for</span> (info.Struct.fields) |field| {
-        std.debug.warn(
+        std.debug.print(
             <span class="tok-str">&quot;{} has a field called {} with type {}\n&quot;</span>,
             .{
                 <span class="tok-builtin">@typeName</span>(T),
@@ -1045,11 +1045,11 @@ test &quot;compile-time evaluation&quot; {
 
 <span class="tok-kw">var</span> seconds_offset: <span class="tok-type">f32</span> = <span class="tok-number">0</span>;
 
-<span class="tok-kw">extern</span> <span class="tok-kw">fn</span> <span class="tok-fn">write_callback</span>(
+<span class="tok-kw">fn</span> <span class="tok-fn">write_callback</span>(
     maybe_outstream: ?[*]c.SoundIoOutStream,
     frame_count_min: <span class="tok-type">c_int</span>,
     frame_count_max: <span class="tok-type">c_int</span>,
-) <span class="tok-type">void</span> {
+) <span class="tok-kw">callconv</span>(.C) <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> outstream = <span class="tok-builtin">@ptrCast</span>(*c.SoundIoOutStream, maybe_outstream);
     <span class="tok-kw">const</span> layout = &amp;outstream.layout;
     <span class="tok-kw">const</span> float_sample_rate = outstream.sample_rate;
@@ -1105,7 +1105,7 @@ test &quot;compile-time evaluation&quot; {
     <span class="tok-kw">const</span> device = c.soundio_get_output_device(soundio, default_output_index) <span class="tok-kw">orelse</span> <span class="tok-kw">return</span> <span class="tok-kw">error</span>.OutOfMemory;
     <span class="tok-kw">defer</span> c.soundio_device_unref(device);
 
-    std.debug.warn(<span class="tok-str">&quot;Output device: {s}\n&quot;</span>, .{([*]<span class="tok-kw">const</span> <span class="tok-type">u8</span>)(device.*.name)});
+    std.debug.print(<span class="tok-str">&quot;Output device: {s}\n&quot;</span>, .{([*]<span class="tok-kw">const</span> <span class="tok-type">u8</span>)(device.*.name)});
 
     <span class="tok-kw">const</span> outstream = c.soundio_outstream_create(device) <span class="tok-kw">orelse</span> <span class="tok-kw">return</span> <span class="tok-kw">error</span>.OutOfMemory;
     <span class="tok-kw">defer</span> c.soundio_outstream_destroy(outstream);
@@ -1226,7 +1226,7 @@ int main(int argc, char **argv) {
       <p class="file">hello.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
-    std.debug.warn(<span class="tok-str">&quot;Hello, world!\n&quot;</span>, .{});
+    std.debug.print(<span class="tok-str">&quot;Hello, world!\n&quot;</span>, .{});
 }</code></pre><pre><code class="shell">$ zig build-exe hello.zig
 $ ./hello
 Hello, world!
@@ -1381,7 +1381,7 @@ Next, try `zig build --help` or `zig build run`</code></pre>
       <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {
-    std.debug.warn(<span class="tok-str">&quot;All your base are belong to us.\n&quot;</span>);
+    std.debug.print(<span class="tok-str">&quot;All your base are belong to us.\n&quot;</span>);
 }</code></pre>
       <p class="file">build.zig</p>
       <pre><code class="zig"><span class="tok-kw">const</span> Builder = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).build.Builder;
