@@ -861,6 +861,7 @@ fn sio_err(err: c_int) !void {
         .Interrupted => return error.Interrupted,
         .Underflow => return error.Underflow,
         .EncodingString => return error.EncodingString,
+        else => return error.Unknown,
     }
 }
 
@@ -885,7 +886,7 @@ fn write_callback(
             maybe_outstream,
             @ptrCast([*]?[*]c.SoundIoChannelArea, &areas),
             &frame_count,
-        )) catch |err| std.debug.panic("write failed: {}", @errorName(err));
+        )) catch |err| std.debug.panic("write failed: {}", .{@errorName(err)});
 
         if (frame_count == 0) break;
 
@@ -906,7 +907,7 @@ fn write_callback(
         }
         seconds_offset += seconds_per_frame * @intToFloat(f32, frame_count);
 
-        sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {}", @errorName(err));
+        sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {}", .{@errorName(err)});
 
         frames_left -= frame_count;
     }
@@ -926,12 +927,12 @@ pub fn main() !void {
     const device = c.soundio_get_output_device(soundio, default_output_index) orelse return error.OutOfMemory;
     defer c.soundio_device_unref(device);
 
-    std.debug.print("Output device: {s}\n", .{([*]const u8)(device.*.name)});
+    std.debug.print("Output device: {s}\n", .{device.*.name});
 
     const outstream = c.soundio_outstream_create(device) orelse return error.OutOfMemory;
     defer c.soundio_outstream_destroy(outstream);
 
-    outstream.*.format = c.SoundIoFormatFloat32NE;
+    outstream.*.format = @intToEnum(c.SoundIoFormat, c.SoundIoFormatFloat32NE);
     outstream.*.write_callback = write_callback;
 
     try sio_err(c.soundio_outstream_open(outstream));
