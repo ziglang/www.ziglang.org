@@ -1,0 +1,67 @@
+{{ define "main" }}
+  <div class="container">
+  	<h1>Releases</h1>
+    <p>You can also 
+      <a href="https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager">
+      install Zig from a package manager</a>.
+    </p>
+    <p>There is a 
+      <a href="https://ziglang.org/download/index.json">
+      JSON version of this page</a>.
+    </p>
+
+    <div>
+      {{ range $release_name := $.Site.Params.downloads_release_order }}
+        {{ $release := index $.Site.Data.releases $release_name }}
+        <h2>{{$release_name}}</h2>
+
+        <ul>
+          <li>{{ index $release "date" }}</li>
+          <li>{{ i18n "download-documentation" (index $release "docs") | safeHTML }}</li>
+          {{ if isset $release "notes"}}
+          <li>{{ i18n "download-release-notes" (index $release "notes") | safeHTML }}</li>
+          {{ end }}
+          {{ if isset $release "stdDocs"}}
+          <li>{{ i18n "download-stdlib-docs" (index $release "stdDocs") | safeHTML }}</li>
+          {{ end }}
+        </ul>
+
+        <table>
+          <colgroup>
+            <col width="40%">
+            <col width="10%">
+            <col width="10%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>{{ i18n "download-filename" }}</th>
+              <th>{{ i18n "download-kind" }}</th>
+              <th>{{ i18n "download-size" }}</th>
+              <th>Sha256</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ range $target_name := $.Site.Params.downloads_arch_order}}
+              {{ with index $release $target_name}}
+                <tr>
+                  <td><a href="{{ index . "tarball"}}">{{ path.Base (index . "tarball")}}</a></td>
+                  <td>
+                  {{ if eq $target_name "src"}}
+                    {{ i18n "download-source" }}
+                  {{ else if eq $target_name "bootstrap" }}
+                    {{ i18n "download-source" }}
+                  {{ else }}
+                    {{ i18n "download-binary" }}
+                  {{ end }}
+                  </td>
+                  <td>{{ lang.NumFmt 1 (div (int (index . "size")) 1048576.0)}}MiB</td>
+                  <td class="code">{{ index . "shasum"}}</td>
+                </tr>
+              {{end}}
+            {{ end }}
+          </tbody>
+        </table>
+      {{ end }}
+    </div>
+  </div>
+{{ end }}

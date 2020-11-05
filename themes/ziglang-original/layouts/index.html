@@ -1,0 +1,37 @@
+{{ define "links" }}
+	{{ $style := resources.Get "css/home.css" | toCSS | minify | fingerprint }}
+	<link type="text/css" rel="stylesheet" href="{{ $style.Permalink }}">
+{{ end }}
+
+{{ define "main" }}
+{{ .Content }}
+
+<div class="container parent-link" style="display:flex; flex-direction: row; justify-content: space-between;">
+	<a href="" class="parent-link"></a>
+	{{ if ne .Lang "en"}}
+		<a href="https://github.com/ziglang/www.ziglang.org/" class="external-link no-mobile" target="_blank" rel="noopener">
+		This translation has been contributed by the Zig community
+		</a>
+	{{ end }}
+</div>
+{{ end }}
+
+{{ define "banana" }}
+		{{ $samples_path := "./code-samples" }}
+		{{ range (readDir $samples_path) }}
+			<div>
+				{{/* 
+
+					The following terrible hack basically 
+					just does `$samples_path + .Name` and 
+					it's needed because for some reason 
+					files can't give you a full path AND 
+					we don't even have simple string concat.
+					WTF.
+
+				 */}}
+				{{ $sample := .Name | printf "%s/%s" $samples_path | printf "%s" }}
+				{{ highlight (readFile $sample) "zig" ""}}
+			</div>
+		{{ end }}
+{{ end }}
