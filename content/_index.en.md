@@ -60,7 +60,7 @@ There is no concept of "official" or "unofficial", however, each gathering place
 {{< flexrow class="container" >}}
 {{% div style="width:60%;" %}}
 # Main development
-The official Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
+The Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
 Contributors are expected to follow Zig's [Code of Codunct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
