@@ -12,8 +12,8 @@ This section lists resources useful to go from knowing nothing about Zig up to u
 ## Introduction
 These are all introductions to Zig aimed at programmers with different backgrounds.
 
-- [Introduction to programming the physical machine](#yolo)  
-An introduction to Zig for programmers experienced with high-level programming languages such as Python or Javascript.
+<!-- - [Introduction to programming the physical machine](#yolo)  
+An introduction to Zig for programmers experienced with high-level programming languages such as Python or Javascript. -->
 - [In-depth Overview](overview/)  
 Here's an in-depth feature overview of Zig from a systems-programming perspective.
 - [Why Zig When There is Already C++, D, and Rust?](why_zig_rust_d_cpp/)  

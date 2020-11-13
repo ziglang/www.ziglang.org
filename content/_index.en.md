@@ -5,7 +5,7 @@ title: Home
 Zig is a general-purpose programming language and toolchain for maintaining **robust**, **optimal**, and **reusable** software.  
 {{< /slogan >}}
 
-{{< flexrow class="container" >}}
+{{< flexrow class="container" style="padding: 20px 0;">}}
 {{% div style="max-width: 500px" %}}
 # ⚡ A simple language
 Focus on debugging your application rather than debugging your programming language knowledge.
@@ -30,13 +30,13 @@ Write fast, clear code capable of handling all error conditions.
 
 
 {{% /div %}}
-{{< div style="overflow-x: scroll;">}}
+{{< div style="overflow-x: auto;">}}
 {{% zigdocgen "docgen-samples/index.md" %}}
 {{< /div >}}
 {{< /flexrow >}}
 
 {{% div class="alt-background" %}}
-{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center;" title="Community" %}}
+{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Community" %}}
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
@@ -67,13 +67,11 @@ Contributors are expected to follow Zig's [Code of Codunct](https://github.com/z
 <img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
 {{% /div %}}
 {{< /flexrow >}}
-<div style="height: 50px;"></div>
-
 {{% /div %}}
 {{% /div %}}
 
 
-{{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center;" title="Zig Software Foundation" %}}
+{{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
 ## The ZSF is a 501(c)(3) non-profit corporation.
 
 The Zig Software Foundation is a non-profit corporation founded in 2020 by Andrew Kelley, the creator of Zig, with the goal of supporting the development of the language. Currently, the ZSF is able to offer paid work at competitive rates to a small number of core contributors. We hope to be able to extend this offer to more core contributors in the future.
@@ -86,7 +84,7 @@ At the moment the Zig Software Foundation is sustained by donations.
 {{% /div %}}
 
 
-{{< div class="alt-background" >}}
+{{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="Sponsors" %}}
 # GitHub Sponsors
 Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open source community rather than corporate shareholders. In particular, these fine folks sponsor Zig for $200/month or more:
