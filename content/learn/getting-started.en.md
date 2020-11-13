@@ -1,6 +1,5 @@
 ---
-title: Getting started on Linux
+title: Getting started Guide
 toc: true
 ---
 
-linux
