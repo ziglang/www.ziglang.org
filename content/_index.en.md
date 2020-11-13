@@ -30,7 +30,7 @@ Write fast, clear code capable of handling all error conditions.
 
 
 {{% /div %}}
-{{< div >}}
+{{< div style="overflow-x: scroll;">}}
 {{% zigdocgen "docgen-samples/index.md" %}}
 {{< /div >}}
 {{< /flexrow >}}
@@ -38,12 +38,12 @@ Write fast, clear code capable of handling all error conditions.
 {{% div class="alt-background" %}}
 {{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center;" title="Community" %}}
 
-{{< flexrow class="container" >}}
+{{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
 <img src="https://raw.githubusercontent.com/ziglang/logo/master/ziggy.svg" style="max-height: 200px">
 {{% /div %}}
 
-{{% div style="width:75%;" %}}
+{{% div class="community-message" %}}
 # The Zig community is decentralized 
 Anyone is free to start and maintain their own space for the community to gather.  
 There is no concept of "official" or "unofficial", however, each gathering place has its own moderators and rules.
@@ -57,8 +57,8 @@ There is no concept of "official" or "unofficial", however, each gathering place
 {{< /flexrow >}}
 <div style="height: 50px;"></div>
 
-{{< flexrow class="container" >}}
-{{% div style="width:60%;" %}}
+{{< flexrow class="container" style="justify-content: center;" >}}
+{{% div class="main-development-message" %}}
 # Main development
 The Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
 Contributors are expected to follow Zig's [Code of Codunct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
@@ -75,13 +75,21 @@ Contributors are expected to follow Zig's [Code of Codunct](https://github.com/z
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center;" title="Zig Software Foundation" %}}
 ## The ZSF is a 501(c)(3) non-profit corporation.
+
+The Zig Software Foundation is a non-profit corporation founded in 2020 by Andrew Kelley, the creator of Zig, with the goal of supporting the development of the language. Currently, the ZSF is able to offer paid work at competitive rates to a small number of core contributors. We hope to be able to extend this offer to more core contributors in the future.
+
+At the moment the Zig Software Foundation is sustained by donations.
+
+<h1>
+	<a href="zsf/" class="button" style="display:inline;">Learn More</a>
+</h1>
 {{% /div %}}
 
 
 {{< div class="alt-background" >}}
 {{% div class="container" title="Sponsors" %}}
-# Individuals
-Thanks to people who [sponsor Zig](https://github.com/sponsors/ziglang/), the project is accountable to the open source community rather than corporate shareholders. In particular, these fine folks sponsor Zig for $200/month or more:
+# GitHub Sponsors
+Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open source community rather than corporate shareholders. In particular, these fine folks sponsor Zig for $200/month or more:
 
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
