@@ -98,7 +98,7 @@ Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open
 - [drfuchs](https://github.com/drfuchs)
 - Eleanor Bartle
 
-This section is updated at the beginning of each month. 
+This section is updated at the beginning of each month.
 {{% /div %}}
 {{< /div >}}
 
