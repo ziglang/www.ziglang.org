@@ -1,0 +1,158 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><title>&lt;!-- This will override the default value set in baseof.html; i.e., "Zig Programming Language" in the original example-->
+Code Examples &ndash; Zig Programming Language</title><meta name=viewport content="width=device-width,initial-scale=1"><link type=text/css rel=stylesheet href=//ziglang.github.io/www.ziglang.org/css/style.css><link type=text/css rel=stylesheet href=//ziglang.github.io/www.ziglang.org/css/navigation.min.7579a91d3145fb7aa83799b414f28dd5ecb35cdf9eddc17faec97bcbf0b5d9bd.css></head><body><div class=container><a href=//ziglang.github.io/www.ziglang.org/><span id=header-image></span></a></div><nav id=mobile-navbar class=nav><a href=/www.ziglang.org/download/ class=navbar-item>Downloads & Docs</a>
+<label for=mobile-toggle id=hamburger><svg style="width:2em;height:2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M3 6H21V8H3V6m0 5H21v2H3V11m0 5H21v2H3V16z"/></svg></label><input type=checkbox name=mobile-toggle id=mobile-toggle><div class=container id=menu><a href=/www.ziglang.org/learn/ class=navbar-item>Learn</a>
+<a href=/www.ziglang.org/tools/ class=navbar-item>Tools</a>
+<a href=/www.ziglang.org/news/ class=navbar-item>News</a>
+<a href=https://github.com/ziglang/zig class="navbar-item external-link external-link-light">Source Code</a>
+<a href=https://github.com/ziglang/zig/wiki/Community class="navbar-item external-link external-link-light">Join a Community</a>
+<a href=/www.ziglang.org/zsf/ class=navbar-item><img src=//ziglang.github.io/www.ziglang.org/heart.svg style=vertical-align:middle;margin-right:5px>Sponsor the ZSF</a></div></nav><nav id=navbar class=nav><div class=container><a href=/www.ziglang.org/download/ class=navbar-item>Downloads & Documentation</a>
+<a href=/www.ziglang.org/learn/ class=navbar-item>Learn</a>
+<a href=/www.ziglang.org/tools/ class=navbar-item>Tools</a>
+<a href=/www.ziglang.org/news/ class=navbar-item>News</a>
+<a href=https://github.com/ziglang/zig class="navbar-item external-link external-link-light">Source Code</a>
+<a href=https://github.com/ziglang/zig/wiki/Community class="navbar-item external-link external-link-light">Join a Community</a>
+<a href=/www.ziglang.org/zsf/ class=navbar-item><img src=//ziglang.github.io/www.ziglang.org/heart.svg style=vertical-align:middle;margin-right:5px>Sponsor the Zig Software Foundation</a></div></nav><div id=content><div class="container parent-link" style=display:flex;flex-direction:row;justify-content:space-between><a href=//ziglang.github.io/www.ziglang.org/learn/ class=parent-link>← Back to the <b>Learn</b> section</a></div><div class=container><h1>Code Examples</h1><nav id=TableOfContents><ul><li><a href=#memory-leak-detection>Memory leak detection</a></li><li><a href=#c-interoperability>C interoperability</a></li><li><a href=#zigg-zagg>Zigg Zagg</a></li><li><a href=#generic-type>Generic Type</a></li></ul></nav><h2 id=memory-leak-detection>Memory leak detection</h2><p>Using <code>std.GeneralPurposeAllocator</code> you can easily track double frees and memory leaks.</p><p class=file>leak.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
+
+<span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() !<span class=tok-type>void</span> {
+     <span class=tok-kw>var</span> gpalloc = std.heap.GeneralPurposeAllocator(.{}){};
+     <span class=tok-kw>defer</span> std.debug.assert(!gpalloc.deinit());
+     
+     <span class=tok-kw>const</span> alloc = &amp;gpalloc.allocator;
+     
+     <span class=tok-kw>const</span> u32_ptr = <span class=tok-kw>try</span> alloc.create(<span class=tok-type>u32</span>);
+     <span class=tok-comment>// oops I forgot to free!</span>
+}</code></pre><pre><code class=shell>$ zig build-exe leak.zig
+$ ./leak
+error(std): Memory leak detected: 
+<span class=t37_1>/private/var/folders/8m/n62vhdk50yx5514t3sd_wckm0000gn/T/zig_docgen743117711/docgen_tmp/leak.zig:9:38</span>: <span class=t2_0>0x10ff2796f in main (leak)</span>
+     const u32_ptr = try alloc.create(u32);
+                                     <span class=t32_1>^</span>
+<span class=t37_1>/Users/kristoff/zig/build/lib/zig/std/start.zig:334:37</span>: <span class=t2_0>0x10ff29152 in std.start.main (leak)</span>
+            const result = root.main() catch |err| {
+                                    <span class=t32_1>^</span>
+<span class=t37_1>???:?:?</span>: <span class=t2_0>0x7fff779a33d4 in ??? (???)</span>
+<span class=t37_1>???:?:?</span>: <span class=t2_0>0x0 in ??? (???)</span>
+
+
+reached unreachable code
+<span class=t37_1>/Users/kristoff/zig/build/lib/zig/std/debug.zig:225:14</span>: <span class=t2_0>0x10ff26e58 in std.debug.assert (leak)</span>
+    if (!ok) unreachable; // assertion failure
+             <span class=t32_1>^</span>
+<span class=t37_1>/private/var/folders/8m/n62vhdk50yx5514t3sd_wckm0000gn/T/zig_docgen743117711/docgen_tmp/leak.zig:5:28</span>: <span class=t2_0>0x10ff27a00 in main (leak)</span>
+     defer std.debug.assert(!gpalloc.deinit());
+                           <span class=t32_1>^</span>
+<span class=t37_1>/Users/kristoff/zig/build/lib/zig/std/start.zig:334:37</span>: <span class=t2_0>0x10ff29152 in std.start.main (leak)</span>
+            const result = root.main() catch |err| {
+                                    <span class=t32_1>^</span>
+<span class=t37_1>???:?:?</span>: <span class=t2_0>0x7fff779a33d4 in ??? (???)</span>
+<span class=t37_1>???:?:?</span>: <span class=t2_0>0x0 in ??? (???)</span>
+(process terminated by signal)</code></pre><h2 id=c-interoperability>C interoperability</h2><p>Example of importing a C header file and linking to both libc and raylib.</p><pre>
+
+<code class=zig><span class=tok-comment>// build with `zig build-exe cimport.zig -lc -lraylib`</span>
+<span class=tok-kw>const</span> ray = <span class=tok-builtin>@cImport</span>({
+    <span class=tok-builtin>@cInclude</span>(<span class=tok-str>&quot;raylib.h&quot;</span>);
+});
+
+<span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() <span class=tok-type>void</span> {
+    <span class=tok-kw>const</span> screenWidth = <span class=tok-number>800</span>;
+    <span class=tok-kw>const</span> screenHeight = <span class=tok-number>450</span>;
+    
+    ray.InitWindow(screenWidth, screenHeight, <span class=tok-str>&quot;raylib [core] example - basic window&quot;</span>);
+    <span class=tok-kw>defer</span> ray.CloseWindow();
+    
+    ray.SetTargetFPS(<span class=tok-number>60</span>);
+    
+    <span class=tok-kw>while</span>(!ray.WindowShouldClose()) {
+        ray.BeginDrawing();
+        <span class=tok-kw>defer</span> ray.EndDrawing();
+        
+        ray.ClearBackground(ray.RAYWHITE);
+        ray.DrawText(<span class=tok-str>&quot;Hello, World!&quot;</span>, <span class=tok-number>190</span>, <span class=tok-number>200</span>, <span class=tok-number>20</span>, ray.LIGHTGRAY);
+    }
+}</code>
+
+
+</pre><h2 id=zigg-zagg>Zigg Zagg</h2><p>Zig is <em>optimized</em> for coding interviews.</p><p class=file>zag.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
+
+<span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() <span class=tok-type>void</span> {
+    <span class=tok-kw>var</span> i: <span class=tok-type>usize</span> = <span class=tok-number>1</span>;
+    <span class=tok-kw>while</span> (i &lt;= <span class=tok-number>16</span>) : (i += <span class=tok-number>1</span>) {
+        <span class=tok-kw>if</span> (i % <span class=tok-number>15</span> == <span class=tok-number>0</span>) std.log.info(<span class=tok-str>&quot;ZiggZagg&quot;</span>, .{}) <span class=tok-comment>//</span>
+        <span class=tok-kw>else</span> <span class=tok-kw>if</span> (i % <span class=tok-number>3</span> == <span class=tok-number>0</span>) std.log.info(<span class=tok-str>&quot;Zigg&quot;</span>, .{}) <span class=tok-comment>//</span>
+        <span class=tok-kw>else</span> <span class=tok-kw>if</span> (i % <span class=tok-number>5</span> == <span class=tok-number>0</span>) std.log.info(<span class=tok-str>&quot;Zagg&quot;</span>, .{}) <span class=tok-comment>//</span>
+        <span class=tok-kw>else</span> std.log.info(<span class=tok-str>&quot;{}&quot;</span>, .{i});
+    }
+}</code></pre><pre><code class=shell>$ zig build-exe zag.zig
+$ ./zag
+info: 1
+info: 2
+info: Zigg
+info: 4
+info: Zagg
+info: Zigg
+info: 7
+info: 8
+info: Zigg
+info: Zagg
+info: 11
+info: Zigg
+info: 13
+info: 14
+info: ZiggZagg
+info: 16
+</code></pre><h2 id=generic-type>Generic Type</h2><p>In Zig types are comptime values and we use functions that return a type to implement generic algorithms and data structures. In this example we implement a simple generic queue and test its behaviour.</p><p class=file>queue.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
+
+<span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>Queue</span>(<span class=tok-kw>comptime</span> Child: <span class=tok-type>type</span>) <span class=tok-type>type</span> {
+    <span class=tok-kw>return</span> <span class=tok-kw>struct</span> {
+        <span class=tok-kw>const</span> This = <span class=tok-builtin>@This</span>();
+        <span class=tok-kw>const</span> Node = <span class=tok-kw>struct</span> {
+            data: Child,
+            next: ?*Node,
+        };
+        alloc: *std.mem.Allocator,
+        start: ?*Node,
+        end: ?*Node,
+
+        <span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>init</span>(alloc: *std.mem.Allocator) This {
+            <span class=tok-kw>return</span> This{
+                .alloc = alloc,
+                .start = <span class=tok-null>null</span>,
+                .end = <span class=tok-null>null</span>,
+            };
+        }
+        <span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>enqueue</span>(this: *This, value: Child) !<span class=tok-type>void</span> {
+            <span class=tok-kw>const</span> node = <span class=tok-kw>try</span> this.alloc.create(Node);
+            node.* = .{ .data = value, .next = <span class=tok-null>null</span> };
+            <span class=tok-kw>if</span> (this.end) |end| end.next = node <span class=tok-comment>//</span>
+            <span class=tok-kw>else</span> this.start = node;
+            this.end = node;
+        }
+        <span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>dequeue</span>(this: *This) ?Child {
+            <span class=tok-kw>if</span> (this.start == <span class=tok-null>null</span>) <span class=tok-kw>return</span> <span class=tok-null>null</span>;
+            <span class=tok-kw>const</span> start = this.start.?;
+            <span class=tok-kw>defer</span> this.alloc.destroy(start);
+            this.start = start.next;
+            <span class=tok-kw>return</span> start.data;
+        }
+    };
+}
+
+<span class=tok-kw>test</span> <span class=tok-str>&quot;queue&quot;</span> {
+    <span class=tok-kw>const</span> alloc = std.testing.allocator;
+
+    <span class=tok-kw>var</span> int_queue = Queue(<span class=tok-type>i32</span>).init(alloc);
+
+    <span class=tok-kw>try</span> int_queue.enqueue(<span class=tok-number>25</span>);
+    <span class=tok-kw>try</span> int_queue.enqueue(<span class=tok-number>50</span>);
+    <span class=tok-kw>try</span> int_queue.enqueue(<span class=tok-number>75</span>);
+    <span class=tok-kw>try</span> int_queue.enqueue(<span class=tok-number>100</span>);
+
+    std.testing.expectEqual(int_queue.dequeue(), <span class=tok-number>25</span>);
+    std.testing.expectEqual(int_queue.dequeue(), <span class=tok-number>50</span>);
+    std.testing.expectEqual(int_queue.dequeue(), <span class=tok-number>75</span>);
+    std.testing.expectEqual(int_queue.dequeue(), <span class=tok-number>100</span>);
+    std.testing.expectEqual(int_queue.dequeue(), <span class=tok-null>null</span>);
+}</code></pre><pre><code class=shell>$ zig test queue.zig
+1/1 test &quot;queue&quot;... OK
+All 1 tests passed.
+</code></pre></div></div>footer</body></html>
