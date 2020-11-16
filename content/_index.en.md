@@ -7,7 +7,7 @@ Zig is a general-purpose programming language and toolchain for maintaining **ro
 
 {{< flexrow class="container" style="padding: 20px 0;">}}
 {{% div style="max-width: 500px" %}}
-# ⚡ A simple language
+# ⚡ A Simple Language
 Focus on debugging your application rather than debugging your programming language knowledge.
 
 - No hidden control flow.
