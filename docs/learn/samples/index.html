@@ -11,7 +11,7 @@ Code Examples &ndash; Zig Programming Language</title><meta name=viewport conten
 <a href=/www.ziglang.org/news/ class=navbar-item>News</a>
 <a href=https://github.com/ziglang/zig class="navbar-item external-link external-link-light">Source Code</a>
 <a href=https://github.com/ziglang/zig/wiki/Community class="navbar-item external-link external-link-light">Join a Community</a>
-<a href=/www.ziglang.org/zsf/ class=navbar-item><img src=//ziglang.github.io/www.ziglang.org/heart.svg style=vertical-align:middle;margin-right:5px>Sponsor the Zig Software Foundation</a></div></nav><div id=content><div class="container parent-link" style=display:flex;flex-direction:row;justify-content:space-between><a href=//ziglang.github.io/www.ziglang.org/learn/ class=parent-link>← Back to the <b>Learn</b> section</a></div><div class=container><h1>Code Examples</h1><nav id=TableOfContents><ul><li><a href=#memory-leak-detection>Memory leak detection</a></li><li><a href=#c-interoperability>C interoperability</a></li><li><a href=#zigg-zagg>Zigg Zagg</a></li><li><a href=#generic-type>Generic Type</a></li></ul></nav><h2 id=memory-leak-detection>Memory leak detection</h2><p>Using <code>std.GeneralPurposeAllocator</code> you can easily track double frees and memory leaks.</p><p class=file>leak.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
+<a href=/www.ziglang.org/zsf/ class=navbar-item><img src=//ziglang.github.io/www.ziglang.org/heart.svg style=vertical-align:middle;margin-right:5px>Sponsor the Zig Software Foundation</a></div></nav><div id=content><div class="container parent-link" style=display:flex;flex-direction:row;justify-content:space-between><a href=//ziglang.github.io/www.ziglang.org/learn/ class=parent-link>← Back to the <b>Learn</b> section</a></div><div class=container><h1>Code Examples</h1><nav id=TableOfContents><ul><li><a href=#memory-leak-detection>Memory leak detection</a></li><li><a href=#c-interoperability>C interoperability</a></li><li><a href=#zigg-zagg>Zigg Zagg</a></li><li><a href=#generic-type>Generic Type</a></li><li><a href=#using-curl-from-zig>Using cURL from Zig</a></li></ul></nav><h2 id=memory-leak-detection>Memory leak detection</h2><p>Using <code>std.GeneralPurposeAllocator</code> you can easily track double frees and memory leaks.</p><p class=file>leak.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
 
 <span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() !<span class=tok-type>void</span> {
      <span class=tok-kw>var</span> gpalloc = std.heap.GeneralPurposeAllocator(.{}){};
@@ -72,7 +72,7 @@ reached unreachable code
 }</code>
 
 
-</pre><h2 id=zigg-zagg>Zigg Zagg</h2><p>Zig is <em>optimized</em> for coding interviews.</p><p class=file>zag.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
+</pre><h2 id=zigg-zagg>Zigg Zagg</h2><p>Zig is <em>optimized</em> for coding interviews (not really).</p><p class=file>zag.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
 
 <span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() <span class=tok-type>void</span> {
     <span class=tok-kw>var</span> i: <span class=tok-type>usize</span> = <span class=tok-number>1</span>;
@@ -155,4 +155,57 @@ info: 16
 }</code></pre><pre><code class=shell>$ zig test queue.zig
 1/1 test &quot;queue&quot;... OK
 All 1 tests passed.
-</code></pre></div></div>footer</body></html>
+</code></pre><h2 id=using-curl-from-zig>Using cURL from Zig</h2><pre>
+
+<code class=zig><span class=tok-comment>// compile with `zig build-exe zig-curl-test.zig --library curl --library c $(pkg-config --cflags libcurl)`</span>
+<span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
+<span class=tok-kw>const</span> cURL = <span class=tok-builtin>@cImport</span>({
+    <span class=tok-builtin>@cInclude</span>(<span class=tok-str>&quot;curl/curl.h&quot;</span>);
+});
+
+<span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() !<span class=tok-type>void</span> {
+    <span class=tok-kw>var</span> arena_state = std.heap.ArenaAllocator.init(std.heap.c_allocator);
+    <span class=tok-kw>defer</span> arena_state.deinit();
+    <span class=tok-kw>var</span> allocator = &amp;arena_state.allocator;
+
+    <span class=tok-comment>// global curl init, or fail</span>
+    <span class=tok-kw>if</span> (cURL.curl_global_init(cURL.CURL_GLOBAL_ALL) != .CURLE_OK)
+        <span class=tok-kw>return</span> <span class=tok-kw>error</span>.CURLGlobalInitFailed;
+
+    <span class=tok-comment>// curl easy handle init, or fail</span>
+    <span class=tok-kw>const</span> handle = cURL.curl_easy_init() <span class=tok-kw>orelse</span> <span class=tok-kw>return</span> <span class=tok-kw>error</span>.CURLHandleInitFailed;
+    <span class=tok-kw>defer</span> {
+        cURL.curl_easy_cleanup(handle);
+        cURL.curl_global_cleanup();
+    }
+
+    <span class=tok-kw>var</span> response_buffer = std.ArrayList(<span class=tok-type>u8</span>).init(allocator);
+    <span class=tok-kw>defer</span> response_buffer.deinit();
+
+    <span class=tok-comment>// setup curl options</span>
+    <span class=tok-kw>if</span> (cURL.curl_easy_setopt(handle, .CURLOPT_URL, <span class=tok-str>&quot;https://ziglang.org&quot;</span>) != .CURLE_OK)
+        <span class=tok-kw>return</span> <span class=tok-kw>error</span>.CouldNotSetURL;
+
+    <span class=tok-comment>// set write function callbacks</span>
+    <span class=tok-kw>if</span> (cURL.curl_easy_setopt(handle, .CURLOPT_WRITEFUNCTION, writeToArrayListCallback) != .CURLE_OK)
+        <span class=tok-kw>return</span> <span class=tok-kw>error</span>.CouldNotSetWriteCallback;
+    <span class=tok-kw>if</span> (cURL.curl_easy_setopt(handle, .CURLOPT_WRITEDATA, &amp;response_buffer) != .CURLE_OK)
+        <span class=tok-kw>return</span> <span class=tok-kw>error</span>.CouldNotSetWriteCallback;
+
+    <span class=tok-comment>// perform</span>
+    <span class=tok-kw>if</span> (cURL.curl_easy_perform(handle) != .CURLE_OK)
+        <span class=tok-kw>return</span> <span class=tok-kw>error</span>.FailedToPerformRequest;
+
+    std.log.info(<span class=tok-str>&quot;Got response of {} bytes&quot;</span>, .{response_buffer.items.len});
+    std.debug.print(<span class=tok-str>&quot;{}\n&quot;</span>, .{response_buffer.items});
+}
+
+<span class=tok-kw>fn</span> <span class=tok-fn>writeToArrayListCallback</span>(data: *<span class=tok-type>c_void</span>, size: <span class=tok-type>c_uint</span>, nmemb: <span class=tok-type>c_uint</span>, user_data: *<span class=tok-type>c_void</span>) <span class=tok-kw>callconv</span>(.C) <span class=tok-type>c_uint</span> {
+    <span class=tok-kw>var</span> buffer = <span class=tok-builtin>@intToPtr</span>(*std.ArrayList(<span class=tok-type>u8</span>), <span class=tok-builtin>@ptrToInt</span>(user_data));
+    <span class=tok-kw>var</span> typed_data = <span class=tok-builtin>@intToPtr</span>([*]<span class=tok-type>u8</span>, <span class=tok-builtin>@ptrToInt</span>(data));
+    buffer.appendSlice(typed_data[<span class=tok-number>0</span> .. nmemb * size]) <span class=tok-kw>catch</span> <span class=tok-kw>return</span> <span class=tok-number>0</span>;
+    <span class=tok-kw>return</span> nmemb * size;
+}</code>
+
+
+</pre></div></div>footer</body></html>
