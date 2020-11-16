@@ -18,7 +18,7 @@ An introduction to Zig for programmers experienced with high-level programming l
 Here's an in-depth feature overview of Zig from a systems-programming perspective.
 - [Why Zig When There is Already C++, D, and Rust?](why_zig_rust_d_cpp/)  
 An introduction to Zig for C++, D, and Rust programmers.
-- [Code Examples](#)  
+- [Code Examples](samples/)  
 A list of snippets to get a feeling for how Zig code looks like.
 
 
