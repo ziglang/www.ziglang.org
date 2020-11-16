@@ -18,7 +18,7 @@ Example of importing a C header file and linking to both libc and raylib.
 
 
 ## Zigg Zagg
-Zig is *optimized* for coding interviews.
+Zig is *optimized* for coding interviews (not really).
 
 {{< zigdocgen "docgen-samples/samples/3-ziggzagg.md" >}}
 
@@ -27,3 +27,10 @@ Zig is *optimized* for coding interviews.
 In Zig types are comptime values and we use functions that return a type to implement generic algorithms and data structures. In this example we implement a simple generic queue and test its behaviour.
 
 {{< zigdocgen "docgen-samples/samples/4-generic-type.md" >}}
+
+
+## Using cURL from Zig
+
+<pre>
+{{< zigdocgen "docgen-samples/samples/5-curl.md" >}}
+</pre>
