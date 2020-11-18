@@ -76,7 +76,7 @@ Contributors are expected to follow Zig's [Code of Codunct](https://github.com/z
 
 The Zig Software Foundation is a non-profit corporation founded in 2020 by Andrew Kelley, the creator of Zig, with the goal of supporting the development of the language. Currently, the ZSF is able to offer paid work at competitive rates to a small number of core contributors. We hope to be able to extend this offer to more core contributors in the future.
 
-At the moment the Zig Software Foundation is sustained by donations.
+The Zig Software Foundation is sustained by donations.
 
 <h1>
 	<a href="zsf/" class="button" style="display:inline;">Learn More</a>
