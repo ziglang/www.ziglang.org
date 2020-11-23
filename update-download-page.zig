@@ -99,5 +99,5 @@ fn render(
             line += 1;
         }
     }
-    try std.fs.cwd().writeFile(out_file, buffer.span());
+    try std.fs.cwd().writeFile(out_file, buffer.items);
 }
