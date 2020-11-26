@@ -5,8 +5,9 @@ title: Home
 Zig is a general-purpose programming language and toolchain for maintaining **robust**, **optimal**, and **reusable** software.  
 {{< /slogan >}}
 
-{{< flexrow class="container" style="padding: 20px 0;">}}
-{{% div style="max-width: 500px" %}}
+{{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;">}}
+{{% div class="features" %}}
+
 # ⚡ A Simple Language
 Focus on debugging your application rather than debugging your programming language knowledge.
 
@@ -21,17 +22,19 @@ A fresh approach to metaprogramming based on compile-time code execution and laz
 - Manipulate types as values without runtime overhead.
 - Comptime emulates the target architecture.
 
-# ⚡ Performance and Safety
+# ⚡ Performance Meets Safety
 Write fast, clear code capable of handling all error conditions.
 
-- Use error unions and optional types to handle exceptional conditions efficiently.
-- Different release modes let you choose the right balance between performance and runtime safety guarantees.
-- Use comptime to write release-aware code, like std.GeneralPurposeAllocator.
+- The language gracefully guides your error handling logic.
+- Configurable runtime checks help you strike a balance between performance and safety guarantees.
+- Take advantage of vector types to espress SIMD instructions portably.
 
 
 {{% /div %}}
-{{< div style="overflow-x: auto;">}}
-{{% zigdocgen "docgen-samples/index.md" %}}
+{{< div class="codesample" >}}
+
+{{% zigdoctest "assets/zig-code/index.zig" %}}
+
 {{< /div >}}
 {{< /flexrow >}}
 
@@ -61,7 +64,7 @@ There is no concept of "official" or "unofficial", however, each gathering place
 {{% div class="main-development-message" %}}
 # Main development
 The Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
-Contributors are expected to follow Zig's [Code of Codunct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
+Contributors are expected to follow Zig's [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
