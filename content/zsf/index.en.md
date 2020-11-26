@@ -26,7 +26,22 @@ ZSF is a small organization and makes efficient use of monetary resources. The p
 
 The easiest way to support us is to donate via GitHub Sponsors.
 
-For one-time donations and other questions, please contact us at donations@ziglang.org.
+## Donation information	
+Here's useful information to donate through means other than GitHub Sponsors.
+Make sure to check your local law to see if you can deduct donations from your taxes.
+
+|   **EIN**   | **Address** |
+|-------------|-------------|
+| 84-5105214  | Zig Software Foundation  <br> 1732 1st Ave #21385  <br> New York, NY 10128|
+
+## TODOs
+- benevity
+- checks
+- other means mail us
+- lavatech sponsor
+
+For any question, please contact us at donations@ziglang.org.
+
 
 ## Corporate sponsors
 

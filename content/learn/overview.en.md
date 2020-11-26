@@ -36,18 +36,18 @@ Runtime Safety Checks - harm speed, harm size, crash instead of undefined behavi
 
 Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode: 
 
-{{< zigdocgen "docgen-samples/features/1-integer-overflow.md" >}}
+{{< zigdoctest "assets/zig-code/features/1-integer-overflow.zig" >}}
 
 Here is what it looks like at runtime, in safety-checked builds: 
 
-{{< zigdocgen "docgen-samples/features/2-integer-overflow-runtime.md" >}}
+{{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
 
 Those [stack traces work on all targets](https://ziglang.org/#Stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
 With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this: 
 
-{{< zigdocgen "docgen-samples/features/3-undefined-behavior.md" >}}
+{{< zigdoctest "assets/zig-code/features/3-undefined-behavior.zig" >}}
 
 Zig uses [undefined behavior](https://ziglang.org/documentation/master/#Undefined-Behavior) as a razor sharp tool for both bug prevention and performance enhancement.
 
@@ -68,7 +68,7 @@ Please note that Zig is not a fully safe language. For those interested in follo
 
 The Zig Standard Library integrates with libc, but does not depend on it. Here's Hello World:
 
-{{< zigdocgen "docgen-samples/features/4-hello.md" >}}
+{{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
 When compiled with `-O ReleaseSmall`, debug symbols stripped, single-threaded mode, this produces a 9.8 KiB static executable for the x86_64-linux target:
 ```
@@ -92,7 +92,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 Top level declarations such as global variables are order-independent and lazily analyzed. The initialization value of global variables is [evaluated at compile-time](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution). 
 
-{{< zigdocgen "docgen-samples/features/5-global-variables.md" >}}
+{{< zigdoctest "assets/zig-code/features/5-global-variables.zig" >}}
 
 ## Optional type instead of null pointers
 
@@ -100,23 +100,23 @@ In other programming languages, null references are the source of many runtime e
 
 Unadorned Zig pointers cannot be null:
 
-{{< zigdocgen "docgen-samples/features/6-null-to-ptr.md" >}}
+{{< zigdoctest "assets/zig-code/features/6-null-to-ptr.zig" >}}
 
 However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with ?: 
 
-{{< zigdocgen "docgen-samples/features/7-optional-syntax.md" >}}
+{{< zigdoctest "assets/zig-code/features/7-optional-syntax.zig" >}}
 
 To unwrap an optional value, one can use `orelse` to provide a default value:
 
-{{< zigdocgen "docgen-samples/features/8-optional-orelse.md" >}}
+{{< zigdoctest "assets/zig-code/features/8-optional-orelse.zig" >}}
 
 Another option is to use if:
 
-{{< zigdocgen "docgen-samples/features/9-optional-if.md" >}}
+{{< zigdoctest "assets/zig-code/features/9-optional-if.zig" >}}
 
  The same syntax works with [while](https://ziglang.org/documentation/master/#while):
 
-{{< zigdocgen "docgen-samples/features/10-optional-while.md" >}}
+{{< zigdoctest "assets/zig-code/features/10-optional-while.zig" >}}
 
 ## Manual memory management
 
@@ -137,32 +137,32 @@ This is true of the Zig Standard Library as well. Any functions that need to all
 In addition to [A fresh take on error handling](https://ziglang.org/#A-fresh-take-on-error-handling), Zig provides [defer](https://ziglang.org/documentation/master/#defer) and [errdefer](https://ziglang.org/documentation/master/#errdefer) to make all resource management - not only memory - simple and easily verifiable.
 
 For an example of `defer`, see [Integration with C libraries without FFI/bindings](https://ziglang.org/#Integration-with-C-libraries-without-FFIbindings). Here is an example of using `errdefer`:
-{{< zigdocgen "docgen-samples/features/11-errdefer.md" >}}
+{{< zigdoctest "assets/zig-code/features/11-errdefer.zig" >}}
 
 
 ## A fresh take on error handling
 
 Errors are values, and may not be ignored:
 
-{{< zigdocgen "docgen-samples/features/12-errors-as-values.md" >}}
+{{< zigdoctest "assets/zig-code/features/12-errors-as-values.zig" >}}
 
 Errors can be handled with [catch](https://ziglang.org/documentation/master/#catch): 
 
-{{< zigdocgen "docgen-samples/features/13-errors-catch.md" >}}
+{{< zigdoctest "assets/zig-code/features/13-errors-catch.zig" >}}
 
 The keyword [try](https://ziglang.org/documentation/master/#try) is a shortcut for `catch |err| return err`: 
 
-{{< zigdocgen "docgen-samples/features/14-errors-try.md" >}}
+{{< zigdoctest "assets/zig-code/features/14-errors-try.zig" >}}
 
 Note that is an [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), not a [stack trace](https://ziglang.org/#Stack-traces-on-all-targets). The code did not pay the price of unwinding the stack to come up with that trace.
 
 The [switch](https://ziglang.org/documentation/master/#switch) keyword used on an error ensures that all possible errors are handled: 
 
-{{< zigdocgen "docgen-samples/features/15-errors-switch.md" >}}
+{{< zigdoctest "assets/zig-code/features/15-errors-switch.zig" >}}
 
 The keyword [unreachable](https://ziglang.org/documentation/master/#unreachable) is used to assert that no errors will occur: 
 
-{{< zigdocgen "docgen-samples/features/16-unreachable.md" >}}
+{{< zigdoctest "assets/zig-code/features/16-unreachable.zig" >}}
 
 This invokes [undefined behavior](https://ziglang.org/#Performance-and-Safety-Choose-Two) in the unsafe build modes, so be sure to use it only when success is guaranteed.
 
@@ -172,7 +172,7 @@ The stack traces and [error return traces](https://ziglang.org/documentation/mas
 
 In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later: 
 
-{{< zigdocgen "docgen-samples/features/17-stack-traces.md" >}}
+{{< zigdoctest "assets/zig-code/features/17-stack-traces.zig" >}}
 
 You can see this technique being used in the ongoing [GeneralPurposeDebugAllocator project](https://github.com/andrewrk/zig-general-purpose-allocator/#current-status).
 
@@ -180,23 +180,23 @@ You can see this technique being used in the ongoing [GeneralPurposeDebugAllocat
 
 Types are values that must be known at compile-time:
 
-{{< zigdocgen "docgen-samples/features/18-types.md" >}}
+{{< zigdoctest "assets/zig-code/features/18-types.zig" >}}
 
 A generic data structure is simply a function that returns a `type`: 
 
-{{< zigdocgen "docgen-samples/features/19-generics.md" >}}
+{{< zigdoctest "assets/zig-code/features/19-generics.zig" >}}
 
 ## Compile-time reflection and compile-time code execution
 
 The [@typeInfo](https://ziglang.org/documentation/master/#typeInfo) builtin function provides reflection:
 
-{{< zigdocgen "docgen-samples/features/20-reflection.md" >}}
+{{< zigdoctest "assets/zig-code/features/20-reflection.zig" >}}
 
 The Zig Standard Library uses this technique to implement formatted printing. Despite being a [Small, simple language](https://ziglang.org/#Small-simple-language), Zig's formatted printing is implemented entirely in Zig. Meanwhile, in C, compile errors for printf are hard-coded into the compiler. Similarly, in Rust, the formatted printing macro is hard-coded into the compiler.
 
 Zig can also evaluate functions and blocks of code at compile-time. In some contexts, such as global variable initializations, the expression is implicitly evaluated at compile-time. Otherwise, one can explicitly evaluate code at compile-time with the [comptime](https://ziglang.org/documentation/master/#comptime) keyword. This can be especially powerful when combined with assertions: 
 
-{{< zigdocgen "docgen-samples/features/21-comptime.md" >}}
+{{< zigdoctest "assets/zig-code/features/21-comptime.zig" >}}
 
 ## Integration with C libraries without FFI/bindings
 
@@ -204,9 +204,15 @@ Zig can also evaluate functions and blocks of code at compile-time. In some cont
 
 Here is an example of emitting a sine wave using [libsoundio](http://libsound.io/): 
 
-<pre>
-{{< zigdocgen "docgen-samples/features/22-sine-wave.md" >}}
-</pre>
+<u>sine.zig</u>
+{{< zigdoctest "assets/zig-code/features/22-sine-wave.zig" >}}
+
+```
+$ zig build-exe sine.zig -lsoundio -lc
+$ ./sine
+Output device: Built-in Audio Analog Stereo
+^C
+```
 
 [This Zig code is significantly simpler than the equivalent C code](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8), as well as having more safety protections, and all this is accomplished by directly importing the C header file - no API bindings.
 
@@ -256,7 +262,7 @@ Not only can Zig compile C code, but there is a very good reason to use Zig as a
 One of the primary use cases for Zig is exporting a library with the C ABI for other programming languages to call into. The `export` keyword in front of functions, variables, and types causes them to be part of the library API: 
 
 <u>mathtest.zig</u>
-{{< zigdocgen "docgen-samples/features/23-math-test.md" >}}
+{{< zigdoctest "assets/zig-code/features/23-math-test.zig" >}}
 
 To make a static library:
 ```
@@ -270,7 +276,7 @@ $ zig build-lib mathtest.zig -dynamic
 
 Here is an example with the [Zig Build System](https://ziglang.org/#Zig-Build-System):
 
-<u>file.c</u>
+<u>test.c</u>
 ```c
 #include "mathtest.h"
 #include <stdio.h>
@@ -283,9 +289,9 @@ int main(int argc, char **argv) {
 ```
 
 <u>build.zig</u>
-{{< zigdocgen "docgen-samples/features/24-build.md" >}}
+{{< zigdoctest "assets/zig-code/features/24-build.zig" >}}
 
-```shell
+```
 $ zig build test
 1379
 ```
@@ -294,7 +300,7 @@ $ zig build test
 
 Zig can build for any of the targets from the [Support Table](https://ziglang.org/#Support-Table) with [Tier 3 Support](https://ziglang.org/#Tier-3-Support) or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
 
-{{< zigdocgen "docgen-samples/features/4-hello.md" >}}
+{{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
 Now to build it for x86_64-windows, x86_64-macosx, and aarch64v8-linux:
 ```
@@ -421,11 +427,11 @@ Next, try `zig build --help` or `zig build run`
 ```
 
 <u>src/main.zig</u>
-<pre>{{< zigdocgen "docgen-samples/features/25-all-bases.md" >}}</pre>
+{{< zigdoctest "assets/zig-code/features/25-all-bases.zig" >}}
 
 
 <u>build.zig</u>
-<pre>{{< zigdocgen "docgen-samples/features/26-build.md" >}}</pre>
+{{< zigdoctest "assets/zig-code/features/26-build.zig" >}}
 
 
 Let's have a look at that `--help` menu.
