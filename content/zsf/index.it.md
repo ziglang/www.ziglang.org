@@ -1,6 +1,6 @@
 ---
-title: "Supporta la ZSF"
-menu_title: "Supporta la ZSF"
+title: "Supporta la Zig Software Foundation"
+menu_title: "Supporta la Zig Software Foundation"
 mobile_menu_title: "Supporta la ZSF"
 date: 2020-10-20T16:29:51+02:00
 draft: true
