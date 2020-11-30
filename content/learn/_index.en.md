@@ -20,6 +20,8 @@ Here's an in-depth feature overview of Zig from a systems-programming perspectiv
 An introduction to Zig for C++, D, and Rust programmers.
 - [Code Examples](samples/)  
 A list of snippets to get a feeling for how Zig code looks like.
+- [Tools](tools/)  
+A list of useful tools that can help you write Zig code.
 
 
 ## Getting started
