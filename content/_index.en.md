@@ -5,7 +5,7 @@ title: Home
 Zig is a general-purpose programming language and toolchain for maintaining **robust**, **optimal**, and **reusable** software.  
 {{< /slogan >}}
 
-{{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;">}}
+{{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
 {{% div class="features" %}}
 
 # ⚡ A Simple Language
@@ -29,7 +29,18 @@ Write fast, clear code capable of handling all error conditions.
 - Configurable runtime checks help you strike a balance between performance and safety guarantees.
 - Take advantage of vector types to espress SIMD instructions portably.
 
-
+{{% flexrow style="justify-content:center;" %}}
+{{% div %}}
+<h1>
+    <a href="learn/overview/" class="button" style="display: inline;">In-depth overview</a>
+</h1>
+{{% /div %}}
+{{% div  style="margin-left: 5px;" %}}
+<h1>
+    <a href="learn/samples/" class="button" style="display: inline;">More code samples</a>
+</h1>
+{{% /div %}}
+{{% /flexrow %}}
 {{% /div %}}
 {{< div class="codesample" >}}
 
@@ -37,6 +48,7 @@ Write fast, clear code capable of handling all error conditions.
 
 {{< /div >}}
 {{< /flexrow >}}
+
 
 {{% div class="alt-background" %}}
 {{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Community" %}}

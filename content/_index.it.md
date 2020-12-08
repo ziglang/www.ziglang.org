@@ -30,7 +30,18 @@ Scrivi codice efficiente, chiaro e in grado di gestire ogni errore.
 - Cotrolli a runtime configurabili ti permettono di trovare un equilibrio tra prestazioni e garanzie di sicurezza.
 - Usa vector types per esprimere istruzioni SIMD in modo portabile.
 
-
+{{% flexrow style="justify-content:center;" %}}
+{{% div %}}
+<h1>
+    <a href="learn/overview/" class="button" style="display: inline;">Overview dettagliata</a>
+</h1>
+{{% /div %}}
+{{% div  style="margin-left: 5px;" %}}
+<h1>
+    <a href="learn/samples/" class="button" style="display: inline;">Altri esempi di codice</a>
+</h1>
+{{% /div %}}
+{{% /flexrow %}}
 {{% /div %}}
 {{< div class="codesample" >}}
 
