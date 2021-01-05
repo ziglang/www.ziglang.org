@@ -4,7 +4,7 @@ draft: false
 ---
 
 # Translations
-These are all translations provided by the community. If you see a mistake or want to contribute a new translation, please check [the repository](https://github.com/ziglang/www.ziglang.org/).
+These are all translations provided by the community. To contribute fixes and new translations, please check [the repository](https://github.com/ziglang/www.ziglang.org/).
 
 The original content is written in [English](/).
 
