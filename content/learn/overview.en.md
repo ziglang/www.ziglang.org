@@ -27,25 +27,25 @@ Examples of hidden control flow:
 
 ## Performance and Safety: Choose Two
 
-Zig has four [build modes](https://ziglang.org/documentation/master/#Build-Mode), and they can all be mixed and matched all the way down to [scope granularity](https://ziglang.org/documentation/master/#setRuntimeSafety). 
+Zig has four [build modes](https://ziglang.org/documentation/master/#Build-Mode), and they can all be mixed and matched all the way down to [scope granularity](https://ziglang.org/documentation/master/#setRuntimeSafety).
 
 | Parameter | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
 Optimizations - improve speed, harm debugging, harm compile time | | -O3 | -O3| -Os |
 Runtime Safety Checks - harm speed, harm size, crash instead of undefined behavior | On | On | | |
 
-Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode: 
+Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode:
 
 {{< zigdoctest "assets/zig-code/features/1-integer-overflow.zig" >}}
 
-Here is what it looks like at runtime, in safety-checked builds: 
+Here is what it looks like at runtime, in safety-checked builds:
 
 {{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
 
 Those [stack traces work on all targets](https://ziglang.org/#Stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
-With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this: 
+With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this:
 
 {{< zigdoctest "assets/zig-code/features/3-undefined-behavior.zig" >}}
 
@@ -90,7 +90,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 ## Order independent top level declarations
 
-Top level declarations such as global variables are order-independent and lazily analyzed. The initialization value of global variables is [evaluated at compile-time](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution). 
+Top level declarations such as global variables are order-independent and lazily analyzed. The initialization value of global variables is [evaluated at compile-time](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution).
 
 {{< zigdoctest "assets/zig-code/features/5-global-variables.zig" >}}
 
@@ -102,7 +102,7 @@ Unadorned Zig pointers cannot be null:
 
 {{< zigdoctest "assets/zig-code/features/6-null-to-ptr.zig" >}}
 
-However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with ?: 
+However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with ?:
 
 {{< zigdoctest "assets/zig-code/features/7-optional-syntax.zig" >}}
 
@@ -146,21 +146,21 @@ Errors are values, and may not be ignored:
 
 {{< zigdoctest "assets/zig-code/features/12-errors-as-values.zig" >}}
 
-Errors can be handled with [catch](https://ziglang.org/documentation/master/#catch): 
+Errors can be handled with [catch](https://ziglang.org/documentation/master/#catch):
 
 {{< zigdoctest "assets/zig-code/features/13-errors-catch.zig" >}}
 
-The keyword [try](https://ziglang.org/documentation/master/#try) is a shortcut for `catch |err| return err`: 
+The keyword [try](https://ziglang.org/documentation/master/#try) is a shortcut for `catch |err| return err`:
 
 {{< zigdoctest "assets/zig-code/features/14-errors-try.zig" >}}
 
 Note that is an [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), not a [stack trace](https://ziglang.org/#Stack-traces-on-all-targets). The code did not pay the price of unwinding the stack to come up with that trace.
 
-The [switch](https://ziglang.org/documentation/master/#switch) keyword used on an error ensures that all possible errors are handled: 
+The [switch](https://ziglang.org/documentation/master/#switch) keyword used on an error ensures that all possible errors are handled:
 
 {{< zigdoctest "assets/zig-code/features/15-errors-switch.zig" >}}
 
-The keyword [unreachable](https://ziglang.org/documentation/master/#unreachable) is used to assert that no errors will occur: 
+The keyword [unreachable](https://ziglang.org/documentation/master/#unreachable) is used to assert that no errors will occur:
 
 {{< zigdoctest "assets/zig-code/features/16-unreachable.zig" >}}
 
@@ -170,7 +170,7 @@ This invokes [undefined behavior](https://ziglang.org/#Performance-and-Safety-Ch
 
 The stack traces and [error return traces](https://ziglang.org/documentation/master/#Error-Return-Traces) shown on this page work on all [Tier 1 Support](https://ziglang.org/#Tier-1-Support) and some [Tier 2 Support](https://ziglang.org/#Tier-2-Support) targets. [Even freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
 
-In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later: 
+In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later:
 
 {{< zigdoctest "assets/zig-code/features/17-stack-traces.zig" >}}
 
@@ -182,7 +182,7 @@ Types are values that must be known at compile-time:
 
 {{< zigdoctest "assets/zig-code/features/18-types.zig" >}}
 
-A generic data structure is simply a function that returns a `type`: 
+A generic data structure is simply a function that returns a `type`:
 
 {{< zigdoctest "assets/zig-code/features/19-generics.zig" >}}
 
@@ -194,7 +194,7 @@ The [@typeInfo](https://ziglang.org/documentation/master/#typeInfo) builtin func
 
 The Zig Standard Library uses this technique to implement formatted printing. Despite being a [Small, simple language](https://ziglang.org/#Small-simple-language), Zig's formatted printing is implemented entirely in Zig. Meanwhile, in C, compile errors for printf are hard-coded into the compiler. Similarly, in Rust, the formatted printing macro is hard-coded into the compiler.
 
-Zig can also evaluate functions and blocks of code at compile-time. In some contexts, such as global variable initializations, the expression is implicitly evaluated at compile-time. Otherwise, one can explicitly evaluate code at compile-time with the [comptime](https://ziglang.org/documentation/master/#comptime) keyword. This can be especially powerful when combined with assertions: 
+Zig can also evaluate functions and blocks of code at compile-time. In some contexts, such as global variable initializations, the expression is implicitly evaluated at compile-time. Otherwise, one can explicitly evaluate code at compile-time with the [comptime](https://ziglang.org/documentation/master/#comptime) keyword. This can be especially powerful when combined with assertions:
 
 {{< zigdoctest "assets/zig-code/features/21-comptime.zig" >}}
 
@@ -202,7 +202,7 @@ Zig can also evaluate functions and blocks of code at compile-time. In some cont
 
 [@cImport](https://ziglang.org/documentation/master/#cImport) directly imports types, variables, functions, and simple macros for use in Zig. It even translates inline functions from C into Zig.
 
-Here is an example of emitting a sine wave using [libsoundio](http://libsound.io/): 
+Here is an example of emitting a sine wave using [libsoundio](http://libsound.io/):
 
 <u>sine.zig</u>
 {{< zigdoctest "assets/zig-code/features/22-sine-wave.zig" >}}
@@ -259,7 +259,7 @@ Not only can Zig compile C code, but there is a very good reason to use Zig as a
 
 ### Export functions, variables, and types for C code to depend on
 
-One of the primary use cases for Zig is exporting a library with the C ABI for other programming languages to call into. The `export` keyword in front of functions, variables, and types causes them to be part of the library API: 
+One of the primary use cases for Zig is exporting a library with the C ABI for other programming languages to call into. The `export` keyword in front of functions, variables, and types causes them to be part of the library API:
 
 <u>mathtest.zig</u>
 {{< zigdoctest "assets/zig-code/features/23-math-test.zig" >}}
@@ -305,7 +305,7 @@ Zig can build for any of the targets from the [Support Table](https://ziglang.or
 Now to build it for x86_64-windows, x86_64-macosx, and aarch64v8-linux:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
-$ file hello.exe 
+$ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
 $ zig build-exe hello.zig -target x86_64-macosx
 $ file hello
@@ -315,11 +315,11 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
 
-This works on any [Tier 3](https://ziglang.org/#Tier-3-Support)+ target, for any [Tier 3](https://ziglang.org/#Tier-3-Support)+ target. 
+This works on any [Tier 3](https://ziglang.org/#Tier-3-Support)+ target, for any [Tier 3](https://ziglang.org/#Tier-3-Support)+ target.
 
 ### Zig ships with libc
 
-You can find the available libc targets with `zig targets`: 
+You can find the available libc targets with `zig targets`:
 ```
 ...
  "libc": [
@@ -374,7 +374,7 @@ You can find the available libc targets with `zig targets`:
 
 What this means is that `--library c` for these targets *does not depend on any system files*!
 
-Let's look at that [C hello world example](https://ziglang.org/#Zig-is-also-a-C-compiler) again: 
+Let's look at that [C hello world example](https://ziglang.org/#Zig-is-also-a-C-compiler) again:
 ```
 $ zig build-exe --c-source hello.c --library c
 $ ./hello
@@ -407,7 +407,7 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
 
-In some ways, Zig is a better C compiler than C compilers! 
+In some ways, Zig is a better C compiler than C compilers!
 
 This functionality is more than bundling a cross-compilation toolchain along with Zig. For example, the total size of libc headers that Zig ships is 22 MiB uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux headers), yet Zig currently ships with 40 libcs. With a naive bundling that would be 444 MiB. However, thanks to this [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) that I made, and some [good old manual labor](https://github.com/ziglang/zig/wiki/Updating-libc), Zig binary tarballs remain roughly 30 MiB total, despite supporting libc for all these targets, as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler. For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132 MiB.
 
@@ -500,8 +500,8 @@ Zig uses a "support tier" system to communicate the level of support for differe
 
 | | free standing | Linux 3.16+ | macOS 10.13+ | Windows 8.1+ | FreeBSD 12.0+ | NetBSD 8.0+ | DragonFly​BSD 5.8+ | UEFI |
 |-|---------------|-------------|--------------|--------------|---------------|-------------|-------------------|------|
-| x86_64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) |
-| arm64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
+| x86_64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) |
+| arm64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
 | arm32 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
 | mips32 LE | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
 | i386 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 2](https://ziglang.org/#Tier-2-Support) |
