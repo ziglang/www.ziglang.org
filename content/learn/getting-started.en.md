@@ -25,7 +25,7 @@ will become more important than having the latest language feature.
 
 ## Installing Zig
 ### Direct download
-This is the most straight-forward way of obtaining Zig: grab a Zig bundle for your platform from the [Downloads](/downloads) page,
+This is the most straight-forward way of obtaining Zig: grab a Zig bundle for your platform from the [Downloads](/download) page,
 extract it in a directory and add it to your `PATH` to be able to call `zig` from any location.
 
 #### Setting up PATH on Windows
