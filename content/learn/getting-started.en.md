@@ -3,8 +3,8 @@ title: Getting started Guide
 toc: true
 ---
 
-{{% div class="box"%}}
-**Note for Apple Silicon users:**  
+{{% div class="box thin"%}}
+**<center>Note for Apple Silicon users</center>**
 Zig has experimental support for codesigning so you will be able to use it on your M1 Mac,
 but the only way at the moment to get Zig for arm64 macOS is to compile it yourself.
 Make sure to check the [Building from source](#building-from-source) section.
@@ -12,12 +12,12 @@ Make sure to check the [Building from source](#building-from-source) section.
 
 
 ## Tagged release or nightly build?
-Zig has not yet reached v1.0 and the current release cycle is tied to new releases of LLVM, which have a ~6 mont cadence.
+Zig has not yet reached v1.0 and the current release cycle is tied to new releases of LLVM, which have a ~6 months cadence.
 In practical terms, **Zig releases tend to be far apart and quickly become stale given the current speed of development**.
 
-While the ultimate choice is yours, **we encourage you to download a nightly build** mainly because that way it will be easier
-for you to get help: most of the community and sites like [ziglearn.org](https://ziglearn.org) track the master branch for
-the reasons stated above.
+For the purpose of trying Zig out **we encourage you to download a nightly build**, 
+mainly because that way it will be easier for you to get help: most of the community and sites like 
+[ziglearn.org](https://ziglearn.org) track the master branch for the reasons stated above.
 
 This will not be true forever, for example some projects like [river](https://github.com/ifreund/river) decided to sitck to
 a tagged release, so keep that in mind for the future, especially if you start your own Zig project at which point stability
@@ -35,7 +35,7 @@ or just for your user, and **make sure to change the snippet to point at the loc
 The `;` before `C:` is not a typo.
 
 System wide (**admin** Powershell):
-```powershell
+```
 [Environment]::SetEnvironmentVariable(
    "Path",
    [Environment]::GetEnvironmentVariable("Path", "Machine") + ";C:\your-path\zig-windows-x86_64-your-version",
@@ -44,7 +44,7 @@ System wide (**admin** Powershell):
 ```
 
 User level (Powershell):
-```powershell
+```
 [Environment]::SetEnvironmentVariable(
    "Path",
    [Environment]::GetEnvironmentVariable("Path", "User") + ";C:\your-path\zig-windows-x86_64-your-version",
@@ -136,11 +136,11 @@ Congratulations, you have a working Zig installation!
 
 ## Next steps
 Check out other resources present in the [Learn](../) section, make sure to find the Documentation for your version
-of Zig (note: nightly builds should use `master` docs) and check out [ziglearn.org](https://ziglearn.org).
+of Zig (note: nightly builds should use `master` docs) and consider giving [ziglearn.org](https://ziglearn.org) a read.
 
 Zig is a young project and unfortunately we don't have yet the capacity to produce extensive documentation and learning
 materials for everything, so you should consider [joining one of the existing Zig communities](https://github.com/ziglang/zig/wiki/Community)
-to get help when you get stuck, as well as check out initiatives like [Zig SHOWTIME](https://zig.show).
+to get help when you get stuck, as well as checking out initiatives like [Zig SHOWTIME](https://zig.show).
 
 Finally, if you enjoy Zig and want to help speed up the development, [consider donating to the Zig Software Foundation](../../zsf)
 <img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
