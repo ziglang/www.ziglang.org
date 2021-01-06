@@ -1,5 +1,6 @@
 ---
 title: "Code Examples"
+mobile_menu_title: "Code Samples"
 toc: true
 ---
 
