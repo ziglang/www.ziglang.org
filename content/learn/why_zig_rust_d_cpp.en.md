@@ -1,5 +1,6 @@
 ---
 title: "Why Zig When There is Already C++, D, and Rust?"
+mobile_menu_title: "Why Zig When..."
 toc: true
 ---
 

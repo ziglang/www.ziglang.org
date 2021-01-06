@@ -1,5 +1,6 @@
 ---
 title: "In-depth Overview"
+mobile_menu_title: "Overview"
 toc: true
 ---
 # Feature Highlights
