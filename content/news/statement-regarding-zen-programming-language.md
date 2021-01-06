@@ -1,6 +1,7 @@
 ---
 title: "Zigソフトウェア財団とZenプログラミング言語に関する声明"
 date: 2020-09-14T00:00:00+00:00
+mobile_menu_title: "Zigソフトウェア財団とZenプログラミング言語に関する声明"
 draft: false
 lang: ja
 ---

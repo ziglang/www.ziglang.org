@@ -1,5 +1,6 @@
 ---
 title: "Translations"
+mobile_menu_title: "Translations"
 draft: false
 ---
 
