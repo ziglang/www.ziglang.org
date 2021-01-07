@@ -1,5 +1,6 @@
 ---
-title: Getting started Guide
+title: Getting Started
+mobile_menu_title: "Getting Started"
 toc: true
 ---
 
