@@ -27,7 +27,7 @@ A list of useful tools that can help you write Zig code.
 ## Getting started
 If you're ready to start programming in Zig, this guide will help you setup your enviornment.
 
-- [Getting started guide]({{< ref "getting-started.md" >}})  
+- [Getting started]({{< ref "getting-started.md" >}})  
 
 ## Online learning resources
 - [Zig Learn](https://ziglearn.org)  
