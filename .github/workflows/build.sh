@@ -3,15 +3,14 @@
 set -x
 set -e
 
-sudo apt-get update 
-sudo apt-get install -y jq wget xz-utils gcc
 
-# The github action left us inside a checkout of www.ziglang.org (workspace)
-cd .. 
+START_DIR=$(pwd)
+ZIG_DOWNLOAD_URL=$(cat data/releases.json | jq -r '.master."x86_64-linux".tarball')
+cd ..
 
 # Download latest Zig and add it to PATH
 mkdir zig
-wget -qO zig.tar.xf $(cat ./workspace/data/releases.json | jq -r '.master."x86_64-linux".tarball')
+wget -qO zig.tar.xf "$ZIG_DOWNLOAD_URL"
 tar -C zig --strip-components=1 -xJf zig.tar.xf
 export PATH=$PATH:$(pwd)/zig
 
@@ -39,5 +38,5 @@ CGO_ENABLED=1 go install --tags extended
 cd ..
 
 # go back to the website
-cd workspace
+cd START_DIR
 
