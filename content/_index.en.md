@@ -2,7 +2,7 @@
 title: Home
 mobile_menu_title: "Home"
 ---
-{{< slogan get_started="GET STARTED" docs="Documentation" >}}
+{{< slogan get_started="GET STARTED" docs="Documentation" notes="Changes">}}
 Zig is a general-purpose programming language and toolchain for maintaining **robust**, **optimal**, and **reusable** software.  
 {{< /slogan >}}
 
@@ -28,7 +28,7 @@ Write fast, clear code capable of handling all error conditions.
 
 - The language gracefully guides your error handling logic.
 - Configurable runtime checks help you strike a balance between performance and safety guarantees.
-- Take advantage of vector types to espress SIMD instructions portably.
+- Take advantage of vector types to express SIMD instructions portably.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
@@ -66,7 +66,7 @@ There is no concept of "official" or "unofficial", however, each gathering place
 
 <div style="">
 <h1>
-	<a href="" class="button" style="display: inline;">See all Communities</a>
+	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">See all Communities</a>
 </h1>
 </div>
 {{% /div %}}
