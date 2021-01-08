@@ -14,7 +14,7 @@ fn printInfoAboutStruct(comptime T: type) void {
     const info = @typeInfo(T);
     inline for (info.Struct.fields) |field| {
         std.debug.print(
-            "{} has a field called {} with type {}\n",
+            "{s} has a field called {s} with type {s}\n",
             .{
                 @typeName(T),
                 field.name,

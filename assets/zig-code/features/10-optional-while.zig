@@ -5,6 +5,6 @@ pub fn main() void {
     const msg = "hello this is dog";
     var it = std.mem.tokenize(msg, " ");
     while (it.next()) |item| {
-        std.debug.print("{}\n", .{item});
+        std.debug.print("{s}\n", .{item});
     }
 }

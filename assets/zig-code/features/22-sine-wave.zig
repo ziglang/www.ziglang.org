@@ -45,7 +45,7 @@ fn write_callback(
             maybe_outstream,
             @ptrCast([*]?[*]c.SoundIoChannelArea, &areas),
             &frame_count,
-        )) catch |err| std.debug.panic("write failed: {}", .{@errorName(err)});
+        )) catch |err| std.debug.panic("write failed: {s}", .{@errorName(err)});
 
         if (frame_count == 0) break;
 
@@ -66,7 +66,7 @@ fn write_callback(
         }
         seconds_offset += seconds_per_frame * @intToFloat(f32, frame_count);
 
-        sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {}", .{@errorName(err)});
+        sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {s}", .{@errorName(err)});
 
         frames_left -= frame_count;
     }
