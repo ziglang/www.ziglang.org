@@ -33,7 +33,7 @@ mkdir hugo
 wget -qO hugo.tar "https://api.github.com/repos/kristoff-it/hugo/tarball/"
 tar -C hugo --strip-components=1 -xf hugo.tar 
 cd hugo
-CGO_ENABLED=1 go install --tags extended
+CGO_ENABLED=1 go build --tags extended
 cd ..
 
 # go back to the website
