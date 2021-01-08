@@ -36,6 +36,7 @@ cd hugo
 CGO_ENABLED=1 go build --tags extended
 cd ..
 
-# go back to the website
+# go back to the website and build it 
 cd "$START_DIR"
+../hugo/hugo  --minify --cleanDestinationDir --destination=docs/
 
