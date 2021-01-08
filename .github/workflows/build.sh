@@ -26,8 +26,7 @@ cd ..
 wget -qO go.tar.gz "https://dl.google.com/go/go1.15.2.linux-amd64.tar.gz"
 tar -xzf go.tar.gz
 export GOROOT=$(pwd)/go
-export GOPATH=$(pwd)/go/packages
-export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 # Get our Hugo fork, build it and add it to PATH
 mkdir hugo
