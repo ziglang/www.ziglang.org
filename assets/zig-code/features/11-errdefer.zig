@@ -6,7 +6,7 @@ const Device = struct {
         const device = try allocator.create(Device);
         errdefer allocator.destroy(device);
 
-        device.name = try std.fmt.allocPrint(allocator, "Device(id={})", id);
+        device.name = try std.fmt.allocPrint(allocator, "Device(id={d})", id);
         errdefer allocator.free(device.name);
 
         if (id == 0) return error.ReservedDeviceId;
