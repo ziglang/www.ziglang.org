@@ -3,8 +3,8 @@
 set -x
 set -e
 
-apt-get update 
-apt-get install -y jq wget xz-utils gcc
+sudo apt-get update 
+sudo apt-get install -y jq wget xz-utils gcc
 
 # The github action left us inside a checkout of www.ziglang.org (workspace)
 cd .. 
