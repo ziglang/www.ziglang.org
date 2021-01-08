@@ -3,7 +3,6 @@
 set -x
 set -e
 
-
 START_DIR=$(pwd)
 ZIG_DOWNLOAD_URL=$(cat data/releases.json | jq -r '.master."x86_64-linux".tarball')
 cd ..
@@ -25,17 +24,21 @@ cd ..
 
 # Download Go and add it to PATH
 wget -qO go.tar.gz "https://dl.google.com/go/go1.15.2.linux-amd64.tar.gz"
-tar -xzvf go.tar.gz
+tar -xzf go.tar.gz
 export GOROOT=$(pwd)/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+export GOPATH=$(pwd)/go/packages
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
 # Get our Hugo fork, build it and add it to PATH
 mkdir hugo
 wget -qO hugo.tar "https://api.github.com/repos/kristoff-it/hugo/tarball/"
-tar -C hugo --strip-components=1 -xvf hugo.tar 
+tar -C hugo --strip-components=1 -xf hugo.tar 
 cd hugo
 CGO_ENABLED=1 go install --tags extended
 cd ..
+
+cd $GOROOT/bin
+ls -la && false
 
 # go back to the website
 cd "$START_DIR"
