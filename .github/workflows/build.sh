@@ -38,5 +38,5 @@ CGO_ENABLED=1 go install --tags extended
 cd ..
 
 # go back to the website
-cd START_DIR
+cd "$START_DIR"
 
