@@ -36,9 +36,6 @@ cd hugo
 CGO_ENABLED=1 go install --tags extended
 cd ..
 
-cd $GOROOT/bin
-ls -la && false
-
 # go back to the website
 cd "$START_DIR"
 
