@@ -15,5 +15,5 @@ pub fn main() void {
         .len = 0,
     };
 
-    std.debug.print("{}\n", .{list.items.len});
+    std.debug.print("{d}\n", .{list.items.len});
 }
