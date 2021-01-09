@@ -103,7 +103,7 @@ The Zig Software Foundation is sustained by donations.
 {{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="Sponsors" %}}
 # Corporate Sponsors 
-The following companies are providing direct financial support to the Zig Software foundation by donating more than $1000/mo.
+The following companies are providing direct financial support to the Zig Software foundation.
 
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>

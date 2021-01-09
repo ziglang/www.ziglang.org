@@ -6,7 +6,7 @@ toc: true
 
 {{% div class="box thin"%}}
 **<center>Note for Apple Silicon users</center>**
-Zig has experimental support for codesigning so you will be able to use it on your M1 Mac,
+Zig has experimental support for codesigning. You will be able to use Zig with your M1 Mac,
 but the only way at the moment to get Zig for arm64 macOS is to compile it yourself.
 Make sure to check the [Building from source](#building-from-source) section.
 {{% /div %}}
@@ -14,15 +14,18 @@ Make sure to check the [Building from source](#building-from-source) section.
 
 ## Tagged release or nightly build?
 Zig has not yet reached v1.0 and the current release cycle is tied to new releases of LLVM, which have a ~6 months cadence.
-In practical terms, **Zig releases tend to be far apart and quickly become stale given the current speed of development**.
+In practical terms, **Zig releases tend to be far apart and eventually become stale given the current speed of development**.
 
-For the purpose of trying Zig out **we encourage you to download a nightly build**, 
-mainly because that way it will be easier for you to get help: most of the community and sites like 
+It's fine to evaluate Zig using a tagged version, but if you decide that you like Zig and 
+want to dive deeper, **we encourage you to upgrade to a nightly build**, mainly because 
+that way it will be easier for you to get help: most of the community and sites like 
 [ziglearn.org](https://ziglearn.org) track the master branch for the reasons stated above.
 
 This will not be true forever, for example some projects like [river](https://github.com/ifreund/river) decided to sitck to
-a tagged release, so keep that in mind for the future, especially if you start your own Zig project at which point stability
+a tagged release, so keep that in mind, especially if you start your own Zig project at which point stability
 will become more important than having the latest language feature.
+
+The good news is that it's very easy to switch from one Zig version to another or even have multiple versions present on the system at the same time: Zig releases are self-contained archives that can be placed anywhere in your system.
 
 ## Installing Zig
 ### Direct download
@@ -136,7 +139,7 @@ info: All your codebase are belong to us.
 Congratulations, you have a working Zig installation!  
 
 ## Next steps
-Check out other resources present in the [Learn](../) section, make sure to find the Documentation for your version
+**Check out other resources present in the [Learn](../) section**, make sure to find the Documentation for your version
 of Zig (note: nightly builds should use `master` docs) and consider giving [ziglearn.org](https://ziglearn.org) a read.
 
 Zig is a young project and unfortunately we don't have yet the capacity to produce extensive documentation and learning
