@@ -2,8 +2,9 @@
 title: "Zigソフトウェア財団とZenプログラミング言語に関する声明"
 date: 2020-09-14T00:00:00+00:00
 mobile_menu_title: "2020-09-14"
-draft: false
 lang: ja
+aliases:
+    - /news/statement-regarding-zen-programming-language.html
 ---
 {{< box >}} 
 Original English version available below. We are thankful to <a href="https://hyperia.co.jp/" target="_blank" rel="noopener noreferrer">株式会社HYPERIA</a> and all the members of the Zig community that helped us with the Japanese translation. 

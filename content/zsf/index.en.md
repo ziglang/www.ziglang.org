@@ -3,7 +3,6 @@ title: "Sponsor ZSF"
 menu_title: "Sponsor the Zig Software Foundation"
 mobile_menu_title: "Sponsor the ZSF"
 date: 2020-10-20T16:29:51+02:00
-draft: false
 ---
 {{< sponsor-title-cta "Sponsoring the Zig Software Foundation" >}}
 

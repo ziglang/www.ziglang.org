@@ -21,11 +21,8 @@ want to dive deeper, **we encourage you to upgrade to a nightly build**, mainly 
 that way it will be easier for you to get help: most of the community and sites like 
 [ziglearn.org](https://ziglearn.org) track the master branch for the reasons stated above.
 
-This will not be true forever, for example some projects like [river](https://github.com/ifreund/river) decided to sitck to
-a tagged release, so keep that in mind, especially if you start your own Zig project at which point stability
-will become more important than having the latest language feature.
+The good news is that it's very easy to switch from one Zig version to another, or even have multiple versions present on the system at the same time: Zig releases are self-contained archives that can be placed anywhere in your system.
 
-The good news is that it's very easy to switch from one Zig version to another or even have multiple versions present on the system at the same time: Zig releases are self-contained archives that can be placed anywhere in your system.
 
 ## Installing Zig
 ### Direct download

@@ -7,6 +7,7 @@ toc: true
 
 ## Language Servers
 Language servers are editor-agnostic tools for obtaining syntax highlighting, autocompletion, and many other features. Consider using a Language server over a syntax-highlighting extension for a richer development experience.
+
 - [zigtools/zls](https://github.com/zigtools/zls)
 
 ## Text Editors

@@ -1,7 +1,8 @@
 ---
 title: Home
+mobile_menu_title: "Home"
 ---
-{{< slogan get_started="INIZIA QUI" docs="Documentazione" >}}
+{{< slogan get_started="INIZIA QUI" docs="Documentazione" notes="Note">}}
 Zig e' un linguaggio di programmazione general-purpose e toolchain per
 mantere software **robusto**, **ottimale**, e **riusabile**.
 {{< /slogan >}}
@@ -28,17 +29,17 @@ Scrivi codice efficiente, chiaro e in grado di gestire ogni errore.
 
 - Il linguaggio guida elegantemente la tua logica di gestione degli errori.
 - Cotrolli a runtime configurabili ti permettono di trovare un equilibrio tra prestazioni e garanzie di sicurezza.
-- Usa vector types per esprimere istruzioni SIMD in modo portabile.
+- Usa i tipi vettore per esprimere istruzioni SIMD in modo portabile.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
 <h1>
-    <a href="learn/overview/" class="button" style="display: inline;">Overview dettagliata</a>
+    <a href="{{< ref path="learn/overview.en.md" lang="en">}}" class="button" style="display: inline;">Overview dettagliata</a>
 </h1>
 {{% /div %}}
 {{% div  style="margin-left: 5px;" %}}
 <h1>
-    <a href="learn/samples/" class="button" style="display: inline;">Altri esempi di codice</a>
+    <a href="{{< ref path="learn/samples.en.md" lang="en">}}" class="button" style="display: inline;">Altri esempi di codice</a>
 </h1>
 {{% /div %}}
 {{% /flexrow %}}
@@ -65,7 +66,7 @@ Non c'e' nessuna distinzione tra spazi "ufficiali" e non, ma ogni posto ha le pr
 
 <div style="">
 <h1>
-	<a href="" class="button" style="display: inline;">Esplora le comunita'</a>
+	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">Esplora le comunita'</a>
 </h1>
 </div>
 {{% /div %}}
@@ -101,9 +102,20 @@ La Zig Software Foundation si sostiene tramite donazioni.
 
 {{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="Sponsors" %}}
+# Aziende Sponsor
+Le seguenti compagnie offrono diretto supporto finanziario alla Zig Software Foundation.
+
+{{% sponsor-logos "monetary" %}}
+ <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
+   <picture>
+     <source srcset="../pex-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="../pex-dark.svg">
+   </picture>
+ </a>
+{{% /sponsor-logos %}}
 # GitHub Sponsors
 
-Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento all propria comunita' open source, invece che ad uno stuolo di shareholder. In particolare, i seguenti illustri individui supportano Zig per un quantitativo di 200 USD o superiore:
+Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento all propria comunita' open source, invece che ad uno stuolo di shareholder. In particolare, i seguenti illustri individui supportano Zig per un quantitativo di 200 USD/mese o superiore:
 
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
