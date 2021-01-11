@@ -25,5 +25,5 @@ pub fn main() !void {
     if (config.vals.production > 50) {
         @compileError("only up to 50 supported");
     }
-    std.log.info("up={s}", .{config.uptime});
+    std.log.info("up={d}", .{config.uptime});
 }
