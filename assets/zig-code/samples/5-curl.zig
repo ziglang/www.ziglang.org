@@ -23,7 +23,7 @@ pub fn main() !void {
 
     var response_buffer = std.ArrayList(u8).init(allocator);
 
-    // superfluous when using an arena allocator, but 
+    // superfluous when using an arena allocator, but
     // important if the allocator implementation changes
     defer response_buffer.deinit();
 
@@ -41,8 +41,8 @@ pub fn main() !void {
     if (cURL.curl_easy_perform(handle) != .CURLE_OK)
         return error.FailedToPerformRequest;
 
-    std.log.info("Got response of {} bytes", .{response_buffer.items.len});
-    std.debug.print("{}\n", .{response_buffer.items});
+    std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
+    std.debug.print("{s}\n", .{response_buffer.items});
 }
 
 fn writeToArrayListCallback(data: *c_void, size: c_uint, nmemb: c_uint, user_data: *c_void) callconv(.C) c_uint {

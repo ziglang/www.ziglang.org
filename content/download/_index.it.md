@@ -1,6 +1,6 @@
 ---
-title: "Rilasci"
-menu_title: "Rilasci"
-mobile_menu_title: "Rilasci"
+title: "Downloads"
+menu_title: "Downloads"
+mobile_menu_title: "Downloads"
 layout: downloads
 ---

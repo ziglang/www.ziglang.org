@@ -7,6 +7,6 @@ pub fn main() void {
         if (i % 15 == 0) std.log.info("ZiggZagg", .{}) //
         else if (i % 3 == 0) std.log.info("Zigg", .{}) //
         else if (i % 5 == 0) std.log.info("Zagg", .{}) //
-        else std.log.info("{}", .{i});
+        else std.log.info("{d}", .{i});
     }
 }

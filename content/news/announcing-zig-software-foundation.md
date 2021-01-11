@@ -2,7 +2,8 @@
 title: "Announcing the Zig Software Foundation"
 date: 2020-07-11T00:00:00+00:00
 mobile_menu_title: "2020-07-11"
-draft: false
+aliases:
+    - /news/announcing-zig-software-foundation.html
 ---
 # Announcing the Zig Software Foundation
 
