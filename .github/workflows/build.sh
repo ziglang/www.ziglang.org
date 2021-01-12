@@ -37,7 +37,7 @@ CGO_ENABLED=1 go build --tags extended
 cd ..
 
 # Share the changes to $PATH to other workflows
-echo "$PATH" > $GITHUB_ENV
+echo "$PATH" > $GITHUB_PATH
 
 # go back to the website 
 cd "$START_DIR"
