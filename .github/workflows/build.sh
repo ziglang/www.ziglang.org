@@ -34,6 +34,7 @@ wget -qO hugo.tar "https://api.github.com/repos/kristoff-it/hugo/tarball/"
 tar -C hugo --strip-components=1 -xf hugo.tar 
 cd hugo
 CGO_ENABLED=1 go build --tags extended
+export PATH=$PATH:$(pwd)
 cd ..
 
 # Share the changes to $PATH to other workflows
