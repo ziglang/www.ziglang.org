@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    paths-ignore: 
+    - 'docs/**'
+    # While testing the website build on github.io we're using this job
+    # to create another commit on this branch. This filter prevents a 
+    # build-commit-build loop.
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Check out code 
+      uses: actions/checkout@v2
+
+    - name: Run build setup script
+      run: sh ./.github/workflows/build.sh
+
+    - name: Build the website
+      run: hugo  --minify --cleanDestinationDir --destination=docs/
+
+    - name: Commit /docs
+      uses: EndBug/add-and-commit@v6.2.0
+      with:
+        add: "docs"
+        author_name: "Ziggy"
+        author_email: "ziggy@ziglang.org"
+        message: "new build"
