@@ -19,28 +19,28 @@ bar();
     <span class=tok-kw>const</span> x: <span class=tok-type>u8</span> = <span class=tok-number>255</span>;
     <span class=tok-kw>const</span> y = x + <span class=tok-number>1</span>;
 }</code></pre><pre><code class=shell>$ zig test test.zig
-<span class=t0_1>./doctest-3420b6c9/test.zig:3:17: </span><span class=t31_1>error: </span><span class=t0_1>operation caused overflow</span>
+<span class=t0_1>./doctest-58cf6586/test.zig:3:17: </span><span class=t31_1>error: </span><span class=t0_1>operation caused overflow</span>
     const y = x + 1;
                 <span class=t32_1>^</span>
 </code></pre><p>Here is what it looks like at runtime, in safety-checked builds:</p><p class=file></p><p class=file>null.zig</p><pre><code class=zig><span class=tok-kw>test</span> <span class=tok-str>&quot;integer overflow at runtime&quot;</span> {
     <span class=tok-kw>var</span> x: <span class=tok-type>u8</span> = <span class=tok-number>255</span>;
     x += <span class=tok-number>1</span>;
 }</code></pre><pre><code class=shell>$ zig test test.zig
-1/1 test &quot;integer overflow at runtime&quot;... thread 5126 panic: integer overflow
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-5da492f6/test.zig:3:7</span>: <span class=t2_0>0x2062c0 in test &quot;integer overflow at runtime&quot; (test)</span>
+1/1 test &quot;integer overflow at runtime&quot;... thread 5443 panic: integer overflow
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-0401a0e7/test.zig:3:7</span>: <span class=t2_0>0x2062b0 in test &quot;integer overflow at runtime&quot; (test)</span>
     x += 1;
       <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/special/test_runner.zig:69:28</span>: <span class=t2_0>0x230066 in std.special.main (test)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/special/test_runner.zig:69:28</span>: <span class=t2_0>0x230056 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:345:37</span>: <span class=t2_0>0x207ac4 in std.start.posixCallMainAndExit (test)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:345:37</span>: <span class=t2_0>0x207ab4 in std.start.posixCallMainAndExit (test)</span>
             const result = root.main() catch |err| {
                                     <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:163:5</span>: <span class=t2_0>0x207962 in std.start._start (test)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:163:5</span>: <span class=t2_0>0x207952 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class=t32_1>^</span>
 error: the following test command crashed:
-doctest-5da492f6/zig-cache/o/3e2629afe9dcd6f08a9f0defdcfff3f8/test /home/runner/work/www.ziglang.org/zig/zig
+doctest-0401a0e7/zig-cache/o/6b77e21acc401dfe943e54f57e575a6f/test /home/runner/work/www.ziglang.org/zig/zig
 </code></pre><p>Those <a href=https://ziglang.org/#Stack-traces-on-all-targets class=external-link target=_blank rel=noopener>stack traces work on all targets</a>, including <a href=https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html class=external-link target=_blank rel=noopener>freestanding</a>.</p><p>With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this:</p><p class=file></p><pre><code class=zig><span class=tok-kw>test</span> <span class=tok-str>&quot;actually undefined behavior&quot;</span> {
     <span class=tok-builtin>@setRuntimeSafety</span>(<span class=tok-null>false</span>);
     <span class=tok-kw>var</span> x: <span class=tok-type>u8</span> = <span class=tok-number>255</span>;
@@ -81,7 +81,7 @@ All 1 tests passed.
 </code></pre><h2 id=optional-type-instead-of-null-pointers>Optional type instead of null pointers</h2><p>In other programming languages, null references are the source of many runtime exceptions, and even stand accused of being <a href=https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/ class=external-link target=_blank rel=noopener>the worst mistake of computer science</a>.</p><p>Unadorned Zig pointers cannot be null:</p><p class=file></p><p class=file>null.zig</p><pre><code class=zig><span class=tok-kw>test</span> <span class=tok-str>&quot;null @intToPtr&quot;</span> {
     <span class=tok-kw>const</span> ptr = <span class=tok-builtin>@intToPtr</span>(*<span class=tok-type>i32</span>, <span class=tok-number>0x0</span>);
 }</code></pre><pre><code class=shell>$ zig test test.zig
-<span class=t0_1>./doctest-cc28dbee/test.zig:2:17: </span><span class=t31_1>error: </span><span class=t0_1>pointer type '*i32' does not allow address zero</span>
+<span class=t0_1>./doctest-6b9bf78f/test.zig:2:17: </span><span class=t31_1>error: </span><span class=t0_1>pointer type '*i32' does not allow address zero</span>
     const ptr = @intToPtr(*i32, 0x0);
                 <span class=t32_1>^</span>
 </code></pre><p>However any type can be made into an <a href=https://ziglang.org/documentation/master/#Optionals class=external-link target=_blank rel=noopener>optional type</a> by prefixing it with ?:</p><p class=file></p><p class=file>optional_syntax.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
@@ -140,7 +140,7 @@ dog
 <span class=tok-kw>pub</span> <span class=tok-kw>fn</span> <span class=tok-fn>main</span>() <span class=tok-type>void</span> {
     _ = std.fs.cwd().openFile(<span class=tok-str>&quot;does_not_exist/foo.txt&quot;</span>, .{});
 }</code></pre><pre><code class=shell>$ zig build-exe discard.zig
-<span class=t0_1>./doctest-b0c3a8c1/discard.zig:4:30: </span><span class=t31_1>error: </span><span class=t0_1>error is discarded. consider using `try`, `catch`, or `if`</span>
+<span class=t0_1>./doctest-cd032c07/discard.zig:4:30: </span><span class=t31_1>error: </span><span class=t0_1>error is discarded. consider using `try`, `catch`, or `if`</span>
     _ = std.fs.cwd().openFile(&quot;does_not_exist/foo.txt&quot;, .{});
                              <span class=t32_1>^</span>
 </code></pre><p>Errors can be handled with <a href=https://ziglang.org/documentation/master/#catch class=external-link target=_blank rel=noopener>catch</a>:</p><p class=file></p><p class=file>catch.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
@@ -165,16 +165,16 @@ all your codebase are belong to us
 }</code></pre><pre><code class=shell>$ zig build-exe try.zig
 $ ./try
 error: FileNotFound
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/os.zig:1198:23</span>: <span class=t2_0>0x228abb in std.os.openatZ (try)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/os.zig:1198:23</span>: <span class=t2_0>0x228a9b in std.os.openatZ (try)</span>
             ENOENT =&gt; return error.FileNotFound,
                       <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:762:13</span>: <span class=t2_0>0x20d512 in std.fs.Dir.openFileZ (try)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:762:13</span>: <span class=t2_0>0x20d4f2 in std.fs.Dir.openFileZ (try)</span>
             try os.openatZ(self.fd, sub_path, os_flags, 0);
             <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:693:9</span>: <span class=t2_0>0x20b07f in std.fs.Dir.openFile (try)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:693:9</span>: <span class=t2_0>0x20b05f in std.fs.Dir.openFile (try)</span>
         return self.openFileZ(&amp;path_c, flags);
         <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-7c5b3e51/try.zig:4:18</span>: <span class=t2_0>0x22d698 in main (try)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-a8e8232b/try.zig:4:18</span>: <span class=t2_0>0x22d678 in main (try)</span>
     const file = try std.fs.cwd().openFile(&quot;does_not_exist/foo.txt&quot;, .{});
                  <span class=t32_1>^</span>
 </code></pre><p>Note that is an <a href=https://ziglang.org/documentation/master/#Error-Return-Traces class=external-link target=_blank rel=noopener>Error Return Trace</a>, not a <a href=https://ziglang.org/#Stack-traces-on-all-targets class=external-link target=_blank rel=noopener>stack trace</a>. The code did not pay the price of unwinding the stack to come up with that trace.</p><p>The <a href=https://ziglang.org/documentation/master/#switch class=external-link target=_blank rel=noopener>switch</a> keyword used on an error ensures that all possible errors are handled:</p><p class=file></p><p class=file>null.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
@@ -210,16 +210,16 @@ error: FileNotFound
 
     <span class=tok-kw>return</span> value;
 }</code></pre><pre><code class=shell>$ zig test test.zig
-<span class=t0_1>./doctest-3400fd0e/test.zig:4:51: </span><span class=t31_1>error: </span><span class=t0_1>error.Overflow not handled in switch</span>
+<span class=t0_1>./doctest-c6397ec8/test.zig:4:51: </span><span class=t31_1>error: </span><span class=t0_1>error.Overflow not handled in switch</span>
     const result = parseInt(&quot;hi&quot;, 10) catch |err| switch (err) {};
                                                   <span class=t32_1>^</span>
-<span class=t0_1>./doctest-3400fd0e/test.zig:3:24: </span><span class=t36_1>note: </span><span class=t0_1>referenced here</span>
+<span class=t0_1>./doctest-c6397ec8/test.zig:3:24: </span><span class=t36_1>note: </span><span class=t0_1>referenced here</span>
 test &quot;switch on error&quot; {
                        <span class=t32_1>^</span>
-<span class=t0_1>./doctest-3400fd0e/test.zig:4:51: </span><span class=t31_1>error: </span><span class=t0_1>error.DigitExceedsRadix not handled in switch</span>
+<span class=t0_1>./doctest-c6397ec8/test.zig:4:51: </span><span class=t31_1>error: </span><span class=t0_1>error.DigitExceedsRadix not handled in switch</span>
     const result = parseInt(&quot;hi&quot;, 10) catch |err| switch (err) {};
                                                   <span class=t32_1>^</span>
-<span class=t0_1>./doctest-3400fd0e/test.zig:4:51: </span><span class=t31_1>error: </span><span class=t0_1>error.InvalidCharacter not handled in switch</span>
+<span class=t0_1>./doctest-c6397ec8/test.zig:4:51: </span><span class=t31_1>error: </span><span class=t0_1>error.InvalidCharacter not handled in switch</span>
     const result = parseInt(&quot;hi&quot;, 10) catch |err| switch (err) {};
                                                   <span class=t32_1>^</span>
 </code></pre><p>The keyword <a href=https://ziglang.org/documentation/master/#unreachable class=external-link target=_blank rel=noopener>unreachable</a> is used to assert that no errors will occur:</p><p class=file></p><p class=file>unreachable.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
@@ -229,24 +229,24 @@ test &quot;switch on error&quot; {
     file.writeAll(<span class=tok-str>&quot;all your codebase are belong to us\n&quot;</span>) <span class=tok-kw>catch</span> <span class=tok-kw>unreachable</span>;
 }</code></pre><pre><code class=shell>$ zig build-exe unreachable.zig
 $ ./unreachable
-thread 5211 panic: attempt to unwrap error: FileNotFound
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/os.zig:1198:23</span>: <span class=t2_0>0x22890b in std.os.openatZ (unreachable)</span>
+thread 5527 panic: attempt to unwrap error: FileNotFound
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/os.zig:1198:23</span>: <span class=t2_0>0x2288fb in std.os.openatZ (unreachable)</span>
             ENOENT =&gt; return error.FileNotFound,
                       <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:762:13</span>: <span class=t2_0>0x20d362 in std.fs.Dir.openFileZ (unreachable)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:762:13</span>: <span class=t2_0>0x20d352 in std.fs.Dir.openFileZ (unreachable)</span>
             try os.openatZ(self.fd, sub_path, os_flags, 0);
             <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:693:9</span>: <span class=t2_0>0x20aecf in std.fs.Dir.openFile (unreachable)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/fs.zig:693:9</span>: <span class=t2_0>0x20aebf in std.fs.Dir.openFile (unreachable)</span>
         return self.openFileZ(&amp;path_c, flags);
         <span class=t32_1>^</span>
-<span class=t37_1>???:?:?</span>: <span class=t2_0>0x20c94c in ??? (???)</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-d5f39ce8/unreachable.zig:4:71</span>: <span class=t2_0>0x22d525 in main (unreachable)</span>
+<span class=t37_1>???:?:?</span>: <span class=t2_0>0x20c93c in ??? (???)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-31364ec7/unreachable.zig:4:71</span>: <span class=t2_0>0x22d515 in main (unreachable)</span>
     const file = std.fs.cwd().openFile(&quot;does_not_exist/foo.txt&quot;, .{}) catch unreachable;
                                                                       <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:335:22</span>: <span class=t2_0>0x204d4e in std.start.posixCallMainAndExit (unreachable)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:335:22</span>: <span class=t2_0>0x204d3e in std.start.posixCallMainAndExit (unreachable)</span>
             root.main();
                      <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:163:5</span>: <span class=t2_0>0x204c22 in std.start._start (unreachable)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:163:5</span>: <span class=t2_0>0x204c12 in std.start._start (unreachable)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class=t32_1>^</span>
 (process terminated by signal)</code></pre><p>This invokes <a href=https://ziglang.org/#Performance-and-Safety-Choose-Two class=external-link target=_blank rel=noopener>undefined behavior</a> in the unsafe build modes, so be sure to use it only when success is guaranteed.</p><h3 id=stack-traces-on-all-targets>Stack traces on all targets</h3><p>The stack traces and <a href=https://ziglang.org/documentation/master/#Error-Return-Traces class=external-link target=_blank rel=noopener>error return traces</a> shown on this page work on all <a href=https://ziglang.org/#Tier-1-Support class=external-link target=_blank rel=noopener>Tier 1 Support</a> and some <a href=https://ziglang.org/#Tier-2-Support class=external-link target=_blank rel=noopener>Tier 2 Support</a> targets. <a href=https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html class=external-link target=_blank rel=noopener>Even freestanding</a>!</p><p>In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later:</p><p class=file></p><p class=file>stack_traces.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
@@ -283,31 +283,31 @@ thread 5211 panic: attempt to unwrap error: FileNotFound
 }</code></pre><pre><code class=shell>$ zig build-exe stack_traces.zig
 $ ./stack_traces
 first one:
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/debug.zig:183:29</span>: <span class=t2_0>0x236394 in std.debug.captureStackTrace (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/debug.zig:183:29</span>: <span class=t2_0>0x236384 in std.debug.captureStackTrace (stack_traces)</span>
             addr.* = it.next() orelse {
                             <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-e5bc4e93/stack_traces.zig:27:32</span>: <span class=t2_0>0x2346fc in foo (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-b85884f8/stack_traces.zig:27:32</span>: <span class=t2_0>0x2346ec in foo (stack_traces)</span>
     std.debug.captureStackTrace(null, &amp;trace1);
                                <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-e5bc4e93/stack_traces.zig:17:8</span>: <span class=t2_0>0x22d4b8 in main (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-b85884f8/stack_traces.zig:17:8</span>: <span class=t2_0>0x22d4a8 in main (stack_traces)</span>
     foo();
        <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:335:22</span>: <span class=t2_0>0x204d6e in std.start.posixCallMainAndExit (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:335:22</span>: <span class=t2_0>0x204d5e in std.start.posixCallMainAndExit (stack_traces)</span>
             root.main();
                      <span class=t32_1>^</span>
 
 
 second one:
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/debug.zig:183:29</span>: <span class=t2_0>0x236394 in std.debug.captureStackTrace (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/debug.zig:183:29</span>: <span class=t2_0>0x236384 in std.debug.captureStackTrace (stack_traces)</span>
             addr.* = it.next() orelse {
                             <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-e5bc4e93/stack_traces.zig:31:32</span>: <span class=t2_0>0x23471c in bar (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-b85884f8/stack_traces.zig:31:32</span>: <span class=t2_0>0x23470c in bar (stack_traces)</span>
     std.debug.captureStackTrace(null, &amp;trace2);
                                <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-e5bc4e93/stack_traces.zig:18:8</span>: <span class=t2_0>0x22d4bd in main (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/www.ziglang.org/doctest-b85884f8/stack_traces.zig:18:8</span>: <span class=t2_0>0x22d4ad in main (stack_traces)</span>
     bar();
        <span class=t32_1>^</span>
-<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:335:22</span>: <span class=t2_0>0x204d6e in std.start.posixCallMainAndExit (stack_traces)</span>
+<span class=t37_1>/home/runner/work/www.ziglang.org/zig/lib/std/start.zig:335:22</span>: <span class=t2_0>0x204d5e in std.start.posixCallMainAndExit (stack_traces)</span>
             root.main();
                      <span class=t32_1>^</span>
 </code></pre><p>You can see this technique being used in the ongoing <a href=https://github.com/andrewrk/zig-general-purpose-allocator/#current-status class=external-link target=_blank rel=noopener>GeneralPurposeDebugAllocator project</a>.</p><h2 id=generic-data-structures-and-functions>Generic data structures and functions</h2><p>Types are values that must be known at compile-time:</p><p class=file></p><p class=file>types.zig</p><pre><code class=zig><span class=tok-kw>const</span> std = <span class=tok-builtin>@import</span>(<span class=tok-str>&quot;std&quot;</span>);
@@ -388,13 +388,13 @@ Header has a field called name with type []const u8
 <span class=t0_1>/home/runner/work/www.ziglang.org/zig/lib/std/debug.zig:223:14: </span><span class=t31_1>error: </span><span class=t0_1>reached unreachable code</span>
     if (!ok) unreachable; // assertion failure
              <span class=t32_1>^</span>
-<span class=t0_1>./doctest-5af620e3/test.zig:13:15: </span><span class=t36_1>note: </span><span class=t0_1>called from here</span>
+<span class=t0_1>./doctest-e3195fd5/test.zig:13:15: </span><span class=t36_1>note: </span><span class=t0_1>called from here</span>
         assert(array.len == 12345);
               <span class=t32_1>^</span>
-<span class=t0_1>./doctest-5af620e3/test.zig:9:32: </span><span class=t36_1>note: </span><span class=t0_1>called from here</span>
+<span class=t0_1>./doctest-e3195fd5/test.zig:9:32: </span><span class=t36_1>note: </span><span class=t0_1>called from here</span>
 test &quot;compile-time evaluation&quot; {
                                <span class=t32_1>^</span>
-<span class=t0_1>./doctest-5af620e3/test.zig:13:15: </span><span class=t36_1>note: </span><span class=t0_1>referenced here</span>
+<span class=t0_1>./doctest-e3195fd5/test.zig:13:15: </span><span class=t36_1>note: </span><span class=t0_1>referenced here</span>
         assert(array.len == 12345);
               <span class=t32_1>^</span>
 </code></pre><h2 id=integration-with-c-libraries-without-ffibindings>Integration with C libraries without FFI/bindings</h2><p><a href=https://ziglang.org/documentation/master/#cImport class=external-link target=_blank rel=noopener>@cImport</a> directly imports types, variables, functions, and simple macros for use in Zig. It even translates inline functions from C into Zig.</p><p>Here is an example of emitting a sine wave using <a href=http://libsound.io/ class=external-link target=_blank rel=noopener>libsoundio</a>:</p><p><u>sine.zig</u><p class=file></p><pre><code class=zig><span class=tok-kw>const</span> c = <span class=tok-builtin>@cImport</span>(<span class=tok-builtin>@cInclude</span>(<span class=tok-str>&quot;soundio/soundio.h&quot;</span>));
