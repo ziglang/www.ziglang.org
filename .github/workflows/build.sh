@@ -36,7 +36,8 @@ cd hugo
 CGO_ENABLED=1 go build --tags extended
 cd ..
 
-# go back to the website and build it 
-cd "$START_DIR"
-../hugo/hugo  --minify --cleanDestinationDir --destination=docs/
+# Share the changes to $PATH to other workflows
+echo "$PATH" > $GITHUB_ENV
 
+# go back to the website 
+cd "$START_DIR"
