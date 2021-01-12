@@ -3,6 +3,9 @@
 set -x
 set -e
 
+sudo apt-get update -q
+sudo apt-get install -y s3cmd
+
 START_DIR=$(pwd)
 ZIG_DOWNLOAD_URL=$(cat data/releases.json | jq -r '.master."x86_64-linux".tarball')
 cd ..
