@@ -5,37 +5,34 @@ toc: true
 ---
 
 {{% div class="box thin"%}}
-**<center>Note for Apple Silicon users</center>**
-Zig has experimental support for codesigning. You will be able to use Zig with your M1 Mac,
-but the only way at the moment to get Zig for arm64 macOS is to compile it yourself.
-Make sure to check the [Building from source](#building-from-source) section.
+**<center>Nota para usuários do Apple Silicon</center>**
+ig tem suporte experimental para a assinatura de códigos. Você poderá usar Zig com seu M1 Mac,
+mas a única maneira de conseguir Zig para macOS em ARM64 é compilá-lo você mesmo.
+Certifique-se de verificar a seção [Building from source](#building-from-source).
 {{% /div %}}
 
 
-## Tagged release or nightly build?
-Zig has not yet reached v1.0 and the current release cycle is tied to new releases of LLVM, which have a ~6 months cadence.
-In practical terms, **Zig releases tend to be far apart and eventually become stale given the current speed of development**.
+## Marcar (Tags) as versões de lançamento e nightly?
+Zig ainda não atingiu a v1.0 e o atual ciclo de liberação está ligado a novas liberações de LLVM, que têm uma cadência de ~6 meses.
+Em termos práticos, **As versões Zig tendem a ser muito distantes e eventualmente se tornam obsoletas, dada a velocidade atual de desenvolvimento**.
 
-It's fine to evaluate Zig using a tagged version, but if you decide that you like Zig and 
-want to dive deeper, **we encourage you to upgrade to a nightly build**, mainly because 
-that way it will be easier for you to get help: most of the community and sites like 
-[ziglearn.org](https://ziglearn.org) track the master branch for the reasons stated above.
+É bom avaliar o Zig usando uma versão com tags, mas se você decidir que gosta do Zig e quer mergulhar mais fundo, **nós o encorajamos a atualizar para versão nightly**, principalmente porque dessa forma será mais fácil para você obter ajuda: a maioria da comunidade e sites como
+[ziglearn.org](https://ziglearn.org) se baseiam no *master branch* pelas razões acima expostas.
 
-The good news is that it's very easy to switch from one Zig version to another, or even have multiple versions present on the system at the same time: Zig releases are self-contained archives that can be placed anywhere in your system.
+A boa notícia é que é muito fácil mudar de uma versão Zig para outra, ou mesmo ter várias versões presentes no sistema ao mesmo tempo: As versões Zig são arquivos autocontidos que podem ser colocados em qualquer lugar em seu sistema.
 
 
-## Installing Zig
-### Direct download
-This is the most straight-forward way of obtaining Zig: grab a Zig bundle for your platform from the [Downloads](/download) page,
-extract it in a directory and add it to your `PATH` to be able to call `zig` from any location.
+## Instalando Zig
+### Baixar diretamente
+Esta é a maneira mais direta de obter o Zig: pegue um pacote Zig para sua plataforma a partir da página [Downloads](/download),
+extrair em um diretório qualquer e adicioná-lo ao seu `PATH` para poder utilizar o executável `zig` de qualquer lugar.
 
-#### Setting up PATH on Windows
-To setup your path on Windows run **one** of the following snippets of code in a Powershell instance.
-Choose if you want to apply this change on a system-wide level (requires running Powershell with admin priviledges)
-or just for your user, and **make sure to change the snippet to point at the location where your copy of Zig lies**.
-The `;` before `C:` is not a typo.
+#### Configurando PATH no Windows
+Para configurar seu caminho no Windows, execute **um** dos seguintes trechos de código em uma instância Powershell.
+Escolha se você deseja aplicar esta mudança em nível de sistema (requer a execução de Powershell com privilégios administrativos) ou apenas para seu usuário, e ** certifique-se de mudar o trecho para apontar para o local onde se encontra sua cópia do Zig***.
+O `;` antes do `C:` não é um erro de tipo.
 
-System wide (**admin** Powershell):
+Modo privilegiado do sistema (**admin** no Powershell):
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -44,7 +41,7 @@ System wide (**admin** Powershell):
 )
 ```
 
-User level (Powershell):
+Modo usuário (**sem privilégio** no Powershell):
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -52,23 +49,23 @@ User level (Powershell):
    "User"
 )
 ```
-After you're done, restart your Powershell instance.
+Depois de terminar, reinicie sua instância do Powershell.
 
-#### Setting up PATH on Linux, macOS, BSD
-Add the location of your zig binary to your PATH environment variable.
+#### Configurando PATH no Linux, macOS, BSD
+Adicione a localização de seu binário zig à sua variável de ambiente `PATH`.
 
-This is generally done by adding an export line to your shell startup script (`.profile`, `.zshrc`, ...)
+Isso geralmente é feito adicionando uma linha de exportação ao seu script de inicialização do shell. (`.profile`, `.zshrc`, ...)
 ```bash
 export PATH=$PATH:~/path/to/zig
 ```
-After you're done, either `source` your startup file or restart your shell.
+Depois de feito, seu arquivo inicial ou `source`, reinicie o shell.
 
 
 
 
-### Package managers
+### Gerenciadores de pacotes
 #### Windows
-Zig is available on [Chocolatey](https://chocolatey.org/packages/zig).
+Zig está disponível no [Chocolatey](https://chocolatey.org/packages/zig).
 ```
 choco install zig
 ```
@@ -76,14 +73,14 @@ choco install zig
 #### macOS
 
 **Homebrew**  
-NOTE: Homebrew doesn't have a bottle for Apple Silicon yet. If you have a M1 Mac, you must build Zig from source.
+NOTA: Homebrew ainda não possui os pacotes para Apple Silicon. Se você tem um M1 Mac, você deve compilar o Zig a partir da fonte.
 
-Latest tagged release:
+Última versão de lançamento:
 ```
 brew install zig
 ```
 
-Latest build from Git master branch:
+Última construção do *master branch* de Git:
 ```
 brew install zig --HEAD
 ```
@@ -93,55 +90,52 @@ brew install zig --HEAD
 port install zig
 ```
 #### Linux
-Zig is also present in many package managers for Linux. [Here](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
-you can find an updated list but keep in mind that some packages might bundle outdated versions of Zig.
+Zig também está presente em muitos gerentes de pacotes para Linux. [Aqui](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
+você pode encontrar uma lista atualizada, mas tenha em mente que alguns pacotes podem conter versões desatualizadas do Zig.
 
-### Building from source
-[Here](https://github.com/ziglang/zig/wiki/Building-Zig-From-Source) 
-you can find more information on how to build Zig from source for Linux, macOS and Windows.
+### Compilando da Fonte
+[Aqui](https://github.com/ziglang/zig/wiki/Building-Zig-From-Source) 
+você pode encontrar mais informações sobre como construir Zig a partir da fonte para Linux, MacOS e Windows.
 
-## Recommended tools
-### Syntax Higlighters and LSP
-All major text editors have syntax highlight support for Zig. 
-Some bundle it, some others require installing a plugin.  
+## Ferramentas recomendadas
+### Sintaxe dos Higlighters e LSP
+Todos os principais editores de texto têm suporte de destaque de sintaxe para Zig. 
+Alguns o empacotam, outros requerem a instalação de um plugin.  
 
-If you're interested in a deeper integration beween Zig and your editor, 
-checkout [zigtools/zls](https://github.com/zigtools/zls).
+Se você estiver interessado em uma integração mais profunda entre o Zig e seu editor, confira [zigtools/zls](https://github.com/zigtools/zls).
 
-If you're interested in what else is available, checkout the [Tools](../tools/) section.
+Se você estiver interessado no que mais está disponível, confira a seção [Tools](../tools/).
 
 ## Run Hello World
-If you completed the installation process correctly, you should now be able to invoke the Zig compiler from your shell.  
-Let's test this by creating your first Zig program!
+Se você completou o processo de instalação corretamente, agora você deverá ser capaz de invocar o compilador Zig a partir do shell.  
+Vamos testar isso criando seu primeiro programa Zig!
 
-Navigate to your projects directory and run:
+Navegue até o diretório de seus projetos e execute:
 ```bash
 mkdir hello-world
 cd hello-world
 zig init-exe
 ```
 
-This should output:
+Isto deve sair:
 ```
 info: Created build.zig
 info: Created src/main.zig
 info: Next, try `zig build --help` or `zig build run`
 ```
 
-Running `zig build run` should then compile the executable and run it, ultimately  resulting in:
+Executando `zig build run` deve então compilar o executável e executá-lo, resultando em última instância:
 ```
 info: All your codebase are belong to us.
 ```
 
-Congratulations, you have a working Zig installation!  
+Parabéns, você tem uma instalação Zig funcionando!  
 
-## Next steps
-**Check out other resources present in the [Learn](../) section**, make sure to find the Documentation for your version
-of Zig (note: nightly builds should use `master` docs) and consider giving [ziglearn.org](https://ziglearn.org) a read.
+## Próximos passos
+**Verifique outros recursos presentes na seção** [Aprender](../), certifique-se de encontrar a Documentação de sua versão do Zig (nota: as construções nightly devem utilizar documentação `master`) e considerar dar uma lida no [ziglearn.org](https://ziglearn.org) também.
 
-Zig is a young project and unfortunately we don't have yet the capacity to produce extensive documentation and learning
-materials for everything, so you should consider [joining one of the existing Zig communities](https://github.com/ziglang/zig/wiki/Community)
-to get help when you get stuck, as well as checking out initiatives like [Zig SHOWTIME](https://zig.show).
+Zig é um projeto jovem e infelizmente ainda não temos a capacidade de produzir extensa documentação e materiais de aprendizagem para tudo, portanto, você deve considerar [juntando-se a uma das comunidades Zig existentes](https://github.com/ziglang/zig/wiki/Community)
+para obter ajuda quando você ficar confuso, bem como para verificar iniciativas como [Zig SHOWTIME](https://zig.show).
 
-Finally, if you enjoy Zig and want to help speed up the development, [consider donating to the Zig Software Foundation](../../zsf)
+Finalmente, se você gosta de Zig e quer ajudar a acelerar o desenvolvimento, [considere fazer uma doação para a Zig Software Foundation](../../zsf)
 <img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
