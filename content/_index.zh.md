@@ -107,8 +107,8 @@ Zig 软件基金会由捐款维持。
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
    <picture>
-     <source srcset="pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="pex-dark.svg">
+     <source srcset="../pex-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="../pex-dark.svg">
    </picture>
  </a>
 {{% /sponsor-logos %}}
