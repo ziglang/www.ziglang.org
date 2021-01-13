@@ -6,7 +6,7 @@ toc: true
 
 {{% div class="box thin"%}}
 **<center>Note for Apple Silicon users</center>**
-Zig has experimental support for codesigning. You will be able to use Zig with your M1 Mac,
+Zig has experimental support for code signing. You will be able to use Zig with your M1 Mac,
 but the only way at the moment to get Zig for arm64 macOS is to compile it yourself.
 Make sure to check the [Building from source](#building-from-source) section.
 {{% /div %}}
@@ -31,7 +31,7 @@ extract it in a directory and add it to your `PATH` to be able to call `zig` fro
 
 #### Setting up PATH on Windows
 To setup your path on Windows run **one** of the following snippets of code in a Powershell instance.
-Choose if you want to apply this change on a system-wide level (requires running Powershell with admin priviledges)
+Choose if you want to apply this change on a system-wide level (requires running Powershell with admin privileges)
 or just for your user, and **make sure to change the snippet to point at the location where your copy of Zig lies**.
 The `;` before `C:` is not a typo.
 
@@ -101,11 +101,11 @@ you can find an updated list but keep in mind that some packages might bundle ou
 you can find more information on how to build Zig from source for Linux, macOS and Windows.
 
 ## Recommended tools
-### Syntax Higlighters and LSP
+### Syntax Highlighters and LSP
 All major text editors have syntax highlight support for Zig. 
 Some bundle it, some others require installing a plugin.  
 
-If you're interested in a deeper integration beween Zig and your editor, 
+If you're interested in a deeper integration between Zig and your editor, 
 checkout [zigtools/zls](https://github.com/zigtools/zls).
 
 If you're interested in what else is available, checkout the [Tools](../tools/) section.
