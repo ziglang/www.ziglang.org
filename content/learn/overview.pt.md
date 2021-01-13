@@ -410,7 +410,7 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically lin
 
 Em alguns aspectos, Zig é um compilador C melhor do que os próprios compiladores C!
 
-Esta funcionalidade é mais do que o agrupamento de um conjunto de ferramentas de compilação cruzada junto ao Zig. Por exemplo, o tamanho total dos cabeçalhos da libc que o Zig envia é de 22 MiB sem compressão. Enquanto isso, os cabeçalhos para musl libc + linux em x86_64 são 8 MiB, e para glibc são 3,1 MiB (falta no glibc os cabeçalhos linux), ainda assim Zig atualmente envia com 40 libcs. Com um agrupamento ingênuo que seria de 444 MiB. No entanto, graças a isto, a [ferramenta process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) que eu fiz, e algum [bom e velho trabalho manual](https://github.com/ziglang/zig/wiki/Updating-libc), Os tarballs binários Zig permanecem em torno de 30 MiB no total, apesar de apoiar a libc para todos esses alvos, bem como a compiler-rt, libunwind e libcxx, e apesar de ser um compilador C compatível com o clang. Para comparação, a compilação do binária no próprio Windows usando clang 8.0.0 do llvm.org é de 132 MiB.
+Esta funcionalidade é mais do que o agrupamento de um conjunto de ferramentas de compilação cruzada junto ao Zig. Por exemplo, o tamanho total dos cabeçalhos da libc que o Zig envia é de 22 MiB sem compressão. Enquanto isso, os cabeçalhos para musl libc + linux em x86_64 são 8 MiB, e para glibc são 3,1 MiB (falta no glibc os cabeçalhos linux), ainda assim Zig atualmente envia com 40 libcs. Com um agrupamento ingênuo que seria de 444 MiB. No entanto, graças a isto, a [ferramenta process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) que eu fiz, e algum [bom e velho trabalho manual](https://github.com/ziglang/zig/wiki/Updating-libc), Os tarballs binários Zig permanecem em torno de 30 MiB no total, apesar de apoiar a libc para todos esses alvos, bem como a compiler-rt, libunwind e libcxx, e apesar de ser um compilador C compatível com o clang. Para comparação, a compilação do binário no próprio Windows usando clang 8.0.0 do llvm.org é de 132 MiB.
 
 Note que apenas no [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) os alvos foram exaustivamente testados. Está previsto [acrescentar mais libcs](https://github.com/ziglang/zig/issues/514) (inclusive para o Windows), e para [adicionar cobertura de testes para compilação em relação a todas as libcs](https://github.com/ziglang/zig/issues/2058).
 
@@ -558,7 +558,7 @@ Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para difere
 
 #### Suporte Tier 3
 
-- The standard library has little to no knowledge of the existence of this target.
+- A biblioteca padrão tem pouco ou nenhum conhecimento da existência deste alvo.
 - Como Zig é baseado em LLVM, ele tem a capacidade de construir para esses alvos, e LLVM tem o alvo habilitado por padrão.
 - Estes alvos não são testados com freqüência; provavelmente será necessário contribuir para o Zig a fim de compilar para estes alvos.
 - O compilador Zig pode precisar ser atualizado com algumas coisas, tais como
