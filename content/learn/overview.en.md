@@ -545,7 +545,7 @@ Zig uses a "support tier" system to communicate the level of support for differe
 ### Tier System
 
 #### Tier 1 Support
-- Not only can Zig generate machine code for these targets, but the standard library cross-platform abstractions have implementations for these targets. Thus it is practical to write a pure Zig application with no dependency on libc.
+- Not only can Zig generate machine code for these targets, but the standard library cross-platform abstractions have implementations for these targets. It is practical to write a pure Zig application with no dependency on libc for operating systems that provide a stable ABI guarantee, such as Linux. (Most operating systems make no such guarantee and define their stable OS interface through libc, so for those targets, linking to libc would still be required.)
 - The CI server automatically tests these targets on every commit to master branch, and updates [the download page](https://ziglang.org/download) with links to pre-built binaries.
 - These targets have debug info capabilities and therefore produce [stack traces](https://ziglang.org/#Stack-traces-on-all-targets) on failed assertions.
 - [libc is available for this target even when cross compiling](https://ziglang.org/#Zig-ships-with-libc).
