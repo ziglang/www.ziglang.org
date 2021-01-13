@@ -29,13 +29,13 @@ De modo mais geral, ter uma abordagem de mãos livres quando se trata de alocaç
 
 A biblioteca padrão do Zig ainda é muito jovem, mas o objetivo é que cada recurso que usa um alocador aceite um alocador em tempo de execução, ou possivelmente em tempo de compilação ou de execução.
 
-A motivação para esta filosofia de projeto é permitir aos usuários escrever qualquer tipo de estratégia de alocação personalizada que considerem necessária, em vez de forçá-los ou mesmo encorajá-los a uma estratégia particular que pode não ser adequada às suas necessidades. Por exemplo, a Ferrugem parece encorajar uma única estratégia de alocação global, que não é adequada para muitos casos de uso, tais como desenvolvimento de SO e desenvolvimento de jogos de alto desempenho. Zig está recebendo sugestões da postura de [Jai](https://www.youtube.com/watch?v=ciGQCP6HgqI) sobre alocadores, uma vez que essa linguagem está sendo desenvolvida por um designer de jogos de alto desempenho para o uso de jogos de alto desempenho. 
+A motivação para esta filosofia de projeto é permitir aos usuários escrever qualquer tipo de estratégia de alocação personalizada que considerem necessária, em vez de forçá-los ou mesmo encorajá-los a uma estratégia particular que pode não ser adequada às suas necessidades. Por exemplo, Rust parece encorajar uma única estratégia de alocação global, que não é adequada para muitos casos de uso, tais como desenvolvimento de SO e desenvolvimento de jogos de alto desempenho. Zig está recebendo sugestões da postura de [Jai](https://www.youtube.com/watch?v=ciGQCP6HgqI) sobre alocadores, uma vez que essa linguagem está sendo desenvolvida por um designer de jogos de alto desempenho para o uso de jogos de alto desempenho. 
 
 Como afirmado antes, este tópico ainda é um pouco confuso e se tornará mais concreto conforme a biblioteca padrão do Zig amadurece. O importante é que a alocação de heap seja um conceito de espaço do usuário, e não embutido na linguagem.
 
 Nem é preciso dizer que não existe um coletor de lixo embutido como há na linguagem Go.
 
-[O pânico da biblioteca padrão do Rust quando está Sem Memória (Out Of Memory)](https://github.com/rust-lang/rust/issues/29802)
+[O pânico emitido pela biblioteca padrão do Rust quando está Sem Memória (Out Of Memory)](https://github.com/rust-lang/rust/issues/29802)
 
 [1]: Na verdade, existe um operador de concatenação de cordas (geralmente um operador de concatenação de matriz), mas ele só funciona em tempo de compilação, de modo que ainda não há alocação de pilha de tempo de execução com isso.
 
@@ -76,7 +76,7 @@ Quando você observa o código Zig, tudo é uma simples expressão ou uma chamad
 
 ## Ferramentas
 
-Zig pode ser baixado na seção [Baixar](/downloads/). Zig fornece arquivos binários para linux, janelas, macos e freebsd. O seguinte descreve o que você obtém com este arquivo:
+Zig pode ser baixado na seção [Baixar](/downloads/). Zig fornece arquivos binários para linux, windows, macos e freebsd. O seguinte descreve o que você obtém com este arquivo:
 
 * instalado após baixar e extrair de um único arquivo, sem necessidade de configuração do sistema
 * compilado estaticamente para que não haja dependências de tempo de execução
