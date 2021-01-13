@@ -13,13 +13,11 @@ pub fn main() !void {
     // global curl init, or fail
     if (cURL.curl_global_init(cURL.CURL_GLOBAL_ALL) != .CURLE_OK)
         return error.CURLGlobalInitFailed;
+    defer cURL.curl_global_cleanup();
 
     // curl easy handle init, or fail
     const handle = cURL.curl_easy_init() orelse return error.CURLHandleInitFailed;
-    defer {
-        cURL.curl_easy_cleanup(handle);
-        cURL.curl_global_cleanup();
-    }
+    defer cURL.curl_easy_cleanup(handle);
 
     var response_buffer = std.ArrayList(u8).init(allocator);
 
