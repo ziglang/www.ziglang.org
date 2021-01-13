@@ -10,7 +10,7 @@ Focus on debugging your application rather than debugging your programming langu
 
 Zig's entire syntax is specified with a [500-line PEG grammar file](https://ziglang.org/documentation/master/#Grammar).
 
-There is **no hidden control flow**, no hidden memory allocations, no preprocessor, and no macros. If Zig code doesn't look like it's jumping away to call a function, then it isn't. This means you can be sure that the following code calls only foo() and then bar(), and this is guaranteed without needing to know the types of anything:
+There is **no hidden control flow**, no hidden memory allocations, no preprocessor, and no macros. If Zig code doesn't look like it's jumping away to call a function, then it isn't. This means you can be sure that the following code calls only `foo()` and then `bar()`, and this is guaranteed without needing to know the types of anything:
 
 ```zig
 var a = b + c.d;
