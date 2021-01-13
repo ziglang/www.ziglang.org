@@ -11,7 +11,7 @@ make the website pleasing to the eye on various screen sizes and
 color scheme preferences as well as friendlier to programmers with
 a wider range of backgrounds.
 
-I watched Loris perform due dilligence by carefully choosing which
+I watched Loris perform due diligence by carefully choosing which
 aspects from established programming language websites to copy, and
 which aspects to omit for Zig. But even more importantly,
 he actively sought feedback from various Zig communities and made
