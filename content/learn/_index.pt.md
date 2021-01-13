@@ -1,7 +1,7 @@
 ---
-title: "Learn"
-menu_title: "Learn"
-mobile_menu_title: "Learn"
+title: "Aprender"
+menu_title: "Aprender"
+mobile_menu_title: "Aprender"
 toc: false
 layout: single
 ---

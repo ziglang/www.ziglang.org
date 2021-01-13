@@ -1,6 +1,6 @@
 ---
-title: "In-depth Overview"
-mobile_menu_title: "Overview"
+title: "Visão Geral em Profundidade"
+mobile_menu_title: "Visão Geral"
 toc: true
 ---
 # Destaques
