@@ -106,7 +106,7 @@ Se você estiver interessado em uma integração mais profunda entre o Zig e seu
 
 Se você estiver interessado no que mais está disponível, confira a seção [Tools](../tools/).
 
-## Run Hello World
+## Executar Hello World
 Se você completou o processo de instalação corretamente, agora você deverá ser capaz de invocar o compilador Zig a partir do shell.  
 Vamos testar isso criando seu primeiro programa Zig!
 

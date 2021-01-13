@@ -8,7 +8,7 @@ toc: true
 
 Concentre-se na depuração de sua aplicação em vez de depurar seus conhecimentos em uma linguagem de programação.
 
-Toda a sintaxe do Zig é especificada com um [500-line PEG grammar file](https://ziglang.org/documentation/master/#Grammar).
+Toda a sintaxe do Zig é especificada com um [Arquivo gramatical PEG de 500 linhas](https://ziglang.org/documentation/master/#Grammar).
 
 Não há **nenhum fluxo de controle oculto**, nenhuma alocação de memória oculta, nenhum pré-processador, e nenhuma macros. Se o código Zig não parece estar pulando para chamar uma função, então não está. Isto significa que você pode ter certeza de que o seguinte código chama apenas `foo()` e depois `bar()`, e isto é garantido sem a necessidade de saber os tipos de nada:
 
@@ -18,49 +18,49 @@ foo();
 bar();
 ```
 
-Examples of hidden control flow:
+Exemplos de fluxo de controle oculto:
 
-- D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
-- C++, D, and Rust have operator overloading, so the `+` operator might call a function.
-- C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called.
+- D tem funções `@property`, que são métodos que você chama com o que parece ser acesso de campo, então no exemplo acima, `c.d` poderia chamar uma função.
+- C++, D, e Rust têm sobrecarga do operador, portanto o operador `+` pode chamar uma função.
+- C++, D, e Go têm exceções do tipo `throw/catch`, portanto `foo()` pode lançar uma exceção, e impedir que `bar()` seja chamado.
 
- Zig promotes code maintenance and readability by making all control flow managed exclusively with language keywords and function calls.
+Zig promove a manutenção do código e a legibilidade, fazendo com que todo o fluxo de controle seja gerenciado exclusivamente com palavras-chave do idioma e chamadas de função.
 
 ## Performance and Safety: Choose Two
 
-Zig has four [build modes](https://ziglang.org/documentation/master/#Build-Mode), and they can all be mixed and matched all the way down to [scope granularity](https://ziglang.org/documentation/master/#setRuntimeSafety).
+Zig tem quatro [modos de construção](https://ziglang.org/documentation/master/#Build-Mode), e todas elas podem ser misturadas e combinadas até a [granularidade do escopo](https://ziglang.org/documentation/master/#setRuntimeSafety).
 
-| Parameter | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
+| Parametro | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
-Optimizations - improve speed, harm debugging, harm compile time | | -O3 | -O3| -Os |
-Runtime Safety Checks - harm speed, harm size, crash instead of undefined behavior | On | On | | |
+Otimizações - melhorar a velocidade, depuração de danos, tempo de compilação de danos | | -O3 | -O3| -Os |
+Verificações de segurança em tempo de execução - velocidade do dano, tamanho do dano, acidente ao invés de comportamento indefinido | On | On | | |
 
-Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode:
+Aqui temos [Sobrecarga de Inteiros (Integer Overflow)](https://ziglang.org/documentation/master/#Integer-Overflow) que parece estar em tempo de compilação, independentemente do modo de construção:
 
 {{< zigdoctest "assets/zig-code/features/1-integer-overflow.zig" >}}
 
-Here is what it looks like at runtime, in safety-checked builds:
+Aqui está o que parece em tempo de execução, em construções verificadas em termos de segurança:
 
 {{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
 
-Those [stack traces work on all targets](https://ziglang.org/#Stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
+Esses [rastreamentos de pilhas funcionam em todos os alvos](https://ziglang.org/#Stack-traces-on-all-targets), incluindo [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
-With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this:
+Com Zig pode-se confiar em um modo de construção `safe-enabled`, e desativar seletivamente a segurança nos gargalos de desempenho. Por exemplo, o exemplo anterior poderia ser modificado desta forma:
 
 {{< zigdoctest "assets/zig-code/features/3-undefined-behavior.zig" >}}
 
-Zig uses [undefined behavior](https://ziglang.org/documentation/master/#Undefined-Behavior) as a razor sharp tool for both bug prevention and performance enhancement.
+Zig utiliza [comportamento indefinido](https://ziglang.org/documentation/master/#Undefined-Behavior) com inteligência tanto para a prevenção de bugs quanto para a melhoria do desempenho.
 
-Speaking of performance, Zig is faster than C.
+Por falar em desempenho, Zig é mais rápido que C.
 
-- The reference implementation uses LLVM as a backend for state of the art optimizations.
-- What other projects call "Link Time Optimization" Zig does automatically.
+- A implementação de referência utiliza LLVM como um backend para as otimizações de ponta.
+- O que outros projetos chamam de "Link Time Optimization" e Zig faz automaticamente.
 - For native targets, advanced CPU features are enabled (-march=native), thanks to the fact that [Cross-compiling is a first-class use case](https://ziglang.org/#Cross-compiling-is-a-first-class-use-case).
-- Carefully chosen undefined behavior. For example, in Zig both signed and unsigned integers have undefined behavior on overflow, contrasted to only signed integers in C. This [facilitates optimizations that are not available in C](https://godbolt.org/z/n_nLEU).
-- Zig directly exposes a [SIMD vector type](https://ziglang.org/documentation/master/#Vectors), making it easy to write portable vectorized code.
+- Comportamento cuidadosamente escolhido e indefinido. Por exemplo, em Zig, tanto os inteiros assinados como os não assinados têm um comportamento indefinido no transbordamento, ao contrário de apenas os inteiros assinados em C. Isto [facilitates optimizations that are not available in C](https://godbolt.org/z/n_nLEU).
+- Zig expõe diretamente a [vetores tipo SIMD](https://ziglang.org/documentation/master/#Vectors), facilitando a escrita de código vetorizado portátil.
 
-Please note that Zig is not a fully safe language. For those interested in following Zig's safety story, subscribe to these issues:
+Favor notar que Zig não é uma linguagem totalmente segura. Para aqueles interessados em seguir a história de segurança do Zig, inscrevam-se para estas questões:
 
 - [enumerate all kinds of undefined behavior, even that which cannot be safety-checked](https://github.com/ziglang/zig/issues/1966)
 - [make Debug and ReleaseSafe modes fully safe](https://github.com/ziglang/zig/issues/2301)
