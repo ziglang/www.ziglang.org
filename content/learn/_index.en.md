@@ -23,7 +23,7 @@ A list of useful tools that can help you write Zig code.
 
 
 ## Getting started
-If you're ready to start programming in Zig, this guide will help you setup your enviornment.
+If you're ready to start programming in Zig, this guide will help you setup your environment.
 
 - [Getting started]({{< ref "getting-started.md" >}})  
 
