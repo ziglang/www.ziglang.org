@@ -6,7 +6,7 @@ toc: true
 
 {{% div class="box thin"%}}
 **<center>Apple Silicon 用户须知</center>**
-Zig有实验性的代码签名支持。您将能够在您的 M1 Mac 上使用Zig，但目前获得 arm64 macOS 版 Zig 的唯一方法是自己编译。请务必查看[从源码开始构建](#building-from-source)部分。
+Zig有实验性的代码签名支持。您将能够在您的 M1 Mac 上使用Zig，但目前获得 arm64 macOS 版 Zig 的唯一方法是自己编译。请务必查看[从源码开始构建](#从源码构建)部分。
 {{% /div %}}
 
 
@@ -21,7 +21,7 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
 
 ## 安装 Zig
 ### 直接下载
-这是最直接的获取 Zig 的方法：从 [Downloads](/download) 页面为您的平台获取压缩包，
+这是最直接的获取 Zig 的方法：从[下载](../../download)页面为您的平台获取压缩包，
 将其解压到一个目录，然后添加到你的 PATH 环境变量里，然后即可在任意位置调用 zig 了。
 
 #### 在 Windows 上设置 PATH
