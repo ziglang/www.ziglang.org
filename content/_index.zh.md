@@ -2,7 +2,7 @@
 title: 主页
 mobile_menu_title: "主页"
 ---
-{{< slogan get_started="快速入门" docs="开发文档" notes="更新日志">}}
+{{< slogan get_started="快速入门" docs="开发文档" notes="更新日志" lang="zh">}}
 Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优化**和**可重用**的软件。
 {{< /slogan >}}
 
