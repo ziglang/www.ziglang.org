@@ -1,6 +1,6 @@
 ---
-title: "Downloads & Docs"
-menu_title: "Downloads & Docs"
-mobile_menu_title: "Downloads & Docs"
+title: "Download"
+menu_title: "Download"
+mobile_menu_title: "Download"
 layout: downloads
 ---
