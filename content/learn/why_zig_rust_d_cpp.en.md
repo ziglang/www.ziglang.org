@@ -76,7 +76,7 @@ When you look at Zig code, everything is a simple expression or a function call.
 
 ## Tooling
 
-Zig can be downloaded from [the downloads section](/downloads/).  Zig provides binary archives for linux, windows, macos and freebsd. The following describes what you get with this archive:
+Zig can be downloaded from [the downloads section](/download/).  Zig provides binary archives for linux, windows, macos and freebsd. The following describes what you get with this archive:
 
 * installed by downloading and extracting a single archive, no system configuration needed
 * statically compiled so there are no runtime dependencies
