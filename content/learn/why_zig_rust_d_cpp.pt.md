@@ -52,15 +52,15 @@ Um dos santo graal da programação é a reutilização de código. Infelizmente
  * Se uma linguagem torna muito fácil ignorar erros e, portanto, verificar se uma biblioteca trata corretamente e gera bolhas de erros, pode ser tentador ignorar a biblioteca e implementá-la novamente, sabendo que todos os erros relevantes foram tratados corretamente. O Zig é projetado de forma que a coisa mais preguiçosa que um programador pode fazer é lidar com os erros corretamente e, portanto, pode-se estar razoavelmente confiante de que uma biblioteca irá propagar erros.
  * Atualmente, é pragmaticamente verdade que C é a linguagem mais versátil e portátil. Qualquer linguagem que não tenha a capacidade de interagir com o código C corre o risco de ser obscurecida. O Zig está tentando se tornar a nova linguagem portátil para bibliotecas, tornando-o simultaneamente direto para a conformidade com a C ABI para funções externas e introduzindo segurança e design de linguagem que evita bugs comuns nas implementações.
 
-## Um Gerenciador de Pacotes e um Sistema de Construção para projetos existentes
+## Um Gerenciador de Pacotes e um Sistema de Compilação para projetos existentes
 
-Zig é uma linguagem de programação, mas também é enviada com um sistema de construção e um gerenciador de pacotes que se destinam a ser úteis mesmo no contexto de um projeto C/C++ tradicional.
+Zig é uma linguagem de programação, mas também é enviada com um sistema de compilação e um gerenciador de pacotes que se destinam a ser úteis mesmo no contexto de um projeto C/C++ tradicional.
 
-Você não só pode escrever o código Zig em vez do código C ou C++, mas também pode usar Zig como um substituto para ferramentas automáticas, fazer, fazer, scons, ninja, etc. E além disso, ele (irá) fornecer um gerenciador de pacotes para dependências nativas. Este sistema de construção é destinado a ser apropriado mesmo que a base de código de um projeto esteja totalmente em C ou C++.
+Você não só pode escrever o código Zig em vez do código C ou C++, mas também pode usar Zig como um substituto para ferramentas automáticas, fazer, fazer, scons, ninja, etc. E além disso, ele (irá) fornecer um gerenciador de pacotes para dependências nativas. Este sistema de compilação é destinado a ser apropriado mesmo que a base de código de um projeto esteja totalmente em C ou C++.
 
 Gerentes de pacotes de sistema como apt-get, pacman, homebrew, e outros são fundamentais para a experiência do usuário final, mas eles podem ser insuficientes para as necessidades dos desenvolvedores. Um gerenciador de pacotes de idioma específico pode ser a diferença entre não ter contribuidores e ter dezenas. Para projetos de código aberto, a dificuldade de conseguir que o projeto seja construído é um enorme obstáculo para os potenciais contribuintes. Para projetos C/C++, ter dependências pode ser fatal, especialmente no Windows, onde não há um gerenciador de pacotes. Mesmo quando se trata apenas de construir o Zig, a maioria dos colaboradores em potencial tem dificuldades com a dependência da LLVM. O Zig está (estará) oferecendo uma forma de os projetos dependerem diretamente de bibliotecas nativas - sem depender do gerenciador de pacotes do sistema dos usuários para ter a versão correta disponível, e de uma forma que é praticamente garantida para construir projetos com sucesso na primeira tentativa, independentemente do sistema que está sendo usado e independente da plataforma que está sendo visada.
 
-Zig está oferecendo a substituição do sistema de construção de um projeto por uma linguagem razoável usando uma API declarativa para a construção de projetos, que também fornece o gerenciamento de pacotes e, portanto, a capacidade de realmente depender de outras bibliotecas C. A capacidade de ter dependências permite abstrações de maior nível e, portanto, a proliferação de códigos reutilizáveis de alto nível.
+Zig está oferecendo a substituição do sistema de compilação de um projeto por uma linguagem razoável usando uma API declarativa para a compilação de projetos, que também fornece o gerenciamento de pacotes e, portanto, a capacidade de realmente depender de outras bibliotecas C. A capacidade de ter dependências permite abstrações de maior nível e, portanto, a proliferação de códigos reutilizáveis de alto nível.
 
 ## Simplicidade
 
@@ -83,5 +83,5 @@ Zig pode ser baixado na seção [Baixar](/downloads/). Zig fornece arquivos bin�
 * utiliza a infra-estrutura madura e bem suportada da LLVM que permite uma profunda otimização e suporte para a maioria das principais plataformas
 * out of the box cross-compilation to most major platforms
 * vincula código fonte com libc que será compilado dinamicamente quando necessário para qualquer plataforma suportada
-* inclui sistema de construção com caching
+* inclui sistema de compilação com caching
 * compila o código C com o suporte da libc
