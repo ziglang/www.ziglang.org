@@ -108,8 +108,8 @@ As seguintes empresas estão fornecendo suporte financeiro direto para a Zig Sof
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
    <picture>
-     <source srcset="pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="pex-dark.svg">
+     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/pex-dark.svg">
    </picture>
  </a>
 {{% /sponsor-logos %}}
