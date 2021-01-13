@@ -9,7 +9,11 @@ Website for [Zig](https://github.com/ziglang/zig)
 - A build of [kristoff-it/zig-doctest](https://github.com/kristoff-it/zig-doctest)
 - Latest Zig (the website tracks master branch)
 
-Hugo expects to find both `zig` and `doctest` in `$PATH`.
+Hugo needs to be built with CSS support:
+```
+CGO_ENABLED=1 go build --tags extended
+```
+Finally, Hugo expects to find both `zig` and `doctest` in `$PATH`.
 
 ### Running the development server
 Run `hugo serve`. On first launch it will use doctest to run all code snippets present in the website. Any error at this stage will either be about missing doctest, Zig being outdated (thus erroneously failing correct tests), or a code snippet failing a test for legitimate reasons.
@@ -44,9 +48,9 @@ DefaultContentLanguage = "en"
 
 Then copy `content/_index.en.md` to `content/_index.ja.md` and apply a small change to be able to distinguish the two versions.
 
-At this point you can go in your browser to `localhost:PORT/ja/` to preview your translation.
+Start `hugo serve` (or reload it); at this point you can go in your browser to `localhost:PORT/ja/` to preview your translation.
 
-Translate all files in content that have a `.en.md` extension and translate `themes/ziglang-original/i18n/en.toml` to translate some menu items, the downloads page, and a few other miscelanneous strings.
+Translate all files in `content/` that have a `.en.md` extension, and translate `themes/ziglang-original/i18n/en.toml` to translate some menu items, the downloads page, and a few other miscelanneous strings.
 
 Finally, add your translation to `translations/index.md`.
 
