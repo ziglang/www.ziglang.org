@@ -164,7 +164,7 @@ Zig 标准库也是如此。任何需要分配内存的函数都会接受一个�
 
 {{< zigdoctest "assets/zig-code/features/16-unreachable.zig" >}}
 
-这将会在不安全构建中导致[未定义行为](#性能和安全：全都要)的发生，因此请确保只有一定会成功时才使用。
+这将会在不安全构建中导致[未定义行为](#性能和安全全都要)的发生，因此请确保只有一定会成功时才使用。
 
 ### 在所有目标上启用堆栈跟踪
 
@@ -255,7 +255,7 @@ sys	0m0.009s
 
 这要归功于[构建产物缓存](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching)。Zig 会自动解析 .d 文件，使用强大的缓存系统来避免重复工作。
 
-Zig 不只是可以用来编译 C 代码，同时还有很好的理由使用 Zig 作为 C 编译器：[zig 与 libc 一起发布](#Zig-与-libc-一起发布)。
+Zig 不只是可以用来编译 C 代码，同时还有很好的理由使用 Zig 作为 C 编译器：[zig 与 libc 一起发布](#zig-与-libc-一起发布)。
 
 ### 为 C 代码导出函数、变量和类型，使其依赖
 
@@ -274,7 +274,7 @@ $ zig build-lib mathtest.zig
 $ zig build-lib mathtest.zig -dynamic
 ```
 
-这有一个使用 [Zig 构建系统](#Zig-构建系统)的例子:
+这有一个使用 [Zig 构建系统](#zig-构建系统)的例子:
 
 <u>test.c</u>
 ```c
@@ -374,7 +374,7 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically link
 
 这意味着在这些目标上使用 `--library c` 将*不依赖任何系统文件*！
 
-让我们再看看 [C 语言 hello world 例子](#Zig-也是-C-编译器)：
+让我们再看看 [C 语言 hello world 例子](#zig-也是-c-编译器)：
 ```
 $ zig build-exe --c-source hello.c --library c
 $ ./hello
@@ -545,9 +545,9 @@ Zig使用“支持等级”系统来描述不同目标的支持程度。需要�
 
 #### 一级支持
 - Zig 不仅可以为这些目标生成机器代码，而且标准库的跨平台抽象也有这些目标的实现。因此，写一个不依赖 libc 的纯 Zig 应用是很实用的。
-- CI 服务器在每次提交到主分支时都会自动测试这些目标，并在[下载页面](/download/)更新预建二进制文件的链接。
+- CI 服务器在每次提交到主分支时都会自动测试这些目标，并在[下载页面](../../download/)更新预建二进制文件的链接。
 - 这些目标具有调试信息功能，因此在失败的断言时产生[堆栈跟踪](#在所有目标上启用堆栈跟踪)。
-- [即使在交叉编译时，libc也可以用于这个目标。](#Zig-与-libc-一起发布).
+- [即使在交叉编译时，libc也可以用于这个目标。](#zig-与-libc-一起发布)
 - 所有的行为测试和适用的标准库测试都通过了这个目标。所有的语言功能都能正常工作。
 
 #### 二级支持
