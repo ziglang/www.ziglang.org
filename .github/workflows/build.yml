@@ -1,23 +1,57 @@
 name: CI
-on:
-  push
+
+on: push
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    
-    - name: Check out code 
-      uses: actions/checkout@v2
+      - name: Check out code
+        uses: actions/checkout@v2
 
-    - name: Run build setup script
-      run: sh ./.github/workflows/build.sh
+      - name: Setup Directories
+        run: |
+          mkdir zig
+          mkdir doctest
+          mkdir hugo
 
-    - name: Build the website
-      run: hugo --minify --cleanDestinationDir
+          echo "$(pwd)/zig" >> $GITHUB_PATH
+          echo "$(pwd)/doctest/zig-cache/bin" >> $GITHUB_PATH
+          echo "$(pwd)/hugo" >> $GITHUB_PATH
 
-    - name: Deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: sh ./.github/workflows/deploy.sh
+      - name: Download Zig
+        working-directory: zig
+        run: |
+          wget -qO zig.tar.xf "$(cat ../data/releases.json | jq -r '.master."x86_64-linux".tarball')"
+          tar --strip-components=1 -xJf zig.tar.xf
+
+      - name: Setup s3cmd
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y s3cmd
+
+      - name: Build Doctest
+        working-directory: doctest
+        run: |
+          wget -qO doctest.tar "https://api.github.com/repos/kristoff-it/zig-doctest/tarball/"
+          tar --strip-components=1 -xvf doctest.tar
+
+          zig build
+
+      - name: Download Hugo
+        working-directory: hugo
+        run: |
+          wget -qO hugo "https://github.com/kristoff-it/hugo/releases/download/v0.0.1/hugo"
+          chmod +x hugo
+
+      - name: Build the website
+        run: |
+          hugo --minify --cleanDestinationDir
+
+      - name: Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          s3cmd put -P --no-mime-magic --recursive --add-header="Cache-Control: max-age=0, must-revalidate" "public/" "s3://ziglang.org/"
