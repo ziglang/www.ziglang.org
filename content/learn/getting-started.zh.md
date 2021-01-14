@@ -133,7 +133,7 @@ info: All your codebase are belong to us.
 **查看在[学习](../)章节的其他资源**，请务必找到与你的 Zig 版本匹配的文档。
 （注意：夜间构建版本应该使用主分支上的文档），并考虑读一读 [ziglearn.org](https://ziglearn.org)。
 
-Zig 是一个年轻的项目，遗憾的是我们还没有能力为所有的东西制作大量的文档和学习材料。因此，你应该考虑[加入其中一个 Zig 社群](https://github.com/ziglang/zig/wiki/Community)
+Zig 是一个年轻的项目，遗憾的是我们还没有能力为所有的东西制作大量的文档和学习材料。因此，你应该考虑[加入其中一个 Zig 社区](https://github.com/ziglang/zig/wiki/Community)
 以在遇到问题是获取帮助，同样也可以看看 [Zig SHOWTIME（英文）](https://zig.show)。
 
 最后，如果你喜欢 Zig 并想加速 Zig 开发，[考虑捐助 Zig 软件基金会](../../zsf)

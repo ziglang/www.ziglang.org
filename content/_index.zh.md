@@ -52,7 +52,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 
 
 {{% div class="alt-background" %}}
-{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="社群" %}}
+{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="社区" %}}
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
@@ -60,13 +60,13 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 {{% /div %}}
 
 {{% div class="community-message" %}}
-# Zig 社群是去中心化的
-任何人都可以自由地建立和维护自己的社群。
-没有“官方”或“非官方”的概念，但是，每个社群都有自己的版主和规则。
+# Zig 社区是去中心化的
+任何人都可以自由地建立和维护自己的社区。
+没有“官方”或“非官方”的概念，但是，每个社区都有自己的版主和规则。
 
 <div style="">
 <h1>
-	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">查看所有社群</a>
+	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">查看所有社区</a>
 </h1>
 </div>
 {{% /div %}}
