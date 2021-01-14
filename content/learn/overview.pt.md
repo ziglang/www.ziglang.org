@@ -44,7 +44,7 @@ Aqui está o que parece em tempo de execução, em construções verificadas em 
 {{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
 
-Esses [rastreamentos de pilhas funcionam em todos os alvos](https://ziglang.org/#Stack-traces-on-all-targets), incluindo [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
+Esses [rastreamentos de pilhas funcionam em todos os dispositivos](https://ziglang.org/#Stack-traces-on-all-targets), incluindo [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
 Com Zig pode-se confiar em um modo de compilação `safe-enabled`, e desativar seletivamente a segurança nos gargalos de desempenho. Por exemplo, o exemplo anterior poderia ser modificado desta forma:
 
@@ -56,7 +56,7 @@ Por falar em desempenho, Zig é mais rápido que C.
 
 - A implementação de referência utiliza LLVM como um backend para as otimizações de ponta.
 - O que outros projetos chamam de "Link Time Optimization" e Zig faz automaticamente.
-- Para alvos nativos, recursos avançados de CPU são habilitados (-march=native), graças ao fato da [compilação cruzada ser um caso de uso de primeira classe](https://ziglang.org/#Cross-compiling-is-a-first-class-use-case).
+- Compila de forma nativa para qualquer dispositivo, utilizando recursos avançados da CPU que são habilitados (-march=native), graças ao fato da [compilação cruzada ser um caso de uso de primeira classe](https://ziglang.org/#Cross-compiling-is-a-first-class-use-case).
 - Comportamento cuidadosamente escolhido e indefinido. Por exemplo, em Zig, tanto os inteiros assinados como os não assinados têm um comportamento indefinido no transbordamento, ao contrário de apenas os inteiros assinados em C. Isto [facilita as otimizações que não estão disponíveis em C](https://godbolt.org/z/n_nLEU).
 - Zig expõe diretamente a [vetores tipo SIMD](https://ziglang.org/documentation/master/#Vectors), facilitando a escrita de código vetorizado portátil.
 
@@ -71,7 +71,7 @@ A biblioteca padrão do Zig se integra com a libc, mas não depende dela. Aqui e
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Quando compilado com `-O ReleaseSmall`, símbolos de depuração são removidos (stripped), modo de thread única, isto produz um executável estático de 9,8 KiB para o alvo x86_64-linux:
+Quando compilado com `-O ReleaseSmall`, símbolos de depuração são removidos (stripped), modo de thread única, isto produz um executável estático de 9,8 KiB para a plataforma x86_64-linux:
 ```
 $ zig build-exe hello.zig --release-small --strip --single-threaded
 $ wc -c hello
@@ -133,7 +133,7 @@ Uma biblioteca escrita em Zig é elegível para ser usada em qualquer lugar:
 
 Para conseguir isto, os programadores Zig devem gerenciar sua própria memória e devem lidar com falhas na alocação de memória.
 
-Isto também é verdade para a Biblioteca Padrão Zig. Qualquer função que precise alocar memória aceita um parâmetro do alocador. Como resultado, a Biblioteca Padrão Zig pode ser usada até mesmo para o alvo freestanding.
+Isto também é verdade para a Biblioteca Padrão Zig. Qualquer função que precise alocar memória aceita um parâmetro do alocador. Como resultado, a Biblioteca Padrão Zig pode ser usada até mesmo para o dispositivo freestanding.
 
 Além de [Uma nova tomada de controle de erros](https://ziglang.org/#A-fresh-take-on-error-handling), Zig fornece [defer](https://ziglang.org/documentation/master/#defer) e [errdefer](https://ziglang.org/documentation/master/#errdefer) para tornar a gestão de todos os recursos - não apenas a memória - simples e facilmente verificável.
 
@@ -167,9 +167,9 @@ A palavra-chave [unreachable](https://ziglang.org/documentation/master/#unreacha
 
 Isto invoca um [comportamento indefinido](https://ziglang.org/#Performance-and-Safety-Choose-Two) nos modos de compilação inseguros, portanto, certifique-se de usá-lo somente quando o sucesso for garantido.
 
-### Rastreamento de pilha em todos os alvos
+### Rastreamento de pilha em todos os dispositivos
 
-O rastreamento da pilha e [rastreamento do retorno de erros](https://ziglang.org/documentation/master/#Error-Return-Traces) mostram que nesta página funcionam todos os alvos da [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) e alguns da [Suporte Tier 2](https://ziglang.org/#Tier-2-Support). [Até mesmo freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
+O rastreamento da pilha e [rastreamento do retorno de erros](https://ziglang.org/documentation/master/#Error-Return-Traces) mostram que nesta página funcionam todos os dispositivos da tabela [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) e alguns da [Suporte Tier 2](https://ziglang.org/#Tier-2-Support). [Até mesmo freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
 
 Além disso, a biblioteca padrão tem a capacidade de capturar um traço de pilha em qualquer ponto e depois despejá-la em erro padrão mais tarde:
 
@@ -299,7 +299,7 @@ $ zig build test
 
 ## A compilação cruzada é um caso de uso de primeira classe
 
-Zig pode compilar para qualquer um dos alvos a partir da [Tabela de Suporte](https://ziglang.org/#Support-Table) com [Suporte Tier 3](https://ziglang.org/#Tier-3-Support) ou melhor. Nenhum "conjunto de ferramentas cruzada" precisa ser instalada ou algo parecido. Aqui está um "Hello World" nativo:
+Zig pode compilar para qualquer um dos dispositivos listados na [Tabela de Suporte](https://ziglang.org/#Support-Table) com [Suporte Tier 3](https://ziglang.org/#Tier-3-Support) ou melhor. Nenhum "conjunto de ferramentas cruzada" precisa ser instalada ou algo parecido. Aqui está um "Hello World" nativo:
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
@@ -316,11 +316,11 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
 
-Isto funciona em qualquer [Tier 3](https://ziglang.org/#Tier-3-Support)+ alvos, para qualquer [Tier 3](https://ziglang.org/#Tier-3-Support)+ alvos.
+Isto funciona em qualquer [Tier 3](https://ziglang.org/#Tier-3-Support)+ dispositivos, para qualquer [Tier 3](https://ziglang.org/#Tier-3-Support)+ plataformas.
 
-### Zig embarca com libc
+### Zig vinculado com libc
 
-Você pode encontrar os alvos libc disponíveis com `zig targets`:
+Você pode encontrar as plataformas disponíveis que suportam libc, através do comando `zig targets`:
 ```
 ...
  "libc": [
@@ -373,7 +373,7 @@ Você pode encontrar os alvos libc disponíveis com `zig targets`:
  ],
  ```
 
-O que isto significa é que `--library c` para estes alvos *não depende de nenhum arquivo do sistema*!
+O que isto significa é que `--library c` para estas plataformas *não depende de nenhum arquivo do sistema*!
 
 Vejamos o [exemplo do hello world em C](https://ziglang.org/#Zig-is-also-a-C-compiler) novamente:
 ```
@@ -401,7 +401,7 @@ $ ldd hello
 
 Neste exemplo, Zig construiu musl libc a partir da fonte e depois ligou-se a ela. A compilação da musl libc para x86_64-linux continua disponível graças ao [sistema de caching](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching), portanto, a qualquer momento esta libc é necessária novamente, ela estará disponível instantaneamente.
 
-Isto significa que esta funcionalidade está disponível em qualquer plataforma. Os usuários de Windows e macOS podem criar códigos Zig e C, e vincular-se a libc, para qualquer um dos alvos listados acima. Da mesma forma, o código pode ser compilado de forma cruzada para outras arquiteturas:
+Isto significa que esta funcionalidade está disponível em qualquer plataforma. Os usuários de Windows e macOS podem criar códigos Zig e C, e vincular-se a libc, para qualquer uma das plataformas listados acima. Da mesma forma, o código pode ser compilado de forma cruzada para outras arquiteturas:
 ```
 $ zig build-exe --c-source hello.c --library c -target aarch64v8-linux-gnu
 $ file hello
@@ -410,9 +410,9 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically lin
 
 Em alguns aspectos, Zig é um compilador C melhor do que os próprios compiladores C!
 
-Esta funcionalidade é mais do que o agrupamento de um conjunto de ferramentas de compilação cruzada junto ao Zig. Por exemplo, o tamanho total dos cabeçalhos da libc que o Zig envia é de 22 MiB sem compressão. Enquanto isso, os cabeçalhos para musl libc + linux em x86_64 são 8 MiB, e para glibc são 3,1 MiB (falta no glibc os cabeçalhos linux), ainda assim Zig atualmente envia com 40 libcs. Com um agrupamento ingênuo que seria de 444 MiB. No entanto, graças a isto, a [ferramenta process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) que eu fiz, e algum [bom e velho trabalho manual](https://github.com/ziglang/zig/wiki/Updating-libc), Os tarballs binários Zig permanecem em torno de 30 MiB no total, apesar de apoiar a libc para todos esses alvos, bem como a compiler-rt, libunwind e libcxx, e apesar de ser um compilador C compatível com o clang. Para comparação, a compilação do binário no próprio Windows usando clang 8.0.0 do llvm.org é de 132 MiB.
+Esta funcionalidade é mais do que o agrupamento de um conjunto de ferramentas de compilação cruzada junto ao Zig. Por exemplo, o tamanho total dos cabeçalhos da libc que o Zig envia é de 22 MiB sem compressão. Enquanto isso, os cabeçalhos para musl libc + linux em x86_64 são 8 MiB, e para glibc são 3,1 MiB (falta no glibc os cabeçalhos linux), ainda assim Zig atualmente envia com 40 libcs. Com um agrupamento ingênuo que seria de 444 MiB. No entanto, graças a isto, a [ferramenta process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) que eu fiz, e algum [bom e velho trabalho manual](https://github.com/ziglang/zig/wiki/Updating-libc), Os tarballs binários Zig permanecem em torno de 30 MiB no total, apesar de apoiar a libc para todos essas plataformas, bem como a compiler-rt, libunwind e libcxx, e apesar de ser um compilador C compatível com o clang. Para comparação, a compilação do binário no próprio Windows usando clang 8.0.0 do llvm.org é de 132 MiB.
 
-Note que apenas no [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) os alvos foram exaustivamente testados. Está previsto [acrescentar mais libcs](https://github.com/ziglang/zig/issues/514) (inclusive para o Windows), e para [adicionar cobertura de testes para compilação em relação a todas as libcs](https://github.com/ziglang/zig/issues/2058).
+Note que apenas no [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) os dispositivos foram exaustivamente testados. Está previsto [acrescentar mais libcs](https://github.com/ziglang/zig/issues/514) (inclusive para o Windows), e para [adicionar cobertura de testes para compilação em relação a todas as libcs](https://github.com/ziglang/zig/issues/2058).
 
 Já está sendo [planejado para ter um Gerenciador de Pacotes do Zig](https://github.com/ziglang/zig/issues/943), mas isso ainda não está pronto. Uma das coisas que será possível é criar um pacote para as bibliotecas C. Isto fará com que o [Sistema de Compilação do Zig](https://ziglang.org/#Zig-Build-System) tornando mais atraente tanto para programadores Zig como para programadores C.
 
@@ -485,7 +485,7 @@ Aqui estão alguns exemplos de scripts de compilação:
 
 ## Concorrência via funções Async
 
-Zig v0.5.0 [introduziu funções assíncronas](https://ziglang.org/download/0.5.0/release-notes.html#Async-Functions). Esta característica não depende de um sistema operacional host ou mesmo de uma memória alocada em pilha. Isso significa que funções assimétricas estão disponíveis para o alvo freestanding.
+Zig v0.5.0 [introduziu funções assíncronas](https://ziglang.org/download/0.5.0/release-notes.html#Async-Functions). Esta característica não depende de um sistema operacional host ou mesmo de uma memória alocada em pilha. Isso significa que funções assimétricas estão disponíveis para os dispositivos freestanding.
 
 Zig infere se uma função é assimétrica, e permite `async`/`await` em funções não assíncronas, o que significa que **as bibliotecas Zig são agnósticos de bloqueio ao invés de E/S assíncrona**. [Zig evita as cores das funções (inglês)](http://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/).
 
@@ -493,9 +493,9 @@ Zig infere se uma função é assimétrica, e permite `async`/`await` em funçõ
 
 A Biblioteca Padrão Zig implementa um loop de eventos que multiplexam as funções assimétricas em um pool de threads para concorrência M:N. A segurança multithreading e a detecção de corrida são áreas de pesquisa ativa.
 
-## Ampla gama de alvos suportados
+## Ampla gama de dispositivos suportados
 
-Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para diferentes alvos. Note que a barra para [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) é maior - [Suporte Tier 2](https://ziglang.org/#Tier-2-Support) é ainda bastante útil.
+Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para diferentes dispositivos. Note que a barra para [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) é maior - [Suporte Tier 2](https://ziglang.org/#Tier-2-Support) é ainda bastante útil.
 
 ### Tabela de Suporte
 
@@ -545,38 +545,38 @@ Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para difere
 ### Tier System
 
 #### Suporte Tier 1
-- O Zig não só pode gerar código de máquina para estes alvos, mas a biblioteca padrão de abstrações entre plataformas tem implementações para estes alvos. Assim, é prático escrever uma aplicação Zig pura, sem dependência da libc.
-- O servidor CI testa automaticamente estes alvos em cada compromisso com o ramo mestre, e atualiza a página [Baixar](https://ziglang.org/download) com links para binários pré-construídos.
-- Estes alvos têm capacidade de depuração e, portanto, produzem [rastreamento de pilha](https://ziglang.org/#Stack-traces-on-all-targets) sobre asserções fracassadas.
-- [libc está disponível para este alvo, mesmo quando a compilação cruzada](https://ziglang.org/#Zig-ships-with-libc).
-- Todos os testes de comportamento e testes de biblioteca padrão aplicáveis são aprovados para este alvo. Todas as características da linguagem são conhecidas por funcionarem corretamente.
+- O Zig não só pode gerar código de máquina para estes dispositivos, mas a biblioteca padrão de abstrações entre plataformas tem implementações para estes dispositivos. Assim, é prático escrever uma aplicação Zig pura, sem dependência da libc.
+- O servidor CI testa automaticamente estes dispositivos de saida em cada compromisso com o *master branch*, e atualiza a página [Baixar](https://ziglang.org/download) com links para binários pré-construídos.
+- Estes dispositivos têm capacidade de depuração e, portanto, produzem [rastreamento de pilha](https://ziglang.org/#Stack-traces-on-all-targets) sobre asserções fracassadas.
+- [libc está disponível para este dispositivo, mesmo quando a compilação cruzada](https://ziglang.org/#Zig-ships-with-libc).
+- Todos os testes de comportamento e testes de biblioteca padrão aplicáveis são aprovados para esta plataforma. Todas as características da linguagem são conhecidas por funcionarem corretamente.
 
 #### Suporte Tier 2
-- A biblioteca padrão suporta este alvo, mas é possível que algumas APIs dêem um erro de compilação "Unsupported OS". Pode-se fazer uma vinculação com a libc ou outras bibliotecas para preencher as lacunas da biblioteca padrão.
-- Estes alvos são conhecidos por funcionarem, mas podem não ser testados automaticamente, portanto, há regressões ocasionais.
-- Alguns testes podem ser desativados para estes alvos enquanto trabalhamos para [Suporte Tier 1](https://ziglang.org/#Tier-1-Support).
+- A biblioteca padrão suporta esta plataforma, mas é possível que algumas APIs dêem um erro de compilação "Unsupported OS". Pode-se fazer uma vinculação com a libc ou outras bibliotecas para preencher as lacunas da biblioteca padrão.
+- Estes dispositivos são conhecidos por funcionarem, mas podem não ser testados automaticamente, portanto, há regressões ocasionais.
+- Alguns testes podem ser desativados para estes dispositivos enquanto trabalhamos para [Suporte Tier 1](https://ziglang.org/#Tier-1-Support).
 
 #### Suporte Tier 3
 
-- A biblioteca padrão tem pouco ou nenhum conhecimento da existência deste alvo.
-- Como Zig é baseado em LLVM, ele tem a capacidade de construir para esses alvos, e LLVM tem o alvo habilitado por padrão.
-- Estes alvos não são testados com freqüência; provavelmente será necessário contribuir para o Zig a fim de compilar para estes alvos.
+- A biblioteca padrão tem pouco ou nenhum conhecimento da existência desta palataforma.
+- Como Zig é baseado em LLVM, ele tem a capacidade de construir para esses dispositivos, e LLVM tendo a plataforma habilitado por padrão.
+- Estas plataformas não são testadas com freqüência; provavelmente será necessário contribuir para o Zig a fim de compilar para estes dispositivos.
 - O compilador Zig pode precisar ser atualizado com algumas coisas, tais como
   - quais são os tamanhos dos tipos C inteiros
-  - C ABI convoca convenção para este alvo
+  - C ABI convoca convenção para esta plataforma
   - código bootstrap e manipulador de pânico padrão
-- zig garante incluir este alvo.
+- zig garante incluir estas plataformas listadas.
 
 #### Suporte Tier 4
 
 - O apoio a esses objetivos é inteiramente experimental.
-- LLVM pode ter o alvo como um alvo experimental, o que significa que você precisa usar binários fornecidos em Zig para que o alvo esteja disponível, ou construir LLVM a partir da fonte com bandeiras de configuração especiais.
-- Esta alvo pode ser considerada depreciada por uma parte oficial, como por exemplo [macosx/i386](https://support.apple.com/en-us/HT208436), neste caso, esta meta permanecerá para sempre presa no Nível 4.
-- Este alvo só pode suportar `--emit` asm e não pode emitir arquivos objeto.
+- LLVM pode ter a paltaforma como experimental, o que significa que você precisa usar binários fornecidos em Zig para que a paltaforma esteja disponível, ou construir LLVM a partir da fonte com bandeiras de configuração especiais.
+- Esta plataforma pode ser considerada depreciada por uma parte oficial, como por exemplo [macosx/i386](https://support.apple.com/en-us/HT208436), neste caso, esta meta permanecerá para sempre presa no Nível 4.
+- Esta plataforma só pode suportar `--emit` asm e não pode emitir arquivos objeto.
 
 ## Colaboradores de pacotes 
 
-O compilador Zig ainda não é completamente auto-hospedado, mas não importa o, [permanecerá exatamente 3 etapas](https://github.com/ziglang/zig/issues/853) para deixar de usar um compilador C++ no sistema para ter um compilador Zig totalmente auto-hospedado para qualquer alvo. Como observa Maya Rashish, [portando o Zig para outras plataformas é divertido e rápido](http://coypu.sdf.org/porting-zig.html).
+O compilador Zig ainda não é completamente auto-hospedado, mas não importa o, [permanecerá exatamente 3 etapas](https://github.com/ziglang/zig/issues/853) para deixar de usar um compilador C++ no sistema para ter um compilador Zig totalmente auto-hospedado para qualquer plataforma. Como observa Maya Rashish, [portando o Zig para outras plataformas é divertido e rápido](http://coypu.sdf.org/porting-zig.html).
 
 Os [modos de compilação](https://ziglang.org/documentation/master/#Build-Mode) sem depuração (non-debug) são reprodutíveis/determináveis.
 

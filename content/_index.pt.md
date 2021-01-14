@@ -21,7 +21,7 @@ Uma nova abordagem de metaprogramação baseada na execução do código em temp
 
 - Chame qualquer função em tempo de compilação.
 - Manipular tipos como valores sem sobrecarga de tempo de execução.
-- O Comptime emula a arquitetura alvo.
+- O Comptime emula a arquitetura de saida.
 
 # ⚡ Desempenho que se enquadra na segurança
 Escreva um código rápido e claro, capaz de lidar com todas as condições de erro.
