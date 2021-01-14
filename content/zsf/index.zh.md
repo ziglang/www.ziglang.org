@@ -58,9 +58,9 @@ ZSF 是一个小组织，并且有效地利用了货币资源。我们的计划�
 以下公司向 Zig 软件基金会免费提供部分服务。
 
 {{% sponsor-logos "services" %}}
-![](../lavatech.png)
-![](../dropbox.png)
-![](../aws.png)
+![](/lavatech.png)
+![](/dropbox.png)
+![](/aws.png)
 {{% /sponsor-logos %}}
 
 
