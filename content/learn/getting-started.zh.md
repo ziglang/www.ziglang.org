@@ -1,12 +1,12 @@
 ---
-title: 快速入门
+title: "快速入门"
 mobile_menu_title: "快速入门"
 toc: true
 ---
 
 {{% div class="box thin"%}}
 **<center>Apple Silicon 用户须知</center>**
-Zig有实验性的代码签名支持。您将能够在您的 M1 Mac 上使用Zig，但目前获得 arm64 macOS 版 Zig 的唯一方法是自己编译。请务必查看[从源码开始构建](#从源码构建)部分。
+Zig 有实验性的代码签名支持。你将能够在你的 M1 Mac 上使用 Zig，但目前获得 arm64 macOS 版 Zig 的唯一方法是自己编译。请务必查看[从源码开始构建](#从源码构建)部分。
 {{% /div %}}
 
 
@@ -21,8 +21,8 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
 
 ## 安装 Zig
 ### 直接下载
-这是最直接的获取 Zig 的方法：从[下载](../../download)页面为您的平台获取压缩包，
-将其解压到一个目录，然后添加到你的 PATH 环境变量里，然后即可在任意位置调用 zig 了。
+这是最直接的获取 Zig 的方法：从[下载](../../download)页面为你的平台获取压缩包，
+将其解压到一个目录，将其添加到你的 PATH 环境变量里，然后就可在任意位置调用 Zig 了。
 
 #### 在 Windows 上设置 PATH
 要在 Windows 上设置 PATH，请在 Powershell 中运行以下**任一**代码片段:
@@ -52,7 +52,7 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
 #### 在 Linux, macOS, BSD 上设置 PATH
 将 zig 二进制镜像的位置添加到 PATH 环境变量中。
 
-这通常可以通过在你的 shell 启动脚本中添加一个 export 语句来实现的（`.profile`，`.zshrc`等）
+这通常可以通过在你的 shell 启动脚本（`.profile`，`.zshrc`等）中添加一个 export 语句来实现
 ```bash
 export PATH=$PATH:~/path/to/zig
 ```
@@ -63,7 +63,7 @@ export PATH=$PATH:~/path/to/zig
 
 ### 包管理
 #### Windows
-Zig 在 [Chocolatey](https://chocolatey.org/packages/zig) 上可用.
+Zig 在 [Chocolatey](https://chocolatey.org/packages/zig) 上可用。
 ```
 choco install zig
 ```
@@ -89,24 +89,24 @@ port install zig
 ```
 #### Linux
 Zig 也存在于许多 Linux 的包管理器中。 [从这里（英文）](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
-可以找到一个更新的列表，但请记住，一些软件包管理器可能会附带过时的Zig版本。
+可以找到一个更新的列表，但请记住，一些软件包管理器可能会附带过时的 Zig 版本。
 
 ### 从源码构建
 [从这里（英文）](https://github.com/ziglang/zig/wiki/Building-Zig-From-Source)
-可以找到更多关于如何在 Linux、macOS 和 Windows 下从源头构建 Zig 的信息。
+可以找到更多关于如何在 Linux、macOS 和 Windows 下从源代码构建 Zig 的信息。
 
 ## 推荐工具
 ### 语法高亮和语言服务器（LSP）
-所有主要的文本编辑器都有 Zig 的语法高亮支持。
-有一些是内置的，而也有一些需要安装一个插件。
+所有主流文本编辑器都有 Zig 的语法高亮支持。
+有一些内置此功能，有一些需要安装插件。
 
-如果你对 Zig 和你的编辑器的深度整合感兴趣，可以查看 [zigtools/zls](https://github.com/zigtools/zls).
+如果你对 Zig 和你的编辑器的深度整合感兴趣，可以查看 [zigtools/zls](https://github.com/zigtools/zls)。
 
 如果你对其他的工具感兴趣，可以查看 [工具](../tools/) 章节。
 
 ## 运行“你好，世界”
 如果你正确地完成了安装过程，你现在应该可以从你的 shell 中运行 Zig 编译器了。
-让我们通过创建你的第一个 Zig 程序来测试一下吧！
+让我们创建你的第一个 Zig 程序来测试一下吧！
 
 导航到你存放项目的文件夹，运行：
 ```bash
@@ -127,10 +127,10 @@ info: Next, try `zig build --help` or `zig build run`
 info: All your codebase are belong to us.
 ```
 
-恭喜您，您已经安装好了 Zig！
+恭喜你，你已经安装好了 Zig！
 
 ## 下一步
-**查看在 [Learn](../) 章节的其他资源**，请务必找到与你的zig版本匹配的文档。
+**查看在 [Learn](../) 章节的其他资源**，请务必找到与你的 Zig 版本匹配的文档。
 （注意：夜间构建版本应该使用主分支上的文档），并考虑读一读 [ziglearn.org](https://ziglearn.org)。
 
 Zig 是一个年轻的项目，遗憾的是，我们还没有能力为所有的东西制作大量的文档和学习材料，因此，你应该考虑[加入其中一个 Zig 社群](https://github.com/ziglang/zig/wiki/Community)

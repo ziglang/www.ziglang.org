@@ -1,5 +1,5 @@
 ---
-title: 主页
+title: "主页"
 mobile_menu_title: "主页"
 ---
 {{< slogan get_started="快速入门" docs="开发文档" notes="更新日志" lang="zh">}}
@@ -26,9 +26,9 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 # ⚡ 性能与安全并重
 编写快速、清晰的代码，同时处理所有错误条件。
 
-- 优雅地指导您编写错误处理逻辑。
-- 可配置的运行时检查帮助您在性能和安全保证之间取得平衡。
-- 使用可移植的向量类型表达SIMD指令。
+- 指导你优雅地编写错误处理逻辑。
+- 可配置的运行时检查帮助你在性能和安全保证之间取得平衡。
+- 使用可移植的向量类型表达 SIMD 指令。
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
@@ -62,7 +62,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 {{% div class="community-message" %}}
 # Zig 社群是去中心化的
 任何人都可以自由地建立和维护自己的社群。
-没有 "官方 "或 "非官方 "的概念，但是，每个社群都有自己的版主和规则。
+没有“官方”或“非官方”的概念，但是，每个社群都有自己的版主和规则。
 
 <div style="">
 <h1>
@@ -77,7 +77,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 {{% div class="main-development-message" %}}
 # 开发主线
 Zig 源码仓库可以在 [https://github.com/ziglang/zig](https://github.com/ziglang/zig) 找到，我们同时也在这里发布问题跟踪和提案讨论。
-贡献者应该遵守 Zig 的 [行为准则](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
+贡献者应该遵守 Zig 的 [行为准则](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)。
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
@@ -102,7 +102,7 @@ Zig 软件基金会由捐款维持。
 {{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="赞助商" %}}
 # 企业赞助商
-以下公司为Zig软件基金会提供直接的资金支持。
+以下公司为 Zig 软件基金会提供直接的资金支持。
 
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
@@ -114,7 +114,7 @@ Zig 软件基金会由捐款维持。
 {{% /sponsor-logos %}}
 
 # GitHub 赞助
-感谢[赞助 Zig](zsf/) 的人，该项目对开源社区而不是企业股东负责。特别是，这些好心人以每月 200 美元或以上的金额赞助 Zig。
+感谢[赞助 Zig](zsf/) 的人，该项目对开源社区而不是企业股东负责。特别地，这些好心人以每月 200 美元或以上的金额赞助 Zig。
 
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
@@ -128,7 +128,6 @@ Zig 软件基金会由捐款维持。
 本栏目将会在每月初更新。
 {{% /div %}}
 {{< /div >}}
-
 
 
 

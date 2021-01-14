@@ -10,7 +10,7 @@ toc: true
 
 Zig 的完整语法可以被 [500 行的 PEG 语法的文件](https://ziglang.org/documentation/master/#Grammar)所描述。
 
-没有**隐藏的控制流**，没有隐藏的内存分配，没有预处理器，也没有宏。如果 Zig 代码看起来不像是跳开调用一个函数，那么它就不是。这意味着你可以确定下面的代码只调用 `foo()`，然后调用 `bar()`，这一点是可以保证的，而不需要知道任何东西的类型：
+没有**隐藏的控制流**，没有隐藏的内存分配，没有预处理器，也没有宏。如果 Zig 代码看起来不像是调用一个函数，那么它就不是。这意味着你可以确定下面的代码只调用 `foo()`，然后调用 `bar()`，这一点是可以保证的，而不需要知道任何东西的类型：
 
 ```zig
 var a = b + c.d;
@@ -33,7 +33,7 @@ Zig 有 4 种[构建模式](https://ziglang.org/documentation/master/#Build-Mode
 | 参数 | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
 优化 - 提升速度，降低可调试能力，降低编译时间 | | -O3 | -O3| -Os |
-运行时安全检查 - 降低速度，影响体积，崩溃而不是未定义行为 | On | On | | |
+运行时安全检查 - 降低速度，影响体积，崩溃代替未定义行为 | On | On | | |
 
 以下是编译时[整数溢出](https://ziglang.org/documentation/master/#Integer-Overflow)的例子，无关编译模式：
 
@@ -57,7 +57,7 @@ Zig 将[未定义行为](https://ziglang.org/documentation/master/#Undefined-Beh
 - 参考实现使用 LLVM 作为后端进行最先进的优化。
 - 其他项目所谓的“链接时间优化”，在 Zig 时自动完成。
 - 对于原生构建目标，高级 CPU 特性被启用（相当于 -march=native）这要感谢[对跨平台构建的一流支持](https://ziglang.org/#Cross-compiling-is-a-first-class-use-case)。
-- 精心选择的未定义行为。例如，在 Zig 中，有符号和无符号整数在溢出时都有未定义的行为，而在 C 中只有有符号整数，这有助于[实现 C 语言里没有的优化](https://godbolt.org/z/n_nLEU)。
+- 精心选择的未定义行为。例如，在 Zig 中，有符号和无符号整数在溢出时都有未定义的行为，而在 C 中仅有符号整数有此行为，这有助于[实现 C 语言里没有的优化](https://godbolt.org/z/n_nLEU)。
 - Zig 直接暴露了[SIMD 向量类型](https://ziglang.org/documentation/master/#Vectors)，使得编写跨平台的向量化代码更容易。
 
 请注意，Zig 不是一个完全安全的语言。有兴趣关注 Zig 安全故事的用户，可以订阅下面这些链接：
@@ -168,7 +168,7 @@ Zig 标准库也是如此。任何需要分配内存的函数都会接受一个�
 
 ### 在所有目标上启用堆栈跟踪
 
-本页所展示的堆栈跟踪和[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)适用于所有[一级支持](#一级支持)和部分[二级支持](#二级支持)目标。[甚至裸金属（freestanding）目标](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
+本页所展示的堆栈跟踪和[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)适用于所有[一级支持](#一级支持)和部分[二级支持](#二级支持)目标。[甚至裸金属（freestanding）目标](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)！
 
 此外，标准库能够在任何一点捕获堆栈跟踪，然后将其转储为标准错误：
 
@@ -200,7 +200,7 @@ Zig 还可以在编译时计算函数和代码块。在某些情况下，比如�
 
 ## 无需 FFI/bindings 的 C 库集成
 
-[@cImport](https://ziglang.org/documentation/master/#cImport) 可以为 zig 直接导入类型，变量，函数和简单的宏。它甚至能翻译 c 内联函数到 zig。
+[@cImport](https://ziglang.org/documentation/master/#cImport) 可以为 Zig 直接导入类型，变量，函数和简单的宏。它甚至能翻译 C 内联函数到 Zig。
 
 这是一个利用 [libsoundio](http://libsound.io/) 库发出正弦波的例子：
 
@@ -214,7 +214,7 @@ Output device: Built-in Audio Analog Stereo
 ^C
 ```
 
-[这里的 Zig 代码比同等的 C 代码要简单得多](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8)，同时也有更多的安全保护措施，所有这些都是通过直接导入 C 头文件来实现的——而无需 API 绑定。
+[这里的 Zig 代码比等效的 C 代码要简单得多](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8)，同时也有更多的安全保护措施，所有这些都是通过直接导入 C 头文件来实现的——无需 API 绑定。
 
 *Zig 比 C 更擅长使用 C 库。*
 
@@ -407,7 +407,7 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
 
-在某些方面，Zig 是一个比 C 编译器更好的 C 编译器!
+在某些方面，Zig 是比 C 编译器更好的 C 编译器!
 
 这个功能不仅仅是将交叉编译工具链与 Zig 捆绑在一起。例如，Zig 提供的 libc 头文件总大小为 22 MiB，未压缩。同时，仅 x86_64 上的musl libc+linux 头文件就有 8 MiB，glibc 有 3.1 MiB（glibc 缺少 linux 头文件），然而 Zig 目前附带的 libc 有 40 个。如果是天真的捆绑，那就是 444 MiB。然而，多亏了我做的这个 [process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) 工具，以及一些[老式的手工劳动](https://github.com/ziglang/zig/wiki/Updating-libc)，Zig 二进制压缩包的总容量仍然只有 30 MiB，尽管它支持所有这些目标的 libc，以及 compiler-rt、libunwind 和 libcxx，尽管它是一个 clang 兼容的 C 编译器。作为比较，来自 llvm.org 的 clang 8.0.0 本身的 Windows 二进制构建有 132 MiB 这么大。
 
@@ -544,7 +544,7 @@ Zig使用“支持等级”系统来描述不同目标的支持程度。需要�
 ### 支持等级
 
 #### 一级支持
-- Zig 不仅可以为这些目标生成机器代码，而且标准库的跨平台抽象也有这些目标的实现。因此，写一个不依赖 libc 的纯 Zig 应用是很实用的。
+- Zig 不仅可以为这些目标生成机器代码，而且标准库的跨平台抽象也有这些目标的实现。因此，写一个不依赖 libc 的纯 Zig 应用是可行的。
 - CI 服务器在每次提交到主分支时都会自动测试这些目标，并在[下载页面](../../download/)更新预建二进制文件的链接。
 - 这些目标具有调试信息功能，因此在失败的断言时产生[堆栈跟踪](#在所有目标上启用堆栈跟踪)。
 - [即使在交叉编译时，libc也可以用于这个目标。](#zig-与-libc-一起发布)
@@ -579,11 +579,11 @@ Zig使用“支持等级”系统来描述不同目标的支持程度。需要�
 
 非调试[构建模式](https://ziglang.org/documentation/master/#Build-Mode)是可重现/确定的。
 
-这是[JSON格式的下载页面](https://ziglang.org/download/index.json).
+这是[JSON格式的下载页面](https://ziglang.org/download/index.json)。
 
 Zig 团队的几位成员都有维护软件包的经验。
 
 - [Daurnimator](https://github.com/daurnimator) 维护 [Arch Linux 包](https://www.archlinux.org/packages/community/x86_64/zig/)。
 - [Marc Tiehuis](https://tiehuis.github.io/) 维护 Visual Studio Code 扩展。
 - [Andrew Kelley](https://andrewkelley.me/) 花了一年左右的时间来做 [Debian 和 Ubuntu 的打包工作](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes)，并随手贡献给 [nixpkgs](https://github.com/NixOS/nixpkgs/)。
-- [Jeff Fowler](https://blog.jfo.click/) 维护者 Homebrew 包并发起了 [Sublime 扩展](https://github.com/ziglang/sublime-zig-language) （现在由 [emekoi](https://github.com/emekoi) 维护）.
+- [Jeff Fowler](https://blog.jfo.click/) 维护者 Homebrew 包并发起了 [Sublime 扩展](https://github.com/ziglang/sublime-zig-language) （现在由 [emekoi](https://github.com/emekoi) 维护）。

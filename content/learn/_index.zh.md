@@ -15,11 +15,11 @@ layout: single
 - [深入了解](overview/)
 从系统编程的角度对 Zig 进行深入的功能了解。
 - [有了 C++、D 和 Rust，为什么还需要 Zig？](why_zig_rust_d_cpp/)
-针对 C++、D 和 Rust 程序员的Zig介绍。
+针对 C++、D 和 Rust 程序员的 Zig 介绍。
 - [代码范例](samples/)
-一些可以让你感受到Zig代码是怎样的代码片段。
+一些可以让你感受 Zig 的代码片段。
 - [工具](tools/)
-一些可以帮助你编写Zig代码的有用工具列表。
+一些可以帮助你编写 Zig 代码的有用工具列表。
 
 
 ## 快速入门
@@ -36,7 +36,6 @@ Zig 的结构化介绍，由 [Sobeston](https://github.com/sobeston) 编写。
 [Andrew Kelley](https://andrewkelley.me) 介绍Zig及其理念的视频。
 - [Zig 与 LLVM 的新关系](https://kristoff.it/blog/zig-new-relationship-llvm/)
 一篇关于构建 Zig 自托管编译器的博客文章, 也被[ lwn.net 的一篇文章所介绍](https://lwn.net/Articles/833400/).
-
 
 
 
