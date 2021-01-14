@@ -10,7 +10,7 @@ toc: true
 
 Zig 的完整语法可以被 [500 行的 PEG 语法的文件](https://ziglang.org/documentation/master/#Grammar)所描述。
 
-没有**隐藏的控制流**，没有隐藏的内存分配，没有预处理器，也没有宏。如果 Zig 代码看起来不像是调用一个函数，那么它就不是。这意味着你可以确定下面的代码只调用 `foo()`，然后调用 `bar()`，这一点是可以保证的，而不需要知道任何东西的类型：
+没有**隐式控制流**，没有隐式内存分配，没有预处理器，也没有宏。如果 Zig 代码看起来不像是在调用一个函数，那么它就不是。这意味着你可以确定下面的代码只会先调用 `foo()`，然后调用 `bar()`，不需要知道任何元素的类型，这一点也是可以保证的：
 
 ```zig
 var a = b + c.d;
@@ -18,7 +18,7 @@ foo();
 bar();
 ```
 
-隐藏控制流的例子：
+隐式控制流的例子：
 
 - D 有 `@property` 函数，可以让你的方法调用看起来像是成员访问，因此在上面的例子中，`c.d` 可能会调用一个函数。
 - C++，D 和 Rust 有运算符重载，因此 `+` 可能会调用一个函数。
@@ -32,8 +32,8 @@ Zig 有 4 种[构建模式](https://ziglang.org/documentation/master/#Build-Mode
 
 | 参数 | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
-优化 - 提升速度，降低可调试能力，降低编译时间 | | -O3 | -O3| -Os |
-运行时安全检查 - 降低速度，影响体积，崩溃代替未定义行为 | On | On | | |
+优化 - 提升运行速度，降低可调试能力，减慢编译时间 | | -O3 | -O3| -Os |
+运行时安全检查 - 降低运行速度，增大体积，用崩溃代替未定义行为 | On | On | | |
 
 以下是编译时[整数溢出](https://ziglang.org/documentation/master/#Integer-Overflow)的例子，无关编译模式选择：
 
@@ -46,7 +46,7 @@ Zig 有 4 种[构建模式](https://ziglang.org/documentation/master/#Build-Mode
 
 这些[堆栈跟踪在所有目标上都可用](#在所有目标上启用堆栈跟踪)，包括[裸金属（freestanding）](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)。
 
-有了 Zig，人们可以依靠安全启用的构建模式，并在性能瓶颈处选择性地禁用安全检查。例如前面的例子可以这样修改：
+有了 Zig，人们可以依赖启用安全检查的构建模式，并在性能瓶颈处选择性地禁用安全检查。例如前面的例子可以这样修改：
 
 {{< zigdoctest "assets/zig-code/features/3-undefined-behavior.zig" >}}
 
@@ -55,9 +55,9 @@ Zig 将[未定义行为](https://ziglang.org/documentation/master/#Undefined-Beh
 说到性能，Zig 比 C 快：
 
 - 参考实现使用 LLVM 作为后端进行最先进的优化。
-- 其他项目所谓的“链接时间优化”，在 Zig 时自动完成。
-- 对于原生构建目标，高级 CPU 特性被启用（相当于 -march=native）这要感谢[对跨平台构建的一流支持](https://ziglang.org/#Cross-compiling-is-a-first-class-use-case)。
-- 精心选择的未定义行为。例如，在 Zig 中，有符号和无符号整数在溢出时都有未定义的行为，而在 C 中仅有符号整数有此行为，这有助于[实现 C 语言里没有的优化](https://godbolt.org/z/n_nLEU)。
+- 其他项目所谓的“链接时优化”，在 Zig 是自动达成的。
+- 多亏了[对交叉编译的一流支持](#交叉编译的一流支持)，对于原生构建目标，高级 CPU 特性可以被启用（相当于 `-march=native`）。
+- 精心选择的未定义行为。例如，在 Zig 中，有符号和无符号整数在溢出时都属于未定义的行为，而在 C 中仅有有符号整数的溢出属于未定义行为，这有助于[实现 C 语言里没有的优化](https://godbolt.org/z/n_nLEU)。
 - Zig 直接暴露了[SIMD 向量类型](https://ziglang.org/documentation/master/#Vectors)，使得编写跨平台的向量化代码更容易。
 
 请注意，Zig 不是一个完全安全的语言。有兴趣关注 Zig 安全故事的用户，可以订阅下面这些链接：
@@ -71,7 +71,7 @@ Zig 标准库里集成了 libc，但是不依赖于它：
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-当使用 `-O ReleaseSmall` 移除调试符号，单线程模式编译时，可以产生一个以 x86_64-linux 为目标的 9.8 KiB 的静态可执行文件：
+当使用 `-O ReleaseSmall` 并移除调试符号，单线程模式编译时，可以产生一个以 x86_64-linux 为目标的 9.8 KiB 的静态可执行文件：
 ```
 $ zig build-exe hello.zig --release-small --strip --single-threaded
 $ wc -c hello
@@ -80,7 +80,7 @@ $ ldd hello
   not a dynamic executable
 ```
 
-Windows 的构建就更小了，达到了 4096 字节：
+Windows 的构建就更小了，仅仅 4096 字节：
 ```
 $ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
@@ -91,13 +91,13 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 ## 顺序无关的顶层声明
 
-全局变量等顶层声明与顺序无关，并进行惰性分析。全局变量的初始化值[在编译时进行求值](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution)。
+全局变量等顶层声明与顺序无关，并进行惰性分析。全局变量的初始值[在编译时进行求值](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution)。
 
 {{< zigdoctest "assets/zig-code/features/5-global-variables.zig" >}}
 
 ## 可选类型代替空指针
 
-在其他编程语言中，空引用是许多运行时异常的来源，甚至被指责为[计算机科学最严重的错误](https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/)。
+在其他编程语言中，空引用是许多运行时异常的来源，甚至被指责为[计算机科学中最严重的错误](https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/)。
 
 不加修饰的 Zig 指针不可为空：
 
@@ -122,13 +122,13 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 用 Zig 编写的库可以在任何地方使用：
 
-- [桌面程序](https://github.com/TM35-Metronome/) & [游戏](https://github.com/dbandstra/oxid)
+- [桌面程序](https://github.com/TM35-Metronome/)和[游戏](https://github.com/dbandstra/oxid)
 - 低延迟服务器
 - [操作系统内核](https://github.com/AndreaOrru/zen)
 - [嵌入式设备](https://github.com/skyfex/zig-nrf-demo/)
 - 实时软件，例如现场表演，飞机，心脏起搏器
-- [在浏览器或者其他使用 WebAssembly 的插件](https://shritesh.github.io/zigfmt-web/)
-- 其他编程语言，使用 C ABI
+- [在浏览器或者其他使用 WebAssembly 作为插件的程序](https://shritesh.github.io/zigfmt-web/)
+- 通过 C ABI 给其他语言调用
 
 为了达到这个目的，Zig 程序员必须管理自己的内存，必须处理内存分配失败。
 
@@ -154,7 +154,7 @@ Zig 标准库也是如此。任何需要分配内存的函数都会接受一个�
 
 {{< zigdoctest "assets/zig-code/features/14-errors-try.zig" >}}
 
-请注意这是一个[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)，而不是[堆栈跟踪](https://ziglang.org/#Stack-traces-on-all-targets)。代码没有付出解开堆栈的代价来得出该跟踪。
+请注意这是一个[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)，而不是[堆栈跟踪](https://ziglang.org/#Stack-traces-on-all-targets)。代码没有付出解开堆栈的代价来获得该跟踪。
 
 在错误值上使用 [switch](https://ziglang.org/documentation/master/#switch) 关键词可以用于确保所有可能的错误都被处理：
 
@@ -164,13 +164,13 @@ Zig 标准库也是如此。任何需要分配内存的函数都会接受一个�
 
 {{< zigdoctest "assets/zig-code/features/16-unreachable.zig" >}}
 
-这将会在不安全构建中出现[未定义行为](#性能和安全全都要)，因此请确保只有一定会成功时才使用。
+这将会在不安全构建中出现[未定义行为](#性能和安全全都要)，因此请确保只在一定会成功的地方使用。
 
 ### 在所有目标上启用堆栈跟踪
 
 本页所展示的堆栈跟踪和[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)适用于所有[一级支持](#一级支持)和部分[二级支持](#二级支持)目标，[甚至裸金属（freestanding）目标](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)！
 
-此外，标准库能够在任何一点捕获堆栈跟踪，然后将其转储为标准错误：
+此外，标准库能在任何一点捕获堆栈跟踪，然后将其转储为标准错误：
 
 {{< zigdoctest "assets/zig-code/features/17-stack-traces.zig" >}}
 
@@ -194,7 +194,7 @@ Zig 标准库也是如此。任何需要分配内存的函数都会接受一个�
 
 Zig 标准库使用这种技术来实现格式化打印。尽管是一种[小巧而简洁的语言](#小巧而简洁的语言)，但 Zig 的格式化打印完全是在 Zig 中实现的。同时，在 C 语言中，printf 的编译错误是硬编码到编译器中的。同样，在 Rust 中，格式化打印的宏也是硬编码到编译器中的。
 
-Zig 还可以在编译期对函数和代码块求值。在某些情况下，比如全局变量初始化，表达式会在编译时隐式地进行求值。除此之外我们还可以使用 [comptime](https://ziglang.org/documentation/master/#comptime) 关键字显式地在编译期求值。把它与断言相结合就可以变得尤为强大了：
+Zig 还可以在编译期对函数和代码块求值。在某些情况下，比如全局变量初始化，表达式会在编译期隐式地进行求值。除此之外我们还可以使用 [comptime](https://ziglang.org/documentation/master/#comptime) 关键字显式地在编译期求值。把它与断言相结合就可以变得尤为强大了：
 
 {{< zigdoctest "assets/zig-code/features/21-comptime.zig" >}}
 
@@ -571,13 +571,13 @@ Zig 使用“支持等级”系统来描述不同目标的支持程度。需要�
 - 对这些目标的支持完全是试验性的。
 - LLVM可能会将目标作为实验性目标，这意味着你需要使用 Zig 提供的二进制文件来使目标可用，或者使用特殊的配置标志从源码构建 LLVM ，如果目标可用，`zig targets` 将显示目标。
 - 这个目标可能会被官方认为是废弃的，比如 [macosx/i386](https://support.apple.com/en-us/HT208436)，在这种情况下，这个目标将永远停留在四级。
-- 这个目标可能只支持输出汇编（ `--emit asm` ），而不支持输出对象文件。
+- 这个目标可能只支持输出汇编（`--emit asm`），而不支持输出对象文件。
 
 ## 对包维护者友好
 
-虽然 Zig 编译器还没有完全自托管，但无论如何，从拥有一个系统 C++ 编译器到拥有一个适用于任何目标的完全自托管的 Zig 编译器，将[保持正好 3 步](https://github.com/ziglang/zig/issues/853)。正如 Maya Rashish 所指出的那样，[将 Zig 移植到其他平台是很有趣的，而且速度很快](http://coypu.sdf.org/porting-zig.html)。
+虽然 Zig 编译器还没有完全自托管，但无论如何，从拥有一个系统 C++ 编译器到拥有一个适用于任何目标的完全自托管的 Zig 编译器，将[保持正好 3 步](https://github.com/ziglang/zig/issues/853)。正如 Maya Rashish 所指出的那样，[将 Zig 移植到其他平台是有趣且快速的](http://coypu.sdf.org/porting-zig.html)。
 
-非调试[构建模式](https://ziglang.org/documentation/master/#Build-Mode)是可重现/确定的。
+非[调试模式](https://ziglang.org/documentation/master/#Build-Mode)的构建是可重现/确定的。
 
 这是[JSON格式的下载页面](https://ziglang.org/download/index.json)。
 

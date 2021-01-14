@@ -17,7 +17,7 @@ toc: true
 
 
 ## Zigg Zagg
-Zig 已为代码面试做了*优化*（并不）。
+Zig 已为代码面试做了*优化*（并没有）。
 
 {{< zigdoctest "assets/zig-code/samples/3-ziggzagg.zig" >}}
 

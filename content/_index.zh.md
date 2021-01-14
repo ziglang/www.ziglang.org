@@ -12,8 +12,8 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 # ⚡ 一个简单的语言
 专注于调试你的应用程序，而不是调试你的编程语言知识。
 
-- 没有隐藏控制流。
-- 没有隐藏的内存分配。
+- 没有隐式控制流。
+- 没有隐式内存分配。
 - 没有预处理器，没有宏。
 
 # ⚡ 编译期执行
@@ -24,7 +24,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 - 编译期模拟目标架构。
 
 # ⚡ 性能与安全并重
-编写快速、清晰的代码，同时处理所有错误条件。
+编写快速、清晰的代码处理所有的错误情况。
 
 - 指导你优雅地编写错误处理逻辑。
 - 可配置的运行时检查帮助你在性能和安全保证之间取得平衡。
@@ -77,7 +77,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 {{% div class="main-development-message" %}}
 # 开发主线
 Zig 源码仓库可以在 [https://github.com/ziglang/zig](https://github.com/ziglang/zig) 找到，我们同时也在这里发布问题跟踪和提案讨论。
-贡献者应该遵守 Zig 的 [行为准则](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)。
+贡献者应该遵守 Zig 的[行为准则](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)。
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
