@@ -48,8 +48,8 @@ As seguintes empresas estão fornecendo apoio financeiro direto à Zig Software 
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
    <picture>
-     <source srcset="../pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="../pex-dark.svg">
+     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/pex-dark.svg">
    </picture>
  </a>
 {{% /sponsor-logos %}}
@@ -62,7 +62,6 @@ As seguintes empresas estão oferecendo alguns de seus serviços para a Zig Soft
 ![](/dropbox.png)
 ![](/aws.png)
 {{% /sponsor-logos %}}
-
 
 
 
