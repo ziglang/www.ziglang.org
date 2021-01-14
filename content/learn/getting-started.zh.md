@@ -25,12 +25,12 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
 将其解压到一个目录，将其添加到你的 PATH 环境变量里，然后就可在任意位置调用 Zig 了。
 
 #### 在 Windows 上设置 PATH
-要在 Windows 上设置 PATH，请在 Powershell 中运行以下**任一**代码片段:
-选择您是要在全系统级别上应用此更改 （需要在有管理员权限的情况下运行Powershell）
-还是只针对您的用户，**并确保更改代码以指向Zig副本所在的位置**。
+要在 Windows 上设置 PATH，请在 PowerShell 中运行以下**任一**代码片段:
+选择你是要在系统级别上应用此更改 （需要在有管理员权限的情况下运行 PowerShell）
+还是只针对你使用的用户，**并确保更改代码以指向 Zig 所在的位置**。
 注意在 `C:` 之前的 `;` 不是拼写错误。
 
-系统级安装 (**管理员** Powershell):
+系统级安装 (**管理员** PowerShell):
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -39,7 +39,7 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
 )
 ```
 
-用户级安装 (Powershell):
+用户级安装 (PowerShell):
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -47,7 +47,7 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
    "User"
 )
 ```
-运行完毕后重启您的 Powershell 实例。
+运行完毕后重启你的 PowerShell 实例。
 
 #### 在 Linux, macOS, BSD 上设置 PATH
 将 zig 二进制镜像的位置添加到 PATH 环境变量中。
@@ -137,4 +137,4 @@ Zig 是一个年轻的项目，遗憾的是，我们还没有能力为所有的�
 以在遇到问题是获取帮助，同样，也可以看看 [Zig SHOWTIME（英文）](https://zig.show)。
 
 最后，如果你喜欢 Zig 并像加速发展，[考虑捐助 Zig 软件基金会](../../zsf)
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">。

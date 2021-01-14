@@ -411,7 +411,7 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically lin
 
 这个功能不仅仅是将交叉编译工具链与 Zig 捆绑在一起。例如，Zig 提供的 libc 头文件总大小为 22 MiB，未压缩。同时，仅 x86_64 上的musl libc+linux 头文件就有 8 MiB，glibc 有 3.1 MiB（glibc 不包括 linux 头文件），然而 Zig 目前附带的 libc 有 40 个。如果是天真的捆绑发布，那就是 444 MiB。然而，多亏了我做的这个 [process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) 工具，以及一些[老式的手工劳动](https://github.com/ziglang/zig/wiki/Updating-libc)，Zig 二进制压缩包的总容量仍然只有 30 MiB，尽管它支持所有这些目标的 libc，以及 compiler-rt、libunwind 和 libcxx，尽管它是一个 clang 兼容的 C 编译器。作为比较，来自 llvm.org 的 clang 8.0.0 本身的 Windows 二进制构建有 132 MiB 这么大。
 
-请注意，只有[一级支持](#一级支持)目标已被彻底测试。我们有计划增加[更多的 libc](https://github.com/ziglang/zig/issues/514)（包括 Windows 平台），并增加[针对所有 libc 的测试覆盖率](https://github.com/ziglang/zig/issues/2058)。
+请注意，只有[一级支持](#一级支持)目标得到了彻底测试。我们有计划增加[更多的 libc](https://github.com/ziglang/zig/issues/514)（包括 Windows 平台），并提高[对所有 libc 的测试覆盖率](https://github.com/ziglang/zig/issues/2058)。
 
 我们还计划有一个 [Zig 包管理器](https://github.com/ziglang/zig/issues/943)，但还没有完成。其中一个功能是可以为 C 库创建一个包，这将使 [Zig 构建系统](#Zig-构建系统)对 Zig 程序员和 C 程序员都有吸引力。
 
