@@ -32,10 +32,10 @@ Zig 有 4 种[构建模式](https://ziglang.org/documentation/master/#Build-Mode
 
 | 参数 | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
-优化 - 提升运行速度，降低可调试能力，减慢编译时间 | | -O3 | -O3| -Os |
+优化 - 提升运行速度，降低可调试能力，减慢编译期间 | | -O3 | -O3| -Os |
 运行时安全检查 - 降低运行速度，增大体积，用崩溃代替未定义行为 | On | On | | |
 
-以下是编译时[整数溢出](https://ziglang.org/documentation/master/#Integer-Overflow)的例子，无关编译模式选择：
+以下是编译期[整数溢出](https://ziglang.org/documentation/master/#Integer-Overflow)的例子，无关编译模式选择：
 
 {{< zigdoctest "assets/zig-code/features/1-integer-overflow.zig" >}}
 
@@ -71,7 +71,7 @@ Zig 标准库里集成了 libc，但是不依赖于它：
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-当使用 `-O ReleaseSmall` 并移除调试符号，单线程模式编译时，可以产生一个以 x86_64-linux 为目标的 9.8 KiB 的静态可执行文件：
+当使用 `-O ReleaseSmall` 并移除调试符号，单线程模式构建，可以产生一个以 x86_64-linux 为目标的 9.8 KiB 的静态可执行文件：
 ```
 $ zig build-exe hello.zig --release-small --strip --single-threaded
 $ wc -c hello
@@ -91,7 +91,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 ## 顺序无关的顶层声明
 
-全局变量等顶层声明与顺序无关，并进行惰性分析。全局变量的初始值[在编译时进行求值](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution)。
+全局变量等顶层声明与顺序无关，并进行惰性分析。全局变量的初始值[在编译时进行求值](#编译期反射和编译期代码执行)。
 
 {{< zigdoctest "assets/zig-code/features/5-global-variables.zig" >}}
 
@@ -154,7 +154,7 @@ Zig 标准库也是如此。任何需要分配内存的函数都会接受一个�
 
 {{< zigdoctest "assets/zig-code/features/14-errors-try.zig" >}}
 
-请注意这是一个[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)，而不是[堆栈跟踪](https://ziglang.org/#Stack-traces-on-all-targets)。代码没有付出解开堆栈的代价来获得该跟踪。
+请注意这是一个[错误返回跟踪](https://ziglang.org/documentation/master/#Error-Return-Traces)，而不是[堆栈跟踪](#在所有目标上启用堆栈跟踪)。代码没有付出解开堆栈的代价来获得该跟踪。
 
 在错误值上使用 [switch](https://ziglang.org/documentation/master/#switch) 关键词可以用于确保所有可能的错误都被处理：
 
