@@ -58,9 +58,9 @@ As seguintes empresas estão fornecendo apoio financeiro direto à Zig Software 
 As seguintes empresas estão oferecendo alguns de seus serviços para a Zig Software Foundation gratuitamente.
 
 {{% sponsor-logos "services" %}}
-![](../lavatech.png)
-![](../dropbox.png)
-![](../aws.png)
+![](/lavatech.png)
+![](/dropbox.png)
+![](/aws.png)
 {{% /sponsor-logos %}}
 
 

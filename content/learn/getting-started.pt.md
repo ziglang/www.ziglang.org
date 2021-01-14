@@ -24,7 +24,7 @@ A boa notícia é que é muito fácil mudar de uma versão Zig para outra, ou me
 
 ## Instalando Zig
 ### Baixar diretamente
-Esta é a maneira mais direta de obter o Zig: pegue um pacote Zig para sua plataforma a partir da página [Downloads](/download),
+Esta é a maneira mais direta de obter o Zig: pegue um pacote Zig para sua plataforma a partir da página [Baixar](../../download),
 extrair em um diretório qualquer e adicioná-lo ao seu `PATH` para poder utilizar o executável `zig` de qualquer lugar.
 
 #### Configurando PATH no Windows
@@ -138,4 +138,4 @@ Zig é um projeto jovem e infelizmente ainda não temos a capacidade de produzir
 para obter ajuda quando você ficar confuso, bem como para verificar iniciativas como [Zig SHOWTIME](https://zig.show).
 
 Finalmente, se você gosta de Zig e quer ajudar a acelerar o desenvolvimento, [considere fazer uma doação para a Zig Software Foundation](../../zsf)
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">.
