@@ -137,4 +137,4 @@ Zig 是一个年轻的项目，遗憾的是我们还没有能力为所有的东�
 以在遇到问题是获取帮助，同样也可以看看 [Zig SHOWTIME（英文）](https://zig.show)。
 
 最后，如果你喜欢 Zig 并想加速 Zig 开发，[考虑捐助 Zig 软件基金会](../../zsf)
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">。
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">。
