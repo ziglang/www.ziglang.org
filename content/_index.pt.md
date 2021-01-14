@@ -33,7 +33,7 @@ Escreva um código rápido e claro, capaz de lidar com todas as condições de e
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
 <h1>
-    <a href="{{< ref path="learn/overview.en.md" lang="en">}}" class="button" style="display: inline;">Visão Geral</a>
+    <a href="{{< ref path="learn/overview.md">}}" class="button" style="display: inline;">Visão Geral</a>
 </h1>
 {{% /div %}}
 {{% div  style="margin-left: 5px;" %}}
@@ -129,7 +129,6 @@ Graças a pessoas que [Patrocine Zig](zsf/), o projeto é responsável perante a
 Esta seção é atualizada no início de cada mês.
 {{% /div %}}
 {{< /div >}}
-
 
 
 
