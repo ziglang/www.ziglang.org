@@ -2,7 +2,7 @@
 title: Home
 mobile_menu_title: "Home"
 ---
-{{< slogan get_started="COMECE AGORA" docs="Documentação" notes="Mudanças">}}
+{{< slogan get_started="COMECE AGORA" docs="Documentação" notes="Mudanças" lang="pt">}}
 Zig é uma linguagem de programação de propósito geral e um conjunto de ferramentas para manter o seu software **robusto**, **otimizado**, e **usável**.  
 {{< /slogan >}}
 
@@ -129,7 +129,6 @@ Graças a pessoas que [Patrocine Zig](zsf/), o projeto é responsável perante a
 Esta seção é atualizada no início de cada mês.
 {{% /div %}}
 {{< /div >}}
-
 
 
 
