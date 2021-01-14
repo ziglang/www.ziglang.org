@@ -3,7 +3,7 @@ title: Home
 mobile_menu_title: "Home"
 ---
 {{< slogan get_started="COMECE AGORA" docs="Documentação" notes="Mudanças">}}
-Zig é uma linguagem de programação de propósito geral e um conjunto de ferramentas para manter o seu software **robusto**, **otimizado**, e **usável***.  
+Zig é uma linguagem de programação de propósito geral e um conjunto de ferramentas para manter o seu software **robusto**, **otimizado**, e **usável**.  
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
@@ -33,12 +33,12 @@ Escreva um código rápido e claro, capaz de lidar com todas as condições de e
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
 <h1>
-    <a href="learn/overview/" class="button" style="display: inline;">Visão geral em profundidade</a>
+    <a href="{{< ref path="learn/overview.en.md" lang="en">}}" class="button" style="display: inline;">Visão Geral</a>
 </h1>
 {{% /div %}}
 {{% div  style="margin-left: 5px;" %}}
 <h1>
-    <a href="learn/samples/" class="button" style="display: inline;">Mais exemplos de código</a>
+    <a href="{{< ref path="learn/samples.en.md" lang="en">}}" class="button" style="display: inline;">Mais exemplos de código</a>
 </h1>
 {{% /div %}}
 {{% /flexrow %}}

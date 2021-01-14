@@ -12,7 +12,7 @@ Esta seção lista recursos úteis para ir desde não saber nada sobre Zig até 
 ## Introdução
 Todas estas páginas são introduções ao Zig destinadas a programadores com diferentes formações.
 
-- [Visão geral em profundidade](overview/)  
+- [Visão Geral](overview/)  
 Aqui está uma visão aprofundada do Zig do ponto de vista da programação de sistemas.
 - [Por que Zig quando já existe C++, D, e Rust?](why_zig_rust_d_cpp/)  
 Uma introdução a Zig para programadores de C++, D, e Rust.
@@ -28,14 +28,14 @@ Se você estiver pronto para começar a programar em Zig, este guia o ajudará a
 - [Comece Agora]({{< ref "getting-started.md" >}})  
 
 ## Recursos de aprendizado online
-- [Aprenda Zig](https://ziglearn.org)  
+- [Zig Learn](https://ziglearn.org)  
 Uma introdução estruturada ao Zig, por [Sobeston](https://github.com/sobeston).
 
 ## Vídeos e posts relevantes no blog
 - [Zig a caminho do 1.0 (inglês)](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
 Vídeo de [Andrew Kelley](https://andrewkelley.me) apresentando Zig e sua filosofia.
 - [Nova relação de Zig com a LLVM (inglês)](https://kristoff.it/blog/zig-new-relationship-llvm/)  
-Um post no blog sobre o trabalho para a construção do compilador auto-hospedado Zig, também apresentado em [um artigo no lwn.net (inglês)](https://lwn.net/Articles/833400/).
+Um post no blog sobre o trabalho para a compilação do compilador auto-hospedado Zig, também apresentado em [um artigo no lwn.net (inglês)](https://lwn.net/Articles/833400/).
 
 
 

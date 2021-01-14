@@ -1,5 +1,5 @@
 ---
-title: "Visão Geral em Profundidade"
+title: "Visão Geral"
 mobile_menu_title: "Visão Geral"
 toc: true
 ---

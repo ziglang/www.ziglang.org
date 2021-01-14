@@ -1,6 +1,6 @@
 ---
-title: Getting Started
-mobile_menu_title: "Getting Started"
+title: Começando
+mobile_menu_title: "Começando"
 toc: true
 ---
 
@@ -8,7 +8,7 @@ toc: true
 **<center>Nota para usuários do Apple Silicon</center>**
 Zig tem suporte experimental para a assinatura de códigos. Você poderá usar Zig com seu M1 Mac,
 mas a única maneira de conseguir Zig para macOS em ARM64 é compilá-lo você mesmo.
-Certifique-se de verificar a seção [Compilando da Fonte](#building-from-source).
+Certifique-se de verificar a seção [Compilando da Fonte](#compilando-da-fonte).
 {{% /div %}}
 
 
@@ -80,7 +80,7 @@ NOTA: Homebrew ainda não possui os pacotes para Apple Silicon. Se você tem um 
 brew install zig
 ```
 
-Última construção do *master branch* de Git:
+Última compilação do *master branch* de Git:
 ```
 brew install zig --HEAD
 ```
