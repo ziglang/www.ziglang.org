@@ -545,7 +545,7 @@ Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para difere
 ### Tier System
 
 #### Suporte Tier 1
-- O Zig não só pode gerar código de máquina para estes dispositivos, mas a biblioteca padrão de abstrações entre plataformas tem implementações para estes dispositivos. Assim, é prático escrever uma aplicação Zig pura, sem dependência da libc.
+- O Zig não só pode gerar código de máquina para estes dispositivos, mas a biblioteca padrão de abstrações entre plataformas tem implementações para estes dispositivos.
 - O servidor CI testa automaticamente estes dispositivos de saida em cada compromisso com o *master branch*, e atualiza a página [Baixar](https://ziglang.org/download) com links para binários pré-construídos.
 - Estes dispositivos têm capacidade de depuração e, portanto, produzem [rastreamento de pilha](https://ziglang.org/#Stack-traces-on-all-targets) sobre asserções fracassadas.
 - [libc está disponível para este dispositivo, mesmo quando a compilação cruzada](https://ziglang.org/#Zig-ships-with-libc).
