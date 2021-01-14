@@ -52,7 +52,7 @@ Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂�
 #### 在 Linux, macOS, BSD 上设置 PATH
 将 zig 二进制镜像的位置添加到 PATH 环境变量中。
 
-这通常可以通过在你的 shell 启动脚本（`.profile`，`.zshrc`等）中添加一个 export 语句来实现
+这通常可以通过在你的 shell 启动脚本（`.profile`，`.zshrc` 等）中添加一个 export 语句来实现
 ```bash
 export PATH=$PATH:~/path/to/zig
 ```
@@ -102,7 +102,7 @@ Zig 也存在于许多 Linux 的包管理器中。 [从这里（英文）](https
 
 如果你对 Zig 和你的编辑器的深度整合感兴趣，可以查看 [zigtools/zls](https://github.com/zigtools/zls)。
 
-如果你对其他的工具感兴趣，可以查看 [工具](../tools/) 章节。
+如果你对其他的工具感兴趣，可以查看[工具](../tools/)章节。
 
 ## 运行“你好，世界”
 如果你正确地完成了安装过程，你现在应该可以从你的 shell 中运行 Zig 编译器了。
@@ -130,11 +130,11 @@ info: All your codebase are belong to us.
 恭喜你，你已经安装好了 Zig！
 
 ## 下一步
-**查看在 [Learn](../) 章节的其他资源**，请务必找到与你的 Zig 版本匹配的文档。
+**查看在[学习](../)章节的其他资源**，请务必找到与你的 Zig 版本匹配的文档。
 （注意：夜间构建版本应该使用主分支上的文档），并考虑读一读 [ziglearn.org](https://ziglearn.org)。
 
-Zig 是一个年轻的项目，遗憾的是，我们还没有能力为所有的东西制作大量的文档和学习材料，因此，你应该考虑[加入其中一个 Zig 社群](https://github.com/ziglang/zig/wiki/Community)
-以在遇到问题是获取帮助，同样，也可以看看 [Zig SHOWTIME（英文）](https://zig.show)。
+Zig 是一个年轻的项目，遗憾的是我们还没有能力为所有的东西制作大量的文档和学习材料。因此，你应该考虑[加入其中一个 Zig 社群](https://github.com/ziglang/zig/wiki/Community)
+以在遇到问题是获取帮助，同样也可以看看 [Zig SHOWTIME（英文）](https://zig.show)。
 
-最后，如果你喜欢 Zig 并像加速发展，[考虑捐助 Zig 软件基金会](../../zsf)
+最后，如果你喜欢 Zig 并想加速 Zig 开发，[考虑捐助 Zig 软件基金会](../../zsf)
 <img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">。

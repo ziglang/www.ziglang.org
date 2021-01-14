@@ -80,7 +80,7 @@ $ ldd hello
   not a dynamic executable
 ```
 
-Windows的构建就更小了，达到了4096字节：
+Windows 的构建就更小了，达到了 4096 字节：
 ```
 $ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe

@@ -32,10 +32,10 @@ layout: single
 Zig 的结构化介绍，由 [Sobeston](https://github.com/sobeston) 编写。
 
 ## 相关视频和博客文章
-- [Zig 1.0 之路](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]
+- [Zig 1.0 之路（英文）](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]
 [Andrew Kelley](https://andrewkelley.me) 介绍 Zig 及其理念的视频。
-- [Zig 与 LLVM 的新关系](https://kristoff.it/blog/zig-new-relationship-llvm/)
-一篇关于构建 Zig 自托管编译器的博客文章，也被[ lwn.net 的一篇文章所介绍](https://lwn.net/Articles/833400/)。
+- [Zig 与 LLVM 的新关系（英文）](https://kristoff.it/blog/zig-new-relationship-llvm/)
+一篇关于构建 Zig 自托管编译器的博客文章，也被[ lwn.net 的一篇文章（英文）所介绍](https://lwn.net/Articles/833400/)。
 
 
 
