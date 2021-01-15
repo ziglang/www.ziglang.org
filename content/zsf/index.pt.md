@@ -1,10 +1,10 @@
 ---
-title: "Patrocinadores da ZSF"
-menu_title: "Patrocinadores da Zig Software Foundation"
-mobile_menu_title: "Patrocinadores da ZSF"
+title: "Patrocine à ZSF"
+menu_title: "Patrocine à Zig Software Foundation"
+mobile_menu_title: "Patrocine à ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "Patrocinadores da Zig Software Foundation" >}}
+{{< sponsor-title-cta "Patrocine à Zig Software Foundation" >}}
 
 ## Missão
 A missão da Zig Software Foundation é promover, proteger e fazer avançar a linguagem de programação Zig, apoiar e facilitar o crescimento de uma comunidade diversificada e internacional de programadores Zig, e fornecer educação e orientação aos estudantes, ensinando a próxima geração de programadores a serem competentes, éticos e a manterem uns aos outros com padrões elevados.
@@ -23,10 +23,10 @@ Ao fazer uma doação ao ZSF, você está financiando o desenvolvimento da lingu
 
 ZSF é uma pequena organização e faz uso eficiente de recursos monetários. O plano é mantê-la assim, mas queremos transformar nossos voluntários não remunerados em mantenedores remunerados para ajudar na fusão de pedidos e fazer progressos mais rápidos em direção ao 1.0. O objetivo do ZSF ser sem fins lucrativos é beneficiar as pessoas. Estamos tentando fazer com que os mantenedores de código aberto sejam pagos pelo seu tempo.
 
-A maneira mais fácil de nos apoiar é doar através dos [Patrocinadores do GitHub](https://github.com/sponsors/ziglang).
+A maneira mais fácil de nos apoiar é doar através dos [Patrocínios do GitHub](https://github.com/sponsors/ziglang).
 
-## Informações das doaçoes
-Aqui estão informações úteis para doar por outros meios que não os Patrocinadores do GitHub.
+## Informações das doações
+Aqui estão informações úteis para doar por outros meios que não os Patrocínios do GitHub.
 Certifique-se de verificar sua legislação local para ver se você pode deduzir doações de seus impostos.
 
 |   **EIN**   | **Endereço** |
@@ -40,7 +40,7 @@ Certifique-se de verificar sua legislação local para ver se você pode deduzir
 
 **Por favor, não hesite em nos contatar em donations@ziglang.org se você tiver dúvidas ou necessidades específicas.**
 
-## Patrocinadores corporativos
+## Patrocínios corporativos
 
 ### Doações monetárias
 As seguintes empresas estão fornecendo apoio financeiro direto à Zig Software Foundation doando mais de US$ 1000/mês.
