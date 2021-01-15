@@ -12,3 +12,4 @@ The original content is written in [English](/).
 
 - [Italiano](../it/)
 - [Português](../pt/)
+- [简体中文](../zh/)
