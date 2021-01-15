@@ -1,6 +1,6 @@
 ---
-title: Home
-mobile_menu_title: "Home"
+title: Página Inicial
+mobile_menu_title: "Inicial"
 ---
 {{< slogan get_started="COMECE AGORA" docs="Documentação" notes="Mudanças" lang="pt">}}
 Zig é uma linguagem de programação de propósito geral e um conjunto de ferramentas para manter o seu software **robusto**, **otimizado**, e **usável**.  
@@ -88,7 +88,7 @@ Espera-se que os contribuidores sigam o Zig [Código de Conduta](https://github.
 
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
-## A ZSF é uma corporação sem fins lucrativos 501(c)(3).
+## A ZSF é uma corporação 501(c)(3) sem fins lucrativos.
 
 A Zig Software Foundation é uma corporação sem fins lucrativos fundada em 2020 por Andrew Kelley, o criador do Zig, com o objetivo de apoiar o desenvolvimento da linguagem. Atualmente, a ZSF é capaz de oferecer trabalho remunerado a taxas competitivas para um pequeno número de colaboradores principais. Esperamos ser capazes de estender esta oferta a mais colaboradores centrais no futuro.
 

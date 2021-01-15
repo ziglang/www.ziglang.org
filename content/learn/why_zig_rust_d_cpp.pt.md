@@ -19,7 +19,7 @@ Exemplos de fluxo de controle oculto:
 
 - D tem funções `@property`, que são métodos que você chama com o que parece ser acesso de campo, então no exemplo acima, `c.d` poderia chamar uma função.
 - C++, D, e Rust têm sobrecarga do operador, portanto o operador `+` pode chamar uma função.
-- C++, D, e Go têm exceções de `throw/catch`, portanto `foo()` pode lançar uma exceção, e impedir que `bar()` seja chamado. (Claro que, mesmo em Zig `foo()` poderia bloquear e impedir que `bar()` fosse chamado, mas isso pode acontecer em qualquer linguagem Completude-Turing).
+- C++, D, e Go têm exceções de `throw/catch`, portanto `foo()` pode lançar uma exceção, e impedir que `bar()` seja chamado. (Claro que, mesmo em Zig `foo()` poderia bloquear e impedir que `bar()` fosse chamado, mas isso pode acontecer em qualquer linguagem que seja Turing-Completude).
 
 O objetivo desta decisão de projeto é melhorar a legibilidade.
 
@@ -35,7 +35,7 @@ Como afirmado antes, este tópico ainda é um pouco confuso e se tornará mais c
 
 Nem é preciso dizer que não existe um coletor de lixo embutido como há na linguagem Go.
 
-[O pânico emitido pela biblioteca padrão do Rust quando está Sem Memória (Out Of Memory)](https://github.com/rust-lang/rust/issues/29802)
+[O erro [panic] emitido pela biblioteca padrão do Rust quando estiver sem Memória (Out Of Memory)](https://github.com/rust-lang/rust/issues/29802)
 
 [1]: Na verdade, existe um operador de concatenação de cordas (geralmente um operador de concatenação de matriz), mas ele só funciona em tempo de compilação, de modo que ainda não há alocação de pilha de tempo de execução com isso.
 
