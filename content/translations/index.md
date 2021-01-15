@@ -11,3 +11,4 @@ The original content is written in [English](/).
 ## Available translations
 
 - [Italiano](../it/)
+- [Português](../pt/)
