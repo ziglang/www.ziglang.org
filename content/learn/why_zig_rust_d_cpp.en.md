@@ -17,32 +17,69 @@ bar();
 
 Examples of hidden control flow:
 
-- D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
-- C++, D, and Rust have operator overloading, so the `+` operator might call a function.
-- C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called. (Of course, even in Zig `foo()` could deadlock and prevent `bar()` from being called, but that can happen in any Turing-complete language.)
+* D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
+* C++, D, and Rust have operator overloading, so the `+` operator might call a function.
+* C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called. (Of course, even in Zig `foo()` could deadlock and prevent `bar()` from being called, but that can happen in any Turing-complete language.)
 
 The purpose of this design decision is to improve readability.
 
 ## No hidden allocations
 
-More generally, have a hands-off approach when it comes to heap allocation. There is no `new` keyword or any other language feature that uses a heap allocator (e.g. string concatenation operator[1]). The entire concept of the heap is strictly in userspace. There are some standard library features that provide and work with heap allocators, but those are optional standard library features, not built into the language itself. If you never initialize a heap allocator, then you can be sure your program is never going to cause heap allocations.
+Zig has a hands-off approach when it comes to heap allocation. There is no `new` keyword
+or any other language feature that uses a heap allocator (e.g. string concatenation operator[1]).
+The entire concept of the heap is managed by library and application code, not by the language.
 
-Zig's standard library is still very young, but the goal is for every feature that uses an allocator to accept an allocator at runtime, or possibly at either compile time or runtime.
+Examples of hidden allocations:
 
-The motivation for this design philosophy is to enable users to write any manner of custom allocator strategy they find necessary, instead of forcing them or even encouraging them into a particular strategy that may not be suitable for their needs. For example, Rust seems to encourage a single global allocator strategy, which is not suitable for many usecases such as OS development and high-performance game development. Zig is taking cues from [Jai](https://www.youtube.com/watch?v=ciGQCP6HgqI)'s stance on allocators, since that language is being developed by a high-performance game designer for the usecase of high-performance games.
+* Go's `defer` allocates memory to a function-local stack. In addition to being an unintuitive
+  way for this control flow to work, it can cause out-of-memory failures if you use
+  `defer` inside a loop.
+* C++ coroutines allocate heap memory in order to call a coroutine.
+* In Go, a function call can cause heap allocation because goroutines allocate small stacks
+  that get resized when the call stack gets deep enough.
+* The main Rust standard library APIs panic on out of memory conditions, and the alternate
+  APIs that accept allocator parameters are an afterthought
+  (see [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
+* D has an optional garbage collector, and it is common for code to use it,
+  so without a full and recursive audit of all your dependency tree, it's likely that
+  you are accidentally using the garbage collector.
 
-As stated before, this topic is still a bit fuzzy, and will become more concrete as the Zig standard library matures. The important thing is that heap allocation be a userspace concept, and not built into the language.
+Nearly all garbage collected languages have hidden allocations strewn about, since the
+garbage collector hides the evidence on the cleanup side.
 
-Needless to say, there is no builtin garbage collector like Go has.
+The main problem with hidden allocations is that it prevents the *reusability* of a
+piece of code, unnecessarily limiting the number of environments that code would be
+appropriate to be deployed to. Simply put, there exist use cases where one must be able
+to rely on control flow and function calls to not have the side-effect of memory allocation,
+therefore a programming language can only serve these use cases if it can realistically
+provide this guarantee.
 
-[Rust standard library panics on Out Of Memory](https://github.com/rust-lang/rust/issues/29802)
+In Zig, there are standard library features that provide and work with heap allocators,
+but those are optional standard library features, not built into the language itself.
+If you never initialize a heap allocator, you can be confident your program will not heap allocate.
+
+Every standard library feature that needs to allocate heap memory accepts an `Allocator` parameter
+in order to do it. This means that the Zig standard library supports freestanding targets. For
+example `std.ArrayList` and `std.AutoHashMap` can be used for bare metal programming!
+
+Custom allocators make manual memory management a breeze. Zig has a debug allocator that
+maintains memory safety in the face of use-after-free and double-free. It automatically
+detects and prints stack traces of memory leaks. There is an arena allocator so that you can
+bundle any number of allocations into one and free them all at once rather than manage
+each allocation independently. Special-purpose allocators can be used to improve performance
+or memory usage for any particular application's needs.
 
 [1]: Actually there is a string concatenation operator (generally an array concatenation operator), but it only works at compile time, so there's still no runtime heap allocation with that.
 
 ## First-class support for no standard library
 
-Zig has an entirely optional standard library that only gets compiled into your program if you use it. Zig has equal support for either linking against libc or not linking against it. Zig is friendly to bare-metal and high-performance development.
+As hinted above, Zig has an entirely optional standard library. Each std lib API only gets compiled
+into your program if you use it. Zig has equal support for either linking against libc or
+not linking against it. Zig is friendly to bare-metal and high-performance development.
 
+It's the best of both worlds; for example in Zig, WebAssembly programs can both use
+the normal features of the standard library, and still result in the tiniest binaries when
+compared to other programming languages that support compiling to WebAssembly.
 
 ## A Portable Language for Libraries
 
@@ -68,15 +105,9 @@ C++, Rust, and D have a large number of features and it can be distracting from 
 
 Zig has no macros and no metaprogramming, yet still is powerful enough to express complex programs in a clear, non-repetitive way. Even Rust which has macros special cases `format!`, implementing it in the compiler itself. Meanwhile in Zig, the equivalent function is implemented in the standard library with no special case code in the compiler.
 
-When you look at Zig code, everything is a simple expression or a function call. There is no operator overloading, property methods, runtime dispatch, macros, or hidden control flow. Zig is going for all the beautiful simplicity of C, minus the pitfalls.
-
- * [Struggles With Rust](https://compileandrun.com/stuggles-with-rust.html)
- * [Way Cooler gives up on Rust due to complexity](http://way-cooler.org/blog/2019/04/29/rewriting-way-cooler-in-c.html)
- * [Moving to Zig for ARM Development](https://www.jishuwen.com/d/2Ap9)
-
 ## Tooling
 
-Zig can be downloaded from [the downloads section](/download/).  Zig provides binary archives for linux, windows, macos and freebsd. The following describes what you get with this archive:
+Zig can be downloaded from [the downloads section](/download/).  Zig provides binary archives for Linux, Windows, macOS and FreeBSD. The following describes what you get with this archive:
 
 * installed by downloading and extracting a single archive, no system configuration needed
 * statically compiled so there are no runtime dependencies
@@ -84,4 +115,4 @@ Zig can be downloaded from [the downloads section](/download/).  Zig provides bi
 * out of the box cross-compilation to most major platforms
 * ships with source code for libc that will be dynamically compiled when needed for any supported platform
 * includes build system with caching
-* compiles C code with libc support
+* compiles C and C++ code with libc support
