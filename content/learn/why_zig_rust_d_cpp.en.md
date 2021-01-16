@@ -40,9 +40,6 @@ Examples of hidden allocations:
 * The main Rust standard library APIs panic on out of memory conditions, and the alternate
   APIs that accept allocator parameters are an afterthought
   (see [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
-* D has an optional garbage collector, and it is common for code to use it,
-  so without a full and recursive audit of all your dependency tree, it's likely that
-  you are accidentally using the garbage collector.
 
 Nearly all garbage collected languages have hidden allocations strewn about, since the
 garbage collector hides the evidence on the cleanup side.
