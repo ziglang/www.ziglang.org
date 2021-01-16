@@ -4,7 +4,7 @@ mobile_menu_title: "Home"
 ---
 {{< slogan get_started="INIZIA QUI" docs="Documentazione" notes="Note">}}
 Zig e' un linguaggio di programmazione general-purpose e toolchain per
-mantere software **robusto**, **ottimale**, e **riusabile**.
+mantenere software **robusto**, **ottimale**, e **riusabile**.
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;">}}
@@ -28,7 +28,7 @@ Un nuovo approccio alla metaprogrammazione basato sull'esecuzione di codice dura
 Scrivi codice efficiente, chiaro e in grado di gestire ogni errore.
 
 - Il linguaggio guida elegantemente la tua logica di gestione degli errori.
-- Cotrolli a runtime configurabili ti permettono di trovare un equilibrio tra prestazioni e garanzie di sicurezza.
+- Controlli a runtime configurabili ti permettono di trovare un equilibrio tra prestazioni e garanzie di sicurezza.
 - Usa i tipi vettore per esprimere istruzioni SIMD in modo portabile.
 
 {{% flexrow style="justify-content:center;" %}}
@@ -52,7 +52,7 @@ Scrivi codice efficiente, chiaro e in grado di gestire ogni errore.
 {{< /flexrow >}}
 
 {{% div class="alt-background" %}}
-{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Comunita'" %}}
+{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Comunità" %}}
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
@@ -60,13 +60,13 @@ Scrivi codice efficiente, chiaro e in grado di gestire ogni errore.
 {{% /div %}}
 
 {{% div class="community-message" %}}
-# La comunita' Zig e' decentralizzata
-Chiunque e' libero di avviare e mantenere un proprio spazio per permettere alla comunita' di interagire.
-Non c'e' nessuna distinzione tra spazi "ufficiali" e non, ma ogni posto ha le proprie regole e moderatori.
+# La comunità Zig è decentralizzata
+Chiunque è libero di avviare e mantenere un proprio spazio per permettere alla comunità di interagire.
+Non c'è nessuna distinzione tra spazi "ufficiali" e non, ma ogni posto ha le proprie regole e moderatori.
 
 <div style="">
 <h1>
-	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">Esplora le comunita'</a>
+	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">Esplora le comunità</a>
 </h1>
 </div>
 {{% /div %}}
@@ -76,7 +76,7 @@ Non c'e' nessuna distinzione tra spazi "ufficiali" e non, ma ogni posto ha le pr
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
 # Sviluppo del progetto
-Il repository di Zig puo' essere trovato a [https://github.com/ziglang/zig](https://github.com/ziglang/zig), dove manteniamo anche l'issue tracker e discutiamo le proposte di miglioramento.  
+Il repository di Zig può essere trovato a [https://github.com/ziglang/zig](https://github.com/ziglang/zig), dove manteniamo anche l'issue tracker e discutiamo le proposte di miglioramento.  
 I contributori sono tenuti a rispettare il [codice di comportamento](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md) di Zig.
 {{% /div %}}
 {{% div style="width:40%" %}}
@@ -90,12 +90,12 @@ I contributori sono tenuti a rispettare il [codice di comportamento](https://git
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
 ## La ZSF e' una corporazione non-profit.
 
-La Zig Software Foundation e' una corporazioe non-profit fondata nel 2020 da Andrew Kelley, il creatore di Zig, con l'obbviettivo di supportare lo sviluppo del linguaggio. Al momento la fondazione e' in grado di offire pagamento a rate competitivi ad un piccolo numero di contributori. Speriamo di poter estentere questa offerta a piu' contibutori nel prossimo futuro.
+La Zig Software Foundation e' una corporazione non-profit fondata nel 2020 da Andrew Kelley, il creatore di Zig, con l'obbiettivo di supportare lo sviluppo del linguaggio. Al momento la fondazione è in grado di offire pagamento a rate competitivi ad un piccolo numero di contributori. Speriamo di poter estendere questa offerta a più contibutori nel prossimo futuro.
 
 La Zig Software Foundation si sostiene tramite donazioni.
 
 <h1>
-	<a href="zsf/" class="button" style="display:inline;">Ulterori dettagli</a>
+	<a href="zsf/" class="button" style="display:inline;">Ulteriori dettagli</a>
 </h1>
 {{% /div %}}
 
@@ -115,7 +115,7 @@ Le seguenti compagnie offrono diretto supporto finanziario alla Zig Software Fou
 {{% /sponsor-logos %}}
 # GitHub Sponsors
 
-Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento all propria comunita' open source, invece che ad uno stuolo di shareholder. In particolare, i seguenti illustri individui supportano Zig per un quantitativo di 200 USD/mese o superiore:
+Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento all propria comunità open source, invece che ad uno stuolo di shareholder. In particolare, i seguenti illustri individui supportano Zig per un quantitativo di 200 USD/mese o superiore:
 
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
