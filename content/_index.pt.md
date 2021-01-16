@@ -52,7 +52,7 @@ Escreva um código rápido e claro, capaz de lidar com todas as condições de e
 
 
 {{% div class="alt-background" %}}
-{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Community" %}}
+{{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Comunidade" %}}
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
