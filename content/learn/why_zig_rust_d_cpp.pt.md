@@ -17,39 +17,71 @@ bar();
 
 Exemplos de fluxo de controle oculto:
 
-- D tem funções `@property`, que são métodos que você chama com o que parece ser acesso de campo, então no exemplo acima, `c.d` poderia chamar uma função.
-- C++, D, e Rust têm sobrecarga do operador, portanto o operador `+` pode chamar uma função.
-- C++, D, e Go têm exceções de `throw/catch`, portanto `foo()` pode lançar uma exceção, e impedir que `bar()` seja chamado. (Claro que, mesmo em Zig `foo()` poderia bloquear e impedir que `bar()` fosse chamado, mas isso pode acontecer em qualquer linguagem que seja Turing-Completude).
+* D tem funções `@property`, que são métodos que você chama com o que parece ser acesso de campo, então no exemplo acima, `c.d` poderia chamar uma função.
+* C++, D, e Rust têm sobrecarga do operador, portanto o operador `+` pode chamar uma função.
+* C++, D, e Go têm exceções de `throw/catch`, portanto `foo()` pode lançar uma exceção, e impedir que `bar()` seja chamado. (Claro que, mesmo em Zig `foo()` poderia bloquear e impedir que `bar()` fosse chamado, mas isso pode acontecer em qualquer linguagem que seja Turing-Completude).
 
 O objetivo desta decisão de projeto é melhorar a legibilidade.
 
 ## Sem alocações ocultas
 
-De modo mais geral, ter uma abordagem de mãos livres quando se trata de alocação de pilhas. Não há nenhuma "nova" palavra-chave ou qualquer outro recurso de linguagem que utilize um alocador de pilha (por exemplo, operador de concatenação de strings[1]). Todo o conceito da pilha está estritamente no espaço do usuário. Há algumas características padrão de biblioteca que fornecem e funcionam com alocadores de pilha, mas essas são características opcionais de biblioteca padrão, não incorporadas no próprio idioma. Se você nunca inicializa um alocador de pilhas, então você pode ter certeza de que seu programa nunca vai causar alocações de pilhas.
+Zig tem uma abordagem de trabalho manual quando se trata de alocação de memória. Não há uma palavra-chave `new`
+ou qualquer outro recurso semelhante na linguagem que utilize um alocador de memória (por exemplo, operador de concatenação de strings[1]).
+Todo o conceito da heap é gerenciado pela biblioteca e o código da aplicação, não pela linguagem.
 
-A biblioteca padrão do Zig ainda é muito jovem, mas o objetivo é que cada recurso que usa um alocador aceite um alocador em tempo de execução, ou possivelmente em tempo de compilação ou de execução.
+Exemplo de alocações ocultas:
 
-A motivação para esta filosofia de projeto é permitir aos usuários escrever qualquer tipo de estratégia de alocação personalizada que considerem necessária, em vez de forçá-los ou mesmo encorajá-los a uma estratégia particular que pode não ser adequada às suas necessidades. Por exemplo, Rust parece encorajar uma única estratégia de alocação global, que não é adequada para muitos casos de uso, tais como desenvolvimento de SO e desenvolvimento de jogos de alto desempenho. Zig está recebendo sugestões da postura de [Jai](https://www.youtube.com/watch?v=ciGQCP6HgqI) sobre alocadores, uma vez que essa linguagem está sendo desenvolvida por um designer de jogos de alto desempenho para o uso de jogos de alto desempenho. 
+* Go utiliza `defer` para alocar memória a uma pilha de funções-local. Além de ser uma forma não intuitiva
+  para este fluxo de controle funcionar, ele pode causar falhas como falta de memória se você usar `defer`
+  dentro de um laço.
+* Corrotinas em C++ aloca memória heap a fim de chamar uma corrotina.
+* Em Go, uma chamada de função pode causar alocação de memória porque as goroutines alocam pequenas pilhas
+  que são redimensionadas quando a pilha de chamadas fica muito cheia.
+* As principais APIs da biblioteca padrão Rust entram em pânico em condições de falta de memória, e as APIs
+  alternativas que aceitam parâmetros de alocação serão um problema a ser considerado mais tarde.
+  (veja [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
 
-Como afirmado antes, este tópico ainda é um pouco confuso e se tornará mais concreto conforme a biblioteca padrão do Zig amadurece. O importante é que a alocação de heap seja um conceito de espaço do usuário, e não embutido na linguagem.
+Quase todas as línguagens que possuem coletor de lixo têm alocações ocultas,
+já que o coletor de lixo esconde as evidências no lado da liberação de memória.
 
-Nem é preciso dizer que não existe um coletor de lixo embutido como há na linguagem Go.
+O principal problema com alocações ocultas é que elas impedem a *reusabilidade* de um pedaço do código,
+limitando desnecessariamente o número de ambientes aos quais o código seria apropriado para ser implantado.
+Simplificando, existem casos de uso em que se deve ser capaz de confiar no fluxo de controle e chamadas de
+função para não ter o efeito colateral da alocação de memória, portanto, uma linguagem de programação só pode
+servir a estes casos de uso se ela puder fornecer esta garantia de forma realista.
 
-[O erro [panic] emitido pela biblioteca padrão do Rust quando estiver sem Memória (Out Of Memory)](https://github.com/rust-lang/rust/issues/29802)
+Em Zig, há recursos da biblioteca padrão que fornecem e trabalham com alocadores de memória, mas esses são recursos
+opcionais da biblioteca padrão, já que não são incorporados a linguagem.
+Se você nunca inicializar um alocador de memória, você pode ter certeza de que seu programa não irá alocar memória.
 
-[1]: Na verdade, existe um operador de concatenação de cordas (geralmente um operador de concatenação de matriz), mas ele só funciona em tempo de compilação, de modo que ainda não há alocação de pilha de tempo de execução com isso.
+Cada recurso da biblioteca padrão que precisa alocar memória aceita um parâmetro `Allocator` para fazer isso.
+Isto significa que a biblioteca padrão do Zig suporta dispositivos freestanding. Por exemplo `std.ArrayList` e
+`std.AutoHashMap` podem ser utilizadas para programação em bare metal!
+
+Alocadores personalizados fazem gerenciamento manual de memória com facilidade. Zig tem um alocador de depuração
+que mantém a segurança da memória em casos de ponteiro selvagem e liberação dupla. Ela automaticamente detecta e imprime vestígios
+de vazamentos de memória na pilha. Há um alocador de arena para que você possa agrupar qualquer número de alocações em uma
+e liberá-las todas de uma só vez, em vez de gerenciar cada alocação independentemente. Alocadores para fins especiais podem
+ser usados para melhorar o desempenho ou uso de memória para qualquer necessidade específica de aplicação.
+
+[1]: Na verdade, existe um operador de concatenação de strings (geralmente um operador de concatenação de matriz),
+  mas ele só funciona em tempo de compilação, de modo que ainda não há alocação de pilha de tempo de execução com isso.
 
 ## Autonomia
 
-Zig tem uma biblioteca padrão inteiramente opcional que só é compilada em seu programa se você a utilizar. O mesmo ocorre com a libc, a utilização dela é opcional, exceto em casos de interoperabilidade com linguagem C. O Zig é amigável ao desenvolvimento de sistemas de alto desempenho e bare-metal. 
+Como sugerido acima, o Zig tem uma biblioteca padrão inteiramente opcional. Cada API biblioteca padrão só é compilada em seu programa
+se você a utilizar. Zig faz o mesmo com a biblioteca C, ou seja, a vinculação dela também é opcional. O Zig é flexível ao
+desenvolvimento de bare metal e computadores de alto desempenho.
 
+É o melhor dos dois mundos; por exemplo, em Zig, os programas em WebAssembly podem tanto usar as características normais da biblioteca padrão,
+como ainda resultar nos mais pequenos binários quando comparados com outras linguagens de programação que suportam a compilação para WebAssembly.
 
 ## Uma linguagem portátil para bibliotecas
 
 Um dos santo graal da programação é a reutilização de código. Infelizmente, na prática, acabamos reinventando a roda várias vezes. Muitas vezes é justificado.
 
  * Se um aplicativo tem requisitos de tempo real, qualquer biblioteca que usa coleta de lixo ou qualquer outro comportamento não determinístico é desqualificada como dependência.
- * Se uma linguagem torna muito fácil ignorar erros e, portanto, verificar se uma biblioteca trata corretamente e gera bolhas de erros, pode ser tentador ignorar a biblioteca e implementá-la novamente, sabendo que todos os erros relevantes foram tratados corretamente. O Zig é projetado de forma que a coisa mais preguiçosa que um programador pode fazer é lidar com os erros corretamente e, portanto, pode-se estar razoavelmente confiante de que uma biblioteca irá propagar erros.
+ * Se uma linguagem torna muito fácil ignorar erros e, portanto, verificar se uma biblioteca trata corretamente e gera bolhas de erros, pode ser tentador ignorar     a biblioteca e implementá-la novamente, sabendo que todos os erros relevantes foram tratados corretamente. O Zig é projetado de forma que a coisa mais preguiçosa que um programador pode fazer é lidar com os erros corretamente e, portanto, pode-se estar razoavelmente confiante de que uma biblioteca irá propagar erros.
  * Atualmente, é pragmaticamente verdade que C é a linguagem mais versátil e portátil. Qualquer linguagem que não tenha a capacidade de interagir com o código C corre o risco de ser obscurecida. O Zig está tentando se tornar a nova linguagem portátil para bibliotecas, tornando-o simultaneamente direto para a conformidade com a C ABI para funções externas e introduzindo segurança e design de linguagem que evita bugs comuns nas implementações.
 
 ## Um Gerenciador de Pacotes e um Sistema de Compilação para projetos existentes
@@ -68,20 +100,14 @@ C++, Rust, e D têm um grande número de características e podem distrair do si
 
 Zig não tem macros nem metaprogramação, mas ainda é poderoso o suficiente para expressar programas complexos de uma forma clara e não repetitiva. Mesmo Rust, que tem macros com casos especiais `format!`, implementando-o no próprio compilador. Enquanto isso, em Zig, a função equivalente é implementada na biblioteca padrão, sem código de caso especial no compilador.
 
-Quando você observa o código Zig, tudo é uma simples expressão ou uma chamada de função. Não há sobrecarga de operador, métodos de propriedade, despacho de tempo de execução, macros ou fluxo de controle oculto. Zig está indo para toda a bela simplicidade do C, menos as armadilhas.
-
- * [Struggles With Rust](https://compileandrun.com/stuggles-with-rust.html)
- * [Way Cooler gives up on Rust due to complexity](http://way-cooler.org/blog/2019/04/29/rewriting-way-cooler-in-c.html)
- * [Moving to Zig for ARM Development](https://www.jishuwen.com/d/2Ap9)
-
 ## Ferramentas
 
-Zig pode ser baixado na seção [Baixar](/downloads/). Zig fornece arquivos binários para linux, windows, macos e freebsd. O seguinte descreve o que você obtém com este arquivo:
+Zig pode ser baixado na seção [Baixar](/downloads/). Zig fornece arquivos binários para Linux, Windows, MacOS e FreeBSD. Siga as descrições do que você obtém com este arquivo:
 
 * instalado após baixar e extrair de um único arquivo, sem necessidade de configuração do sistema
 * compilado estaticamente para que não haja dependências de tempo de execução
 * utiliza a infra-estrutura madura e bem suportada da LLVM que permite uma profunda otimização e suporte para a maioria das principais plataformas
-* out of the box cross-compilation to most major platforms
-* vincula código fonte com libc que será compilado dinamicamente quando necessário para qualquer plataforma suportada
+* compilação cruzada de qualquer plataforma para outras plataformas suportadas
+* vincula o código fonte com a bibliocate C que será compilado dinamicamente quando necessário para qualquer plataforma suportada
 * inclui sistema de compilação com caching
-* compila o código C com o suporte da libc
+* compila código C e C++ com o suporte da biblioteca C
