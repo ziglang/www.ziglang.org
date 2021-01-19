@@ -61,23 +61,8 @@ Le seguenti compagnie offrono diretto supporto finanziario alla Zig Software Fou
 ### Infrastruttura
 Le seguenti compagnie stanno offrendo alcuni dei loro servizi alla Zig Software Foundation gratuitamente.
 
-{{% sponsor-logos %}}
-![](../lavatech.png)
+{{% sponsor-logos "services" %}}
+![](/lavatech.png)
 ![](/dropbox.png)
 ![](/aws.png)
 {{% /sponsor-logos %}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
