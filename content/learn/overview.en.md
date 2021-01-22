@@ -44,7 +44,7 @@ Here is what it looks like at runtime, in safety-checked builds:
 {{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
 
-Those [stack traces work on all targets](https://ziglang.org/#Stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
+Those [stack traces work on all targets](#stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
 With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this:
 
@@ -56,7 +56,7 @@ Speaking of performance, Zig is faster than C.
 
 - The reference implementation uses LLVM as a backend for state of the art optimizations.
 - What other projects call "Link Time Optimization" Zig does automatically.
-- For native targets, advanced CPU features are enabled (-march=native), thanks to the fact that [Cross-compiling is a first-class use case](https://ziglang.org/#Cross-compiling-is-a-first-class-use-case).
+- For native targets, advanced CPU features are enabled (-march=native), thanks to the fact that [Cross-compiling is a first-class use case](#cross-compiling-is-a-first-class-use-case).
 - Carefully chosen undefined behavior. For example, in Zig both signed and unsigned integers have undefined behavior on overflow, contrasted to only signed integers in C. This [facilitates optimizations that are not available in C](https://godbolt.org/z/n_nLEU).
 - Zig directly exposes a [SIMD vector type](https://ziglang.org/documentation/master/#Vectors), making it easy to write portable vectorized code.
 
@@ -91,7 +91,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 ## Order independent top level declarations
 
-Top level declarations such as global variables are order-independent and lazily analyzed. The initialization values of global variables are [evaluated at compile-time](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution).
+Top level declarations such as global variables are order-independent and lazily analyzed. The initialization values of global variables are [evaluated at compile-time](#compile-time-reflection-and-compile-time-code-execution).
 
 {{< zigdoctest "assets/zig-code/features/5-global-variables.zig" >}}
 
@@ -135,9 +135,9 @@ In order to accomplish this, Zig programmers must manage their own memory, and m
 
 This is true of the Zig Standard Library as well. Any functions that need to allocate memory accept an allocator parameter. As a result, the Zig Standard Library can be used even for the freestanding target.
 
-In addition to [A fresh take on error handling](https://ziglang.org/#A-fresh-take-on-error-handling), Zig provides [defer](https://ziglang.org/documentation/master/#defer) and [errdefer](https://ziglang.org/documentation/master/#errdefer) to make all resource management - not only memory - simple and easily verifiable.
+In addition to [A fresh take on error handling](#a-fresh-take-on-error-handling), Zig provides [defer](https://ziglang.org/documentation/master/#defer) and [errdefer](https://ziglang.org/documentation/master/#errdefer) to make all resource management - not only memory - simple and easily verifiable.
 
-For an example of `defer`, see [Integration with C libraries without FFI/bindings](https://ziglang.org/#Integration-with-C-libraries-without-FFIbindings). Here is an example of using `errdefer`:
+For an example of `defer`, see [Integration with C libraries without FFI/bindings](#integration-with-c-libraries-without-ffibindings). Here is an example of using `errdefer`:
 {{< zigdoctest "assets/zig-code/features/11-errdefer.zig" >}}
 
 
@@ -155,7 +155,7 @@ The keyword [try](https://ziglang.org/documentation/master/#try) is a shortcut f
 
 {{< zigdoctest "assets/zig-code/features/14-errors-try.zig" >}}
 
-Note that is an [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), not a [stack trace](https://ziglang.org/#Stack-traces-on-all-targets). The code did not pay the price of unwinding the stack to come up with that trace.
+Note that is an [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), not a [stack trace](#stack-traces-on-all-targets). The code did not pay the price of unwinding the stack to come up with that trace.
 
 The [switch](https://ziglang.org/documentation/master/#switch) keyword used on an error ensures that all possible errors are handled:
 
@@ -165,11 +165,11 @@ The keyword [unreachable](https://ziglang.org/documentation/master/#unreachable)
 
 {{< zigdoctest "assets/zig-code/features/16-unreachable.zig" >}}
 
-This invokes [undefined behavior](https://ziglang.org/#Performance-and-Safety-Choose-Two) in the unsafe build modes, so be sure to use it only when success is guaranteed.
+This invokes [undefined behavior](#performance-and-safety-choose-two) in the unsafe build modes, so be sure to use it only when success is guaranteed.
 
 ### Stack traces on all targets
 
-The stack traces and [error return traces](https://ziglang.org/documentation/master/#Error-Return-Traces) shown on this page work on all [Tier 1 Support](https://ziglang.org/#Tier-1-Support) and some [Tier 2 Support](https://ziglang.org/#Tier-2-Support) targets. [Even freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
+The stack traces and [error return traces](https://ziglang.org/documentation/master/#Error-Return-Traces) shown on this page work on all [Tier 1 Support](#tier-1-support) and some [Tier 2 Support](#tier-2-support) targets. [Even freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
 
 In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later:
 
@@ -193,7 +193,7 @@ The [@typeInfo](https://ziglang.org/documentation/master/#typeInfo) builtin func
 
 {{< zigdoctest "assets/zig-code/features/20-reflection.zig" >}}
 
-The Zig Standard Library uses this technique to implement formatted printing. Despite being a [Small, simple language](https://ziglang.org/#Small-simple-language), Zig's formatted printing is implemented entirely in Zig. Meanwhile, in C, compile errors for printf are hard-coded into the compiler. Similarly, in Rust, the formatted printing macro is hard-coded into the compiler.
+The Zig Standard Library uses this technique to implement formatted printing. Despite being a [Small, simple language](#small-simple-language), Zig's formatted printing is implemented entirely in Zig. Meanwhile, in C, compile errors for printf are hard-coded into the compiler. Similarly, in Rust, the formatted printing macro is hard-coded into the compiler.
 
 Zig can also evaluate functions and blocks of code at compile-time. In some contexts, such as global variable initializations, the expression is implicitly evaluated at compile-time. Otherwise, one can explicitly evaluate code at compile-time with the [comptime](https://ziglang.org/documentation/master/#comptime) keyword. This can be especially powerful when combined with assertions:
 
@@ -256,7 +256,7 @@ sys	0m0.009s
 
 This is thanks to [Build Artifact Caching](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching). Zig automatically parses the .d file uses a robust caching system to avoid duplicating work.
 
-Not only can Zig compile C code, but there is a very good reason to use Zig as a C compiler: [Zig ships with libc](https://ziglang.org/#Zig-ships-with-libc).
+Not only can Zig compile C code, but there is a very good reason to use Zig as a C compiler: [Zig ships with libc](#zig-ships-with-libc).
 
 ### Export functions, variables, and types for C code to depend on
 
@@ -275,7 +275,7 @@ To make a shared library:
 $ zig build-lib mathtest.zig -dynamic
 ```
 
-Here is an example with the [Zig Build System](https://ziglang.org/#Zig-Build-System):
+Here is an example with the [Zig Build System](#zig-build-system):
 
 <u>test.c</u>
 ```c
@@ -299,7 +299,7 @@ $ zig build test
 
 ## Cross-compiling is a first-class use case
 
-Zig can build for any of the targets from the [Support Table](https://ziglang.org/#Support-Table) with [Tier 3 Support](https://ziglang.org/#Tier-3-Support) or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
+Zig can build for any of the targets from the [Support Table](#support-table) with [Tier 3 Support](#tier-3-support) or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
@@ -316,7 +316,7 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
 
-This works on any [Tier 3](https://ziglang.org/#Tier-3-Support)+ target, for any [Tier 3](https://ziglang.org/#Tier-3-Support)+ target.
+This works on any [Tier 3](#tier-3-support)+ target, for any [Tier 3](#tier-3-support)+ target.
 
 ### Zig ships with libc
 
@@ -375,7 +375,7 @@ You can find the available libc targets with `zig targets`:
 
 What this means is that `--library c` for these targets *does not depend on any system files*!
 
-Let's look at that [C hello world example](https://ziglang.org/#Zig-is-also-a-C-compiler) again:
+Let's look at that [C hello world example](#zig-is-also-a-c-compiler) again:
 ```
 $ zig build-exe --c-source hello.c --library c
 $ ./hello
@@ -412,9 +412,9 @@ In some ways, Zig is a better C compiler than C compilers!
 
 This functionality is more than bundling a cross-compilation toolchain along with Zig. For example, the total size of libc headers that Zig ships is 22 MiB uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux headers), yet Zig currently ships with 40 libcs. With a naive bundling that would be 444 MiB. However, thanks to this [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) that I made, and some [good old manual labor](https://github.com/ziglang/zig/wiki/Updating-libc), Zig binary tarballs remain roughly 30 MiB total, despite supporting libc for all these targets, as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler. For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132 MiB.
 
-Note that only the [Tier 1 Support](https://ziglang.org/#Tier-1-Support) targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
+Note that only the [Tier 1 Support](#tier-1-support) targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
 
-It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](https://ziglang.org/#Zig-Build-System) attractive for Zig programmers and C programmers alike.
+It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](#zig-build-system) attractive for Zig programmers and C programmers alike.
 
 ## Zig Build System
 
@@ -495,51 +495,51 @@ The Zig Standard Library implements an event loop that multiplexes async functio
 
 ## Wide range of targets supported
 
-Zig uses a "support tier" system to communicate the level of support for different targets. Note that the bar for [Tier 1 Support](https://ziglang.org/#Tier-1-Support) is high - [Tier 2 Support](https://ziglang.org/#Tier-2-Support) is still quite useful.
+Zig uses a "support tier" system to communicate the level of support for different targets. Note that the bar for [Tier 1 Support](#tier-1-support) is high - [Tier 2 Support](#tier-2-support) is still quite useful.
 
 ### Support Table
 
 | | free standing | Linux 3.16+ | macOS 10.13+ | Windows 8.1+ | FreeBSD 12.0+ | NetBSD 8.0+ | DragonFly​BSD 5.8+ | UEFI |
 |-|---------------|-------------|--------------|--------------|---------------|-------------|-------------------|------|
-| x86_64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) |
-| arm64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
-| arm32 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
-| mips32 LE | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| i386 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 2](https://ziglang.org/#Tier-2-Support) |
-| riscv64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
-| bpf | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| hexagon | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| mips32 BE | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| mips64 | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| amdgcn | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| sparc | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| s390x | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| lanai | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| powerpc32 | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| powerpc64 | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| avr | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| riscv32 | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) |
-| xcore | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| nvptx | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| msp430 | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| r600 | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| arc | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| tce | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| le | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| amdil | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| hsail | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| spir | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| kalimba | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| shave | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| renderscript | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
+| x86_64 | [Tier 1](#tier-1-support) | [Tier 1](#tier-1-support) | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) |
+| arm64 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
+| arm32 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
+| mips32 LE | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| i386 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 4](#tier-4-support) | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 2](#tier-2-support) |
+| riscv64 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
+| bpf | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| hexagon | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| mips32 BE | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| mips64 | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| amdgcn | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| sparc | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| s390x | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| lanai | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| powerpc32 | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| powerpc64 | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| avr | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| riscv32 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | [Tier 4](#tier-4-support) |
+| xcore | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| nvptx | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| msp430 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| r600 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| arc | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| tce | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| le | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| amdil | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| hsail | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| spir | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| kalimba | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| shave | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
+| renderscript | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
 
 
 ### WebAssembly Support Table
 
 |        | free standing | emscripten | WASI   |
 |--------|---------------|------------|--------|
-| wasm32 | [Tier 1](https://ziglang.org/#Tier-1-Support)        | [Tier 3](https://ziglang.org/#Tier-3-Support)     | [Tier 1](https://ziglang.org/#Tier-1-Support) |
-| wasm64 | [Tier 4](https://ziglang.org/#Tier-4-Support)        | [Tier 4](https://ziglang.org/#Tier-4-Support)     | [Tier 4](https://ziglang.org/#Tier-4-Support) |
+| wasm32 | [Tier 1](#tier-1-support)        | [Tier 3](#tier-3-support)     | [Tier 1](#tier-1-support) |
+| wasm64 | [Tier 4](#tier-4-support)        | [Tier 4](#tier-4-support)     | [Tier 4](#tier-4-support) |
 
 
 ### Tier System
@@ -547,14 +547,14 @@ Zig uses a "support tier" system to communicate the level of support for differe
 #### Tier 1 Support
 - Not only can Zig generate machine code for these targets, but the standard library cross-platform abstractions have implementations for these targets.
 - The CI server automatically tests these targets on every commit to master branch, and updates [the download page](https://ziglang.org/download) with links to pre-built binaries.
-- These targets have debug info capabilities and therefore produce [stack traces](https://ziglang.org/#Stack-traces-on-all-targets) on failed assertions.
-- [libc is available for this target even when cross compiling](https://ziglang.org/#Zig-ships-with-libc).
+- These targets have debug info capabilities and therefore produce [stack traces](#stack-traces-on-all-targets) on failed assertions.
+- [libc is available for this target even when cross compiling](#zig-ships-with-libc).
 - All the behavior tests and applicable standard library tests pass for this target. All language features are known to work correctly.
 
 #### Tier 2 Support
 - The standard library supports this target, but it's possible that some APIs will give an "Unsupported OS" compile error. One can link with libc or other libraries to fill in the gaps in the standard library.
 - These targets are known to work, but may not be automatically tested, so there are occasional regressions.
-- Some tests may be disabled for these targets as we work toward [Tier 1 Support](https://ziglang.org/#Tier-1-Support).
+- Some tests may be disabled for these targets as we work toward [Tier 1 Support](#tier-1-support).
 
 #### Tier 3 Support
 
