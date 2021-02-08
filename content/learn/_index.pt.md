@@ -9,6 +9,9 @@ layout: single
 # Aprender
 Esta seção lista recursos úteis para ir desde não saber nada sobre Zig até a compreensão de sua filosofia. 
 
+## Documentação
+{{% learn_docs %}}
+
 ## Introdução
 Todas estas páginas são introduções ao Zig destinadas a programadores com diferentes formações.
 

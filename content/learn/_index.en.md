@@ -9,6 +9,9 @@ layout: single
 # Learn
 This section lists resources useful to go from knowing nothing about Zig up to understanding its philosophy. 
 
+## Documentation
+{{% learn_docs %}}
+
 ## Introduction
 These are all introductions to Zig aimed at programmers with different backgrounds.
 
