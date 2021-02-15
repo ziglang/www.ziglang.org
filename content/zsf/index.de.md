@@ -48,8 +48,8 @@ Die folgenden Unternehmen bieten der Zig Software Foundation direkte finanzielle
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
    <picture>
-     <source srcset="../pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="../pex-dark.svg">
+     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/pex-dark.svg">
    </picture>
  </a>
 {{% /sponsor-logos %}}
@@ -58,11 +58,10 @@ Die folgenden Unternehmen bieten der Zig Software Foundation direkte finanzielle
 Die folgenden Unternehmen stellen ihre Dienste der Zig Software Foundation kostenfrei zur Verfügung.
 
 {{% sponsor-logos "services" %}}
-![](../lavatech.png)
-![](../dropbox.png)
-![](../aws.png)
+![](/lavatech.png)
+![](/dropbox.png)
+![](/aws.png)
 {{% /sponsor-logos %}}
-
 
 
 
