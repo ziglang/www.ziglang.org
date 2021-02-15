@@ -136,4 +136,4 @@ ausgibt. Glückwunsch, du hast jetzt eine funktionierende Installation von Zig!
 Zig ist ein junges Projekt, und wir haben leider nicht die Kapazitäten, umfangreiche Dokumentation und Lernmaterialien zu erzeugen. Wenn du feststeckst, kannst du aber auch [einer Zig-Community beitreten](https://github.com/ziglang/zig/wiki/Community), oder Initiativen wie [Zig SHOWTIME](https://zig.show) ansehen.
 
 Wenn dir Zig gefällt und du helfen willst, die Entwicklung voranzutreiben, kannst du [der Zig Software Foundation spenden](../../zsf).
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">.
