@@ -2,7 +2,7 @@
 title: Home
 mobile_menu_title: "Home"
 ---
-{{< slogan get_started="EINFÜHRUNG" docs="Dokumentation" notes="Änderungen">}}
+{{< slogan get_started="EINFÜHRUNG" docs="Dokumentation" notes="Änderungen" lang="de">}}
 Zig ist eine General-Purpose-Programmiersprache und Toolchain für **robuste**, **optimale** und **wiederverwendbare** Software.  
 {{< /slogan >}}
 
@@ -129,7 +129,6 @@ Dank vieler Unterstützer ist das Projekt der Open-Source-Community und nicht Ak
 Dieser Abschnitt wird zu Beginn jedes Monats aktualisiert.
 {{% /div %}}
 {{< /div >}}
-
 
 
 
