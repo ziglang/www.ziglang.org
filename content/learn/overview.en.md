@@ -91,7 +91,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 ## Order independent top level declarations
 
-Top level declarations such as global variables are order-independent and lazily analyzed. The initialization value of global variables is [evaluated at compile-time](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution).
+Top level declarations such as global variables are order-independent and lazily analyzed. The initialization values of global variables are [evaluated at compile-time](https://ziglang.org/#Compile-time-reflection-and-compile-time-code-execution).
 
 {{< zigdoctest "assets/zig-code/features/5-global-variables.zig" >}}
 
