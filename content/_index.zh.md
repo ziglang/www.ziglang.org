@@ -56,7 +56,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**优�
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
-<img src="https://raw.githubusercontent.com/ziglang/logo/master/ziggy.svg" style="max-height: 200px">
+<img src="/ziggy.svg" style="max-height: 200px">
 {{% /div %}}
 
 {{% div class="community-message" %}}
@@ -80,7 +80,7 @@ Zig 源码仓库可以在 [https://github.com/ziglang/zig](https://github.com/zi
 贡献者应该遵守 Zig 的[行为准则](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)。
 {{% /div %}}
 {{% div style="width:40%" %}}
-<img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
+<img src="/zero.svg" style="max-height: 200px">
 {{% /div %}}
 {{< /flexrow >}}
 {{% /div %}}

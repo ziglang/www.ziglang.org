@@ -56,7 +56,7 @@ Write fast, clear code capable of handling all error conditions.
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
-<img src="https://raw.githubusercontent.com/ziglang/logo/master/ziggy.svg" style="max-height: 200px">
+<img src="/ziggy.svg" style="max-height: 200px">
 {{% /div %}}
 
 {{% div class="community-message" %}}
@@ -80,7 +80,7 @@ The Zig repository can be found at [https://github.com/ziglang/zig](https://gith
 Contributors are expected to follow Zig's [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
-<img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
+<img src="/zero.svg" style="max-height: 200px">
 {{% /div %}}
 {{< /flexrow >}}
 {{% /div %}}
