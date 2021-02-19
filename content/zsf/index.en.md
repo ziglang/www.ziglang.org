@@ -48,8 +48,8 @@ The following companies are providing direct financial support to the Zig Softwa
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
    <picture>
-     <source srcset="../pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="../pex-dark.svg">
+     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/pex-dark.svg">
    </picture>
  </a>
 {{% /sponsor-logos %}}
@@ -58,9 +58,9 @@ The following companies are providing direct financial support to the Zig Softwa
 The following companies are offering some of their services to the Zig Software Foundation free of charge.
 
 {{% sponsor-logos "services" %}}
-![](../lavatech.png)
-![](../dropbox.png)
-![](../aws.png)
+![](/lavatech.png)
+![](/dropbox.png)
+![](/aws.png)
 {{% /sponsor-logos %}}
 
 
