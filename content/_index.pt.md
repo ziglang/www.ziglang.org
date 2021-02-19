@@ -56,7 +56,7 @@ Escreva um código rápido e claro, capaz de lidar com todas as condições de e
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
-<img src="https://raw.githubusercontent.com/ziglang/logo/master/ziggy.svg" style="max-height: 200px">
+<img src="/ziggy.svg" style="max-height: 200px">
 {{% /div %}}
 
 {{% div class="community-message" %}}
@@ -80,7 +80,7 @@ O repositório Zig pode ser encontrado em [https://github.com/ziglang/zig](https
 Espera-se que os contribuidores sigam o Zig [Código de Conduta](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
-<img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">
+<img src="/zero.svg" style="max-height: 200px">
 {{% /div %}}
 {{< /flexrow >}}
 {{% /div %}}
