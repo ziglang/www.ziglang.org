@@ -132,11 +132,11 @@ Eine in Zig verfasste Bibliothek kann überall verwendet werden:
 
 Um das zu erreichen, müssen Zig-Programmierer ihren Speicher selbst verwalten und mit scheiternder Speicherallokation umgehen.
 
-Das trifft auch auf die Standardbibliothek zu. Alle Funktionen, die Speicher alloziieren müssen, nehmen einen Allocator als Parameter an. Damit kann die Standardbibliothek sogar auf dem Freestanding-Target verwendet werden.
+Das trifft auch auf die Standardbibliothek zu. Alle Funktionen, die Speicher alloziieren müssen, nehmen einen `Allocator` als Parameter an. Damit kann die Standardbibliothek sogar auf dem Freestanding-Target verwendet werden.
 
 Außer einem [neuen Ansatz zur Fehlerbehandlung](#ein-neuer-ansatz-zur-fehlerbehandlung), stellt Zig [defer](https://ziglang.org/documentation/master/#defer) und [errdefer](https://ziglang.org/documentation/master/#errdefer) zur Verfügung, um alle Ressourcenverwaltung -- nicht nur Speicher -- einfach und leicht verifizierbar zu machen.
 
-Für Beispiele von `defer`, siehe [Integration mit C-Bibliotheken ohne FFI/Bindings](#integration-mit-c-bibliotheken-ohne-ffibindings). Hier ist ein Beispiel von `errdefer`:
+Für Beispiele von `defer` siehe [Integration mit C-Bibliotheken ohne FFI/Bindings](#integration-mit-c-bibliotheken-ohne-ffibindings). Hier ist ein Beispiel von `errdefer`:
 {{< zigdoctest "assets/zig-code/features/11-errdefer.zig" >}}
 
 

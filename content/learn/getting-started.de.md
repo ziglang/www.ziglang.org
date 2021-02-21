@@ -8,18 +8,18 @@ toc: true
 **<center>Hinweis für Nutzer von Apple Silicon</center>**
 Zigs Unterstützung für Code Signing ist experimentell. Du kannst Zig mit deinem M1 Mac vewenden,
 aber momentan ist der einzige Weg, Zig für arm64 macOS zu bekommen, es selbst zu kompilieren.
-Beachte dazu den Abschnitt [Vom Quellcode kompilieren](#vom-quellcode-kompilieren).
+Beachte dazu den Abschnitt [Zig selbst kompilieren](#zig-selbst-kompilieren).
 {{% /div %}}
 
 
 ## Release oder Nightly Build?
-Zig hat noch nicht v1.0 erreicht und der aktuelle Release-Zyklus ist an neue Releases von LLVM gebunden, die etwa alle 6 Monate erscheinen.
+Zig hat noch nicht die Version 1.0 erreicht und der aktuelle Release-Zyklus ist an neue Releases von LLVM gebunden, die etwa alle 6 Monate erscheinen.
 In der Praxis **liegen Zigs Releases weit auseinander und werden bei der momentanen Entwicklungsgeschwindigkeit irgendwann veraltet**.
 
 Die getaggten Versionen können verwendet werden, aber wenn du tiefer in Zig einsteigen möchtest, **empfehlen wir, auf ein Nightly Build umzusteigen**, vor allem, weil du so einfacher Hilfe bekommen kannst: der Großteil der Community und Seiten wie 
 [ziglearn.org](https://ziglearn.org) verfolgen aus obigen Gründen den Master-Branch.
 
-Die gute Nachricht ist, dass es sehr einfach ist, von einer Version von Zig auf eine andere umzusteigen, oder sogar mehrere Versionen gleichzeitig zu nutzen: Zigs Releases sind vollständige Archive, die überall im System platziert werden können.
+Die gute Nachricht ist, dass es sehr einfach ist, von einer Version von Zig auf eine andere umzusteigen, oder sogar mehrere Versionen gleichzeitig zu nutzen: Zigs Releases sind einfach Archive, die alles Notwendige enthalten und überall im System platziert werden können.
 
 
 ## Zig installieren
@@ -59,7 +59,7 @@ Dazu wird meistens eine Zeile an das Startupscript (`.profile`, `.zshrc`, ...) d
 ```bash
 export PATH=$PATH:~/pfad/von/zig
 ```
-Wenn du fertig bist, `source` deine Startupdatei oder starte die Shell neu.
+Wenn du fertig bist, rufe `source` mit deiner Startupdatei auf oder starte die Shell neu.
 
 
 
@@ -74,7 +74,7 @@ choco install zig
 #### macOS
 
 **Homebrew**  
-HINWEIS: Homebrew hat noch keine Bottle für Apple Silicon. Wenn du einen M1 Mac hast, musst du Zig vom Quellcode kompilieren.
+HINWEIS: Homebrew hat noch keine Bottle für Apple Silicon. Wenn du einen M1 Mac hast, musst du Zig selbst kompilieren.
 
 Neuestes Release:
 ```
@@ -91,19 +91,19 @@ brew install zig --HEAD
 port install zig
 ```
 #### Linux
-Zig ist in vielen Paketmanagern für Linux vertreten. [Hier](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
-ist eine aktuelle Liste; beachte aber, dass einige Pakete möglicherweise veraltete Versionen von Zig bündeln.
+Zig ist in vielen Paketmanagern für Linux verfügbar. [Hier](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
+ist eine aktuelle Liste; beachte aber, dass einige Pakete möglicherweise veraltete Versionen von Zig enthalten.
 
-### Vom Quellcode kompilieren
+### Zig selbst kompilieren
 [Hier](https://github.com/ziglang/zig/wiki/Building-Zig-From-Source) 
-findest du weitere Informationen darüber, wie man Zig für Linux, macOS und Windows vom Quellcode kompiliert.
+findest du weitere Informationen darüber, wie man Zig für Linux, macOS und Windows selbst kompiliert.
 
 ## Empfohlene Tools
 ### Syntaxhighlighter und LSP
 Alle größeren Texteditoren unterstützen Syntaxhighlighting für Zig. 
 Einige bringen dies mit, für andere muss ein Plugin installiert werden.  
 
-Für eine tiefere Integration zwischen Zig und deinem Editor siehe [zigtools/zls](https://github.com/zigtools/zls) und den Abschnitt [Tools](../tools/).
+Wenn du Zig besser mit deinem Editor integrieren möchtest, schau dir [zigtools/zls](https://github.com/zigtools/zls) und den Abschnitt [Tools](../tools/) an.
 
 ## Hello World ausführen
 Wenn du die Installation erfolgreich abgeschlossen hast, solltest du Zig aus der Shell ausführen können.
