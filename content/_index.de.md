@@ -21,14 +21,14 @@ Eine moderner Ansatz zur Metaprogrammierung -- basierend auf Compile-Zeit-Ausfü
 
 - Rufe jede Funktion zur Compile-Zeit auf.
 - Manipuliere Typen als Werte, ohne Laufzeit-Overhead.
-- Comptime emuliert die Targetarchitektur.
+- Comptime emuliert die Zielarchitektur.
 
 # ⚡ Performance trifft Sicherheit
-Schreibe schnellen, klaren Code, der mit allen Fehlerbedingungen umgehen kann.
+Schreibe schnellen und klaren Code, der mit allen Fehlerbedingungen umgehen kann.
 
-- Die Sprache leitet die Fehlerbehandlungslogik elegant.
-- Konfigurierbare Laufzeitüberprüfungen helfen, zwischen Performance und Sicherheitsgarantien abzuwägen.
-- Nutze Vektortypen, um SIMD-Anweisungen portabel auszudrücken.
+- Die Sprache hilft dir dabei, korrekte Fehlerbehandlungen zu schreiben.
+- Konfigurierbare Laufzeitüberprüfungen helfen, einen guten Kompromiss zwischen Performance und Sicherheitsgarantien zu finden.
+- Nutze Vektortypen, um SIMD-Anweisungen plattformunabhängig auszudrücken.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
@@ -62,7 +62,7 @@ Schreibe schnellen, klaren Code, der mit allen Fehlerbedingungen umgehen kann.
 {{% div class="community-message" %}}
 # Die Zig-Community ist dezentralisiert
 Jeder darf einen Raum für die Community schaffen.
-Es gibt kein "offiziell" or "inoffiziell", aber jeder Versammlungsort hat seine Regeln und Moderatoren.
+Es gibt kein "offiziell" or "inoffiziell", aber jeder Versammlungsort hat seine eigenen Regeln und Moderatoren.
 
 <div style="">
 <h1>
@@ -76,7 +76,7 @@ Es gibt kein "offiziell" or "inoffiziell", aber jeder Versammlungsort hat seine 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
 # Entwicklung
-Das Zig-Repository ist unter [https://github.com/ziglang/zig](https://github.com/ziglang/zig) zu finden, wo wir auch den Issue-Tracker unterhalten und Vorschläge diskutieren.  
+Das Zig-Repository ist unter [https://github.com/ziglang/zig](https://github.com/ziglang/zig) zu finden, wo wir auch den Issue-Tracker betreiben und Vorschläge diskutieren.  
 Mitwirkende müssen sich an Zigs [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md) halten.
 {{% /div %}}
 {{% div style="width:40%" %}}
