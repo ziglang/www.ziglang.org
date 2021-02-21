@@ -5,7 +5,7 @@ toc: true
 ---
 
 ## Speicherlecks aufdecken
-Der `std.GeneralPurposeAllocator` kann Doppel-Freigabe und Speicherlecks nachverfolgen.
+Der `std.heap.GeneralPurposeAllocator` kann Doppel-Freigabe und Speicherlecks nachverfolgen.
 
 {{< zigdoctest "assets/zig-code/samples/1-memory-leak.zig" >}}
 

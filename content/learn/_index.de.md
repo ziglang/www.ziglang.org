@@ -13,7 +13,7 @@ Dieser Abschnitt enthält Ressourcen, die hoffentlich helfen, Zigs Philosophie z
 {{% learn_docs %}}
 
 ## Einführung
-Dies sind Einführungen in Zig für Programmierer mit verschiedenen Vorkenntnissen.
+Dies sind Einführungen in Zig für Programmierer mit verschiedenen Vorkenntnissen:
 
 - [Ausführliche Übersicht](overview/)  
 Eine ausführliche Übersicht über Zigs Features aus der Perspektive des Systemprogrammierens.

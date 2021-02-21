@@ -33,18 +33,18 @@ Beispiele versteckter Allokationen:
 * Das Schlüsselwort `defer` in Go alloziiert Speicher auf einem funktionslokalen Stapel. Abgesehen von dem unintuitiven Kontrollfluss kann ein `defer` innerhalb einer Schleife zu unerwartetem Speicherüberlauf führen.
 * Koroutinen in C++ alloziieren beim Aufruf Heapspeicher.
 * In Go kann ein Funktionsaufruf zu Heapallokation führen, weil Goroutinen kleine Stapel alloziieren, die vergrößert werden müssen, wenn der Aufrufstapel zu tief wird.
-* Rusts Standardbibliotheks-API führt zu einer Panik, wenn kein freier Speicher verfügbar ist, und alternative APIs mit Allocator-Parametern wurden nur nachträglich bedacht (siehe [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
+* Rusts Standardbibliotheks-API führt zu einer Panik, wenn kein freier Speicher verfügbar ist, und alternative APIs mit Allokator-Parametern wurden nur nachträglich bedacht (siehe [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
 
 Fast alle Sprachen mit Garbage Collector sind voller Allokationen, die von der automatischen Spicherverwaltung versteckt werden.
 
 Das Hauptproblem an versteckten Allokationen ist es, dass sie die Wiederverwendbarkeit von Code verhindern, indem sie die Menge an Systemen, die ihn verwenden können, unnötig einschränken. Einfach gesagt gibt es Anwendungsfälle, in denen man sich darauf verlassen können muss, dass Kontrollfluss und Funktionsaufrufe keine Nebeneffekte auf die Speicherallokation haben, und eine Sprache kann diese Anwendunsfälle nur bedienen, wenn sie solche Garantien machen kann.
 
 Zigs Standardbibliothek bietet Features, die Heapallokationen bereitstellen und damit arbeiten, aber diese sind optional, nicht in die Sprache selbst eingebaut.
-Wenn du nie einen Allocator initialisierst, kannst du dir sicher sein, dass dein Programm nichts alloziiert.
+Wenn du nie einen Allokator initialisierst, kannst du dir sicher sein, dass dein Programm nichts alloziiert.
 
 Jedes Feature der Standardbibliothek, das Heapspeicher alloziieren muss, nimmt dazu einen `Allocator` als Parameter an. Das bedeutet, dass Zigs Standardbibliothek Freestanding-Targets unterstützt. Zum Beispiel können `std.ArrayList` und `std.AutoHashMap` für Bare-Metal-Programme genutzt werden!
 
-Eigene Allocators machen manuelle Speicherverwaltung kinderleicht. Zig hat einen Debug-Allocator, der Speichersicherheit bei Use-after-free und Double-free garantiert. Er detektiert und logt automatisch Speicherlecks. Es gibt einen Arena-Allocator, der beliebig viele Allokationen bündeln und zusammen freigeben kann (statt sie einzeln zu verwalten). Besondere Allocators können genutzt werden, um Performance oder Speichernutzung nach den Anforderungen einer Anwendung zu optimieren.
+Eigene Allokatoren machen manuelle Speicherverwaltung kinderleicht. Zig hat einen Debug-Allokator, der Speichersicherheit bei Use-after-free und Double-free garantiert. Er detektiert und logt automatisch Speicherlecks. Es gibt einen Arena-Allokator, der beliebig viele Allokationen bündeln und zusammen freigeben kann (statt sie einzeln zu verwalten). Besondere Allokatoren können genutzt werden, um Performance oder Speichernutzung nach den Anforderungen einer Anwendung zu optimieren.
 
 [1]: Tatsächlich gibt es einen Verkettungsoperator für Strings und Arrays, der aber nur zur Compilezeit benutzbar ist und damit auch keine Laufzeit-Heapallokation mit sich bringt.
 
@@ -66,7 +66,7 @@ Ein heiliger Gral des Programmierens ist Code-Wiederverwendung. Leider scheint e
 
 Zig ist eine Programmiersprache, aber sie bringt auch ein Build-System und einen Paketmanager mit, die auch für traditionelle C/C++-Projekte nützlich sein sollen.
 
-Zig kann nicht nur C- oder C++-Code ersetzen, sondern auch autotools, cmake, make, scons, ninja usw. Und obendrein bietet es (bald™) einen Paketmanager für native Abhängigkeiten. Dieses Build-System soll auch für Projekte relevant sein, deren gesamte Codebasis aus C oder C++ besteht.
+Zig kann nicht nur C- oder C++-Code ersetzen, sondern auch autotools, cmake, make, scons, ninja usw. Und obendrein bietet es (bald™) einen Paketmanager für native Abhängigkeiten. Dieses Build-System ist auch für Projekte relevant, deren gesamte Codebasis aus C oder C++ besteht.
 
 System-Paketmanager wie apt-get, pacman, homebrew und andere sind für Endbenutzer hilfreich, aber sie können für die Bedürfnisse der Entwickler unzureichend sein. Ein sprachspezifischer Paketmanager kann für ein Projekt den Unterschied zwischen keinen und dutzenden Mitwirkenden ausmachen. Bei Open-Source-Projekten ist die Schwierigkeit, das Projekt überhaupt zu kompilieren, eine große Hürde für potentielle Mitwirkende. Für Projekte in C/C++ können Abhängigkeiten fatal sein, besonders auf Windows, wo es keinen Paketmanager gibt. Selbst wenn man nur Zig selbst baut, macht die Abhängigkeit von LLVM den meisten potentiellen Mitwirkenden Schwierigkeiten. Zig bietet (bald) eine Möglichkeit für direkte Abhängigkeiten von nativen Bibliotheken - ohne sich auf den Paketmanager des Benutzers verlassen zu müssen, und auf eine Art und Weise, die erfolgreiche Builds praktisch garantiert, unabhängig vom verwendeten System und der Target-Plattform.
 
