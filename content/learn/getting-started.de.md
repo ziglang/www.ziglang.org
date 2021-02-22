@@ -14,7 +14,7 @@ Beachte dazu den Abschnitt [Zig selbst kompilieren](#zig-selbst-kompilieren).
 
 ## Release oder Nightly Build?
 Zig hat noch nicht die Version 1.0 erreicht und der aktuelle Release-Zyklus ist an neue Releases von LLVM gebunden, die etwa alle 6 Monate erscheinen.
-In der Praxis **liegen Zigs Releases weit auseinander und werden bei der momentanen Entwicklungsgeschwindigkeit irgendwann veraltet**.
+In der Praxis **liegen Zigs Releases weit auseinander und werden bei der momentanen Entwicklungsgeschwindigkeit schnell veraltet**.
 
 Die getaggten Versionen können verwendet werden, aber wenn du tiefer in Zig einsteigen möchtest, **empfehlen wir, auf ein Nightly Build umzusteigen**, vor allem, weil du so einfacher Hilfe bekommen kannst: der Großteil der Community und Seiten wie 
 [ziglearn.org](https://ziglearn.org) verfolgen aus obigen Gründen den Master-Branch.
