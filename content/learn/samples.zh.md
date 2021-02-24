@@ -5,7 +5,7 @@ toc: true
 ---
 
 ## 内存泄露检测
-使用 `std.GeneralPurposeAllocator` 来检测双重释放和内存泄露。
+使用 `std.heap.GeneralPurposeAllocator` 来检测双重释放和内存泄露。
 
 {{< zigdoctest "assets/zig-code/samples/1-memory-leak.zig" >}}
 
