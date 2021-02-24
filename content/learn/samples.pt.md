@@ -5,7 +5,7 @@ toc: true
 ---
 
 ## Detecção de vazamento de memória
-Utilizando `std.GeneralPurposeAllocator` você pode detectar liberação dupla e vazamentos de memória.
+Utilizando `std.heap.GeneralPurposeAllocator` você pode detectar liberação dupla e vazamentos de memória.
 
 {{< zigdoctest "assets/zig-code/samples/1-memory-leak.zig" >}}
 

@@ -5,7 +5,7 @@ toc: true
 ---
 
 ## Memory leak detection
-Using `std.GeneralPurposeAllocator` you can track double frees and memory leaks.
+Using `std.heap.GeneralPurposeAllocator` you can track double frees and memory leaks.
 
 {{< zigdoctest "assets/zig-code/samples/1-memory-leak.zig" >}}
 
