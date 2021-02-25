@@ -169,7 +169,7 @@ Isto invoca um [comportamento indefinido](https://ziglang.org/#Performance-and-S
 
 ### Rastreamento de pilha em todos os dispositivos
 
-O rastreamento da pilha e [rastreamento do retorno de erros](https://ziglang.org/documentation/master/#Error-Return-Traces) mostram que nesta página funcionam todos os dispositivos da tabela [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) e alguns da [Suporte Tier 2](https://ziglang.org/#Tier-2-Support). [Até mesmo freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
+O rastreamento da pilha e [rastreamento do retorno de erros](https://ziglang.org/documentation/master/#Error-Return-Traces) mostram que nesta página funcionam todos os dispositivos da tabela [Suporte Tier 1](#suporte-tier-1) e alguns da [Suporte Tier 2](#suporte-tier-2). [Até mesmo freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
 
 Além disso, a biblioteca padrão tem a capacidade de capturar um traço de pilha em qualquer ponto e depois despejá-la em erro padrão mais tarde:
 
@@ -299,7 +299,7 @@ $ zig build test
 
 ## A compilação cruzada é um caso de uso de primeira classe
 
-Zig pode compilar para qualquer um dos dispositivos listados na [Tabela de Suporte](https://ziglang.org/#Support-Table) com [Suporte Tier 3](https://ziglang.org/#Tier-3-Support) ou melhor. Nenhum "conjunto de ferramentas cruzada" precisa ser instalada ou algo parecido. Aqui está um "Hello World" nativo:
+Zig pode compilar para qualquer um dos dispositivos listados na [Tabela de Suporte](https://ziglang.org/#Support-Table) com [Suporte Tier 3](#suporte-tier-3) ou melhor. Nenhum "conjunto de ferramentas cruzada" precisa ser instalada ou algo parecido. Aqui está um "Hello World" nativo:
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
@@ -316,7 +316,7 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
 
-Isto funciona em qualquer [Tier 3](https://ziglang.org/#Tier-3-Support)+ dispositivos, para qualquer [Tier 3](https://ziglang.org/#Tier-3-Support)+ plataformas.
+Isto funciona em qualquer [Tier 3](#suporte-tier-3)+ dispositivos, para qualquer [Tier 3](#suporte-tier-3)+ plataformas.
 
 ### Zig vinculado com libc
 
@@ -412,7 +412,7 @@ Em alguns aspectos, Zig é um compilador C melhor do que os próprios compilador
 
 Esta funcionalidade é mais do que o agrupamento de um conjunto de ferramentas de compilação cruzada junto ao Zig. Por exemplo, o tamanho total dos cabeçalhos da libc que o Zig envia é de 22 MiB sem compressão. Enquanto isso, os cabeçalhos para musl libc + linux em x86_64 são 8 MiB, e para glibc são 3,1 MiB (falta no glibc os cabeçalhos linux), ainda assim Zig atualmente envia com 40 libcs. Com um agrupamento ingênuo que seria de 444 MiB. No entanto, graças a isto, a [ferramenta process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) que eu fiz, e algum [bom e velho trabalho manual](https://github.com/ziglang/zig/wiki/Updating-libc), Os tarballs binários Zig permanecem em torno de 30 MiB no total, apesar de apoiar a libc para todos essas plataformas, bem como a compiler-rt, libunwind e libcxx, e apesar de ser um compilador C compatível com o clang. Para comparação, a compilação do binário no próprio Windows usando clang 8.0.0 do llvm.org é de 132 MiB.
 
-Note que apenas no [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) os dispositivos foram exaustivamente testados. Está previsto [acrescentar mais libcs](https://github.com/ziglang/zig/issues/514) (inclusive para o Windows), e para [adicionar cobertura de testes para compilação em relação a todas as libcs](https://github.com/ziglang/zig/issues/2058).
+Note que apenas no [Suporte Tier 1](#suporte-tier-1) os dispositivos foram exaustivamente testados. Está previsto [acrescentar mais libcs](https://github.com/ziglang/zig/issues/514) (inclusive para o Windows), e para [adicionar cobertura de testes para compilação em relação a todas as libcs](https://github.com/ziglang/zig/issues/2058).
 
 Já está sendo [planejado para ter um Gerenciador de Pacotes do Zig](https://github.com/ziglang/zig/issues/943), mas isso ainda não está pronto. Uma das coisas que será possível é criar um pacote para as bibliotecas C. Isto fará com que o [Sistema de Compilação do Zig](https://ziglang.org/#Zig-Build-System) tornando mais atraente tanto para programadores Zig como para programadores C.
 
@@ -495,66 +495,66 @@ A Biblioteca Padrão Zig implementa um loop de eventos que multiplexam as funç�
 
 ## Ampla gama de dispositivos suportados
 
-Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para diferentes dispositivos. Note que a barra para [Suporte Tier 1](https://ziglang.org/#Tier-1-Support) é maior - [Suporte Tier 2](https://ziglang.org/#Tier-2-Support) é ainda bastante útil.
+Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para diferentes dispositivos. Note que a barra para [Suporte Tier 1](#suporte-tier-1) é maior - [Suporte Tier 2](#suporte-tier-2) é ainda bastante útil.
 
 ### Tabela de Suporte
 
 | | free standing | Linux 3.16+ | macOS 10.13+ | Windows 8.1+ | FreeBSD 12.0+ | NetBSD 8.0+ | DragonFly​BSD 5.8+ | UEFI |
 |-|---------------|-------------|--------------|--------------|---------------|-------------|-------------------|------|
-| x86_64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) |
-| arm64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
-| arm32 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
-| mips32 LE | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| i386 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 2](https://ziglang.org/#Tier-2-Support) |
-| riscv64 | [Tier 1](https://ziglang.org/#Tier-1-Support) | [Tier 2](https://ziglang.org/#Tier-2-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) |
-| bpf | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| hexagon | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| mips32 BE | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| mips64 | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| amdgcn | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| sparc | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| s390x | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| lanai | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| powerpc32 | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| powerpc64 | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | [Tier 3](https://ziglang.org/#Tier-3-Support) | [Tier 3](https://ziglang.org/#Tier-3-Support) | N/A | N/A |
-| avr | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| riscv32 | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) |
-| xcore | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| nvptx | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| msp430 | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| r600 | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| arc | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| tce | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| le | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| amdil | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| hsail | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| spir | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| kalimba | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| shave | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
-| renderscript | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A | [Tier 4](https://ziglang.org/#Tier-4-Support) | [Tier 4](https://ziglang.org/#Tier-4-Support) | N/A | N/A |
+| x86_64 | [Tier 1](#suporte-tier-1) | [Tier 1](#suporte-tier-1) | [Tier 1](#suporte-tier-1) | [Tier 2](#suporte-tier-2) | [Tier 2](#suporte-tier-2) | [Tier 2](#suporte-tier-2) | [Tier 2](#suporte-tier-2) | [Tier 2](#suporte-tier-2) |
+| arm64 | [Tier 1](#suporte-tier-1) | [Tier 2](#suporte-tier-2) | [Tier 2](#suporte-tier-2) | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | [Tier 3](#suporte-tier-3) |
+| arm32 | [Tier 1](#suporte-tier-1) | [Tier 2](#suporte-tier-2) | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | [Tier 3](#suporte-tier-3) |
+| mips32 LE | [Tier 1](#suporte-tier-1) | [Tier 2](#suporte-tier-2) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| i386 | [Tier 1](#suporte-tier-1) | [Tier 2](#suporte-tier-2) | [Tier 4](#suporte-tier-4) | [Tier 2](#suporte-tier-2) | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | [Tier 2](#suporte-tier-2) |
+| riscv64 | [Tier 1](#suporte-tier-1) | [Tier 2](#suporte-tier-2) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | [Tier 3](#suporte-tier-3) |
+| bpf | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| hexagon | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| mips32 BE | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| mips64 | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| amdgcn | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| sparc | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| s390x | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| lanai | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| powerpc32 | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | [Tier 4](#suporte-tier-4) | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| powerpc64 | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | [Tier 4](#suporte-tier-4) | N/A | [Tier 3](#suporte-tier-3) | [Tier 3](#suporte-tier-3) | N/A | N/A |
+| avr | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| riscv32 | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | [Tier 4](#suporte-tier-4) |
+| xcore | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| nvptx | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| msp430 | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| r600 | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| arc | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| tce | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| le | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| amdil | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| hsail | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| spir | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| kalimba | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| shave | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
+| renderscript | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A | [Tier 4](#suporte-tier-4) | [Tier 4](#suporte-tier-4) | N/A | N/A |
 
 
 ### Tabela de suporte para WebAssembly
 
 |        | free standing | emscripten | WASI   |
 |--------|---------------|------------|--------|
-| wasm32 | [Tier 1](https://ziglang.org/#Tier-1-Support)        | [Tier 3](https://ziglang.org/#Tier-3-Support)     | [Tier 1](https://ziglang.org/#Tier-1-Support) |
-| wasm64 | [Tier 4](https://ziglang.org/#Tier-4-Support)        | [Tier 4](https://ziglang.org/#Tier-4-Support)     | [Tier 4](https://ziglang.org/#Tier-4-Support) |
+| wasm32 | [Tier 1](#suporte-tier-1)        | [Tier 3](#suporte-tier-3)     | [Tier 1](#suporte-tier-1) |
+| wasm64 | [Tier 4](#suporte-tier-4)        | [Tier 4](#suporte-tier-4)     | [Tier 4](#suporte-tier-4) |
 
 
 ### Tier System
 
 #### Suporte Tier 1
 - O Zig não só pode gerar código de máquina para estes dispositivos, mas a biblioteca padrão de abstrações entre plataformas tem implementações para estes dispositivos.
-- O servidor CI testa automaticamente estes dispositivos de saida em cada compromisso com o *master branch*, e atualiza a página [Baixar](https://ziglang.org/download) com links para binários pré-construídos.
-- Estes dispositivos têm capacidade de depuração e, portanto, produzem [rastreamento de pilha](https://ziglang.org/#Stack-traces-on-all-targets) sobre asserções fracassadas.
-- [libc está disponível para este dispositivo, mesmo quando a compilação cruzada](https://ziglang.org/#Zig-ships-with-libc).
+- O servidor CI testa automaticamente estes dispositivos de saida em cada compromisso com o *master branch*, e atualiza a página [Baixar]({{< ref "/download/" >}}) com links para binários pré-construídos.
+- Estes dispositivos têm capacidade de depuração e, portanto, produzem [rastreamento de pilha](#rastreamento-de-pilha-em-todos-os-dispositivos) sobre asserções fracassadas.
+- [libc está disponível para este dispositivo, mesmo quando a compilação cruzada](#zig-vinculado-com-libc).
 - Todos os testes de comportamento e testes de biblioteca padrão aplicáveis são aprovados para esta plataforma. Todas as características da linguagem são conhecidas por funcionarem corretamente.
 
 #### Suporte Tier 2
 - A biblioteca padrão suporta esta plataforma, mas é possível que algumas APIs dêem um erro de compilação "Unsupported OS". Pode-se fazer uma vinculação com a libc ou outras bibliotecas para preencher as lacunas da biblioteca padrão.
 - Estes dispositivos são conhecidos por funcionarem, mas podem não ser testados automaticamente, portanto, há regressões ocasionais.
-- Alguns testes podem ser desativados para estes dispositivos enquanto trabalhamos para [Suporte Tier 1](https://ziglang.org/#Tier-1-Support).
+- Alguns testes podem ser desativados para estes dispositivos enquanto trabalhamos para [Suporte Tier 1](#suporte-tier-1).
 
 #### Suporte Tier 3
 
@@ -580,7 +580,7 @@ O compilador Zig ainda não é completamente auto-hospedado, mas não importa o,
 
 Os [modos de compilação](https://ziglang.org/documentation/master/#Build-Mode) sem depuração (non-debug) são reprodutíveis/determináveis.
 
-Há um [Versão JSON da página de download](https://ziglang.org/download/index.json).
+Há um [Versão JSON da página de download](/download/index.json).
 
 Vários membros da equipe Zig têm experiência na manutenção de pacotes.
 

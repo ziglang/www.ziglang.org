@@ -545,7 +545,7 @@ Zig kommuniziert die Unterstützung von verschiedenen Targets mit "Support Tiers
 
 #### Tier 1 Support
 - Zig kann für diese Targets nicht nur Maschinencode erzeugen, auch die Cross-Platform-Abstraktionen der Standardbibliothek wurden jeweils vollständig implementiert.
-- Der CI-Server testet diese Targets automatisch bei jedem Commit zum Master-Branch, und aktualisiert die [Downloadseite](https://ziglang.org/de/download) mit Links zu den vorkompilierten Binärdateien.
+- Der CI-Server testet diese Targets automatisch bei jedem Commit zum Master-Branch, und aktualisiert die [Downloadseite]({{< ref "/download/" >}}) mit Links zu den vorkompilierten Binärdateien.
 - Diese Targets haben vollständige Debuginformations-Fähigkeiten und erzeugen bei fehlgeschlagenen Assertions [Stacktraces](#stacktraces-auf-allen-targets).
 - [die libc ist auch beim Crosskompilieren verfügbar](#zig-enthält-libc).
 - Alle Verhaltenstests und anwendbaren Standardbibliothekstests werden für diese Targets bestanden. Alle Features der Sprache funktionieren korrekt.
@@ -579,7 +579,7 @@ Der Compiler ist noch nicht vollständig selbst-gehostet, aber es bleiben unter 
 
 Nicht-Debug-[Buildmodi](https://ziglang.org/documentation/master/#Build-Mode) sind reproduzierbar/deterministisch.
 
-Es gibt eine [JSON-Version der Downloadseite](https://ziglang.org/de/download/index.json).
+Es gibt eine [JSON-Version der Downloadseite](/download/index.json).
 
 Einige Mitglieder des Teams haben Erfahrung im Verwalten von Paketen.
 
