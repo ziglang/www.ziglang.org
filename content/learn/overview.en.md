@@ -546,7 +546,7 @@ Zig uses a "support tier" system to communicate the level of support for differe
 
 #### Tier 1 Support
 - Not only can Zig generate machine code for these targets, but the standard library cross-platform abstractions have implementations for these targets.
-- The CI server automatically tests these targets on every commit to master branch, and updates [the download page](https://ziglang.org/download) with links to pre-built binaries.
+- The CI server automatically tests these targets on every commit to master branch, and updates [the download page]({{< ref "/download/" >}}) with links to pre-built binaries.
 - These targets have debug info capabilities and therefore produce [stack traces](#stack-traces-on-all-targets) on failed assertions.
 - [libc is available for this target even when cross compiling](#zig-ships-with-libc).
 - All the behavior tests and applicable standard library tests pass for this target. All language features are known to work correctly.
@@ -580,7 +580,7 @@ The reference Zig compiler is not completely self-hosted yet, but no matter what
 
 Non-debug [build modes](https://ziglang.org/documentation/master/#Build-Mode) are reproducible/deterministic.
 
-There is a [JSON version of the download page](https://ziglang.org/download/index.json).
+There is a [JSON version of the download page](/download/index.json).
 
 Several members of the Zig team have experience maintaining packages.
 
