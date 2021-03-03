@@ -23,7 +23,7 @@ Zig ist für Programmierinterviews *optimiert* (nicht wirklich).
 
 
 ## Generische Typen
-In Zig sind Typen Compilezeitwerte; wir benutzen Funktionen, die Typen zurückgeben, um generische Algorithhmen und Datenstrukturen zu implementieren. In diesem Beispiel implementieren wir eine einfache generische Queue und testen ihr Verhalten.
+In Zig sind Typen Compilezeitwerte; wir benutzen Funktionen, die Typen zurückgeben, um generische Algorithmen und Datenstrukturen zu implementieren. In diesem Beispiel implementieren wir eine einfache generische Queue und testen ihr Verhalten.
 
 {{< zigdoctest "assets/zig-code/samples/4-generic-type.zig" >}}
 

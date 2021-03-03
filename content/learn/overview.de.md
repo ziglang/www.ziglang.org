@@ -9,7 +9,7 @@ Debugge deine Anwendung, nicht deine Kenntnis der Programmiersprache.
 
 Zig's gesamte Syntax ist in 500 Zeilen [PEG-Grammatik](https://ziglang.org/documentation/master/#Grammar) beschrieben.
 
-Es gibt **keinen verstecketen Kontrollfluss**, keine versteckten Speicherallokationen, keinen Präprozessor, und keine Makros. Wenn Zig kode nicht aussieht, als ober in einen Funktionsaufruf springt, dann tut er das nicht. Das bedeutet, dass du sicher sein kannst, dass der folgende Code nur `foo()` und dann `bar()` aufruft, und das ist garantiert, ohne die Typen von irgendwelchen Werten zu kennen:
+Es gibt **keinen versteckten Kontrollfluss**, keine versteckten Speicherallokationen, keinen Präprozessor, und keine Makros. Wenn Zig Code nicht aussieht, als ober in einen Funktionsaufruf springt, dann tut er das nicht. Das bedeutet, dass du sicher sein kannst, dass der folgende Code nur `foo()` und dann `bar()` aufruft, und das ist garantiert, ohne die Typen von irgendwelchen Werten zu kennen:
 
 ```zig
 var a = b + c.d;
@@ -17,11 +17,11 @@ foo();
 bar();
 ```
 
-Beispiele von verstecketem Kontrollfluss:
+Beispiele von verstecktem Kontrollfluss:
 
 - D hat `@property`-Funktionen -- Methoden, deren Aufruf wie ein Feldzugriff aussieht, also könnte im obigen Beispiel `c.d` eine Funktion aufrufen.
 - C++, D, und Rust haben Operatorenüberladung, also könnte der Operator `+` eine Funktion aufrufen.
-- C++, D, und Go haben throw/catch-Ausnahmen, also könnte `foo()` eine Ausahme werfen und die Ausführung von `bar()` verhindern.
+- C++, D, und Go haben throw/catch-Ausnahmen, also könnte `foo()` eine Ausnahme werfen und die Ausführung von `bar()` verhindern.
 
  Zig fördert Codewartung und Lesbarkeit, indem Kontrollfluss ausschließlich mit Schlüsselwörtern und Funktionsaufrufen geschieht.
 
@@ -38,18 +38,18 @@ So sieht [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Ov
 
 {{< zigdoctest "assets/zig-code/features/1-integer-overflow.zig" >}}
 
-So sieht er zur Laufzeit aus, in safety-checked builds:
+So sieht er zur Laufzeit aus, in safety-checked-Builds:
 
 {{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
 
 Die [Stacktraces funktionieren auf allen Targets](#stacktraces-auf-allen-targets), auch [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
-Zig erlaubt es, sich auf einen Buildmodus mit aktivierter Sicherheit verlassen, und die Sicherheit an performance-bottlenecks selektiv zu deaktivieren. Das vorherige Beispiel könnte so verändert werden:
+Zig erlaubt es, sich auf einen Buildmodus mit aktivierter Sicherheit zu verlassen, und die Sicherheit an Performanceengpässen selektiv zu deaktivieren. Das vorherige Beispiel könnte so verändert werden:
 
 {{< zigdoctest "assets/zig-code/features/3-undefined-behavior.zig" >}}
 
-Zig benutzt [undefniniertes Verhalten](https://ziglang.org/documentation/master/#Undefined-Behavior) als ein  messerscharfes Instrument zur Vermeidung von Bugs und Performanceverbesserung.
+Zig benutzt [undefiniertes Verhalten](https://ziglang.org/documentation/master/#Undefined-Behavior) als ein  messerscharfes Instrument zur Vermeidung von Bugs und Performanceverbesserung.
 
 Apropos Performance: Zig ist schneller als C.
 
@@ -66,7 +66,7 @@ Beachte bitte, dass Zig keine vollständig sichere Sprache ist. Interessierte an
 
 ## Zig ist nicht abhängig von C, sondern konkurriert mit C
 
-Zigs Standarsbibliothek kann libc einbeziehen, aber ist nicht darauf angewiesen. Hier ist Hello World:
+Zigs Standardbibliothek kann libc einbeziehen, aber ist nicht darauf angewiesen. Hier ist Hello World:
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
@@ -122,9 +122,9 @@ Dieselbe Syntax funktioniert mit [while](https://ziglang.org/documentation/maste
 
 Eine in Zig verfasste Bibliothek kann überall verwendet werden:
 
-- [Desktopanwendungen](https://github.com/TM35-Metronome/) & [games](https://github.com/dbandstra/oxid)
+- [Desktopanwendungen](https://github.com/TM35-Metronome/) & [Spiele](https://github.com/dbandstra/oxid)
 - Server mit geringer Latenz
-- [etriebssystemkernel](https://github.com/AndreaOrru/zen)
+- [Betriebssystemkernel](https://github.com/AndreaOrru/zen)
 - [Embedded-Geräte](https://github.com/skyfex/zig-nrf-demo/)
 - Echtzeitsoftware, z.B. Liveauftritte, Flugzeuge, Herzschrittmacher
 - [In Webbrowsern oder anderen Plugins mit WebAssembly](https://shritesh.github.io/zigfmt-web/)
@@ -132,7 +132,7 @@ Eine in Zig verfasste Bibliothek kann überall verwendet werden:
 
 Um das zu erreichen, müssen Zig-Programmierer ihren Speicher selbst verwalten und mit scheiternder Speicherallokation umgehen.
 
-Das trifft auch auf die Standardbibliothek zu. Alle Funktionen, die Speicher alloziieren müssen, nehmen einen `Allocator` als Parameter an. Damit kann die Standardbibliothek sogar auf dem Freestanding-Target verwendet werden.
+Das trifft auch auf die Standardbibliothek zu. Alle Funktionen, die Speicher allozieren müssen, nehmen einen `Allocator` als Parameter an. Damit kann die Standardbibliothek sogar auf dem Freestanding-Target verwendet werden.
 
 Außer einem [neuen Ansatz zur Fehlerbehandlung](#ein-neuer-ansatz-zur-fehlerbehandlung), stellt Zig [defer](https://ziglang.org/documentation/master/#defer) und [errdefer](https://ziglang.org/documentation/master/#errdefer) zur Verfügung, um alle Ressourcenverwaltung -- nicht nur Speicher -- einfach und leicht verifizierbar zu machen.
 
@@ -214,7 +214,7 @@ Output device: Built-in Audio Analog Stereo
 ^C
 ```
 
-[Dieser Zigcode ist signifikant einfacher als der äquivalente C-Code](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8), hat mehr Sicherheitsvorkehrungen, und all das wird mit einem einfache `@cImport` der C-Headerdateien erreicht -- ohne API-Bindings.
+[Dieser Zig-Code ist signifikant einfacher als der äquivalente C-Code](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8), hat mehr Sicherheitsvorkehrungen, und all das wird mit einem einfache `@cImport` der C-Headerdateien erreicht -- ohne API-Bindings.
 
 *Zig kann C-Bibliotheken besser nutzen als das C selbst kann.*
 
@@ -400,14 +400,14 @@ $ ldd hello
 
 In diesem Beispiel hat Zig musls Quellcode kompiliert und verlinkt. Dank dem [Cachesystem](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching) bleibt das Build von musl-libc für `x86_64-linux` verfügbar und kann bei Bedarf sofort genutzt werden.
 
-Das bedeutet, dass die Funktionalität auf jeder Plattform verfügbar ist. Nutzer von Windows und macOS können Zig- und C-Code für jedes der obigen Targets kompilieren und gegen libc linken. Auf ähnliche Art und Weise kann Code für andere Priozessorarchitekturen crosskompiliert werden:
+Das bedeutet, dass die Funktionalität auf jeder Plattform verfügbar ist. Nutzer von Windows und macOS können Zig- und C-Code für jedes der obigen Targets kompilieren und gegen libc linken. Auf ähnliche Art und Weise kann Code für andere Prozessorarchitekturen crosskompiliert werden:
 ```
 $ zig build-exe --c-source hello.c --library c -target aarch64v8-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
 
-In macher Hinsicht kann Zig besser C kompilieren als C-Compiler!
+In mancher Hinsicht kann Zig besser C kompilieren als C-Compiler!
 
 Diese Funktionalität ist mehr als eine mit Zig gebündelte Cross-Toolchain. Zum Beispiel sind die libc-Header, die Zig mitbringt, unkomprimiert 22 MiB groß. Dabei kommen die Header für musl libc + Linux auf x86_64 alleine auf 8 MiB, und die Header für glibc machen 3.1 MiB aus (glibc fehlen die Linux-Header), aber Zig enthält momentan 40 libcs. Ohne Bündelung wären das 444 MiB. Dank meines Tools [process_headers](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) jedoch, und ein wenig [guter alter manueller Arbeit](https://github.com/ziglang/zig/wiki/Updating-libc), bleiben Zigs binäre Tarballs bei insgesamt rund 30 MiB, trotz Unterstützung für libc auf all diesen  Targets, sowie compiler-rt, libunwind und libcxx, und dem Clang-kompatiblen C-Compiler. Zum Vergleich: das Build von clang 8.0.0 von llvm.org für Windows ist 132 MiB groß.
 
@@ -544,14 +544,14 @@ Zig kommuniziert die Unterstützung von verschiedenen Targets mit "Support Tiers
 ### Tier-System
 
 #### Tier 1 Support
-- Zig kann für diese Targets nicht nur Maschinencode erzeugen, auch die Cross-Platform-Abstraktionen der Standardbibliothek wurden jeweils vollständig implementiert.
+- Zig kann für diese Targets nicht nur Maschinencode erzeugen, auch die plattformunabhängigen Abstraktionen der Standardbibliothek wurden jeweils vollständig implementiert.
 - Der CI-Server testet diese Targets automatisch bei jedem Commit zum Master-Branch, und aktualisiert die [Downloadseite]({{< ref "/download/" >}}) mit Links zu den vorkompilierten Binärdateien.
 - Diese Targets haben vollständige Debuginformations-Fähigkeiten und erzeugen bei fehlgeschlagenen Assertions [Stacktraces](#stacktraces-auf-allen-targets).
 - [die libc ist auch beim Crosskompilieren verfügbar](#zig-enthält-libc).
 - Alle Verhaltenstests und anwendbaren Standardbibliothekstests werden für diese Targets bestanden. Alle Features der Sprache funktionieren korrekt.
 
 #### Tier 2 Support
-- Die Standardbibliothek unterstützt diese Targets, ann aber teilweise "Unsupported OS"-Kompilezeitfehler erzeugen. Um die Lücken in der Standardbibliothek auszufüllen, kann gegen libc oder andere Bibliotheken verlinkt werden.
+- Die Standardbibliothek unterstützt diese Targets, kann aber teilweise "Unsupported OS"-Kompilezeitfehler erzeugen. Um die Lücken in der Standardbibliothek auszufüllen, kann gegen libc oder andere Bibliotheken verlinkt werden.
 - Diese Targets funktionieren, aber werden möglicherweise nicht automatisch getestet, können also gelegentlich rückfällig werden.
 - Einige Tests werden für diese Targets möglicherweise deaktiviert, während wir an [Tier 1 Support](#tier-1-support) arbeiten.
 

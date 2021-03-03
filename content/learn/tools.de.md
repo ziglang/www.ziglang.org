@@ -5,8 +5,8 @@ mobile_menu_title: "Tools"
 toc: true
 ---
 
-## Languageserver
-Languageserver sind editoragnostische Tools für Syntaxhighlighting, Autovervollständigung und viele andere Features. Damit bieten sie häufig eine bessere Entwicklungserfahrung als Editorplugins.
+## Language Server
+Language Server sind editor-agnostische Tools für Syntaxhighlighting, Autovervollständigung und viele andere Features. Damit bieten sie häufig eine bessere Entwicklungserfahrung als Editorplugins.
 
 - [zigtools/zls](https://github.com/zigtools/zls)
 
@@ -28,6 +28,6 @@ Editor-spezifische Tools, größtenteils Syntaxhighlighter.
 ### Kate
 - [ziglang/kde-syntax-highlighting](https://github.com/ziglang/kde-syntax-highlighting)
 
-## Documentation and Testing
+## Dokumentation und Tests
 - [kristoff-it/zig-doctest](https://github.com/kristoff-it/zig-doctest)
 

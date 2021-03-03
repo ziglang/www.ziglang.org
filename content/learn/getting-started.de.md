@@ -6,7 +6,7 @@ toc: true
 
 {{% div class="box thin"%}}
 **<center>Hinweis für Nutzer von Apple Silicon</center>**
-Zigs Unterstützung für Code Signing ist experimentell. Du kannst Zig mit deinem M1 Mac vewenden,
+Zigs Unterstützung für Code Signing ist experimentell. Du kannst Zig mit deinem M1 Mac verwenden,
 aber momentan ist der einzige Weg, Zig für arm64 macOS zu bekommen, es selbst zu kompilieren.
 Beachte dazu den Abschnitt [Zig selbst kompilieren](#zig-selbst-kompilieren).
 {{% /div %}}
@@ -28,7 +28,7 @@ Dies ist der einfachste Weg, Zig zu bekommen: nimm ein Paket von der [Downloads]
 extrahiere es in ein Verzeichnis und füge es an deinen `PATH` an, um Zig von überall nutzen zu können.
 
 #### Auf Windows den PATH ändern
-Um deine PATH-Variable auf Windows einzustellen, führe **einen** der folgenden Codschnipsel mit Powershell aus.
+Um deine PATH-Variable auf Windows einzustellen, führe **einen** der folgenden Codeschnipsel mit Powershell aus.
 Entscheide dich, ob du diese Änderung systemweit durchführen willst (erfordert eine mit Adminrechten ausgeführte Powershell)
 oder nur für deinen Benutzer, und **ändere den Schnipsel, um auf deine Kopie von Zig zu verweisen**.
 Das `;` vor dem `C:` ist kein Tippfehler.
@@ -110,7 +110,7 @@ Wenn du die Installation erfolgreich abgeschlossen hast, solltest du Zig aus der
 
 Probieren wir das mit deinem ersten Zig-Programm aus!
 
-Wechlse in dein Projektverzeichnis und führe aus:
+Wechsle in dein Projektverzeichnis und führe aus:
 ```bash
 mkdir hello-world
 cd hello-world
@@ -131,7 +131,7 @@ info: All your codebase are belong to us.
 ausgibt. Glückwunsch, du hast jetzt eine funktionierende Installation von Zig!
 
 ## Nächste Schritte
-**Sieh dir auch auch die anderen Ressourcen im Abschnitt [Lernen](../) an**, suche dir die Dokumentation für deine Version (Hinweis: Nightly Builds sollten die `master`-Dokumenatation benutzen) und lies vielleicht [ziglearn.org](https://ziglearn.org).
+**Sieh dir auch auch die anderen Ressourcen im Abschnitt [Lernen](../) an**, suche dir die Dokumentation für deine Version (Hinweis: Nightly Builds sollten die `master`-Dokumentation benutzen) und lies vielleicht [ziglearn.org](https://ziglearn.org).
 
 Zig ist ein junges Projekt, und wir haben leider nicht die Kapazitäten, umfangreiche Dokumentation und Lernmaterialien zu erzeugen. Wenn du feststeckst, kannst du aber auch [einer Zig-Community beitreten](https://github.com/ziglang/zig/wiki/Community), oder Initiativen wie [Zig SHOWTIME](https://zig.show) ansehen.
 
