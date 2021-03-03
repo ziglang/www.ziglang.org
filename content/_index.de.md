@@ -17,7 +17,7 @@ Debugge deine Anwendung, nicht deine Kenntnis der Sprache.
 - Kein Präprozessor, keine Makros. 
 
 # ⚡ Comptime
-Eine moderner Ansatz zur Metaprogrammierung -- basierend auf Compile-Zeit-Ausführung and Lazy Evaluation.
+Eine moderner Ansatz zur Metaprogrammierung -- basierend auf Compile-Zeit-Ausführung und Lazy Evaluation.
 
 - Rufe jede Funktion zur Compile-Zeit auf.
 - Manipuliere Typen als Werte, ohne Laufzeit-Overhead.
@@ -62,7 +62,7 @@ Schreibe schnellen und klaren Code, der mit allen Fehlerbedingungen umgehen kann
 {{% div class="community-message" %}}
 # Die Zig-Community ist dezentralisiert
 Jeder darf einen Raum für die Community schaffen.
-Es gibt kein "offiziell" or "inoffiziell", aber jeder Versammlungsort hat seine eigenen Regeln und Moderatoren.
+Es gibt kein "offiziell" oder "inoffiziell", aber jeder Versammlungsort hat seine eigenen Regeln und Moderatoren.
 
 <div style="">
 <h1>
@@ -90,7 +90,7 @@ Mitwirkende müssen sich an Zigs [Code of Conduct](https://github.com/ziglang/zi
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
 ## Die ZSF ist eine 501(c)(3) Non-Profit-Organisation.
 
-Die Zig Software Foundation ist eine Non-Profit-Organisation, die 2020 von Andrew Kelley, dem Schöpfer von Zig, geründet wurde, um die Entwicklung der Sprache zu unterstützen. Momentan bietet die ZSF einigen Kernmitwirkenden konkurrenzfähig bezahlte Arbeit. Wir hoffen, dies künftig witeren Mitwirkenden anbieten zu können.
+Die Zig Software Foundation ist eine Non-Profit-Organisation, die 2020 von Andrew Kelley, dem Schöpfer von Zig, gegründet wurde, um die Entwicklung der Sprache zu unterstützen. Momentan bietet die ZSF einigen Kernmitwirkenden konkurrenzfähig bezahlte Arbeit. Wir hoffen, dies künftig weiteren Mitwirkenden anbieten zu können.
 
 Die Zig Software Foundation wird von Spenden erhalten.
 
@@ -114,7 +114,7 @@ Die folgenden Unternehmen bieten der Zig Software Foundation direkte finanzielle
  </a>
 {{% /sponsor-logos %}}
 
-# GitHub Sponsoren
+# GitHub-Sponsoren
 Dank vieler Unterstützer ist das Projekt der Open-Source-Community und nicht Aktionären Rechenschaft schuldig. Insbesondere [unterstützen](zsf/) diese guten Leute Zig mit monatlich $200 oder mehr:
 
 - [Karrick McDermott](https://github.com/karrick)

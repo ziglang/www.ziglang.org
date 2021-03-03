@@ -5,7 +5,7 @@ toc: true
 ---
 
 
-## Kein verstecketer Kontrollfluss
+## Kein versteckter Kontrollfluss
 
 Wenn Zig-Code nicht aussieht, als ob er in einen Funktionsaufruf springt, dann tut er das nicht. Das bedeutet, dass du sicher sein kannst, dass der folgende Code nur `foo()` und dann `bar()` aufruft, und das ist garantiert, ohne die Typen von irgendwelchen Werten zu kennen:
 
@@ -19,7 +19,7 @@ Beispiele von verstecktem Kontrollfluss:
 
 * D hat `@property`-Funktionen -- Methoden, deren Aufruf wie ein Feldzugriff aussieht, also könnte im obigen Beispiel `c.d` eine Funktion aufrufen.
 * C++, D, und Rust haben Operatorenüberladung, also könnte der Operator `+` eine Funktion aufrufen.
-* C++, D, und Go haben throw/catch-Ausnahmen, also könnte `foo()` eine Ausahme werfen und die Ausführung von `bar()` verhindern. (Natürlich kann auch in Zig `foo()` in eine Endlosschleife geraten und so die Ausführung von `bar()` verhindern, aber das ist in jeder Turing-vollständigen Sprache möglich.)
+* C++, D, und Go haben throw/catch-Ausnahmen, also könnte `foo()` eine Ausnahme werfen und die Ausführung von `bar()` verhindern. (Natürlich kann auch in Zig `foo()` in eine Endlosschleife geraten und so die Ausführung von `bar()` verhindern, aber das ist in jeder Turing-vollständigen Sprache möglich.)
 
 Diese Designentscheidung wurde getroffen, um die Lesbarkeit zu verbessern.
 
@@ -30,25 +30,25 @@ Das gesamte Konzept des Heaps wird von Bibliotheks- und Anwendungscode verwaltet
 
 Beispiele versteckter Allokationen:
 
-* Das Schlüsselwort `defer` in Go alloziiert Speicher auf einem funktionslokalen Stapel. Abgesehen von dem unintuitiven Kontrollfluss kann ein `defer` innerhalb einer Schleife zu unerwartetem Speicherüberlauf führen.
-* Koroutinen in C++ alloziieren beim Aufruf Heapspeicher.
-* In Go kann ein Funktionsaufruf zu Heapallokation führen, weil Goroutinen kleine Stapel alloziieren, die vergrößert werden müssen, wenn der Aufrufstapel zu tief wird.
+* Das Schlüsselwort `defer` in Go alloziert Speicher auf einem funktionslokalen Stapel. Abgesehen von dem unintuitiven Kontrollfluss kann ein `defer` innerhalb einer Schleife zu unerwartetem Speicherüberlauf führen.
+* Koroutinen in C++ allozieren beim Aufruf Heapspeicher.
+* In Go kann ein Funktionsaufruf zu Heapallokationen führen, weil Goroutinen kleine Stapel allozieren, die vergrößert werden müssen, wenn der Aufrufstapel zu tief wird.
 * Rusts Standardbibliotheks-API führt zu einer Panik, wenn kein freier Speicher verfügbar ist, und alternative APIs mit Allokator-Parametern wurden nur nachträglich bedacht (siehe [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
 
-Fast alle Sprachen mit Garbage Collector sind voller Allokationen, die von der automatischen Spicherverwaltung versteckt werden.
+Fast alle Sprachen mit Garbage Collector sind voller Allokationen, die von der automatischen Speicherverwaltung versteckt werden.
 
-Das Hauptproblem an versteckten Allokationen ist es, dass sie die Wiederverwendbarkeit von Code verhindern, indem sie die Menge an Systemen, die ihn verwenden können, unnötig einschränken. Einfach gesagt gibt es Anwendungsfälle, in denen man sich darauf verlassen können muss, dass Kontrollfluss und Funktionsaufrufe keine Nebeneffekte auf die Speicherallokation haben, und eine Sprache kann diese Anwendunsfälle nur bedienen, wenn sie solche Garantien machen kann.
+Das Hauptproblem an versteckten Allokationen ist es, dass sie die Wiederverwendbarkeit von Code verhindern, indem sie die Menge an Systemen, die ihn verwenden können, unnötig einschränken. Einfach gesagt gibt es Anwendungsfälle, in denen man sich darauf verlassen können muss, dass Kontrollfluss und Funktionsaufrufe keine Nebeneffekte auf die Speicherallokation haben, und eine Sprache kann diese Anwendungsfälle nur bedienen, wenn sie solche Garantien machen kann.
 
 Zigs Standardbibliothek bietet Features, die Heapallokationen bereitstellen und damit arbeiten, aber diese sind optional, nicht in die Sprache selbst eingebaut.
-Wenn du nie einen Allokator initialisierst, kannst du dir sicher sein, dass dein Programm nichts alloziiert.
+Wenn du nie einen Allokator initialisierst, kannst du dir sicher sein, dass dein Programm nichts alloziert.
 
-Jedes Feature der Standardbibliothek, das Heapspeicher alloziieren muss, nimmt dazu einen `Allocator` als Parameter an. Das bedeutet, dass Zigs Standardbibliothek Freestanding-Targets unterstützt. Zum Beispiel können `std.ArrayList` und `std.AutoHashMap` für Bare-Metal-Programme genutzt werden!
+Jedes Feature der Standardbibliothek, das Heapspeicher allozieren muss, nimmt dazu einen `Allocator` als Parameter an. Das bedeutet, dass Zigs Standardbibliothek Freestanding-Targets unterstützt. Zum Beispiel können `std.ArrayList` und `std.AutoHashMap` für Bare-Metal-Programme genutzt werden!
 
 Eigene Allokatoren machen manuelle Speicherverwaltung kinderleicht. Zig hat einen Debug-Allokator, der Speichersicherheit bei Use-after-free und Double-free garantiert. Er detektiert und logt automatisch Speicherlecks. Es gibt einen Arena-Allokator, der beliebig viele Allokationen bündeln und zusammen freigeben kann (statt sie einzeln zu verwalten). Besondere Allokatoren können genutzt werden, um Performance oder Speichernutzung nach den Anforderungen einer Anwendung zu optimieren.
 
 [1]: Tatsächlich gibt es einen Verkettungsoperator für Strings und Arrays, der aber nur zur Compilezeit benutzbar ist und damit auch keine Laufzeit-Heapallokation mit sich bringt.
 
-## Vollständge Unterstützung für keine Standardbibliothek
+## Vollständige Unterstützung für keine Standardbibliothek
 
 Wie oben angedeutet, ist Zigs Standardbibliothek absolut optional. Jede API wird nur kompiliert, wenn sie gebraucht wird. Zig unterstützt es gleichermaßen, mit der libc zu linken oder nicht. Zig eignet sich besonders gut für Bare-Metal- und High-Performance-Entwicklung.
 
@@ -60,7 +60,7 @@ Ein heiliger Gral des Programmierens ist Code-Wiederverwendung. Leider scheint e
 
 * Wenn eine Anwendung Echtzeitanforderungen hat, dann ist jede Bibliothek, die Garbage Collection oder ein anderes nicht-deterministisches Verhalten verwendet, als Abhängigkeit disqualifiziert.
 * Wenn eine Sprache es zu einfach macht, Fehler zu ignorieren und zu schwer, zu überprüfen, ob eine Bibliothek Fehler korrekt behandelt und auflöst, kann es verlockend sein, die Bibliothek zu ignorieren und sie neu zu implementieren, um sicherzugehen, dass alle relevanten Fehler korrekt behandelt werden. Zig ist so konzipiert, dass das Faulste, was ein Programmierer tun kann, die korrekte Behandlung von Fehlern ist, und so kann man einigermaßen sicher sein, dass eine Bibliothek Fehler korrekt weitergeben wird.
-* Derzeit ist aus pragmatischer Sicht C die vielseitigste und portabelste Sprache. Jede Sprache, die nicht mit mit C-Code interagieren kann, riskiert es, in Obskurität zu verschwinden. Zig versucht, die neue portable Sprache für Bibliotheken zu werden, indem es gleichzeitig C ABI-Konformität für externe Funktionen vereinfacht und Sicherheit und ein Sprachdesign einführt, das häufige Fehler innerhalb der Implementierungen verhindert.
+* Derzeit ist aus pragmatischer Sicht C die vielseitigste und portabelste Sprache. Jede Sprache, die nicht mit mit C-Code interagieren kann, riskiert es, in der Versenkung zu verschwinden. Zig versucht, die neue portable Sprache für Bibliotheken zu werden, indem es gleichzeitig C ABI-Konformität für externe Funktionen vereinfacht und Sicherheit und ein Sprachdesign einführt, das häufige Fehler innerhalb der Implementierungen verhindert.
 
 ## Ein Paketmanager und Build-System für bestehende Projekte
 
