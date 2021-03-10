@@ -124,7 +124,11 @@ Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
-- Eleanor Bartle
+- [Lager Data](https://www.lagerdata.com)
+- Derek Collison
+- ConnectEverything
+- Joran Dirk Greef
+- Simon A. Nielsen Knights
 
 This section is updated at the beginning of each month.
 {{% /div %}}

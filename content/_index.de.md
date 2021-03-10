@@ -124,7 +124,11 @@ Dank vieler Unterstützer ist das Projekt der Open-Source-Community und nicht Ak
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
-- Eleanor Bartle
+- [Lager Data](https://www.lagerdata.com)
+- Derek Collison
+- ConnectEverything
+- Joran Dirk Greef
+- Simon A. Nielsen Knights
 
 Dieser Abschnitt wird zu Beginn jedes Monats aktualisiert.
 {{% /div %}}
