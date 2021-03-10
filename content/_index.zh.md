@@ -123,7 +123,11 @@ Zig 软件基金会由捐款维持。
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
-- Eleanor Bartle
+- [Lager Data](https://www.lagerdata.com)
+- Derek Collison
+- ConnectEverything
+- Joran Dirk Greef
+- Simon A. Nielsen Knights
 
 本栏目将会在每月初更新。
 {{% /div %}}

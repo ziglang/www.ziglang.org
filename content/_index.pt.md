@@ -124,7 +124,11 @@ Graças a pessoas que [Patrocine Zig](zsf/), o projeto é responsável perante a
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
-- Eleanor Bartle
+- [Lager Data](https://www.lagerdata.com)
+- Derek Collison
+- ConnectEverything
+- Joran Dirk Greef
+- Simon A. Nielsen Knights
 
 Esta seção é atualizada no início de cada mês.
 {{% /div %}}
