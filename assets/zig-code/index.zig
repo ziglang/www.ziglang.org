@@ -1,4 +1,4 @@
-// zig-doctest: syntax
+// zig-doctest: run --skip_output
 const std = @import("std");
 const json = std.json;
 const payload =
