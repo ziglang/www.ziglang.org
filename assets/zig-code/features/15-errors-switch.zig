@@ -1,4 +1,4 @@
-// zig-doctest: test --fail Overflow
+// zig-doctest: test --fail Overflow --name test
 const std = @import("std");
 
 test "switch on error" {

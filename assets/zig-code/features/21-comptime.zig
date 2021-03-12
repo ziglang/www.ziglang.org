@@ -1,4 +1,4 @@
-// zig-doctest: test --fail unreachable
+// zig-doctest: test --fail unreachable --name test
 const std = @import("std");
 const assert = std.debug.assert;
 
