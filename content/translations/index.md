@@ -15,3 +15,4 @@ The original content is written in [English](/).
 - [简体中文](../zh/)
 - [Deutsch](../de/)
 - [Français](../fr/)
+- [한국어](../ko/)
