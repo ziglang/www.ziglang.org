@@ -54,7 +54,7 @@ Zig는 [정의되지 않은 동작](https://ziglang.org/documentation/master/#Un
 
 성능에 대해 얘기하자면, Zig는 C보다 빠릅니다.
 
-- 표준 구현제는 LLVM을 백엔드로 사용하여 최고의 최적화 기술을 활용합니다.
+- 표준 구현체는 LLVM을 백엔드로 사용하여 최고의 최적화 기술을 활용합니다.
 - 다른 프로젝트에서 "링크 타임의 최적화"라고 부르는 것을 Zig는 자동으로 수행합니다.
 - [크로스 컴파일이 기본 제공](#크로스-컴파일-기본-제공) 되는 덕분에, 네이티브 타겟에서 고급 CPU 기능을 쓸 수 있습니다.
 - 정의되지 않은 동작을 조심스럽게 선정했습니다. 예를 들어 Zig에서는 부호가 있거나 없는 정수 모두 오버플로우 시에 정의되지 않은 동작이 있는데, 이는 C에는 부호 있는 정수에만 있는 것과 대조됩니다. 이는 [C에서는 불가능한 최적화가 가능하게 해줍니다](https://godbolt.org/z/n_nLEU).
@@ -155,7 +155,7 @@ Zig로 작성한 라이브러리는 어디에나 쓸 수 있습니다:
 
 {{< zigdoctest "assets/zig-code/features/14-errors-try.zig" >}}
 
-[스택트레이스](#모든-타겟에서-스택트레이스-지원)가 아니라 [오류 리턴 트레이스](https://ziglang.org/documentation/master/#Error-Return-Traces)임을 주의하세요. 저 코드는 스택을 풀어 트레이스를 만드는 대가를 치르지 않았습니다.
+[스택트레이스](#모든-타겟에서-스택트레이스-지원)가 아니라 [오류 리턴 트레이스](https://ziglang.org/documentation/master/#Error-Return-Traces)임을 주의하세요. 저 코드는 스택을 풀어 트레이스를 만드는 비용이 없습니다.
 
 오류에 [switch](https://ziglang.org/documentation/master/#switch) 키워드를 사용하면 발생 가능한 모든 오류가 처리되도록 할 수 있습니다:
 
@@ -193,9 +193,9 @@ Generic 데이터 구조는 단순히 `type`을 리턴하는 함수입니다:
 
 {{< zigdoctest "assets/zig-code/features/20-reflection.zig" >}}
 
-Zig 표준 라이브러니는 이 기술을 이용하여 포맷 출력을 구현합니다. [작고 단순한 언어](#작고-단순한-언어)이지만, Zig의 포맷 출력은 모두 Zig 안에 구현되어 있습니다. 반면 C에서는 printf를 위한 컴파일 오류가 컴파일러에 하드코딩 되어 있습니다. 비슷하게 Rust에서는 포맷 출력 매크로는 컴파일러에 하드코딩 되어 있습니다.
+Zig 표준 라이브러리는 이 기술을 이용하여 포맷 출력을 구현합니다. [작고 단순한 언어](#작고-단순한-언어)이지만, Zig의 포맷 출력은 모두 Zig 안에 구현되어 있습니다. 반면 C에서는 printf를 위한 컴파일 오류가 컴파일러에 하드코딩 되어 있습니다. 비슷하게 Rust에서는 포맷 출력 매크로는 컴파일러에 하드코딩 되어 있습니다.
 
-Zig는 또한 함수와 코드 블록을 컴파일 타임에 평가할 수 있습니다. 어떤 맥락에서, 전역 변수 초기화 같은 표현은 암시적으로 컴파일 타임에 평가됩니다. 다른 방법으로는 [comptime](https://ziglang.org/documentation/master/#comptime) 키워드를 이용하여 명시적으로 컴파일 타임에 코드를 평가할 수 있습니다. 이는 특히 assertion과 함께 사용하면 강력합니다:
+Zig는 또한 함수와 코드 블록을 컴파일 타임에 평가할 수 있습니다. 어떤 경우 전역 변수 초기화 같은 표현은 암시적으로 컴파일 타임에 평가됩니다. 다른 방법으로는 [comptime](https://ziglang.org/documentation/master/#comptime) 키워드를 이용하여 명시적으로 컴파일 타임에 코드를 평가할 수 있습니다. 이는 특히 assertion과 함께 사용하면 강력합니다:
 
 {{< zigdoctest "assets/zig-code/features/21-comptime.zig" >}}
 
@@ -412,9 +412,9 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically lin
 
 이 기능은 Zig에 크로스 컴파일 툴체인을 포함하는 것 이상입니다. 예를 들어 Zig에 포함되는 libc 헤더의 전체 크기는 압축 없이 22 MiB입니다. 한편, musl libc + Linux는 x86_64 헤더만 8 MiB이며, glibc 용은 3.1 MiB 인데(glibc에는 Linux 헤더 미포함), Zig는 현재 40종의 libc를 포함합니다. 네이티브 번들링을 포함하면 444 MiB가 될겁니다. 하지만, 제가 만든 [process_headers 툴](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig)과 [수작업](https://github.com/ziglang/zig/wiki/Updating-libc) 덕분에 이 모든 타겟에 libc를 비롯 compiler-rt, libunwind, libcx를 지원하며 clang 호환 C 컴파일러임에도 불구하고 Zig 바이너리 압축파일들은 대략 30 MiB를 유지할 수 있었습니다. 비교하자면, llvm.org에서 받은 Windows용 clang 8.0.0 바이너리 빌드는 그 자체만으로 132 MiB 입니다.
 
-Note that only the [티어 1 지원](#티어-1-지원) targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
+[티어 1 지원](#티어-1-지원) 타겟만 완전히 테스트 되었음을 주의해 주세요. [더 많은 libc들을 추가](https://github.com/ziglang/zig/issues/514)할 계획이며 (Windows 포함), [모든 libc의 빌드에 대한 테스트 커버리지도 추가](https://github.com/ziglang/zig/issues/2058)할 계획입니다.
 
-[Zig 패키지 매니저](https://github.com/ziglang/zig/issues/943)도 계획되어 있으나, 아직 완성되지 않았습니다. 가능해질 일 중 하나는 C 라이브러리용 패키지를 만드는 것입니다. [Zig 빌드 시스템](#zig-빌드-시스템)은 Zig 개발자와 C 개발자 모두에게 매력있게 다가오게 될 것입니다.
+[Zig 패키지 매니저](https://github.com/ziglang/zig/issues/943)도 계획되어 있으나, 아직 완성되지 않았습니다. 가능해질 일 중 하나는 C 라이브러리용 패키지를 만드는 것입니다. [Zig 빌드 시스템](#zig-빌드-시스템)은 Zig 개발자와 C 개발자 모두에게 매력있게 다가올 것입니다.
 
 ## Zig 빌드 시스템
 
@@ -424,7 +424,7 @@ $ zig init-exe
 Created build.zig
 Created src/main.zig
 
-다음으로, `zig build --help` 또는 `zig build run`을 시도해 보겠습니다.
+Next, try `zig build --help` or `zig build run`
 ```
 
 <u>src/main.zig</u>
@@ -553,7 +553,7 @@ Zig는 "지원 티어" 체계를 이용해 다른 타겟에 대한 지원 수준
 
 #### 티어 2 지원
 - 표준 라이브러리가 이 타겟을 지원하지만, 일부 API는 "Unsupported OS" 컴파일 오류를 발생시킵니다. libc나 다른 라이브러리를 링크하여 표준 라이브러리 내의 간극을 메울 수 있습니다.
-- 이 타겟들은 작동하는 것으로 알려져 있지만, 자동으로 테스트 되지 않을 수 있어 때때로 문제가 되살아나기도 합니다.
+- 이 타겟들은 작동하는 것으로 알려져 있지만, 자동으로 테스트 되지 않을 수 있어 때때로 수정한 문제가 되살아나기도 합니다.
 - 일부 테스트는 [티어 1 지원](#티어-1-지원)으로의 작업을 위해 비활성화 되었을 수 있습니다.
 
 #### 티어 3 지원
