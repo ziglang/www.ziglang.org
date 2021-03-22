@@ -2,7 +2,7 @@
 title: 홈
 mobile_menu_title: "홈"
 ---
-{{< slogan get_started="GET STARTED" docs="Documentation" notes="Changes" lang="en" >}}
+{{< slogan get_started="시작하기" docs="문서" notes="변경사항" lang="ko" >}}
 Zig는 **튼튼**하고, **최적화**된, **재사용 가능**한 소프트웨어를 관리하기 위한 범용 프로그래밍 언어 및 툴체인입니다.
 {{< /slogan >}}
 
@@ -33,12 +33,12 @@ Zig는 **튼튼**하고, **최적화**된, **재사용 가능**한 소프트웨�
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
 <h1>
-    <a href="learn/overview/" class="button" style="display: inline;">In-depth overview</a>
+    <a href="learn/overview/" class="button" style="display: inline;">심층 개요</a>
 </h1>
 {{% /div %}}
 {{% div  style="margin-left: 5px;" %}}
 <h1>
-    <a href="learn/samples/" class="button" style="display: inline;">More code samples</a>
+    <a href="learn/samples/" class="button" style="display: inline;">더 많은 코드 샘플</a>
 </h1>
 {{% /div %}}
 {{% /flexrow %}}
@@ -60,7 +60,7 @@ Zig는 **튼튼**하고, **최적화**된, **재사용 가능**한 소프트웨�
 {{% /div %}}
 
 {{% div class="community-message" %}}
-# Zig 커뮤니티는 분산되어 있다
+# 분산된 Zig 커뮤니티
 누구나 커뮤니티가 모일만한 자신만의 공간을 만들어 유지해도 좋습니다.
 "공식"이나 "비공식"이란 개념은 없습니다만, 각 공간에는 관리자와 규칙이 있습니다.
 
@@ -88,14 +88,14 @@ Zig의 저장소는 [https://github.com/ziglang/zig](https://github.com/ziglang/
 
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
-## ZSF는 501(c)(3) 비영리 기업이다.
+## ZSF는 501(c)(3) 비영리 기업입니다.
 
 Zig Software Foundation은 언어에 대한 개발을 지원하는 것을 목표로 Zig의 창시자인 Andrew Kelley에 의해 2020년에 설립된 비영리 기업입니다. 현재 ZSF는 소수의 주요 기여자의 작업에 대해 경쟁력 있는 수준의 비용을 제공할 수 있습니다. 앞으로 더 많은 주요 기여자들에게 이런 제공을 확대하길 바랍니다.
 
 Zig Software Foundation은 기부로 유지됩니다.
 
 <h1>
-	<a href="zsf/" class="button" style="display:inline;">Learn More</a>
+	<a href="zsf/" class="button" style="display:inline;">더 보기</a>
 </h1>
 {{% /div %}}
 

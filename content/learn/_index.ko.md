@@ -15,13 +15,13 @@ layout: single
 ## 소개
 다른 배경을 가진 개발자들을 대상으로 한 소개 자료입니다.
 
-- [In-depth Overview](overview/)  
+- [심층 개요](overview/)
 시스템 프로그래밍 관점에서 보는 Zig의 심층 기능에 대한 개요입니다.
-- [Why Zig When There is Already C++, D, and Rust?](why_zig_rust_d_cpp/)  
+- [왜 Zig를 써야하지? 이미 C++, D 그리고 Rust가 있는데?](why_zig_rust_d_cpp/)
 C++, D, Rust 개발자들을 위한 Zig에 대한 소개.
-- [Code Examples](samples/)  
+- [코드 예제](samples/)
 Zig 코드가 어떻게 생겼는지 감을 잡을 수 있는 코드 조각들의 목록.
-- [Tools](tools/)  
+- [도구](tools/)
 Zig 코드를 작성하는 데에 도움이 될만한 도구들의 목록.
 
 
@@ -38,7 +38,7 @@ Zig에 대한 구조적인 소개 by [Sobeston](https://github.com/sobeston).
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
 Zig와 그 철학을 소개하는 [Andrew Kelley](https://andrewkelley.me)의 동영상.
 - [Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)  
-[lwn.net 기사](https://lwn.net/Articles/833400/)에도 게재된, 자체 호스팅 컴파일러인 Zig를 만들기 위해 한 작업에 대한 블로그 글.
+[lwn.net 기사](https://lwn.net/Articles/833400/)에도 게재된, 자체 호스팅 컴파일러인 Zig를 만들기 위해 수행한 작업에 대한 블로그 글.
 
 
 
