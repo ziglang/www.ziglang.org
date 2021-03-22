@@ -35,7 +35,7 @@ Windows에서 PATH를 설정하려면 Powershell에서 다음 중 **하나**의 
 또는 한 유저에게만 적용되길 바라는지에 따라 선택하되, **설치된 Zig의 위치에 맞춰 코드 내 경로를 수정합니다**.
 `C:` 앞에 있는 `;`는 오타가 아니니 주의하세요.
 
-System wide (**admin** Powershell):
+시스템 전체 (**관리자로 실행**된 Powershell):
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -44,7 +44,7 @@ System wide (**admin** Powershell):
 )
 ```
 
-User level (Powershell):
+사용자 단위 (Powershell):
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
