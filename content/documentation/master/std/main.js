@@ -1844,7 +1844,13 @@
         var oldHash = location.hash;
         var parts = oldHash.split("?");
         var newPart2 = (domSearch.value === "") ? "" : ("?" + domSearch.value);
-        location.hash = (parts.length === 1) ? (oldHash + newPart2) : (parts[0] + newPart2);
+        var maybeHash = oldHash.startsWith("#") ? "" : "#";
+        if (parts.length === 1) {
+            history.pushState(null, null, maybeHash + oldHash + newPart2);
+        } else {
+            history.replaceState(null, null, maybeHash + parts[0] + newPart2);
+        }
+        onHashChange();
     }
     function getSearchTerms() {
         var list = curNavSearch.trim().split(/[ \r\n\t]+/);
