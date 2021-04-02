@@ -41,6 +41,7 @@ Ecco alcune informazioni utili a donare tramite metodi diversi da GitHub Sponsor
 - Invio di assegni cartacei per posta (metodo supportato solo negli Stati Uniti)
 - Trasferimento bancario (disponibile da ogni paese che supporta SWIFT, contattateci per ulteriori informazioni)
 - [Benevity](https://benevity.com)
+- [Wise](https://wise.com)
 
 **Perfavore non esistate a contattarci a donations@ziglang.org se avete domande o esigenze particolari.**
 

@@ -37,6 +37,7 @@ Certifique-se de verificar sua legislação local para ver se você pode deduzir
 - Verificações físicas (ver o endereço de correio do caracol listado acima)
 - Transferências bancárias (inclusive de fora dos EUA, entre em contato conosco para mais informações)
 - [Benevity](https://benevity.com) (recomendado se seu empregador fizer doações!)
+- [Wise](https://wise.com)
 
 **Por favor, não hesite em nos contatar em donations@ziglang.org se você tiver dúvidas ou necessidades específicas.**
 
