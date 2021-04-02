@@ -37,6 +37,7 @@ GitHub Sponsors 외의 다른 방법으로 기부할 때 필요한 정보입니�
 - 수표 (상기의 우편주소를 참고하세요)
 - 무통장입금 (미국 외에서도 가능, 궁금하신 사항은 문의 요망)
 - [Benevity](https://benevity.com) (고용주가 기부를 원할 경우 추천합니다!)
+- [Wise](https://wise.com)
 
 **질문이나 특별한 요구사항이 있으신 경우 주저말고 donations@ziglang.org 로 연락주세요.**
 

@@ -37,6 +37,7 @@ Make sure to check your local law to see if you can deduct donations from your t
 - Physical checks (see the snail mail address listed above)
 - Bank transfers (including from outside of the US, contact us for more info)
 - [Benevity](https://benevity.com) (recommended if your employer matches donations!)
+- [Wise](https://wise.com)
 
 **Please don't hesitate to contact us at donations@ziglang.org if you have questions or specific needs.**
 
