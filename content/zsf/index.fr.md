@@ -67,5 +67,4 @@ Les entreprises suivantes fournissent gratuitement certains de leurs services à
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
-![](/aws.png)
 {{% /sponsor-logos %}}
