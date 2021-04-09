@@ -61,7 +61,6 @@ ZSF 是一个小组织，并且有效地利用了货币资源。我们的计划�
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
-![](/aws.png)
 {{% /sponsor-logos %}}
 
 
