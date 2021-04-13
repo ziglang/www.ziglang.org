@@ -4,11 +4,6 @@ mobile_menu_title: "快速入门"
 toc: true
 ---
 
-{{% div class="box thin"%}}
-**<center>Apple Silicon 用户须知</center>**
-Zig 有实验性的代码签名支持。你将能够在你的 M1 Mac 上使用 Zig，但目前获得 arm64 macOS 版 Zig 的唯一方法是自己编译。请务必查看[从源码开始构建](#从源码构建)部分。
-{{% /div %}}
-
 
 ## 选择带标签的版本还是夜间构建版本？
 Zig 还没有达到 v1.0 版本，目前的发布周期与 LLVM 的新版本挂钩，其发布周期约为 6 个月。
