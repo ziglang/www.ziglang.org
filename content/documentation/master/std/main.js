@@ -269,9 +269,7 @@
                 domFnNoExamples.classList.remove("hidden");
             } else if (calls != null) {
                 if (fnObj.combined === undefined) fnObj.combined = allCompTimeFnCallsResult(calls);
-                if (fnObj.combined != null) {
-                    renderContainer(fnObj.combined, calls.map(function (call) { return zigAnalysis.calls[call].result.value }));
-                }
+                if (fnObj.combined != null) renderContainer(fnObj.combined);
 
                 var domListFnExamplesFragment = createDomListFragment(calls.length, '<li></li>');
 
@@ -486,28 +484,25 @@
         return domTemplate.content;
     }
 
-    function typeIndexName(typeIndex, wantHtml, wantLink, fnDecl, linkFnNameDecl, thisTypes) {
-        if(thisTypes && thisTypes.includes(typeIndex)){
-            return token('@This', tokenKinds.Builtin, wantHtml) + '()';
-        }
+    function typeIndexName(typeIndex, wantHtml, wantLink, fnDecl, linkFnNameDecl) {
         var typeObj = zigAnalysis.types[typeIndex];
         var declNameOk = declCanRepresentTypeKind(typeObj.kind);
         if (wantLink) {
             var declIndex = getCanonTypeDecl(typeIndex);
             var declPath = getCanonDeclPath(declIndex);
             if (declPath == null) {
-                return typeName(typeObj, wantHtml, wantLink, fnDecl, linkFnNameDecl, thisTypes);
+                return typeName(typeObj, wantHtml, wantLink, fnDecl, linkFnNameDecl);
             }
             var name = (wantLink && declCanRepresentTypeKind(typeObj.kind)) ?
                 declPath.declNames[declPath.declNames.length - 1] :
-                typeName(typeObj, wantHtml, false, fnDecl, linkFnNameDecl, thisTypes);
+                typeName(typeObj, wantHtml, false, fnDecl, linkFnNameDecl);
             if (wantLink && wantHtml) {
                 return '<a href="' + navLink(declPath.pkgNames, declPath.declNames) + '">' + name + '</a>';
             } else {
                 return name;
             }
         } else {
-            return typeName(typeObj, wantHtml, false, fnDecl, linkFnNameDecl, thisTypes);
+            return typeName(typeObj, wantHtml, false, fnDecl, linkFnNameDecl);
         }
     }
 
@@ -579,23 +574,23 @@
         }
     }
 
-    function typeName(typeObj, wantHtml, wantSubLink, fnDecl, linkFnNameDecl, thisTypes) {
+    function typeName(typeObj, wantHtml, wantSubLink, fnDecl, linkFnNameDecl) {
         switch (typeObj.kind) {
             case typeKinds.Array:
                 var name = "[";
                 name += token(typeObj.len, tokenKinds.Number, wantHtml);
                 name += "]";
-                name += typeIndexName(typeObj.elem, wantHtml, wantSubLink, null, null, thisTypes);
+                name += typeIndexName(typeObj.elem, wantHtml, wantSubLink, null);
                 return name;
             case typeKinds.Vector:
                 var name = "Vector(";
                 name += token(typeObj.len, tokenKinds.Number, wantHtml);
                 name += ", ";
-                name += typeIndexName(typeObj.elem, wantHtml, wantSubLink, null, null, thisTypes);
+                name += typeIndexName(typeObj.elem, wantHtml, wantSubLink, null);
                 name += ")";
                 return name;
             case typeKinds.Optional:
-                return "?" + typeIndexName(typeObj.child, wantHtml, wantSubLink, fnDecl, linkFnNameDecl, thisTypes);
+                return "?" + typeIndexName(typeObj.child, wantHtml, wantSubLink, fnDecl, linkFnNameDecl);
             case typeKinds.Pointer:
                 var name = "";
                 switch (typeObj.len) {
@@ -631,7 +626,7 @@
                     }
                     name += ") ";
                 }
-                name += typeIndexName(typeObj.elem, wantHtml, wantSubLink, null, null, thisTypes);
+                name += typeIndexName(typeObj.elem, wantHtml, wantSubLink, null);
                 return name;
             case typeKinds.Float:
                 return token('f' + typeObj.bits, tokenKinds.Type, wantHtml);
@@ -665,12 +660,12 @@
                 }
             case typeKinds.ErrorUnion:
                 var errSetTypeObj = zigAnalysis.types[typeObj.err];
-                var payloadHtml = typeIndexName(typeObj.payload, wantHtml, wantSubLink, null, null, thisTypes);
+                var payloadHtml = typeIndexName(typeObj.payload, wantHtml, wantSubLink, null);
                 if (fnDecl != null && errSetTypeObj.fn === fnDecl.value) {
                     // function index parameter supplied and this is the inferred error set of it
                     return "!" + payloadHtml;
                 } else {
-                    return typeIndexName(typeObj.err, wantHtml, wantSubLink, null, null, thisTypes) + "!" + payloadHtml;
+                    return typeIndexName(typeObj.err, wantHtml, wantSubLink, null) + "!" + payloadHtml;
                 }
             case typeKinds.Fn:
                 var payloadHtml = "";
@@ -735,18 +730,18 @@
                         if (isVarArgs && i === typeObj.args.length - 1) {
                             payloadHtml += '...';
                         } else if (argTypeIndex != null) {
-                            payloadHtml += typeIndexName(argTypeIndex, wantHtml, wantSubLink, null, null, thisTypes);
+                            payloadHtml += typeIndexName(argTypeIndex, wantHtml, wantSubLink);
                         } else {
-                            payloadHtml += token('anytype', tokenKinds.Keyword, wantHtml);
+                            payloadHtml += token('var', tokenKinds.Keyword, wantHtml);
                         }
                     }
                 }
 
                 payloadHtml += ') ';
                 if (typeObj.ret != null) {
-                    payloadHtml += typeIndexName(typeObj.ret, wantHtml, wantSubLink, fnDecl, null, thisTypes);
+                    payloadHtml += typeIndexName(typeObj.ret, wantHtml, wantSubLink, fnDecl);
                 } else {
-                    payloadHtml += token('anytype', tokenKinds.Keyword, wantHtml);
+                    payloadHtml += token('var', tokenKinds.Keyword, wantHtml);
                 }
                 return payloadHtml;
             case typeKinds.Frame:
@@ -756,7 +751,7 @@
                 var name = token('anyframe', tokenKinds.Keyword, wantHtml);
                 if (typeObj.result) {
                   name += "->";
-                  name += typeIndexName(typeObj.result, wantHtml, wantSubLink, null, null, thisTypes);
+                  name += typeIndexName(typeObj.result, wantHtml, wantSubLink, null);
                 }
                 return name;
             default:
@@ -941,7 +936,7 @@
         domFnProto.classList.remove("hidden");
     }
 
-    function renderContainer(container, thisTypes) {
+    function renderContainer(container) {
         var typesList = [];
         var namespacesList = [];
         var errSetsList = [];
@@ -1043,7 +1038,7 @@
                 var tdFnCode = trDom.children[0];
                 var tdDesc = trDom.children[1];
 
-                tdFnCode.innerHTML = typeIndexName(decl.type, true, true, decl, navLinkDecl(decl.name), thisTypes);
+                tdFnCode.innerHTML = typeIndexName(decl.type, true, true, decl, navLinkDecl(decl.name));
 
                 var docs = zigAnalysis.astNodes[decl.src].docs;
                 if (docs != null) {
