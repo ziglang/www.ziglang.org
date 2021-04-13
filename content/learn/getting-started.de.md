@@ -4,13 +4,6 @@ mobile_menu_title: "Einstieg"
 toc: true
 ---
 
-{{% div class="box thin"%}}
-**<center>Hinweis für Nutzer von Apple Silicon</center>**
-Zigs Unterstützung für Code Signing ist experimentell. Du kannst Zig mit deinem M1 Mac verwenden,
-aber momentan ist der einzige Weg, Zig für arm64 macOS zu bekommen, es selbst zu kompilieren.
-Beachte dazu den Abschnitt [Zig selbst kompilieren](#zig-selbst-kompilieren).
-{{% /div %}}
-
 
 ## Release oder Nightly Build?
 Zig hat noch nicht die Version 1.0 erreicht und der aktuelle Release-Zyklus ist an neue Releases von LLVM gebunden, die etwa alle 6 Monate erscheinen.

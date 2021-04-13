@@ -4,13 +4,6 @@ mobile_menu_title: "시작하기"
 toc: true
 ---
 
-{{% div class="box thin"%}}
-**<center>애플 실리콘 사용자를 위한 주의사항</center>**
-Zig는 code signing을 실험적으로 지원합니다. M1 맥에서 Zig를 사용할 수는 있지만,
-arm64 macOS에서 Zig를 사용하려면 당장은 직접 컴파일하는 방법 외엔 없습니다.
-[소스로 빌드하기](#소스로-빌드하기) 섹션을 반드시 확인하세요.
-{{% /div %}}
-
 
 ## tag된 릴리즈냐 nightly build냐?
 Zig는 아직 v1.0에 도달하지 못했으며, 현재 릴리즈는 LLVM의 새 릴리즈와 묶여 최대 6개월의 주기를 갖습니다.
