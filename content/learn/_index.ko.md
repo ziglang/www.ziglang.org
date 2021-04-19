@@ -32,7 +32,8 @@ Zig로 프로그래밍할 준비가 되었다면, 이 가이드가 환경설정�
 
 ## 온라인 학습 자료
 - [Zig Learn](https://ziglearn.org)  
-Zig에 대한 구조적인 소개 by [Sobeston](https://github.com/sobeston).
+- Zig에 대한 구조적인 소개 by [Sobeston](https://github.com/sobeston).
+- Learn Zig by fixing tiny broken programs with [ziglings](https://github.com/ratfactor/ziglings).
 
 ## 관련 동영상 및 블로그 글
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  

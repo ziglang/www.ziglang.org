@@ -32,7 +32,8 @@ layout: single
 
 ## 在线学习资源
 - [学习 Zig](https://ziglearn.org)
-Zig 的结构化介绍，由 [Sobeston](https://github.com/sobeston) 编写。
+- Zig 的结构化介绍，由 [Sobeston](https://github.com/sobeston) 编写。
+- Learn Zig by fixing tiny broken programs with [ziglings](https://github.com/ratfactor/ziglings).
 
 ## 相关视频和博客文章
 - [Zig 1.0 之路（英文）](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]
