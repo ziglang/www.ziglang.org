@@ -499,7 +499,7 @@ Zig uses a "support tier" system to communicate the level of support for differe
 
 ### Support Table
 
-| | free standing | Linux 3.16+ | macOS 10.13+ | Windows 8.1+ | FreeBSD 12.0+ | NetBSD 8.0+ | DragonFly​BSD 5.8+ | UEFI |
+| | free standing | Linux 3.16+ | macOS 10.13+ | Windows 8.1+ | FreeBSD 12.0+ | NetBSD 8.0+ | DragonFlyBSD 5.8+ | UEFI |
 |-|---------------|-------------|--------------|--------------|---------------|-------------|-------------------|------|
 | x86_64 | [Tier 1](#tier-1-support) | [Tier 1](#tier-1-support) | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) |
 | arm64 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
@@ -507,16 +507,16 @@ Zig uses a "support tier" system to communicate the level of support for differe
 | mips32 LE | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | i386 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 4](#tier-4-support) | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 2](#tier-2-support) |
 | riscv64 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
+| powerpc32 | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| powerpc64 | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| mips32 BE | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
+| mips64 | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | bpf | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | hexagon | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| mips32 BE | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| mips64 | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | amdgcn | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | sparc | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | s390x | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | lanai | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| powerpc32 | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| powerpc64 | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
 | avr | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
 | riscv32 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | [Tier 4](#tier-4-support) |
 | xcore | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
