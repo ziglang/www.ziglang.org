@@ -78,7 +78,7 @@ Edit files in src/.
 To upload:
 
 ```
-export ZIG_DOCGEN=/home/andy/dev/zig/zig-cache/docgen
+export ZIG_DOCGEN=/home/andy/dev/zig/zig-out/docgen
 ./build
 ```
 
