@@ -46,9 +46,9 @@ test "queue" {
     try int_queue.enqueue(75);
     try int_queue.enqueue(100);
 
-    std.testing.expectEqual(int_queue.dequeue(), 25);
-    std.testing.expectEqual(int_queue.dequeue(), 50);
-    std.testing.expectEqual(int_queue.dequeue(), 75);
-    std.testing.expectEqual(int_queue.dequeue(), 100);
-    std.testing.expectEqual(int_queue.dequeue(), null);
+    try std.testing.expectEqual(int_queue.dequeue(), 25);
+    try std.testing.expectEqual(int_queue.dequeue(), 50);
+    try std.testing.expectEqual(int_queue.dequeue(), 75);
+    try std.testing.expectEqual(int_queue.dequeue(), 100);
+    try std.testing.expectEqual(int_queue.dequeue(), null);
 }
