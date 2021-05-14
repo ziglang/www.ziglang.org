@@ -125,10 +125,11 @@ Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
 - [Lager Data](https://www.lagerdata.com)
-- Derek Collison
-- ConnectEverything
+- [Derek Collison](https://github.com/derekcollison)
+- [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
+- Stephen Gutekanst
 
 Questa sezione e' aggiornata all'inizio di ogni mese.
 {{% /div %}}

@@ -124,10 +124,11 @@ Zig 软件基金会由捐款维持。
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
 - [Lager Data](https://www.lagerdata.com)
-- Derek Collison
-- ConnectEverything
+- [Derek Collison](https://github.com/derekcollison)
+- [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
+- Stephen Gutekanst
 
 本栏目将会在每月初更新。
 {{% /div %}}
