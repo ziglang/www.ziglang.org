@@ -125,10 +125,11 @@ Zig Software Foundation은 기부로 유지됩니다.
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
 - [Lager Data](https://www.lagerdata.com)
-- Derek Collison
-- ConnectEverything
+- [Derek Collison](https://github.com/derekcollison)
+- [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
+- Stephen Gutekanst
 
 이 섹션은 매달 초 갱신됩니다.
 {{% /div %}}

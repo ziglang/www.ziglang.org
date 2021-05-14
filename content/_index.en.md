@@ -125,10 +125,11 @@ Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
 - [Lager Data](https://www.lagerdata.com)
-- Derek Collison
-- ConnectEverything
+- [Derek Collison](https://github.com/derekcollison)
+- [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
+- Stephen Gutekanst
 
 This section is updated at the beginning of each month.
 {{% /div %}}

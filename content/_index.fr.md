@@ -128,7 +128,12 @@ En particulier, ces personnes formidables sponsorisent Zig à hauteur de 200 $/m
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
 - [drfuchs](https://github.com/drfuchs)
-- Eleanor Bartle
+- [Lager Data](https://www.lagerdata.com)
+- [Derek Collison](https://github.com/derekcollison)
+- [NATS.io](https://github.com/nats-io)
+- Joran Dirk Greef
+- Simon A. Nielsen Knights
+- Stephen Gutekanst
 
 Cette section est mise à jour au début de chaque mois.
 {{% /div %}}
