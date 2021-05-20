@@ -4,12 +4,12 @@ const builtin = @import("builtin");
 
 var address_buffer: [8]usize = undefined;
 
-var trace1 = builtin.StackTrace{
+var trace1 = std.builtin.StackTrace{
     .instruction_addresses = address_buffer[0..4],
     .index = 0,
 };
 
-var trace2 = builtin.StackTrace{
+var trace2 = std.builtin.StackTrace{
     .instruction_addresses = address_buffer[4..],
     .index = 0,
 };
