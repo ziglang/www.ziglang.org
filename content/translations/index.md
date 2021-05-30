@@ -16,3 +16,4 @@ The original content is written in [English](/).
 - [Deutsch](../de/)
 - [Français](../fr/)
 - [한국어](../ko/)
+- [Español](../es/)
