@@ -559,20 +559,25 @@ Zig uses a "support tier" system to communicate the level of support for differe
 #### Tier 3 Support
 
 - The standard library has little to no knowledge of the existence of this target.
+- If this target is provided by LLVM, LLVM has the target enabled by default.
 - Because Zig is based on LLVM, it has the capability to build for these targets, and LLVM has the target enabled by default.
 - These targets are not frequently tested; one will likely need to contribute to Zig in order to build for these targets.
 - The Zig compiler might need to be updated with a few things such as
   - what sizes are the C integer types
   - C ABI calling convention for this target
-  - bootstrap code and default panic handler
+  - start code and default panic handler
 - zig targets is guaranteed to include this target.
 
 #### Tier 4 Support
 
 - Support for these targets is entirely experimental.
-- LLVM may have the target as an experimental target, which means that you need to use Zig-provided binaries for the target to be available, or build LLVM from source with special configure flags. zig targets will display the target if it is available.
+- If this target is provided by LLVM, LLVM may have the target as an experimental target,
+  which means that you need to use Zig-provided binaries for the target to be available,
+  or build LLVM from source with special configure flags. `zig targets` will display the
+  target if it is available.
 - This target may be considered deprecated by an official party, such as [macosx/i386](https://support.apple.com/en-us/HT208436) in which case this target will remain forever stuck in Tier 4.
-- This target may only support `--emit` asm and cannot emit object files.
+- This target may only support `-femit-asm` and cannot emit object files (`-fno-emit-bin`
+  enabled by default and cannot be overridden).
 
 ## Friendly toward package maintainers
 
