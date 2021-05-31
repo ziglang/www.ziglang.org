@@ -681,8 +681,26 @@ Contributors: Alexandros Naskos
     {#header_close#}
 
     {#header_open|macOS Support#}
-    <p>macOS development in the past 6 months has been tumultuous, with the major breaking changes
-    of Big Sur and the announcement of the upcoming aarch64 hardware.</p>
+    <p>With the advent of the {#link|Self-Hosted Linker#}, Zig is now able to generate
+    well-formed and codesigned binaries on arm64 macOS (aka the Apple Silicon).
+    It is also able to cross-compile C, C++, and Zig code to an arm64 and x86_64
+    macOS. Additionally, arm64 nightly binaries of Zig are automatically generated
+    by our Continuous Integration service, meaning both arm64 and x86_64 macOS are
+    now {#link|Tier 1|Tier 1 Support#} targets.
+    </p>
+    <p>
+    To facilitate incremental linking, the self-hosted compiler is now by default generating
+    <a href="https://opensource.apple.com/source/lldb/lldb-179.1/www/symbols.html"><code>dSYM</code> bundles</a> which store DWARF debug information and debug symbols on macOS.
+    This puts Zig on path of becoming a true replacement for the Xcode development environment.
+    </p>
+    <p>
+    Finally, as a side experiment, Jakub added in {#link|Test Coverage#} integration
+    with <a href="https://www.darlinghq.org/">Darling</a> (#8760), a translation layer of macOS
+    syscalls to Linux, with the intention of being able to cross test MachO binaries
+    and macOS specific tests directly on Linux simply by passing in an additional flag
+    <code>-Denable-darling</code> to <code>zig build test</code>.
+    </p>
+
     <p>TODO</p>
 SYSTEM_LINKER_HACK
     macos: avoid --export-dynamic when using system linker
@@ -691,6 +709,22 @@ SYSTEM_LINKER_HACK
    - headers now available for x86_64-macos-gnu and aarch64-macos-gnu
    - depend on bundled headers even for native. #6773
    - jakub & andrew
+    {#header_close#}
+
+    {#header_open|WebAssembly Support#}
+    <p>The {#link|Self-Hosted Compiler#} gained a work-in-progress
+    {#link|WebAssembly Backend#}, which provides the ability for Zig to
+    compile to wasm without {#link|LLVM|LLVM 12#}.</p>
+    <p>Zig now ships with {#link|WASI libc#} and supports cross-compiling
+    C code to WASI with Zig. This also makes Zig a tempting alternative to downloading and
+    building
+    <a href="https://github.com/webassembly/wasi-libc">WASI libc</a> and/or
+    <a href="https://github.com/webassembly/wasi-sdk">WASI SDK</a> manually (#8837).
+    </p>
+
+    TODO
+* wasm: fix object extension to standard .o from .o.wasm
+* wasm: build static archive unless -dynamic specified
     {#header_close#}
 
     {#header_open|Haiku Support#}
@@ -903,41 +937,162 @@ zir memory layout
     TODO
     {#header_close#}
 
-    {#header_open|Backend: x86-64#}
+    {#header_open|x86-64 Backend#}
     TODO
     {#header_close#}
 
-    {#header_open|Backend: AArch64#}
+    {#header_open|AArch64 Backend#}
+<p>The experimental self-hosted AArch64 (a.k.a. ARM64) backend is new in this version.
+Currently, the self-hosted compiler is able to generate binaries for Linux (ELF) and macOS
+(Mach-O, thanks to Jakub Konka). Currently, only a very small subset of the Zig language
+is supported.</p>
+    {#header_close#}
+
+    {#header_open|ARM Backend#}
+    <p>
+Bitwise operations on and multiplication of 32-bit integers were introduced. Furthermore, conditional branching (including while- and for-loops) is now possible. Additionally, the register allocation mechanism was overhauled, allowing for correct code generation in situations where registers are spilled.
+    </p>
+    {#header_close#}
+
+    {#header_open|LLVM Backend#}
     TODO
     {#header_close#}
 
-    {#header_open|Backend: ARM#}
+    {#header_open|WebAssembly Backend#}
+    <p>A lot of progress has been made with regards to the WebAssembly backend, both
+    architecturally and in terms of feature completeness.</p>
+
+    <p>During the self-hosted compiler meeting of
+    <a href="https://github.com/ziglang/zig/wiki/Self-Hosted-Compiler-Meetings#2020-12-10">2020-12-10</a>
+    we discussed on how to move forward with the architecture of the backends.
+    A proof of concept was done in <a href="https://github.com/ziglang/zig/pull/7321">#7321</a>
+    to merge it with the other backends. However, it was found to be counter intuitive and
+    ultimately decided upon to keep the wasm backend seperately.
+    </p>
+    <p>
+    Apart from this design decision, progress was made to bring up the wasm backend closer towards feature completeness:
+    </p>
+    <ul>
+        <li>Implement storing and loading of locals (<a href="https://github.com/ziglang/zig/pull/7726">#7726</a>)</li>
+        <li>Refactoring the wasm backend to streamline its implementation with the other backends. (<a href="https://github.com/ziglang/zig/pull/7797">#7797</a>)</li>
+        <li>Support for control flow such as while loops and if statements. (<a href="https://github.com/ziglang/zig/pull/7895">#7895</a>)</li>
+        <li>Importing and calling of extern functions. Allowing to call host functions from within Zig. (<a href="https://github.com/ziglang/zig/pull/7960">#7960</a>)</li>
+        <li>Unary operator '!' support. (<a href="https://github.com/ziglang/zig/pull/8339">#8339</a>)</li>
+        <li>Opcode builder and multiple binary operands implemented. (<a href="https://github.com/ziglang/zig/pull/8416">#8416</a>)</li>
+        <li>"Hello world" support (arrays and pointer to arrays). (<a href="https://github.com/ziglang/zig/pull/8439">#8439</a>)</li>
+        <li>Enums (<a href="https://github.com/ziglang/zig/pull/8789">#8789</a>)</li>
+        <li>Initial implementation of structs and switches. (<a href="https://github.com/ziglang/zig/pull/8847">#8847</a>)</li>
+        <li>Support for error sets and error unions. (<a href="https://github.com/ziglang/zig/pull/8923">#8923</a>)</li>
+    </ul>
+    <p>Contributors: Gracefuu, Isaac Freund, Luuk de Gram</p>
+
+    {#header_close#}
+
+    {#header_open|RISC-V 64 Backend#}
     TODO
     {#header_close#}
 
-    {#header_open|Backend: LLVM#}
+    {#header_open|C Backend#}
     TODO
     {#header_close#}
 
-    {#header_open|Backend: WebAssembly#}
+    {#header_open|SPIR-V Backend#}
     TODO
     {#header_close#}
 
-    {#header_open|Backend: SPU Mark II#}
-    TODO
+    {#header_open|SPU Mark II Backend#}
+    <p>This backend, related to the <a href="https://ashet.computer/">Ashet Home Computer</a>
+    project, was incomplete, and the maintainer stopped working on it. Since it never made it
+    to a usable state, this backend is removed in 0.8.0.</p>
+    <p>
+    The code is still safely stored in the Git history, and anyone is welcome to revive it!
+    </p>
+    {#header_close#}
     {#header_close#}
 
-    {#header_open|Backend: RISC-V 64#}
-    TODO
-    {#header_close#}
+    {#header_open|Self-Hosted Linker#}
+    <p>As you may know from our previous releases, we had immense problems with
+    <code>ld64.lld</code> linker on macOS - it is subpar in functionality to other target
+    formats (Elf, Coff, etc.) and it does not support the latest arm64-based Macs
+    (see #7527 or #3295 for some of the issues we encountered). While there has been
+    progress on the new lld's MachO backend dubbed <code>ld64.lld.darwinnew</code>,
+    it is still not the default backend as of {#link|LLVM 12#}. Additionally, it is
+    doubtful that the new backend will allow for seamless cross-compilation to macOS
+    since every macOS binary is required to be a PIE and link dynamically against
+    <code>libSystem</code> dylib, which will require the lib's presence on the host
+    for the lld to reference and link against.</p>
 
-    {#header_open|Backend: C#}
-    TODO
-    {#header_close#}
+    <p>These were enough to make
+    <a href="https://github.com/ziglang/zig/issues/1535">a case for building our own linker, written entirely in Zig</a>,
+    which would initially focus on MachO linking. Since our core team member,
+    Jakub, has already been working on the stage2 MachO backend before,
+    he decided to try his luck at writing a traditional MachO linker in Zig from scratch
+    which he started towards the end of January 2021. Fast forward a couple of months,
+    and since May 2021, we are incredibly happy to report it is used as our primary
+    linker when targeting macOS and is successfully able to link the stage1 Zig compiler
+    as part of the <a href="https://github.com/ziglang/zig-bootstrap">zig-bootstrap</a>
+    effort (see
+    <a href="https://github.com/ziglang/zig-bootstrap/issues/38">ziglang/zig-bootstrap#38</a> and
+    <a href="https://github.com/ziglang/zig-bootstrap/issues/44">ziglang/zig-bootstrap#44</a>).
+    </p>
 
-    {#header_open|Backend: SPIR-V#}
-    TODO
-    {#header_close#}
+    <p>This means Zig can be used to successfully cross-compile C/C++ (clang) and Zig
+    to macOS from anywhere!</p>
+
+    <p>In summary, cross-compiling C/C++ and Zig to macOS is now as trivial as adding
+    <code>-target aarch64-macos</code> or <code>-target x86_64-macos</code> to the invocation
+    of your chosen Zig tool ({#link|zig cc#}, {#link|zig c++#}, or <code>zig build-exe</code>).
+    There are still bits of functionality that are missing such as the ability to create a
+    dynamic library or
+    <a href="https://github.com/ziglang/zig/issues/8935">linking against text-based definitions (<code>.tbd</code>s)</a>
+    but Jakub plans to address these next.</p>
+
+    <p>In celebration of Jakub's recent accomplishments of improving the self-hosted linker
+    on Mach-O enough to be able to link LLVM, Clang, LLD, and Zig, we now have the tracking issue
+    <a href="https://github.com/ziglang/zig/issues/8726">Completely Eliminate Dependency on LLD</a>
+    with the goal of eventually completely relying on our own linker implementation for all
+    targets, and entirely stop linking against LLD.
+    </p>
+    <p>This issue does not block the release of Zig 1.0, however it is a stretch goal, and a
+    fun indicator of progress to keep track of along the way.</p>
+    <p>Here are all the places we depend on LLD, along with an indicator of how much our
+    own linker code can do:</p>
+    <ul>
+      <li>🟡 ELF:<ul>
+          <li>🟡 x86, x86_64</li>
+          <li>🟡 arm, aarch64</li>
+          <li>🟡 riscv</li>
+          <li>🔴 hexagon</li>
+          <li>🔴 mips</li>
+          <li>🔴 ppc, ppc32</li>
+          <li>🔴 sparc</li>
+          <li>🔴 amdgpu</li>
+          <li>🔴 avr</li>
+          <li>🔴 msp430</li>
+        </ul></li>
+      <li>🟢 Mach-O<ul>
+          <li>🟢 x86_64</li>
+          <li>🟢 aarch64</li>
+        </ul></li>
+      <li>🟡 COFF/PE<ul>
+          <li>🟡 x86, x86_64</li>
+          <li>🔴 arm, aarch64</li>
+        </ul></li>
+      <li>🟡 WASM</li>
+    </ul>
+    <p>Key:</p>
+    <ul>
+      <li>🟢 major progress</li>
+      <li>🟡 some progress</li>
+      <li>🔴 no progress</li>
+    </ul>
+    <p>
+    Another issue to note here is that this release does <em>not</em> include a drop-in
+    linker sub-command, e.g. <code>zig ld</code>. At this time Zig is lacking the glue
+    code to hook up the Command-Line Interface to the linker implementation.
+    If you are interested in this use case, the tracking issue is
+    <a href="https://github.com/ziglang/zig/issues/8755">zig ld: a drop-in linker replacement</a>.
+    </p>
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -985,7 +1140,15 @@ the std.testing change
 
     Add 'u' specifier to std.format
 
+    start code: export main with strong linkage
+
 <p>Contributors: Adam Goertz, Aiz672, Al Hoang, Alex Cameron, Alexandros Naskos, Anders Conbere, Andreas Karlsson, Andreas Linz, Andrew Kelley, Aransentin, Asherah Connor, Benjamin Feng, Benjamin Graf, Bill Nagel, BinaryWarlock, Bxil, Cameron Conn, Carlos Zúñiga, Daniele Cocca, Devin Bayer, Dmitry Atamanov, Edward Dean, Ethan Gruffudd, Evan Haas, Felix (xq) Queißner, Frank Denis, Guillaume Ballet, Hadron67, Hannu Hartikainen, Hubert Jasudowicz, Isaac Freund, Isaac Yonemoto, J.C. Moyer, Jakub Konka, Jay Petacat, Jens Goldberg, Jonathan Knezek, Jonathan Marler, Joran Dirk Greef, Joris Hartog, Josh Holland, Josh Wolfe, Julian Maingot, Julius Putra Tanu Setiaji, Kenta Iwasaki, Koakuma, Lee Cannon, LemonBoy, Lewis Gaul, Loris Cro, Luna, Luuk de Gram, Maciej Walczak, Mahdi Khanalizadeh, Manuel Floruß, Martin Wickham, Mathieu Guay-Paquet, Matt Knight, Matt Sicker, Matthew Borkowski, Meghan, Meghan Denny, Michael Dusan, Michael Freundorfer, Michael Holmes, Miles Alan, Nathanaël Courant, Nuno Leiria, Rageoholic, Robin Voetter, Rocknest, Rohlem, Ryan Greenblatt, Ryan Liptak, Sage Hane, Sahnvour, Shachaf Ben-Kiki, Sobeston, Sreehari S, Sébastien Marie, Tadeo Kondrak, Tau, Timon Kruiper, Travis, Veikka Tuominen, Vincent Rischmann, Yorhel, Zander Khan, ZapAnton, aiz, antlilja, breakin, christian-stephen, cryptocode, data-man, daurnimator, ducdetronquito, fancl20, frmdstryr, g-w1, gracefu, heidezomp, johnLate, jumpnbrownweasel, lithdew, luna, mason1920, rgreenblatt, root, ryuukk, tgschultz, viri, xackus, Žiga Željko</p>
+
+    {#header_close#}
+
+    {#header_open|Zig Build System#}
+* build: allow specifying rpaths explicitly (#8912)
+    TODO
 
     {#header_close#}
 
@@ -1034,6 +1197,10 @@ TODO tooling:
     This release updates the bundled mingw-w64 source code to
     <a href="https://sourceforge.net/p/mingw-w64/mailman/message/37287751/">v9.0.0</a>.
     </p>
+    {#header_close#}
+
+    {#header_open|WASI libc#}
+    TODO
     {#header_close#}
 
     {#header_open|zig ar#}
