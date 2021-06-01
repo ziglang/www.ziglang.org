@@ -253,12 +253,12 @@
       <li><a href="https://github.com/alexnask">Alexandros Naskos</a></li>
     </ul>
     <p>
+    Please consider <a href="/zsf/">donating to the ZSF</a> to help us pay even more contributors!
+    </p>
+    <p>
     This release features <strong>7 months of work</strong> and
     changes from <strong>144 different contributors</strong>, spread among
     <strong>2711 commits</strong>.
-    </p>
-    <p>
-    Please consider <a href="/zsf/">donating to the ZSF</a> to help us pay even more contributors!
     </p>
     {#header_open|Table of Contents#}
     {#nav#}
@@ -972,8 +972,7 @@ SYSTEM_LINKER_HACK
     he has been single-handedly keeping us afloat while we work towards finishing the
     {#link|Self-Hosted Compiler#}.
     </p>
-    <p>Contributors: Al Hoang, Alexandros Naskos, Andrew Kelley, Isaac Freund, Jakub Konka, Jay Petacat, Josh Wolfe, Koakuma, Lee Cannon, LemonBoy, Mathieu Guay-Paquet, Matthew Knight, Michael Dusan, Nathan Michaels, Sizhe Zhao, Sreehari S, Tadeo Kondrak, Timon Kruiper, Veikka Tuominen, Woze Parrot, frmdstryr, g-w1, lars, pfg, xackus</p>
-
+    <p>Contributors: LemonBoy, Andrew Kelley, Koakuma, Veikka Tuominen, Tadeo Kondrak, Michael Dusan, Jakub Konka, frmdstryr, Mathieu Guay-Paquet, Sreehari S, Al Hoang, Alexandros Naskos, Isaac Freund, Jay Petacat, Josh Wolfe, Lee Cannon, Matthew Knight, Nathan Michaels, Sizhe Zhao, Timon Kruiper, Woze Parrot, g-w1, lars, pfg, xackus</p>
     {#header_open|LLVM 12#}
     <p>
     This release of Zig upgrades to
@@ -1256,6 +1255,94 @@ Bitwise operations on and multiplication of 32-bit integers were introduced. Fur
     If you are interested in this use case, the tracking issue is
     <a href="https://github.com/ziglang/zig/issues/8755">zig ld: a drop-in linker replacement</a>.
     </p>
+    {#header_close#}
+
+    {#header_open|C Translation#}
+    <p>This is the feature that powers both <code>zig translate-c</code> as well as
+    {#syntax#}@cImport{#endsyntax#} syntax. It is implemented in the {#link|Self-Hosted Compiler#},
+    using the libclang C++ API.</p>
+    <p>
+    This release cycle saw a prolific new contributor to this area of the code - Evan Haas.
+    Not only did he contribute many improvements to C translation this cycle, but his company,
+    <a href="https://www.lagerdata.com/">Lager Data</a>, sponsors Zig. What a guy!
+    </p>
+    <p>
+    Vexu implemented a major simplification of the implementation of translate-c by
+    <a href="https://github.com/ziglang/zig/issues/6710">introducing a new pseudo-ast data structure</a>.
+    Instead of the code having to manage both AST nodes and tokens at once, in order to render
+    the output Zig code, now the C translation code only must create pesudo-AST nodes, which are
+    then lowered to tokens at the end. This made the code easier to maintain and contribute to,
+    and greatly simplified the {#link|Reworked Memory Layout#} efforts that happened simultaneously
+    in the {#link|Self-Hosted-Compiler#}.
+    </p>
+    <p>Miscellaneous improvements:</p>
+    <ul>
+      <li>Added support for translating FnDecl's that appear within functions.</li>
+      <li>Added support for __cleanup__ attribute, using a {#syntax#}defer{#endsyntax#} statement to implement the C __cleanup__ attribute.</li>
+      <li>Demote initialization of opaque types. Fixes a segfault in translate-c that would previously occur when initializing structs with unnamed bitfields.</li>
+      <li>Added support for translating global (file scope) assembly.</li>
+      <li>Fixed typedefs with multiple names.</li>
+      <li>Fixed casting of function pointers.</li>
+      <li>Group field access LHS if necessary and LHS of array access if necessary.</li>
+      <li>Better handling of int to enum casts (#6011).</li>
+      <li>Wrap switch statements in a {#syntax#}while (true){#endsyntax#} loop. This allows {#syntax#}break{#endsyntax#} statements to be directly translated from the original C (#8387).</li>
+      <li>Added support for vector expressions, including vector types, __builtin_shufflevector, and __builtin_convertvector.</li>
+      <li>Fix calls with no args in macros.</li>
+      <li>intcast compound assignment operand if different-sized integer.</li>
+      <li>Stop creating unnamed decls for typedefs child types.</li>
+      <li>Ensure assignments are within a block when necessary (#8159).</li>
+      <li>Preserve zero fractional part in float literals.</li>
+      <li>Use {#syntax#}[N:0]{#endsyntax#} arrays when initializer is a string literal (#8264, #8215).</li>
+      <li>Demoted usage of un-implemented builtins.</li>
+      <li>Implemented generic selection expressions. Enables translation of C code that uses the <code>_Generic</code> keyword.</li>
+      <li>Added compound literal support.</li>
+      <li>Explicitly cast decayed array to pointer with {#syntax#}@ptrCast{#endsyntax#}. This enables translation of code that uses pointer arithmetic with arrays.</li>
+      <li>Support compound assignment of pointer and signed int.</li>
+      <li>Translate align attribute for block scoped variables.</li>
+      <li>Strip the leading zero from octal literals.</li>
+      <li>Enable pointer arithmetic with signed integer operand.</li>
+      <li>Added &lt;assert.h&gt; support.</li>
+      <li>Added limited OffsetOfExpr support.</li>
+      <li>Added typeof support.</li>
+      <li>Added support for pointer subtraction (#7216).</li>
+      <li>Check for noreturn in switch in more cases.</li>
+      <li>Made switch default have an empty block not break.</li>
+      <li>Use global scope for typedef/record/enum type translation if needed.</li>
+      <li>Correctly add semicolon to if statements.</li>
+      <li>Ensure failed macros don't get defined multiple times.</li>
+      <li>Improved switch translation.</li>
+      <li>Support scoped typedef, enum and record decls (#5256).</li>
+      <li>Demote untranslatable declarations to externs.</li>
+      <li>Elide some unecessary casts of literals.</li>
+      <li>Made comma operator introduce a new scope, preventing inadvertent side-effects when an expression is not evaluated due to boolean short-circuiting (#7989).</li>
+      <li>Call {#syntax#}@boolToInt{#endsyntax#} on return value when necessary (#6215).</li>
+      <li>Improve function pointer handling (#4124).</li>
+      <li>Added wide string literal support.</li>
+      <li>Fixed bug when rendering struct initializer with length 1.</li>
+      <li>Improved array support (#4831, #7832, #7842).</li>
+      <li>Added Wide, UTF-16, and UTF-32 character literals.</li>
+      <li>Ensure bools are cast to int when necessary.</li>
+      <li>Allow dollar sign $ in identifiers (#7585).</li>
+      <li>Static function declarations with no prototype should not be variadic (#7594).</li>
+      <li>Demote variadic functions to declarations.</li>
+      <li>Correctly cast bool to signed int.</li>
+      <li>Improve handling of C compiler intrinsics (#6707).</li>
+      <li>Detect parenthesized string literals.</li>
+      <li>Support casting enums to all int types.</li>
+    </ul>
+    <p>
+    Here's a fun example, translating one of the many files of DOOM to Zig, and then compiling
+    the resulting Zig code into an object:
+    </p>
+    <pre>andy@ark ~/D/D/linuxdoom-1.10 (master)&gt; zig translate-c -lc m_cheat.c &gt;m_cheat.zig
+andy@ark ~/D/D/linuxdoom-1.10 (master)&gt; zig build-obj m_cheat.zig
+andy@ark ~/D/D/linuxdoom-1.10 (master)&gt; file m_cheat.o
+m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info, not stripped</pre>
+    <p>
+    This is one of the smaller C files; I ran into quite a few opportunities
+    for more C translation improvements when looking for this example!
+    </p>
+    <p>Contributors: Evan Haas, Veikka Tuominen (Vexu), xackus, Andrew Kelley, LemonBoy, Isaac Freund, Michael Dusan, Tadeo Kondrak, Timon Kruiper</p>
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1699,7 +1786,7 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     <p>ISAPv2 is not fast, but can be an option for highly sensitive data, when the runtime environment cannot be trusted.</p>
     {#header_close#}
 
-    {#header_open|hash-to-curve#}
+    {#header_open|Hash-To-Curve#}
     <p>Is there a way to map an arbitrary string into an elliptic curve point, so that the discrete log is not known?</p>
 
     <p>While more and more protocols require such a function, there was no standard way to do it until the <a href="https://datatracker.ietf.org/doc/draft-irtf-cfrg-hash-to-curve/">hash-to-curve</a> specification came out.</p>
@@ -1707,7 +1794,7 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     <p>This release adds <code>crypto.ecc.Edwards25519.fromString()</code>, implementing the suites defined in the specification for the Edwards25519 curve.</p>
     {#header_close#}
 
-    {#header_open|double-base scalar multiplication#}
+    {#header_open|Double-Base Scalar Multiplication#}
     <p>Signatures systems over elliptic curves frequently require computing Px+Qy, with P and Q being different points on the same curve.</p>
 
     <p>And a specialized function can be much faster than computing both multiplications separately.</p>
@@ -1726,37 +1813,40 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
 
     <p>We took the approach of contributing a Zig backend to <a href="https://github.com/mit-plv/fiat-crypto">fiat-crypto</a>, a project to generate arithmetic that has been formally proven for correctness.</p>
 
-    <p>The output of that tool is the core of our P-256 implementation, making Zig the first general-purpose language with formally verified cryptography right in the standard library. Support for other curves will be done the same way.</p>
+    <p>The output of that tool is the core of our P-256 implementation,
+    <strong>making Zig the first general-purpose language with formally verified cryptography
+      right in the standard library</strong>. Support for other curves will be done the same way.</p>
 
-    <p>Please note however, that verification stops at source-level, and doesn't protect against possible compiler bugs.</p>
+    <p>Please note however, that verification stops at source-level, and doesn't protect
+    against possible {#link|compiler bugs|This Release Contains Bugs#}.</p>
     {#header_close#}
 
-    {#header_open|Constant-time comparisons#}
+    {#header_open|Constant-Time Comparisons#}
     <p>A new function was added to compare (not just for equality) byte strings: <code>crypto.utils.timingSafeCompare()</code>.</p>
 
     <p>It is useful to compare arbitrary-large nonces, counters or serialized field elements.</p>
     {#header_close#}
 
-    {#header_open|Round-reduced ChaCha20#}
+    {#header_open|Round-Reduced ChaCha20#}
     <p>Round-reduced versions (8 and 12 rounds) of the ChaCha20-based ciphers have been added. This includes the ChaCha20 stream cipher itself, as well as the ChaCha20-Poly1305 construction.</p>
 
     <p>8 rounds ChaCha20 provides a 2.5x speedup over the standard 20 rounds version, <a href="https://eprint.iacr.org/2019/1492.pdf">and is still believed to have a safe security margin</a>.</p>
     {#header_close#}
 
-    {#header_open|Breaking changes#}
+    {#header_open|Breaking Changes#}
     <ul>
       <li>Edwards25519: <code>neutralElement</code> was deprecated. New code should use <code>identityElement</code> instead.</li>
       <li>Errors have been made more consistent across <code>std.crypto</code> functions. They now all share the same <code>std.crypto.Error</code> errors set.</li>
     </ul>
     {#header_close#}
 
-    {#header_open|Performance improvements#}
+    {#header_open|Performance Improvements#}
     <ul>
       <li>Ed25519 signature verification is about 60% faster than in Zig 0.7.1.</li>
     </ul>
     {#header_close#}
 
-    {#header_open|Bug fixes#}
+    {#header_open|Crypto Bug Fixes#}
     <ul>
       <li>AES: <code>{encrypt,decrypt}Wide()</code> functions performed more rounds than necessary. This has been fixed.</li>
       <li>BLAKE2: properly handle output sizes that are not a multiple of 8.</li>
@@ -1999,6 +2089,10 @@ LemonBoy -std: Make C allocator respect the required alignment
     {#header_close#}
 
     {#header_open|Please Welcome kprotty to the Core Zig Team#}
+    <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|LemonBoy Gains LLVM Write Access#}
     <p>TODO</p>
     {#header_close#}
 
