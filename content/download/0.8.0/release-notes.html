@@ -340,7 +340,11 @@
             <li><a id="toc-mingw-w64-900" href="#mingw-w64-900">mingw-w64 9.0.0</a></li>
             <li><a id="toc-WASI-libc" href="#WASI-libc">WASI libc</a></li>
             <li><a id="toc-zig-ar" href="#zig-ar">zig ar</a></li>
-            <li><a id="toc-zig-cc" href="#zig-cc">zig cc</a></li>
+            <li><a id="toc-zig-cc" href="#zig-cc">zig cc</a>
+            <ul>
+                <li><a id="toc-Environment-Variable-Alternatives-to-CLI-Options" href="#Environment-Variable-Alternatives-to-CLI-Options">Environment Variable Alternatives to CLI Options</a></li>
+                <li><a id="toc-Improved-Local-Cache-Directory-Logic" href="#Improved-Local-Cache-Directory-Logic">Improved Local Cache Directory Logic</a></li>
+            </ul></li>
             <li><a id="toc-zig-c" href="#zig-c">zig c++</a></li>
         </ul></li>
         <li><a id="toc-Bug-Fixes" href="#Bug-Fixes">Bug Fixes</a>
@@ -2209,12 +2213,125 @@ TODO tooling:
 
     <h2 id="zig-cc"><a href="#toc-zig-cc">zig cc</a> <a class="hdr" href="#zig-cc">§</a></h2>
 
-    TODO
+    <p>
+    Zig now automatically uses a thread pool to compile C objects in parallel. For users
+    with multiple CPU cores this will make a huge difference in how long it takes to
+    compile C and C++ objects.
+    </p>
+    <p>
+    <code>zig cc</code> is covered by the Bug Stability Program. This means that, even
+    prior to Zig 1.0, we will not tag a release with any known regressions in <code>zig cc</code>.
+    Some caveats: this applies to only the Zig codebase; we cannot promise that
+    <a href="#LLVM-12">Clang</a> will not regress.
+    </p>
+    <p>
+    Also please be aware that there are
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3A%22zig+cc%22">open zig cc issues</a>,
+    but these are things that never worked in the first place, making them
+    <em>bugs</em> and <em>enhancements</em>, not regressions.
+    </p>
+    <p>
+    Apart from parallelization, mainly the improvements in this release are polish
+    and bug fixes, bringing us materially closer to the "it just works" user experience:
+    </p>
+    <ul>
+      <li>Made <code>zig cc</code> print more info from Clang itself and from our own linker
+      invocation. This is needed for CMake to properly discover all the include directories
+      and library search paths (#7110, #7166).</li>
+      <li>Made SONAME off by default when using <code>zig cc</code> to match C compilers.
+        <code>zig build-lib -dynamic</code> still defaults SONAME to on.</li>
+      <li>Default to a.exe on Windows, matching Clang.</li>
+      <li>Support both ubsan and tsan at the same time.</li>
+      <li>Support reading input from stdin, fixing use of <code>zig cc</code> with meson (#6271.</li>
+      <li>Recognize more coff linker options (#7874).</li>
+      <li>Recognize the <code>-s</code> flag to be "strip".</li>
+      <li>Fixed handling of <code>-MM</code> flag, as well as <code>-MG</code>,
+        <code>-MM</code>, and <code>-MMD</code> aliases.</li>
+      <li>Copy .pdb files from zig-cache/ when appropriate (#8407).</li>
+      <li>Properly pass -mcpu option when assembling.</li>
+      <li>Expose header files when linking libunwind.</li>
+    </ul>
+
+    <h3 id="Environment-Variable-Alternatives-to-CLI-Options"><a href="#toc-Environment-Variable-Alternatives-to-CLI-Options">Environment Variable Alternatives to CLI Options</a> <a class="hdr" href="#Environment-Variable-Alternatives-to-CLI-Options">§</a></h3>
+
+    <p>This release adds:</p>
+    <ul>
+      <li><code>ZIG_LOCAL_CACHE_DIR</code> corresponding to <code>--cache-dir</code></li>
+      <li><code>ZIG_GLOBAL_CACHE_DIR</code> corresponding to <code>--global-cache-dir</code></li>
+      <li><code>ZIG_LIB_DIR</code> corresponding to <code>--override-lib-dir</code></li>
+      <li><code>ZIG_VERBOSE_LINK</code> corresponding to <code>--verbose-link</code></li>
+      <li><code>ZIG_VERBOSE_CC</code> corresponding to <code>--verbose-cc</code></li>
+    </ul>
+    <p>
+    Generally the CLI options that Zig provides are preferable to using environment variables,
+    however, when using <code>zig cc</code>, we are bound by Clang's CLI options and
+    therefore need alternate channels to pass these configuration options.
+    </p>
+    
+
+    <h3 id="Improved-Local-Cache-Directory-Logic"><a href="#toc-Improved-Local-Cache-Directory-Logic">Improved Local Cache Directory Logic</a> <a class="hdr" href="#Improved-Local-Cache-Directory-Logic">§</a></h3>
+
+    <p>
+    Previously, when choosing the local cache directory, if there was no
+    root source file, an explicitly chosen path, or other clues, zig would
+    choose cwd + zig-cache/ as the local cache directory.
+    </p>
+    <p>
+    This can be problematic if Zig is invoked with the CWD set to a
+    read-only directory, or a directory unrelated to the actual source files
+    being compiled. In the real world, we see this when using <code>zig cc</code> with
+    CGo, which for some reason changes the current working directory to the
+    read-only go standard library path before running the C compiler.
+    </p>
+    <p>
+    This change conservatively chooses to use the global cache directory
+    as the local cache directory when there is no other reasonable choice,
+    and no longer will rely on the cwd path to choose a local cache directory.
+    </p>
+    <p>
+    As a reminder, the <code>--cache-dir</code> CLI flag and <code>ZIG_LOCAL_CACHE_DIR</code>
+    environment variable are available for overriding the decision. For the
+    zig build system, it will always choose the directory that build.zig is + zig-cache/.
+    </p>
+    <p>
+    With this, plus a commit that landed in Go 1.17,
+    <a href="https://dev.to/kristoff/zig-makes-go-cross-compilation-just-work-29ho">Zig Makes Go Cross Compilation Just Work</a>.
+    </p>
+    <p>
+    Another user saw this and noticed that additionally,
+    <a href="https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work/">Zig Makes Rust Cross-compilation Just Work</a>.
+    </p>
+    
+    <p>
+    Contributors: Andrew Kelley, Jakub Konka, LemonBoy, Rafael Ristovski, g-w1
+    </p>
     
 
     <h2 id="zig-c"><a href="#toc-zig-c">zig c++</a> <a class="hdr" href="#zig-c">§</a></h2>
 
-    TODO
+    <p>
+    <code>zig c++</code> is equivalent to <a href="#zig-cc">zig cc</a> with an added <code>-lc++</code>
+    parameter, but I made a separate heading here because I realized that some people are
+    not aware that Zig supports compiling C++ code and providing libc++ too!
+    </p>
+    <pre><code>#include &lt;iostream&gt;
+int main() {
+    std::cout &lt;&lt; "Hello World!" &lt;&lt; std::endl;
+    return 0;
+}</code></pre>
+    <pre>$ zig c++ -o hello hello.cpp
+$ ./hello
+Hello World!</pre>
+    <p>Cross-compiling too, of course:</p>
+    <pre>$ zig c++ -o hello hello.cpp -target riscv64-linux
+$ qemu-riscv64 ./hello
+Hello World!</pre>
+    <p>
+    One thing that trips people up when they use this feature is that the
+    <strong>C++ ABI is not stable across compilers</strong>, so always remember the rule:
+    You must use the same C++ compiler to compile <em>all</em> your objects and static libraries.
+    This is an unfortunate limitation of C++ which Zig can never fix.
+    </p>
     
     
 
@@ -2372,3 +2489,31 @@ Date:   Sun Nov 22 17:30:34 2020 -0700
  TODO do a diff on the test matrix
 
  TODO allow tests to fail
+
+
+commit 0d4b6ac7417d1094ac972981b0241444ce2380ba
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Jan 22 23:36:30 2021 -0700
+
+    add LTO support
+    
+    The CLI gains -flto and -fno-lto options to override the default.
+    However, the cool thing about this is that the defaults are great! In
+    general when you use build-exe in release mode, Zig will enable LTO if
+    it would work and it would help.
+    
+    zig cc supports detecting and honoring the -flto and -fno-lto flags as
+    well. The linkWithLld functions are improved to all be the same with
+    regards to copying the artifact instead of trying to pass single objects
+    through LLD with -r. There is possibly a future improvement here as
+    well; see the respective TODOs.
+    
+    stage1 is updated to support outputting LLVM bitcode instead of machine
+    code when lto is enabled. This allows LLVM to optimize across the Zig and
+    C/C++ code boundary.
+    
+    closes #2845
+
+
+
+TODO change g-w1 to Jacob G-W
