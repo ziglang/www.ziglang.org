@@ -275,7 +275,10 @@
                 <li><a id="toc-Tier-3-Support" href="#Tier-3-Support">Tier 3 Support</a></li>
                 <li><a id="toc-Tier-4-Support" href="#Tier-4-Support">Tier 4 Support</a></li>
             </ul></li>
-            <li><a id="toc-Windows-Support" href="#Windows-Support">Windows Support</a></li>
+            <li><a id="toc-Windows-Support" href="#Windows-Support">Windows Support</a>
+            <ul>
+                <li><a id="toc-No-MSVC-Dependency-by-Default" href="#No-MSVC-Dependency-by-Default">No MSVC Dependency by Default</a></li>
+            </ul></li>
             <li><a id="toc-macOS-Support" href="#macOS-Support">macOS Support</a></li>
             <li><a id="toc-WebAssembly-Support" href="#WebAssembly-Support">WebAssembly Support</a></li>
             <li><a id="toc-Haiku-Support" href="#Haiku-Support">Haiku Support</a></li>
@@ -854,11 +857,48 @@
 
     <h2 id="Windows-Support"><a href="#toc-Windows-Support">Windows Support</a> <a class="hdr" href="#Windows-Support">§</a></h2>
 
-    Windows TLS startup symbols are already provided by libcrt when linking against libc
+    <p>Improvements to the <a href="#Standard-Library">Standard Library</a>:</p>
+    <ul>
+      <li>Avoid redundantly providing Windows TLS startup symbols when linking libc
+          because they are already provided by libcrt.</li>
+      <li>Add <code>timeval</code> extern struct.</li>
+      <li>Made sure to handle PATH_NOT_FOUND when deleting files (#7879).</li>
+      <li>Made windows.ReadFile allow short reads (#7121).</li>
+      <li>Implement chdir and chdirZ for Windows.</li>
+      <li>Fixed WindowsDynLib.openW trying to strip the \??\ prefix when it does not exist.</li>
+      <li>Only check for evented mode in windows.OpenFile when in async mode.</li>
+      <li>Introduced os.windows.QueryObjectName</li>
+      <li>os.windows.GetFinalPathNameByHandle: add test</li>
+      <li>Define nfds_t for windows.</li>
+      <li>os.windows.user32.messageBoxW.</li>
+      <li>os/windows/ws2_32: add missing FIONBIO constant.</li>
+      <li>Fixed and add os.windows.user32 WM constants.</li>
+      <li>Implemented nt path conversion for windows. Fixes <code>.</code> and <code>..</code>
+        not working in <code class="zig">std.fs</code> paths.</li>
+      <li>Switched to using unicode when parsing the command line on windows (#7241).</li>
+    </ul>
+    <h3 id="No-MSVC-Dependency-by-Default"><a href="#toc-No-MSVC-Dependency-by-Default">No MSVC Dependency by Default</a> <a class="hdr" href="#No-MSVC-Dependency-by-Default">§</a></h3>
 
-    make "gnu" (mingw-w64) the default C ABI on Windows Closes #6565
-
-Contributors: Alexandros Naskos, Andrew Kelley
+    <p>Since Zig ships with <a href="#mingw-w64-900">MinGW-w64</a>, Zig can be used to
+    compile C and C++ code on Windows without having MSVC installed.
+    However, before this release, it was not obvious how to take advantage of this feature,
+    since the default behavior was to integrate with MSVC.
+    </p>
+    <p>
+    In this release, the default behavior is to ignore MSVC and do everything based only
+    on the Zig installation. This makes using Zig to compile C and C++ code on
+    Windows an "it just works" experience.
+    </p>
+    <p>
+    MSVC integration can be achieved by using <code>-target native-native-msvc</code>.
+    Note that mingw-w64 is ABI-compatible with MSVC, so any build artifacts produced by one
+    are consumable by the other. However the respective C header files are not always
+    API-compatible, which is why there is still a use case for overriding the default.
+    </p>
+    <p>
+    Tracking issue: #6565
+    </p>
+    
     
 
     <h2 id="macOS-Support"><a href="#toc-macOS-Support">macOS Support</a> <a class="hdr" href="#macOS-Support">§</a></h2>
@@ -882,15 +922,18 @@ Contributors: Alexandros Naskos, Andrew Kelley
     and macOS specific tests directly on Linux simply by passing in an additional flag
     <code>-Denable-darling</code> to <code>zig build test</code>.
     </p>
-
-    <p>TODO</p>
-SYSTEM_LINKER_HACK
-    macos: avoid --export-dynamic when using system linker
-
- * fetch-them-macos-headers #7035
-   - headers now available for x86_64-macos-gnu and aarch64-macos-gnu
-   - depend on bundled headers even for native. #6773
-   - jakub & andrew
+    <p>
+    In 0.8.0, Zig provides libc header files for macOS, for both
+    <code>x86_64-macos</code> and <code>aarch64-macos</code>, using the experimental
+    <a href="https://github.com/ziglang/fetch-them-macos-headers">fetch-them-macos-headers</a>
+    project. There is a myth that Apple's C header files have an encumbered license, but that is not
+    the case. They are licensed under the
+    <a href="https://spdx.org/licenses/APSL-1.1.html">Apple Public Source License</a>
+    which is in fact quite permissive.</p>
+    <p>Zig 0.8.0 will rely on these headers even when compiling natively, as long as there
+    are no system dependencies. <strong>This makes Zig able to compile C and C++ code
+    on macOS without XCode installed</strong> (#6773).</p>
+    <p>Additionally, OS version detection for macOS has been re-implemented.</p>
     
 
     <h2 id="WebAssembly-Support"><a href="#toc-WebAssembly-Support">WebAssembly Support</a> <a class="hdr" href="#WebAssembly-Support">§</a></h2>
@@ -1766,7 +1809,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>fix Boyer-Moore-Horspool algorithm in indexOfPos and lastIndexOf when element type is larger than a byte</li>
     <li>fix accidental quadratic dependence on haystack length in replace and replacementSize (#8859)</li>
     <li>Const correct GUID parameter of getInfo and setInfo</li>
-    <li>implement nt path conversion for windows</li>
     <li>os: WSAStartup is now called upon socket creation when needed</li>
     <li>Make atfork handler more robust (#8841).</li>
     <li>Call pthread_atfork only once</li>
@@ -1775,7 +1817,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>add missing EBADF error code for openat</li>
     <li>Avoid using white color when printing stacktraces. Use .bold instead of .white, the effect is the same for light-on-dark terminals but greatly improves the readability for dark-on-light ones (#8761).</li>
     <li>dragonfly: fix duplicate definition of sockaddr_storage</li>
-    <li>fix & add os.windows.user32 WM constants</li>
     <li>rework math.scalbn (#8733)</li>
     <li>hash_map: use 7 bits of metadata instead of 6</li>
     <li>compiler-rt: Fix signedness mismatch in f128 mul impl</li>
@@ -1794,13 +1835,11 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Prefer 64bit libc functions where possible</li>
     <li>os: add missing sockaddr_storage defs</li>
     <li>os: fix sockaddr_storage padding size</li>
-    <li>os/windows/ws2_32: add missing FIONBIO constant</li>
     <li>ArrayHashMap: ensureUnusedCapacity and ensureTotalCapacity</li>
     <li>ArrayList: add clearRetainingCapacity and clearAndFree</li>
     <li>Implement hex float printing</li>
     <li>compiler-rt: Better selection of __clzsi implementation</li>
     <li>Accept unaligned slice in several ArrayListAligned ops. Do not impose the internal alignment requirements to the user-supplied parameters (#8647).</li>
-    <li>os/bits/windows: add `timeval` extern struct</li>
     <li>GeneralPurposeAllocator: print leaked memory addresses. This helps when using it with other tools, such as memory watchpoints.</li>
     <li>handle -frandom-seed in NIX_CFLAGS_COMPILE</li>
     <li>Implement copysign, signbit, isFinite for f128</li>
@@ -1824,7 +1863,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add process_vm_readv/writev wrappers</li>
     <li>deprecate ensureCapacity, add two other capacity functions</li>
     <li>Add pidfd wrappers</li>
-    <li>os.windows.user32.messageBoxW</li>
     <li>linux: fix number of arguments for tgkill syscall</li>
     <li>change `@import("builtin")` to `std.builtin`</li>
     <li>compiler-rt: Don't pass f16 around as arguments</li>
@@ -1892,7 +1930,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>macho: add arm64 relocation type enum</li>
     <li>Add MAX_RW_COUNT limit to os.pread() (#7805).</li>
     <li>linux: add fallocate() to io_uring</li>
-    <li>windows: make sure to handle PATH_NOT_FOUND when deleting files (#7879).</li>
     <li>Change <code>compareFn</code> to <code>fn (a: T, b: T) math.Order</code></li>
     <li>Add missing cast when calling fcntl w/ constant args</li>
     <li>Fixed pipe2 fallback (#7760)</li>
@@ -1903,12 +1940,8 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>elf: expose parsing decoupled from fs.File</li>
     <li>os.uefi.protocols.FileProtocol: fix and expose get_position, set_position (#7762)</li>
     <li>Add missing ECONNRESET from getsockoptError</li>
-    <li>define nfds_t for windows</li>
     <li>implement emutls in compiler_rt</li>
     <li>event.Loop: fix race condition when starting the time wheel (#7572).</li>
-    <li>macos: reimplement OS version detection</li>
-    <li>introduce os.windows.QueryObjectName</li>
-    <li>os.windows.GetFinalPathNameByHandle: add test</li>
     <li>Add fmt.formatDuration and fmt.duration (#7297)</li>
     <li>Made reader.skipBytes's num_bytes a u64</li>
     <li>os/bits/linux: add the termios cc bits</li>
@@ -1935,6 +1968,7 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add more standard type definitions for FreeBSD (#7550).</li>
     <li>Fix Reader.readUntilDelimiterOrEofAlloc() API</li>
     <li>Uniform polling logic for Windows and Unix.</li>
+    <li>Fixed fs.Watch implementation on Linux and Windows</li>
     <li>Fix poll definitions for FreeBSD/Darwin</li>
     <li>Avoid deadlocking in ChildProcess.exec.</li>
     <li>zig test: testing.zig_exe_path is now available. It will be set to the path of the zig executable which is running `zig test`.</li>
@@ -1956,10 +1990,8 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add Linux baudrate constants</li>
     <li>Add process_madvise to Linux syscalls (#7450)</li>
     <li>Prevent hashing undefined bits for integers of non power of 2 size.</li>
-    <li>Only check for evented mode in windows.OpenFile when in async mode</li>
     <li>Create SendToError (#7417)</li>
     <li>non-byte-multiple sized integers and bool have no definite representation (#7445).</li>
-    <li>Fixed fs.Watch implementation on Linux and Windows</li>
     <li>Add missing Linux syscalls.</li>
     <li>Fix formatting of type values (#7429).</li>
     <li>Improve sigaction interface (#7411)</li>
@@ -1984,8 +2016,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Always return loopback address when looking up localhost.</li>
     <li>os: remove unneeded error from accept errorset.</li>
     <li>add os.shutdown function for sockets</li>
-    <li>Fix WindowsDynLib.openW trying to strip the \??\ prefix when it does not exist</li>
-    <li>Switch to using unicode when parsing the command line on windows (#7241)</li>
     <li>Fix memory leak in BufMap.</li>
     <li>meta: add assumeSentinel</li>
     <li>Avoid deadlock in the signal handler (#7247).</li>
@@ -2008,14 +2038,12 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add builtin.Signedness, use it instead of is_signed</li>
     <li>getdents: entries with d_ino==0 are now properly skipped</li>
     <li>Change seed for Murmur2_64 from u32 to u64.</li>
-    <li>Implement chdir and chdirZ for Windows.</li>
     <li>Add atomic.Bool and expose all atomic operations from atomic.Int (#7154).</li>
     <li>Add meta.fieldNames.</li>
     <li>Add fs.openDirAbsolute and fs.accessAbsolute (#7082)</li>
     <li>Move leb128 out of debug and remove trivial *mem functions as discussed in #5588 (#6876)</li>
     <li>linuxWaitFd: make NetworkSubsystemFailed error unreachable. This error from os.poll is Windows-specific, so unreachable on Linux.</li>
     <li>Add more MachO consts and structs.</li>
-    <li>Made windows.ReadFile allow short reads (#7121).</li>
     <li>mem: make sliceAsBytes, etc. respect volatile</li>
     <li>Add fs.path.extension.</li>
     <li>Fix HashMap.putAssumeCapacity and HashMap.clearRetainingCapacity (#7061).</li>
