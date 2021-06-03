@@ -248,7 +248,7 @@
     <ul style="columns: 3">
       <li><a href="https://kristoff.it/">Loris Cro</a></li>
       <li><a href="http://www.jakubkonka.com/">Jakub Konka</a></li>
-      <li><a href="https://vexu.eu/">Veikka Tuominen</a></li>
+      <li><a href="https://github.com/Vexu">Veikka Tuominen</a></li>
       <li><a href="https://github.com/SpexGuy">Martin Wickham</a></li>
       <li><a href="https://github.com/alexnask">Alexandros Naskos</a></li>
     </ul>
@@ -339,6 +339,13 @@
                 <li><a id="toc-Crypto-Bug-Fixes" href="#Crypto-Bug-Fixes">Crypto Bug Fixes</a></li>
             </ul></li>
             <li><a id="toc-MultiArrayList" href="#MultiArrayList">MultiArrayList</a></li>
+            <li><a id="toc-Hash-Maps" href="#Hash-Maps">Hash Maps</a>
+            <ul>
+                <li><a id="toc-Hash-Context-Types" href="#Hash-Context-Types">Hash Context Types</a></li>
+                <li><a id="toc-Adapting-Contexts" href="#Adapting-Contexts">Adapting Contexts</a></li>
+                <li><a id="toc-Separated-KeyValue-Storage" href="#Separated-KeyValue-Storage">Separated Key/Value Storage</a></li>
+                <li><a id="toc-Renamed-Functions" href="#Renamed-Functions">Renamed Functions</a></li>
+            </ul></li>
             <li><a id="toc-Progress" href="#Progress">Progress</a></li>
             <li><a id="toc-Testing" href="#Testing">Testing</a></li>
             <li><a id="toc-Orphanage" href="#Orphanage">Orphanage</a></li>
@@ -1862,13 +1869,11 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>bsd: detect os version</li>
     <li>meta.Elem: support all optional types</li>
     <li>Fix offset param splitting for preadv/pwritev</li>
-    <li>fix AutoArrayHashMap's store_hash logic</li>
     <li>Harmonize use of off_t between libc and Zig impls</li>
     <li>c: Fix prototypes for bcmp and memcmp</li>
     <li>Prefer 64bit libc functions where possible</li>
     <li>os: add missing sockaddr_storage defs</li>
     <li>os: fix sockaddr_storage padding size</li>
-    <li>ArrayHashMap: ensureUnusedCapacity and ensureTotalCapacity</li>
     <li>ArrayList: add clearRetainingCapacity and clearAndFree</li>
     <li>Implement hex float printing</li>
     <li>compiler-rt: Better selection of __clzsi implementation</li>
@@ -1907,7 +1912,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>compiler-rt: Introduce PowerPC-specific f128 helpers</li>
     <li>Fix TLS definitions for 32bit PowerPC targets</li>
     <li>Improve powerpc support.</li>
-    <li>Removed empty init from HashMapUnmanaged</li>
     <li>netbsd: minor fixes to allow stage1 to build</li>
     <li>os/linux: return error on EALREADY for connect() and getsockoptError()</li>
     <li>os/bits/linux: add IPv6 socket options</li>
@@ -1915,7 +1919,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add compile error for signed integer math. Output compile errors when signed integer types are used on functions where the answer might've been a complex number but that functionality hasn't been implemented. This applies to sqrt, log, log2, log10 and ln.</li>
     <li>os: handle ECONNRESET for connect() syscall</li>
     <li>base64: cleanups and support url-safe and other non-padded variants</li>
-    <li>ArrayHashMap: decrement entries slice len after popping from entries in pop() to prevent oob</li>
     <li>os.linux: handle ECONNRESET for recv</li>
     <li>UEFI: boot_services: implement locateDevicePath</li>
     <li>Specify type in autoHash error message (#7970).</li>
@@ -1965,7 +1968,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add missing cast when calling fcntl w/ constant args</li>
     <li>Fixed pipe2 fallback (#7760)</li>
     <li>Replace <code>shrink</code> with <code>shrinkAndFree</code> and <code>shrinkRetainingCapacity</code></li>
-    <li>ArrayHashMap: add "AssertDiscard" function variants.</li>
     <li>Add Priority Dequeue</li>
     <li>Organize std lib concurrency primitives and add RwLock</li>
     <li>elf: expose parsing decoupled from fs.File</li>
@@ -1990,8 +1992,7 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>spinlock: Default SpinLock.state to .Unlocked to allow default struct initialization</li>
     <li>c: add syslog</li>
     <li>freebsd, netbsd, dragonfly: add struct timeval</li>
-    <li>Support equivalent ArrayList operations in ArrayHashMap</li>
-    <li>Rename ArrayList shrink => shrinkAndFree</li>
+    <li>Rename ArrayList shrink to shrinkAndFree</li>
     <li>c: add some noalias</li>
     <li>meta.fieldInfo takes an enum rather than a string</li>
     <li>Add meta.FieldEnum</li>
@@ -2074,7 +2075,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add more MachO consts and structs.</li>
     <li>mem: make sliceAsBytes, etc. respect volatile</li>
     <li>Add fs.path.extension.</li>
-    <li>Fix HashMap.putAssumeCapacity and HashMap.clearRetainingCapacity (#7061).</li>
     <li>Improved support for OpenBSD.</li>
     <li>Fix json parser close tracking (#6865).</li>
     <li>Don't prevent compilation on platforms where debug info is unsupported</li>
@@ -2350,6 +2350,198 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     struct element shares the same value.
 
     This is an alternate implementation to #7854.
+    
+
+    <h2 id="Hash-Maps"><a href="#toc-Hash-Maps">Hash Maps</a> <a class="hdr" href="#Hash-Maps">§</a></h2>
+
+    <p>Martin Wickham made
+    <a href="https://github.com/ziglang/zig/pull/8975">a series of sweeping changes</a>
+    to <code>HashMap</code> and <code>ArrayHashMap</code> APIs as part of 0.8.0, resolving
+    the following issues:</p>
+    <ul>
+      <li><a href="#Hash-Context-Types">Hash Context Types</a> (#8528).</li>
+      <li><a href="#Adapting-Contexts">Adapting Contexts</a> (#8619).</li>
+      <li>New <code class="zig">getPtr()</code> function returns a pointer to value (#7489).</li>
+      <li><a href="#Separated-KeyValue-Storage">Separated Key/Value Storage</a> (#8363).</li>
+      <li>BufSet/BufMap functions renamed to match other set/map types (#8971).</li>
+    </ul>
+    <p>Preexisting code that uses these APIs will need to update.</p>
+    <p>Additionally, the following miscellaneous improvements were made:</p>
+    <ul>
+    <li>Fixed HashMap.putAssumeCapacity and HashMap.clearRetainingCapacity (#7061).</li>
+    <li>Fixed AutoArrayHashMap's store_hash logic.</li>
+    <li>ArrayHashMap: ensureUnusedCapacity and ensureTotalCapacity.</li>
+    <li>Removed empty init from HashMapUnmanaged.</li>
+    <li>ArrayHashMap: decrement entries slice len after popping from entries in pop() to prevent OOB.</li>
+    <li>ArrayHashMap: add "AssertDiscard" function variants.</li>
+    <li>Support equivalent ArrayList operations in ArrayHashMap.</li>
+    </ul>
+    <h3 id="Hash-Context-Types"><a href="#toc-Hash-Context-Types">Hash Context Types</a> <a class="hdr" href="#Hash-Context-Types">§</a></h3>
+
+    <p>Hash map types which accept a hash and eql function have been refactored to instead
+    require a Context type.  Context types must have member functions <code>hash</code>
+    and <code>eql</code> which will perform the hash.  Example context for strings:</p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> StringContext = <span class="tok-kw">struct</span> {
+    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">hash</span>(self: <span class="tok-builtin">@This</span>(), s: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">u64</span> {
+        <span class="tok-kw">return</span> hashString(s);
+    }
+    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">eql</span>(self: <span class="tok-builtin">@This</span>(), a: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>, b: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">bool</span> {
+        <span class="tok-kw">return</span> eqlString(a, b);
+    }
+};</code></pre>
+    <p>Note that, like before, ArrayHashMap requires 32-bit hashes and HashMap requires
+    64-bit hashes.</p>
+    <p>Context types may also have fields.</p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> StringPoolContext = <span class="tok-kw">struct</span> {
+    pool: StringPool,
+    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">hash</span>(self: <span class="tok-builtin">@This</span>(), s: StringPool.ID) <span class="tok-type">u64</span> {
+        <span class="tok-kw">return</span> self.pool.getStringHash(s);
+    }
+    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">eql</span>(self: <span class="tok-builtin">@This</span>(), a: StringPool.ID, b: StringPool.ID) <span class="tok-type">bool</span> {
+        <span class="tok-kw">return</span> a == b;
+    }
+};</code></pre>
+    <p>When using a nonempty context with a Managed hash map type, the context instance
+    is stored within the managed instance.  The instance must be created with
+    <code>initContext</code> instead of the usual <code>init</code> function.</p>
+
+    <p>For Unmanaged hash map types, you must now call Context variants of the
+    hash map functions to pass in a context instance:</p>
+    <ul>
+      <li><code>map.put(k, v)</code> =&gt; <code>map.putContext(k, v, ctx)</code></li>
+      <li><code>map.get(k)</code> =&gt; <code>map.getContext(k, ctx)</code></li>
+      <li><code>map.remove(k)</code> =&gt; <code>map.removeContext(k, ctx)</code></li>
+      <li>etc.</li>
+    </ul>
+    <p>However, the old functions still exist, and will work as long as the context
+    is zero sized.</p>
+    
+
+    <h3 id="Adapting-Contexts"><a href="#toc-Adapting-Contexts">Adapting Contexts</a> <a class="hdr" href="#Adapting-Contexts">§</a></h3>
+
+    <p>In addition to Contexts, you can now create Adapting Contexts, which allow you to
+    use specialized keys with the map. For example:</p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> StringPoolAdaptingContext = <span class="tok-kw">struct</span> {
+    pool: StringPool,
+    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">hash</span>(self: <span class="tok-builtin">@This</span>(), k: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">u64</span> {
+        <span class="tok-kw">return</span> hashString(k);
+    }
+    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">eql</span>(self: <span class="tok-builtin">@This</span>(), new_key: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>, stored_key: StringPool.ID) <span class="tok-type">bool</span> {
+        <span class="tok-kw">return</span> eqlString(new_key, self.pool.getString(stored_key));
+    }
+};</code></pre>
+    <p>This adapting context can be used to query a map which uses the
+    <code>StringPoolContext</code> from the previous section. The adapter allows queries
+    to be performed using keys which may or may not actually be in the string pool.
+    To enable this, it provides hashing for the adapted key, and a comparison function
+    between the adapted key and a stored key.</p>
+    <p>New functions with names ending in <code>Adapted</code> allow these adapting contexts
+    to be passed in.</p>
+    
+
+    <h3 id="Separated-KeyValue-Storage"><a href="#toc-Separated-KeyValue-Storage">Separated Key/Value Storage</a> <a class="hdr" href="#Separated-KeyValue-Storage">§</a></h3>
+
+    <p>Before 0.8.0, keys and values were stored in an array of structs of
+    <code>Entry{K, V}</code>.  This storage wastes a lot of memory if keys and values
+    have differing alignment, and for <code>ArrayHashMap</code> incurs performance
+    penalties when iterating over only keys or only values.
+    With this change, hash maps now store two separated arrays of
+    keys and values.</p>
+
+    <p>This means that existing APIs which return <code class="zig">*Entry</code> can no longer be supported.
+    The following breaking changes have been made:</p>
+    <ul>
+    <li><code>Entry</code> has been changed from <code class="zig"><span class="tok-kw">struct</span> { key: K, value: V }</code> to <code class="zig"><span class="tok-kw">struct</span> { key_ptr: *K, value_ptr: *V }</code>.</li>
+    <li>A new struct <code>KV</code> is <code>struct { key: K, value: V }</code>.</li>
+    <li>APIs which used to return <code>*Entry</code> now return <code>Entry</code>.</li>
+    <li>APIs which used to return <code>Entry</code> now return <code>KV</code>.</li>
+    </ul>
+    <p>Here are some examples for updating code to use the new API:</p>
+    <p>Example 1:</p>
+    <pre><code class="zig"><span class="tok-comment">// old</span>
+<span class="tok-kw">var</span> it = hash_map.iterator();
+<span class="tok-kw">while</span> (it.next()) |entry| {
+    <span class="tok-kw">const</span> k = entry.key;
+    <span class="tok-kw">const</span> v = entry.value;
+}
+
+<span class="tok-comment">// new</span>
+<span class="tok-kw">var</span> it = hash_map.iterator();
+<span class="tok-kw">while</span> (it.next()) |entry| {
+    <span class="tok-kw">const</span> k = entry.key_ptr.*;
+    <span class="tok-kw">const</span> v = entry.value_ptr.*;
+}</code></pre>
+    <p>Example 2:</p>
+    <pre><code class="zig"><span class="tok-comment">// old</span>
+<span class="tok-kw">for</span> (array_hash_map.entries.items) |entry| {
+    free(entry.key);
+    free(entry.value);
+}
+
+<span class="tok-comment">// new</span>
+<span class="tok-kw">for</span> (array_hash_map.keys()) |key| {
+    free(key);
+}
+<span class="tok-kw">for</span> (array_hash_map.values()) |value| {
+    free(value);
+}</code></pre>
+    <p>Example 3:</p>
+    <pre><code class="zig"><span class="tok-comment">// old</span>
+<span class="tok-kw">for</span> (array_hash_map.entries.items) |entry| {
+    useBoth(entry.key, entry.value);
+}
+
+<span class="tok-comment">// new</span>
+<span class="tok-kw">var</span> it = array_hash_map.iterator()
+<span class="tok-kw">while</span> (it.next()) |entry| {
+    useBoth(entry.key_ptr.*, entry.value_ptr.*);
+}
+
+<span class="tok-comment">// After accepted proposal https://github.com/ziglang/zig/issues/7257 is implemented:</span>
+<span class="tok-kw">for</span> (array_hash_map.keys(), array_hash_map.values()) |key, value| {
+    useBoth(key, value);
+}</code></pre>
+    <p>Example 4:</p>
+    <pre><code class="zig"><span class="tok-comment">// old</span>
+<span class="tok-kw">const</span> result = <span class="tok-kw">try</span> map.getOrPut(key);
+<span class="tok-kw">if</span> (!result.found_existing) {
+    result.entry.value = new_value;
+}
+
+<span class="tok-comment">// new</span>
+<span class="tok-kw">const</span> result = <span class="tok-kw">try</span> map.getOrPut(key);
+<span class="tok-kw">if</span> (!result.found_existing) {
+    result.value_ptr.* = new_value;
+}</code></pre>
+    
+
+    <h3 id="Renamed-Functions"><a href="#toc-Renamed-Functions">Renamed Functions</a> <a class="hdr" href="#Renamed-Functions">§</a></h3>
+
+    <p>In addition to the above changes, several functions have been renamed to better
+    reflect their operation and to improve consistency. These changes also affect the
+    <code>BufMap</code> and <code>BufSet</code> APIs.</p>
+    <ul>
+      <li><code>ensureCapacity</code> has been split into <code>ensureTotalCapacity</code> and <code>ensureAdditionalCapacity</code></li>
+      <li><code>HashMap.remove</code> now returns <code class="zig"><span class="tok-type">bool</span></code>, a new function <code>fetchRemove</code> returns <code>?KV</code></li>
+      <li><code>removeAssertDiscard</code> has been deleted, use <code>assert(map.remove(key))</code> instead.</li>
+      <li><code>ArrayHashMap.remove</code> has been split into six variants (not including adapted/context variants)<ul>
+          <li><code class="zig">orderedRemove(K) <span class="tok-type">bool</span></code></li>
+          <li><code class="zig">orderedRemoveAt(<span class="tok-type">usize</span>) <span class="tok-type">bool</span></code></li>
+          <li><code class="zig">fetchOrderedRemove(K) ?KV</code></li>
+          <li><code class="zig">swapRemove(K) <span class="tok-type">bool</span></code></li>
+          <li><code class="zig">swapRemoveAt(<span class="tok-type">usize</span>) <span class="tok-type">bool</span></code></li>
+          <li><code class="zig">fetchSwapRemove(K) ?KV</code></li>
+        </ul>
+      </li>
+      <li><code>BufSet.put</code> is now <code>BufSet.insert</code></li>
+      <li><code>BufSet.exists</code> is now <code>BufSet.contains</code></li>
+      <li><code>BufSet.delete</code> is now <code>BufSet.remove</code></li>
+      <li><code>BufSet.iterator</code> now iterates over key values only</li>
+      <li><code>BufMap.set</code> is now <code>BufMap.put</code></li>
+      <li><code>BufMap.setMove</code> is now <code>BufMap.putMove</code></li>
+      <li><code>BufMap.delete</code> is now <code>BufMap.remove</code></li>
+    </ul>
+    
     
 
     <h2 id="Progress"><a href="#toc-Progress">Progress</a> <a class="hdr" href="#Progress">§</a></h2>
