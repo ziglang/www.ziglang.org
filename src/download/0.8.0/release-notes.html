@@ -248,7 +248,7 @@
     <ul style="columns: 3">
       <li><a href="https://kristoff.it/">Loris Cro</a></li>
       <li><a href="http://www.jakubkonka.com/">Jakub Konka</a></li>
-      <li><a href="https://vexu.eu/">Veikka Tuominen</a></li>
+      <li><a href="https://github.com/Vexu">Veikka Tuominen</a></li>
       <li><a href="https://github.com/SpexGuy">Martin Wickham</a></li>
       <li><a href="https://github.com/alexnask">Alexandros Naskos</a></li>
     </ul>
@@ -1701,13 +1701,11 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>bsd: detect os version</li>
     <li>meta.Elem: support all optional types</li>
     <li>Fix offset param splitting for preadv/pwritev</li>
-    <li>fix AutoArrayHashMap's store_hash logic</li>
     <li>Harmonize use of off_t between libc and Zig impls</li>
     <li>c: Fix prototypes for bcmp and memcmp</li>
     <li>Prefer 64bit libc functions where possible</li>
     <li>os: add missing sockaddr_storage defs</li>
     <li>os: fix sockaddr_storage padding size</li>
-    <li>ArrayHashMap: ensureUnusedCapacity and ensureTotalCapacity</li>
     <li>ArrayList: add clearRetainingCapacity and clearAndFree</li>
     <li>Implement hex float printing</li>
     <li>compiler-rt: Better selection of __clzsi implementation</li>
@@ -1746,7 +1744,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>compiler-rt: Introduce PowerPC-specific f128 helpers</li>
     <li>Fix TLS definitions for 32bit PowerPC targets</li>
     <li>Improve powerpc support.</li>
-    <li>Removed empty init from HashMapUnmanaged</li>
     <li>netbsd: minor fixes to allow stage1 to build</li>
     <li>os/linux: return error on EALREADY for connect() and getsockoptError()</li>
     <li>os/bits/linux: add IPv6 socket options</li>
@@ -1754,7 +1751,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add compile error for signed integer math. Output compile errors when signed integer types are used on functions where the answer might've been a complex number but that functionality hasn't been implemented. This applies to sqrt, log, log2, log10 and ln.</li>
     <li>os: handle ECONNRESET for connect() syscall</li>
     <li>base64: cleanups and support url-safe and other non-padded variants</li>
-    <li>ArrayHashMap: decrement entries slice len after popping from entries in pop() to prevent oob</li>
     <li>os.linux: handle ECONNRESET for recv</li>
     <li>UEFI: boot_services: implement locateDevicePath</li>
     <li>Specify type in autoHash error message (#7970).</li>
@@ -1804,7 +1800,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add missing cast when calling fcntl w/ constant args</li>
     <li>Fixed pipe2 fallback (#7760)</li>
     <li>Replace <code>shrink</code> with <code>shrinkAndFree</code> and <code>shrinkRetainingCapacity</code></li>
-    <li>ArrayHashMap: add "AssertDiscard" function variants.</li>
     <li>Add Priority Dequeue</li>
     <li>Organize std lib concurrency primitives and add RwLock</li>
     <li>elf: expose parsing decoupled from fs.File</li>
@@ -1829,8 +1824,7 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>spinlock: Default SpinLock.state to .Unlocked to allow default struct initialization</li>
     <li>c: add syslog</li>
     <li>freebsd, netbsd, dragonfly: add struct timeval</li>
-    <li>Support equivalent ArrayList operations in ArrayHashMap</li>
-    <li>Rename ArrayList shrink => shrinkAndFree</li>
+    <li>Rename ArrayList shrink to shrinkAndFree</li>
     <li>c: add some noalias</li>
     <li>meta.fieldInfo takes an enum rather than a string</li>
     <li>Add meta.FieldEnum</li>
@@ -1913,7 +1907,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Add more MachO consts and structs.</li>
     <li>mem: make sliceAsBytes, etc. respect volatile</li>
     <li>Add fs.path.extension.</li>
-    <li>Fix HashMap.putAssumeCapacity and HashMap.clearRetainingCapacity (#7061).</li>
     <li>Improved support for OpenBSD.</li>
     <li>Fix json parser close tracking (#6865).</li>
     <li>Don't prevent compilation on platforms where debug info is unsupported</li>
@@ -2170,6 +2163,199 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     struct element shares the same value.
 
     This is an alternate implementation to #7854.
+    {#header_close#}
+
+    {#header_open|Hash Maps#}
+    <p>Martin Wickham made
+    <a href="https://github.com/ziglang/zig/pull/8975">a series of sweeping changes</a>
+    to <code>HashMap</code> and <code>ArrayHashMap</code> APIs as part of 0.8.0, resolving
+    the following issues:</p>
+    <ul>
+      <li>{#link|Hash Context Types#} (#8528).</li>
+      <li>{#link|Adapting Contexts#} (#8619).</li>
+      <li>New {#syntax#}getPtr(){#endsyntax#} function returns a pointer to value (#7489).</li>
+      <li>{#link|Separated Key/Value Storage#} (#8363).</li>
+      <li>BufSet/BufMap functions renamed to match other set/map types (#8971).</li>
+    </ul>
+    <p>Preexisting code that uses these APIs will need to update.</p>
+    <p>Additionally, the following miscellaneous improvements were made:</p>
+    <ul>
+    <li>Fixed HashMap.putAssumeCapacity and HashMap.clearRetainingCapacity (#7061).</li>
+    <li>Fixed AutoArrayHashMap's store_hash logic.</li>
+    <li>ArrayHashMap: ensureUnusedCapacity and ensureTotalCapacity.</li>
+    <li>Removed empty init from HashMapUnmanaged.</li>
+    <li>ArrayHashMap: decrement entries slice len after popping from entries in pop() to prevent OOB.</li>
+    <li>ArrayHashMap: add "AssertDiscard" function variants.</li>
+    <li>Support equivalent ArrayList operations in ArrayHashMap.</li>
+    </ul>
+    {#header_open|Hash Context Types#}
+    <p>Hash map types which accept a hash and eql function have been refactored to instead
+    require a Context type.  Context types must have member functions <code>hash</code>
+    and <code>eql</code> which will perform the hash.  Example context for strings:</p>
+    {#code_begin|syntax#}
+pub const StringContext = struct {
+    pub fn hash(self: @This(), s: []const u8) u64 {
+        return hashString(s);
+    }
+    pub fn eql(self: @This(), a: []const u8, b: []const u8) bool {
+        return eqlString(a, b);
+    }
+};
+    {#code_end#}
+    <p>Note that, like before, ArrayHashMap requires 32-bit hashes and HashMap requires
+    64-bit hashes.</p>
+    <p>Context types may also have fields.</p>
+    {#code_begin|syntax#}
+pub const StringPoolContext = struct {
+    pool: StringPool,
+    pub fn hash(self: @This(), s: StringPool.ID) u64 {
+        return self.pool.getStringHash(s);
+    }
+    pub fn eql(self: @This(), a: StringPool.ID, b: StringPool.ID) bool {
+        return a == b;
+    }
+};
+    {#code_end#}
+    <p>When using a nonempty context with a Managed hash map type, the context instance
+    is stored within the managed instance.  The instance must be created with
+    <code>initContext</code> instead of the usual <code>init</code> function.</p>
+
+    <p>For Unmanaged hash map types, you must now call Context variants of the
+    hash map functions to pass in a context instance:</p>
+    <ul>
+      <li><code>map.put(k, v)</code> =&gt; <code>map.putContext(k, v, ctx)</code></li>
+      <li><code>map.get(k)</code> =&gt; <code>map.getContext(k, ctx)</code></li>
+      <li><code>map.remove(k)</code> =&gt; <code>map.removeContext(k, ctx)</code></li>
+      <li>etc.</li>
+    </ul>
+    <p>However, the old functions still exist, and will work as long as the context
+    is zero sized.</p>
+    {#header_close#}
+
+    {#header_open|Adapting Contexts#}
+    <p>In addition to Contexts, you can now create Adapting Contexts, which allow you to
+    use specialized keys with the map. For example:</p>
+    {#code_begin|syntax#}
+pub const StringPoolAdaptingContext = struct {
+    pool: StringPool,
+    pub fn hash(self: @This(), k: []const u8) u64 {
+        return hashString(k);
+    }
+    pub fn eql(self: @This(), new_key: []const u8, stored_key: StringPool.ID) bool {
+        return eqlString(new_key, self.pool.getString(stored_key));
+    }
+};
+    {#code_end#}
+    <p>This adapting context can be used to query a map which uses the
+    <code>StringPoolContext</code> from the previous section. The adapter allows queries
+    to be performed using keys which may or may not actually be in the string pool.
+    To enable this, it provides hashing for the adapted key, and a comparison function
+    between the adapted key and a stored key.</p>
+    <p>New functions with names ending in <code>Adapted</code> allow these adapting contexts
+    to be passed in.</p>
+    {#header_close#}
+
+    {#header_open|Separated Key/Value Storage#}
+    <p>Before 0.8.0, keys and values were stored in an array of structs of
+    <code>Entry{K, V}</code>.  This storage wastes a lot of memory if keys and values
+    have differing alignment, and for <code>ArrayHashMap</code> incurs performance
+    penalties when iterating over only keys or only values.
+    With this change, hash maps now store two separated arrays of
+    keys and values.</p>
+
+    <p>This means that existing APIs which return {#syntax#}*Entry{#endsyntax#} can no longer be supported.
+    The following breaking changes have been made:</p>
+    <ul>
+    <li><code>Entry</code> has been changed from {#syntax#}struct { key: K, value: V }{#endsyntax#} to {#syntax#}struct { key_ptr: *K, value_ptr: *V }{#endsyntax#}.</li>
+    <li>A new struct <code>KV</code> is <code>struct { key: K, value: V }</code>.</li>
+    <li>APIs which used to return <code>*Entry</code> now return <code>Entry</code>.</li>
+    <li>APIs which used to return <code>Entry</code> now return <code>KV</code>.</li>
+    </ul>
+    <p>Here are some examples for updating code to use the new API:</p>
+    <p>Example 1:</p>
+    <pre>{#syntax#}// old
+var it = hash_map.iterator();
+while (it.next()) |entry| {
+    const k = entry.key;
+    const v = entry.value;
+}
+
+// new
+var it = hash_map.iterator();
+while (it.next()) |entry| {
+    const k = entry.key_ptr.*;
+    const v = entry.value_ptr.*;
+}{#endsyntax#}</pre>
+    <p>Example 2:</p>
+    <pre>{#syntax#}// old
+for (array_hash_map.entries.items) |entry| {
+    free(entry.key);
+    free(entry.value);
+}
+
+// new
+for (array_hash_map.keys()) |key| {
+    free(key);
+}
+for (array_hash_map.values()) |value| {
+    free(value);
+}{#endsyntax#}</pre>
+    <p>Example 3:</p>
+    <pre>{#syntax#}// old
+for (array_hash_map.entries.items) |entry| {
+    useBoth(entry.key, entry.value);
+}
+
+// new
+var it = array_hash_map.iterator()
+while (it.next()) |entry| {
+    useBoth(entry.key_ptr.*, entry.value_ptr.*);
+}
+
+// After accepted proposal https://github.com/ziglang/zig/issues/7257 is implemented:
+for (array_hash_map.keys(), array_hash_map.values()) |key, value| {
+    useBoth(key, value);
+}{#endsyntax#}</pre>
+    <p>Example 4:</p>
+    <pre>{#syntax#}// old
+const result = try map.getOrPut(key);
+if (!result.found_existing) {
+    result.entry.value = new_value;
+}
+
+// new
+const result = try map.getOrPut(key);
+if (!result.found_existing) {
+    result.value_ptr.* = new_value;
+}{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Renamed Functions#}
+    <p>In addition to the above changes, several functions have been renamed to better
+    reflect their operation and to improve consistency. These changes also affect the
+    <code>BufMap</code> and <code>BufSet</code> APIs.</p>
+    <ul>
+      <li><code>ensureCapacity</code> has been split into <code>ensureTotalCapacity</code> and <code>ensureAdditionalCapacity</code></li>
+      <li><code>HashMap.remove</code> now returns {#syntax#}bool{#endsyntax#}, a new function <code>fetchRemove</code> returns <code>?KV</code></li>
+      <li><code>removeAssertDiscard</code> has been deleted, use <code>assert(map.remove(key))</code> instead.</li>
+      <li><code>ArrayHashMap.remove</code> has been split into six variants (not including adapted/context variants)<ul>
+          <li>{#syntax#}orderedRemove(K) bool{#endsyntax#}</li>
+          <li>{#syntax#}orderedRemoveAt(usize) bool{#endsyntax#}</li>
+          <li>{#syntax#}fetchOrderedRemove(K) ?KV{#endsyntax#}</li>
+          <li>{#syntax#}swapRemove(K) bool{#endsyntax#}</li>
+          <li>{#syntax#}swapRemoveAt(usize) bool{#endsyntax#}</li>
+          <li>{#syntax#}fetchSwapRemove(K) ?KV{#endsyntax#}</li>
+        </ul>
+      </li>
+      <li><code>BufSet.put</code> is now <code>BufSet.insert</code></li>
+      <li><code>BufSet.exists</code> is now <code>BufSet.contains</code></li>
+      <li><code>BufSet.delete</code> is now <code>BufSet.remove</code></li>
+      <li><code>BufSet.iterator</code> now iterates over key values only</li>
+      <li><code>BufMap.set</code> is now <code>BufMap.put</code></li>
+      <li><code>BufMap.setMove</code> is now <code>BufMap.putMove</code></li>
+      <li><code>BufMap.delete</code> is now <code>BufMap.remove</code></li>
+    </ul>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Progress#}
