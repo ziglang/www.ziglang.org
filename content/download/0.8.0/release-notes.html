@@ -297,6 +297,8 @@
             <li><a id="toc-Command-Line-Interface" href="#Command-Line-Interface">Command-Line Interface</a></li>
             <li><a id="toc-Reworked-Memory-Layout" href="#Reworked-Memory-Layout">Reworked Memory Layout</a></li>
             <li><a id="toc-Whole-File-AST-Lowering" href="#Whole-File-AST-Lowering">Whole-File AST Lowering</a></li>
+            <li><a id="toc-Static-PIE" href="#Static-PIE">Static PIE</a></li>
+            <li><a id="toc-Reuse-Runtime-Libraries-in-More-Cases" href="#Reuse-Runtime-Libraries-in-More-Cases">Reuse Runtime Libraries in More Cases</a></li>
             <li><a id="toc-x86-64-Backend" href="#x86-64-Backend">x86-64 Backend</a></li>
             <li><a id="toc-AArch64-Backend" href="#AArch64-Backend">AArch64 Backend</a></li>
             <li><a id="toc-ARM-Backend" href="#ARM-Backend">ARM Backend</a></li>
@@ -973,7 +975,7 @@ SYSTEM_LINKER_HACK
       <li>Improve documentation for ArrayList, ArrayListUnmanaged, etc. (#7624)</li>
     </ul>
     <p>
-    Contributors: Andrew Kelley, Carlos Zúñiga, Dave Gauer, Devin Bayer, Eleanor Bartle, Frank Denis, Jakub Konka, Jay Petacat, Jonas Carpay, Josh Holland, Josh Wolfe, LemonBoy, Martin Wickham, Mathieu Guay-Paquet, Matthew Borkowski, Ryan Liptak, Tadeo Kondrak, Veikka Tuominen, data-man, g-w1, xackus
+    Contributors: Andrew Kelley, Carlos Zúñiga, Dave Gauer, Devin Bayer, Eleanor Bartle, Frank Denis, Jakub Konka, Jay Petacat, Jonas Carpay, Josh Holland, Josh Wolfe, LemonBoy, Martin Wickham, Mathieu Guay-Paquet, Matthew Borkowski, Ryan Liptak, Tadeo Kondrak, Veikka Tuominen, data-man, Jacob G-W, xackus
     </p>
     
 
@@ -1094,7 +1096,7 @@ SYSTEM_LINKER_HACK
     he has been single-handedly keeping us afloat while we work towards finishing the
     <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.
     </p>
-    <p>Contributors: LemonBoy, Andrew Kelley, Koakuma, Veikka Tuominen, Tadeo Kondrak, Michael Dusan, Jakub Konka, frmdstryr, Mathieu Guay-Paquet, Sreehari S, Al Hoang, Alexandros Naskos, Isaac Freund, Jay Petacat, Josh Wolfe, Lee Cannon, Matthew Knight, Nathan Michaels, Sizhe Zhao, Timon Kruiper, Woze Parrot, g-w1, lars, pfg, xackus</p>
+    <p>Contributors: LemonBoy, Andrew Kelley, Koakuma, Veikka Tuominen, Tadeo Kondrak, Michael Dusan, Jakub Konka, frmdstryr, Mathieu Guay-Paquet, Sreehari S, Al Hoang, Alexandros Naskos, Isaac Freund, Jay Petacat, Josh Wolfe, Lee Cannon, Matthew Knight, Nathan Michaels, Sizhe Zhao, Timon Kruiper, Woze Parrot, Jacob G-W, lars, pfg, xackus</p>
     <h2 id="LLVM-12"><a href="#toc-LLVM-12">LLVM 12</a> <a class="hdr" href="#LLVM-12">§</a></h2>
 
     <p>
@@ -1144,6 +1146,20 @@ releases and QA doesn't exist.
 
     <h1 id="Self-Hosted-Compiler"><a href="#toc-Self-Hosted-Compiler">Self-Hosted Compiler</a> <a class="hdr" href="#Self-Hosted-Compiler">§</a></h1>
 
+    <p>The main focus of this release cycle was the self-hosted compiler (also known
+    as "stage2").</p>
+    <p>
+    Despite the fact that .zig source code by default is still compiled in this
+    release using the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>, the main driver code is already
+    self-hosted, as well as many features, such as <a href="#zig-cc">zig cc</a>, <a href="#C-Translation">C Translation</a>,
+    and <a href="#CPU-Feature-Detection">CPU Feature Detection</a>. So improvements made to "stage2" in these areas
+    do in fact affect the main Zig user experience.
+    </p>
+    TODO Show passing test cases that self-hosted is now capable of
+    TODO Performance demo
+    TODO Mention the architecture of the stage2 compiler and note the
+      main contributors who have stepped up to work on the various parts of it.
+    TODO Explain the bootstrapping plan
 
     <p>Miscellaneous:</p>
     <ul>
@@ -1152,18 +1168,15 @@ releases and QA doesn't exist.
       <li>parser: use shared scratch buffer to avoid allocating and freeing many small lists (#8910).</li>
       <li>Update the official spec to match the self-hosted parser.</li>
       <li>tokenizer: fix crash on multiline string with only 1 backslash (#8904).</li>
+      <li>Variable shadowing detection (#6969).</li>
+      <li>link: properly implement passthrough mode for LLD child proccess.</li>
+      <li>Detect redundant C/C++ source files, preventing a deadlock in the caching system (#7308).</li>
+      <li>Print package path on --pkg-begin failure.</li>
+      <li>Better error message for root zig source file not found (#6777, #6893).</li>
+      <li>Always link -lpthread when using system libc. Required when cross-compiling glibc targets.</li>
+      <li>Allow building musl/glibc in thumb mode.</li>
+      <li>Fix libc components' linking order.</li>
     </ul>
-
-    <p>The main focus of this release cycle was the self-hosted compiler (also known
-    as "stage2"). There is a lot to talk about here:</p>
-    <ul>
-      <li>Show passing test cases that self-hosted is now capable of</li>
-      <li>Performance demo</li>
-      <li>Mention the architecture of the stage2 compiler and note the
-      main contributors who have stepped up to work on the various parts of it.</li>
-      <li>Explain the bootstrapping plan</li>
-    </ul>
-
     <h2 id="CPU-Feature-Detection"><a href="#toc-CPU-Feature-Detection">CPU Feature Detection</a> <a class="hdr" href="#CPU-Feature-Detection">§</a></h2>
 
     TODO
@@ -1225,7 +1238,83 @@ zir memory layout
     <h2 id="Whole-File-AST-Lowering"><a href="#toc-Whole-File-AST-Lowering">Whole-File AST Lowering</a> <a class="hdr" href="#Whole-File-AST-Lowering">§</a></h2>
 
     TODO
+
+commit b750e074c621b8679e14e53f9ecd2faa4432eff9
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat May 22 17:20:30 2021 -0700
+
+    stage2: rework astgen command into `zig ast-check`
     
+    This addresses the use case of quickly reporting AstGen compile errors
+    for a file, for use with an IDE for example.
+    
+     * Rename from `zig asgen` to `zig ast-check`
+     * It is now a command always available; not only in debug builds.
+     * Give it usage text and proper CLI parsing.
+     * Support reading from stdin when no positional arg is provided.
+     * `-t` flag makes it print textual ZIR. Without this flag, it only
+       provides compile errors.
+     * Support `--color` parameter to override the tty detection
+    
+    closes #8871
+
+ src/main.zig | 158 +++++++++++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 117 insertions(+), 41 deletions(-)
+
+    
+
+    <h2 id="Static-PIE"><a href="#toc-Static-PIE">Static PIE</a> <a class="hdr" href="#Static-PIE">§</a></h2>
+
+    <p>Mainly thanks to LemonBoy, Zig now supports
+    <strong>Position Independent Executables</strong>, even
+    when compiling statically. Here is an example:</p>
+    <pre>$ zig build-exe hello.zig 
+$ file hello
+hello: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped
+$ zig build-exe hello.zig -fPIE
+$ file hello
+hello: ELF 64-bit LSB <strong>pie</strong> executable, x86-64, version 1 (SYSV), dynamically linked, with debug_info, not stripped</pre>
+    <p>
+    The main use case for PIE is
+    <a href="https://en.wikipedia.org/wiki/Address_space_layout_randomization">Address Space Layout Randomization</a>.
+    This is a security measure aimed at making exploits more difficult by introducing
+    non-determinism into pointer addresses at runtime. Its effectiveness is debatable,
+    however, it also has a surprisingly useful property.
+    </p>
+    <p>
+    It is one piece of the puzzle in a
+    <a href="https://www.youtube.com/watch?v=pq1XqP4-qOo">truly portable Linux binary that can run on any distribution, including loading graphics drivers</a>.
+    A static PIE is capable of executing both statically linked, and then
+    re-executing itself dynamically linked once the statically linked code has surveyed
+    the system to find the dynamic linker. This is a niche idea, but may
+    be worth pursuing for the use case of distributing portable game binaries
+    and other GUI applications.
+    </p>
+    <p>Tracking issues: #3960, #4503</p>
+    
+
+    <h2 id="Reuse-Runtime-Libraries-in-More-Cases"><a href="#toc-Reuse-Runtime-Libraries-in-More-Cases">Reuse Runtime Libraries in More Cases</a> <a class="hdr" href="#Reuse-Runtime-Libraries-in-More-Cases">§</a></h2>
+
+    <p>
+    Previously Zig would need to recompile runtime libraries if you changed the
+    values of --strip or -O. Now, unless the <code>debug_compiler_runtime_libs</code>
+    flag is set (which is currently not exposed to the CLI), Zig will always
+    choose ReleaseFast or ReleaseSmall for compiler runtime libraries.
+    </p>
+    <p>
+    When the main application chooses ReleaseFast or ReleaseSmall, that
+    value is propagated to compiler runtime libraries. Otherwise a decision
+    is made based on the target, which is currently ReleaseSmall for
+    freestanding WebAssembly and ReleaseFast for everything else.
+    </p>
+    <p>
+    Ultimately the purpose of this change is to have Debug and ReleaseSafe
+    builds of applications still get optimized builds of, e.g. libcxx and
+    libunwind, as well as to spend less time unnecessarily rebuilding compiler
+    runtime libraries.
+    </p>
+    
+
 
     <h2 id="x86-64-Backend"><a href="#toc-x86-64-Backend">x86-64 Backend</a> <a class="hdr" href="#x86-64-Backend">§</a></h2>
 
@@ -1774,7 +1863,7 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     <li>Support for static PIE executables.</li>
     </ul>
 
-<p>Contributors: Adam Goertz, Aiz672, Al Hoang, Alex Cameron, Alexandros Naskos, Anders Conbere, Andreas Karlsson, Andreas Linz, Andrew Kelley, Aransentin, Asherah Connor, Benjamin Feng, Benjamin Graf, Bill Nagel, BinaryWarlock, Bxil, Cameron Conn, Carlos Zúñiga, Daniele Cocca, Devin Bayer, Dmitry Atamanov, Edward Dean, Ethan Gruffudd, Evan Haas, Felix (xq) Queißner, Frank Denis, Guillaume Ballet, Hadron67, Hannu Hartikainen, Hubert Jasudowicz, Isaac Freund, Isaac Yonemoto, J.C. Moyer, Jakub Konka, Jay Petacat, Jens Goldberg, Jonathan Knezek, Jonathan Marler, Joran Dirk Greef, Joris Hartog, Josh Holland, Josh Wolfe, Julian Maingot, Julius Putra Tanu Setiaji, Kenta Iwasaki, Koakuma, Lee Cannon, LemonBoy, Lewis Gaul, Loris Cro, Luna, Luuk de Gram, Maciej Walczak, Mahdi Khanalizadeh, Manuel Floruß, Martin Wickham, Mathieu Guay-Paquet, Matt Knight, Matt Sicker, Matthew Borkowski, Meghan, Meghan Denny, Michael Dusan, Michael Freundorfer, Michael Holmes, Miles Alan, Nathanaël Courant, Nuno Leiria, Rageoholic, Robin Voetter, Rocknest, Rohlem, Ryan Greenblatt, Ryan Liptak, Sage Hane, Sahnvour, Shachaf Ben-Kiki, Sobeston, Sreehari S, Sébastien Marie, Tadeo Kondrak, Tau, Timon Kruiper, Travis, Veikka Tuominen, Vincent Rischmann, Yorhel, Zander Khan, ZapAnton, aiz, antlilja, breakin, christian-stephen, cryptocode, data-man, daurnimator, ducdetronquito, fancl20, frmdstryr, g-w1, gracefu, heidezomp, johnLate, jumpnbrownweasel, lithdew, luna, mason1920, rgreenblatt, root, ryuukk, tgschultz, viri, xackus, Žiga Željko</p>
+<p>Contributors: Adam Goertz, Aiz672, Al Hoang, Alex Cameron, Alexandros Naskos, Anders Conbere, Andreas Karlsson, Andreas Linz, Andrew Kelley, Aransentin, Asherah Connor, Benjamin Feng, Benjamin Graf, Bill Nagel, BinaryWarlock, Bxil, Cameron Conn, Carlos Zúñiga, Daniele Cocca, Devin Bayer, Dmitry Atamanov, Edward Dean, Ethan Gruffudd, Evan Haas, Felix (xq) Queißner, Frank Denis, Guillaume Ballet, Hadron67, Hannu Hartikainen, Hubert Jasudowicz, Isaac Freund, Isaac Yonemoto, J.C. Moyer, Jakub Konka, Jay Petacat, Jens Goldberg, Jonathan Knezek, Jonathan Marler, Joran Dirk Greef, Joris Hartog, Josh Holland, Josh Wolfe, Julian Maingot, Julius Putra Tanu Setiaji, Kenta Iwasaki, Koakuma, Lee Cannon, LemonBoy, Lewis Gaul, Loris Cro, Luna, Luuk de Gram, Maciej Walczak, Mahdi Khanalizadeh, Manuel Floruß, Martin Wickham, Mathieu Guay-Paquet, Matt Knight, Matt Sicker, Matthew Borkowski, Meghan, Meghan Denny, Michael Dusan, Michael Freundorfer, Michael Holmes, Miles Alan, Nathanaël Courant, Nuno Leiria, Rageoholic, Robin Voetter, Rocknest, Rohlem, Ryan Greenblatt, Ryan Liptak, Sage Hane, Sahnvour, Shachaf Ben-Kiki, Sobeston, Sreehari S, Sébastien Marie, Tadeo Kondrak, Tau, Timon Kruiper, Travis, Veikka Tuominen, Vincent Rischmann, Yorhel, Zander Khan, ZapAnton, aiz, antlilja, breakin, christian-stephen, cryptocode, data-man, daurnimator, ducdetronquito, fancl20, frmdstryr, Jacob G-W, gracefu, heidezomp, johnLate, jumpnbrownweasel, lithdew, luna, mason1920, rgreenblatt, root, ryuukk, tgschultz, viri, xackus, Žiga Željko</p>
 
     <h2 id="Formatted-Printing"><a href="#toc-Formatted-Printing">Formatted Printing</a> <a class="hdr" href="#Formatted-Printing">§</a></h2>
 
@@ -2147,7 +2236,7 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     </ul>
 
 
-<p>Contributors: Andrew Kelley, Asherah Connor, Daniele Cocca, Frank Denis, Hubert Jasudowicz, Isaac Freund, Jakub Konka, Jay Petacat, Jonathan Marler, Josh Holland, Lee Cannon, LemonBoy, Martin Wickham, Michael Dusan, Michael Holmes, Ryan Greenblatt, Veikka Tuominen, Vexu, Vincent Rischmann, antlilja, daurnimator, frmdstryr, g-w1, lithdew, rgreenblatt</p>
+<p>Contributors: Andrew Kelley, Asherah Connor, Daniele Cocca, Frank Denis, Hubert Jasudowicz, Isaac Freund, Jakub Konka, Jay Petacat, Jonathan Marler, Josh Holland, Lee Cannon, LemonBoy, Martin Wickham, Michael Dusan, Michael Holmes, Ryan Greenblatt, Veikka Tuominen, Vexu, Vincent Rischmann, antlilja, daurnimator, frmdstryr, Jacob G-W, lithdew, rgreenblatt</p>
     
 
     <h1 id="Toolchain"><a href="#toc-Toolchain">Toolchain</a> <a class="hdr" href="#Toolchain">§</a></h1>
@@ -2174,7 +2263,7 @@ TODO tooling:
     This release updates the bundled musl source code to
     <a href="https://musl.libc.org/releases.html">v1.2.2</a>.
     </p>
-    TODO ifreund made it support dynamic musl
+    TODO ifreund made it support dynamic musl (#7406)
     
 
     <h2 id="glibc-233"><a href="#toc-glibc-233">glibc 2.33</a> <a class="hdr" href="#glibc-233">§</a></h2>
@@ -2250,6 +2339,8 @@ TODO tooling:
       <li>Copy .pdb files from zig-cache/ when appropriate (#8407).</li>
       <li>Properly pass -mcpu option when assembling.</li>
       <li>Expose header files when linking libunwind.</li>
+      <li>Implicitly enable <code>--eh_frame_hdr</code> when compiling C/C++ files. Matches what Clang/GCC driver do (#7711).</li>
+      <li>Pass -mthumb when compiling C/C++ code. The Clang driver requires this flag and ignores the target triple.</li>
     </ul>
 
     <h3 id="Environment-Variable-Alternatives-to-CLI-Options"><a href="#toc-Environment-Variable-Alternatives-to-CLI-Options">Environment Variable Alternatives to CLI Options</a> <a class="hdr" href="#Environment-Variable-Alternatives-to-CLI-Options">§</a></h3>
@@ -2303,7 +2394,7 @@ TODO tooling:
     </p>
     
     <p>
-    Contributors: Andrew Kelley, Jakub Konka, LemonBoy, Rafael Ristovski, g-w1
+    Contributors: Andrew Kelley, Jakub Konka, LemonBoy, Rafael Ristovski, Jacob G-W
     </p>
     
 
@@ -2343,12 +2434,6 @@ Hello World!</pre>
     <p>
     Note: many bugs were both introduced and resolved within this release cycle.
     </p>
-
-TODO
-LemonBoy -std: Make C allocator respect the required alignment
-    Use posix_memalign where available and the _aligned_{malloc,free} API on
-    Windows. Closes #3783
-
     <h2 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h2>
 
     <p>
@@ -2455,33 +2540,6 @@ LemonBoy -std: Make C allocator respect the required alignment
   </body>
 </html>
 
-TODO LemonBoy - Initial support for static PIE executables
-
-ommit abc717f203060f7ab16d36f2afe681d838b46801
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Nov 22 17:28:11 2020 -0700
-
-    modernize the PIE patch for the latest master branch
-
-    This is the part of #3960 that has to be rewritten to apply to latest
-    master branch code.
-
-commit c7170e4a5480581db5f30913eebd9ad4f7cd121e
-Merge: 98d5bfbd4 abc717f20
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Nov 22 17:30:34 2020 -0700
-
-    Support PIE (Position Independent Executables)
-
-    Closes #4503
-    Revives #3960
-    Merges branch 'pie' into master
-
-
-
- lib/std/build.zig | 11 +++++++++++
- 1 file changed, 11 insertions(+)
-
 
  TODO mention the license tweak
 
@@ -2515,5 +2573,40 @@ Date:   Fri Jan 22 23:36:30 2021 -0700
     closes #2845
 
 
+commit 5ac91794cce8bd53916a378815be01e4365d53d9
+Author: Isaac Freund <ifreund@ifreund.xyz>
+Date:   Mon May 10 21:29:20 2021 +0200
 
-TODO change g-w1 to Jacob G-W
+    stage2: use system libc when targeting the native OS/ABI
+    
+    Currently zig will always try to build its own libc and compile against
+    that. This of course makes sense for cross-compilation, but can cause
+    problems when targeting the native OS/ABI.
+    
+    For example, if the system uses a newer glibc version than zig ships
+    zig will fall back to using the newest version it does ship. However
+    this causes linking system libraries to fail as they are built against a
+    different glibc version than the zig code is built against.
+    
+    To remedy this, simply default to linking the system libc when targeting
+    the native OS/ABI.
+
+ src/Compilation.zig | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+commit 1d6c804b29fed146aafda0f56cae7a4853b6abf9
+Author: Isaac Freund <ifreund@ifreund.xyz>
+Date:   Tue May 18 23:09:28 2021 +0200
+
+    stage2: only default to linking system libc if linking system libs
+    
+    We do need to link the system libc if linking system libraries as
+    they may potentially be compiled against e.g. a newer glibc version
+    than zig can provide. However if not linking system libraries, using
+    the zig provided libc is more reliable as it does not depend on any
+    quirks of the host system or being able to invoke the system cc to
+    find include dirs.
+
+ src/Compilation.zig | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
