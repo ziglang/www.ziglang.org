@@ -284,6 +284,9 @@
             <li><a id="toc-bpf-Support" href="#bpf-Support">bpf Support</a></li>
             <li><a id="toc-msp430-Support" href="#msp430-Support">msp430 Support</a></li>
             <li><a id="toc-sparc64-Support" href="#sparc64-Support">sparc64 Support</a></li>
+            <li><a id="toc-PowerPC-Support" href="#PowerPC-Support">PowerPC Support</a></li>
+            <li><a id="toc-32-bit-x86-Support" href="#32-bit-x86-Support">32-bit x86 Support</a></li>
+            <li><a id="toc-MIPS-Support" href="#MIPS-Support">MIPS Support</a></li>
         </ul></li>
         <li><a id="toc-Documentation" href="#Documentation">Documentation</a></li>
         <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a></li>
@@ -299,6 +302,7 @@
             <li><a id="toc-Whole-File-AST-Lowering" href="#Whole-File-AST-Lowering">Whole-File AST Lowering</a></li>
             <li><a id="toc-LTO" href="#LTO">LTO</a></li>
             <li><a id="toc-Static-PIE" href="#Static-PIE">Static PIE</a></li>
+            <li><a id="toc-Native-libc-Integration" href="#Native-libc-Integration">Native libc Integration</a></li>
             <li><a id="toc-Reuse-Runtime-Libraries-in-More-Cases" href="#Reuse-Runtime-Libraries-in-More-Cases">Reuse Runtime Libraries in More Cases</a></li>
             <li><a id="toc-x86-64-Backend" href="#x86-64-Backend">x86-64 Backend</a></li>
             <li><a id="toc-AArch64-Backend" href="#AArch64-Backend">AArch64 Backend</a></li>
@@ -333,6 +337,7 @@
             </ul></li>
             <li><a id="toc-MultiArrayList" href="#MultiArrayList">MultiArrayList</a></li>
             <li><a id="toc-Progress" href="#Progress">Progress</a></li>
+            <li><a id="toc-Testing" href="#Testing">Testing</a></li>
             <li><a id="toc-Orphanage" href="#Orphanage">Orphanage</a></li>
         </ul></li>
         <li><a id="toc-Zig-Build-System" href="#Zig-Build-System">Zig Build System</a></li>
@@ -356,9 +361,11 @@
         </ul></li>
         <li><a id="toc-News" href="#News">News</a>
         <ul>
-            <li><a id="toc-Please-Welcome-Frank-Denis-to-the-Core-Zig-Team" href="#Please-Welcome-Frank-Denis-to-the-Core-Zig-Team">Please Welcome Frank Denis to the Core Zig Team</a></li>
-            <li><a id="toc-Please-Welcome-kprotty-to-the-Core-Zig-Team" href="#Please-Welcome-kprotty-to-the-Core-Zig-Team">Please Welcome kprotty to the Core Zig Team</a></li>
+            <li><a id="toc-Frank-Denis-joins-the-Core-Zig-Team" href="#Frank-Denis-joins-the-Core-Zig-Team">Frank Denis joins the Core Zig Team</a></li>
+            <li><a id="toc-kprotty-joins-the-Core-Zig-Team" href="#kprotty-joins-the-Core-Zig-Team">kprotty joins the Core Zig Team</a></li>
             <li><a id="toc-LemonBoy-Gains-LLVM-Write-Access" href="#LemonBoy-Gains-LLVM-Write-Access">LemonBoy Gains LLVM Write Access</a></li>
+            <li><a id="toc-Loris-Cro-Gets-a-Raise" href="#Loris-Cro-Gets-a-Raise">Loris Cro Gets a Raise</a></li>
+            <li><a id="toc-License-Tweak" href="#License-Tweak">License Tweak</a></li>
         </ul></li>
         <li><a id="toc-Roadmap" href="#Roadmap">Roadmap</a>
         <ul>
@@ -952,6 +959,28 @@ SYSTEM_LINKER_HACK
 
     Koakuma, LemonBoy
     
+
+    <h2 id="PowerPC-Support"><a href="#toc-PowerPC-Support">PowerPC Support</a> <a class="hdr" href="#PowerPC-Support">§</a></h2>
+
+ added:
+ powerpc-linux-none powerpc-linux-musl
+ powerpc-linux-gnu - #4927
+    
+
+    <h2 id="32-bit-x86-Support"><a href="#toc-32-bit-x86-Support">32-bit x86 Support</a> <a class="hdr" href="#32-bit-x86-Support">§</a></h2>
+
+ i386-linux-gnu made progress
+ https://github.com/ziglang/zig/issues/4926
+ https://github.com/ziglang/zig/issues/8930
+    
+
+    <h2 id="MIPS-Support"><a href="#toc-MIPS-Support">MIPS Support</a> <a class="hdr" href="#MIPS-Support">§</a></h2>
+
+ - mips-linux-none, mips-linux-musl regressed due to llvm 12
+ - we gained mipsel-linux, mipsel-linux-musl, mipsel-linux-gnu support
+   but have it commented out
+    
+
     
 
     <h1 id="Documentation"><a href="#toc-Documentation">Documentation</a> <a class="hdr" href="#Documentation">§</a></h1>
@@ -1272,7 +1301,7 @@ Date:   Sat May 22 17:20:30 2021 -0700
     end, when all objects are available to examine at the same time.
     </p>
     <p>
-    The CLI gains <code>-flto</code> and <code>-fno-lto</code> options to
+    The Command-Line Interface gains <code>-flto</code> and <code>-fno-lto</code> options to
     override the default. However, the cool thing about this is that the defaults
     are great! In general when you use build-exe in release mode, Zig will
     enable LTO if it would work and it would help.
@@ -1398,6 +1427,47 @@ hello: ELF 64-bit LSB <strong>pie</strong> executable, x86-64, version 1 (SYSV),
     and other GUI applications.
     </p>
     <p>Tracking issues: #3960, #4503</p>
+    
+
+    <h2 id="Native-libc-Integration"><a href="#toc-Native-libc-Integration">Native libc Integration</a> <a class="hdr" href="#Native-libc-Integration">§</a></h2>
+
+commit 5ac91794cce8bd53916a378815be01e4365d53d9
+Author: Isaac Freund <ifreund@ifreund.xyz>
+Date:   Mon May 10 21:29:20 2021 +0200
+
+    stage2: use system libc when targeting the native OS/ABI
+    
+    Currently zig will always try to build its own libc and compile against
+    that. This of course makes sense for cross-compilation, but can cause
+    problems when targeting the native OS/ABI.
+    
+    For example, if the system uses a newer glibc version than zig ships
+    zig will fall back to using the newest version it does ship. However
+    this causes linking system libraries to fail as they are built against a
+    different glibc version than the zig code is built against.
+    
+    To remedy this, simply default to linking the system libc when targeting
+    the native OS/ABI.
+
+ src/Compilation.zig | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+commit 1d6c804b29fed146aafda0f56cae7a4853b6abf9
+Author: Isaac Freund <ifreund@ifreund.xyz>
+Date:   Tue May 18 23:09:28 2021 +0200
+
+    stage2: only default to linking system libc if linking system libs
+    
+    We do need to link the system libc if linking system libraries as
+    they may potentially be compiled against e.g. a newer glibc version
+    than zig can provide. However if not linking system libraries, using
+    the zig provided libc is more reliable as it does not depend on any
+    quirks of the host system or being able to invoke the system cc to
+    find include dirs.
+
+ src/Compilation.zig | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
     
 
     <h2 id="Reuse-Runtime-Libraries-in-More-Cases"><a href="#toc-Reuse-Runtime-Libraries-in-More-Cases">Reuse Runtime Libraries in More Cases</a> <a class="hdr" href="#Reuse-Runtime-Libraries-in-More-Cases">§</a></h2>
@@ -2260,6 +2330,11 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     restore it.
     
 
+    <h2 id="Testing"><a href="#toc-Testing">Testing</a> <a class="hdr" href="#Testing">§</a></h2>
+
+    TODO
+    
+
     <h2 id="Orphanage"><a href="#toc-Orphanage">Orphanage</a> <a class="hdr" href="#Orphanage">§</a></h2>
 
     TODO
@@ -2561,12 +2636,12 @@ Hello World!</pre>
     <h1 id="News"><a href="#toc-News">News</a> <a class="hdr" href="#News">§</a></h1>
 
 
-    <h2 id="Please-Welcome-Frank-Denis-to-the-Core-Zig-Team"><a href="#toc-Please-Welcome-Frank-Denis-to-the-Core-Zig-Team">Please Welcome Frank Denis to the Core Zig Team</a> <a class="hdr" href="#Please-Welcome-Frank-Denis-to-the-Core-Zig-Team">§</a></h2>
+    <h2 id="Frank-Denis-joins-the-Core-Zig-Team"><a href="#toc-Frank-Denis-joins-the-Core-Zig-Team">Frank Denis joins the Core Zig Team</a> <a class="hdr" href="#Frank-Denis-joins-the-Core-Zig-Team">§</a></h2>
 
     <p>TODO</p>
     
 
-    <h2 id="Please-Welcome-kprotty-to-the-Core-Zig-Team"><a href="#toc-Please-Welcome-kprotty-to-the-Core-Zig-Team">Please Welcome kprotty to the Core Zig Team</a> <a class="hdr" href="#Please-Welcome-kprotty-to-the-Core-Zig-Team">§</a></h2>
+    <h2 id="kprotty-joins-the-Core-Zig-Team"><a href="#toc-kprotty-joins-the-Core-Zig-Team">kprotty joins the Core Zig Team</a> <a class="hdr" href="#kprotty-joins-the-Core-Zig-Team">§</a></h2>
 
     <p>TODO</p>
     
@@ -2574,6 +2649,30 @@ Hello World!</pre>
     <h2 id="LemonBoy-Gains-LLVM-Write-Access"><a href="#toc-LemonBoy-Gains-LLVM-Write-Access">LemonBoy Gains LLVM Write Access</a> <a class="hdr" href="#LemonBoy-Gains-LLVM-Write-Access">§</a></h2>
 
     <p>TODO</p>
+    
+
+    <h2 id="Loris-Cro-Gets-a-Raise"><a href="#toc-Loris-Cro-Gets-a-Raise">Loris Cro Gets a Raise</a> <a class="hdr" href="#Loris-Cro-Gets-a-Raise">§</a></h2>
+
+    <p>TODO</p>
+    
+
+    <h2 id="License-Tweak"><a href="#toc-License-Tweak">License Tweak</a> <a class="hdr" href="#License-Tweak">§</a></h2>
+
+    <p>In celebration of this 0.8.0 release, Andrew made a small tweak to the LICENSE file
+    of the main Zig repository:</p>
+    <pre><code>--- a/LICENSE
++++ b/LICENSE
+@@ -1,6 +1,6 @@
+ The MIT License (Expat)
+ 
+<span style="color: red">-Copyright (c) 2015 Andrew Kelley</span>
+<span style="color: green">+Copyright (c) 2015-2021, Zig contributors</span>
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal</code></pre>
+    <p>
+    Thank you everyone for your amazing contributions over the past years! ❤️
+    </p>
     
 
     
@@ -2645,51 +2744,3 @@ Hello World!</pre>
     </div>
   </body>
 </html>
-
-
- TODO mention the license tweak
-
-
- TODO do a diff on the test matrix
-
- TODO allow tests to fail
-
-
-
-commit 5ac91794cce8bd53916a378815be01e4365d53d9
-Author: Isaac Freund <ifreund@ifreund.xyz>
-Date:   Mon May 10 21:29:20 2021 +0200
-
-    stage2: use system libc when targeting the native OS/ABI
-    
-    Currently zig will always try to build its own libc and compile against
-    that. This of course makes sense for cross-compilation, but can cause
-    problems when targeting the native OS/ABI.
-    
-    For example, if the system uses a newer glibc version than zig ships
-    zig will fall back to using the newest version it does ship. However
-    this causes linking system libraries to fail as they are built against a
-    different glibc version than the zig code is built against.
-    
-    To remedy this, simply default to linking the system libc when targeting
-    the native OS/ABI.
-
- src/Compilation.zig | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
-
-commit 1d6c804b29fed146aafda0f56cae7a4853b6abf9
-Author: Isaac Freund <ifreund@ifreund.xyz>
-Date:   Tue May 18 23:09:28 2021 +0200
-
-    stage2: only default to linking system libc if linking system libs
-    
-    We do need to link the system libc if linking system libraries as
-    they may potentially be compiled against e.g. a newer glibc version
-    than zig can provide. However if not linking system libraries, using
-    the zig provided libc is more reliable as it does not depend on any
-    quirks of the host system or being able to invoke the system cc to
-    find include dirs.
-
- src/Compilation.zig | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
-
