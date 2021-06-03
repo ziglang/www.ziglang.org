@@ -830,6 +830,25 @@ SYSTEM_LINKER_HACK
 
     Koakuma, LemonBoy
     {#header_close#}
+
+    {#header_open|PowerPC Support#}
+ added:
+ powerpc-linux-none powerpc-linux-musl
+ powerpc-linux-gnu - #4927
+    {#header_close#}
+
+    {#header_open|32-bit x86 Support#}
+ i386-linux-gnu made progress
+ https://github.com/ziglang/zig/issues/4926
+ https://github.com/ziglang/zig/issues/8930
+    {#header_close#}
+
+    {#header_open|MIPS Support#}
+ - mips-linux-none, mips-linux-musl regressed due to llvm 12
+ - we gained mipsel-linux, mipsel-linux-musl, mipsel-linux-gnu support
+   but have it commented out
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Documentation#}
@@ -1140,7 +1159,7 @@ Date:   Sat May 22 17:20:30 2021 -0700
     end, when all objects are available to examine at the same time.
     </p>
     <p>
-    The CLI gains <code>-flto</code> and <code>-fno-lto</code> options to
+    The Command-Line Interface gains <code>-flto</code> and <code>-fno-lto</code> options to
     override the default. However, the cool thing about this is that the defaults
     are great! In general when you use build-exe in release mode, Zig will
     enable LTO if it would work and it would help.
@@ -1265,6 +1284,46 @@ hello: ELF 64-bit LSB <strong>pie</strong> executable, x86-64, version 1 (SYSV),
     and other GUI applications.
     </p>
     <p>Tracking issues: #3960, #4503</p>
+    {#header_close#}
+
+    {#header_open|Native libc Integration#}
+commit 5ac91794cce8bd53916a378815be01e4365d53d9
+Author: Isaac Freund <ifreund@ifreund.xyz>
+Date:   Mon May 10 21:29:20 2021 +0200
+
+    stage2: use system libc when targeting the native OS/ABI
+    
+    Currently zig will always try to build its own libc and compile against
+    that. This of course makes sense for cross-compilation, but can cause
+    problems when targeting the native OS/ABI.
+    
+    For example, if the system uses a newer glibc version than zig ships
+    zig will fall back to using the newest version it does ship. However
+    this causes linking system libraries to fail as they are built against a
+    different glibc version than the zig code is built against.
+    
+    To remedy this, simply default to linking the system libc when targeting
+    the native OS/ABI.
+
+ src/Compilation.zig | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+commit 1d6c804b29fed146aafda0f56cae7a4853b6abf9
+Author: Isaac Freund <ifreund@ifreund.xyz>
+Date:   Tue May 18 23:09:28 2021 +0200
+
+    stage2: only default to linking system libc if linking system libs
+    
+    We do need to link the system libc if linking system libraries as
+    they may potentially be compiled against e.g. a newer glibc version
+    than zig can provide. However if not linking system libraries, using
+    the zig provided libc is more reliable as it does not depend on any
+    quirks of the host system or being able to invoke the system cc to
+    find include dirs.
+
+ src/Compilation.zig | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
     {#header_close#}
 
     {#header_open|Reuse Runtime Libraries in More Cases#}
@@ -2094,6 +2153,10 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     restore it.
     {#header_close#}
 
+    {#header_open|Testing#}
+    TODO
+    {#header_close#}
+
     {#header_open|Orphanage#}
     TODO
     move std.SegmentedList to the std-lib-orphanage
@@ -2380,16 +2443,38 @@ Hello World!</pre>
 
     {#header_open|News#}
 
-    {#header_open|Please Welcome Frank Denis to the Core Zig Team#}
+    {#header_open|Frank Denis joins the Core Zig Team#}
     <p>TODO</p>
     {#header_close#}
 
-    {#header_open|Please Welcome kprotty to the Core Zig Team#}
+    {#header_open|kprotty joins the Core Zig Team#}
     <p>TODO</p>
     {#header_close#}
 
     {#header_open|LemonBoy Gains LLVM Write Access#}
     <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Loris Cro Gets a Raise#}
+    <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|License Tweak#}
+    <p>In celebration of this 0.8.0 release, Andrew made a small tweak to the LICENSE file
+    of the main Zig repository:</p>
+    <pre><code>--- a/LICENSE
++++ b/LICENSE
+@@ -1,6 +1,6 @@
+ The MIT License (Expat)
+ 
+<span style="color: red">-Copyright (c) 2015 Andrew Kelley</span>
+<span style="color: green">+Copyright (c) 2015-2021, Zig contributors</span>
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal</code></pre>
+    <p>
+    Thank you everyone for your amazing contributions over the past years! ❤️
+    </p>
     {#header_close#}
 
     {#header_close#}
@@ -2456,51 +2541,3 @@ Hello World!</pre>
     </div>
   </body>
 </html>
-
-
- TODO mention the license tweak
-
-
- TODO do a diff on the test matrix
-
- TODO allow tests to fail
-
-
-
-commit 5ac91794cce8bd53916a378815be01e4365d53d9
-Author: Isaac Freund <ifreund@ifreund.xyz>
-Date:   Mon May 10 21:29:20 2021 +0200
-
-    stage2: use system libc when targeting the native OS/ABI
-    
-    Currently zig will always try to build its own libc and compile against
-    that. This of course makes sense for cross-compilation, but can cause
-    problems when targeting the native OS/ABI.
-    
-    For example, if the system uses a newer glibc version than zig ships
-    zig will fall back to using the newest version it does ship. However
-    this causes linking system libraries to fail as they are built against a
-    different glibc version than the zig code is built against.
-    
-    To remedy this, simply default to linking the system libc when targeting
-    the native OS/ABI.
-
- src/Compilation.zig | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
-
-commit 1d6c804b29fed146aafda0f56cae7a4853b6abf9
-Author: Isaac Freund <ifreund@ifreund.xyz>
-Date:   Tue May 18 23:09:28 2021 +0200
-
-    stage2: only default to linking system libc if linking system libs
-    
-    We do need to link the system libc if linking system libraries as
-    they may potentially be compiled against e.g. a newer glibc version
-    than zig can provide. However if not linking system libraries, using
-    the zig provided libc is more reliable as it does not depend on any
-    quirks of the host system or being able to invoke the system cc to
-    find include dirs.
-
- src/Compilation.zig | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
-
