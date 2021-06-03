@@ -1133,6 +1133,111 @@ Date:   Sat May 22 17:20:30 2021 -0700
 
     {#header_close#}
 
+    {#header_open|LTO#}
+    <p>
+    LTO stands for <strong>Link Time Optimization</strong>. In summary, it means
+    postponing the final stages of compilation and optimization until the very
+    end, when all objects are available to examine at the same time.
+    </p>
+    <p>
+    The CLI gains <code>-flto</code> and <code>-fno-lto</code> options to
+    override the default. However, the cool thing about this is that the defaults
+    are great! In general when you use build-exe in release mode, Zig will
+    enable LTO if it would work and it would help.
+    </p>
+    <p>
+    {#link|zig cc#} supports detecting and honoring the <code>-flto</code>
+    and <code>-fno-lto</code> flags as well.
+    </p>
+    <p>
+    This feature is implemented in a way that allows {#link|LLVM|LLVM 12#} to optimize
+    across the Zig and C/C++ code boundary:
+    </p>
+    <p><strong>main.zig</strong></p>
+    <pre>{#syntax#}const std = @import("std");
+
+export fn foo4() void {
+    _ = std.c.printf("Hi\n");
+}
+
+extern fn foo1() c_int;
+
+pub fn main() u8 {
+    return @intCast(u8, foo1());
+}{#endsyntax#}</pre>
+    <p><strong>a.c</strong></p>
+    <pre><code>int foo1(void);
+void foo2(void);
+void foo4(void);
+
+static signed int i = 0;
+
+void foo2(void) {
+  i = -1;
+}
+
+static int foo3() {
+  foo4();
+  return 10;
+}
+
+int foo1(void) {
+  int data = 0;
+
+  if (i &lt; 0)
+    data = foo3();
+
+  data = data + 42;
+  return data;
+}</code></pre>
+    <p>Output:</p>
+    <pre><code>$ ./zig build-exe main.zig a.c -OReleaseFast -lc 
+$ ./main
+$ echo $?
+42
+$ objdump -d main -Mintel | grep -A7 '&lt;main'
+0000000000201530 &lt;main&gt;:
+  201530:	48 c7 c0 ff ff ff ff 	mov    rax,0xffffffffffffffff
+  201537:	66 0f 1f 84 00 00 00 	nop    WORD PTR [rax+rax*1+0x0]
+  20153e:	00 00 
+  201540:	48 83 7c c2 08 00    	cmp    QWORD PTR [rdx+rax*8+0x8],0x0
+  201546:	48 8d 40 01          	lea    rax,[rax+0x1]
+  20154a:	75 f4                	jne    201540 &lt;main+0x10&gt;
+  20154c:	48 63 cf             	movsxd rcx,edi
+  20154f:	48 89 35 7a 22 00 00 	mov    QWORD PTR [rip+0x227a],rsi        # 2037d0 &lt;argv&gt;
+  201556:	48 89 0d 7b 22 00 00 	mov    QWORD PTR [rip+0x227b],rcx        # 2037d8 &lt;argv+0x8&gt;
+  20155d:	48 89 15 7c 22 00 00 	mov    QWORD PTR [rip+0x227c],rdx        # 2037e0 &lt;environ.0&gt;
+  201564:	48 89 05 7d 22 00 00 	mov    QWORD PTR [rip+0x227d],rax        # 2037e8 &lt;environ.0+0x8&gt;
+  20156b:	b8 2a 00 00 00       	mov    eax,0x2a
+  201570:	c3                   	ret</code></pre>
+    <p>The interesting thing to note here is that there was no LTO explicitly opted into.
+    It happened automatically.
+    And you can see here that in the main function, there is no call to
+    <code>foo1</code> and there is no exported <code>foo4</code>. If we didn't have LTO,
+    the call to <code>foo1</code> could not have been inlined. For example, here's what
+    happens if we force-disable LTO:
+    </p>
+    <pre><code>$ ./zig build-exe main.zig a.c -OReleaseFast -lc -fno-lto
+$ objdump -d main -Mintel | grep -A7 '&lt;main'
+00000000002015d0 &lt;main&gt;:
+  2015d0:	50                   	push   rax
+  2015d1:	48 c7 c0 ff ff ff ff 	mov    rax,0xffffffffffffffff
+  2015d8:	0f 1f 84 00 00 00 00 	nop    DWORD PTR [rax+rax*1+0x0]
+  2015df:	00 
+  2015e0:	48 83 7c c2 08 00    	cmp    QWORD PTR [rdx+rax*8+0x8],0x0
+  2015e6:	48 8d 40 01          	lea    rax,[rax+0x1]
+  2015ea:	75 f4                	jne    2015e0 &lt;main+0x10&gt;
+  2015ec:	48 63 cf             	movsxd rcx,edi
+  2015ef:	48 89 35 fa 22 00 00 	mov    QWORD PTR [rip+0x22fa],rsi        # 2038f0 &lt;argv&gt;
+  2015f6:	48 89 0d fb 22 00 00 	mov    QWORD PTR [rip+0x22fb],rcx        # 2038f8 &lt;argv+0x8&gt;
+  2015fd:	48 89 15 fc 22 00 00 	mov    QWORD PTR [rip+0x22fc],rdx        # 203900 &lt;environ.0&gt;
+  201604:	48 89 05 fd 22 00 00 	mov    QWORD PTR [rip+0x22fd],rax        # 203908 &lt;environ.0+0x8&gt;
+  20160b:	e8 90 ff ff ff       	call   2015a0 &lt;foo1&gt;
+  201610:	0f b6 c0             	movzx  eax,al</code></pre>
+    <p>Now you can see Zig is forced to call <code>foo</code> and return its result.</p>
+    <p>Tracking issue: #2845</p>
+    {#header_close#}
+
     {#header_open|Static PIE#}
     <p>Mainly thanks to LemonBoy, Zig now supports
     <strong>Position Independent Executables</strong>, even
@@ -1716,7 +1821,6 @@ m_cheat.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), with debug_info
     previously did. See the new doc comments for more details.</li>
     <li>Made {#syntax#}Version.parse{#endsyntax#} less strict.</li>
     <li>Added {#syntax#}LinearFifo(...).pump(src_reader, dest_writer){#endsyntax#}</li>
-    <li>Support for static PIE executables.</li>
     </ul>
 
 <p>Contributors: Adam Goertz, Aiz672, Al Hoang, Alex Cameron, Alexandros Naskos, Anders Conbere, Andreas Karlsson, Andreas Linz, Andrew Kelley, Aransentin, Asherah Connor, Benjamin Feng, Benjamin Graf, Bill Nagel, BinaryWarlock, Bxil, Cameron Conn, Carlos Zúñiga, Daniele Cocca, Devin Bayer, Dmitry Atamanov, Edward Dean, Ethan Gruffudd, Evan Haas, Felix (xq) Queißner, Frank Denis, Guillaume Ballet, Hadron67, Hannu Hartikainen, Hubert Jasudowicz, Isaac Freund, Isaac Yonemoto, J.C. Moyer, Jakub Konka, Jay Petacat, Jens Goldberg, Jonathan Knezek, Jonathan Marler, Joran Dirk Greef, Joris Hartog, Josh Holland, Josh Wolfe, Julian Maingot, Julius Putra Tanu Setiaji, Kenta Iwasaki, Koakuma, Lee Cannon, LemonBoy, Lewis Gaul, Loris Cro, Luna, Luuk de Gram, Maciej Walczak, Mahdi Khanalizadeh, Manuel Floruß, Martin Wickham, Mathieu Guay-Paquet, Matt Knight, Matt Sicker, Matthew Borkowski, Meghan, Meghan Denny, Michael Dusan, Michael Freundorfer, Michael Holmes, Miles Alan, Nathanaël Courant, Nuno Leiria, Rageoholic, Robin Voetter, Rocknest, Rohlem, Ryan Greenblatt, Ryan Liptak, Sage Hane, Sahnvour, Shachaf Ben-Kiki, Sobeston, Sreehari S, Sébastien Marie, Tadeo Kondrak, Tau, Timon Kruiper, Travis, Veikka Tuominen, Vincent Rischmann, Yorhel, Zander Khan, ZapAnton, aiz, antlilja, breakin, christian-stephen, cryptocode, data-man, daurnimator, ducdetronquito, fancl20, frmdstryr, Jacob G-W, gracefu, heidezomp, johnLate, jumpnbrownweasel, lithdew, luna, mason1920, rgreenblatt, root, ryuukk, tgschultz, viri, xackus, Žiga Željko</p>
@@ -2361,29 +2465,6 @@ Hello World!</pre>
 
  TODO allow tests to fail
 
-
-commit 0d4b6ac7417d1094ac972981b0241444ce2380ba
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Jan 22 23:36:30 2021 -0700
-
-    add LTO support
-    
-    The CLI gains -flto and -fno-lto options to override the default.
-    However, the cool thing about this is that the defaults are great! In
-    general when you use build-exe in release mode, Zig will enable LTO if
-    it would work and it would help.
-    
-    zig cc supports detecting and honoring the -flto and -fno-lto flags as
-    well. The linkWithLld functions are improved to all be the same with
-    regards to copying the artifact instead of trying to pass single objects
-    through LLD with -r. There is possibly a future improvement here as
-    well; see the respective TODOs.
-    
-    stage1 is updated to support outputting LLVM bitcode instead of machine
-    code when lto is enabled. This allows LLVM to optimize across the Zig and
-    C/C++ code boundary.
-    
-    closes #2845
 
 
 commit 5ac91794cce8bd53916a378815be01e4365d53d9
