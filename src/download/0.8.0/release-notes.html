@@ -967,27 +967,195 @@
     {#header_close#}
 
     {#header_open|Language Changes#}
-    TODO language
-  - delete packed enums from the language
-    stage1: Require a block after suspend Closes #8603
-  - Add {#syntax#}@extern{#endsyntax#}.
+    <p>Compared to other releases, the Zig language saw fewer changes this cycle,
+    providing a relatively stable target for the {#link|Self-Hosted Compiler#} implementation.
+    Still, there were a few additions and breaking changes.</p>
 
-  - `zig test` no longer filters based on empty labels / nameless test blocks
+    {#header_open|No More Extern or Packed Enums#}
+    <pre>{#syntax#}const A = extern enum { foo, bar };
+const B = packed enum { foo, bar };{#endsyntax#}</pre>
+    <pre><code><strong>test.zig:1:11: <span style="color: red">error:</span> enums do not support 'packed' or 'extern'; instead provide an explicit integer tag type</strong>
+const A = extern enum { foo, bar };
+          ^
+<strong>test.zig:2:11: <span style="color: red">error:</span> enums do not support 'packed' or 'extern'; instead provide an explicit integer tag type</strong>
+const B = packed enum { foo, bar };
+          ^</code></pre>
+    <p>This error is caught by the {#link|Self-Hosted Compiler#} (due to {#link|Whole-File AST Lowering#}) but not yet caught by the {#link|Bootstrap Compiler#}. Related proposal: #8970</p>
+    {#header_close#}
 
-  - remove @TagType
-    - Tadeo Kondrak
+    {#header_open|Require Block After Suspend#}
+    {#code_begin|test_err#}
+test "example" {
+    suspend;
+}
+    {#code_end#}
+    <p><code>zig fmt</code> automatically fixes it, transforming it into:</p>
+    {#code_begin|syntax#}
+test "example" {
+    suspend {}
+}
+    {#code_end#}
+    <p>Tracking issue: #8603</p>
+    {#header_close#}
 
-  - Allow resume in nosuspend scope. Resuming a suspended async function call
-    is actually a synchronous operation.
+    {#header_open|@extern#}
+    <p>New builtin:</p>
+    <pre>{#syntax#}@extern(T: type, comptime options: std.builtin.ExternOptions) *T{#endsyntax#}</pre>
+    <p>Creates a reference to an external symbol in the output object file.</p>
+    {#header_close#}
 
-  - Allow async in nosuspend scope. Starting an async function call is actually
-    a synchronous operation, since the caller is not awaiting on the callee for a return value.
+    {#header_open|Nameless Tests#}
+    <p>Nameless tests are exempt from <code>--test-filter</code> parameters, making it
+    possible to use <code>--test-filter</code> while still pointing <code>zig test</code>
+    at the root source file.</p>
+    <p class="file">a.zig</p>
+    {#code_begin|syntax#}
+test {
+    _ = @import("b.zig");
+}
+    {#code_end#}
+    <p class="file">b.zig</p>
+    {#code_begin|syntax#}
+const std = @import("std");
 
-  - add SysV calling convention
+test "pass" {
+    try std.testing.expect(true);
+}
+test "fail" {
+    try std.testing.expect(false);
+}
+    {#code_end#}
+    <pre><code>$ ./zig test a.zig
+b.test "fail"... FAIL (TestUnexpectedResult)
+<strong>/home/andy/Downloads/zig/lib/std/testing.zig:310:14:</strong> 0x24d54b in std.testing.expect (test)
+    if (!ok) return error.TestUnexpectedResult;
+             ^
+<strong>/home/andy/Downloads/zig/build/b.zig:7:5:</strong> 0x2068b1 in b.test "fail" (test)
+    try std.testing.expect(false);
+    ^
+2 passed; 0 skipped; 1 failed.
+error: the following test command failed with exit code 1:
+zig-cache/o/577deb476721d8dde8bc782f2c61ed2f/test /home/andy/Downloads/zig/build/zig
 
-  - stage1: Allow wrapping negation on unsigned ints at comptime Closes #7951 Closes #8574
+$ ./zig test a.zig --test-filter pass
+All 2 tests passed.</code></pre>
+    {#header_close#}
 
-  - std.builtin re-arranging
+    {#header_open|@TagType Removed#}
+    <p>Old code:</p>
+    {#code_begin|test_err#}
+const std = @import("std");
+const Enum = enum { one, two, three };
+
+test "old code" {
+    const T = @TagType(Enum);
+    try std.testing.expectEqual(u2, T);
+}
+    {#code_end#}
+    <p>New code:</p>
+    {#code_begin|test#}
+const std = @import("std");
+const Enum = enum { one, two, three };
+const TagType = std.meta.TagType;
+
+test "new code" {
+    const T = TagType(Enum);
+    try std.testing.expectEqual(u2, T);
+}
+    {#code_end#}
+    <p>Contributors: Tadeo Kondrak</p>
+    {#header_close#}
+
+    {#header_open|nosuspend#}
+    <p>{#syntax#}nosuspend{#endsyntax#} blocks now allow {#syntax#}resume{#endsyntax#}
+    inside their scope, because resuming a suspended async function call is actually a
+    synchronous operation.</p>
+    <p>{#syntax#}nosuspend{#endsyntax#} blocks now allow {#syntax#}async{#endsyntax#}
+    function calls inside their scope, because starting an async function call is actually
+    a synchronous operation, since the caller is not awaiting on the callee for a return value.</p>
+    {#header_close#}
+
+    {#header_open|Add SysV Calling Convention#}
+    <p>{#syntax#}std.builtin.CallingConvention{#endsyntax#} now looks like this:</p>
+    {#code_begin|syntax#}
+pub const CallingConvention = enum {
+    Unspecified,
+    C,
+    Naked,
+    Async,
+    Inline,
+    Interrupt,
+    Signal,
+    Stdcall,
+    Fastcall,
+    Vectorcall,
+    Thiscall,
+    APCS,
+    AAPCS,
+    AAPCSVFP,
+    SysV,
+};
+    {#code_end#}
+    {#header_close#}
+
+    {#header_open|Wrapping Negation on Unsigned Ints at comptime#}
+    {#code_begin|test#}
+const std = @import("std");
+const expect = std.testing.expect;
+const maxInt = std.math.maxInt;
+
+test "unsigned negation wrapping" {
+    try testUnsignedNegationWrappingEval(1);
+    comptime try testUnsignedNegationWrappingEval(1);
+}
+fn testUnsignedNegationWrappingEval(x: u16) !void {
+    try expect(x == 1);
+    const neg = -%x;
+    try expect(neg == maxInt(u16));
+}
+    {#code_end#}
+    <p>Contributor: LemonBoy</p>
+    <p>Tracking issues: #7951, #8574</p>
+    {#header_close#}
+
+    {#header_open|@import("builtin") no longer re-exports std.builtin#}
+    <p>Old code:</p>
+    {#code_begin|test_err#}
+const std = @import("std");
+const builtin = @import("builtin"); // <--- look here
+
+test "old code" {
+    const StackTrace = builtin.StackTrace;
+}
+    {#code_end#}
+    <p>New code:</p>
+    {#code_begin|test#}
+const std = @import("std");
+const builtin = std.builtin; // <--- look here
+
+test "new code" {
+    const StackTrace = builtin.StackTrace;
+}
+    {#code_end#}
+    <p>Additionally, the following is deprecated:</p>
+    {#code_begin|syntax#}
+const std = @import("std");
+const builtin = std.builtin; // <--- look here
+
+test "deprecated code" {
+    const native_arch = builtin.cpu.arch; // deprecated!
+}
+    {#code_end#}
+    <p>Instead, do this:</p>
+    {#code_begin|test#}
+const std = @import("std");
+const builtin = @import("builtin"); // <--- look here
+
+test "new code" {
+    const native_arch = builtin.cpu.arch; // OK
+}
+    {#code_end#}
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Bootstrap Compiler#}
@@ -1261,7 +1429,7 @@ Date:   Sat May 22 17:20:30 2021 -0700
     This feature is implemented in a way that allows {#link|LLVM|LLVM 12#} to optimize
     across the Zig and C/C++ code boundary:
     </p>
-    <p><strong>main.zig</strong></p>
+    <p class="file">main.zig</p>
     <pre>{#syntax#}const std = @import("std");
 
 export fn foo4() void {
@@ -1273,7 +1441,7 @@ extern fn foo1() c_int;
 pub fn main() u8 {
     return @intCast(u8, foo1());
 }{#endsyntax#}</pre>
-    <p><strong>a.c</strong></p>
+    <p class="file">a.c</p>
     <pre><code>int foo1(void);
 void foo2(void);
 void foo4(void);
@@ -2795,3 +2963,5 @@ Hello World!</pre>
     </div>
   </body>
 </html>
+
+TODO run tidy check on this file
