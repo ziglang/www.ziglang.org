@@ -310,7 +310,10 @@
         </ul></li>
         <li><a id="toc-Self-Hosted-Compiler" href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>
         <ul>
-            <li><a id="toc-CPU-Feature-Detection" href="#CPU-Feature-Detection">CPU Feature Detection</a></li>
+            <li><a id="toc-CPU-Feature-Detection" href="#CPU-Feature-Detection">CPU Feature Detection</a>
+            <ul>
+                <li><a id="toc-Update-CPU-Features-Tool" href="#Update-CPU-Features-Tool">Update CPU Features Tool</a></li>
+            </ul></li>
             <li><a id="toc-Command-Line-Interface" href="#Command-Line-Interface">Command-Line Interface</a></li>
             <li><a id="toc-Reworked-Memory-Layout" href="#Reworked-Memory-Layout">Reworked Memory Layout</a></li>
             <li><a id="toc-Whole-File-AST-Lowering" href="#Whole-File-AST-Lowering">Whole-File AST Lowering</a></li>
@@ -327,6 +330,7 @@
             <li><a id="toc-C-Backend" href="#C-Backend">C Backend</a></li>
             <li><a id="toc-SPIR-V-Backend" href="#SPIR-V-Backend">SPIR-V Backend</a></li>
             <li><a id="toc-SPU-Mark-II-Backend" href="#SPU-Mark-II-Backend">SPU Mark II Backend</a></li>
+            <li><a id="toc-Miscellaneous-stage2-Improvements" href="#Miscellaneous-stage2-Improvements">Miscellaneous stage2 Improvements</a></li>
         </ul></li>
         <li><a id="toc-Self-Hosted-Linker" href="#Self-Hosted-Linker">Self-Hosted Linker</a></li>
         <li><a id="toc-C-Translation" href="#C-Translation">C Translation</a></li>
@@ -472,7 +476,7 @@
     <td>arm</td>
     <td>✅</td>
     <td>#3174 🐛📦</td>
-    <td>N/A</td>
+    <td>💀</td>
     <td>🐛📦🧪</td>
     <td>N/A</td>
     </tr>
@@ -576,7 +580,7 @@
     <td>arm</td>
     <td><a href="#Tier-1-Support">Tier 1</a></td>
     <td>✅</td>
-    <td>N/A</td>
+    <td>💀</td>
     <td>🔍</td>
     <td>🔍</td>
     <td>🔍</td>
@@ -876,8 +880,8 @@
       <li>kalimba</li>
       <li>shave</li>
       <li>renderscript</li>
-      <li>32-bit x86 macOS, as well as powerpc32 and powerpc64 macOS, because Apple has
-          officially dropped support for them.</li>
+      <li>32-bit x86 macOS, 32-bit ARM macOS, powerpc32 and powerpc64 macOS,
+        because Apple has officially dropped support for them.</li>
     </ul>
     
     
@@ -1482,7 +1486,7 @@ releases and QA doesn't exist.
     Despite the fact that .zig source code by default is still compiled in this
     release using the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>, the main driver code is already
     self-hosted, as well as many features, such as <a href="#zig-cc">zig cc</a>, <a href="#C-Translation">C Translation</a>,
-    and <a href="#CPU-Feature-Detection">CPU Feature Detection</a>. So improvements made to "stage2" in these areas
+    and <a href="#CPU-Feature-Detection">CPU Feature Detection</a>. Improvements made to "stage2" in these areas
     do in fact affect the main Zig user experience.
     </p>
     TODO Show passing test cases that self-hosted is now capable of
@@ -1491,77 +1495,242 @@ releases and QA doesn't exist.
       main contributors who have stepped up to work on the various parts of it.
     TODO Explain the bootstrapping plan
 
-    <p>Miscellaneous:</p>
-    <ul>
-      <li>Default AVR generic cpu to avr2</li>
-      <li>parser: Use an operator precedence table</li>
-      <li>parser: use shared scratch buffer to avoid allocating and freeing many small lists (#8910).</li>
-      <li>Update the official spec to match the self-hosted parser.</li>
-      <li>tokenizer: fix crash on multiline string with only 1 backslash (#8904).</li>
-      <li>Variable shadowing detection (#6969).</li>
-      <li>link: properly implement passthrough mode for LLD child proccess.</li>
-      <li>Detect redundant C/C++ source files, preventing a deadlock in the caching system (#7308).</li>
-      <li>Print package path on --pkg-begin failure.</li>
-      <li>Better error message for root zig source file not found (#6777, #6893).</li>
-      <li>Always link -lpthread when using system libc. Required when cross-compiling glibc targets.</li>
-      <li>Fix libc components' linking order.</li>
-    </ul>
     <h2 id="CPU-Feature-Detection"><a href="#toc-CPU-Feature-Detection">CPU Feature Detection</a> <a class="hdr" href="#CPU-Feature-Detection">§</a></h2>
 
-    TODO
-    stage2: Add framework for host CPU detection on Linux
+    <p>LemonBoy added a framework for host CPU detection on Linux based on
+    parsing <code>/proc/cpuinfo</code>, and implemented the model
+    detection for <a href="#sparc64-Support">64-bit SPARC targets</a> as proof of concept.
+    </p>
+    <p>
+    He also added CPU feature detection for macOS, PowerPC, and ARM/AArch64.
+    </p>
+    <p>
+    The CPU detection code is nearly at feature parity with LLVM. We do support
+    detecting the native CPU on Sparc systems and macOS, our ARM/AArch64
+    model list is quite comprehensive, and so is our PPC one. The only missing pieces are:</p>
+    <ul>
+      <li>ARM32 detection on Darwin hosts (it is doubtful anybody is planning on
+        running the compiler on a old-ass iPhone)</li>
+      <li>s390x detection on Linux hosts. This can be easily added at a later stage.</li>
+    </ul>
+    <p>As a result of all this work, we dropped LLVM's host CPU detection method
+    as a fallback. This is one less dependency that Zig has on LLVM, bringing us
+    one step closer to making LLVM an optional extension rather than a required dependency.</p>
 
-    Add a generic framework to parse /proc/cpuinfo and implement the model
-    detection for 64bit SPARC targets as proof of concept.
+    <h3 id="Update-CPU-Features-Tool"><a href="#toc-Update-CPU-Features-Tool">Update CPU Features Tool</a> <a class="hdr" href="#Update-CPU-Features-Tool">§</a></h3>
 
-    stage2: Add CPU feature detection for macos
-
-    This is mostly meant to detect the current and future AArch64 core types
-    as the x86 part is already taken care of with OS-independent machinery.
-
-
-    stage2: Drop LLVM's host CPU detection method as fallback
-
-    The CPU detection code is nearly at feature parity, we do support
-    detecting the native CPU on Sparc systems and macos, our ARM/AArch64
-    model list is quite comprehensive and so is our PPC one.
-
-    The only missing pieces are:
-    - ARM32 detection on Darwin hosts (I don't think anybody is planning on
-      running the compiler on a old-ass iPhone)
-    - s390x detection on Linux hosts, this can be easily added at a later
-      stage.
-
-
-    stage1: Implement CPU host detection for PowerPC targets
-
-    Untested but should work well on both 32 and 64 bit systems.
-
-    stage2: Implement CPU host detection for ARM/AArch64 targets
-
-    LemonBoy
-
-    TODO mention CPU features tool improvement
+    <p>Zig's target CPU feature awareness is a superset of LLVM's, which means that for every
+    target CPU feature Zig is aware of, it must know whether and how to map that to LLVM's
+    target CPU feature.</p>
+    <p>For this purpose Andrew created the <a href="https://github.com/ziglang/zig/blob/0.8.0/tools/update_cpu_features.zig">update_cpu_features.zig</a> tool. This tool generates .zig code that
+    contains enums and data declarations for all the various CPUs that Zig is aware of.</p>
+    <p>This tool is run in response to the following two events:</p>
+    <ul>
+      <li>When a new LLVM version is released.</li>
+      <li>When the Zig project modifies, creates, or deletes target CPU features independently of LLVM.</li>
+    </ul>
+    <p>Before this release, updating target CPU features in response to LLVM updates was
+    a manual process, in which it was too easy to introduce bugs.</p>
+    <p>Now, the tool completely automates the process, and there are no longer any manual steps
+    involved when LLVM updates, other than re-running the tool.</p>
+    <p>
+    Additionally, Andrew improved it to parallelize work for each target, making it run
+    much faster, despite wading through many megabytes of llvm-tblgen JSON dumps.
+    </p>
+    
     
 
     <h2 id="Command-Line-Interface"><a href="#toc-Command-Line-Interface">Command-Line Interface</a> <a class="hdr" href="#Command-Line-Interface">§</a></h2>
 
-    TODO
-
-    fix issue #6798: zig init-lib doesn't accept -h flag
-
-Contributors: Guoxin Yin
-
-
+    <ul>
+      <li>Fixed <code>zig init-lib</code> not accepting <code>-h</code> flag (#6798).</li>
+      <li>Infer <code>--name</code> based on first C source file or object.</li>
+      <li>Fixed incorrect error message with <code>-cflags</code>.</li>
+      <li>Added <code>run</code> and <code>update-and-run</code> command to the <code>--watch</code>
+        REPL.</li>
+      <li>In the <code>--watch</code> REPL, empty command re-runs previous command. This can be
+        especially useful combined with the new <code>update-and-run</code> command.</li>
+    </ul>
     
 
     <h2 id="Reworked-Memory-Layout"><a href="#toc-Reworked-Memory-Layout">Reworked Memory Layout</a> <a class="hdr" href="#Reworked-Memory-Layout">§</a></h2>
 
-    TODO
-tokenizer memory layout
-ast memory layout
-zir memory layout
-  - thanks to the contributors who helped out
+    <p>Andrew writes:</p>
+    <p>I have been reading Richard Fabian's book,
+    <a href="https://dataorienteddesign.com/dodbook/">Data-Oriented Design</a>,
+    and finally things started to "click" for me. I've had these ideas swirling around
+    in my head for years, but only recently do I feel like I have an intuitive grasp on
+    how modern CPUs work, especially with regards to L1 cache, and the relative latencies
+    of uncached memory loads vs computations.</p>
+    <p>Compilation speed is a top priority for the design of both the Zig self-hosted
+    compiler as well as the language itself. I have been careful to design the language
+    in a way as to unlock the potential of an ambitiously fast compiler.</p>
+    <p>In this release cycle, I took the time to rework the memory layout of 3 out of 4
+    phases of the compiler pipeline:</p>
+    <pre>tokenize ➡️ parse ➡️ ast lowering ➡️ semantic analysis ➡️ machine code gen</pre>
+    <p>Each arrow in this diagram represents a phase in the compiler pipeline inputting data
+    in one form, and outputting data in a different form, for the next phase.</p>
+    <ul>
+      <li><strong>tokenize</strong> - inputs <strong>.zig source code</strong>,
+        outputs <strong>token list</strong></li>
+      <li><strong>parse</strong> - inputs <strong>token list</strong>,
+        outputs <strong>AST</strong> (Abstract Syntax Tree)</li>
+      <li><strong>ast lowering</strong> - inputs <strong>AST</strong>, outputs
+        <strong>ZIR</strong> (Zig Intermediate Representation)</li>
+      <li><strong>semantic analysis</strong> - inputs <strong>ZIR</strong>, outputs
+        <strong>AIR</strong> (Analyzed Intermediate Representation)</li>
+      <li><strong>machine code gen</strong> - inputs <strong>AIR</strong>, outputs
+        <strong>machine code</strong></li>
+    </ul>
+    <p>
+    I decided to try to reduce the number of heap-allocated bytes of the
+    <strong>token list</strong> as well as the <strong>AST</strong>, as a pilot
+    test for doing a similar strategy for ZIR and AIR later.
+    I had a few key insights here:
+    </p>
+    <ul>
+      <li>Underlying premise: using less memory will make things faster, because
+        of fewer allocations and better cache utilization. Also using less
+        memory is valuable in and of itself.</li>
+      <li>Using a <a href="#MultiArrayList">Struct-Of-Arrays</a>
+        for tokens and AST nodes, saves the bytes of
+        padding between the enum tag (which kind of token is it; which kind
+        of AST node is it) and the next fields in the struct. It also improves
+        cache coherence, since one can peek ahead in the tokens array without
+        having to load the source locations of tokens.</li>
+      <li>Token memory can be conserved by only having the tag (1 byte) and byte
+        offset (4 bytes) for a total of 5 bytes per token. It is not necessary
+        to store the token ending byte offset because one can always re-tokenize
+        later, but also most tokens the length can be trivially determined from
+        the tag alone, and for ones where it doesn't, string literals for
+        example, one must parse the string literal again later anyway in
+        astgen, making it free to re-tokenize.</li>
+      <li>AST nodes do not actually need to store more than 1 token index because
+        one can poke left and right in the tokens array very cheaply.</li>
+    </ul>
+    <p>So far we are left with one big problem though: how can we put AST nodes
+    into an array, since different AST nodes are different sizes?</p>
+    <p>This is where my key observation comes in: one can have a hash table for
+    the extra data for the less common AST nodes! But it gets even better than
+    that:</p>
+    <p>I defined this data that is always present for every AST Node:</p>
+    <ul>
+      <li>tag (1 byte)<ul>
+          <li>which AST node is it</li>
+        </ul>
+      </li>
+      <li>main_token (4 bytes, index into tokens array)<ul>
+          <li>the tag determines which token this points to</li>
+        </ul>
+      </li>
+      <li><code class="zig"><span class="tok-kw">struct</span>{lhs: <span class="tok-type">u32</span>, rhs: <span class="tok-type">u32</span>}</code><ul>
+          <li>enough to store 2 indexes to other AST nodes, the tag determines
+            how to interpret this data</li>
+        </ul>
+      </li>
+    </ul>
+    <p>You can see how a binary operation, such as <code>a * b</code> would fit into this
+    structure perfectly. A unary operation, such as <code>*a</code> would also fit,
+    and leave <code>rhs</code> unused. So this is a total of 13 bytes per AST node.
+    And again, we don't have to pay for the padding to round up to 16 because
+    we store in struct-of-arrays format.</p>
+
+    <p>I made a further observation: the only kind of data AST nodes need to
+    store other than the main_token is indexes to sub-expressions. <em>That&#39;s it.</em>
+    <strong>The only purpose of an AST is to bring a tree structure to a list of tokens.</strong>
+    This observation means all the data that nodes store are only sets of u32
+    indexes to other nodes. The other tokens can be found later by the compiler,
+    by poking around in the tokens array, which again is super fast because it
+    is struct-of-arrays, so you often only need to look at the token tags array,
+    which is an array of bytes, very cache friendly.</p>
+
+    <p>So for nearly every kind of AST node, you can store it in 13 bytes. For the
+    rarer AST nodes that have 3 or more indexes to other nodes to store, either
+    the lhs or the rhs will be repurposed to be an index into an extra_data array
+    which contains the extra AST node indexes. In other words, no hash table needed,
+    it's just 1 big ArrayList with the extra data for AST Nodes.</p>
+
+    <p>Final observation, no need to have a canonical tag for a given AST. For example:
+    The expression <code>foo(bar)</code> is a function call. Function calls can have any
+    number of parameters. However in this example, we can encode the function
+    call into the AST with a tag called <code>FunctionCallOnlyOneParam</code>, and use lhs
+    for the function expr and rhs for the only parameter expr. Meanwhile if the
+    code was <code>foo(bar, baz)</code> then the AST node would have to be <code>FunctionCall</code>
+    with lhs still being the function expr, but rhs being the index into
+    <code>extra_data</code>. Then because the tag is <code>FunctionCall</code> it means
+    <code>extra_data[rhs]</code> is the "start" and <code>extra_data[rhs+1]</code> is the "end".
+    Now the range <code>extra_data[start..end]</code> describes the list of parameters
+    to the function.</p>
+
+    <p>Point being, you only have to pay for the extra bytes if the AST actually
+    requires it. The limit to the number of different AST tag encodings is 256, in order to keep
+    the tag only 1 byte each.</p>
+
+    <p>Reworking the memory layout of two of the core pipeline phases is no joke.
+    After 176 commits, 42 files changed, +20,800/-16,573 lines,
+    and help from quite a few contributors, we had all tests passing again in the branch (#7920).
+    I observed the following performance improvements of the parser:</p>
+    <ul>
+      <li>✅ 15% fewer cache-misses</li>
+      <li>✅ 28% fewer total instructions executed</li>
+      <li>✅ 26% fewer total CPU cycles</li>
+      <li>✅ 22% faster wall clock time</li>
+    </ul>
+    <p>
+    Based on this success, I followed up, applying the same principles and strategies
+    to <strong>ZIR</strong>.
+    </p>
+    <p>I'll spare you the details this time, but after 100 commits, 33 files changed,
+    +14,719/-11,495 lines, and again some very much appreciated help from various
+    contributors, the branch was merge-ready (#8266).</p>
+    <p>
+    For these changes, it was not possible to come up with a realistic workload for
+    a benchmark, since self-hosted semantic analysis was not far enough along, but I was
+    able to do this funny one:
+    </p>
+    <p class="file">print1mil.zig</p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">_start</span>() <span class="tok-type">noreturn</span> {
+    print(); <span class="tok-comment">// repeated 1,000,000 times</span>
+    exit();
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">print</span>() <span class="tok-type">void</span> {
+    <span class="tok-kw">asm</span> <span class="tok-kw">volatile</span> (<span class="tok-str">&quot;syscall&quot;</span>
+        :
+        : [number] <span class="tok-str">&quot;{rax}&quot;</span> (<span class="tok-number">1</span>),
+          [arg1] <span class="tok-str">&quot;{rdi}&quot;</span> (<span class="tok-number">1</span>),
+          [arg2] <span class="tok-str">&quot;{rsi}&quot;</span> (<span class="tok-builtin">@ptrToInt</span>(<span class="tok-str">&quot;Hello, world!\n&quot;</span>)),
+          [arg3] <span class="tok-str">&quot;{rdx}&quot;</span> (<span class="tok-number">14</span>)
+        : <span class="tok-str">&quot;rcx&quot;</span>, <span class="tok-str">&quot;r11&quot;</span>, <span class="tok-str">&quot;memory&quot;</span>
+    );
+    <span class="tok-kw">return</span>;
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">exit</span>() <span class="tok-type">noreturn</span> {
+    <span class="tok-kw">asm</span> <span class="tok-kw">volatile</span> (<span class="tok-str">&quot;syscall&quot;</span>
+        :
+        : [number] <span class="tok-str">&quot;{rax}&quot;</span> (<span class="tok-number">231</span>),
+          [arg1] <span class="tok-str">&quot;{rdi}&quot;</span> (<span class="tok-number">0</span>)
+        : <span class="tok-str">&quot;rcx&quot;</span>, <span class="tok-str">&quot;r11&quot;</span>, <span class="tok-str">&quot;memory&quot;</span>
+    );
+    <span class="tok-kw">unreachable</span>;
+}</code></pre>
+    <p>Results:</p>
+    <ul>
+      <li>✅ Wall Clock Time: 0.93 seconds ➡️ 0.57 seconds (39% reduction)<ul>
+          <li>this is 1.8 million lines per second on my laptop 😀</li></ul>
+      <li>✅ Peak Memory Usage: 645 MiB ➡️ 386 MiB (40% reduction)</li>
+      <li>✅ Cache Misses (53% reduction)</li>
+      <li>✅ Instructions (23% reduction)</li>
+      <li>✅ CPU Cycles (41% reduction)</li>
+    </ul>
+    <p>
+    Even with a contrived example like this, it is clear that
+    designing the core phases of the compiler pipeline to use compact
+    encodings has an obvious and worthwhile benefit in terms of memory usage and speed.
+    </p>
+    <p>In this release we did <em>not</em> yet apply these principles and strategies to
+    <strong>AIR</strong>. I expect to see similar gains upon finishing that work.</p>
     
 
     <h2 id="Whole-File-AST-Lowering"><a href="#toc-Whole-File-AST-Lowering">Whole-File AST Lowering</a> <a class="hdr" href="#Whole-File-AST-Lowering">§</a></h2>
@@ -1871,6 +2040,25 @@ Bitwise operations on and multiplication of 32-bit integers were introduced. Fur
     <p>
     The code is still safely stored in the Git history, and anyone is welcome to revive it!
     </p>
+    
+
+    <h2 id="Miscellaneous-stage2-Improvements"><a href="#toc-Miscellaneous-stage2-Improvements">Miscellaneous stage2 Improvements</a> <a class="hdr" href="#Miscellaneous-stage2-Improvements">§</a></h2>
+
+    <ul>
+      <li>Default AVR generic cpu to avr2</li>
+      <li>parser: Use an operator precedence table</li>
+      <li>parser: use shared scratch buffer to avoid allocating and freeing many small lists (#8910).</li>
+      <li>Update the official spec to match the self-hosted parser.</li>
+      <li>tokenizer: fix crash on multiline string with only 1 backslash (#8904).</li>
+      <li>Variable shadowing detection (#6969).</li>
+      <li>link: properly implement passthrough mode for LLD child proccess.</li>
+      <li>Detect redundant C/C++ source files, preventing a deadlock in the caching system (#7308).</li>
+      <li>Print package path on --pkg-begin failure.</li>
+      <li>Better error message for root zig source file not found (#6777, #6893).</li>
+      <li>Always link -lpthread when using system libc. Required when cross-compiling glibc targets.</li>
+      <li>Fix libc components' linking order.</li>
+    </ul>
+    <p>Contributors: Andrew Kelley, Jakub Konka, Veikka Tuominen, joachimschmidt557, Evan Haas, Isaac Freund, Jacob G-W, LemonBoy, Timon Kruiper, gracefu, Alex Cameron, xackus, Michael Dusan, Tadeo Kondrak, Alexandros Naskos, Noam Preil, g-w1, xavier, Ersikan, Jay Petacat, Robin Voetter, antlilja, daurnimator, Asherah Connor, Dimenus, Guoxin Yin, Jonathan Marler, Lee Cannon, Luuk de Gram, Josh Holland, Koakuma, Mitchell Kember, Rafael Ristovski, Ryan Liptak, Sizhe Zhao, Sreehari S, lithdew, protty, tgschultz</p>
     
     
 
