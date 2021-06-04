@@ -495,84 +495,9 @@ The Zig Standard Library implements an event loop that multiplexes async functio
 
 ## Wide range of targets supported
 
-Zig uses a "support tier" system to communicate the level of support for different targets. Note that the bar for [Tier 1 Support](#tier-1-support) is high - [Tier 2 Support](#tier-2-support) is still quite useful.
+Zig uses a "support tier" system to communicate the level of support for different targets.
 
-### Support Table
-
-| | free standing | Linux 3.16+ | macOS 10.13+ | Windows 8.1+ | FreeBSD 12.0+ | NetBSD 8.0+ | DragonFlyBSD 5.8+ | UEFI |
-|-|---------------|-------------|--------------|--------------|---------------|-------------|-------------------|------|
-| x86_64 | [Tier 1](#tier-1-support) | [Tier 1](#tier-1-support) | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) |
-| arm64 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
-| arm32 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
-| mips32 LE | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| i386 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | [Tier 4](#tier-4-support) | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 2](#tier-2-support) |
-| riscv64 | [Tier 1](#tier-1-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | [Tier 3](#tier-3-support) |
-| powerpc32 | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| powerpc64 | [Tier 2](#tier-2-support) | [Tier 3](#tier-3-support) | [Tier 4](#tier-4-support) | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| mips32 BE | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| mips64 | [Tier 2](#tier-2-support) | [Tier 2](#tier-2-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| bpf | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| hexagon | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| amdgcn | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| sparc | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| s390x | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| lanai | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A | [Tier 3](#tier-3-support) | [Tier 3](#tier-3-support) | N/A | N/A |
-| avr | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| riscv32 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | [Tier 4](#tier-4-support) |
-| xcore | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| nvptx | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| msp430 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| r600 | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| arc | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| tce | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| le | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| amdil | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| hsail | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| spir | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| kalimba | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| shave | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-| renderscript | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A | [Tier 4](#tier-4-support) | [Tier 4](#tier-4-support) | N/A | N/A |
-
-
-### WebAssembly Support Table
-
-|        | free standing | emscripten | WASI   |
-|--------|---------------|------------|--------|
-| wasm32 | [Tier 1](#tier-1-support)        | [Tier 3](#tier-3-support)     | [Tier 1](#tier-1-support) |
-| wasm64 | [Tier 4](#tier-4-support)        | [Tier 4](#tier-4-support)     | [Tier 4](#tier-4-support) |
-
-
-### Tier System
-
-#### Tier 1 Support
-- Not only can Zig generate machine code for these targets, but the standard library cross-platform abstractions have implementations for these targets.
-- The CI server automatically tests these targets on every commit to master branch, and updates [the download page]({{< ref "/download/" >}}) with links to pre-built binaries.
-- These targets have debug info capabilities and therefore produce [stack traces](#stack-traces-on-all-targets) on failed assertions.
-- [libc is available for this target even when cross compiling](#zig-ships-with-libc).
-- All the behavior tests and applicable standard library tests pass for this target. All language features are known to work correctly.
-
-#### Tier 2 Support
-- The standard library supports this target, but it's possible that some APIs will give an "Unsupported OS" compile error. One can link with libc or other libraries to fill in the gaps in the standard library.
-- These targets are known to work, but may not be automatically tested, so there are occasional regressions.
-- Some tests may be disabled for these targets as we work toward [Tier 1 Support](#tier-1-support).
-
-#### Tier 3 Support
-
-- The standard library has little to no knowledge of the existence of this target.
-- Because Zig is based on LLVM, it has the capability to build for these targets, and LLVM has the target enabled by default.
-- These targets are not frequently tested; one will likely need to contribute to Zig in order to build for these targets.
-- The Zig compiler might need to be updated with a few things such as
-  - what sizes are the C integer types
-  - C ABI calling convention for this target
-  - bootstrap code and default panic handler
-- zig targets is guaranteed to include this target.
-
-#### Tier 4 Support
-
-- Support for these targets is entirely experimental.
-- LLVM may have the target as an experimental target, which means that you need to use Zig-provided binaries for the target to be available, or build LLVM from source with special configure flags. zig targets will display the target if it is available.
-- This target may be considered deprecated by an official party, such as [macosx/i386](https://support.apple.com/en-us/HT208436) in which case this target will remain forever stuck in Tier 4.
-- This target may only support `--emit` asm and cannot emit object files.
+[Support Table as of Zig 0.8.0](/download/0.8.0/release-notes.html#Support-Table)
 
 ## Friendly toward package maintainers
 
