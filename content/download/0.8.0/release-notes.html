@@ -1492,12 +1492,6 @@ releases and QA doesn't exist.
     and <a href="#CPU-Feature-Detection">CPU Feature Detection</a>. Improvements made to "stage2" in these areas
     do in fact affect the main Zig user experience.
     </p>
-    TODO Show passing test cases that self-hosted is now capable of
-    TODO Performance demo
-    TODO Mention the architecture of the stage2 compiler and note the
-      main contributors who have stepped up to work on the various parts of it.
-    TODO Explain the bootstrapping plan
-
     <h2 id="CPU-Feature-Detection"><a href="#toc-CPU-Feature-Detection">CPU Feature Detection</a> <a class="hdr" href="#CPU-Feature-Detection">§</a></h2>
 
     <p>LemonBoy added a framework for host CPU detection on Linux based on
@@ -1836,7 +1830,7 @@ releases and QA doesn't exist.
     <img src="https://ziglang.org/download/0.8.0/whole-file-astgen.png" alt="Infographic showing a sense of progress" style="max-width: 100%">
 
     <p>In order to have a proper benchmark to find out how fast the compiler is,
-    we would need to have Sema (Semantic Analsis) complete (in the picture above,
+    we would need to have Sema (Semantic Analysis) complete (in the picture above,
     it is marked 40% done). However, we can at least collect a measurement for the first
     three phases of the pipeline and see how Zig is doing so far.</p>
 
@@ -1872,17 +1866,17 @@ AstGen entire std lib, stage2 release warm cache: 0m0.018s</code></pre>
       <li>returning from a <code class="zig"><span class="tok-kw">defer</span></code> expression</li>
     </ul>
     <p>
-    This command is also useful to Zig developers. It has a <code>-t</code> flag which
-    renders the ZIR code into a textual format, useful for debugging the compiler.
+    This command is also useful to Zig developers. It has a <code>-t</code> flag available
+    in debug builds of the compiler which renders the ZIR code into a textual format.
     Here is an example:
     </p>
-    <p class="file">foo.zig</p>
+    <p class="file">hello.zig</p>
     <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {
     <span class="tok-kw">try</span> std.io.getStdOut().writeAll(<span class="tok-str">&quot;Hello, World!\n&quot;</span>);
 }</code></pre>
-    <pre><code>$ ./zig ast-check -t foo.zig
+    <pre><code>$ ./zig ast-check -t hello.zig
 # Source bytes:       109B
 # Tokens:             32 (184B)
 # AST Nodes:          16 (328B)
@@ -2066,43 +2060,21 @@ hello: ELF 64-bit LSB <strong>pie</strong> executable, x86-64, version 1 (SYSV),
 
     <h2 id="Native-libc-Integration"><a href="#toc-Native-libc-Integration">Native libc Integration</a> <a class="hdr" href="#Native-libc-Integration">§</a></h2>
 
-commit 5ac91794cce8bd53916a378815be01e4365d53d9
-Author: Isaac Freund <ifreund@ifreund.xyz>
-Date:   Mon May 10 21:29:20 2021 +0200
+    <p>Thanks to an improvement by Isaac Freund, Zig will now integrate with system libc
+    when targeting the native OS/ABI and linking any system libraries.</p>
 
-    stage2: use system libc when targeting the native OS/ABI
-    
-    Currently zig will always try to build its own libc and compile against
+    <p>Before, Zig would always try to build its own libc and compile against
     that. This of course makes sense for cross-compilation, but can cause
-    problems when targeting the native OS/ABI.
+    problems when targeting the native OS/ABI, when combined with other system libraries.</p>
     
-    For example, if the system uses a newer glibc version than zig ships
+    <p>For example, if the system uses a newer glibc version than zig ships,
     zig will fall back to using the newest version it does ship. However
     this causes linking system libraries to fail as they are built against a
-    different glibc version than the zig code is built against.
-    
-    To remedy this, simply default to linking the system libc when targeting
-    the native OS/ABI.
+    different glibc version than the zig code is built against.</p>
 
- src/Compilation.zig | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
-
-commit 1d6c804b29fed146aafda0f56cae7a4853b6abf9
-Author: Isaac Freund <ifreund@ifreund.xyz>
-Date:   Tue May 18 23:09:28 2021 +0200
-
-    stage2: only default to linking system libc if linking system libs
-    
-    We do need to link the system libc if linking system libraries as
-    they may potentially be compiled against e.g. a newer glibc version
-    than zig can provide. However if not linking system libraries, using
-    the zig provided libc is more reliable as it does not depend on any
-    quirks of the host system or being able to invoke the system cc to
-    find include dirs.
-
- src/Compilation.zig | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
-
+    <p>On the other hand, if not linking system libraries, using the zig-provided libc
+    is more reliable as it does not depend on any quirks of the host system
+    or being able to invoke the system C compiler to find include directories.</p>
     
 
     <h2 id="Reuse-Runtime-Libraries-in-More-Cases"><a href="#toc-Reuse-Runtime-Libraries-in-More-Cases">Reuse Runtime Libraries in More Cases</a> <a class="hdr" href="#Reuse-Runtime-Libraries-in-More-Cases">§</a></h2>
@@ -2127,37 +2099,46 @@ Date:   Tue May 18 23:09:28 2021 +0200
     </p>
     
 
-
     <h2 id="x86-64-Backend"><a href="#toc-x86-64-Backend">x86-64 Backend</a> <a class="hdr" href="#x86-64-Backend">§</a></h2>
 
-    TODO
+    <ul>
+      <li>Use ABI size to determine 64-bit operation.</li>
+      <li>Implement integer multiplication.</li>
+      <li>Encoding helpers to make future contributions easier.</li>
+    </ul>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/test.zig">the set of test cases passing for x86-64</a></p>
+    <p>Contributors: gracefu, Joachim Schmidt</p>
     
 
     <h2 id="AArch64-Backend"><a href="#toc-AArch64-Backend">AArch64 Backend</a> <a class="hdr" href="#AArch64-Backend">§</a></h2>
 
-<p>The experimental self-hosted AArch64 (a.k.a. ARM64) backend is new in this version.
-Currently, the self-hosted compiler is able to generate binaries for Linux (ELF) and macOS
-(Mach-O, thanks to Jakub Konka). Currently, only a very small subset of the Zig language
-is supported.</p>
+    <p>The experimental self-hosted AArch64 (a.k.a. ARM64) backend is new in this version.
+    Currently, the self-hosted compiler is able to generate binaries for Linux (ELF) and macOS
+    (Mach-O, thanks to Jakub Konka). Currently, only a very small subset of the Zig language
+    is supported.</p>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/aarch64.zig">the set of test cases passing for aarch64</a></p>
     
 
     <h2 id="ARM-Backend"><a href="#toc-ARM-Backend">ARM Backend</a> <a class="hdr" href="#ARM-Backend">§</a></h2>
 
-    <p>
-Bitwise operations on and multiplication of 32-bit integers were introduced. Furthermore, conditional branching (including while- and for-loops) is now possible. Additionally, the register allocation mechanism was overhauled, allowing for correct code generation in situations where registers are spilled.
+    <p>Bitwise operations on and multiplication of 32-bit integers were introduced.
+    Furthermore, conditional branching (including while- and for-loops) is now possible.
+    Additionally, the register allocation mechanism was overhauled, allowing for correct
+    code generation in situations where registers are spilled.
     </p>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/arm.zig">the set of test cases passing for ARM</a></p>
+    <p>Contributors: Joachim Schmidt</p>
     
 
     <h2 id="LLVM-Backend"><a href="#toc-LLVM-Backend">LLVM Backend</a> <a class="hdr" href="#LLVM-Backend">§</a></h2>
 
-    TODO
+    <p>Timon Kruiper broke ground on the stage2 LLVM backend during this release cycle.</p>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/llvm.zig">the set of test cases passing for the LLVM backend</a></p>
     
 
     <h2 id="WebAssembly-Backend"><a href="#toc-WebAssembly-Backend">WebAssembly Backend</a> <a class="hdr" href="#WebAssembly-Backend">§</a></h2>
 
-    <p>A lot of progress has been made with regards to the WebAssembly backend, both
-    architecturally and in terms of feature completeness.</p>
-
+    <p>This is a work-in-progress backend newly introduced in 0.8.0.</p>
     <p>During the self-hosted compiler meeting of
     <a href="https://github.com/ziglang/zig/wiki/Self-Hosted-Compiler-Meetings#2020-12-10">2020-12-10</a>
     we discussed on how to move forward with the architecture of the backends.
@@ -2180,23 +2161,41 @@ Bitwise operations on and multiplication of 32-bit integers were introduced. Fur
         <li>Initial implementation of structs and switches. (<a href="https://github.com/ziglang/zig/pull/8847">#8847</a>)</li>
         <li>Support for error sets and error unions. (<a href="https://github.com/ziglang/zig/pull/8923">#8923</a>)</li>
     </ul>
-    <p>Contributors: Gracefuu, Isaac Freund, Luuk de Gram</p>
-
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/wasm.zig">the set of test cases passing for the WASM backend</a></p>
+    <p>Contributors: Luuk de Gram, Isaac Freund, gracefu</p>
     
 
     <h2 id="RISC-V-64-Backend"><a href="#toc-RISC-V-64-Backend">RISC-V 64 Backend</a> <a class="hdr" href="#RISC-V-64-Backend">§</a></h2>
 
-    TODO
+    <p>This is a work-in-progress backend newly introduced in 0.8.0.</p>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/riscv64.zig">the set of test cases passing for the RISC-V 64 backend</a></p>
+    <p>Contributors: Joachim Schmidt</p>
     
 
     <h2 id="C-Backend"><a href="#toc-C-Backend">C Backend</a> <a class="hdr" href="#C-Backend">§</a></h2>
 
-    TODO
+    <ul>
+      <li>Added tests for emit-h functionality.</li>
+      <li>Implemented <code class="zig"><span class="tok-builtin">@breakpoint</span></code>.</li>
+      <li>Improved test harness to support executing generated C code.</li>
+      <li>Proper integration with incremental compilation of the frontend.</li>
+      <li>condbr, breaks, switchbr, not, bitwise ops, optionals, errors</li>
+      <li>Numerous other sweeping changes.</li>
+    </ul>
+    <p>See <a href="https://github.com/ziglang/zig/blob/0.8.0/test/stage2/cbe.zig">the set of test cases passing for the C backend</a></p>
+    <p>Contributors: Andrew Kelley, Veikka Tuominen, Jacob G-W, Noam Preil, Alex Cameron, Tadeo Kondrak</p>
     
 
     <h2 id="SPIR-V-Backend"><a href="#toc-SPIR-V-Backend">SPIR-V Backend</a> <a class="hdr" href="#SPIR-V-Backend">§</a></h2>
 
-    TODO
+    <p>Robin Voetter broke ground on the SPIR-V backend during this cycle. It's not yet to the
+    point where we can get a
+    <a href="https://github.com/andrewrk/zig-vulkan-triangle/">"hello world" vulkan triangle</a>,
+    but the skeleton of the backend
+    is in place. There are quite a few language issues to overcome. This backend challenges
+    the ability for Zig to be true to its "general-purpose" claim, and it is a
+    welcome challenge! The existence of this backend will help shape the Zig language specification
+    and prevent it from being overfitted to x86-like ISAs.</p>
     
 
     <h2 id="SPU-Mark-II-Backend"><a href="#toc-SPU-Mark-II-Backend">SPU Mark II Backend</a> <a class="hdr" href="#SPU-Mark-II-Backend">§</a></h2>
