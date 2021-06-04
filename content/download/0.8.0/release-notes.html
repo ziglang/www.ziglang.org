@@ -292,7 +292,18 @@
             <li><a id="toc-MIPS-Support" href="#MIPS-Support">MIPS Support</a></li>
         </ul></li>
         <li><a id="toc-Documentation" href="#Documentation">Documentation</a></li>
-        <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a></li>
+        <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
+        <ul>
+            <li><a id="toc-No-More-Extern-or-Packed-Enums" href="#No-More-Extern-or-Packed-Enums">No More Extern or Packed Enums</a></li>
+            <li><a id="toc-Require-Block-After-Suspend" href="#Require-Block-After-Suspend">Require Block After Suspend</a></li>
+            <li><a id="toc-extern" href="#extern">@extern</a></li>
+            <li><a id="toc-Nameless-Tests" href="#Nameless-Tests">Nameless Tests</a></li>
+            <li><a id="toc-TagType-Removed" href="#TagType-Removed">@TagType Removed</a></li>
+            <li><a id="toc-nosuspend" href="#nosuspend">nosuspend</a></li>
+            <li><a id="toc-Add-SysV-Calling-Convention" href="#Add-SysV-Calling-Convention">Add SysV Calling Convention</a></li>
+            <li><a id="toc-Wrapping-Negation-on-Unsigned-Ints-at-comptime" href="#Wrapping-Negation-on-Unsigned-Ints-at-comptime">Wrapping Negation on Unsigned Ints at comptime</a></li>
+            <li><a id="toc-importbuiltin-no-longer-re-exports-stdbuiltin" href="#importbuiltin-no-longer-re-exports-stdbuiltin">@import("builtin") no longer re-exports std.builtin</a></li>
+        </ul></li>
         <li><a id="toc-Bootstrap-Compiler" href="#Bootstrap-Compiler">Bootstrap Compiler</a>
         <ul>
             <li><a id="toc-LLVM-12" href="#LLVM-12">LLVM 12</a></li>
@@ -1112,27 +1123,215 @@
 
     <h1 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h1>
 
-    TODO language
-  - delete packed enums from the language
-    stage1: Require a block after suspend Closes #8603
-  - Add <code class="zig"><span class="tok-builtin">@extern</span></code>.
+    <p>Compared to other releases, the Zig language saw fewer changes this cycle,
+    providing a relatively stable target for the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> implementation.
+    Still, there were a few additions and breaking changes.</p>
 
-  - `zig test` no longer filters based on empty labels / nameless test blocks
+    <h2 id="No-More-Extern-or-Packed-Enums"><a href="#toc-No-More-Extern-or-Packed-Enums">No More Extern or Packed Enums</a> <a class="hdr" href="#No-More-Extern-or-Packed-Enums">§</a></h2>
 
-  - remove @TagType
-    - Tadeo Kondrak
+    <pre><code class="zig"><span class="tok-kw">const</span> A = <span class="tok-kw">extern</span> <span class="tok-kw">enum</span> { foo, bar };
+<span class="tok-kw">const</span> B = <span class="tok-kw">packed</span> <span class="tok-kw">enum</span> { foo, bar };</code></pre>
+    <pre><code><strong>test.zig:1:11: <span style="color: red">error:</span> enums do not support 'packed' or 'extern'; instead provide an explicit integer tag type</strong>
+const A = extern enum { foo, bar };
+          ^
+<strong>test.zig:2:11: <span style="color: red">error:</span> enums do not support 'packed' or 'extern'; instead provide an explicit integer tag type</strong>
+const B = packed enum { foo, bar };
+          ^</code></pre>
+    <p>This error is caught by the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> (due to <a href="#Whole-File-AST-Lowering">Whole-File AST Lowering</a>) but not yet caught by the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>. Related proposal: #8970</p>
+    
 
-  - Allow resume in nosuspend scope. Resuming a suspended async function call
-    is actually a synchronous operation.
+    <h2 id="Require-Block-After-Suspend"><a href="#toc-Require-Block-After-Suspend">Require Block After Suspend</a> <a class="hdr" href="#Require-Block-After-Suspend">§</a></h2>
 
-  - Allow async in nosuspend scope. Starting an async function call is actually
-    a synchronous operation, since the caller is not awaiting on the callee for a return value.
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;example&quot;</span> {
+    <span class="tok-kw">suspend</span>;
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">./docgen_tmp/test.zig:2:12: </span><span class="t31_1">error: </span><span class="t0_1">invalid token: ';'</span>
+    suspend;
+           <span class="t32_1">^</span>
+</code></pre>
 
-  - add SysV calling convention
+    <p><code>zig fmt</code> automatically fixes it, transforming it into:</p>
+    <pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;example&quot;</span> {
+    <span class="tok-kw">suspend</span> {}
+}</code></pre>
+    <p>Tracking issue: #8603</p>
+    
 
-  - stage1: Allow wrapping negation on unsigned ints at comptime Closes #7951 Closes #8574
+    <h2 id="extern"><a href="#toc-extern">@extern</a> <a class="hdr" href="#extern">§</a></h2>
 
-  - std.builtin re-arranging
+    <p>New builtin:</p>
+    <pre><code class="zig"><span class="tok-builtin">@extern</span>(T: <span class="tok-type">type</span>, <span class="tok-kw">comptime</span> options: std.builtin.ExternOptions) *T</code></pre>
+    <p>Creates a reference to an external symbol in the output object file.</p>
+    
+
+    <h2 id="Nameless-Tests"><a href="#toc-Nameless-Tests">Nameless Tests</a> <a class="hdr" href="#Nameless-Tests">§</a></h2>
+
+    <p>Nameless tests are exempt from <code>--test-filter</code> parameters, making it
+    possible to use <code>--test-filter</code> while still pointing <code>zig test</code>
+    at the root source file.</p>
+    <p class="file">a.zig</p>
+    <pre><code class="zig"><span class="tok-kw">test</span> {
+    _ = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;b.zig&quot;</span>);
+}</code></pre>
+    <p class="file">b.zig</p>
+    <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;pass&quot;</span> {
+    <span class="tok-kw">try</span> std.testing.expect(<span class="tok-null">true</span>);
+}
+<span class="tok-kw">test</span> <span class="tok-str">&quot;fail&quot;</span> {
+    <span class="tok-kw">try</span> std.testing.expect(<span class="tok-null">false</span>);
+}</code></pre>
+    <pre><code>$ ./zig test a.zig
+b.test "fail"... FAIL (TestUnexpectedResult)
+<strong>/home/andy/Downloads/zig/lib/std/testing.zig:310:14:</strong> 0x24d54b in std.testing.expect (test)
+    if (!ok) return error.TestUnexpectedResult;
+             ^
+<strong>/home/andy/Downloads/zig/build/b.zig:7:5:</strong> 0x2068b1 in b.test "fail" (test)
+    try std.testing.expect(false);
+    ^
+2 passed; 0 skipped; 1 failed.
+error: the following test command failed with exit code 1:
+zig-cache/o/577deb476721d8dde8bc782f2c61ed2f/test /home/andy/Downloads/zig/build/zig
+
+$ ./zig test a.zig --test-filter pass
+All 2 tests passed.</code></pre>
+    
+
+    <h2 id="TagType-Removed"><a href="#toc-TagType-Removed">@TagType Removed</a> <a class="hdr" href="#TagType-Removed">§</a></h2>
+
+    <p>Old code:</p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> Enum = <span class="tok-kw">enum</span> { one, two, three };
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;old code&quot;</span> {
+    <span class="tok-kw">const</span> T = <span class="tok-builtin">@TagType</span>(Enum);
+    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-type">u2</span>, T);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">./docgen_tmp/test.zig:5:15: </span><span class="t31_1">error: </span><span class="t0_1">invalid builtin function: 'TagType'</span>
+    const T = @TagType(Enum);
+              <span class="t32_1">^</span>
+</code></pre>
+
+    <p>New code:</p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> Enum = <span class="tok-kw">enum</span> { one, two, three };
+<span class="tok-kw">const</span> TagType = std.meta.TagType;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;new code&quot;</span> {
+    <span class="tok-kw">const</span> T = TagType(Enum);
+    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-type">u2</span>, T);
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test [1/1] test &quot;new code&quot;... 
+
+All 1 tests passed.
+</code></pre>
+
+    <p>Contributors: Tadeo Kondrak</p>
+    
+
+    <h2 id="nosuspend"><a href="#toc-nosuspend">nosuspend</a> <a class="hdr" href="#nosuspend">§</a></h2>
+
+    <p><code class="zig"><span class="tok-kw">nosuspend</span></code> blocks now allow <code class="zig"><span class="tok-kw">resume</span></code>
+    inside their scope, because resuming a suspended async function call is actually a
+    synchronous operation.</p>
+    <p><code class="zig"><span class="tok-kw">nosuspend</span></code> blocks now allow <code class="zig"><span class="tok-kw">async</span></code>
+    function calls inside their scope, because starting an async function call is actually
+    a synchronous operation, since the caller is not awaiting on the callee for a return value.</p>
+    
+
+    <h2 id="Add-SysV-Calling-Convention"><a href="#toc-Add-SysV-Calling-Convention">Add SysV Calling Convention</a> <a class="hdr" href="#Add-SysV-Calling-Convention">§</a></h2>
+
+    <p><code class="zig">std.builtin.CallingConvention</code> now looks like this:</p>
+    <pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> CallingConvention = <span class="tok-kw">enum</span> {
+    Unspecified,
+    C,
+    Naked,
+    Async,
+    Inline,
+    Interrupt,
+    Signal,
+    Stdcall,
+    Fastcall,
+    Vectorcall,
+    Thiscall,
+    APCS,
+    AAPCS,
+    AAPCSVFP,
+    SysV,
+};</code></pre>
+    
+
+    <h2 id="Wrapping-Negation-on-Unsigned-Ints-at-comptime"><a href="#toc-Wrapping-Negation-on-Unsigned-Ints-at-comptime">Wrapping Negation on Unsigned Ints at comptime</a> <a class="hdr" href="#Wrapping-Negation-on-Unsigned-Ints-at-comptime">§</a></h2>
+
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+<span class="tok-kw">const</span> maxInt = std.math.maxInt;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;unsigned negation wrapping&quot;</span> {
+    <span class="tok-kw">try</span> testUnsignedNegationWrappingEval(<span class="tok-number">1</span>);
+    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> testUnsignedNegationWrappingEval(<span class="tok-number">1</span>);
+}
+<span class="tok-kw">fn</span> <span class="tok-fn">testUnsignedNegationWrappingEval</span>(x: <span class="tok-type">u16</span>) !<span class="tok-type">void</span> {
+    <span class="tok-kw">try</span> expect(x == <span class="tok-number">1</span>);
+    <span class="tok-kw">const</span> neg = -%x;
+    <span class="tok-kw">try</span> expect(neg == maxInt(<span class="tok-type">u16</span>));
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test [1/1] test &quot;unsigned negation wrapping&quot;... 
+
+All 1 tests passed.
+</code></pre>
+
+    <p>Contributor: LemonBoy</p>
+    <p>Tracking issues: #7951, #8574</p>
+    
+
+    <h2 id="importbuiltin-no-longer-re-exports-stdbuiltin"><a href="#toc-importbuiltin-no-longer-re-exports-stdbuiltin">@import("builtin") no longer re-exports std.builtin</a> <a class="hdr" href="#importbuiltin-no-longer-re-exports-stdbuiltin">§</a></h2>
+
+    <p>Old code:</p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>); <span class="tok-comment">// &lt;--- look here</span>
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;old code&quot;</span> {
+    <span class="tok-kw">const</span> StackTrace = builtin.StackTrace;
+}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="t0_1">./docgen_tmp/test.zig:5:31: </span><span class="t31_1">error: </span><span class="t0_1">container 'builtin' has no member called 'StackTrace'</span>
+    const StackTrace = builtin.StackTrace;
+                              <span class="t32_1">^</span>
+</code></pre>
+
+    <p>New code:</p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> builtin = std.builtin; <span class="tok-comment">// &lt;--- look here</span>
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;new code&quot;</span> {
+    <span class="tok-kw">const</span> StackTrace = builtin.StackTrace;
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test [1/1] test &quot;new code&quot;... 
+
+All 1 tests passed.
+</code></pre>
+
+    <p>Additionally, the following is deprecated:</p>
+    <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> builtin = std.builtin; <span class="tok-comment">// &lt;--- look here</span>
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;deprecated code&quot;</span> {
+    <span class="tok-kw">const</span> native_arch = builtin.cpu.arch; <span class="tok-comment">// deprecated!</span>
+}</code></pre>
+    <p>Instead, do this:</p>
+    <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>); <span class="tok-comment">// &lt;--- look here</span>
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;new code&quot;</span> {
+    <span class="tok-kw">const</span> native_arch = builtin.cpu.arch; <span class="tok-comment">// OK</span>
+}</code></pre><pre><code class="shell">$ zig test test.zig
+Test [1/1] test &quot;new code&quot;... 
+
+All 1 tests passed.
+</code></pre>
+
+    
     
 
     <h1 id="Bootstrap-Compiler"><a href="#toc-Bootstrap-Compiler">Bootstrap Compiler</a> <a class="hdr" href="#Bootstrap-Compiler">§</a></h1>
@@ -1414,7 +1613,7 @@ Date:   Sat May 22 17:20:30 2021 -0700
     This feature is implemented in a way that allows <a href="#LLVM-12">LLVM</a> to optimize
     across the Zig and C/C++ code boundary:
     </p>
-    <p><strong>main.zig</strong></p>
+    <p class="file">main.zig</p>
     <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 
 <span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">foo4</span>() <span class="tok-type">void</span> {
@@ -1426,7 +1625,7 @@ Date:   Sat May 22 17:20:30 2021 -0700
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">u8</span> {
     <span class="tok-kw">return</span> <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, foo1());
 }</code></pre>
-    <p><strong>a.c</strong></p>
+    <p class="file">a.c</p>
     <pre><code>int foo1(void);
 void foo2(void);
 void foo4(void);
@@ -3008,3 +3207,5 @@ Hello World!</pre>
     </div>
   </body>
 </html>
+
+TODO run tidy check on this file
