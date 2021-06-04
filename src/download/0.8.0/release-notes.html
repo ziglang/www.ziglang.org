@@ -1543,35 +1543,199 @@ fn exit() noreturn {
     encodings has an obvious and worthwhile benefit in terms of memory usage and speed.
     </p>
     <p>In this release we did <em>not</em> yet apply these principles and strategies to
-    <strong>AIR</strong>. This will affect the bottleneck of the compiler - semantic analysis
-    and machine code generation - and so I expect to see similar gains upon finishing that work.</p>
+    <strong>AIR</strong>, the last remaining intermediate representation of the compiler pipeline.
+    When we do, it will affect the bottleneck of the compiler - semantic analysis
+    and machine code generation - and so I expect to see similar performance
+    gains upon finishing that work.</p>
     {#header_close#}
 
     {#header_open|Whole-File AST Lowering#}
-    TODO
+    <p>This was a language modification as well as an implementation strategy.
+    It solves #335 and goes a long way towards making the problematic proposal #3028 unneeded.
+    The implementation simplified the compiler and yet opened up straightforward
+    opportunities for parallelism and caching.</p>
+    <p>In stage2 we have a concept of "AstGen" which stands for Abstract Syntax Tree Generation. This is the part where we input an AST and output Zig Intermediate Representation code.</p>
+    <p>Before, this was done lazily as-needed per function. This required code to
+    orchestrate per-function ZIR code and independently manage memory lifetimes.
+    It also meant each function used independent arrays of ZIR tags, instruction lists,
+    string tables, and auxiliary lists. When a file was modified, the compiler had to check
+    which function source bytes differed, and repeat AstGen for the changed functions to
+    generate updated ZIR code.</p>
+    <p>One key design strategy is to make ZIR code immutable, typeless, and depend only on AST.
+    This ensures that it can be re-used for multiple generic instantiations, comptime
+    function calls, and inlined function calls.</p>
+    <p>This modification took that design strategy, and observed that it is possible
+    to generate ZIR for an entire file indiscriminately, for all functions, depending on
+    AST alone and not introducing any type checking. Furthermore, it observes that
+    this allows implementing the following compile errors:</p>
+    <ul>
+      <li>Unused private function</li>
+      <li>Unused local variable</li>
+      <li>Unused private global variable</li>
+      <li>Unreachable code</li>
+      <li>Local variable not mutated</li>
+    </ul>
+    <p>All of these compile errors are possible with AstGen alone, and do not require types. In fact, trying to implement these compile errors with types is problematic because of conditional compilation. But there is no conditional compilation with AstGen. Doing entire files at once would make it possible to have compile errors for unused private functions and globals.</p>
+    <p>With the way that ZIR is encoded, lowering all of a file into
+    <a href="https://andrewkelley.me/temp/luffy.jpg">one piece</a>
+    of ZIR code is less overhead than splitting it by function.
+    Less overhead of list capacity is wasted, and more strings in the string
+    table will be shared.</p>
 
-commit b750e074c621b8679e14e53f9ecd2faa4432eff9
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat May 22 17:20:30 2021 -0700
+    <p>This works great for caching. All source files independently need to be converted
+    to ZIR, and once converted to ZIR, the original source, token list, and AST node
+    list are all no longer needed. The relevant bytes are stored directly in ZIR.
+    So each .zig source file has exactly one corresponding ZIR bytecode.
+    The caching strategy for this is dead simple. Consider also that the transformation
+    from .zig to ZIR does not depend on the target options, or anything,
+    other than the AST. So cached ZIR for std lib files and common used packages
+    <strong>can be re-used between unrelated projects</strong>.</p>
 
-    stage2: rework astgen command into `zig ast-check`
-    
-    This addresses the use case of quickly reporting AstGen compile errors
-    for a file, for use with an IDE for example.
-    
-     * Rename from `zig asgen` to `zig ast-check`
-     * It is now a command always available; not only in debug builds.
-     * Give it usage text and proper CLI parsing.
-     * Support reading from stdin when no positional arg is provided.
-     * `-t` flag makes it print textual ZIR. Without this flag, it only
-       provides compile errors.
-     * Support `--color` parameter to override the tty detection
-    
-    closes #8871
+    <p>This made the first 3 phases of the compiler pipeline <em>embarassingly parallel</em>.
+    Thanks to #2206, the compiler optimistically looks for all .zig source files in a project,
+    and parallelizes each tokenize➡️parse➡️ZIR transformation.
+    The caching system notices when .zig source files are unchanged,
+    and loads the .ZIR code directly instead of the source, skipping tokenization,
+    parsing, and AstGen entirely, on a per-file basis.
+    The AST tree only needs to be loaded in order to report compile errors.</p>
 
- src/main.zig | 158 +++++++++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 117 insertions(+), 41 deletions(-)
+    <p>Because of the {#link|Reworked Memory Layout#}, serialization of ZIR
+    in binary form is straightforward. It consists only of:</p>
+    <ul>
+      <li>List of u8 tags for each instruction</li>
+      <li>List of u32, u32 data for each instruction</li>
+      <li>List of u8 string table</li>
+      <li>List of u32 auxiliary data</li>
+    </ul>
+    <p>Writing/reading this to/from a file is trivial and is performed via a single
+    writev/readv syscall, respectively.</p>
 
+    <p>Here is an example of using the new {#link|zig ast-check command#} to print
+    how many bytes are used for one of the largest .zig files
+    in the {#link|Standard Library#}:</p>
+    <pre><code>$ zig ast-check -t std/os.zig | head -n7
+# Source bytes:       238 KB
+# Tokens:             35023 (171 KB)
+# AST Nodes:          17397 (221 KB)
+# Total ZIR bytes:    472 KB
+# Instructions:       26586 (234 KB)
+# String Table Bytes: 15.0 KB
+# Extra Data Items:   57179 (223 KB)</code></pre>
+    <p>The key thing to remember here is that with "Total ZIR bytes" loaded in memory,
+    the "Source bytes" <strong>remain on disk, never loaded into memory</strong>,
+    and "Tokens", and "AST Nodes" <strong>are never computed</strong>. They only need
+    to be loaded/computed for files which contain compile errors.</p>
+
+    <p>So although the .zig source code is pretty compact, if you add up "Source bytes",
+    "Tokens", and "AST Nodes", it comes out to 630 KB, which is 1.3 times the number of
+    "Total ZIR bytes". I checked the stats for all the std lib files, and found this 1.3 ratio
+    to be extremely consistent.</p>
+
+    <p>This means that not only does whole-file AST lowering allow Zig to skip past 3 compiler
+    phases for cached files, Zig ends up loading <em>fewer bytes from disk</em>
+    in order to do so!</p>
+
+    <p>
+    In this set of changes, I (Andrew) also reworked the incremental compilation
+    infrastructure in the frontend, making it work cleanly with
+    {#link|Standard Library#} integration. I made this infographic to communicate a sense
+    of progress that this set of changes accomplished:
+    </p>
+
+    <img src="https://ziglang.org/download/0.8.0/whole-file-astgen.png" alt="Infographic showing a sense of progress" style="max-width: 100%">
+
+    <p>In order to have a proper benchmark to find out how fast the compiler is,
+    we would need to have Sema (Semantic Analysis) complete (in the picture above,
+    it is marked 40% done). However, we can at least collect a measurement for the first
+    three phases of the pipeline and see how Zig is doing so far.</p>
+
+    <p>In summary, it comes out to <strong>8.9 million lines per second</strong> on my
+    8-core i9-9980HK NVMe:</p>
+
+    <pre><code>AstGen entire std lib, stage2 debug   cold cache: 0m0.959s
+AstGen entire std lib, stage2 debug   warm cache: 0m0.066s
+AstGen entire std lib, stage2 release cold cache: 0m0.033s
+AstGen entire std lib, stage2 release warm cache: 0m0.018s</code></pre>
+
+    <p>The lines-per-second number is derived by dividing
+    how many lines of code are in the {#link|Standard Library#} (292,458) by the
+    "release cold cache" number above (33ms)</p>
+
+    <p>There is no way Zig will be this fast when the implementation is completely
+    finished. <strong>This number does not include the two final phases of the
+      compiler pipeline</strong>. But these are some promising results so far!
+    At least there is an upper limit to aim for.</p>
+
+    {#header_open|zig ast-check command#}
+    <p>Thanks to this work, there is a new subcommand: <code>zig ast-check</code></p>
+    <p>This command quickly reports a subset of compile errors (about 100 different things),
+    without needing to know any information about the target or the build.
+    This makes it suitable for automatic
+    IDE integration, for quick turnaround on compile errors such as:</p>
+    <ul>
+      <li>Redeclaring the same variable name</li>
+      <li>Redundant use of {#syntax#}comptime{#endsyntax#}</li>
+      <li>{#syntax#}break{#endsyntax#} expression outside loop</li>
+      <li>unused label</li>
+      <li>returning from a {#syntax#}defer{#endsyntax#} expression</li>
+    </ul>
+    <p>
+    This command is also useful to Zig developers. It has a <code>-t</code> flag available
+    in debug builds of the compiler which renders the ZIR code into a textual format.
+    Here is an example:
+    </p>
+    <p class="file">hello.zig</p>
+    {#code_begin|syntax#}
+const std = @import("std");
+
+pub fn main() !void {
+    try std.io.getStdOut().writeAll("Hello, World!\n");
+}
+    {#code_end#}
+    <pre><code>$ ./zig ast-check -t hello.zig
+# Source bytes:       109B
+# Tokens:             32 (184B)
+# AST Nodes:          16 (328B)
+# Total ZIR bytes:    622B
+# Instructions:       26 (234B)
+# String Table Bytes: 48B
+# Extra Data Items:   69 (276B)
+%25 = extended(struct_decl(parent, Auto, {
+  [53] std line(0) hash(c9cf6ee7a5ad2804a9114568f721d663): %0 = block_inline({
+    %1 = import("std") token_offset:1:21
+    %2 = break_inline(%0, %1)
+  }) node_offset:1:1
+  [60] pub main line(2) hash(92a14e8c420ccc95ba5cac0402815cd9): %3 = block_inline({
+    %23 = func_inferred([], @Ref.void_type, inferror, {
+      %4 = dbg_stmt(1, 4)
+      %16 = block({
+        %5 = decl_ref("std") token_offset:4:9
+        %6 = field_val(%5, "io") node_offset:4:12
+        %7 = field_val(%6, "getStdOut") node_offset:4:15
+        %8 = call(%7, []) node_offset:4:25
+        %9 = field_val(%8, "writeAll") node_offset:4:27
+        %10 = param_type(%9, 0)
+        %11 = str("Hello, World!\n")
+        %12 = as_node(%10, %11) node_offset:4:37
+        %13 = call(%9, [%12]) node_offset:4:36
+        %14 = is_err(%13) node_offset:4:5
+        %15 = condbr(%14, {
+          %17 = err_union_code(%13) node_offset:4:5
+          %18 = ret_node(%17) node_offset:4:5
+        }, {
+          %19 = err_union_payload_unsafe(%13) node_offset:4:5
+          %20 = break(%16, %19)
+        }) node_offset:4:5
+      }) node_offset:4:5
+      %21 = ensure_result_used(%16) node_offset:4:5
+      %22 = ret_coerce(@Ref.void_value) token_offset:5:1
+    }) (lbrace=0:20,rbrace=2:0) node_offset:3:5
+    %24 = break_inline(%3, %23)
+  }) node_offset:3:5
+}, {}, {})
+Imports:
+  std</code></pre>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|LTO#}
