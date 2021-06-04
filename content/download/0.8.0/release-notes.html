@@ -2908,18 +2908,88 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
 
     <h2 id="MultiArrayList"><a href="#toc-MultiArrayList">MultiArrayList</a> <a class="hdr" href="#MultiArrayList">§</a></h2>
 
-    TODO
-    Also known as "Struct-Of-Arrays" or "SOA". The purpose of this data
-    structure is to provide a similar API to ArrayList but instead of
-    the element type being a struct, the fields of the struct are in N
-    different arrays, all with the same length and capacity.
-
-    Having this abstraction means we can put them in the same allocation,
+    <p>One pattern commonly observed in Data-Oriented Design is
+    <a href="https://en.wikipedia.org/wiki/AoS_and_SoA">Struct of Arrays (SOA)</a>.
+    This can be useful when <a href="#Reworked-Memory-Layout">reworking memory layout</a>
+    to be more CPU-cache-friendly.</p>
+    <p>Some programming languages have experimented with support for SoA at the language level.
+    In Zig, this abstraction is now provided in the standard library; no language modifications
+    needed.</p>
+    <p>The purpose of this data structure is to provide a similar API to
+    <code class="zig">ArrayList</code> but instead of the element type being a struct,
+    the fields of the struct are in N different arrays, all with the same length and capacity.</p>
+    <p>Having this abstraction means we can put them in the same allocation,
     avoiding overhead with the allocator. It also saves a tiny bit of
     overhead from the redundant capacity and length fields, since each
-    struct element shares the same value.
+    struct element shares the same value.</p>
 
-    This is an alternate implementation to #7854.
+    <p>Here is an example of using this data structure:</p>
+    <p class="file">multi_array_list.zig</p><pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> Allocator = std.mem.Allocator;
+<span class="tok-kw">const</span> MultiArrayList = std.MultiArrayList;
+<span class="tok-kw">const</span> ArrayList = std.ArrayListUnmanaged;
+
+<span class="tok-kw">const</span> MyData = <span class="tok-kw">struct</span> {
+    tag: <span class="tok-kw">enum</span> { one, two },
+    pointer: *<span class="tok-type">i32</span>,
+};
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {
+    {
+        <span class="tok-kw">var</span> gpa: std.heap.GeneralPurposeAllocator(.{
+            .enable_memory_limit = <span class="tok-null">true</span>,
+        }) = .{};
+        <span class="tok-kw">defer</span> _ = gpa.deinit();
+
+        <span class="tok-kw">var</span> list: ArrayList(MyData) = .{};
+        <span class="tok-kw">defer</span> list.deinit(&amp;gpa.allocator);
+
+        <span class="tok-kw">try</span> addSomeItems(&amp;gpa.allocator, &amp;list);
+        std.debug.print(<span class="tok-str">&quot;ArrayList: {}\n&quot;</span>, .{
+            std.fmt.fmtIntSizeBin(gpa.total_requested_bytes),
+        });
+    }
+    {
+        <span class="tok-kw">var</span> gpa: std.heap.GeneralPurposeAllocator(.{
+            .enable_memory_limit = <span class="tok-null">true</span>,
+        }) = .{};
+        <span class="tok-kw">defer</span> _ = gpa.deinit();
+
+        <span class="tok-kw">var</span> list: MultiArrayList(MyData) = .{};
+        <span class="tok-kw">defer</span> list.deinit(&amp;gpa.allocator);
+
+        <span class="tok-kw">try</span> addSomeItems(&amp;gpa.allocator, &amp;list);
+        std.debug.print(<span class="tok-str">&quot;MultiArrayList: {}\n&quot;</span>, .{
+            std.fmt.fmtIntSizeBin(gpa.total_requested_bytes),
+        });
+    }
+}
+
+<span class="tok-kw">var</span> derp: <span class="tok-type">i32</span> = <span class="tok-number">0</span>;
+
+<span class="tok-kw">fn</span> <span class="tok-fn">addSomeItems</span>(gpa: *Allocator, list: <span class="tok-kw">anytype</span>) !<span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> i: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;
+    <span class="tok-kw">while</span> (i &lt; <span class="tok-number">10000</span>) : (i += <span class="tok-number">1</span>) {
+        <span class="tok-kw">try</span> list.append(gpa, .{
+            .pointer = &amp;derp,
+            .tag = <span class="tok-kw">if</span> (i % <span class="tok-number">1</span> == <span class="tok-number">0</span>) .one <span class="tok-kw">else</span> .two,
+        });
+    }
+}</code></pre><pre><code class="shell">$ zig build-exe multi_array_list.zig
+$ ./multi_array_list
+ArrayList: 160KiB
+MultiArrayList: 91.177734375KiB
+</code></pre>
+
+    <p>Here is illustrated the same struct being added ten thousand times to an ArrayList,
+    and also to a MultiArrayList, and observe that the MultiArrayList uses only 57% of the
+    memory as the ArrayList, due to not wasting the padding bytes between the 1-byte enum
+    field and the pointer field.</p>
+    <p>On modern hardware, this can make a big difference due to lower L1 cache pressure
+    on the CPU.</p>
+    <p>This abstraction was immediately useful, unlocking both
+    <a href="#Reworked-Memory-Layout">Reworked Memory Layout</a> and <a href="#Hash-Maps">hash map improvements</a>
+    in this release cycle.</p>
     
 
     <h2 id="Hash-Maps"><a href="#toc-Hash-Maps">Hash Maps</a> <a class="hdr" href="#Hash-Maps">§</a></h2>

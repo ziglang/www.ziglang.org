@@ -2682,18 +2682,85 @@ Date:   Fri Dec 18 15:38:38 2020 -0700
     {#header_close#}
 
     {#header_open|MultiArrayList#}
-    TODO
-    Also known as "Struct-Of-Arrays" or "SOA". The purpose of this data
-    structure is to provide a similar API to ArrayList but instead of
-    the element type being a struct, the fields of the struct are in N
-    different arrays, all with the same length and capacity.
-
-    Having this abstraction means we can put them in the same allocation,
+    <p>One pattern commonly observed in Data-Oriented Design is
+    <a href="https://en.wikipedia.org/wiki/AoS_and_SoA">Struct of Arrays (SOA)</a>.
+    This can be useful when {#link|reworking memory layout|Reworked Memory Layout#}
+    to be more CPU-cache-friendly.</p>
+    <p>Some programming languages have experimented with support for SoA at the language level.
+    In Zig, this abstraction is now provided in the standard library; no language modifications
+    needed.</p>
+    <p>The purpose of this data structure is to provide a similar API to
+    {#syntax#}ArrayList{#endsyntax#} but instead of the element type being a struct,
+    the fields of the struct are in N different arrays, all with the same length and capacity.</p>
+    <p>Having this abstraction means we can put them in the same allocation,
     avoiding overhead with the allocator. It also saves a tiny bit of
     overhead from the redundant capacity and length fields, since each
-    struct element shares the same value.
+    struct element shares the same value.</p>
 
-    This is an alternate implementation to #7854.
+    <p>Here is an example of using this data structure:</p>
+    {#code_begin|exe|multi_array_list#}
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+const MultiArrayList = std.MultiArrayList;
+const ArrayList = std.ArrayListUnmanaged;
+
+const MyData = struct {
+    tag: enum { one, two },
+    pointer: *i32,
+};
+
+pub fn main() !void {
+    {
+        var gpa: std.heap.GeneralPurposeAllocator(.{
+            .enable_memory_limit = true,
+        }) = .{};
+        defer _ = gpa.deinit();
+
+        var list: ArrayList(MyData) = .{};
+        defer list.deinit(&gpa.allocator);
+
+        try addSomeItems(&gpa.allocator, &list);
+        std.debug.print("ArrayList: {}\n", .{
+            std.fmt.fmtIntSizeBin(gpa.total_requested_bytes),
+        });
+    }
+    {
+        var gpa: std.heap.GeneralPurposeAllocator(.{
+            .enable_memory_limit = true,
+        }) = .{};
+        defer _ = gpa.deinit();
+
+        var list: MultiArrayList(MyData) = .{};
+        defer list.deinit(&gpa.allocator);
+
+        try addSomeItems(&gpa.allocator, &list);
+        std.debug.print("MultiArrayList: {}\n", .{
+            std.fmt.fmtIntSizeBin(gpa.total_requested_bytes),
+        });
+    }
+}
+
+var derp: i32 = 0;
+
+fn addSomeItems(gpa: *Allocator, list: anytype) !void {
+    var i: usize = 0;
+    while (i < 10000) : (i += 1) {
+        try list.append(gpa, .{
+            .pointer = &derp,
+            .tag = if (i % 1 == 0) .one else .two,
+        });
+    }
+}
+    {#code_end#}
+    <p>Here is illustrated the same struct added ten thousand times to an ArrayList,
+    and also to a MultiArrayList, and observe that the MultiArrayList uses only 57% of the
+    memory as the ArrayList, due to not wasting the padding bytes between the 1-byte enum
+    field and the pointer field.</p>
+    <p>On modern hardware, this can make a big difference due to lower L1 cache pressure
+    on the CPU.</p>
+    <p>This abstraction was immediately useful, unlocking both
+    {#link|Reworked Memory Layout#} in the {#link|Self-Hosted Compiler#} as well as
+    {#link|hash map improvements|Hash Maps#} in this release cycle.</p>
     {#header_close#}
 
     {#header_open|Hash Maps#}
