@@ -4,20 +4,20 @@ mobile_menu_title: "Primeros pasos"
 toc: true
 ---
 
-## Lanzamientos etiquetados o compilación nocturna?
-Zig no ha alcanzado la versión 1.0 aún y el ciclo de liberación actual depende de la liberación de LLVM, lo cual ocurre cada ~6 meses.
-En terminos prácticos, **los lanzamientos de Zig tienden a ser muy separados entre si y ocasionalmente llegan a perder vigencia debido a la velocidad en el desarrollo del lenguaje.**.
+## Lanzamientos etiquetados o compilación nightly?
+Zig no ha alcanzado la versión 1.0 aún y el ciclo de lanzamiento actual depende de la liberación de LLVM, lo cual ocurre cada ~6 meses.
+En términos prácticos, **los lanzamientos de Zig tienden a ser muy separados entre si y ocasionalmente llegan a perder vigencia debido a la velocidad en el desarrollo del lenguaje.**.
 
-No hay problema con evaluar Zig utilizando alguna de las versiones etiquetadas, pero si deciedes que quieres continuar programando con Zig mas a fondo, **te recomendamos actualizar a las compilaciones nocturnas**, ya que de esa manera será mas fácil obtener ayuda: la mayoría de los miembros de la comunidad y sitios como [ziglearn.org](https://ziglearn.org) siguen la rama "master" del repositorio por las razones expuestas arriba.
+No hay problema con evaluar Zig utilizando alguna de las versiones etiquetadas, pero si decides que quieres continuar programando con Zig mas a fondo, **te recomendamos actualizar a las compilaciones nightly**, ya que de esa manera será más fácil obtener ayuda: la mayoría de los miembros de la comunidad y sitios como [ziglearn.org](https://ziglearn.org) siguen la rama "master" del repositorio por las razones expuestas arriba.
 
-La buena noticia es que es muy fácil de moverse de una versión de Zig a otra, o incluso tener multimples versiones presentes en el sistema al mismo tiempo: las versiones de Zig son un simple folder con todo lo necesario, el cual puede ser colocado en cualquier ubicación del sistema.
+La buena noticia es que es muy fácil de moverse de una versión de Zig a otra, o incluso tener múltiples versiones presentes en el sistema al mismo tiempo: las versiones de Zig son un simple directorio con todo lo necesario, el cual puede ser colocado en cualquier ubicación del sistema.
 
 ## Instalación de Zig
 ### Descarga directa
-Esta es la manera mas simple de obtener Zig: descarga un paquete de Zig correspondiente a tu plataforma desde la [página de descargas](/es/download), extrae el contenido en el directorio de tu elección y añade la rua al `PATH` para poder ejecutar `zig` desde cualquier ubicación.
+Esta es la manera mas simple de obtener Zig: descarga un paquete de Zig correspondiente a tu plataforma desde la [página de descargas](/es/download), extrae el contenido en el directorio de tu elección y añade la ruta al `PATH` para poder ejecutar `zig` desde cualquier ubicación.
 
 #### Configuración de la variable de entorno PATH en Windows
-Para configurar la ruta de Zig en el `PATH` the Windows ejecuta **uno** de los siguientes fragmentos de código en una terminal Powershell. Elige si quieres aplicar el cambio para todos los usuarios del sistema (lo cual requiere ejecutar Powershell con derechos de administrador) o solo para el usuario actual, y **asegurate de ajustar el fragmento de código para que apunte a la ubicación de tu copia de Zig**. El `;` antes de `C:` no es un error.
+Para configurar la ruta de Zig en el `PATH` the Windows ejecuta **uno** de los siguientes fragmentos de código en una terminal Powershell. Elige si quieres aplicar el cambio para todos los usuarios del sistema (lo cual requiere ejecutar Powershell con derechos de administrador) o solo para el usuario actual, y **asegúrate de ajustar el fragmento de código para que apunte a la ubicación de tu copia de Zig**. El `;` antes de `C:` no es un error.
 
 Para todos los usuarios (Powershell ejecutado como **administrador**):
 ```
@@ -36,16 +36,16 @@ Para el usuario actual (Powershell):
    "User"
 )
 ```
-Despues de esto, reinicia la terminal de Powershell.
+Después de esto, reinicia la terminal de Powershell.
 
 #### Configuración de la variable de entorno PATH Linux, macOS, BSD
 Añade la ubicación del ejecutable zig a la variable de ambiente PATH.
 
-Generalmente, esto se agregando una linea de 'export' a tu script de inicio del shell (`.profile`, `.zshrc`, ...)
+Generalmente, esto se hace agregando una linea de 'export' a tu script de inicio del shell (`.profile`, `.zshrc`, ...)
 ```bash
 export PATH=$PATH:~/ruta/a/zig
 ```
-Despues de esto, reinicia tu shell o refresca con el comando `source`
+Después de esto, reinicia tu shell o actualiza con el comando `source`
 
 
 
@@ -118,9 +118,9 @@ info: All your codebase are belong to us.
 Felicidades, ahora tienes una instalación de Zig funcional!
 
 ## Siguientes pasos
-**Revisa otros recursos presentes en la sección [Aprender](../)**, asegurate de encontrar la documentación para tu versión de Zig (nota: los compilados nocturnos corresponden a la documentación `master`) y considera leer [ziglearn.org](https://ziglearn.org).
+**Revisa otros recursos presentes en la sección [Aprender](../)**, asegurate de encontrar la documentación para tu versión de Zig (nota: los compilados nightly corresponden a la documentación `master`) y considera leer [ziglearn.org](https://ziglearn.org).
 
-Zig es un proyecto joven y desafortunadamente aún no tenemos la capacidad para producir documentacion y materiales extensivos para todas sus caracteristicas, así que considera [unirte a alguna de las comunidades existentes de Zig](https://github.com/ziglang/zig/wiki/Community) para obtener ayuda. También da un vistazo a [Zig SHOWTIME](https://zig.show).
+Zig es un proyecto joven y desafortunadamente aún no tenemos la capacidad para producir documentación y materiales extensivos para todas sus características, así que considera [unirte a alguna de las comunidades existentes de Zig](https://github.com/ziglang/zig/wiki/Community) para obtener ayuda. También da un vistazo a [Zig SHOWTIME](https://zig.show).
 
 Finalmente, si disfrutas Zig y quieres ayudar a acelerar su desarrollo, [considera donar a la Zig Software Foundation](../../zsf)
 <img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
