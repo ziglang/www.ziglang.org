@@ -6,7 +6,7 @@ toc: true
 ---
 
 ## Servidores de Lenguaje
-Los servidores de lenguaje son herramientas abiertas a cualquier editor para obtener marcado de sintaxis, autocompletado, y muchas otras caracteristicas de productividad. Considera usar un servidor de lenguaje en vez de una simple extensión de marcado de sintaxis para una experiencia de desarrollo mas rica.
+Los servidores de lenguaje son herramientas abiertas a cualquier editor para obtener marcado de sintaxis, auto-completado, y muchas otras características de productividad. Considera usar un servidor de lenguaje en vez de una simple extensión de marcado de sintaxis para una experiencia de desarrollo mas rica.
 
 - [zigtools/zls](https://github.com/zigtools/zls)
 
