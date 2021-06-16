@@ -12,7 +12,7 @@ Esta sección incluye recursos útiles que te llevan de no saber nada a entender
 ## Documentación
 {{% learn_docs %}}
 
-## Introdución
+## Introducción
 Estos son recursos de introducción a Zig orientados a programadores con diferentes niveles de experiencia.
 
 - [Revisión a fondo](overview/)
@@ -25,7 +25,7 @@ Una lista de ejemplos que muestran como luce el código Zig.
 Una lista de herramientas útiles al escribir código Zig.
 
 ## Primeros pasos
-Si estas listo para comenzar a programar con Zig, esta guía te ayudará a poner en marcha el ambiente necesario.
+Si estás listo para comenzar a programar con Zig, esta guía te ayudará a poner en marcha el ambiente necesario.
 
 - [Primeros pasos]({{< ref "getting-started.md" >}})  
 

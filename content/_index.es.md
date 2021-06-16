@@ -3,28 +3,28 @@ title: Inicio
 mobile_menu_title: "Inicio"
 ---
 {{< slogan get_started="PRIMEROS PASOS" docs="Documentación" notes="Cambios" lang="es" >}}
-Zig es un lenguaje de programación de propósito general y una cadena de herramientas para mantener software **robusto**, **optimo** y **reusable**.
+Zig es un lenguaje de programación de propósito general y una cadena de herramientas para mantener software **robusto**, **óptimo** y **reusable**.
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
 {{% div class="features" %}}
 
 # ⚡ Un Lenguaje Simple
-Enfocate en depurar tu aplicación en vez de depurar tu conocimiento del lenguaje
+Enfócate en depurar tu aplicación en vez de depurar tu conocimiento del lenguaje
 
 - Sin control de flujo oculto.
 - Sin asignaciones de memoria ocultas
 - Sin preprocesador, sin macros.
 
 # ⚡ Comptime
-Un enfoque fresco hacia la meta-programación basada en ejecución de codigo en tiempo de compilación y evaluación tardía (lazy evaluation). 
+Un enfoque fresco hacia la meta-programación basada en ejecución de código en tiempo de compilación y evaluación tardía (lazy evaluation). 
 
 - Llama cualquier función en tiempo de compilación.
 - Manipula tipos como si fuesen valores sin penalizar el tiempo de ejecución.
 - Comptime emula la arquitectura objetivo.
 
 # ⚡ Desempeño y Seguridad
-Escribe código claro y rapido capaz de manejar todas las condiciones de error.
+Escribe código claro y rápido capaz de manejar todas las condiciones de error.
 
 - Zig guía en forma eficaz tu lógica de tratamiento de errores.
 - Los chequeos configurables de tiempo de ejecución te ayudan a alcanzar un balance entre desempeño y garantías de seguridad.
@@ -61,8 +61,8 @@ Escribe código claro y rapido capaz de manejar todas las condiciones de error.
 
 {{% div class="community-message" %}}
 # La comunidad Zig es descentralizada
-Todos son libres para iniciar y mantener su propio espacio de reunion para la comunidad.
-No existe el concepto de "oficial" o "no oficial", no obstante, cada lugar de reunion tiene sus propias reglas y moderadores.
+Todos son libres para mantener su propio lugar de reunión para la comunidad.
+No existe el concepto de "oficial" o "no oficial", no obstante, cada lugar de reunión tiene sus propias reglas y moderadores.
 
 <div style="">
 <h1>
@@ -76,7 +76,7 @@ No existe el concepto de "oficial" o "no oficial", no obstante, cada lugar de re
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
 # Desarrollo principal
-El repositorio de Zig se encuentra en [https://github.com/ziglang/zig](https://github.com/ziglang/zig), donde también hospedamos el seguimiento a problemas y discuciones de propuestas.
+El repositorio de Zig se encuentra en [https://github.com/ziglang/zig](https://github.com/ziglang/zig), donde también damos seguimiento a errores y discusiones de propuestas.
 Los contribuyentes deberán seguir el [Código de conducta de Zig](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
@@ -90,7 +90,7 @@ Los contribuyentes deberán seguir el [Código de conducta de Zig](https://githu
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
 ## La ZSF es una corporación sin fines de lucro 501(c)(3).
 
-La Zig Software Foundation es una corporación sin fines de lucro fundada en 2020 por Andrew Kelly, el creador de Zig, con el fin de sostener el desarrollo del lenguaje. Actualmente, la ZSF es capaz de ofrecer empleo con remuneración competitiva a un pequeño número de contribuyentes. Esperamos ser capaces de extender esta oferta a mas contribuyentes en el futuro. 
+La Zig Software Foundation es una corporación sin fines de lucro fundada en 2020 por Andrew Kelly, el creador de Zig, con el fin de sostener el desarrollo del lenguaje. Actualmente, la ZSF es capaz de ofrecer empleo con remuneración competitiva a un pequeño número de contribuyentes. Esperamos ser capaces de extender esta oferta a más contribuyentes en el futuro. 
 
 La Zig Software Foundation se mantiene con donaciones.
 
@@ -115,7 +115,7 @@ Las siguientes compañías proveen apoyo económico directo a la Zig Software Fo
 {{% /sponsor-logos %}}
 
 # Patrocinadores en GitHub
-Grácias a la [gente que patrocina Zig](zsf/), el proyecto se debe a la comunidad open source y no a entes corporativos. En particular, estos queridos amigos patrocian a Zig por un monto de $200 USD mensuales o más:
+Gracias a la [gente que patrocina Zig](zsf/), el proyecto se debe a la comunidad open source y no a entes corporativos. En particular, estos queridos amigos patrocinan a Zig por un monto de $200 USD mensuales o más:
 
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
