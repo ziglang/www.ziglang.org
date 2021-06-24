@@ -1444,7 +1444,7 @@ All 1 tests passed.
     thread2.wait();
 }
 
-<span class="tok-kw">fn</span> <span class="tok-fn">testTls</span>(context: <span class="tok-type">void</span>) <span class="tok-type">void</span> {
+<span class="tok-kw">fn</span> <span class="tok-fn">testTls</span>(_: <span class="tok-type">void</span>) <span class="tok-type">void</span> {
     assert(x == <span class="tok-number">1234</span>);
     x += <span class="tok-number">1</span>;
     assert(x == <span class="tok-number">1235</span>);
@@ -2846,7 +2846,7 @@ All 2 tests passed.
     <span class="tok-kw">return</span> int_slice[<span class="tok-number">0</span>];
 }</code></pre><pre><code class="shell">$ zig test test.zig 
 Test [1/1] test &quot;pointer alignment safety&quot;... 
-thread 1250 panic: incorrect alignment
+thread 2613 panic: incorrect alignment
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:10:63</span>: <span class="t2_0">0x2080ac in foo (test)</span>
     const int_slice = std.mem.bytesAsSlice(u32, @alignCast(4, slice4));
                                                               <span class="t32_1">^</span>
@@ -2869,7 +2869,7 @@ thread 1250 panic: incorrect alignment
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       
@@ -2963,7 +2963,7 @@ All 1 tests passed.
     <span class="tok-comment">// asserts that the slice has len &gt;= 1.</span>
 }</code></pre><pre><code class="shell">$ zig test test.zig 
 Test [1/1] test &quot;basic slices&quot;... 
-thread 1279 panic: index out of bounds
+thread 2637 panic: index out of bounds
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:22:10</span>: <span class="t2_0">0x2069b3 in test &quot;basic slices&quot; (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
@@ -2983,7 +2983,7 @@ thread 1279 panic: index out of bounds
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <p>This is one reason we prefer slices to pointers.</p>
@@ -3147,6 +3147,8 @@ All 1 tests passed.
 
     <span class="tok-comment">// you can still instantiate an empty struct</span>
     <span class="tok-kw">const</span> does_nothing = Empty {};
+
+    _ = does_nothing;
 }
 
 <span class="tok-comment">// struct field order is determined by the compiler for optimal performance.</span>
@@ -3747,10 +3749,11 @@ export fn entry(foo: Foo) void { }
 </code></pre>
 
       <p>
-      For a C-ABI-compatible enum, use <code class="zig"><span class="tok-kw">extern</span> <span class="tok-kw">enum</span></code>:
+      For a C-ABI-compatible enum, provide an explicit tag type to
+      the enum:
       </p>
-      <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> Foo = <span class="tok-kw">extern</span> <span class="tok-kw">enum</span> { a, b, c };
-<span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">entry</span>(foo: Foo) <span class="tok-type">void</span> { }</code></pre><pre><code class="shell">$ zig build-obj test.zig</code></pre>
+      <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">const</span> Foo = <span class="tok-kw">enum</span>(<span class="tok-type">c_int</span>) { a, b, c };
+<span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">entry</span>(foo: Foo) <span class="tok-type">void</span> { _ = foo; }</code></pre><pre><code class="shell">$ zig build-obj test.zig</code></pre>
 
       
 
@@ -3859,7 +3862,7 @@ All 1 tests passed.
     payload.float = <span class="tok-number">12.34</span>;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;simple union&quot;... 
-thread 1459 panic: access of inactive union field
+thread 2822 panic: access of inactive union field
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:12</span>: <span class="t2_0">0x20677b in test &quot;simple union&quot; (test)</span>
     payload.float = 12.34;
            <span class="t32_1">^</span>
@@ -3879,7 +3882,7 @@ thread 1459 panic: access of inactive union field
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <p>You can activate another field by assigning the entire union:</p>
@@ -4195,9 +4198,11 @@ const pi = 3.14;
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;separate scopes&quot;</span> {
     {
         <span class="tok-kw">const</span> pi = <span class="tok-number">3.14</span>;
+        _ = pi;
     }
     {
         <span class="tok-kw">var</span> pi: <span class="tok-type">bool</span> = <span class="tok-null">true</span>;
+        _ = pi;
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;separate scopes&quot;... 
@@ -4239,7 +4244,7 @@ All 1 tests passed.
         <span class="tok-comment">// Switching on arbitrary expressions is allowed as long as the</span>
         <span class="tok-comment">// expression is known at compile-time.</span>
         zz =&gt; zz,
-        <span class="tok-kw">comptime</span> blk: {
+        blk: {
             <span class="tok-kw">const</span> d: <span class="tok-type">u32</span> = <span class="tok-number">5</span>;
             <span class="tok-kw">const</span> e: <span class="tok-type">u32</span> = <span class="tok-number">100</span>;
             <span class="tok-kw">break</span> :blk d + e;
@@ -4703,7 +4708,7 @@ All 1 tests passed.
     <span class="tok-comment">// To access the index of iteration, specify a second capture value.</span>
     <span class="tok-comment">// This is zero-indexed.</span>
     <span class="tok-kw">var</span> sum2: <span class="tok-type">i32</span> = <span class="tok-number">0</span>;
-    <span class="tok-kw">for</span> (items) |value, i| {
+    <span class="tok-kw">for</span> (items) |_, i| {
         <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(i) == <span class="tok-type">usize</span>);
         sum2 += <span class="tok-builtin">@intCast</span>(<span class="tok-type">i32</span>, i);
     }
@@ -4877,7 +4882,7 @@ All 1 tests passed.
     }
 
     <span class="tok-kw">const</span> b: ?<span class="tok-type">u32</span> = <span class="tok-null">null</span>;
-    <span class="tok-kw">if</span> (b) |value| {
+    <span class="tok-kw">if</span> (b) |_| {
         <span class="tok-kw">unreachable</span>;
     } <span class="tok-kw">else</span> {
         <span class="tok-kw">try</span> expect(<span class="tok-null">true</span>);
@@ -4914,11 +4919,13 @@ All 1 tests passed.
     <span class="tok-kw">if</span> (a) |value| {
         <span class="tok-kw">try</span> expect(value == <span class="tok-number">0</span>);
     } <span class="tok-kw">else</span> |err| {
+        _ = err;
         <span class="tok-kw">unreachable</span>;
     }
 
     <span class="tok-kw">const</span> b: <span class="tok-type">anyerror</span>!<span class="tok-type">u32</span> = <span class="tok-kw">error</span>.BadValue;
     <span class="tok-kw">if</span> (b) |value| {
+        _ = value;
         <span class="tok-kw">unreachable</span>;
     } <span class="tok-kw">else</span> |err| {
         <span class="tok-kw">try</span> expect(err == <span class="tok-kw">error</span>.BadValue);
@@ -4938,13 +4945,13 @@ All 1 tests passed.
     <span class="tok-kw">var</span> c: <span class="tok-type">anyerror</span>!<span class="tok-type">u32</span> = <span class="tok-number">3</span>;
     <span class="tok-kw">if</span> (c) |*value| {
         value.* = <span class="tok-number">9</span>;
-    } <span class="tok-kw">else</span> |err| {
+    } <span class="tok-kw">else</span> |_| {
         <span class="tok-kw">unreachable</span>;
     }
 
     <span class="tok-kw">if</span> (c) |value| {
         <span class="tok-kw">try</span> expect(value == <span class="tok-number">9</span>);
-    } <span class="tok-kw">else</span> |err| {
+    } <span class="tok-kw">else</span> |_| {
         <span class="tok-kw">unreachable</span>;
     }
 }
@@ -4957,18 +4964,20 @@ All 1 tests passed.
     <span class="tok-kw">if</span> (a) |optional_value| {
         <span class="tok-kw">try</span> expect(optional_value.? == <span class="tok-number">0</span>);
     } <span class="tok-kw">else</span> |err| {
+        _ = err;
         <span class="tok-kw">unreachable</span>;
     }
 
     <span class="tok-kw">const</span> b: <span class="tok-type">anyerror</span>!?<span class="tok-type">u32</span> = <span class="tok-null">null</span>;
     <span class="tok-kw">if</span> (b) |optional_value| {
         <span class="tok-kw">try</span> expect(optional_value == <span class="tok-null">null</span>);
-    } <span class="tok-kw">else</span> |err| {
+    } <span class="tok-kw">else</span> |_| {
         <span class="tok-kw">unreachable</span>;
     }
 
     <span class="tok-kw">const</span> c: <span class="tok-type">anyerror</span>!?<span class="tok-type">u32</span> = <span class="tok-kw">error</span>.BadValue;
     <span class="tok-kw">if</span> (c) |optional_value| {
+        _ = optional_value;
         <span class="tok-kw">unreachable</span>;
     } <span class="tok-kw">else</span> |err| {
         <span class="tok-kw">try</span> expect(err == <span class="tok-kw">error</span>.BadValue);
@@ -4980,13 +4989,13 @@ All 1 tests passed.
         <span class="tok-kw">if</span> (optional_value.*) |*value| {
             value.* = <span class="tok-number">9</span>;
         }
-    } <span class="tok-kw">else</span> |err| {
+    } <span class="tok-kw">else</span> |_| {
         <span class="tok-kw">unreachable</span>;
     }
 
     <span class="tok-kw">if</span> (d) |optional_value| {
         <span class="tok-kw">try</span> expect(optional_value.? == <span class="tok-number">9</span>);
-    } <span class="tok-kw">else</span> |err| {
+    } <span class="tok-kw">else</span> |_| {
         <span class="tok-kw">unreachable</span>;
     }
 }</code></pre><pre><code class="shell">$ zig test if.zig
@@ -5136,7 +5145,7 @@ All 1 tests passed.
     assert(<span class="tok-null">false</span>);
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;this will fail&quot;... 
-thread 1712 panic: reached unreachable code
+thread 3078 panic: reached unreachable code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:14</span>: <span class="t2_0">0x207edb in assert (test)</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
@@ -5159,7 +5168,7 @@ thread 1712 panic: reached unreachable code
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       
@@ -5210,6 +5219,7 @@ test &quot;type of unreachable&quot; {
       </p>
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(condition: <span class="tok-type">bool</span>, b: <span class="tok-type">u32</span>) <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> a = <span class="tok-kw">if</span> (condition) b <span class="tok-kw">else</span> <span class="tok-kw">return</span>;
+    _ = a;
     <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;do something with a&quot;</span>);
 }
 <span class="tok-kw">test</span> <span class="tok-str">&quot;noreturn&quot;</span> {
@@ -5233,7 +5243,7 @@ All 1 tests passed.
 }
 
 <span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;</code></pre><pre><code class="shell">$ zig test test.zig -target x86_64-windows
-warning: created docgen_tmp/zig-cache/o/edddf5ff289d1d538cbc0b0a43cd9625/test.exe but skipping execution because it is non-native
+warning: created docgen_tmp/zig-cache/o/3c639c144d58903e916106e01da04c46/test.exe but skipping execution because it is non-native
 </code></pre>
 
       
@@ -5572,7 +5582,7 @@ All 1 tests passed.
       <p>If you want to provide a default value, you can use the <code class="zig"><span class="tok-kw">catch</span></code> binary operator:</p>
       <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">doAThing</span>(str: []<span class="tok-type">u8</span>) <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> number = parseU64(str, <span class="tok-number">10</span>) <span class="tok-kw">catch</span> <span class="tok-number">13</span>;
-    <span class="tok-comment">// ...</span>
+    _ = number; <span class="tok-comment">// ...</span>
 }</code></pre>
       <p>
       In this code, <code class="zig">number</code> will be equal to the successfully parsed string, or
@@ -5586,14 +5596,14 @@ All 1 tests passed.
       function logic:</p>
       <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">doAThing</span>(str: []<span class="tok-type">u8</span>) !<span class="tok-type">void</span> {
     <span class="tok-kw">const</span> number = parseU64(str, <span class="tok-number">10</span>) <span class="tok-kw">catch</span> |err| <span class="tok-kw">return</span> err;
-    <span class="tok-comment">// ...</span>
+    _ = number; <span class="tok-comment">// ...</span>
 }</code></pre>
       <p>
       There is a shortcut for this. The <code class="zig"><span class="tok-kw">try</span></code> expression:
       </p>
       <pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">doAThing</span>(str: []<span class="tok-type">u8</span>) !<span class="tok-type">void</span> {
     <span class="tok-kw">const</span> number = <span class="tok-kw">try</span> parseU64(str, <span class="tok-number">10</span>);
-    <span class="tok-comment">// ...</span>
+    _ = number; <span class="tok-comment">// ...</span>
 }</code></pre>
       <p>
       <code class="zig"><span class="tok-kw">try</span></code> evaluates an error union expression. If it is an error, it returns
@@ -5927,7 +5937,7 @@ error: PermissionDenied
     <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;PermissionDenied&quot;</span>);
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 1906 panic: PermissionDenied
+thread 3269 panic: PermissionDenied
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x232a96 in bang2 (test)</span>
     @panic(&quot;PermissionDenied&quot;);
     <span class="t32_1">^</span>
@@ -6077,7 +6087,7 @@ struct Foo *do_a_thing(void) {
 
 <span class="tok-kw">fn</span> <span class="tok-fn">doAThing</span>() ?*Foo {
     <span class="tok-kw">const</span> ptr = malloc(<span class="tok-number">1234</span>) <span class="tok-kw">orelse</span> <span class="tok-kw">return</span> <span class="tok-null">null</span>;
-    <span class="tok-comment">// ...</span>
+    _ = ptr; <span class="tok-comment">// ...</span>
 }</code></pre>
       <p>
         Here, Zig is at least as convenient, if not more, than C. And, the type of "ptr"
@@ -6195,6 +6205,7 @@ All 1 tests passed.
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;type coercion - variable declaration&quot;</span> {
     <span class="tok-kw">var</span> a: <span class="tok-type">u8</span> = <span class="tok-number">1</span>;
     <span class="tok-kw">var</span> b: <span class="tok-type">u16</span> = a;
+    _ = b;
 }
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;type coercion - function call&quot;</span> {
@@ -6202,11 +6213,14 @@ All 1 tests passed.
     foo(a);
 }
 
-<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(b: <span class="tok-type">u16</span>) <span class="tok-type">void</span> {}
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(b: <span class="tok-type">u16</span>) <span class="tok-type">void</span> {
+    _ = b;
+}
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;type coercion - @as builtin&quot;</span> {
     <span class="tok-kw">var</span> a: <span class="tok-type">u8</span> = <span class="tok-number">1</span>;
     <span class="tok-kw">var</span> b = <span class="tok-builtin">@as</span>(<span class="tok-type">u16</span>, a);
+    _ = b;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/3] test &quot;type coercion - variable declaration&quot;... 
 Test [2/3] test &quot;type coercion - function call&quot;... 
@@ -6240,7 +6254,7 @@ All 3 tests passed.
     foo(b);
 }
 
-<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(a: *<span class="tok-kw">const</span> <span class="tok-type">i32</span>) <span class="tok-type">void</span> {}</code></pre><pre><code class="shell">$ zig test test.zig
+<span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(_: *<span class="tok-kw">const</span> <span class="tok-type">i32</span>) <span class="tok-type">void</span> {}</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;type coercion - const qualification&quot;... 
 
 All 1 tests passed.
@@ -6546,7 +6560,7 @@ All 1 tests passed.
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;coercion of zero bit types&quot;</span> {
     <span class="tok-kw">var</span> x: <span class="tok-type">void</span> = {};
     <span class="tok-kw">var</span> y: *<span class="tok-type">void</span> = x;
-    <span class="tok-comment">//var z: void = y; // TODO</span>
+    _ = y;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;coercion of zero bit types&quot;... 
 
@@ -7347,7 +7361,7 @@ test &quot;fibonacci&quot;... FAIL (TestUnexpectedResult)
 
 0 passed; 0 skipped; 1 failed.
 error: the following test command failed with exit code 1:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <p>
@@ -7890,6 +7904,7 @@ All 1 tests passed.
 <span class="tok-kw">test</span> <span class="tok-str">&quot;suspend with no resume&quot;</span> {
     <span class="tok-kw">var</span> frame = <span class="tok-kw">async</span> func();
     <span class="tok-kw">try</span> expect(x == <span class="tok-number">2</span>);
+    _ = frame;
 }
 
 <span class="tok-kw">fn</span> <span class="tok-fn">func</span>() <span class="tok-type">void</span> {
@@ -8139,6 +8154,7 @@ All 1 tests passed.
 
 <span class="tok-kw">var</span> global_download_frame: <span class="tok-kw">anyframe</span> = <span class="tok-null">undefined</span>;
 <span class="tok-kw">fn</span> <span class="tok-fn">fetchUrl</span>(allocator: *Allocator, url: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) ![]<span class="tok-type">u8</span> {
+    _ = url; <span class="tok-comment">// this is just an example, we don't actually do it!</span>
     <span class="tok-kw">const</span> result = <span class="tok-kw">try</span> std.mem.dupe(allocator, <span class="tok-type">u8</span>, <span class="tok-str">&quot;this is the downloaded url contents&quot;</span>);
     <span class="tok-kw">errdefer</span> allocator.free(result);
     <span class="tok-kw">suspend</span> {
@@ -8150,6 +8166,7 @@ All 1 tests passed.
 
 <span class="tok-kw">var</span> global_file_frame: <span class="tok-kw">anyframe</span> = <span class="tok-null">undefined</span>;
 <span class="tok-kw">fn</span> <span class="tok-fn">readFile</span>(allocator: *Allocator, filename: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) ![]<span class="tok-type">u8</span> {
+    _ = filename; <span class="tok-comment">// this is just an example, we don't actually do it!</span>
     <span class="tok-kw">const</span> result = <span class="tok-kw">try</span> std.mem.dupe(allocator, <span class="tok-type">u8</span>, <span class="tok-str">&quot;this is the file contents&quot;</span>);
     <span class="tok-kw">errdefer</span> allocator.free(result);
     <span class="tok-kw">suspend</span> {
@@ -8213,6 +8230,7 @@ file_text: this is the file contents
 }
 
 <span class="tok-kw">fn</span> <span class="tok-fn">fetchUrl</span>(allocator: *Allocator, url: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) ![]<span class="tok-type">u8</span> {
+    _ = url; <span class="tok-comment">// this is just an example, we don't actually do it!</span>
     <span class="tok-kw">const</span> result = <span class="tok-kw">try</span> std.mem.dupe(allocator, <span class="tok-type">u8</span>, <span class="tok-str">&quot;this is the downloaded url contents&quot;</span>);
     <span class="tok-kw">errdefer</span> allocator.free(result);
     std.debug.print(<span class="tok-str">&quot;fetchUrl returning\n&quot;</span>, .{});
@@ -8220,6 +8238,7 @@ file_text: this is the file contents
 }
 
 <span class="tok-kw">fn</span> <span class="tok-fn">readFile</span>(allocator: *Allocator, filename: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) ![]<span class="tok-type">u8</span> {
+    _ = filename; <span class="tok-comment">// this is just an example, we don't actually do it!</span>
     <span class="tok-kw">const</span> result = <span class="tok-kw">try</span> std.mem.dupe(allocator, <span class="tok-type">u8</span>, <span class="tok-str">&quot;this is the file contents&quot;</span>);
     <span class="tok-kw">errdefer</span> allocator.free(result);
     std.debug.print(<span class="tok-str">&quot;readFile returning\n&quot;</span>, .{});
@@ -9778,9 +9797,9 @@ All 1 tests passed.
     }
 }</code></pre><pre><code class="shell">$ zig test test.zig -OReleaseFast
 Test [1/1] test &quot;@setRuntimeSafety&quot;... 
-thread 2570 panic: integer overflow
+thread 3877 panic: integer overflow
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/ab5c1ffb97fa2af21f9957115c7896c9/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/935001f67e1743ca657a10939c33e732/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <p>Note: it is <a href="https://github.com/ziglang/zig/issues/978">planned</a> to replace
@@ -10242,9 +10261,10 @@ All 1 tests passed.
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">test</span> <span class="tok-str">&quot;integer cast panic&quot;</span> {
     <span class="tok-kw">var</span> a: <span class="tok-type">u16</span> = <span class="tok-number">0xabcd</span>;
     <span class="tok-kw">var</span> b: <span class="tok-type">u8</span> = <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, a);
+    _ = b;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;integer cast panic&quot;... 
-thread 2616 panic: integer cast truncated bits
+thread 3923 panic: integer cast truncated bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:17</span>: <span class="t2_0">0x206715 in test &quot;integer cast panic&quot; (test)</span>
     var b: u8 = @intCast(u8, a);
                 <span class="t32_1">^</span>
@@ -10264,7 +10284,7 @@ thread 2616 panic: integer cast truncated bits
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <p>
@@ -10509,7 +10529,7 @@ All 1 tests passed.
     <span class="tok-kw">unreachable</span>;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 Test [1/1] test &quot;safety check&quot;... 
-thread 2650 panic: reached unreachable code
+thread 4218 panic: reached unreachable code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x2066ea in test &quot;safety check&quot; (test)</span>
     unreachable;
     <span class="t32_1">^</span>
@@ -10529,7 +10549,7 @@ thread 2650 panic: reached unreachable code
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/7f34ab7d7b033d23b6b65d82c319396a/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/50ecb6f705314535a2207da084120662/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <h2 id="Reaching-Unreachable-Code"><a href="#toc-Reaching-Unreachable-Code">Reaching Unreachable Code</a> <a class="hdr" href="#Reaching-Unreachable-Code">§</a></h2>
@@ -10562,7 +10582,7 @@ comptime {
     std.debug.assert(<span class="tok-null">false</span>);
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2664 panic: reached unreachable code
+thread 4233 panic: reached unreachable code
 <span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/debug.zig:231:14</span>: <span class="t2_0">0x2042cb in std.debug.assert (test)</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
@@ -10599,14 +10619,15 @@ thread 2664 panic: reached unreachable code
       <p>At runtime:</p>
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">var</span> x = foo(<span class="tok-str">&quot;hello&quot;</span>);
+    _ = x;
 }
 
 <span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(x: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">u8</span> {
     <span class="tok-kw">return</span> x[<span class="tok-number">5</span>];
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2676 panic: index out of bounds
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x231199 in foo (test)</span>
+thread 4245 panic: index out of bounds
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:13</span>: <span class="t2_0">0x231199 in foo (test)</span>
     return x[5];
             <span class="t32_1">^</span>
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:16</span>: <span class="t2_0">0x229f26 in main (test)</span>
@@ -10648,7 +10669,7 @@ thread 2676 panic: index out of bounds
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{unsigned});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2689 panic: attempt to cast negative value to unsigned integer
+thread 4260 panic: attempt to cast negative value to unsigned integer
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x229f97 in main (test)</span>
     var unsigned = @intCast(u32, value);
                    <span class="t32_1">^</span>
@@ -10691,7 +10712,7 @@ thread 2689 panic: attempt to cast negative value to unsigned integer
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{byte});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2703 panic: integer cast truncated bits
+thread 4273 panic: integer cast truncated bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x229f9c in main (test)</span>
     const byte = @intCast(u8, spartan_count);
                  <span class="t32_1">^</span>
@@ -10747,7 +10768,7 @@ thread 2703 panic: integer cast truncated bits
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{byte});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2715 panic: integer overflow
+thread 4287 panic: integer overflow
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x229f7f in main (test)</span>
     byte += 1;
          <span class="t32_1">^</span>
@@ -10884,7 +10905,7 @@ All 1 tests passed.
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{y});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2754 panic: left shift overflowed bits
+thread 4324 panic: left shift overflowed bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x229fbb in main (test)</span>
     var y = @shlExact(x, 2);
             <span class="t32_1">^</span>
@@ -10923,7 +10944,7 @@ thread 2754 panic: left shift overflowed bits
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{y});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2766 panic: right shift overflowed bits
+thread 4337 panic: right shift overflowed bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x229fbb in main (test)</span>
     var y = @shrExact(x, 2);
             <span class="t32_1">^</span>
@@ -10965,7 +10986,7 @@ thread 2766 panic: right shift overflowed bits
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{c});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2779 panic: division by zero
+thread 4350 panic: division by zero
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x229f89 in main (test)</span>
     var c = a / b;
               <span class="t32_1">^</span>
@@ -11007,7 +11028,7 @@ thread 2779 panic: division by zero
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{c});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2793 panic: remainder division by zero or negative value
+thread 4362 panic: remainder division by zero or negative value
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x229fab in main (test)</span>
     var c = a % b;
               <span class="t32_1">^</span>
@@ -11049,7 +11070,7 @@ thread 2793 panic: remainder division by zero or negative value
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{c});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2806 panic: exact division produced remainder
+thread 4375 panic: exact division produced remainder
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x229fcd in main (test)</span>
     var c = @divExact(a, b);
             <span class="t32_1">^</span>
@@ -11074,6 +11095,7 @@ thread 2806 panic: exact division produced remainder
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">comptime</span> {
     <span class="tok-kw">const</span> optional_number: ?<span class="tok-type">i32</span> = <span class="tok-null">null</span>;
     <span class="tok-kw">const</span> number = optional_number.?;
+    _ = number;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 <span class="t0_1">./docgen_tmp/test.zig:3:35: </span><span class="t31_1">error: </span><span class="t0_1">unable to unwrap null</span>
     const number = optional_number.?;
@@ -11089,7 +11111,7 @@ thread 2806 panic: exact division produced remainder
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{number});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2820 panic: attempt to use null value
+thread 4387 panic: attempt to use null value
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x229f8c in main (test)</span>
     var number = optional_number.?;
                                 <span class="t32_1">^</span>
@@ -11133,6 +11155,7 @@ it's null
       <p>At compile-time:</p>
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">comptime</span> {
     <span class="tok-kw">const</span> number = getNumberOrFail() <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
+    _ = number;
 }
 
 <span class="tok-kw">fn</span> <span class="tok-fn">getNumberOrFail</span>() !<span class="tok-type">i32</span> {
@@ -11155,7 +11178,7 @@ it's null
     <span class="tok-kw">return</span> <span class="tok-kw">error</span>.UnableToReturnNumber;
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2842 panic: attempt to unwrap error: UnableToReturnNumber
+thread 4411 panic: attempt to unwrap error: UnableToReturnNumber
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x231274 in getNumberOrFail (test)</span>
     return error.UnableToReturnNumber;
     <span class="t32_1">^</span>
@@ -11210,6 +11233,7 @@ got error: UnableToReturnNumber
     <span class="tok-kw">const</span> err = <span class="tok-kw">error</span>.AnError;
     <span class="tok-kw">const</span> number = <span class="tok-builtin">@errorToInt</span>(err) + <span class="tok-number">10</span>;
     <span class="tok-kw">const</span> invalid_err = <span class="tok-builtin">@intToError</span>(number);
+    _ = invalid_err;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 <span class="t0_1">./docgen_tmp/test.zig:4:25: </span><span class="t31_1">error: </span><span class="t0_1">integer value 11 represents no error</span>
     const invalid_err = @intToError(number);
@@ -11223,23 +11247,23 @@ got error: UnableToReturnNumber
     <span class="tok-kw">var</span> err = <span class="tok-kw">error</span>.AnError;
     <span class="tok-kw">var</span> number = <span class="tok-builtin">@errorToInt</span>(err) + <span class="tok-number">500</span>;
     <span class="tok-kw">var</span> invalid_err = <span class="tok-builtin">@intToError</span>(number);
-    std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{number});
+    std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{invalid_err});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2864 panic: invalid error code
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x229fe3 in main (test)</span>
+thread 4434 panic: invalid error code
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x22a013 in main (test)</span>
     var invalid_err = @intToError(number);
                       <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:461:22</span>: <span class="t2_0">0x22236c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:461:22</span>: <span class="t2_0">0x22239c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:413:12</span>: <span class="t2_0">0x2061de in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:413:12</span>: <span class="t2_0">0x20620e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:332:17</span>: <span class="t2_0">0x205206 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:332:17</span>: <span class="t2_0">0x205236 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:245:5</span>: <span class="t2_0">0x205012 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:245:5</span>: <span class="t2_0">0x205042 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)</code></pre>
@@ -11256,6 +11280,7 @@ thread 2864 panic: invalid error code
 <span class="tok-kw">comptime</span> {
     <span class="tok-kw">const</span> a: <span class="tok-type">u2</span> = <span class="tok-number">3</span>;
     <span class="tok-kw">const</span> b = <span class="tok-builtin">@intToEnum</span>(Foo, a);
+    _ = b;
 }</code></pre><pre><code class="shell">$ zig test test.zig
 <span class="t0_1">./docgen_tmp/test.zig:8:15: </span><span class="t31_1">error: </span><span class="t0_1">enum 'Foo' has no tag matching integer value 3</span>
     const b = @intToEnum(Foo, a);
@@ -11280,7 +11305,7 @@ const Foo = enum {
     std.debug.print(<span class="tok-str">&quot;value: {s}\n&quot;</span>, .{<span class="tok-builtin">@tagName</span>(b)});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2877 panic: invalid enum value
+thread 4447 panic: invalid enum value
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x22a019 in main (test)</span>
     var b = @intToEnum(Foo, a);
             <span class="t32_1">^</span>
@@ -11338,7 +11363,7 @@ thread 2877 panic: invalid enum value
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{x});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2891 panic: invalid error code
+thread 4461 panic: invalid error code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x231276 in foo (test)</span>
     const x = @errSetCast(Set2, set1);
               <span class="t32_1">^</span>
@@ -11389,7 +11414,7 @@ thread 2891 panic: invalid error code
     <span class="tok-kw">return</span> int_slice[<span class="tok-number">0</span>];
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2903 panic: incorrect alignment
+thread 4476 panic: incorrect alignment
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:59</span>: <span class="t2_0">0x2314fc in foo (test)</span>
     const int_slice = mem.bytesAsSlice(u32, @alignCast(4, slice4));
                                                           <span class="t32_1">^</span>
@@ -11446,7 +11471,7 @@ thread 2903 panic: incorrect alignment
     std.debug.print(<span class="tok-str">&quot;value: {}\n&quot;</span>, .{f.float});
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2917 panic: access of inactive union field
+thread 4489 panic: access of inactive union field
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x23ea0a in bar (test)</span>
     f.float = 12.34;
      <span class="t32_1">^</span>
@@ -11551,9 +11576,10 @@ value: 1.23400001e+01
       <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">var</span> opt_ptr: ?*<span class="tok-type">i32</span> = <span class="tok-null">null</span>;
     <span class="tok-kw">var</span> ptr = <span class="tok-builtin">@ptrCast</span>(*<span class="tok-type">i32</span>, opt_ptr);
+    _ = ptr;
 }</code></pre><pre><code class="shell">$ zig build-exe test.zig
 $ ./test
-thread 2946 panic: cast causes pointer to be null
+thread 4518 panic: cast causes pointer to be null
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:15</span>: <span class="t2_0">0x229f30 in main (test)</span>
     var ptr = @ptrCast(*i32, opt_ptr);
               <span class="t32_1">^</span>
@@ -11662,7 +11688,7 @@ All 1 tests passed.
     std.debug.print(<span class="tok-str">&quot;ptr={*}\n&quot;</span>, .{ptr});
 }</code></pre><pre><code class="shell">$ zig build-exe cli_allocation.zig
 $ ./cli_allocation
-ptr=i32@7fd59d6d7018
+ptr=i32@7fb3ad9c4018
 </code></pre>
 
               When using this kind of allocator, there is no need to free anything manually. Everything
@@ -11703,18 +11729,22 @@ ptr=i32@7fd59d6d7018
       <p>String literals such as <code class="zig"><span class="tok-str">&quot;foo&quot;</span></code> are in the global constant data section.
       This is why it is an error to pass a string literal to a mutable slice, like this:
       </p>
-      <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(s: []<span class="tok-type">u8</span>) <span class="tok-type">void</span> {}
+      <p class="file">test.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(s: []<span class="tok-type">u8</span>) <span class="tok-type">void</span> {
+    _ = s;
+}
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;string literal to mutable slice&quot;</span> {
     foo(<span class="tok-str">&quot;hello&quot;</span>);
 }</code></pre><pre><code class="shell">$ zig test test.zig
-<span class="t0_1">./docgen_tmp/test.zig:4:9: </span><span class="t31_1">error: </span><span class="t0_1">expected type '[]u8', found '*const [5:0]u8'</span>
+<span class="t0_1">./docgen_tmp/test.zig:6:9: </span><span class="t31_1">error: </span><span class="t0_1">expected type '[]u8', found '*const [5:0]u8'</span>
     foo(&quot;hello&quot;);
         <span class="t32_1">^</span>
 </code></pre>
 
       <p>However if you make the slice constant, then it works:</p>
-      <p class="file">strlit.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(s: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">void</span> {}
+      <p class="file">strlit.zig</p><pre><code class="zig"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(s: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">void</span> {
+    _ = s;
+}
 
 <span class="tok-kw">test</span> <span class="tok-str">&quot;string literal to constant slice&quot;</span> {
     foo(<span class="tok-str">&quot;hello&quot;</span>);
@@ -11867,7 +11897,7 @@ All 1 tests passed.
       <pre><code class="zig"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 <span class="tok-comment">/// Zig version. When writing code that supports multiple versions of Zig, prefer</span>
 <span class="tok-comment">/// feature detection (i.e. with `@hasDecl` or `@hasField`) over version checks.</span>
-<span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.9.0-dev.256+0134cb021&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.9.0-dev.273+31c49ad64&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
 <span class="tok-comment">/// Temporary until self-hosted is feature complete.</span>
 <span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_is_stage2 = <span class="tok-null">true</span>;
 <span class="tok-comment">/// Temporary until self-hosted supports the `cpu.arch` value.</span>
@@ -12054,7 +12084,7 @@ test &quot;expect in release fast mode&quot;... FAIL (TestUnexpectedResult)
 
 0 passed; 0 skipped; 1 failed.
 error: the following test command failed with exit code 1:
-docgen_tmp/zig-cache/o/ab5c1ffb97fa2af21f9957115c7896c9/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/935001f67e1743ca657a10939c33e732/test /home/vsts/work/1/s/build/release/bin/zig
 </code></pre>
 
       <p>See the rest of the <code class="zig">std.testing</code> namespace for more available functions.</p>
