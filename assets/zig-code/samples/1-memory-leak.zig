@@ -8,5 +8,7 @@ pub fn main() !void {
     const alloc = &gpalloc.allocator;
 
     const u32_ptr = try alloc.create(u32);
+    _ = u32_ptr; // silences unused variable error
+
     // oops I forgot to free!
 }
