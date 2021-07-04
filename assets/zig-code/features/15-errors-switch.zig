@@ -2,7 +2,7 @@
 const std = @import("std");
 
 test "switch on error" {
-    const result = parseInt("hi", 10) catch |err| switch (err) {};
+    _ = parseInt("hi", 10) catch |err| switch (err) {};
 }
 
 fn parseInt(buf: []const u8, radix: u8) !u64 {

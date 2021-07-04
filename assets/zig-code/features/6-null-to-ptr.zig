@@ -1,4 +1,4 @@
 // zig-doctest: test --fail zero
 test "null @intToPtr" {
-    const ptr = @intToPtr(*i32, 0x0);
+    _ = @intToPtr(*i32, 0x0);
 }
