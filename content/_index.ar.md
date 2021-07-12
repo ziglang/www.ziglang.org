@@ -117,19 +117,22 @@ Zig هي لغة برمجة متعددة الأغراض وسلسلة أدوات �
 # رعاة GitHub
  بفضل كل من [يدعم Zig](zsf/)، فالمشروع ملك لمجتمع البرمجيات مفتوحة المصدر وليس للشركات الراعية. تحديدًا، هذه القائمة هي لأفراد يدعمون Zig بـ200$ شهريًا أو أكثر:
 
+- [**Lager Data**](https://www.lagerdata.com)
+- [**drfuchs**](https://github.com/drfuchs)
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
 - [ryanworl](https://github.com/ryanworl)
 - [Stevie Hryciw](https://www.hryx.net/)
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [drfuchs](https://github.com/drfuchs)
-- [Lager Data](https://www.lagerdata.com)
 - [Derek Collison](https://github.com/derekcollison)
 - [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
 - Stephen Gutekanst
+- Mataroa.blog
+- Yong-Yue 
+- Vulfox
 
 يتم تحديث هذا القسم مع بداية كل شهر.
 {{% /div %}}

@@ -117,19 +117,22 @@ Zig Software Foundation은 기부로 유지됩니다.
 # GitHub Sponsors
 [Zig를 후원](zsf/)해 주시는 분들께 감사드리며, 이 프로젝트는 기업 주주가 아닌 오픈소스 커뮤니티에 책임이 있습니다. 특히, 다음의 훌륭한 분들께서 Zig에 매달 $200 이상을 후원하고 계십니다:
 
+- [**Lager Data**](https://www.lagerdata.com)
+- [**drfuchs**](https://github.com/drfuchs)
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
 - [ryanworl](https://github.com/ryanworl)
 - [Stevie Hryciw](https://www.hryx.net/)
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [drfuchs](https://github.com/drfuchs)
-- [Lager Data](https://www.lagerdata.com)
 - [Derek Collison](https://github.com/derekcollison)
 - [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
 - Stephen Gutekanst
+- Mataroa.blog
+- Yong-Yue 
+- Vulfox
 
 이 섹션은 매달 초 갱신됩니다.
 {{% /div %}}
