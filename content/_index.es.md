@@ -117,19 +117,22 @@ Las siguientes compañías proveen apoyo económico directo a la Zig Software Fo
 # Patrocinadores en GitHub
 Gracias a la [gente que patrocina Zig](zsf/), el proyecto se debe a la comunidad open source y no a entes corporativos. En particular, estos queridos amigos patrocinan a Zig por un monto de $200 USD mensuales o más:
 
+- [**Lager Data**](https://www.lagerdata.com)
+- [**drfuchs**](https://github.com/drfuchs)
 - [Karrick McDermott](https://github.com/karrick)
 - [Raph Levien](https://raphlinus.github.io/)
 - [ryanworl](https://github.com/ryanworl)
 - [Stevie Hryciw](https://www.hryx.net/)
 - [Josh Wolfe](https://github.com/thejoshwolfe)
 - [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [drfuchs](https://github.com/drfuchs)
-- [Lager Data](https://www.lagerdata.com)
 - [Derek Collison](https://github.com/derekcollison)
 - [NATS.io](https://github.com/nats-io)
 - Joran Dirk Greef
 - Simon A. Nielsen Knights
 - Stephen Gutekanst
+- Mataroa.blog
+- Yong-Yue 
+- Vulfox
 
 Esta sección se actualiza al inicio de cada mes.
 {{% /div %}}
