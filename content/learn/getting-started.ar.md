@@ -63,8 +63,6 @@ choco install zig
 #### macOS
 
 **Homebrew**
-ملحوظة: لا توجد نسخة على Homebrew لـApple Silicon حتى الآن. إذا كنت تستخدم M1 Mac، فيجب عليك بناء Zig من المصدر.
-
 أحدث إصدار موسوم:
 ```
 brew install zig
