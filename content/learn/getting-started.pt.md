@@ -65,8 +65,6 @@ choco install zig
 #### macOS
 
 **Homebrew**  
-NOTA: Homebrew ainda não possui os pacotes para Apple Silicon. Se você tem um M1 Mac, você deve compilar o Zig a partir da fonte.
-
 Última versão de lançamento:
 ```
 brew install zig

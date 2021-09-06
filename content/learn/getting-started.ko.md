@@ -69,8 +69,6 @@ choco install zig
 #### macOS
 
 **Homebrew**  
-주의: 애플 실리콘용 bottle은 아직 지원되지 않습니다. M1 맥 사용자의 경우 소스로 빌드해야만 합니다.
-
 최신 tag된 릴리즈:
 ```
 brew install zig

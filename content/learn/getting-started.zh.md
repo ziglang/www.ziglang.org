@@ -66,8 +66,6 @@ choco install zig
 #### macOS
 
 **Homebrew**
-注意: Homebrew 暂时还没有支持 Apple Silicon 的 bottle 。如果你拥有 M1 Mac，你必须从源码构建。
-
 最新带标签版本：
 ```
 brew install zig
