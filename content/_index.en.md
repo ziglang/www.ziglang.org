@@ -118,22 +118,18 @@ The following companies are providing direct financial support to the Zig Softwa
 Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open source community rather than corporate shareholders. In particular, these fine folks sponsor Zig for $200/month or more:
 
 
-- [**Lager Data**](https://www.lagerdata.com)
-- [**drfuchs**](https://github.com/drfuchs)
-- [Karrick McDermott](https://github.com/karrick)
-- [Raph Levien](https://raphlinus.github.io/)
-- [ryanworl](https://github.com/ryanworl)
-- [Stevie Hryciw](https://www.hryx.net/)
-- [Josh Wolfe](https://github.com/thejoshwolfe)
-- [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [Derek Collison](https://github.com/derekcollison)
-- [NATS.io](https://github.com/nats-io)
-- Joran Dirk Greef
-- Simon A. Nielsen Knights
+- [Pex](https://pex.com)
+- [drfuchs](https://github.com/drfuchs)
+- [Lager Data](https://lagerdata.com)
 - Stephen Gutekanst
-- Mataroa.blog
-- Yong-Yue 
-- Vulfox
+- Stevie Hryciw
+- Derek Collison
+- Karrick McDermott
+- Joran Dirk Greef
+- Dustin Taylor
+- José M Rico
+- ConnectEverything
+- Simon A. Nielsen Knights
 
 This section is updated at the beginning of each month.
 {{% /div %}}
