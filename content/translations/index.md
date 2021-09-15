@@ -14,6 +14,7 @@ The original content is written in [English](/).
 - [Português](../pt/)
 - [简体中文](../zh/)
 - [Deutsch](../de/)
+- [فارسی](../fa/)
 - [Français](../fr/)
 - [한국어](../ko/)
 - [Español](../es/)
