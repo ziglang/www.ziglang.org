@@ -501,7 +501,6 @@
         <li><a id="toc-Builtin-Functions" href="#Builtin-Functions">Builtin Functions</a>
         <ul style="columns: 2">
             <li><a id="toc-addWithOverflow" href="#addWithOverflow">@addWithOverflow</a></li>
-            <li><a id="toc-addWithSaturation" href="#addWithSaturation">@addWithSaturation</a></li>
             <li><a id="toc-alignCast" href="#alignCast">@alignCast</a></li>
             <li><a id="toc-alignOf" href="#alignOf">@alignOf</a></li>
             <li><a id="toc-as" href="#as">@as</a></li>
@@ -565,7 +564,6 @@
             <li><a id="toc-wasmMemoryGrow" href="#wasmMemoryGrow">@wasmMemoryGrow</a></li>
             <li><a id="toc-mod" href="#mod">@mod</a></li>
             <li><a id="toc-mulWithOverflow" href="#mulWithOverflow">@mulWithOverflow</a></li>
-            <li><a id="toc-mulWithSaturation" href="#mulWithSaturation">@mulWithSaturation</a></li>
             <li><a id="toc-panic" href="#panic">@panic</a></li>
             <li><a id="toc-popCount" href="#popCount">@popCount</a></li>
             <li><a id="toc-ptrCast" href="#ptrCast">@ptrCast</a></li>
@@ -580,7 +578,6 @@
             <li><a id="toc-setRuntimeSafety" href="#setRuntimeSafety">@setRuntimeSafety</a></li>
             <li><a id="toc-shlExact" href="#shlExact">@shlExact</a></li>
             <li><a id="toc-shlWithOverflow" href="#shlWithOverflow">@shlWithOverflow</a></li>
-            <li><a id="toc-shlWithSaturation" href="#shlWithSaturation">@shlWithSaturation</a></li>
             <li><a id="toc-shrExact" href="#shrExact">@shrExact</a></li>
             <li><a id="toc-shuffle" href="#shuffle">@shuffle</a></li>
             <li><a id="toc-sizeOf" href="#sizeOf">@sizeOf</a></li>
@@ -601,7 +598,6 @@
             <li><a id="toc-trunc" href="#trunc">@trunc</a></li>
             <li><a id="toc-round" href="#round">@round</a></li>
             <li><a id="toc-subWithOverflow" href="#subWithOverflow">@subWithOverflow</a></li>
-            <li><a id="toc-subWithSaturation" href="#subWithSaturation">@subWithSaturation</a></li>
             <li><a id="toc-tagName" href="#tagName">@tagName</a></li>
             <li><a id="toc-This" href="#This">@This</a></li>
             <li><a id="toc-truncate" href="#truncate">@truncate</a></li>
@@ -941,7 +937,7 @@ Test [1/1] test &quot;expect in release fast mode&quot;...
 Test [2/1] test &quot;expect in release fast mode&quot;... FAIL (TestUnexpectedResult)
 0 passed; 0 skipped; 1 failed.
 error: the following test command failed with exit code 1:
-docgen_tmp/zig-cache/o/939b4beb65711b411d681c1fa151f3ef/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6d5eb4838272e7e4dc4e36c8e9795925/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>See the rest of the <code>std.testing</code> namespace for more available functions.</p>
       <p>
@@ -1732,8 +1728,9 @@ All 1 tests passed.
       </p>
       <p>
       Operators such as <code>+</code> and <code>-</code> cause undefined behavior on
-              integer overflow. Also available are operations such as <code>+%</code> and
-                  <code>-%</code> which are defined to have wrapping arithmetic on all targets.
+      integer overflow. Alternative operators are provided for wrapping and saturating arithmetic on all targets.  
+      <code>+%</code> and <code>-%</code> perform wrapping arithmetic
+      while <code>+|</code> and <code>-|</code> perform saturating arithmetic.
       </p>
       <p>
       Zig supports arbitrary bit-width integers, referenced by using
@@ -1891,6 +1888,23 @@ a +%= b</code></pre></th>
           </td>
         </tr>
         <tr>
+          <th scope="row"><pre><code>a +| b
+a +|= b</code></pre></th>
+          <td>
+            <ul>
+              <li><a href="#Integers">Integers</a></li>
+            </ul>
+          </td>
+          <td>Saturating Addition.
+            <ul>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+            </ul>
+          </td>
+          <td>
+            <pre><code><span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, std.math.maxInt(<span class="tok-type">u32</span>)) +| <span class="tok-number">1</span> == <span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, std.math.maxInt(<span class="tok-type">u32</span>))</code></pre>
+          </td>
+        </tr>
+        <tr>
           <th scope="row"><pre><code>a - b
 a -= b</code></pre></th>
           <td>
@@ -1927,6 +1941,23 @@ a -%= b</code></pre></th>
           </td>
           <td>
             <pre><code><span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">0</span>) -% <span class="tok-number">1</span> == std.math.maxInt(<span class="tok-type">u32</span>)</code></pre>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><pre><code>a -| b
+a -|= b</code></pre></th>
+          <td>
+            <ul>
+              <li><a href="#Integers">Integers</a></li>
+            </ul>
+          </td>
+          <td>Saturating Subtraction.
+            <ul>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+            </ul>
+          </td>
+          <td>
+            <pre><code><span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">0</span>) -| <span class="tok-number">1</span> == <span class="tok-number">0</span></code></pre>
           </td>
         </tr>
         <tr>
@@ -2004,6 +2035,23 @@ a *%= b</code></pre></th>
           </td>
         </tr>
         <tr>
+          <th scope="row"><pre><code>a *| b
+a *|= b</code></pre></th>
+          <td>
+            <ul>
+              <li><a href="#Integers">Integers</a></li>
+            </ul>
+          </td>
+          <td>Saturating Multiplication.
+            <ul>
+              <li>Invokes <a href="#Peer-Type-Resolution">Peer Type Resolution</a> for the operands.</li>
+            </ul>
+          </td>
+          <td>
+            <pre><code><span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">200</span>) *| <span class="tok-number">2</span> == <span class="tok-number">255</span></code></pre>
+          </td>
+        </tr>
+        <tr>
           <th scope="row"><pre><code>a / b
 a /= b</code></pre></th>
           <td>
@@ -2070,6 +2118,24 @@ a &lt;&lt;= b</code></pre></th>
           </td>
           <td>
             <pre><code><span class="tok-number">1</span> &lt;&lt; <span class="tok-number">8</span> == <span class="tok-number">256</span></code></pre>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><pre><code>a &lt;&lt;| b
+a &lt;&lt;|= b</code></pre></th>
+          <td>
+            <ul>
+              <li><a href="#Integers">Integers</a></li>
+            </ul>
+          </td>
+          <td>Saturating Bit Shift Left.
+            <ul>
+              <li>See also <a href="#shlExact">@shlExact</a>.</li>
+              <li>See also <a href="#shlWithOverflow">@shlWithOverflow</a>.</li>
+            </ul>
+          </td>
+          <td>
+            <pre><code><span class="tok-builtin">@as</span>(<span class="tok-type">u8</span>, <span class="tok-number">1</span>) &lt;&lt;| <span class="tok-number">8</span> == <span class="tok-number">255</span></code></pre>
           </td>
         </tr>
         <tr>
@@ -2464,14 +2530,14 @@ ptr.* == <span class="tok-number">1234</span></code></pre>
 a!b
 x{}
 !x -x -%x ~x &amp;x ?x
-* / % ** *% ||
-+ - ++ +% -%
-&lt;&lt; &gt;&gt;
+* / % ** *% *| ||
++ - ++ +% -% +| -|
+&lt;&lt; &gt;&gt; &lt;&lt;|
 &amp; ^ | <span class="tok-kw">orelse</span> <span class="tok-kw">catch</span>
 == != &lt; &gt; &lt;= &gt;=
 <span class="tok-kw">and</span>
 <span class="tok-kw">or</span>
-= *= /= %= += -= &lt;&lt;= &gt;&gt;= &amp;= ^= |=</code></pre>
+= *= *%= *|= /= %= += +%= +|= -= -%= -|= &lt;&lt;= &lt;&lt;|= &gt;&gt;= &amp;= ^= |=</code></pre>
       
       
       <h2 id="Arrays"><a href="#toc-Arrays">Arrays</a> <a class="hdr" href="#Arrays">§</a></h2>
@@ -3004,7 +3070,7 @@ All 2 tests passed.
     <span class="tok-kw">const</span> int_slice = std.mem.bytesAsSlice(<span class="tok-type">u32</span>, <span class="tok-builtin">@alignCast</span>(<span class="tok-number">4</span>, slice4));
     <span class="tok-kw">return</span> int_slice[<span class="tok-number">0</span>];
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;pointer alignment safety&quot;... thread 5111 panic: incorrect alignment
+Test [1/1] test &quot;pointer alignment safety&quot;... thread 6230 panic: incorrect alignment
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:10:63</span>: <span class="t2_0">0x20815c in foo (test)</span>
     const int_slice = std.mem.bytesAsSlice(u32, @alignCast(4, slice4));
                                                               <span class="t32_1">^</span>
@@ -3027,7 +3093,7 @@ Test [1/1] test &quot;pointer alignment safety&quot;... thread 5111 panic: incor
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       
 
@@ -3116,7 +3182,7 @@ All 1 tests passed.
     <span class="tok-comment">// Note that `slice.ptr` does not invoke safety checking, while `&amp;slice[0]`</span>
     <span class="tok-comment">// asserts that the slice has len &gt;= 1.</span>
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;basic slices&quot;... thread 5133 panic: index out of bounds
+Test [1/1] test &quot;basic slices&quot;... thread 6250 panic: index out of bounds
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:22:10</span>: <span class="t2_0">0x206ab3 in test &quot;basic slices&quot; (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
@@ -3136,7 +3202,7 @@ Test [1/1] test &quot;basic slices&quot;... thread 5133 panic: index out of boun
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>This is one reason we prefer slices to pointers.</p>
       <figure><figcaption class="zig-cap"><cite class="file">slices.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
@@ -3983,7 +4049,7 @@ All 1 tests passed.
     <span class="tok-kw">var</span> payload = Payload{ .int = <span class="tok-number">1234</span> };
     payload.float = <span class="tok-number">12.34</span>;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;simple union&quot;... thread 5287 panic: access of inactive union field
+Test [1/1] test &quot;simple union&quot;... thread 6406 panic: access of inactive union field
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:12</span>: <span class="t2_0">0x20687b in test &quot;simple union&quot; (test)</span>
     payload.float = 12.34;
            <span class="t32_1">^</span>
@@ -4003,7 +4069,7 @@ Test [1/1] test &quot;simple union&quot;... thread 5287 panic: access of inactiv
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>You can activate another field by assigning the entire union:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test_simple_union.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
@@ -5211,7 +5277,7 @@ All 1 tests passed.
 <span class="tok-kw">test</span> <span class="tok-str">&quot;this will fail&quot;</span> {
     assert(<span class="tok-null">false</span>);
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;this will fail&quot;... thread 5521 panic: reached unreachable code
+Test [1/1] test &quot;this will fail&quot;... thread 6642 panic: reached unreachable code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:14</span>: <span class="t2_0">0x207f7b in assert (test)</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
@@ -5234,7 +5300,7 @@ Test [1/1] test &quot;this will fail&quot;... thread 5521 panic: reached unreach
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       
       <h3 id="At-Compile-Time"><a href="#toc-At-Compile-Time">At Compile-Time</a> <a class="hdr" href="#At-Compile-Time">§</a></h3>
@@ -5306,7 +5372,7 @@ All 1 tests passed.
 }
 
 <span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test noreturn_from_exit.zig -target x86_64-windows</kbd>
-warning: created docgen_tmp/zig-cache/o/b81f73e0b5c8b38c3c0c257f4eda26c2/test.exe but skipping execution because it is non-native
+warning: created docgen_tmp/zig-cache/o/a41f3ea0b364bfc98aff90bee84f300d/test.exe but skipping execution because it is non-native
 </samp></pre></figure>
       
       <h2 id="Functions"><a href="#toc-Functions">Functions</a> <a class="hdr" href="#Functions">§</a></h2>
@@ -5987,7 +6053,7 @@ error: PermissionDenied
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 5678 panic: PermissionDenied
+thread 6804 panic: PermissionDenied
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x232156 in bang2 (test)</span>
     @panic(&quot;PermissionDenied&quot;);
     <span class="t32_1">^</span>
@@ -7348,7 +7414,7 @@ Test [1/1] test &quot;fibonacci&quot;...
 Test [2/1] test &quot;fibonacci&quot;... FAIL (TestUnexpectedResult)
 0 passed; 0 skipped; 1 failed.
 error: the following test command failed with exit code 1:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>
       What happened is Zig started interpreting the <code>expect</code> function with the
@@ -8296,17 +8362,6 @@ file_text: this is the file contents
       Performs <code>result.* = a + b</code>. If overflow or underflow occurs,
           stores the overflowed bits in <code>result</code> and returns <code><span class="tok-null">true</span></code>.
                   If no overflow or underflow occurs, returns <code><span class="tok-null">false</span></code>.
-      </p>
-      
-      <h3 id="addWithSaturation"><a href="#toc-addWithSaturation">@addWithSaturation</a> <a class="hdr" href="#addWithSaturation">§</a></h3>
-
-      <pre><code><span class="tok-builtin">@addWithSaturation</span>(a: T, b: T) T</code></pre>
-      <p>
-      Returns <code>a + b</code>. The result will be clamped between the type maximum and minimum.
-      </p>
-      <p>
-      Once <a href="https://github.com/ziglang/zig/issues/1284">Saturating arithmetic</a>.
-      is completed, the syntax <code>a +| b</code> will be equivalent to calling <code><span class="tok-builtin">@addWithSaturation</span>(a, b)</code>.
       </p>
       
       <h3 id="alignCast"><a href="#toc-alignCast">@alignCast</a> <a class="hdr" href="#alignCast">§</a></h3>
@@ -9663,23 +9718,6 @@ Test [2/1] test &quot;@wasmMemoryGrow&quot;... SKIP
       </p>
       
       
-      <h3 id="mulWithSaturation"><a href="#toc-mulWithSaturation">@mulWithSaturation</a> <a class="hdr" href="#mulWithSaturation">§</a></h3>
-
-      <pre><code><span class="tok-builtin">@mulWithSaturation</span>(a: T, b: T) T</code></pre>
-      <p>
-      Returns <code>a * b</code>. The result will be clamped between the type maximum and minimum.
-      </p>
-      <p>
-      Once <a href="https://github.com/ziglang/zig/issues/1284">Saturating arithmetic</a>.
-      is completed, the syntax <code>a *| b</code> will be equivalent to calling <code><span class="tok-builtin">@mulWithSaturation</span>(a, b)</code>.
-      </p>
-      <p>
-      NOTE: Currently there is a bug in the llvm.smul.fix.sat intrinsic which affects <code><span class="tok-builtin">@mulWithSaturation</span></code> of signed integers.  
-      This may result in an incorrect sign bit when there is overflow.  This will be fixed in zig's 0.9.0 release.  
-      Check <a href="https://github.com/ziglang/zig/issues/9643">this issue</a> for more information.
-      </p>
-      
-
       <h3 id="panic"><a href="#toc-panic">@panic</a> <a class="hdr" href="#panic">§</a></h3>
 
       <pre><code><span class="tok-builtin">@panic</span>(message: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">noreturn</span></code></pre>
@@ -9922,9 +9960,9 @@ All 1 tests passed.
         }
     }
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig -OReleaseFast</kbd>
-Test [1/1] test &quot;@setRuntimeSafety&quot;... thread 6168 panic: integer overflow
+Test [1/1] test &quot;@setRuntimeSafety&quot;... thread 7306 panic: integer overflow
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/939b4beb65711b411d681c1fa151f3ef/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6d5eb4838272e7e4dc4e36c8e9795925/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>Note: it is <a href="https://github.com/ziglang/zig/issues/978">planned</a> to replace
       <code><span class="tok-builtin">@setRuntimeSafety</span></code> with <code>@optimizeFor</code></p>
@@ -9935,8 +9973,10 @@ docgen_tmp/zig-cache/o/939b4beb65711b411d681c1fa151f3ef/test /home/vsts/work/1/s
 
       <pre><code><span class="tok-builtin">@shlExact</span>(value: T, shift_amt: Log2T) T</code></pre>
       <p>
-      Performs the left shift operation (<code>&lt;&lt;</code>). Caller guarantees
-      that the shift will not shift any 1 bits out.
+      Performs the left shift operation (<code>&lt;&lt;</code>).
+      For unsigned integers, the result is <a href="#undefined">undefined</a> if any 1 bits
+      are shifted out. For signed integers, the result is <a href="#undefined">undefined</a> if
+      any bits that disagree with the resultant sign bit are shifted out.
       </p>
       <p>
       The type of <code>shift_amt</code> is an unsigned integer with <code>log2(T.bit_count)</code> bits.
@@ -9945,7 +9985,6 @@ docgen_tmp/zig-cache/o/939b4beb65711b411d681c1fa151f3ef/test /home/vsts/work/1/s
       <p>See also:</p><ul>
 <li><a href="#shrExact">@shrExact</a></li>
 <li><a href="#shlWithOverflow">@shlWithOverflow</a></li>
-<li><a href="#shlWithSaturation">@shlWithSaturation</a></li>
 </ul>
 
       
@@ -9965,32 +10004,10 @@ docgen_tmp/zig-cache/o/939b4beb65711b411d681c1fa151f3ef/test /home/vsts/work/1/s
       <p>See also:</p><ul>
 <li><a href="#shlExact">@shlExact</a></li>
 <li><a href="#shrExact">@shrExact</a></li>
-<li><a href="#shlWithSaturation">@shlWithSaturation</a></li>
 </ul>
 
       
       
-      <h3 id="shlWithSaturation"><a href="#toc-shlWithSaturation">@shlWithSaturation</a> <a class="hdr" href="#shlWithSaturation">§</a></h3>
-
-      <pre><code><span class="tok-builtin">@shlWithSaturation</span>(a: T, shift_amt: T) T</code></pre>
-      <p>
-      Returns <code>a &lt;&lt; b</code>. The result will be clamped between type minimum and maximum.  
-      </p>
-      <p>
-      Once <a href="https://github.com/ziglang/zig/issues/1284">Saturating arithmetic</a>.
-      is completed, the syntax <code>a &lt;&lt;| b</code> will be equivalent to calling <code><span class="tok-builtin">@shlWithSaturation</span>(a, b)</code>.
-      </p>
-      <p>
-      Unlike other @shl builtins, shift_amt doesn't need to be a Log2T as saturated overshifting is well defined.  
-      </p>
-      <p>See also:</p><ul>
-<li><a href="#shlExact">@shlExact</a></li>
-<li><a href="#shrExact">@shrExact</a></li>
-<li><a href="#shlWithOverflow">@shlWithOverflow</a></li>
-</ul>
-
-      
-
       <h3 id="shrExact"><a href="#toc-shrExact">@shrExact</a> <a class="hdr" href="#shrExact">§</a></h3>
 
       <pre><code><span class="tok-builtin">@shrExact</span>(value: T, shift_amt: Log2T) T</code></pre>
@@ -10005,7 +10022,6 @@ docgen_tmp/zig-cache/o/939b4beb65711b411d681c1fa151f3ef/test /home/vsts/work/1/s
       <p>See also:</p><ul>
 <li><a href="#shlExact">@shlExact</a></li>
 <li><a href="#shlWithOverflow">@shlWithOverflow</a></li>
-<li><a href="#shlWithSaturation">@shlWithSaturation</a></li>
 </ul>
 
       
@@ -10344,18 +10360,6 @@ All 1 tests passed.
       </p>
       
       
-      <h3 id="subWithSaturation"><a href="#toc-subWithSaturation">@subWithSaturation</a> <a class="hdr" href="#subWithSaturation">§</a></h3>
-
-      <pre><code><span class="tok-builtin">@subWithSaturation</span>(a: T, b: T) T</code></pre>
-      <p>
-      Returns <code>a - b</code>. The result will be clamped between the type maximum and minimum.  
-      </p>
-      <p>
-      Once <a href="https://github.com/ziglang/zig/issues/1284">Saturating arithmetic</a>.
-      is completed, the syntax <code>a -| b</code> will be equivalent to calling <code><span class="tok-builtin">@subWithSaturation</span>(a, b)</code>.
-      </p>
-      
-
       <h3 id="tagName"><a href="#toc-tagName">@tagName</a> <a class="hdr" href="#tagName">§</a></h3>
 
       <pre><code><span class="tok-builtin">@tagName</span>(value: <span class="tok-kw">anytype</span>) [:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span></code></pre>
@@ -10415,7 +10419,7 @@ All 1 tests passed.
     <span class="tok-kw">var</span> b: <span class="tok-type">u8</span> = <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, a);
     _ = b;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;integer cast panic&quot;... thread 6210 panic: integer cast truncated bits
+Test [1/1] test &quot;integer cast panic&quot;... thread 7352 panic: integer cast truncated bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:17</span>: <span class="t2_0">0x206825 in test &quot;integer cast panic&quot; (test)</span>
     var b: u8 = @intCast(u8, a);
                 <span class="t32_1">^</span>
@@ -10435,7 +10439,7 @@ Test [1/1] test &quot;integer cast panic&quot;... thread 6210 panic: integer cas
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>
       However this is well defined and working code:
@@ -10680,7 +10684,7 @@ All 1 tests passed.
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">test</span> <span class="tok-str">&quot;safety check&quot;</span> {
     <span class="tok-kw">unreachable</span>;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;safety check&quot;... thread 6240 panic: reached unreachable code
+Test [1/1] test &quot;safety check&quot;... thread 7385 panic: reached unreachable code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x2067ea in test &quot;safety check&quot; (test)</span>
     unreachable;
     <span class="t32_1">^</span>
@@ -10700,7 +10704,7 @@ Test [1/1] test &quot;safety check&quot;... thread 6240 panic: reached unreachab
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/c353d77049975cef319fc82356a3d6d5/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/58f0b2c9faec72618d6b8d428eca680b/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <h3 id="Reaching-Unreachable-Code"><a href="#toc-Reaching-Unreachable-Code">Reaching Unreachable Code</a> <a class="hdr" href="#Reaching-Unreachable-Code">§</a></h3>
 
@@ -10732,7 +10736,7 @@ comptime {
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6255 panic: reached unreachable code
+thread 7397 panic: reached unreachable code
 <span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/debug.zig:226:14</span>: <span class="t2_0">0x20436b in std.debug.assert (test)</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
@@ -10777,7 +10781,7 @@ thread 6255 panic: reached unreachable code
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6267 panic: index out of bounds
+thread 7413 panic: index out of bounds
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:13</span>: <span class="t2_0">0x2308f9 in foo (test)</span>
     return x[5];
             <span class="t32_1">^</span>
@@ -10821,7 +10825,7 @@ thread 6267 panic: index out of bounds
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6279 panic: attempt to cast negative value to unsigned integer
+thread 7426 panic: attempt to cast negative value to unsigned integer
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x229a17 in main (test)</span>
     var unsigned = @intCast(u32, value);
                    <span class="t32_1">^</span>
@@ -10865,7 +10869,7 @@ thread 6279 panic: attempt to cast negative value to unsigned integer
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6293 panic: integer cast truncated bits
+thread 7438 panic: integer cast truncated bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x229a1c in main (test)</span>
     const byte = @intCast(u8, spartan_count);
                  <span class="t32_1">^</span>
@@ -10921,7 +10925,7 @@ thread 6293 panic: integer cast truncated bits
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6306 panic: integer overflow
+thread 7451 panic: integer overflow
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x2299ff in main (test)</span>
     byte += 1;
          <span class="t32_1">^</span>
@@ -11057,7 +11061,7 @@ All 1 tests passed.
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6344 panic: left shift overflowed bits
+thread 7489 panic: left shift overflowed bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x229a2b in main (test)</span>
     var y = @shlExact(x, 2);
             <span class="t32_1">^</span>
@@ -11097,7 +11101,7 @@ thread 6344 panic: left shift overflowed bits
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6356 panic: right shift overflowed bits
+thread 7502 panic: right shift overflowed bits
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x229a2b in main (test)</span>
     var y = @shrExact(x, 2);
             <span class="t32_1">^</span>
@@ -11140,7 +11144,7 @@ thread 6356 panic: right shift overflowed bits
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6370 panic: division by zero
+thread 7514 panic: division by zero
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x229a09 in main (test)</span>
     var c = a / b;
               <span class="t32_1">^</span>
@@ -11183,7 +11187,7 @@ thread 6370 panic: division by zero
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6383 panic: remainder division by zero or negative value
+thread 7527 panic: remainder division by zero or negative value
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x229a2b in main (test)</span>
     var c = a % b;
               <span class="t32_1">^</span>
@@ -11226,7 +11230,7 @@ thread 6383 panic: remainder division by zero or negative value
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6397 panic: exact division produced remainder
+thread 7540 panic: exact division produced remainder
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x229a4d in main (test)</span>
     var c = @divExact(a, b);
             <span class="t32_1">^</span>
@@ -11267,7 +11271,7 @@ thread 6397 panic: exact division produced remainder
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6411 panic: attempt to use null value
+thread 7554 panic: attempt to use null value
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x2299fc in main (test)</span>
     var number = optional_number.?;
                                 <span class="t32_1">^</span>
@@ -11334,7 +11338,7 @@ it's null
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6431 panic: attempt to unwrap error: UnableToReturnNumber
+thread 7576 panic: attempt to unwrap error: UnableToReturnNumber
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x2309e4 in getNumberOrFail (test)</span>
     return error.UnableToReturnNumber;
     <span class="t32_1">^</span>
@@ -11406,7 +11410,7 @@ got error: UnableToReturnNumber
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6452 panic: invalid error code
+thread 7597 panic: invalid error code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x229a63 in main (test)</span>
     var invalid_err = @intToError(number);
                       <span class="t32_1">^</span>
@@ -11461,7 +11465,7 @@ const Foo = enum {
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6464 panic: invalid enum value
+thread 7610 panic: invalid enum value
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x229a99 in main (test)</span>
     var b = @intToEnum(Foo, a);
             <span class="t32_1">^</span>
@@ -11519,7 +11523,7 @@ thread 6464 panic: invalid enum value
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6478 panic: invalid error code
+thread 7622 panic: invalid error code
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x2309b6 in foo (test)</span>
     const x = @errSetCast(Set2, set1);
               <span class="t32_1">^</span>
@@ -11571,7 +11575,7 @@ thread 6478 panic: invalid error code
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6490 panic: incorrect alignment
+thread 7637 panic: incorrect alignment
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:59</span>: <span class="t2_0">0x230c3c in foo (test)</span>
     const int_slice = mem.bytesAsSlice(u32, @alignCast(4, slice4));
                                                           <span class="t32_1">^</span>
@@ -11628,7 +11632,7 @@ thread 6490 panic: incorrect alignment
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6502 panic: access of inactive union field
+thread 7649 panic: access of inactive union field
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x23e14a in bar (test)</span>
     f.float = 12.34;
      <span class="t32_1">^</span>
@@ -11737,7 +11741,7 @@ value: 1.23400001e+01
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6533 panic: cast causes pointer to be null
+thread 7679 panic: cast causes pointer to be null
 <span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:15</span>: <span class="t2_0">0x2299b0 in main (test)</span>
     var ptr = @ptrCast(*i32, opt_ptr);
               <span class="t32_1">^</span>
@@ -11845,7 +11849,7 @@ All 1 tests passed.
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe cli_allocation.zig</kbd>
 
 $ <kbd>./cli_allocation</kbd>
-ptr=i32@7f7a5c667018
+ptr=i32@7f7ae5480018
 </samp></pre></figure>
               When using this kind of allocator, there is no need to free anything manually. Everything
               gets freed at once with the call to <code>arena.deinit()</code>.
@@ -12047,7 +12051,7 @@ All 1 tests passed.
       <figure><figcaption class="zig-cap"><cite>@import("builtin")</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 <span class="tok-comment">/// Zig version. When writing code that supports multiple versions of Zig, prefer</span>
 <span class="tok-comment">/// feature detection (i.e. with `@hasDecl` or `@hasField`) over version checks.</span>
-<span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.9.0-dev.1183+1e805df81&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.9.0-dev.1205+33e77f127&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
 <span class="tok-comment">/// Temporary until self-hosted is feature complete.</span>
 <span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_is_stage2 = <span class="tok-null">false</span>;
 <span class="tok-comment">/// Temporary until self-hosted supports the `cpu.arch` value.</span>
@@ -12447,9 +12451,9 @@ pub extern fn do_something(foo: enum_FOO) c_int;
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     _ = c;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe verbose.zig -lc --verbose-cimport</kbd>
-info(compilation): C import source: docgen_tmp/zig-cache/o/b38e5082acb1eaea700ba937df23fb10/cimport.h
-info(compilation): C import .d file: docgen_tmp/zig-cache/o/b38e5082acb1eaea700ba937df23fb10/cimport.h.d
-info(compilation): C import output: docgen_tmp/zig-cache/o/cf7bfdf1d807461e1f0e208493bbcc04/cimport.zig
+info(compilation): C import source: docgen_tmp/zig-cache/o/4e11bd124473074e1de9a524d650d241/cimport.h
+info(compilation): C import .d file: docgen_tmp/zig-cache/o/4e11bd124473074e1de9a524d650d241/cimport.h.d
+info(compilation): C import output: docgen_tmp/zig-cache/o/3a2d257206885e3a820f761bdd08e9ac/cimport.zig
 
 $ <kbd>./verbose</kbd>
 </samp></pre></figure>
@@ -14003,6 +14007,7 @@ AssignOp
      / PLUSEQUAL
      / MINUSEQUAL
      / LARROW2EQUAL
+     / LARROW2PIPEEQUAL
      / RARROW2EQUAL
      / AMPERSANDEQUAL
      / CARETEQUAL
@@ -14037,6 +14042,8 @@ AdditionOp
      / PLUS2
      / PLUSPERCENT
      / MINUSPERCENT
+     / PLUSPIPE
+     / MINUSPIPE
 
 MultiplyOp
     &lt;- PIPE2
@@ -14045,6 +14052,7 @@ MultiplyOp
      / PERCENT
      / ASTERISK2
      / ASTERISKPERCENT
+     / ASTERISKPIPE
 
 PrefixOp
     &lt;- EXCLAMATIONMARK
@@ -14208,6 +14216,8 @@ ASTERISK2            &lt;- '**'               skip
 ASTERISKEQUAL        &lt;- '*='               skip
 ASTERISKPERCENT      &lt;- '*%'     ![=]      skip
 ASTERISKPERCENTEQUAL &lt;- '*%='              skip
+ASTERISKPIPE         &lt;- '*|'     ![=]      skip
+ASTERISKPIPEEQUAL    &lt;- '*|='              skip
 CARET                &lt;- '^'      ![=]      skip
 CARETEQUAL           &lt;- '^='               skip
 COLON                &lt;- ':'                skip
@@ -14224,6 +14234,8 @@ EXCLAMATIONMARK      &lt;- '!'      ![=]      skip
 EXCLAMATIONMARKEQUAL &lt;- '!='               skip
 LARROW               &lt;- '&lt;'      ![&lt;=]     skip
 LARROW2              &lt;- '&lt;&lt;'     ![=]      skip
+LARROW2PIPE          &lt;- '&lt;&lt;|'    ![=]      skip
+LARROW2PIPEEQUAL     &lt;- '&lt;&lt;|='   ![=]      skip
 LARROW2EQUAL         &lt;- '&lt;&lt;='              skip
 LARROWEQUAL          &lt;- '&lt;='               skip
 LBRACE               &lt;- '{'                skip
@@ -14233,6 +14245,8 @@ MINUS                &lt;- '-'      ![%=&gt;]    skip
 MINUSEQUAL           &lt;- '-='               skip
 MINUSPERCENT         &lt;- '-%'     ![=]      skip
 MINUSPERCENTEQUAL    &lt;- '-%='              skip
+MINUSPIPE            &lt;- '-|'     ![=]      skip
+MINUSPIPEEQUAL       &lt;- '-|='              skip
 MINUSRARROW          &lt;- '-&gt;'               skip
 PERCENT              &lt;- '%'      ![=]      skip
 PERCENTEQUAL         &lt;- '%='               skip
@@ -14244,6 +14258,8 @@ PLUS2                &lt;- '++'               skip
 PLUSEQUAL            &lt;- '+='               skip
 PLUSPERCENT          &lt;- '+%'     ![=]      skip
 PLUSPERCENTEQUAL     &lt;- '+%='              skip
+PLUSPIPE             &lt;- '+|'     ![=]      skip
+PLUSPIPEEQUAL        &lt;- '+|='              skip
 LETTERC              &lt;- 'c'                skip
 QUESTIONMARK         &lt;- '?'                skip
 RARROW               &lt;- '&gt;'      ![&gt;=]     skip
