@@ -27,10 +27,14 @@ pub fn Queue(comptime Child: type) type {
             this.end = node;
         }
         pub fn dequeue(this: *This) ?Child {
-            if (this.start == null) return null;
-            const start = this.start.?;
+            const start = this.start orelse return null;
             defer this.alloc.destroy(start);
-            this.start = start.next;
+            if (start.next) |next|
+                this.start = next
+            else {
+                this.start = null;
+                this.end = null;
+            }
             return start.data;
         }
     };
@@ -50,5 +54,9 @@ test "queue" {
     try std.testing.expectEqual(int_queue.dequeue(), 50);
     try std.testing.expectEqual(int_queue.dequeue(), 75);
     try std.testing.expectEqual(int_queue.dequeue(), 100);
+    try std.testing.expectEqual(int_queue.dequeue(), null);
+
+    try int_queue.enqueue(5);
+    try std.testing.expectEqual(int_queue.dequeue(), 5);
     try std.testing.expectEqual(int_queue.dequeue(), null);
 }
