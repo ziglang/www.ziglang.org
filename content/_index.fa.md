@@ -128,18 +128,7 @@ Zig یک زبان همه منظوره و ابزاری برای نگهداری ن
 
 ممنونیم از کسانی که [اسپانسر Zig](zsf/) بودند، پروژه به جای سهامداران شرکت، به جامعه منبع باز پاسخگو است. به طور خاص، این افراد خوب با 200 دلار در ماه یا بیشتر از Zig حمایت می کنند:
 
--   [Pex](https://pex.com)
--   [drfuchs](https://github.com/drfuchs)
--   [Lager Data](https://lagerdata.com)
--   Stephen Gutekanst
--   Stevie Hryciw
--   Derek Collison
--   Karrick McDermott
--   Joran Dirk Greef
--   Dustin Taylor
--   José M Rico
--   ConnectEverything
--   Simon A. Nielsen Knights
+{{< ghsponsors >}}
 
 این قسمت هر ماه بروزرسانی میشود.
 {{% /div %}}

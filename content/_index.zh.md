@@ -116,22 +116,7 @@ Zig 软件基金会由捐款维持。
 # GitHub 赞助
 感谢[赞助 Zig](zsf/) 的人，该项目对开源社区而不是企业股东负责。特别地，这些好心人以每月 200 美元或以上的金额赞助 Zig。
 
-- [**Lager Data**](https://www.lagerdata.com)
-- [**drfuchs**](https://github.com/drfuchs)
-- [Karrick McDermott](https://github.com/karrick)
-- [Raph Levien](https://raphlinus.github.io/)
-- [ryanworl](https://github.com/ryanworl)
-- [Stevie Hryciw](https://www.hryx.net/)
-- [Josh Wolfe](https://github.com/thejoshwolfe)
-- [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [Derek Collison](https://github.com/derekcollison)
-- [NATS.io](https://github.com/nats-io)
-- Joran Dirk Greef
-- Simon A. Nielsen Knights
-- Stephen Gutekanst
-- Mataroa.blog
-- Yong-Yue 
-- Vulfox
+{{< ghsponsors >}}
 
 本栏目将会在每月初更新。
 {{% /div %}}
