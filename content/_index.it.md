@@ -117,22 +117,7 @@ Le seguenti compagnie offrono diretto supporto finanziario alla Zig Software Fou
 
 Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento all propria comunità open source, invece che ad uno stuolo di shareholder. In particolare, i seguenti illustri individui supportano Zig per un quantitativo di 200 USD/mese o superiore:
 
-- [**Lager Data**](https://www.lagerdata.com)
-- [**drfuchs**](https://github.com/drfuchs)
-- [Karrick McDermott](https://github.com/karrick)
-- [Raph Levien](https://raphlinus.github.io/)
-- [ryanworl](https://github.com/ryanworl)
-- [Stevie Hryciw](https://www.hryx.net/)
-- [Josh Wolfe](https://github.com/thejoshwolfe)
-- [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [Derek Collison](https://github.com/derekcollison)
-- [NATS.io](https://github.com/nats-io)
-- Joran Dirk Greef
-- Simon A. Nielsen Knights
-- Stephen Gutekanst
-- Mataroa.blog
-- Yong-Yue 
-- Vulfox
+{{< ghsponsors >}}
 
 Questa sezione e' aggiornata all'inizio di ogni mese.
 {{% /div %}}

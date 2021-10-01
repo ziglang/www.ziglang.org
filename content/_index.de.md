@@ -117,22 +117,7 @@ Die folgenden Unternehmen bieten der Zig Software Foundation direkte finanzielle
 # GitHub-Sponsoren
 Dank vieler Unterstützer ist das Projekt der Open-Source-Community und nicht Aktionären Rechenschaft schuldig. Insbesondere [unterstützen](zsf/) diese guten Leute Zig mit monatlich $200 oder mehr:
 
-- [**Lager Data**](https://www.lagerdata.com)
-- [**drfuchs**](https://github.com/drfuchs)
-- [Karrick McDermott](https://github.com/karrick)
-- [Raph Levien](https://raphlinus.github.io/)
-- [ryanworl](https://github.com/ryanworl)
-- [Stevie Hryciw](https://www.hryx.net/)
-- [Josh Wolfe](https://github.com/thejoshwolfe)
-- [SkunkWerks, GmbH](https://skunkwerks.at/)
-- [Derek Collison](https://github.com/derekcollison)
-- [NATS.io](https://github.com/nats-io)
-- Joran Dirk Greef
-- Simon A. Nielsen Knights
-- Stephen Gutekanst
-- Mataroa.blog
-- Yong-Yue 
-- Vulfox
+{{< ghsponsors >}}
 
 Dieser Abschnitt wird zu Beginn jedes Monats aktualisiert.
 {{% /div %}}
