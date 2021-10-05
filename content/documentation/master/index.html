@@ -300,7 +300,6 @@
         <li><a id="toc-Introduction" href="#Introduction">Introduction</a></li>
         <li><a id="toc-Zig-Standard-Library" href="#Zig-Standard-Library">Zig Standard Library</a></li>
         <li><a id="toc-Hello-World" href="#Hello-World">Hello World</a></li>
-        <li><a id="toc-Zig-Test" href="#Zig-Test">Zig Test</a></li>
         <li><a id="toc-Comments" href="#Comments">Comments</a>
         <ul>
             <li><a id="toc-Doc-comments" href="#Doc-comments">Doc comments</a></li>
@@ -319,6 +318,18 @@
             <ul>
                 <li><a id="toc-undefined" href="#undefined">undefined</a></li>
             </ul></li>
+        </ul></li>
+        <li><a id="toc-Zig-Test" href="#Zig-Test">Zig Test</a>
+        <ul>
+            <li><a id="toc-Test-Declarations" href="#Test-Declarations">Test Declarations</a></li>
+            <li><a id="toc-Nested-Container-Tests" href="#Nested-Container-Tests">Nested Container Tests</a></li>
+            <li><a id="toc-Test-Failure" href="#Test-Failure">Test Failure</a></li>
+            <li><a id="toc-Skip-Tests" href="#Skip-Tests">Skip Tests</a></li>
+            <li><a id="toc-Report-Memory-Leaks" href="#Report-Memory-Leaks">Report Memory Leaks</a></li>
+            <li><a id="toc-Detecting-Test-Build" href="#Detecting-Test-Build">Detecting Test Build</a></li>
+            <li><a id="toc-Test-Output-and-Logging" href="#Test-Output-and-Logging">Test Output and Logging</a></li>
+            <li><a id="toc-The-Testing-Namespace" href="#The-Testing-Namespace">The Testing Namespace</a></li>
+            <li><a id="toc-Test-Tool-Documentation" href="#Test-Tool-Documentation">Test Tool Documentation</a></li>
         </ul></li>
         <li><a id="toc-Variables" href="#Variables">Variables</a>
         <ul>
@@ -871,98 +882,21 @@ Hello, world!
 </ul>
 
       
-      <h2 id="Zig-Test"><a href="#toc-Zig-Test">Zig Test</a> <a class="hdr" href="#Zig-Test">§</a></h2>
-
-      <p>
-      <kbd>zig test</kbd> is a tool that can be used to quickly build and run Zig code
-      to make sure behavior meets expectations. <code><span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>).is_test</code>
-      is available for code to detect whether the current build is a test build.
-      </p>
-      <figure><figcaption class="zig-cap"><cite class="file">detect_test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);
-<span class="tok-kw">const</span> expect = std.testing.expect;
-
-<span class="tok-kw">test</span> <span class="tok-str">&quot;builtin.is_test&quot;</span> {
-    <span class="tok-kw">try</span> expect(builtin.is_test);
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test detect_test.zig</kbd>
-Test [1/1] test &quot;builtin.is_test&quot;...
-All 1 tests passed.
-</samp></pre></figure>
-      <p>
-      Zig has lazy top level declaration analysis, which means that if a function is not called,
-      or otherwise used, it is not analyzed. This means that there may be an undiscovered
-      compile error in a function because it is never called.
-      </p>
-      <figure><figcaption class="zig-cap"><cite class="file">unused_fn.zig</cite></figcaption><pre><code><span class="tok-kw">fn</span> <span class="tok-fn">unused</span>() <span class="tok-type">i32</span> {
-    <span class="tok-kw">return</span> <span class="tok-str">&quot;wrong return type&quot;</span>;
-}
-<span class="tok-kw">test</span> <span class="tok-str">&quot;unused function&quot;</span> { }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test unused_fn.zig</kbd>
-Test [1/1] test &quot;unused function&quot;...
-All 1 tests passed.
-</samp></pre></figure>
-      <p>
-      Note that, while in <a href="#Debug">Debug</a> and <a href="#ReleaseSafe">ReleaseSafe</a> modes, <a href="#unreachable">unreachable</a> emits a
-      call to <a href="#panic">@panic</a>, in <a href="#ReleaseFast">ReleaseFast</a> and <a href="#ReleaseSmall">ReleaseSmall</a> modes, it is really
-      undefined behavior. The implementation of <code>std.debug.assert</code> is as
-      simple as:
-      </p>
-      <figure><figcaption class="zig-cap"><cite class="file">assert.zig</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">assert</span>(ok: <span class="tok-type">bool</span>) <span class="tok-type">void</span> {
-    <span class="tok-kw">if</span> (!ok) <span class="tok-kw">unreachable</span>;
-}</code></pre></figure>
-      <p>
-      This means that when testing in ReleaseFast or ReleaseSmall mode, <code>assert</code>
-      is not sufficient to check the result of a computation:
-      </p>
-      <figure><figcaption class="zig-cap"><cite class="file">assert_release_fast_mode.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> assert = std.debug.assert;
-
-<span class="tok-kw">test</span> <span class="tok-str">&quot;assert in release fast mode&quot;</span> {
-    assert(<span class="tok-null">false</span>);
-}</code></pre></figure>
-      <p>
-      When compiling this test in <a href="#ReleaseFast">ReleaseFast</a> mode, it invokes unchecked
-      <a href="#Undefined-Behavior">Undefined Behavior</a>. Since that could do anything, this documentation
-      cannot show you the output.
-      </p>
-      <p>
-      Better practice for checking the output when testing is to use <code>std.testing.expect</code>:
-      </p>
-      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> expect = std.testing.expect;
-
-<span class="tok-kw">test</span> <span class="tok-str">&quot;expect in release fast mode&quot;</span> {
-    <span class="tok-kw">try</span> expect(<span class="tok-null">false</span>);
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig -O ReleaseFast</kbd>
-Test [1/1] test &quot;expect in release fast mode&quot;...
-Test [2/1] test &quot;expect in release fast mode&quot;... FAIL (TestUnexpectedResult)
-0 passed; 0 skipped; 1 failed.
-error: the following test command failed with exit code 1:
-docgen_tmp/zig-cache/o/a0a2e852e9610c4ab196a8f44066e271/test /home/vsts/work/1/s/build/release/bin/zig
-</samp></pre></figure>
-      <p>See the rest of the <code>std.testing</code> namespace for more available functions.</p>
-      <p>
-      <kbd>zig test</kbd> has a few command line parameters which affect the compilation. See
-      <kbd>zig --help</kbd> for a full list. The most interesting one is <kbd>--test-filter [text]</kbd>.
-      This makes the test build only include tests whose name contains the supplied filter text.
-      Again, thanks to lazy analysis, this can allow you to narrow a build to only a few functions in
-      isolation.
-      </p>
-      
       <h2 id="Comments"><a href="#toc-Comments">Comments</a> <a class="hdr" href="#Comments">§</a></h2>
 
-      <figure><figcaption class="zig-cap"><cite class="file">comments.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;
+      <figure><figcaption class="zig-cap"><cite class="file">comments.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> print = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).debug.print;
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;comments&quot;</span> {
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-comment">// Comments in Zig start with &quot;//&quot; and end at the next LF byte (end of line).</span>
-    <span class="tok-comment">// The below line is a comment, and won't be executed.</span>
+    <span class="tok-comment">// The line below is a comment and won't be executed.</span>
 
-    <span class="tok-comment">//expect(false);</span>
+    <span class="tok-comment">//print(&quot;Hello?&quot;, .{});</span>
 
-    <span class="tok-kw">const</span> x = <span class="tok-null">true</span>;  <span class="tok-comment">// another comment</span>
-    <span class="tok-kw">try</span> expect(x);
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test comments.zig</kbd>
-Test [1/1] test &quot;comments&quot;...
-All 1 tests passed.
+    print(<span class="tok-str">&quot;Hello, world!\n&quot;</span>, .{}); <span class="tok-comment">// another comment</span>
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe comments.zig</kbd>
+
+$ <kbd>./comments</kbd>
+Hello, world!
 </samp></pre></figure>
       <p>
       There are no multiline comments in Zig (e.g. like <code class="c">/* */</code>
@@ -1350,27 +1284,37 @@ value: 1234
       in recent versions of the Unicode specification (as of Unicode 13.0).
       In Zig, a Unicode code point literal corresponds to the Unicode definition of a code point.
       </p>
-      <figure><figcaption class="zig-cap"><cite class="file">string_literals_test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;
-<span class="tok-kw">const</span> mem = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).mem;
+      <figure><figcaption class="zig-cap"><cite class="file">string_literals.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> print = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).debug.print;
+<span class="tok-kw">const</span> mem = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).mem; <span class="tok-comment">// will be used to compare bytes</span>
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;string literals&quot;</span> {
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">const</span> bytes = <span class="tok-str">&quot;hello&quot;</span>;
-    <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(bytes) == *<span class="tok-kw">const</span> [<span class="tok-number">5</span>:<span class="tok-number">0</span>]<span class="tok-type">u8</span>);
-    <span class="tok-kw">try</span> expect(bytes.len == <span class="tok-number">5</span>);
-    <span class="tok-kw">try</span> expect(bytes[<span class="tok-number">1</span>] == <span class="tok-str">'e'</span>);
-    <span class="tok-kw">try</span> expect(bytes[<span class="tok-number">5</span>] == <span class="tok-number">0</span>);
-    <span class="tok-kw">try</span> expect(<span class="tok-str">'e'</span> == <span class="tok-str">'\x65'</span>);
-    <span class="tok-kw">try</span> expect(<span class="tok-str">'\u{1f4a9}'</span> == <span class="tok-number">128169</span>);
-    <span class="tok-kw">try</span> expect(<span class="tok-str">'💯'</span> == <span class="tok-number">128175</span>);
-    <span class="tok-kw">try</span> expect(mem.eql(<span class="tok-type">u8</span>, <span class="tok-str">&quot;hello&quot;</span>, <span class="tok-str">&quot;h\x65llo&quot;</span>));
-    <span class="tok-kw">try</span> expect(<span class="tok-str">&quot;\xff&quot;</span>[<span class="tok-number">0</span>] == <span class="tok-number">0xff</span>); <span class="tok-comment">// non-UTF-8 strings are possible with \xNN notation.</span>
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test string_literals_test.zig</kbd>
-Test [1/1] test &quot;string literals&quot;...
-All 1 tests passed.
+    print(<span class="tok-str">&quot;{s}\n&quot;</span>, .{<span class="tok-builtin">@typeName</span>(<span class="tok-builtin">@TypeOf</span>(bytes))});       <span class="tok-comment">// *const [5:0]u8</span>
+    print(<span class="tok-str">&quot;{d}\n&quot;</span>, .{bytes.len});                       <span class="tok-comment">// 5</span>
+    print(<span class="tok-str">&quot;{c}\n&quot;</span>, .{bytes[<span class="tok-number">1</span>]});                        <span class="tok-comment">// 'e'</span>
+    print(<span class="tok-str">&quot;{d}\n&quot;</span>, .{bytes[<span class="tok-number">5</span>]});                        <span class="tok-comment">// 0</span>
+    print(<span class="tok-str">&quot;{}\n&quot;</span>, .{<span class="tok-str">'e'</span> == <span class="tok-str">'\x65'</span>});                    <span class="tok-comment">// true</span>
+    print(<span class="tok-str">&quot;{d}\n&quot;</span>, .{<span class="tok-str">'\u{1f4a9}'</span>});                     <span class="tok-comment">// 128169</span>
+    print(<span class="tok-str">&quot;{d}\n&quot;</span>, .{<span class="tok-str">'💯'</span>});                            <span class="tok-comment">// 128175</span>
+    print(<span class="tok-str">&quot;{}\n&quot;</span>, .{mem.eql(<span class="tok-type">u8</span>, <span class="tok-str">&quot;hello&quot;</span>, <span class="tok-str">&quot;h\x65llo&quot;</span>)}); <span class="tok-comment">// true</span>
+    print(<span class="tok-str">&quot;0x{x}\n&quot;</span>, .{<span class="tok-str">&quot;\xff&quot;</span>[<span class="tok-number">0</span>]}); <span class="tok-comment">// non-UTF-8 strings are possible with \xNN notation.</span>
+    print(<span class="tok-str">&quot;{u}\n&quot;</span>, .{<span class="tok-str">'⚡'</span>});
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe string_literals.zig</kbd>
+
+$ <kbd>./string_literals</kbd>
+*const [5:0]u8
+5
+e
+0
+true
+128169
+128175
+true
+0xff
+⚡
 </samp></pre></figure>
       <p>See also:</p><ul>
 <li><a href="#Arrays">Arrays</a></li>
-<li><a href="#Zig-Test">Zig Test</a></li>
 <li><a href="#Source-Encoding">Source Encoding</a></li>
 </ul>
 
@@ -1450,7 +1394,7 @@ All 1 tests passed.
       <h3 id="Assignment"><a href="#toc-Assignment">Assignment</a> <a class="hdr" href="#Assignment">§</a></h3>
 
       <p>Use the <code><span class="tok-kw">const</span></code> keyword to assign a value to an identifier:</p>
-      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> x = <span class="tok-number">1234</span>;
+      <figure><figcaption class="zig-cap"><cite class="file">constant_identifier_cannot_change.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> x = <span class="tok-number">1234</span>;
 
 <span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">void</span> {
     <span class="tok-comment">// It works at file scope as well as inside functions.</span>
@@ -1460,34 +1404,35 @@ All 1 tests passed.
     y += <span class="tok-number">1</span>;
 }
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;assignment&quot;</span> {
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     foo();
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-<span class="t0_1">./docgen_tmp/test.zig:8:7: </span><span class="t31_1">error: </span><span class="t0_1">cannot assign to constant</span>
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe constant_identifier_cannot_change.zig</kbd>
+<span class="t0_1">./docgen_tmp/constant_identifier_cannot_change.zig:8:7: </span><span class="t31_1">error: </span><span class="t0_1">cannot assign to constant</span>
     y += 1;
       <span class="t32_1">^</span>
 </samp></pre></figure>
       <p><code><span class="tok-kw">const</span></code> applies to all of the bytes that the identifier immediately addresses. <a href="#Pointers">Pointers</a> have their own const-ness.</p>
       <p>If you need a variable that you can modify, use the <code><span class="tok-kw">var</span></code> keyword:</p>
-      <figure><figcaption class="zig-cap"><cite class="file">var_test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;
+      <figure><figcaption class="zig-cap"><cite class="file">mutable_var.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> print = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).debug.print;
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;var&quot;</span> {
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">var</span> y: <span class="tok-type">i32</span> = <span class="tok-number">5678</span>;
 
     y += <span class="tok-number">1</span>;
 
-    <span class="tok-kw">try</span> expect(y == <span class="tok-number">5679</span>);
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test var_test.zig</kbd>
-Test [1/1] test &quot;var&quot;...
-All 1 tests passed.
+    print(<span class="tok-str">&quot;{d}&quot;</span>, .{y});
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe mutable_var.zig</kbd>
+
+$ <kbd>./mutable_var</kbd>
+5679
 </samp></pre></figure>
       <p>Variables must be initialized:</p>
-      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">test</span> <span class="tok-str">&quot;initialization&quot;</span> {
+      <figure><figcaption class="zig-cap"><cite class="file">var_must_be_initialized.zig</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">var</span> x: <span class="tok-type">i32</span>;
 
     x = <span class="tok-number">1</span>;
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-<span class="t1_0">docgen_tmp/test.zig:2:5: </span><span class="t31_1">error:</span><span class="t1_0"> variables must be initialized
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe var_must_be_initialized.zig</kbd>
+<span class="t1_0">docgen_tmp/var_must_be_initialized.zig:2:5: </span><span class="t31_1">error:</span><span class="t1_0"> variables must be initialized
 </span>    var x: i32;
     <span class="t32_1">^
 </span>
@@ -1495,15 +1440,16 @@ All 1 tests passed.
       <h4 id="undefined"><a href="#toc-undefined">undefined</a> <a class="hdr" href="#undefined">§</a></h4>
 
       <p>Use <code><span class="tok-null">undefined</span></code> to leave variables uninitialized:</p>
-      <figure><figcaption class="zig-cap"><cite class="file">undefined_test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;
+      <figure><figcaption class="zig-cap"><cite class="file">assign_undefined.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> print = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).debug.print;
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;init with undefined&quot;</span> {
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     <span class="tok-kw">var</span> x: <span class="tok-type">i32</span> = <span class="tok-null">undefined</span>;
     x = <span class="tok-number">1</span>;
-    <span class="tok-kw">try</span> expect(x == <span class="tok-number">1</span>);
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test undefined_test.zig</kbd>
-Test [1/1] test &quot;init with undefined&quot;...
-All 1 tests passed.
+    print(<span class="tok-str">&quot;{d}&quot;</span>, .{x});
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe assign_undefined.zig</kbd>
+
+$ <kbd>./assign_undefined</kbd>
+1
 </samp></pre></figure>
       <p>
       <code><span class="tok-null">undefined</span></code> can be <a href="#Type-Coercion">coerced</a> to any type.
@@ -1517,6 +1463,365 @@ All 1 tests passed.
       bugs early, and to help detect use of undefined memory in a debugger.
       </p>
       
+      
+      
+      <h2 id="Zig-Test"><a href="#toc-Zig-Test">Zig Test</a> <a class="hdr" href="#Zig-Test">§</a></h2>
+
+      <p>
+        Code written within one or more <code><span class="tok-kw">test</span></code> declarations can be used to ensure behavior meets expectations:
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">introducing_zig_test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;expect addOne adds one to 41&quot;</span> {
+
+    <span class="tok-comment">// The Standard Library contains useful functions to help create tests.</span>
+    <span class="tok-comment">// `expect` is a function that verifies its argument is true.</span>
+    <span class="tok-comment">// It will return an error if its argument is false to indicate a failure.</span>
+    <span class="tok-comment">// `try` is used to return an error to the test runner to notify it that the test failed.</span>
+    <span class="tok-kw">try</span> std.testing.expect(addOne(<span class="tok-number">41</span>) == <span class="tok-number">42</span>);
+}
+
+<span class="tok-comment">/// The function `addOne` adds one to the number given as its argument.</span>
+<span class="tok-kw">fn</span> <span class="tok-fn">addOne</span>(number: <span class="tok-type">i32</span>) <span class="tok-type">i32</span> {
+    <span class="tok-kw">return</span> number + <span class="tok-number">1</span>;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test introducing_zig_test.zig</kbd>
+Test [1/1] test &quot;expect addOne adds one to 41&quot;...
+All 1 tests passed.
+</samp></pre></figure>
+      <p>
+        The <code class="file">introducing_zig_test.zig</code> code sample tests the <a href="#Functions">function</a>
+        <code>addOne</code> to ensure that it returns <code><span class="tok-number">42</span></code> given the input
+        <code><span class="tok-number">41</span></code>. From this test's perspective, the <code>addOne</code> function is
+        said to be <em>code under test</em>.
+      </p>
+      <p>
+        <kbd>zig test</kbd> is a tool that creates and runs a test build. By default, it builds and runs an
+        executable program using the <em>default test runner</em> provided by the <a href="#Zig-Standard-Library">Zig Standard Library</a>
+        as its main entry point. During the build, <code><span class="tok-kw">test</span></code> declarations found while
+        <a href="#Root-Source-File">resolving</a> the given Zig source file are included for the default test runner
+        to run and report on.
+      </p>
+      <aside>
+        This documentation discusses the features of the default test runner as provided by the Zig Standard Library.
+        Its source code is located in <code class="file">lib/std/special/test_runner.zig</code>.
+      </aside>
+      <p>
+        The shell output shown above displays two lines after the <kbd>zig test</kbd> command. These lines are
+        printed to standard error by the default test runner:
+      </p>
+      <dl>
+        <dt><samp>Test [1/1] test "expect addOne adds one to 41"...</samp></dt>
+        <dd>Lines like this indicate which test, out of the total number of tests, is being run.
+          In this case, <samp>[1/1]</samp> indicates that the first test, out of a total of
+          one test, is being run. Note that, when the test runner program's standard error is output
+          to the terminal, these lines are cleared when a test succeeds.
+        </dd>
+        <dt><samp>All 1 tests passed.</samp></dt>
+        <dd>This line indicates the total number of tests that have passed.</dd>
+      </dl>
+      <h3 id="Test-Declarations"><a href="#toc-Test-Declarations">Test Declarations</a> <a class="hdr" href="#Test-Declarations">§</a></h3>
+
+      <p>
+        Test declarations contain the <a href="#Keyword-Reference">keyword</a> <code><span class="tok-kw">test</span></code>, followed by an
+        optional name written as a <a href="#String-Literals-and-Unicode-Code-Point-Literals">string literal</a>, followed
+        by a <a href="#blocks">block</a> containing any valid Zig code that is allowed in a <a href="#Functions">function</a>.
+      </p>
+      <aside>
+        By convention, non-named tests should only be used to <a href="#Nested-Container-Tests">make other tests run</a>.
+        Non-named tests cannot be <a href="#Skip-Tests">filtered</a>.
+      </aside>
+      <p>
+        Test declarations are similar to <a href="#Functions">Functions</a>: they have a return type and a block of code. The implicit
+        return type of <code><span class="tok-kw">test</span></code> is the <a href="#Error-Union-Type">Error Union Type</a> <code><span class="tok-type">anyerror</span>!<span class="tok-type">void</span></code>,
+        and it cannot be changed. When a Zig source file is not built using the <kbd>zig test</kbd> tool, the test
+        declarations are omitted from the build.
+      </p>
+      <p>
+        Test declarations can be written in the same file, where code under test is written, or in a separate Zig source file.
+        Since test declarations are top-level declarations, they are order-independent and can
+        be written before or after the code under test.
+      </p>
+      <p>See also:</p><ul>
+<li><a href="#The-Global-Error-Set">The Global Error Set</a></li>
+<li><a href="#Grammar">Grammar</a></li>
+</ul>
+
+      
+      <h3 id="Nested-Container-Tests"><a href="#toc-Nested-Container-Tests">Nested Container Tests</a> <a class="hdr" href="#Nested-Container-Tests">§</a></h3>
+
+      <p>
+        When the <kbd>zig test</kbd> tool is building a test runner, only resolved <code><span class="tok-kw">test</span></code>
+        declarations are included in the build. Initially, only the given Zig source file's top-level
+        declarations are resolved. Unless nested containers are referenced from a top-level test declaration,
+        nested container tests will not be resolved.
+      </p>
+      <p>
+        The code sample below uses the <code>std.testing.refAllDecls(<span class="tok-builtin">@This</span>())</code> function call to
+        reference all of the containers that are in the file including the imported Zig source file. The code
+        sample also shows an alternative way to reference containers using the <code>_ = C;</code>
+        syntax. This syntax tells the compiler to ignore the result of the expression on the right side of the
+        assignment operator.
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">testdecl_container_top_level.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-comment">// Imported source file tests will run when referenced from a top-level test declaration.</span>
+<span class="tok-comment">// The next line alone does not cause &quot;introducing_zig_test.zig&quot; tests to run.</span>
+<span class="tok-kw">const</span> imported_file = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;introducing_zig_test.zig&quot;</span>);
+
+<span class="tok-kw">test</span> {
+    <span class="tok-comment">// To run nested container tests, either, call `refAllDecls` which will</span>
+    <span class="tok-comment">// reference all declarations located in the given argument.</span>
+    <span class="tok-comment">// `@This()` is a builtin function that returns the innermost container it is called from.</span>
+    <span class="tok-comment">// In this example, the innermost container is this file (implicitly a struct).</span>
+    std.testing.refAllDecls(<span class="tok-builtin">@This</span>());
+
+    <span class="tok-comment">// or, reference each container individually from a top-level test declaration.</span>
+    <span class="tok-comment">// The `_ = C;` syntax is a no-op reference to the identifier `C`.</span>
+    _ = S;
+    _ = U;
+    _ = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;introducing_zig_test.zig&quot;</span>);
+}
+
+<span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {
+    <span class="tok-kw">test</span> <span class="tok-str">&quot;S demo test&quot;</span> {
+        <span class="tok-kw">try</span> expect(<span class="tok-null">true</span>);
+    }
+
+    <span class="tok-kw">const</span> SE = <span class="tok-kw">enum</span> {
+        V,
+
+        <span class="tok-comment">// This test won't run because its container (SE) is not referenced.</span>
+        <span class="tok-kw">test</span> <span class="tok-str">&quot;This Test Won't Run&quot;</span> {
+            <span class="tok-kw">try</span> expect(<span class="tok-null">false</span>);
+        }
+    };
+};
+
+<span class="tok-kw">const</span> U = <span class="tok-kw">union</span> { <span class="tok-comment">// U is referenced by the file's top-level test declaration</span>
+    s: US,        <span class="tok-comment">// and US is referenced here; therefore, &quot;U.Us demo test&quot; will run</span>
+
+    <span class="tok-kw">const</span> US = <span class="tok-kw">struct</span> {
+        <span class="tok-kw">test</span> <span class="tok-str">&quot;U.US demo test&quot;</span> {
+            <span class="tok-comment">// This test is a top-level test declaration for the struct.</span>
+            <span class="tok-comment">// The struct is nested (declared) inside of a union.</span>
+            <span class="tok-kw">try</span> expect(<span class="tok-null">true</span>);
+        }
+    };
+
+    <span class="tok-kw">test</span> <span class="tok-str">&quot;U demo test&quot;</span> {
+        <span class="tok-kw">try</span> expect(<span class="tok-null">true</span>);
+    }
+};</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test testdecl_container_top_level.zig</kbd>
+Test [1/5] test &quot;&quot;...
+Test [2/5] S.test &quot;S demo test&quot;...
+Test [3/5] U.test &quot;U demo test&quot;...
+Test [4/5] introducing_zig_test.test &quot;expect addOne adds one to 41&quot;...
+Test [5/5] US.test &quot;U.US demo test&quot;...
+All 5 tests passed.
+</samp></pre></figure>
+      
+      <h3 id="Test-Failure"><a href="#toc-Test-Failure">Test Failure</a> <a class="hdr" href="#Test-Failure">§</a></h3>
+
+      <p>
+        The default test runner checks for an <a href="#Errors">error</a> returned from a test.
+        When a test returns an error, the test is considered a failure and its <a href="#Error-Return-Traces">error return trace</a>
+        is output to standard error. The total number of failures will be reported after all tests have run.
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;expect this to fail&quot;</span> {
+    <span class="tok-kw">try</span> std.testing.expect(<span class="tok-null">false</span>);
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;expect this to succeed&quot;</span> {
+    <span class="tok-kw">try</span> std.testing.expect(<span class="tok-null">true</span>);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
+Test [1/2] test &quot;expect this to fail&quot;...
+Test [2/2] test &quot;expect this to fail&quot;... FAIL (TestUnexpectedResult)
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/testing.zig:305:14</span>: <span class="t2_0">0x2081cb in std.testing.expect (test)</span>
+    if (!ok) return error.TestUnexpectedResult;
+             <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:4:5</span>: <span class="t2_0">0x2069b1 in test &quot;expect this to fail&quot; (test)</span>
+    try std.testing.expect(false);
+    <span class="t32_1">^</span>
+Test [2/2] test &quot;expect this to succeed&quot;...
+1 passed; 0 skipped; 1 failed.
+error: the following test command failed with exit code 1:
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
+</samp></pre></figure>
+      
+      <h3 id="Skip-Tests"><a href="#toc-Skip-Tests">Skip Tests</a> <a class="hdr" href="#Skip-Tests">§</a></h3>
+
+      <p>
+        One way to skip tests is to filter them out by using the <kbd>zig test</kbd> command line parameter
+        <kbd>--test-filter [text]</kbd>. This makes the test build only include tests whose name contains the
+        supplied filter text. Note that non-named tests are run even when using the <kbd>--test-filter [text]</kbd>
+        command line parameter.
+      </p>
+      <p>
+        To programmatically skip a test, make a <code><span class="tok-kw">test</span></code> return the error
+        <code><span class="tok-kw">error</span>.SkipZigTest</code> and the default test runner will consider the test as being skipped.
+        The total number of skipped tests will be reported after all tests have run.
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">test</span> <span class="tok-str">&quot;this will be skipped&quot;</span> {
+    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SkipZigTest;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
+Test [1/1] test &quot;this will be skipped&quot;...
+Test [2/1] test &quot;this will be skipped&quot;... SKIP
+0 passed; 1 skipped; 0 failed.
+</samp></pre></figure>
+      <p>
+        The default test runner skips tests containing a <a href="#Async-Functions">suspend point</a> while the
+        test is running using the default, blocking IO mode.
+        (The evented IO mode is enabled using the <kbd>--test-evented-io</kbd> command line parameter.)
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">async_skip.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;async skip test&quot;</span> {
+    <span class="tok-kw">var</span> frame = <span class="tok-kw">async</span> func();
+    <span class="tok-kw">const</span> result = <span class="tok-kw">await</span> frame;
+    <span class="tok-kw">try</span> std.testing.expect(result == <span class="tok-number">1</span>);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">func</span>() <span class="tok-type">i32</span> {
+    <span class="tok-kw">suspend</span> {
+        <span class="tok-kw">resume</span> <span class="tok-builtin">@frame</span>();
+    }
+    <span class="tok-kw">return</span> <span class="tok-number">1</span>;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test async_skip.zig</kbd>
+Test [1/1] test &quot;async skip test&quot;...
+Test [2/1] test &quot;async skip test&quot;... SKIP (async test)
+0 passed; 1 skipped; 0 failed.
+</samp></pre></figure>
+      <p>
+        In the code sample above, the test would not be skipped in blocking IO mode if the <code><span class="tok-kw">nosuspend</span></code>
+        keyword was used (see <a href="#Async-and-Await">Async and Await</a>).
+      </p>
+      
+      <h3 id="Report-Memory-Leaks"><a href="#toc-Report-Memory-Leaks">Report Memory Leaks</a> <a class="hdr" href="#Report-Memory-Leaks">§</a></h3>
+
+      <p>
+        When code allocates <a href="#Memory">Memory</a> using the <a href="#Zig-Standard-Library">Zig Standard Library</a>'s testing allocator,
+        <code>std.testing.allocator</code>, the default test runner will report any leaks that are
+        found from using the testing allocator:
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;detect leak&quot;</span> {
+    <span class="tok-kw">var</span> list = std.ArrayList(<span class="tok-type">u21</span>).init(std.testing.allocator);
+    <span class="tok-comment">// missing `defer list.deinit();`</span>
+    <span class="tok-kw">try</span> list.append(<span class="tok-str">'☔'</span>);
+
+    <span class="tok-kw">try</span> std.testing.expect(list.items.len == <span class="tok-number">1</span>);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
+Test [1/1] test &quot;detect leak&quot;... [gpa] (err): memory address 0x7ff914516000 leaked:
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/array_list.zig:334:69</span>: <span class="t2_0">0x20a870 in std.array_list.ArrayListAligned(u21,null).ensureTotalCapacity (test)</span>
+                const new_memory = try self.allocator.reallocAtLeast(self.allocatedSlice(), better_capacity);
+                                                                    <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/array_list.zig:358:41</span>: <span class="t2_0">0x20a7b8 in std.array_list.ArrayListAligned(u21,null).addOne (test)</span>
+            try self.ensureTotalCapacity(newlen);
+                                        <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/array_list.zig:183:49</span>: <span class="t2_0">0x208204 in std.array_list.ArrayListAligned(u21,null).append (test)</span>
+            const new_item_ptr = try self.addOne();
+                                                <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:20</span>: <span class="t2_0">0x207860 in test &quot;detect leak&quot; (test)</span>
+    try list.append('☔');
+                   <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x236052 in std.special.main (test)</span>
+        } else test_fn.func();
+                           <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22e19c in std.start.callMain (test)</span>
+            root.main();
+                     <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20b36e in std.start.callMainWithArgs (test)</span>
+    return @call(.{ .modifier = .always_inline }, callMain, .{});
+           <span class="t32_1">^</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208686 in std.start.posixCallMainAndExit (test)</span>
+    std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
+                <span class="t32_1">^</span>
+
+
+
+All 1 tests passed.
+1 errors were logged.
+1 tests leaked memory.
+error: the following test command failed with exit code 1:
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
+</samp></pre></figure>
+      <p>See also:</p><ul>
+<li><a href="#defer">defer</a></li>
+<li><a href="#Memory">Memory</a></li>
+</ul>
+
+      
+      <h3 id="Detecting-Test-Build"><a href="#toc-Detecting-Test-Build">Detecting Test Build</a> <a class="hdr" href="#Detecting-Test-Build">§</a></h3>
+
+      <p>
+        Use the <a href="#Compile-Variables">compile variable</a> <code><span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>).is_test</code>
+        to detect a test build:
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">detect_test.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);
+<span class="tok-kw">const</span> expect = std.testing.expect;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;builtin.is_test&quot;</span> {
+    <span class="tok-kw">try</span> expect(isATest());
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">isATest</span>() <span class="tok-type">bool</span> {
+    <span class="tok-kw">return</span> builtin.is_test;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test detect_test.zig</kbd>
+Test [1/1] test &quot;builtin.is_test&quot;...
+All 1 tests passed.
+</samp></pre></figure>
+      
+      <h3 id="Test-Output-and-Logging"><a href="#toc-Test-Output-and-Logging">Test Output and Logging</a> <a class="hdr" href="#Test-Output-and-Logging">§</a></h3>
+
+      <p>
+        The default test runner and the Zig Standard Library's testing namespace output messages to standard error.
+      </p>
+      
+      <h3 id="The-Testing-Namespace"><a href="#toc-The-Testing-Namespace">The Testing Namespace</a> <a class="hdr" href="#The-Testing-Namespace">§</a></h3>
+
+      <p>
+        The Zig Standard Library's <code>testing</code> namespace contains useful functions to help
+        you create tests. In addition to the <code>expect</code> function, this document uses a couple of more functions
+        as exemplified here:
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">testing_functions.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;expectEqual demo&quot;</span> {
+    <span class="tok-kw">const</span> expected: <span class="tok-type">i32</span> = <span class="tok-number">42</span>;
+    <span class="tok-kw">const</span> actual = <span class="tok-number">42</span>;
+
+    <span class="tok-comment">// The first argument to `expectEqual` is the known, expected, result.</span>
+    <span class="tok-comment">// The second argument is the result of some expression.</span>
+    <span class="tok-comment">// The actual's type is casted to the type of expected.</span>
+    <span class="tok-kw">try</span> std.testing.expectEqual(expected, actual);
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;expectError demo&quot;</span> {
+    <span class="tok-kw">const</span> expected_error = <span class="tok-kw">error</span>.DemoError;
+    <span class="tok-kw">const</span> actual_error_union: <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> = <span class="tok-kw">error</span>.DemoError;
+
+    <span class="tok-comment">// `expectError` will fail when the actual error is different than</span>
+    <span class="tok-comment">// the expected error.</span>
+    <span class="tok-kw">try</span> std.testing.expectError(expected_error, actual_error_union);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test testing_functions.zig</kbd>
+Test [1/2] test &quot;expectEqual demo&quot;...
+Test [2/2] test &quot;expectError demo&quot;...
+All 2 tests passed.
+</samp></pre></figure>
+      <p>The Zig Standard Library also contains functions to compare <a href="#Slices">Slices</a>, strings, and more. See the rest of the
+        <code>std.testing</code> namespace in the <a href="#Zig-Standard-Library">Zig Standard Library</a> for more available functions.</p>
+      
+      <h3 id="Test-Tool-Documentation"><a href="#toc-Test-Tool-Documentation">Test Tool Documentation</a> <a class="hdr" href="#Test-Tool-Documentation">§</a></h3>
+
+      <p>
+        <kbd>zig test</kbd> has a few command line parameters which affect the compilation.
+        See <kbd>zig test --help</kbd> for a full list.
+      </p>
       
       
 
@@ -3070,30 +3375,30 @@ All 2 tests passed.
     <span class="tok-kw">const</span> int_slice = std.mem.bytesAsSlice(<span class="tok-type">u32</span>, <span class="tok-builtin">@alignCast</span>(<span class="tok-number">4</span>, slice4));
     <span class="tok-kw">return</span> int_slice[<span class="tok-number">0</span>];
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;pointer alignment safety&quot;... thread 6322 panic: incorrect alignment
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:10:63</span>: <span class="t2_0">0x20828c in foo (test)</span>
+Test [1/1] test &quot;pointer alignment safety&quot;... thread 5550 panic: incorrect alignment
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:10:63</span>: <span class="t2_0">0x20829c in foo (test)</span>
     const int_slice = std.mem.bytesAsSlice(u32, @alignCast(4, slice4));
                                                               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:31</span>: <span class="t2_0">0x2069b9 in test &quot;pointer alignment safety&quot; (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:31</span>: <span class="t2_0">0x2069c9 in test &quot;pointer alignment safety&quot; (test)</span>
     try std.testing.expect(foo(bytes) == 0x11111111);
                               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22d0f2 in std.special.main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22d102 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22562c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22563c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2096ee in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2096fe in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2086e6 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2086f6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2084f2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208502 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       
 
@@ -3182,27 +3487,27 @@ All 1 tests passed.
     <span class="tok-comment">// Note that `slice.ptr` does not invoke safety checking, while `&amp;slice[0]`</span>
     <span class="tok-comment">// asserts that the slice has len &gt;= 1.</span>
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;basic slices&quot;... thread 6342 panic: index out of bounds
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:22:10</span>: <span class="t2_0">0x206be3 in test &quot;basic slices&quot; (test)</span>
+Test [1/1] test &quot;basic slices&quot;... thread 5571 panic: index out of bounds
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:22:10</span>: <span class="t2_0">0x206c03 in test &quot;basic slices&quot; (test)</span>
     slice[10] += 1;
          <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22d102 in std.special.main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22d122 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22563c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22565c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2096fe in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20971e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208786 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2087a6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208592 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2085b2 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>This is one reason we prefer slices to pointers.</p>
       <figure><figcaption class="zig-cap"><cite class="file">slices.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
@@ -4049,27 +4354,27 @@ All 1 tests passed.
     <span class="tok-kw">var</span> payload = Payload{ .int = <span class="tok-number">1234</span> };
     payload.float = <span class="tok-number">12.34</span>;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;simple union&quot;... thread 6492 panic: access of inactive union field
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:12</span>: <span class="t2_0">0x20698b in test &quot;simple union&quot; (test)</span>
+Test [1/1] test &quot;simple union&quot;... thread 5723 panic: access of inactive union field
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:12</span>: <span class="t2_0">0x2069ab in test &quot;simple union&quot; (test)</span>
     payload.float = 12.34;
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce62 in std.special.main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce82 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22539c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2253bc in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20940e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20942e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208496 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2084b6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2082a2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2082c2 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>You can activate another field by assigning the entire union:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test_simple_union.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
@@ -5277,30 +5582,30 @@ All 1 tests passed.
 <span class="tok-kw">test</span> <span class="tok-str">&quot;this will fail&quot;</span> {
     assert(<span class="tok-null">false</span>);
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;this will fail&quot;... thread 6731 panic: reached unreachable code
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:14</span>: <span class="t2_0">0x2080db in assert (test)</span>
+Test [1/1] test &quot;this will fail&quot;... thread 5962 panic: reached unreachable code
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:14</span>: <span class="t2_0">0x2080eb in assert (test)</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:11</span>: <span class="t2_0">0x20691e in test &quot;this will fail&quot; (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:11</span>: <span class="t2_0">0x20692e in test &quot;this will fail&quot; (test)</span>
     assert(false);
           <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce42 in std.special.main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce52 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22537c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22538c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2093ee in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2093fe in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208476 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208486 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208282 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208292 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       
       <h3 id="At-Compile-Time"><a href="#toc-At-Compile-Time">At Compile-Time</a> <a class="hdr" href="#At-Compile-Time">§</a></h3>
@@ -5372,7 +5677,7 @@ All 1 tests passed.
 }
 
 <span class="tok-kw">const</span> expect = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expect;</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test noreturn_from_exit.zig -target x86_64-windows</kbd>
-warning: created docgen_tmp/zig-cache/o/13c84bfc49c85bada92bf811844c2e30/test.exe but skipping execution because it is non-native
+warning: created docgen_tmp/zig-cache/o/7d3c09a19f2147e83e2011c47ad58318/test.exe but skipping execution because it is non-native
 </samp></pre></figure>
       
       <h2 id="Functions"><a href="#toc-Functions">Functions</a> <a class="hdr" href="#Functions">§</a></h2>
@@ -5982,25 +6287,25 @@ All 1 tests passed.
 
 $ <kbd>./test</kbd>
 error: PermissionDenied
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x230e32 in bang1 (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:39:5</span>: <span class="t2_0">0x230e42 in bang1 (test)</span>
     return error.FileNotFound;
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x230d0f in baz (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:23:5</span>: <span class="t2_0">0x230d1f in baz (test)</span>
     try bang1();
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x230cd2 in bang2 (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:43:5</span>: <span class="t2_0">0x230ce2 in bang2 (test)</span>
     return error.PermissionDenied;
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x230dff in hello (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:31:5</span>: <span class="t2_0">0x230e0f in hello (test)</span>
     try bang2();
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x230c9e in bar (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:17:31</span>: <span class="t2_0">0x230cae in bar (test)</span>
         error.FileNotFound =&gt; try hello(),
                               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x230b8c in foo (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:9</span>: <span class="t2_0">0x230b9c in foo (test)</span>
         try bar();
         <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x229b24 in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x229b34 in main (test)</span>
     try foo(12);
     <span class="t32_1">^</span>
 </samp></pre></figure>
@@ -6053,32 +6358,32 @@ error: PermissionDenied
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 6886 panic: PermissionDenied
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x2321c6 in bang2 (test)</span>
+thread 6121 panic: PermissionDenied
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x2321d6 in bang2 (test)</span>
     @panic(&quot;PermissionDenied&quot;);
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x232918 in hello (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:30:10</span>: <span class="t2_0">0x232928 in hello (test)</span>
     bang2();
          <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x2321aa in bar (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:17:14</span>: <span class="t2_0">0x2321ba in bar (test)</span>
         hello();
              <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x230955 in foo (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:12</span>: <span class="t2_0">0x230965 in foo (test)</span>
         bar();
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x22995d in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:8</span>: <span class="t2_0">0x22996d in main (test)</span>
     foo(12);
        <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22220c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22221c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20625e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20626e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052e6 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052f6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050f2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205102 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -7414,7 +7719,7 @@ Test [1/1] test &quot;fibonacci&quot;...
 Test [2/1] test &quot;fibonacci&quot;... FAIL (TestUnexpectedResult)
 0 passed; 0 skipped; 1 failed.
 error: the following test command failed with exit code 1:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>
       What happened is Zig started interpreting the <code>expect</code> function with the
@@ -9960,9 +10265,9 @@ All 1 tests passed.
         }
     }
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig -OReleaseFast</kbd>
-Test [1/1] test &quot;@setRuntimeSafety&quot;... thread 7376 panic: integer overflow
+Test [1/1] test &quot;@setRuntimeSafety&quot;... thread 6604 panic: integer overflow
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/a0a2e852e9610c4ab196a8f44066e271/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/e3499be08dc7d62c32a23bf0cabd858e/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>Note: it is <a href="https://github.com/ziglang/zig/issues/978">planned</a> to replace
       <code><span class="tok-builtin">@setRuntimeSafety</span></code> with <code>@optimizeFor</code></p>
@@ -10419,27 +10724,27 @@ All 1 tests passed.
     <span class="tok-kw">var</span> b: <span class="tok-type">u8</span> = <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, a);
     _ = b;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;integer cast panic&quot;... thread 7421 panic: integer cast truncated bits
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:17</span>: <span class="t2_0">0x206955 in test &quot;integer cast panic&quot; (test)</span>
+Test [1/1] test &quot;integer cast panic&quot;... thread 6648 panic: integer cast truncated bits
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:17</span>: <span class="t2_0">0x206965 in test &quot;integer cast panic&quot; (test)</span>
     var b: u8 = @intCast(u8, a);
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce32 in std.special.main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce42 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22536c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22537c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2093de in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2093ee in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208466 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208476 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208272 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208282 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <p>
       However this is well defined and working code:
@@ -10684,27 +10989,27 @@ All 1 tests passed.
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="tok-kw">test</span> <span class="tok-str">&quot;safety check&quot;</span> {
     <span class="tok-kw">unreachable</span>;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test test.zig</kbd>
-Test [1/1] test &quot;safety check&quot;... thread 7452 panic: reached unreachable code
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x20691a in test &quot;safety check&quot; (test)</span>
+Test [1/1] test &quot;safety check&quot;... thread 6680 panic: reached unreachable code
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x20693a in test &quot;safety check&quot; (test)</span>
     unreachable;
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22cdf2 in std.special.main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/special/test_runner.zig:77:28</span>: <span class="t2_0">0x22ce12 in std.special.main (test)</span>
         } else test_fn.func();
                            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22532c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22534c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20939e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2093be in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208426 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x208446 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208232 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x208252 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 error: the following test command crashed:
-docgen_tmp/zig-cache/o/b17e7bad413d63e25ea2fef4be3ad61d/test /home/vsts/work/1/s/build/release/bin/zig
+docgen_tmp/zig-cache/o/6994912f42e006996f1a5e72ea579371/test /home/vsts/work/1/s/build/release/bin/zig
 </samp></pre></figure>
       <h3 id="Reaching-Unreachable-Code"><a href="#toc-Reaching-Unreachable-Code">Reaching Unreachable Code</a> <a class="hdr" href="#Reaching-Unreachable-Code">§</a></h3>
 
@@ -10736,23 +11041,23 @@ comptime {
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7465 panic: reached unreachable code
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/debug.zig:226:14</span>: <span class="t2_0">0x20435b in std.debug.assert (test)</span>
+thread 6693 panic: reached unreachable code
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/debug.zig:226:14</span>: <span class="t2_0">0x20436b in std.debug.assert (test)</span>
     if (!ok) unreachable; // assertion failure
              <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:4:21</span>: <span class="t2_0">0x22994a in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:4:21</span>: <span class="t2_0">0x22995a in main (test)</span>
     std.debug.assert(false);
                     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2221fc in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22220c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20624e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20625e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052d6 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052e6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050e2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050f2 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -10781,23 +11086,23 @@ thread 7465 panic: reached unreachable code
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7528 panic: index out of bounds
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:13</span>: <span class="t2_0">0x230969 in foo (test)</span>
+thread 6706 panic: index out of bounds
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:7:13</span>: <span class="t2_0">0x230979 in foo (test)</span>
     return x[5];
             <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:16</span>: <span class="t2_0">0x229956 in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:2:16</span>: <span class="t2_0">0x229966 in main (test)</span>
     var x = foo(&quot;hello&quot;);
                <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2221fc in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22220c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20624e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20625e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052d6 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052e6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050e2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050f2 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -10825,20 +11130,20 @@ thread 7528 panic: index out of bounds
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7542 panic: attempt to cast negative value to unsigned integer
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x2299c7 in main (test)</span>
+thread 6721 panic: attempt to cast negative value to unsigned integer
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x2299e7 in main (test)</span>
     var unsigned = @intCast(u32, value);
                    <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22223c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20628e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205316 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205122 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -10869,20 +11174,20 @@ thread 7542 panic: attempt to cast negative value to unsigned integer
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7555 panic: integer cast truncated bits
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x2299cc in main (test)</span>
+thread 6734 panic: integer cast truncated bits
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x2299ec in main (test)</span>
     const byte = @intCast(u8, spartan_count);
                  <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22223c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20628e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205316 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205122 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -10925,20 +11230,20 @@ thread 7555 panic: integer cast truncated bits
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7568 panic: integer overflow
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x2299af in main (test)</span>
+thread 6746 panic: integer overflow
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x2299cf in main (test)</span>
     byte += 1;
          <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22223c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20628e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205316 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205122 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -10973,10 +11278,10 @@ thread 7568 panic: integer overflow
 $ <kbd>./test</kbd>
 unable to add one: Overflow
 error: Overflow
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/math.zig:458:5</span>: <span class="t2_0">0x230d9b in std.math.add (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/math.zig:458:5</span>: <span class="t2_0">0x230dab in std.math.add (test)</span>
     return if (@addWithOverflow(T, a, b, &amp;answer)) error.Overflow else answer;
     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x229c94 in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:8:9</span>: <span class="t2_0">0x229ca4 in main (test)</span>
         return err;
         <span class="t32_1">^</span>
 </samp></pre></figure>
@@ -11061,20 +11366,20 @@ All 1 tests passed.
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7605 panic: left shift overflowed bits
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x2299eb in main (test)</span>
+thread 6786 panic: left shift overflowed bits
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x2299fb in main (test)</span>
     var y = @shlExact(x, 2);
             <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22226c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062be in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205346 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205152 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11101,20 +11406,20 @@ thread 7605 panic: left shift overflowed bits
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7617 panic: right shift overflowed bits
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x2299eb in main (test)</span>
+thread 6799 panic: right shift overflowed bits
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x2299fb in main (test)</span>
     var y = @shrExact(x, 2);
             <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22226c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062be in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205346 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205152 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11144,20 +11449,20 @@ thread 7617 panic: right shift overflowed bits
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7630 panic: division by zero
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2299b9 in main (test)</span>
+thread 6812 panic: division by zero
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2299d9 in main (test)</span>
     var c = a / b;
               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22223c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20628e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205316 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205122 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11187,20 +11492,20 @@ thread 7630 panic: division by zero
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7643 panic: remainder division by zero or negative value
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2299db in main (test)</span>
+thread 6825 panic: remainder division by zero or negative value
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2299fb in main (test)</span>
     var c = a % b;
               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22223c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20628e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205316 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205122 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11230,20 +11535,20 @@ thread 7643 panic: remainder division by zero or negative value
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7655 panic: exact division produced remainder
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x2299fd in main (test)</span>
+thread 6837 panic: exact division produced remainder
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x229a1d in main (test)</span>
     var c = @divExact(a, b);
             <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22223c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20628e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205316 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205122 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11271,20 +11576,20 @@ thread 7655 panic: exact division produced remainder
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7669 panic: attempt to use null value
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x2299bc in main (test)</span>
+thread 6850 panic: attempt to use null value
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x2299cc in main (test)</span>
     var number = optional_number.?;
                                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22224c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20629e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205326 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205132 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11338,24 +11643,24 @@ it's null
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7690 panic: attempt to unwrap error: UnableToReturnNumber
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x230a44 in getNumberOrFail (test)</span>
+thread 6872 panic: attempt to unwrap error: UnableToReturnNumber
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x230a64 in getNumberOrFail (test)</span>
     return error.UnableToReturnNumber;
     <span class="t32_1">^</span>
-<span class="t1_0">???:?:?</span>: <span class="t2_0">0x20bf32 in ??? (???)</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:4:38</span>: <span class="t2_0">0x229a0b in main (test)</span>
+<span class="t1_0">???:?:?</span>: <span class="t2_0">0x20bf52 in ??? (???)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:4:38</span>: <span class="t2_0">0x229a2b in main (test)</span>
     const number = getNumberOrFail() catch unreachable;
                                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22225c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22227c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ae in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ce in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205336 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205356 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205142 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205162 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11410,20 +11715,20 @@ got error: UnableToReturnNumber
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7712 panic: invalid error code
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x229a23 in main (test)</span>
+thread 6893 panic: invalid error code
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x229a33 in main (test)</span>
     var invalid_err = @intToError(number);
                       <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22227c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22228c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ce in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062de in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205356 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205366 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205162 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205172 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11465,20 +11770,20 @@ const Foo = enum {
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7726 panic: invalid enum value
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x229a59 in main (test)</span>
+thread 6906 panic: invalid enum value
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x229a69 in main (test)</span>
     var b = @intToEnum(Foo, a);
             <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2222dc in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2222ec in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20632e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20633e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2053b6 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2053c6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2051c2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2051d2 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11523,23 +11828,23 @@ thread 7726 panic: invalid enum value
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7739 panic: invalid error code
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x230a26 in foo (test)</span>
+thread 6918 panic: invalid error code
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x230a36 in foo (test)</span>
     const x = @errSetCast(Set2, set1);
               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:12:8</span>: <span class="t2_0">0x2299ed in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:12:8</span>: <span class="t2_0">0x2299fd in main (test)</span>
     foo(Set1.B);
        <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22229c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2222ac in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ee in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062fe in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205376 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205386 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205182 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205192 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11575,23 +11880,23 @@ thread 7739 panic: invalid error code
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7751 panic: incorrect alignment
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:59</span>: <span class="t2_0">0x230cac in foo (test)</span>
+thread 6930 panic: incorrect alignment
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:9:59</span>: <span class="t2_0">0x230cbc in foo (test)</span>
     const int_slice = mem.bytesAsSlice(u32, @alignCast(4, slice4));
                                                           <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:12</span>: <span class="t2_0">0x229b65 in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:5:12</span>: <span class="t2_0">0x229b75 in main (test)</span>
     if (foo(bytes) != 0x11111111) return error.Wrong;
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:527:37</span>: <span class="t2_0">0x2222ba in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:527:37</span>: <span class="t2_0">0x2222ca in std.start.callMain (test)</span>
             const result = root.main() catch |err| {
                                     <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062de in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x2062ee in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205366 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x205376 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205172 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x205182 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11632,23 +11937,23 @@ thread 7751 panic: incorrect alignment
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7764 panic: access of inactive union field
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x23e1da in bar (test)</span>
+thread 6943 panic: access of inactive union field
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x23e1ca in bar (test)</span>
     f.float = 12.34;
      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:10:8</span>: <span class="t2_0">0x23719c in main (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:10:8</span>: <span class="t2_0">0x23718c in main (test)</span>
     bar(&amp;f);
        <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22fa3c in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22fa2c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x213a8e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x213a7e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x212b16 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x212b06 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x212922 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x212912 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11741,20 +12046,20 @@ value: 1.23400001e+01
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig</kbd>
 
 $ <kbd>./test</kbd>
-thread 7793 panic: cast causes pointer to be null
-<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:15</span>: <span class="t2_0">0x229970 in main (test)</span>
+thread 6975 panic: cast causes pointer to be null
+<span class="t1_0">/home/vsts/work/1/s/docgen_tmp/test.zig:3:15</span>: <span class="t2_0">0x229980 in main (test)</span>
     var ptr = @ptrCast(*i32, opt_ptr);
               <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x2221fc in std.start.callMain (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:517:22</span>: <span class="t2_0">0x22220c in std.start.callMain (test)</span>
             root.main();
                      <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20624e in std.start.callMainWithArgs (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:469:12</span>: <span class="t2_0">0x20625e in std.start.callMainWithArgs (test)</span>
     return @call(.{ .modifier = .always_inline }, callMain, .{});
            <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052d6 in std.start.posixCallMainAndExit (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:383:17</span>: <span class="t2_0">0x2052e6 in std.start.posixCallMainAndExit (test)</span>
     std.os.exit(@call(.{ .modifier = .always_inline }, callMainWithArgs, .{ argc, argv, envp }));
                 <span class="t32_1">^</span>
-<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050e2 in std.start._start (test)</span>
+<span class="t1_0">/home/vsts/work/1/s/build/release/lib/zig/std/start.zig:296:5</span>: <span class="t2_0">0x2050f2 in std.start._start (test)</span>
     @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
     <span class="t32_1">^</span>
 (process terminated by signal)
@@ -11849,7 +12154,7 @@ All 1 tests passed.
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe cli_allocation.zig</kbd>
 
 $ <kbd>./cli_allocation</kbd>
-ptr=i32@7f9e433f9018
+ptr=i32@7f699a2c4018
 </samp></pre></figure>
               When using this kind of allocator, there is no need to free anything manually. Everything
               gets freed at once with the call to <code>arena.deinit()</code>.
@@ -12051,7 +12356,7 @@ All 1 tests passed.
       <figure><figcaption class="zig-cap"><cite>@import("builtin")</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 <span class="tok-comment">/// Zig version. When writing code that supports multiple versions of Zig, prefer</span>
 <span class="tok-comment">/// feature detection (i.e. with `@hasDecl` or `@hasField`) over version checks.</span>
-<span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.9.0-dev.1320+d4ebfa876&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
+<span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.9.0-dev.1322+4e590fadb&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;
 <span class="tok-comment">/// Temporary until self-hosted is feature complete.</span>
 <span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_is_stage2 = <span class="tok-null">false</span>;
 <span class="tok-comment">/// Temporary until self-hosted supports the `cpu.arch` value.</span>
@@ -12066,27 +12371,34 @@ All 1 tests passed.
 <span class="tok-kw">pub</span> <span class="tok-kw">const</span> abi = std.Target.Abi.gnu;
 <span class="tok-kw">pub</span> <span class="tok-kw">const</span> cpu: std.Target.Cpu = .{
     .arch = .x86_64,
-    .model = &amp;std.Target.x86.cpu.broadwell,
+    .model = &amp;std.Target.x86.cpu.skylake_avx512,
     .features = std.Target.x86.featureSet(&amp;[_]std.Target.x86.Feature{
         .@&quot;64bit&quot;,
         .adx,
         .aes,
         .avx,
         .avx2,
+        .avx512bw,
+        .avx512cd,
+        .avx512dq,
+        .avx512f,
+        .avx512vl,
         .bmi,
         .bmi2,
+        .clflushopt,
         .cmov,
         .cx16,
         .cx8,
         .ermsb,
         .f16c,
-        .false_deps_lzcnt_tzcnt,
         .false_deps_popcnt,
         .fast_15bytenop,
+        .fast_gather,
         .fast_scalar_fsqrt,
         .fast_shld_rotate,
         .fast_variable_crosslane_shuffle,
         .fast_variable_perlane_shuffle,
+        .fast_vector_fsqrt,
         .fma,
         .fsgsbase,
         .fxsr,
@@ -12099,6 +12411,7 @@ All 1 tests passed.
         .nopl,
         .pclmul,
         .popcnt,
+        .prefer_256_bit,
         .prfchw,
         .rdrnd,
         .rdseed,
@@ -12114,7 +12427,9 @@ All 1 tests passed.
         .vzeroupper,
         .x87,
         .xsave,
+        .xsavec,
         .xsaveopt,
+        .xsaves,
     }),
 };
 <span class="tok-kw">pub</span> <span class="tok-kw">const</span> os = std.Target.Os{
@@ -12442,9 +12757,9 @@ pub extern fn do_something(foo: enum_FOO) c_int;
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {
     _ = c;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe verbose.zig -lc --verbose-cimport</kbd>
-info(compilation): C import source: docgen_tmp/zig-cache/o/984b528b27d68037b4881f5ae79f9a06/cimport.h
-info(compilation): C import .d file: docgen_tmp/zig-cache/o/984b528b27d68037b4881f5ae79f9a06/cimport.h.d
-info(compilation): C import output: docgen_tmp/zig-cache/o/b1a836659d66bff2551813664e1142b6/cimport.zig
+info(compilation): C import source: docgen_tmp/zig-cache/o/ee1c0d4039c01db626e4596ddbc78513/cimport.h
+info(compilation): C import .d file: docgen_tmp/zig-cache/o/ee1c0d4039c01db626e4596ddbc78513/cimport.h.d
+info(compilation): C import output: docgen_tmp/zig-cache/o/0e9f329f18c8f859ff8be2500ae52721/cimport.zig
 
 $ <kbd>./verbose</kbd>
 </samp></pre></figure>
