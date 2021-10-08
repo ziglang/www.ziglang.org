@@ -24,12 +24,12 @@ Un nuovo approccio alla metaprogrammazione basato sull'esecuzione di codice dura
 - Manipola tipi come valori senza nessuno spreco a runtime.
 - Comptime emula l'archittetura per cui stai compilando.
 
-# ⚡ Sicurezza ed Alte Prestazioni
-Scrivi codice efficiente, chiaro e in grado di gestire ogni errore.
+# ⚡ Mantienilo con Zig
+Migliora gradualmente il tuo codice C/C++/Zig.
 
-- Il linguaggio guida elegantemente la tua logica di gestione degli errori.
-- Controlli a runtime configurabili ti permettono di trovare un equilibrio tra prestazioni e garanzie di sicurezza.
-- Usa i tipi vettore per esprimere istruzioni SIMD in modo portabile.
+- Il compilatore Zig puo' sostituire altri compilatori C/C++, non richiede dipendenze e supporta cross-compilazione nativamente.
+- Usa `zig build` per creare un ambiente di sviluppo consistente su piu' piattaforme.
+- Aggiungi una unita' di compilazione Zig ai tuoi progetti C/C++; LTO tra i vari linguaggi e' abilitato di default.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}

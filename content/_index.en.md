@@ -23,12 +23,12 @@ A fresh approach to metaprogramming based on compile-time code execution and laz
 - Manipulate types as values without runtime overhead.
 - Comptime emulates the target architecture.
 
-# ⚡ Performance Meets Safety
-Write fast, clear code capable of handling all error conditions.
+# ⚡ Maintain it with Zig
+Incrementally improve your C/C++/Zig codebase.
 
-- The language gracefully guides your error handling logic.
-- Configurable runtime checks help you strike a balance between performance and safety guarantees.
-- Take advantage of vector types to express SIMD instructions portably.
+- Use Zig as a zero-dependency, drop-in C/C++ compiler that supports cross-compilation out-of-the-box.
+- Leverage `zig build` to create a consistent development environment across all platforms.
+- Add a Zig compilation unit to C/C++ projects; cross-language LTO is enabled by default.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
