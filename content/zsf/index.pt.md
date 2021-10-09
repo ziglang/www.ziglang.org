@@ -38,6 +38,7 @@ Certifique-se de verificar sua legislação local para ver se você pode deduzir
 - Transferências bancárias (inclusive de fora dos EUA, entre em contato conosco para mais informações)
 - [Benevity](https://benevity.com) (recomendado se seu empregador fizer doações!)
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
 
 **Por favor, não hesite em nos contatar em donations@ziglang.org se você tiver dúvidas ou necessidades específicas.**
 

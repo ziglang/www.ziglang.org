@@ -38,6 +38,7 @@ Nützliche Informationen, um auf anderem Wege als durch GitHub Sponsors zu spend
 - Banküberweisungen (auch von außerhalb der US, kontaktiere uns für weitere Informationen)
 - [Benevity](https://benevity.com) (empfohlen, wenn dein Arbeitgeber Spenden ausgleicht!)
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
 
 **Wende dich mit weiteren Nachfragen gerne an donations@ziglang.org.**
 

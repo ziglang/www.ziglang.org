@@ -38,6 +38,7 @@ ZSF 是一个小组织，并且有效地利用了货币资源。我们的计划�
 - 银行转账（包括美国以外的银行，请联系我们了解更多信息）。
 - [Benevity](https://benevity.com) （如果你的雇主想要捐款，建议使用这个方法！）
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
 
 **如果您有任何问题或特殊需求，请毫不犹豫地与我们联系：donations@ziglang.org 。**
 

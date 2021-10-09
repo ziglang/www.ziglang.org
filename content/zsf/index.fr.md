@@ -44,6 +44,7 @@ Vérifiez vos lois locales pour savoir s'il est possible de déduire une partie 
 - Virements bancaires (ce qui inclut les pays en dehors des USA, contactez-nous pour plus d'informations)
 - [Benevity](https://benevity.com)
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
 
 **N'hésitez pas à nous contacter à `donations@ziglang.org` si vous avez des questions ou des besoins particuliers.**
 
