@@ -38,6 +38,7 @@ Make sure to check your local law to see if you can deduct donations from your t
 - Bank transfers (including from outside of the US, contact us for more info)
 - [Benevity](https://benevity.com) (recommended if your employer matches donations!)
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/) (supports cryptocurrencies!)
 
 **Please don't hesitate to contact us at donations@ziglang.org if you have questions or specific needs.**
 

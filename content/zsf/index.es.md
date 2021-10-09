@@ -38,6 +38,7 @@ Asegúrate de revisar la ley vigente en tu lugar de origen para saber si tus don
 - Transferencias bancarias (contáctanos si vives fuera de Estados Unidos para mas información)
 - [Benevity](https://benevity.com) (recomendado en caso de que tu empleador iguale donativos!)
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
 
 **No dudes en contactarnos en donations@ziglang.org si tienes preguntas.**
 

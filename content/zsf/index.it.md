@@ -42,6 +42,7 @@ Ecco alcune informazioni utili a donare tramite metodi diversi da GitHub Sponsor
 - Trasferimento bancario (disponibile da ogni paese che supporta SWIFT, contattateci per ulteriori informazioni)
 - [Benevity](https://benevity.com)
 - [Wise](https://wise.com)
+- [Every](https://www.every.org/zig-software-foundation-inc/) (supporta criptovalute!)
 
 **Perfavore non esistate a contattarci a donations@ziglang.org se avete domande o esigenze particolari.**
 
