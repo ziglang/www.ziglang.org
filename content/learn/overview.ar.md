@@ -72,7 +72,7 @@ bar();
 
 حين يصرف هذا المثال بوضعية `O ReleaseSmall-` مع نزع رموز التشخيص، واستعمال وضعية سلسلة التعليمات الواحدة، نحصل على برنامج تنفيذي بحجم 9.8 KiB يستهدف x86_64-linux:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -81,7 +81,7 @@ $ ldd hello
 
 استهداف Windows يصغر حجم البرنامج التنفيذي ليصبح 4096 بايت.
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe
