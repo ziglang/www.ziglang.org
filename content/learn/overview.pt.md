@@ -73,7 +73,7 @@ A biblioteca padrão do Zig se integra com a libc, mas não depende dela. Aqui e
 
 Quando compilado com `-O ReleaseSmall`, símbolos de depuração são removidos (stripped), modo de thread única, isto produz um executável estático de 9,8 KiB para a plataforma x86_64-linux:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -82,7 +82,7 @@ $ ldd hello
 
 No Windows é ainda menor, gerando um binário de 4096 bytes:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe
