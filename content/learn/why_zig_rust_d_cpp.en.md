@@ -100,7 +100,7 @@ Zig is offering to replace a project's build system with a reasonable language u
 
 C++, Rust, and D have such a large number of features that they can be distracting from the actual meaning of the application you are working on. One finds oneself debugging one's knowledge of the programming language instead of debugging the application itself.
 
-Zig has no macros and no metaprogramming, yet is still powerful enough to express complex programs in a clear, non-repetitive way. Even Rust which has macros special cases `format!`, implementing it in the compiler itself. Meanwhile in Zig, the equivalent function is implemented in the standard library with no special case code in the compiler.
+Zig has no macros and no metaprogramming, yet is still powerful enough to express complex programs in a clear, non-repetitive way. Even Rust has macros with special cases like `format!`, which is implemented in the compiler itself. Meanwhile in Zig, the equivalent function is implemented in the standard library with no special case code in the compiler.
 
 ## Tooling
 
