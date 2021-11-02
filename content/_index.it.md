@@ -90,7 +90,7 @@ I contributori sono tenuti a rispettare il [codice di comportamento](https://git
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
 ## La ZSF è una corporazione non-profit.
 
-La Zig Software Foundation è una corporazione non-profit fondata nel 2020 da Andrew Kelley, il creatore di Zig, con l'obbiettivo di supportare lo sviluppo del linguaggio. Al momento la fondazione è in grado di offire pagamenti competitivi (a rate) ad un piccolo numero di contributori. Speriamo di poter estendere questa offerta a più contibutori nel prossimo futuro.
+La Zig Software Foundation è una corporazione non-profit fondata nel 2020 da Andrew Kelley, il creatore di Zig, con l'obbiettivo di supportare lo sviluppo del linguaggio. Al momento la fondazione è in grado di offire pagamenti con tariffe competitive ad un piccolo numero di contributori. Speriamo di poter estendere questa offerta a più contibutori nel prossimo futuro.
 
 La Zig Software Foundation si sostiene tramite donazioni.
 
