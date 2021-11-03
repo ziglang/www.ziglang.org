@@ -94,8 +94,11 @@ const column_types = {
     });
     for (let i = 1; i < rows.length; i += 1) {
       if (rows[i].timestamp < rows[i-1].timestamp) {
-        // Pretend it was done 1 hour after the previous timestamp.
-        rows[i].timestamp = new Date((+rows[i-1].timestamp) + 3600000);
+        rows[i].timestamp = rows[i-1].timestamp;
+
+        // TODO Pretend it was done 1 hour after the previous timestamp.
+        // but this logic has to go for csv rows not d3 rows.
+        //rows[i].timestamp = new Date((+rows[i-1].timestamp) + 3600000);
       }
     }
 
