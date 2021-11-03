@@ -61,6 +61,20 @@ const column_types = {
   const suffixes = [ "_median", "_mean", "_min", "_max" ];
 
   for (let key in benchmarks_json) {
+    // Git commit timestamps can be out of order; we force them to be in
+    // order if they disagree with the zig version ordering. This makes the
+    // lines of the chart easier to understand.
+    const csv_rows = charts[key].rows;
+    csv_rows.sort(function(a, b) {
+      return orderZigVersions(a.zig_version, b.zig_version);
+    });
+    for (let i = 1; i < csv_rows.length; i += 1) {
+      if (csv_rows[i].commit_timestamp < csv_rows[i-1].commit_timestamp) {
+        // Pretend it was done 30 minutes after the previous timestamp.
+        csv_rows[i].commit_timestamp = new Date((+csv_rows[i-1].commit_timestamp) + 1000 * 60 * 30);
+      }
+    }
+
     let rows = [];
     for (let i = 0; i < charts[key].rows.length; i += 1) {
       const csv_row = charts[key].rows[i];
@@ -72,7 +86,6 @@ const column_types = {
             measurement_name: measurement_name,
             y: csv_row[measurement_name],
             label: makeLabel(csv_row, measurement_name),
-            zig_version: csv_row.zig_version,
           });
         }
       }
@@ -82,25 +95,9 @@ const column_types = {
         measurement_name: "maxrss",
         y: csv_row.maxrss,
         label: makeLabel(csv_row, "maxrss"),
-        zig_version: csv_row.zig_version,
       });
     }
 
-    // Git commit timestamps can be out of order; we force them to be in
-    // order if they disagree with the revision number. This makes the lines
-    // easier to understand.
-    rows.sort(function(a, b) {
-      return orderZigVersions(a.zig_version, b.zig_version);
-    });
-    for (let i = 1; i < rows.length; i += 1) {
-      if (rows[i].timestamp < rows[i-1].timestamp) {
-        rows[i].timestamp = rows[i-1].timestamp;
-
-        // TODO Pretend it was done 1 hour after the previous timestamp.
-        // but this logic has to go for csv rows not d3 rows.
-        //rows[i].timestamp = new Date((+rows[i-1].timestamp) + 3600000);
-      }
-    }
 
     const chart = LineChart(rows, {
       x: d => d.timestamp,
