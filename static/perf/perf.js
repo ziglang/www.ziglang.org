@@ -6,6 +6,18 @@ const column_types = {
   zig_version: 'string',
   error_message: 'string',
   maxrss: 'kb',
+  wall_time_median: 'ns',
+  wall_time_mean: 'ns',
+  wall_time_min: 'ns',
+  wall_time_max: 'ns',
+  utime_median: 'ns',
+  utime_mean: 'ns',
+  utime_min: 'ns',
+  utime_max: 'ns',
+  stime_median: 'ns',
+  stime_mean: 'ns',
+  stime_min: 'ns',
+  stime_max: 'ns',
 };
 
 (async function(){
@@ -37,7 +49,10 @@ const column_types = {
           row_obj[column_name] = row_array[column_i];
           break;
         case 'kb':
-          row_obj[column_name] = (+row_array[column_i]) * 1024;
+          row_obj[column_name] = (+row_array[column_i]);
+          break;
+        case 'ns':
+          row_obj[column_name] = (+row_array[column_i]) / 1000000;
           break;
         default:
           row_obj[column_name] = +row_array[column_i];
@@ -78,46 +93,47 @@ const column_types = {
     let rows = [];
     for (let i = 0; i < charts[key].rows.length; i += 1) {
       const csv_row = charts[key].rows[i];
-      for (const prefix of measurements) {
-        for (const suffix of suffixes) {
-          const measurement_name = prefix + suffix;
-          rows.push({
-            timestamp: csv_row.commit_timestamp,
-            measurement_name: measurement_name,
-            y: csv_row[measurement_name],
-            label: makeLabel(csv_row, measurement_name),
-          });
-        }
-      }
 
       rows.push({
         timestamp: csv_row.commit_timestamp,
-        measurement_name: "maxrss",
-        y: csv_row.maxrss,
-        label: makeLabel(csv_row, "maxrss"),
+        measurement_name: "median",
+        y1: csv_row.wall_time_median,
+        y2: csv_row.instructions_median,
+        y3: csv_row.maxrss,
+        label1: makeLabel(csv_row, "wall_time_median"),
+        label2: makeLabel(csv_row, "instructions_median"),
+        label3: makeLabel(csv_row, "maxrss"),
       });
     }
 
-
     const chart = LineChart(rows, {
       x: d => d.timestamp,
-      y: d => d.y,
+      y1: d => d.y1,
+      y2: d => d.y2,
+      y3: d => d.y3,
       z: d => d.measurement_name,
-      title: d => d.label,
-      yLabel: key,
+      title1: d => d.label1,
+      title2: d => d.label2,
+      title3: d => d.label3,
+      y1Label: "ms",
+      y2Label: "instructions",
+      y3Label: "KB",
       width: document.body.clientWidth,
       height: 500,
-      color: "steelblue",
-      voronoi: false,
-      marginLeft: 90,
+      marginLeft: 60,
     })
-    chart.id = key;
-    document.body.appendChild(chart);
+    const div = document.createElement("div");
+    const src_url = "https://github.com/ziglang/gotta-go-fast/tree/master/benchmarks/" +
+      benchmarks_json[key].dir + "/" + benchmarks_json[key].mainPath;
+    const desc = benchmarks_json[key].description;
+    div.innerHTML = `<h2 id="${key}">${key}</h2><p>${desc} <a href="${src_url}">source</a></p>`;
+    div.appendChild(chart);
+    document.body.appendChild(div);
   }
 })();
 
-function makeLabel(obj, measurement_name) {
-  return obj[measurement_name] + " " + measurement_name + " @ " + obj.zig_version;
+function makeLabel(obj, key) {
+  return obj[key] + " " + key + " @ " + obj.zig_version;
 }
 
 function orderZigVersions(a, b) {
@@ -143,9 +159,13 @@ function parseZigVersion(zig_version) {
 // https://observablehq.com/@d3/multi-line-chart
 function LineChart(data, {
   x = ([x]) => x, // given d in data, returns the (temporal) x-value
-  y = ([, y]) => y, // given d in data, returns the (quantitative) y-value
+  y1 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
+  y2 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
+  y3 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   z = () => 1, // given d in data, returns the (categorical) z-value
-  title, // given d in data, returns the title text
+  title1, // given d in data, returns the title text
+  title2, // given d in data, returns the title text
+  title3, // given d in data, returns the title text
   defined, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
   marginTop = 20, // top margin, in pixels
@@ -154,55 +174,78 @@ function LineChart(data, {
   marginLeft = 40, // left margin, in pixels
   width = 640, // outer width, in pixels
   height = 400, // outer height, in pixels
-  xType = d3.scaleUtc, // type of x-scale
-  xDomain, // [xmin, xmax]
   xRange = [marginLeft, width - marginRight], // [left, right]
-  yType = d3.scaleLinear, // type of y-scale
-  yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
   yFormat, // a format specifier string for the y-axis
-  yLabel, // a label for the y-axis
-  zDomain, // array of z-values
-  color = "currentColor", // stroke color of line
+  y1Label, // a label for the y-axis
+  y2Label, // a label for the y-axis
+  y3Label, // a label for the y-axis
   strokeLinecap, // stroke line cap of line
   strokeLinejoin, // stroke line join of line
   strokeWidth = 1.5, // stroke width of line
   strokeOpacity, // stroke opacity of line
   mixBlendMode = "multiply", // blend mode of lines
-  voronoi // show a Voronoi overlay? (for debugging)
 } = {}) {
   // Compute values.
   const X = d3.map(data, x);
-  const Y = d3.map(data, y);
+  const Y1 = d3.map(data, y1);
+  const Y2 = d3.map(data, y2);
+  const Y3 = d3.map(data, y3);
   const Z = d3.map(data, z);
   const O = d3.map(data, d => d);
-  if (defined === undefined) defined = (d, i) => !isNaN(X[i]) && !isNaN(Y[i]);
+  if (defined === undefined) {
+    defined = function (d, i) {
+      return !isNaN(X[i]) &&
+             !isNaN(Y1[i]) &&
+             !isNaN(Y2[i]) &&
+             !isNaN(Y3[i]);
+    };
+  }
   const D = d3.map(data, defined);
 
   // Compute default domains, and unique the z-domain.
-  if (xDomain === undefined) xDomain = d3.extent(X);
-  if (yDomain === undefined) yDomain = [0, d3.max(Y)];
-  if (zDomain === undefined) zDomain = Z;
-  zDomain = new d3.InternSet(zDomain);
+  const xDomain = d3.extent(X);
+  const y1Domain = [d3.min(Y1), d3.max(Y1)];
+  const y2Domain = [d3.min(Y2), d3.max(Y2)];
+  const y3Domain = [d3.min(Y3), d3.max(Y3)];
+  const zDomain = new d3.InternSet(Z);
 
   // Omit any data not present in the z-domain.
   const I = d3.range(X.length).filter(i => zDomain.has(Z[i]));
 
   // Construct scales and axes.
-  const xScale = xType(xDomain, xRange);
-  const yScale = yType(yDomain, yRange);
+  const xScale = d3.scaleUtc(xDomain, xRange);
+  const y1Scale = d3.scaleLinear(y1Domain, yRange);
+  const y2Scale = d3.scaleLinear(y2Domain, yRange);
+  const y3Scale = d3.scaleLinear(y3Domain, yRange);
   const xAxis = d3.axisBottom(xScale).ticks(width / 80).tickSizeOuter(0);
-  const yAxis = d3.axisLeft(yScale).ticks(height / 60, yFormat);
+  const y1Axis = d3.axisLeft(y1Scale).ticks(height / 60, yFormat);
+  const y2Axis = d3.axisRight(y2Scale).ticks(height / 60, yFormat);
+  const y3Axis = d3.axisLeft(y3Scale).ticks(height / 60, yFormat);
 
   // Compute titles.
-  const T = title === undefined ? Z : title === null ? null : d3.map(data, title);
+  const T1 = title1 === undefined ? Z : title1 === null ? null : d3.map(data, title1);
+  const T2 = title2 === undefined ? Z : title2 === null ? null : d3.map(data, title2);
+  const T3 = title3 === undefined ? Z : title3 === null ? null : d3.map(data, title3);
 
   // Construct a line generator.
-  const line = d3.line()
+  const line1 = d3.line()
       .defined(i => D[i])
       .curve(curve)
       .x(i => xScale(X[i]))
-      .y(i => yScale(Y[i]));
+      .y(i => y1Scale(Y1[i]));
+
+  const line2 = d3.line()
+      .defined(i => D[i])
+      .curve(curve)
+      .x(i => xScale(X[i]))
+      .y(i => y2Scale(Y2[i]));
+
+  const line3 = d3.line()
+      .defined(i => D[i])
+      .curve(curve)
+      .x(i => xScale(X[i]))
+      .y(i => y3Scale(Y3[i]));
 
   const svg = d3.create("svg")
       .attr("width", width)
@@ -215,14 +258,9 @@ function LineChart(data, {
       .on("pointerleave", pointerleft)
       .on("touchstart", event => event.preventDefault());
 
-  // An optional Voronoi display (for fun).
-  if (voronoi) svg.append("path")
-      .attr("fill", "none")
-      .attr("stroke", "#ccc")
-      .attr("d", d3.Delaunay
-        .from(I, i => xScale(X[i]), i => yScale(Y[i]))
-        .voronoi([0, 0, width, height])
-        .render());
+  const color1 = "steelblue";
+  const color2 = "brown";
+  const color3 = "darkolivegreen";
 
   svg.append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
@@ -230,21 +268,50 @@ function LineChart(data, {
 
   svg.append("g")
       .attr("transform", `translate(${marginLeft},0)`)
-      .call(yAxis)
+      .call(y1Axis)
       .call(g => g.select(".domain").remove())
-      .call(voronoi ? () => {} : g => g.selectAll(".tick line").clone()
+      .call(g => g.selectAll(".tick line").clone()
           .attr("x2", width - marginLeft - marginRight)
           .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
           .attr("x", -marginLeft)
           .attr("y", 10)
-          .attr("fill", "currentColor")
+          .attr("fill", color1)
           .attr("text-anchor", "start")
-          .text(yLabel));
+          .text(y1Label));
 
-  const path = svg.append("g")
+  svg.append("g")
+      .attr("transform", `translate(${marginLeft},0)`)
+      .call(y2Axis)
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+          .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke-opacity", 0.1))
+      .call(g => g.append("text")
+          .attr("x", 0)
+          .attr("y", 10)
+          .attr("fill", color2)
+          .attr("text-anchor", "start")
+          .text(y2Label));
+
+  svg.append("g")
+      .attr("transform", `translate(${width - marginRight},0)`)
+      .call(y3Axis)
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+          .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke-opacity", 0.1))
+      .call(g => g.append("text")
+          .attr("x", -marginLeft)
+          .attr("y", 10)
+          .attr("fill", color3)
+          .attr("text-anchor", "start")
+          .text(y3Label));
+
+
+  const path1 = svg.append("g")
       .attr("fill", "none")
-      .attr("stroke", color)
+      .attr("stroke", color1)
       .attr("stroke-linecap", strokeLinecap)
       .attr("stroke-linejoin", strokeLinejoin)
       .attr("stroke-width", strokeWidth)
@@ -253,15 +320,59 @@ function LineChart(data, {
     .data(d3.group(I, i => Z[i]))
     .join("path")
       .style("mix-blend-mode", mixBlendMode)
-      .attr("d", ([, I]) => line(I));
+      .attr("d", ([, I]) => line1(I));
 
-  const dot = svg.append("g")
+  const path2 = svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke", color2)
+      .attr("stroke-linecap", strokeLinecap)
+      .attr("stroke-linejoin", strokeLinejoin)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", strokeOpacity)
+    .selectAll("path")
+    .data(d3.group(I, i => Z[i]))
+    .join("path")
+      .style("mix-blend-mode", mixBlendMode)
+      .attr("d", ([, I]) => line2(I));
+
+  const path3 = svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke", color3)
+      .attr("stroke-linecap", strokeLinecap)
+      .attr("stroke-linejoin", strokeLinejoin)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", strokeOpacity)
+    .selectAll("path")
+    .data(d3.group(I, i => Z[i]))
+    .join("path")
+      .style("mix-blend-mode", mixBlendMode)
+      .attr("d", ([, I]) => line3(I));
+
+  const dot1 = svg.append("g")
       .attr("display", "none");
-
-  dot.append("circle")
+  dot1.append("circle")
       .attr("r", 2.5);
+  dot1.append("text")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+      .attr("text-anchor", "middle")
+      .attr("y", -8);
 
-  dot.append("text")
+  const dot2 = svg.append("g")
+      .attr("display", "none");
+  dot2.append("circle")
+      .attr("r", 2.5);
+  dot2.append("text")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+      .attr("text-anchor", "middle")
+      .attr("y", -8);
+
+  const dot3 = svg.append("g")
+      .attr("display", "none");
+  dot3.append("circle")
+      .attr("r", 2.5);
+  dot3.append("text")
       .attr("font-family", "sans-serif")
       .attr("font-size", 10)
       .attr("text-anchor", "middle")
@@ -269,21 +380,60 @@ function LineChart(data, {
 
   function pointermoved(event) {
     const [xm, ym] = d3.pointer(event);
-    const i = d3.least(I, i => Math.hypot(xScale(X[i]) - xm, yScale(Y[i]) - ym)); // closest point
-    path.attr("stroke", ([z]) => Z[i] === z ? null : "#ddd").filter(([z]) => Z[i] === z).raise();
-    dot.attr("transform", `translate(${xScale(X[i])},${yScale(Y[i])})`);
-    if (T) dot.select("text").text(T[i]);
-    svg.property("value", O[i]).dispatch("input", {bubbles: true});
+    const i1Score = i => Math.hypot(xScale(X[i]) - xm, y1Scale(Y1[i]) - ym);
+    const i2Score = i => Math.hypot(xScale(X[i]) - xm, y2Scale(Y2[i]) - ym);
+    const i3Score = i => Math.hypot(xScale(X[i]) - xm, y3Scale(Y3[i]) - ym);
+    const i1 = d3.least(I, i1Score);
+    const i2 = d3.least(I, i2Score);
+    const i3 = d3.least(I, i3Score);
+    const i1_score = i1Score(i1);
+    const i2_score = i2Score(i2);
+    const i3_score = i3Score(i3);
+
+    path1.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path2.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path3.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    dot1.attr("display", "none");
+    dot2.attr("display", "none");
+    dot3.attr("display", "none");
+
+    if (i1_score < i2_score && i1_score < i3_score) {
+      dot1.attr("display", null);
+      path1.attr("stroke", ([z]) => Z[i1] === z ? null : "#ddd").filter(([z]) => Z[i1] === z).raise();
+      dot1.attr("transform", `translate(${xScale(X[i1])},${y1Scale(Y1[i1])})`);
+      if (T1) dot1.select("text").text(T1[i1]);
+      svg.property("value", O[i1]).dispatch("input", {bubbles: true});
+    } else if (i2_score < i1_score && i2_score < i3_score) {
+      dot2.attr("display", null);
+      path2.attr("stroke", ([z]) => Z[i2] === z ? null : "#ddd").filter(([z]) => Z[i2] === z).raise();
+      dot2.attr("transform", `translate(${xScale(X[i2])},${y2Scale(Y2[i2])})`);
+      if (T2) dot2.select("text").text(T2[i2]);
+      svg.property("value", O[i2]).dispatch("input", {bubbles: true});
+    } else {
+      dot3.attr("display", null);
+      path3.attr("stroke", ([z]) => Z[i3] === z ? null : "#ddd").filter(([z]) => Z[i3] === z).raise();
+      dot3.attr("transform", `translate(${xScale(X[i3])},${y3Scale(Y3[i3])})`);
+      if (T3) dot3.select("text").text(T3[i3]);
+      svg.property("value", O[i3]).dispatch("input", {bubbles: true});
+    }
   }
 
   function pointerentered() {
-    path.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    dot.attr("display", null);
+    path1.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path2.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path3.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    dot1.attr("display", null);
+    dot2.attr("display", null);
+    dot3.attr("display", null);
   }
 
   function pointerleft() {
-    path.style("mix-blend-mode", "multiply").attr("stroke", null);
-    dot.attr("display", "none");
+    path1.style("mix-blend-mode", "multiply").attr("stroke", null);
+    path2.style("mix-blend-mode", "multiply").attr("stroke", null);
+    path3.style("mix-blend-mode", "multiply").attr("stroke", null);
+    dot1.attr("display", "none");
+    dot2.attr("display", "none");
+    dot3.attr("display", "none");
     svg.node().value = null;
     svg.dispatch("input", {bubbles: true});
   }
