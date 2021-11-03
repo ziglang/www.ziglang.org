@@ -95,29 +95,34 @@ const column_types = {
       const csv_row = charts[key].rows[i];
 
       rows.push({
-        timestamp: csv_row.commit_timestamp,
-        measurement_name: "median",
+        x: csv_row.commit_timestamp,
+        z: "median",
         y1: csv_row.wall_time_median,
         y2: csv_row.instructions_median,
-        y3: csv_row.maxrss,
-        label1: makeLabel(csv_row, "wall_time_median"),
-        label2: makeLabel(csv_row, "instructions_median"),
-        label3: makeLabel(csv_row, "maxrss"),
+        y3: csv_row.cache_misses_median,
+        y4: csv_row.maxrss,
+        title1: makeLabel(csv_row, "wall_time_median"),
+        title2: makeLabel(csv_row, "instructions_median"),
+        title3: makeLabel(csv_row, "cache_misses_median"),
+        title4: makeLabel(csv_row, "maxrss"),
       });
     }
 
     const chart = LineChart(rows, {
-      x: d => d.timestamp,
+      x: d => d.x,
       y1: d => d.y1,
       y2: d => d.y2,
       y3: d => d.y3,
-      z: d => d.measurement_name,
-      title1: d => d.label1,
-      title2: d => d.label2,
-      title3: d => d.label3,
+      y4: d => d.y4,
+      z: d => d.z,
+      title1: d => d.title1,
+      title2: d => d.title2,
+      title3: d => d.title3,
+      title4: d => d.title4,
       y1Label: "ms",
-      y2Label: "instructions",
-      y3Label: "KB",
+      y2Label: "CPU instructions",
+      y3Label: "cache misses",
+      y4Label: "KB",
       width: document.body.clientWidth,
       height: 500,
       marginLeft: 60,
@@ -162,14 +167,16 @@ function LineChart(data, {
   y1 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   y2 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   y3 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
+  y4 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   z = () => 1, // given d in data, returns the (categorical) z-value
   title1, // given d in data, returns the title text
   title2, // given d in data, returns the title text
   title3, // given d in data, returns the title text
+  title4, // given d in data, returns the title text
   defined, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
   marginTop = 20, // top margin, in pixels
-  marginRight = 30, // right margin, in pixels
+  marginRight = 60, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
   marginLeft = 40, // left margin, in pixels
   width = 640, // outer width, in pixels
@@ -180,6 +187,7 @@ function LineChart(data, {
   y1Label, // a label for the y-axis
   y2Label, // a label for the y-axis
   y3Label, // a label for the y-axis
+  y4Label, // a label for the y-axis
   strokeLinecap, // stroke line cap of line
   strokeLinejoin, // stroke line join of line
   strokeWidth = 1.5, // stroke width of line
@@ -191,6 +199,7 @@ function LineChart(data, {
   const Y1 = d3.map(data, y1);
   const Y2 = d3.map(data, y2);
   const Y3 = d3.map(data, y3);
+  const Y4 = d3.map(data, y4);
   const Z = d3.map(data, z);
   const O = d3.map(data, d => d);
   if (defined === undefined) {
@@ -198,7 +207,8 @@ function LineChart(data, {
       return !isNaN(X[i]) &&
              !isNaN(Y1[i]) &&
              !isNaN(Y2[i]) &&
-             !isNaN(Y3[i]);
+             !isNaN(Y3[i]) &&
+             !isNaN(Y4[i]);
     };
   }
   const D = d3.map(data, defined);
@@ -208,6 +218,7 @@ function LineChart(data, {
   const y1Domain = [d3.min(Y1), d3.max(Y1)];
   const y2Domain = [d3.min(Y2), d3.max(Y2)];
   const y3Domain = [d3.min(Y3), d3.max(Y3)];
+  const y4Domain = [d3.min(Y4), d3.max(Y4)];
   const zDomain = new d3.InternSet(Z);
 
   // Omit any data not present in the z-domain.
@@ -218,15 +229,18 @@ function LineChart(data, {
   const y1Scale = d3.scaleLinear(y1Domain, yRange);
   const y2Scale = d3.scaleLinear(y2Domain, yRange);
   const y3Scale = d3.scaleLinear(y3Domain, yRange);
+  const y4Scale = d3.scaleLinear(y4Domain, yRange);
   const xAxis = d3.axisBottom(xScale).ticks(width / 80).tickSizeOuter(0);
   const y1Axis = d3.axisLeft(y1Scale).ticks(height / 60, yFormat);
   const y2Axis = d3.axisRight(y2Scale).ticks(height / 60, yFormat);
   const y3Axis = d3.axisLeft(y3Scale).ticks(height / 60, yFormat);
+  const y4Axis = d3.axisRight(y4Scale).ticks(height / 60, yFormat);
 
   // Compute titles.
   const T1 = title1 === undefined ? Z : title1 === null ? null : d3.map(data, title1);
   const T2 = title2 === undefined ? Z : title2 === null ? null : d3.map(data, title2);
   const T3 = title3 === undefined ? Z : title3 === null ? null : d3.map(data, title3);
+  const T4 = title4 === undefined ? Z : title4 === null ? null : d3.map(data, title4);
 
   // Construct a line generator.
   const line1 = d3.line()
@@ -247,6 +261,12 @@ function LineChart(data, {
       .x(i => xScale(X[i]))
       .y(i => y3Scale(Y3[i]));
 
+  const line4 = d3.line()
+      .defined(i => D[i])
+      .curve(curve)
+      .x(i => xScale(X[i]))
+      .y(i => y4Scale(Y4[i]));
+
   const svg = d3.create("svg")
       .attr("width", width)
       .attr("height", height)
@@ -260,7 +280,8 @@ function LineChart(data, {
 
   const color1 = "steelblue";
   const color2 = "brown";
-  const color3 = "darkolivegreen";
+  const color3 = "goldenrod";
+  const color4 = "darkolivegreen";
 
   svg.append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
@@ -302,11 +323,25 @@ function LineChart(data, {
           .attr("x2", width - marginLeft - marginRight)
           .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
-          .attr("x", -marginLeft)
+          .attr("x", -marginLeft - 10)
           .attr("y", 10)
           .attr("fill", color3)
           .attr("text-anchor", "start")
           .text(y3Label));
+
+  svg.append("g")
+      .attr("transform", `translate(${width - marginRight},0)`)
+      .call(y4Axis)
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+          .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke-opacity", 0.1))
+      .call(g => g.append("text")
+          .attr("x", 10)
+          .attr("y", 10)
+          .attr("fill", color4)
+          .attr("text-anchor", "start")
+          .text(y4Label));
 
 
   const path1 = svg.append("g")
@@ -348,6 +383,19 @@ function LineChart(data, {
       .style("mix-blend-mode", mixBlendMode)
       .attr("d", ([, I]) => line3(I));
 
+  const path4 = svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke", color4)
+      .attr("stroke-linecap", strokeLinecap)
+      .attr("stroke-linejoin", strokeLinejoin)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", strokeOpacity)
+    .selectAll("path")
+    .data(d3.group(I, i => Z[i]))
+    .join("path")
+      .style("mix-blend-mode", mixBlendMode)
+      .attr("d", ([, I]) => line4(I));
+
   const dot1 = svg.append("g")
       .attr("display", "none");
   dot1.append("circle")
@@ -378,43 +426,64 @@ function LineChart(data, {
       .attr("text-anchor", "middle")
       .attr("y", -8);
 
+  const dot4 = svg.append("g")
+      .attr("display", "none");
+  dot4.append("circle")
+      .attr("r", 2.5);
+  dot4.append("text")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+      .attr("text-anchor", "middle")
+      .attr("y", -8);
+
   function pointermoved(event) {
     const [xm, ym] = d3.pointer(event);
     const i1Score = i => Math.hypot(xScale(X[i]) - xm, y1Scale(Y1[i]) - ym);
     const i2Score = i => Math.hypot(xScale(X[i]) - xm, y2Scale(Y2[i]) - ym);
     const i3Score = i => Math.hypot(xScale(X[i]) - xm, y3Scale(Y3[i]) - ym);
+    const i4Score = i => Math.hypot(xScale(X[i]) - xm, y4Scale(Y4[i]) - ym);
     const i1 = d3.least(I, i1Score);
     const i2 = d3.least(I, i2Score);
     const i3 = d3.least(I, i3Score);
+    const i4 = d3.least(I, i4Score);
     const i1_score = i1Score(i1);
     const i2_score = i2Score(i2);
     const i3_score = i3Score(i3);
+    const i4_score = i4Score(i4);
 
     path1.style("mix-blend-mode", null).attr("stroke", "#ddd");
     path2.style("mix-blend-mode", null).attr("stroke", "#ddd");
     path3.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path4.style("mix-blend-mode", null).attr("stroke", "#ddd");
     dot1.attr("display", "none");
     dot2.attr("display", "none");
     dot3.attr("display", "none");
+    dot4.attr("display", "none");
 
-    if (i1_score < i2_score && i1_score < i3_score) {
+    if (i1_score < i2_score && i1_score < i3_score && i1_score < i4_score) {
       dot1.attr("display", null);
       path1.attr("stroke", ([z]) => Z[i1] === z ? null : "#ddd").filter(([z]) => Z[i1] === z).raise();
       dot1.attr("transform", `translate(${xScale(X[i1])},${y1Scale(Y1[i1])})`);
       if (T1) dot1.select("text").text(T1[i1]);
       svg.property("value", O[i1]).dispatch("input", {bubbles: true});
-    } else if (i2_score < i1_score && i2_score < i3_score) {
+    } else if (i2_score < i3_score && i2_score < i4_score) {
       dot2.attr("display", null);
       path2.attr("stroke", ([z]) => Z[i2] === z ? null : "#ddd").filter(([z]) => Z[i2] === z).raise();
       dot2.attr("transform", `translate(${xScale(X[i2])},${y2Scale(Y2[i2])})`);
       if (T2) dot2.select("text").text(T2[i2]);
       svg.property("value", O[i2]).dispatch("input", {bubbles: true});
-    } else {
+    } else if (i3_score < i4_score) {
       dot3.attr("display", null);
       path3.attr("stroke", ([z]) => Z[i3] === z ? null : "#ddd").filter(([z]) => Z[i3] === z).raise();
       dot3.attr("transform", `translate(${xScale(X[i3])},${y3Scale(Y3[i3])})`);
       if (T3) dot3.select("text").text(T3[i3]);
       svg.property("value", O[i3]).dispatch("input", {bubbles: true});
+    } else {
+      dot4.attr("display", null);
+      path4.attr("stroke", ([z]) => Z[i4] === z ? null : "#ddd").filter(([z]) => Z[i4] === z).raise();
+      dot4.attr("transform", `translate(${xScale(X[i4])},${y4Scale(Y4[i4])})`);
+      if (T4) dot4.select("text").text(T4[i4]);
+      svg.property("value", O[i4]).dispatch("input", {bubbles: true});
     }
   }
 
@@ -422,18 +491,22 @@ function LineChart(data, {
     path1.style("mix-blend-mode", null).attr("stroke", "#ddd");
     path2.style("mix-blend-mode", null).attr("stroke", "#ddd");
     path3.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path4.style("mix-blend-mode", null).attr("stroke", "#ddd");
     dot1.attr("display", null);
     dot2.attr("display", null);
     dot3.attr("display", null);
+    dot4.attr("display", null);
   }
 
   function pointerleft() {
     path1.style("mix-blend-mode", "multiply").attr("stroke", null);
     path2.style("mix-blend-mode", "multiply").attr("stroke", null);
     path3.style("mix-blend-mode", "multiply").attr("stroke", null);
+    path4.style("mix-blend-mode", "multiply").attr("stroke", null);
     dot1.attr("display", "none");
     dot2.attr("display", "none");
     dot3.attr("display", "none");
+    dot4.attr("display", "none");
     svg.node().value = null;
     svg.dispatch("input", {bubbles: true});
   }
