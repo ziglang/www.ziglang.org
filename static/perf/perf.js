@@ -128,12 +128,51 @@ const column_types = {
       marginLeft: 60,
     })
     const div = document.createElement("div");
+    div.classList.add("benchmark");
+    div.classList.add(key);
+    div.classList.add(benchmarks_json[key].kind);
+
+    // Build the title <span>
+    const titleSpan = document.createElement("span");
+    titleSpan.id = key;
+    titleSpan.classList.add("benchmark-title");
+
+    const titleAnchor = document.createElement("a");
+    titleAnchor.innerText = key;
+    titleAnchor.href = "#" + key;
+
+    // Add the titleAnchor to the titleSpan
+    titleSpan.appendChild(titleAnchor);
+
+    // Build the description
+    const descriptionSpan = document.createElement("span");
+    descriptionSpan.classList.add("benchmark-description");
+
+    const descriptionEm = document.createElement("em");
+    descriptionEm.innerText = benchmarks_json[key].description;
+
+    // Add the descriptionEm to the span
+    descriptionSpan.appendChild(descriptionEm);
+
+    const sourceLinkParagraph = document.createElement("p")
+    const sourceLinkAnchor = document.createElement("a")
+    sourceLinkAnchor.classList.add("external-link");
+    sourceLinkAnchor.classList.add("external-link-light");
     const src_url = "https://github.com/ziglang/gotta-go-fast/tree/master/benchmarks/" +
       benchmarks_json[key].dir + "/" + benchmarks_json[key].mainPath;
     const desc = benchmarks_json[key].description;
-    div.innerHTML = `<h2 id="${key}">${key}</h2><p>${desc} <a href="${src_url}">source</a></p>`;
+    sourceLinkAnchor.href = src_url;
+    sourceLinkAnchor.innerText = "Source";
+
+    sourceLinkParagraph.appendChild(sourceLinkAnchor);
+
+    div.appendChild(titleSpan);
+    div.appendChild(descriptionSpan);
     div.appendChild(chart);
-    document.body.appendChild(div);
+    div.appendChild(sourceLinkParagraph);
+
+    // Put the HTML we've built into the existing div#content element in layouts/perf/baseof.html
+    document.getElementById("content").querySelector("div.container").appendChild(div);
   }
 })();
 
