@@ -230,8 +230,7 @@ function LineChart(data, {
   strokeLinecap, // stroke line cap of line
   strokeLinejoin, // stroke line join of line
   strokeWidth = 1.5, // stroke width of line
-  strokeOpacity, // stroke opacity of line
-  mixBlendMode = "multiply", // blend mode of lines
+  strokeOpacity // stroke opacity of line
 } = {}) {
   // Compute values.
   const X = d3.map(data, x);
@@ -393,7 +392,6 @@ function LineChart(data, {
     .selectAll("path")
     .data(d3.group(I, i => Z[i]))
     .join("path")
-      .style("mix-blend-mode", mixBlendMode)
       .attr("d", ([, I]) => line1(I));
 
   const path2 = svg.append("g")
@@ -406,7 +404,6 @@ function LineChart(data, {
     .selectAll("path")
     .data(d3.group(I, i => Z[i]))
     .join("path")
-      .style("mix-blend-mode", mixBlendMode)
       .attr("d", ([, I]) => line2(I));
 
   const path3 = svg.append("g")
@@ -419,7 +416,6 @@ function LineChart(data, {
     .selectAll("path")
     .data(d3.group(I, i => Z[i]))
     .join("path")
-      .style("mix-blend-mode", mixBlendMode)
       .attr("d", ([, I]) => line3(I));
 
   const path4 = svg.append("g")
@@ -432,14 +428,15 @@ function LineChart(data, {
     .selectAll("path")
     .data(d3.group(I, i => Z[i]))
     .join("path")
-      .style("mix-blend-mode", mixBlendMode)
       .attr("d", ([, I]) => line4(I));
 
   const dot1 = svg.append("g")
       .attr("display", "none");
   dot1.append("circle")
+    .style("fill", color1)
       .attr("r", 2.5);
   dot1.append("text")
+    .style("fill", "currentColor")
       .attr("font-family", "sans-serif")
       .attr("font-size", 10)
       .attr("text-anchor", "middle")
@@ -448,8 +445,10 @@ function LineChart(data, {
   const dot2 = svg.append("g")
       .attr("display", "none");
   dot2.append("circle")
+    .style("fill", color2)
       .attr("r", 2.5);
   dot2.append("text")
+    .style("fill", "currentColor")
       .attr("font-family", "sans-serif")
       .attr("font-size", 10)
       .attr("text-anchor", "middle")
@@ -458,8 +457,10 @@ function LineChart(data, {
   const dot3 = svg.append("g")
       .attr("display", "none");
   dot3.append("circle")
+    .style("fill", color3)
       .attr("r", 2.5);
   dot3.append("text")
+    .style("fill", "currentColor")
       .attr("font-family", "sans-serif")
       .attr("font-size", 10)
       .attr("text-anchor", "middle")
@@ -468,8 +469,10 @@ function LineChart(data, {
   const dot4 = svg.append("g")
       .attr("display", "none");
   dot4.append("circle")
+    .style("fill", color4)
       .attr("r", 2.5);
   dot4.append("text")
+    .style("fill", "currentColor")
       .attr("font-family", "sans-serif")
       .attr("font-size", 10)
       .attr("text-anchor", "middle")
@@ -490,10 +493,7 @@ function LineChart(data, {
     const i3_score = i3Score(i3);
     const i4_score = i4Score(i4);
 
-    path1.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    path2.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    path3.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    path4.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    clearLineStrokes();
     dot1.attr("display", "none");
     dot2.attr("display", "none");
     dot3.attr("display", "none");
@@ -501,36 +501,47 @@ function LineChart(data, {
 
     if (i1_score < i2_score && i1_score < i3_score && i1_score < i4_score) {
       dot1.attr("display", null);
-      path1.attr("stroke", ([z]) => Z[i1] === z ? null : "#ddd").filter(([z]) => Z[i1] === z).raise();
+      // Since path1 is selected/hovered, go full opacity and display it on top
+      path1.attr("stroke-opacity", 1.0).raise();
       dot1.attr("transform", `translate(${xScale(X[i1])},${y1Scale(Y1[i1])})`);
       if (T1) dot1.select("text").text(T1[i1]);
-      svg.property("value", O[i1]).dispatch("input", {bubbles: true});
+      dot1.select("circle").attr("r", 4.0);
     } else if (i2_score < i3_score && i2_score < i4_score) {
       dot2.attr("display", null);
-      path2.attr("stroke", ([z]) => Z[i2] === z ? null : "#ddd").filter(([z]) => Z[i2] === z).raise();
+      // Since path2 is selected/hovered, go full opacity and display it on top
+      path2.attr("stroke-opacity", 1.0).raise();
       dot2.attr("transform", `translate(${xScale(X[i2])},${y2Scale(Y2[i2])})`);
       if (T2) dot2.select("text").text(T2[i2]);
-      svg.property("value", O[i2]).dispatch("input", {bubbles: true});
+      dot2.select("circle").attr("r", 4.0);
     } else if (i3_score < i4_score) {
       dot3.attr("display", null);
-      path3.attr("stroke", ([z]) => Z[i3] === z ? null : "#ddd").filter(([z]) => Z[i3] === z).raise();
+      // Since path3 is selected/hovered, go full opacity and display it on top
+      path3.attr("stroke-opacity", 1.0).raise();
       dot3.attr("transform", `translate(${xScale(X[i3])},${y3Scale(Y3[i3])})`);
       if (T3) dot3.select("text").text(T3[i3]);
-      svg.property("value", O[i3]).dispatch("input", {bubbles: true});
+      dot3.select("circle").attr("r", 4.0);
     } else {
       dot4.attr("display", null);
-      path4.attr("stroke", ([z]) => Z[i4] === z ? null : "#ddd").filter(([z]) => Z[i4] === z).raise();
+      // Since path4 is selected/hovered, go full opacity and display it on top
+      path4.attr("stroke-opacity", 1.0).raise();
       dot4.attr("transform", `translate(${xScale(X[i4])},${y4Scale(Y4[i4])})`);
       if (T4) dot4.select("text").text(T4[i4]);
-      svg.property("value", O[i4]).dispatch("input", {bubbles: true});
+      dot4.select("circle").attr("r", 4.0);
     }
   }
 
+  function clearLineStrokes() {
+    path1.attr("stroke-opacity", 0.15);
+    path2.attr("stroke-opacity", 0.15);
+    path3.attr("stroke-opacity", 0.15);
+    path4.attr("stroke-opacity", 0.15);
+  }
+
   function pointerentered() {
-    path1.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    path2.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    path3.style("mix-blend-mode", null).attr("stroke", "#ddd");
-    path4.style("mix-blend-mode", null).attr("stroke", "#ddd");
+    path1.attr("stroke-opacity", 0.15);
+    path2.attr("stroke-opacity", 0.15);
+    path3.attr("stroke-opacity", 0.15);
+    path4.attr("stroke-opacity", 0.15);
     dot1.attr("display", null);
     dot2.attr("display", null);
     dot3.attr("display", null);
@@ -538,10 +549,10 @@ function LineChart(data, {
   }
 
   function pointerleft() {
-    path1.style("mix-blend-mode", "multiply").attr("stroke", null);
-    path2.style("mix-blend-mode", "multiply").attr("stroke", null);
-    path3.style("mix-blend-mode", "multiply").attr("stroke", null);
-    path4.style("mix-blend-mode", "multiply").attr("stroke", null);
+    path1.attr("stroke-opacity", 1.0);
+    path2.attr("stroke-opacity", 1.0);
+    path3.attr("stroke-opacity", 1.0);
+    path4.attr("stroke-opacity", 1.0);
     dot1.attr("display", "none");
     dot2.attr("display", "none");
     dot3.attr("display", "none");
