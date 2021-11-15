@@ -253,10 +253,10 @@ function LineChart(data, {
 
   // Compute default domains, and unique the z-domain.
   const xDomain = d3.extent(X);
-  const y1Domain = [d3.min(Y1), d3.max(Y1)];
-  const y2Domain = [d3.min(Y2), d3.max(Y2)];
-  const y3Domain = [d3.min(Y3), d3.max(Y3)];
-  const y4Domain = [d3.min(Y4), d3.max(Y4)];
+  const y1Domain = [0, d3.max(Y1)];
+  const y2Domain = [0, d3.max(Y2)];
+  const y3Domain = [0, d3.max(Y3)];
+  const y4Domain = [0, d3.max(Y4)];
   const zDomain = new d3.InternSet(Z);
 
   // Omit any data not present in the z-domain.
