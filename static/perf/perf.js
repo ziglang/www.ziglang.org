@@ -1,3 +1,4 @@
+/*
 const column_types = {
   timestamp: 'date',
   commit_timestamp: 'date',
@@ -101,10 +102,12 @@ const column_types = {
         y2: csv_row.instructions_median,
         y3: csv_row.cache_misses_median,
         y4: csv_row.maxrss,
+        y5: csv_row.branch_misses_median,
         title1: makeLabel(csv_row, "wall_time_median"),
         title2: makeLabel(csv_row, "instructions_median"),
         title3: makeLabel(csv_row, "cache_misses_median"),
         title4: makeLabel(csv_row, "maxrss"),
+        title5: makeLabel(csv_row, "Branch Misses"),
       });
     }
 
@@ -114,15 +117,18 @@ const column_types = {
       y2: d => d.y2,
       y3: d => d.y3,
       y4: d => d.y4,
+      y5: d => d.y5,
       z: d => d.z,
       title1: d => d.title1,
       title2: d => d.title2,
       title3: d => d.title3,
       title4: d => d.title4,
+      title5: d => d.title5,
       y1Label: "ms",
       y2Label: "CPU instructions",
       y3Label: "cache misses",
       y4Label: "KB",
+      y5Label: "Branch Misses",
       width: document.body.clientWidth,
       height: 500,
       marginLeft: 60,
@@ -172,9 +178,134 @@ const column_types = {
     div.appendChild(sourceLinkParagraph);
 
     // Put the HTML we've built into the existing div#content element in layouts/perf/baseof.html
-    document.getElementById("content").querySelector("div.container").appendChild(div);
+    // document.getElementById("content").querySelector("div.container").appendChild(div);
   }
 })();
+*/
+
+// Line hover crosshair and stuff:
+// http://bl.ocks.org/mikehadlow/93b471e569e31af07cd3
+// https://medium.com/@louisemoxy/create-an-accurate-tooltip-for-a-d3-area-chart-bf59783f8a2d
+const pane = new Tweakpane.Pane();
+
+const options = {
+  type: "stacked",
+  line: "median",
+  rangeArea: true,
+  xInterval: "date",
+  yStart: "zero",
+  height: 200,
+  primaryLineStrokeColor: '#8df',
+};
+
+const f1 = pane.addFolder({
+  title: 'Charts',
+});
+
+f1.addInput(options, 'type', {
+options: [
+    {text: 'Stacked', value: 'stacked'},
+    {text: 'Overlay', value: 'overlay'},
+  ],
+});
+
+f1.addInput(options, 'line', {
+options: [
+    {text: 'Median', value: 'median'},
+    {text: 'Average', value: 'average'},
+    {text: 'Minimum', value: 'minimum'},
+    {text: 'Maximum', value: 'maximum'},
+  ],
+});
+
+f1.addInput(options, 'rangeArea');
+
+f1.addSeparator();
+
+f1.addInput(options, 'xInterval', {
+options: [
+    {text: 'Date', value: 'date'},
+    {text: 'Commits', value: 'commit'},
+  ],
+});
+
+f1.addInput(options, 'yStart', {
+options: [
+    {text: '0', value: 'zero'},
+    {text: 'Min. Value', value: 'min'},
+  ],
+});
+
+f1.addSeparator();
+
+f1.addInput(options, 'height', {
+  step: 1.0,
+  min: 50,
+  max: 800,
+});
+
+const f2 = pane.addFolder({
+  title: 'Data',
+});
+
+const addMonthDummyDataButton = f2.addButton({
+  title: '+1 Month',
+});
+
+f2.addSeparator();
+
+const resetDataButton = f2.addButton({
+  title: 'Reset',
+});
+
+pane.on('change', (event) => {
+  console.log(options.height);
+
+});
+
+// pane.addInput(options, 'primaryLineStrokeColor');
+const tooltipDiv = document.createElement("div");
+tooltipDiv.id = "tooltip";
+tooltipDiv.classList.add("tooltip");
+document.body.append(tooltipDiv);
+// const tooltip = document.body.append(tooltipDiv);
+  var tooltip = d3.select("div#tooltip")
+    // .append("div")
+    .style("position", "absolute")
+    .style("opacity", 0)
+    // .attr("class", "tooltip")
+    .style("background-color", "darkgray")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("border-color", "orange")
+    .style("padding", "5px")
+
+    var mouseOver = function(event, data) {
+      tooltip
+      .style("opacity", 1)
+      .style("stroke", "black")
+      .style("opacity", 1)
+    }
+  var mouseMove = function(event, data) {
+      const [x, y] = d3.pointer(event);
+    tooltip
+      .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
+      // .style("left", "100px")
+      // .style("top", "100px")
+      // .style("left", event.pageX + "px")
+      // .style("top", event.pageY + "px")
+      .style("left", d3.pointer(event)[0] + "px")
+      .style("top", d3.pointer(event)[1] + "px")
+      // .attr('transform', `translate(${d3.pointer(event)[0]}, ${y})`);
+  }
+  var mouseLeave = function(event, data) {
+    tooltip
+      .style("opacity", 0)
+    d3.select(this)
+      .style("stroke", "none")
+      .style("opacity", 0.8)
+  }
 
 function makeLabel(obj, key) {
   return obj[key] + " " + key + " @ " + obj.zig_version;
@@ -198,6 +329,257 @@ function parseZigVersion(zig_version) {
   return [+semver[0], +semver[1], +semver[2], +rev];
 }
 
+// This style is cool for the top graph: https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html
+
+d3.csv("records.csv").then(function (data) {
+  data.forEach(function (d) {
+    // Need to multiply the unix time by 1000 so the Date initializer works.
+    d.timestamp = new Date(d.timestamp * 1000);
+    d.commit_timestamp = new Date(d.commit_timestamp * 1000);
+    d.benchmark_name = d.benchmark_name;
+    d.zig_version = d.zig_version;
+    // Instructions
+    // d.instructions_median = +d.instructions_median;
+    // d.instructions_min = +d.instructions_min;
+    // d.instructions_max = +d.instructions_max;
+    // CPU Cycles
+    // d.instructions_median = +d.cpu_cycles_median;
+    // d.instructions_min = +d.cpu_cycles_min;
+    // d.instructions_max = +d.cpu_cycles_max;
+    // Cache Misses
+    // d.instructions_median = +d.cache_misses_median;
+    // d.instructions_min = +d.cache_misses_min;
+    // d.instructions_max = +d.cache_misses_max;
+    // Cache References
+    d.instructions_median = +d.cache_references_median;
+    d.instructions_min = +d.cache_references_min;
+    d.instructions_max = +d.cache_references_max;
+  });
+  data = data.filter(data => data.benchmark_name == "self-hosted-parser");
+  // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
+  // The order of the sort and timestamp adjustment must be like this, need to understand why.
+  data.sort(function(a, b) {
+    return orderZigVersions(a.zig_version, b.zig_version);
+  });
+
+  for (let i = 1; i < data.length; i += 1) {
+    if (data[i].commit_timestamp < data[i-1].commit_timestamp) {
+      // Pretend it was done 30 minutes after the previous timestamp.
+      data[i].commit_timestamp = new Date((+data[i-1].commit_timestamp) + (1000 * 60 * 30));
+    }
+  }
+
+const margin = {top: 10, right: 10, bottom: 20, left: 100};
+const containerDiv = document.getElementById("content").querySelector("div.container");
+const width = containerDiv.clientWidth
+const height =  options.height;
+
+const x = d3.scaleTime().range([margin.left, width - margin.right]);
+const yAxisCPUInstructionsArea = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+const yAxisCPUInstructionsMin = d3.scaleLinear().range([height - margin.bottom,  margin.top]);
+const yAxisCPUInstructionsMax = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+const yAxisCPUInstructionsMedian = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+  yAxisCPUInstructionsMedian.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsMedian.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsArea.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisCPUInstructionsMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  yAxisCPUInstructionsMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsMedian.domain(d3.extent(data, d=> d.instructions_median));
+  // yAxisCPUInstructionsArea.domain(d3.extent(data, d=> d.instructions_median));
+  // yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+// const cpuInstructionsMin = d3.scaleLinear().range([height,  0]);
+// const yCacheMissesMin = d3.scaleLinear().range([height,  0]);
+// const yCacheMisses = d3.scaleLinear().range([height,  0]);
+
+// const line = d3.line()
+//     .x(function (data) {
+//       return x(data.timestamp);
+//     })
+//     .y(function (data) {
+//       return y(data.branch_misses_median);
+//     });
+
+const cpuInstructionsMinLine = d3.line()
+    .curve(d3.curveLinear)
+    .x(function (data) {
+      return x(data.commit_timestamp);
+    })
+    .y(function (data) {
+      return yAxisCPUInstructionsMin(data.instructions_min);
+    });
+const cpuInstructionsMaxLine = d3.line()
+    // .curve(d3.curveCatmullRom)
+    .curve(d3.curveLinear)
+    .x(function (data) {
+      return x(data.commit_timestamp);
+    })
+    .y(function (data) {
+      return yAxisCPUInstructionsMax(data.instructions_max);
+    });
+
+const cpuInstructionsMedianLine = d3.line()
+    // .curve(d3.curveCatmullRom)
+    .curve(d3.curveLinear)
+    .x(function (data) {
+      return x(data.commit_timestamp);
+    })
+    .y(function (data) {
+      return yAxisCPUInstructionsMedian(data.instructions_median);
+    });
+
+const cpuInstructionsArea = d3.area()
+    .curve(d3.curveLinear)
+    // .curve(d3.curveCatmullRom)
+    .x(function (data) {
+      return x(data.commit_timestamp);
+    })
+    .y0(function (data) {
+      return yAxisCPUInstructionsArea(data.instructions_min);
+    })
+    .y1(function (data) {
+      return yAxisCPUInstructionsArea(data.instructions_max);
+    })
+
+;
+// const primaryLineStrokeColor = d3.schemePaired[0];
+// const areaFillColor = d3.schemePaired[1];
+// const areaStrokeColor = d3.schemePaired[1];
+
+const primaryLineStrokeColor = d3.schemeDark2[0];
+const areaFillColor = d3.schemePastel2[0];
+const areaStrokeColor = d3.schemePastel2[0];
+
+const svg = d3.create("svg");
+  svg
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", [0, 0, width, height])
+    .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+    .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
+
+
+
+  x.domain(d3.extent(data, function (d) { return d.commit_timestamp; }));
+
+  // Min/Max Range Area
+  svg.append("path")
+      .data([data])
+      .attr("fill-opacity", 0.10)
+      // .attr("fill", "blue")
+      .attr("fill", areaFillColor)
+      .attr("d", cpuInstructionsArea)
+
+
+  // min
+  svg.append("path")
+      .data([data])
+      .attr("transform", "translate(0,0)")
+      .style("stroke", areaStrokeColor)
+      .attr("fill", "none")
+      .attr("stroke-opacity", 0.4)
+      .attr("class", "line")
+      .attr("d", cpuInstructionsMinLine)
+
+  // // max
+  svg.append("path")
+      .data([data])
+      .attr("transform", "translate(0,0)")
+      .attr("fill", "none")
+      .style("stroke", areaStrokeColor)
+      // .style("stroke", "blue")
+      .attr("stroke-opacity", 0.4)
+      .attr("class", "line")
+      .attr("d", cpuInstructionsMaxLine)
+
+
+  // Median Line Chart
+  svg.append("path")
+      .data([data])
+      // .attr("transform", "translate(" + margin.bottom + "," + margin.left + ")")
+      .attr("fill", "none")
+      .attr("stroke-width", 1.0)
+      .style("stroke", primaryLineStrokeColor)
+      // .style("stroke", "#aaaa00")
+      .attr("stroke-opacity", 1.0)
+      .attr("class", "line")
+      .attr("d", cpuInstructionsMedianLine)
+
+      // X-Axis
+  svg.append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x));
+
+  // Y-Axis
+  svg.append("g")
+      .attr("transform", `translate(${margin.left}, 0)`)
+      .call(d3.axisLeft(yAxisCPUInstructionsArea).ticks(height / 80));
+
+
+      svg//.selectAll()
+      .data([data])
+      // .enter()
+          .on("mouseover", mouseOver)
+    .on("mousemove", mouseMove)
+    .on("mouseleave", mouseLeave)
+  // svg.append("g")
+  //     .call(d3.axisLeft(yAxisCPUInstructionsMax));
+
+  containerDiv.appendChild(svg.node());
+});
+
+// function BenchmarkChart(data, {
+// });
+  // document.getElementById("content").querySelector("div.container").appendChild(svg);
+// Object.assign(svg.node(), {value: null});
+// svg.selectAll(null).enter();
+// d3.select("body").append(svg.node());
+// containerDiv.appendChild(svg.node());
+// document.getElementById("content").querySelector("div.container").appendChild(svg.node());
+
+/*
+var margin = {top: 20, right: 20, bottom: 30, left: 50}, width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+// set the ranges
+var x = d3.scaleTime().range([0, width]); var y = d3.scaleLinear().range([height, 0])
+// define the line
+var valueline = d3.line()
+    .x(function(d) { return x(d.date); }) .y(function(d) { return y(d.close); });
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+// Get the data
+d3.csv("records.csv").then(function(data) {
+  // format the data
+  data.forEach(function(d) {
+    // Need to multiply the unix time by 1000 so the Date initializer works.
+    d.timestamp = new Date(d.timestamp * 1000); d.wall_time_median = +d.wall_time_median;
+    // console.log(data);
+  });
+  // Scale the range of the data
+  // x.domain(d3.extent(data, function(d) { return d.timestamp; })); y.domain([0, d3.max(data, function(d) { return d.wall_time_median; })]);
+  // Add the valueline path.
+  svg.append("path")
+
+      .data([data])
+      .attr("class", "line")
+      .attr("d", valueline);
+  // Add the X Axis
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+  // Add the Y Axis
+  svg.append("g")
+      .call(d3.axisLeft(y));
+});
+*/
+
+
 // Copyright 2021 Observable, Inc.
 // Released under the ISC license.
 // https://observablehq.com/@d3/multi-line-chart
@@ -207,26 +589,29 @@ function LineChart(data, {
   y2 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   y3 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   y4 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
+  y5 = ([, y]) => y, // given d in data, returns the (quantitative) y-value
   z = () => 1, // given d in data, returns the (categorical) z-value
   title1, // given d in data, returns the title text
   title2, // given d in data, returns the title text
   title3, // given d in data, returns the title text
   title4, // given d in data, returns the title text
+  title5, // given d in data, returns the title text
   defined, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
   marginTop = 20, // top margin, in pixels
   marginRight = 60, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 40, // left margin, in pixels
+  marginLeft = 180, // left margin, in pixels
   width = 640, // outer width, in pixels
   height = 400, // outer height, in pixels
-  xRange = [marginLeft, width - marginRight], // [left, right]
+  xRange = [marginLeft+60, width - marginRight], // [left, right]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
   yFormat, // a format specifier string for the y-axis
   y1Label, // a label for the y-axis
   y2Label, // a label for the y-axis
   y3Label, // a label for the y-axis
   y4Label, // a label for the y-axis
+  y5Label, // a label for the y-axis
   strokeLinecap, // stroke line cap of line
   strokeLinejoin, // stroke line join of line
   strokeWidth = 1.5, // stroke width of line
@@ -238,6 +623,7 @@ function LineChart(data, {
   const Y2 = d3.map(data, y2);
   const Y3 = d3.map(data, y3);
   const Y4 = d3.map(data, y4);
+  const Y5 = d3.map(data, y5);
   const Z = d3.map(data, z);
   const O = d3.map(data, d => d);
   if (defined === undefined) {
@@ -246,7 +632,8 @@ function LineChart(data, {
              !isNaN(Y1[i]) &&
              !isNaN(Y2[i]) &&
              !isNaN(Y3[i]) &&
-             !isNaN(Y4[i]);
+             !isNaN(Y4[i]) &&
+             !isNaN(Y5[i]);
     };
   }
   const D = d3.map(data, defined);
@@ -257,6 +644,7 @@ function LineChart(data, {
   const y2Domain = [d3.min(Y2), d3.max(Y2)];
   const y3Domain = [d3.min(Y3), d3.max(Y3)];
   const y4Domain = [d3.min(Y4), d3.max(Y4)];
+  const y5Domain = [d3.min(Y5), d3.max(Y5)];
   const zDomain = new d3.InternSet(Z);
 
   // Omit any data not present in the z-domain.
@@ -264,21 +652,28 @@ function LineChart(data, {
 
   // Construct scales and axes.
   const xScale = d3.scaleUtc(xDomain, xRange);
-  const y1Scale = d3.scaleLinear(y1Domain, yRange);
-  const y2Scale = d3.scaleLinear(y2Domain, yRange);
-  const y3Scale = d3.scaleLinear(y3Domain, yRange);
-  const y4Scale = d3.scaleLinear(y4Domain, yRange);
-  const xAxis = d3.axisBottom(xScale).ticks(width / 80).tickSizeOuter(0);
-  const y1Axis = d3.axisLeft(y1Scale).ticks(height / 60, yFormat);
-  const y2Axis = d3.axisRight(y2Scale).ticks(height / 60, yFormat);
-  const y3Axis = d3.axisLeft(y3Scale).ticks(height / 60, yFormat);
-  const y4Axis = d3.axisRight(y4Scale).ticks(height / 60, yFormat);
+  // const y1Scale = d3.scaleLog().domain(y1Domain).range([marginTop+450, height-marginBottom-150]);
+  // const y2Scale = d3.scaleLog().domain(y2Domain).range([marginTop+300, height-marginBottom-250]);
+  // const y3Scale = d3.scaleLog().domain(y3Domain).range([marginTop+200, height-marginBottom-350]);
+  // const y4Scale = d3.scaleLog().domain(y4Domain).range([marginTop+100, height-marginBottom-450]);
+  const y1Scale = d3.scaleLinear(y1Domain, [marginTop+450, height-marginBottom-150]);
+  const y2Scale = d3.scaleLinear(y2Domain, [marginTop+300, height-marginBottom-250]);
+  const y3Scale = d3.scaleLinear(y3Domain, [marginTop+200, height-marginBottom-350]);
+  const y4Scale = d3.scaleLinear(y4Domain, [marginTop+100, height-marginBottom-450]);
+  const y5Scale = d3.scaleLinear(y5Domain, [marginTop+0, height-marginBottom-550]);
+  const xAxis = d3.axisBottom(xScale).ticks(10).tickSizeOuter(0);
+  const y1Axis = d3.axisLeft(y1Scale).ticks(4, d3.format(".2s"));
+  const y2Axis = d3.axisLeft(y2Scale).ticks(4, d3.format(",.4s"));
+  const y3Axis = d3.axisLeft(y3Scale).ticks(4, yFormat);
+  const y4Axis = d3.axisLeft(y4Scale).ticks(4, d3.format(".2s"));
+  const y5Axis = d3.axisLeft(y5Scale).ticks(4, d3.format(".2s"));
 
   // Compute titles.
   const T1 = title1 === undefined ? Z : title1 === null ? null : d3.map(data, title1);
   const T2 = title2 === undefined ? Z : title2 === null ? null : d3.map(data, title2);
   const T3 = title3 === undefined ? Z : title3 === null ? null : d3.map(data, title3);
   const T4 = title4 === undefined ? Z : title4 === null ? null : d3.map(data, title4);
+  const T5 = title4 === undefined ? Z : title5 === null ? null : d3.map(data, title5);
 
   // Construct a line generator.
   const line1 = d3.line()
@@ -305,6 +700,12 @@ function LineChart(data, {
       .x(i => xScale(X[i]))
       .y(i => y4Scale(Y4[i]));
 
+  const line5 = d3.line()
+      .defined(i => D[i])
+      .curve(curve)
+      .x(i => xScale(X[i]))
+      .y(i => y4Scale(Y5[i]));
+
   const svg = d3.create("svg")
       .attr("width", width)
       .attr("height", height)
@@ -316,71 +717,104 @@ function LineChart(data, {
       .on("pointerleave", pointerleft)
       .on("touchstart", event => event.preventDefault());
 
+      // https://www.youtube.com/watch?v=xAoljeRJ3lU
+      // From viridis https://github.com/BIDS/colormap/blob/master/colormaps.py
+      // const color1 = "rgb(68.08602, 1.24287, 84.000825)";
+      // const color4 = "rgb(253.27824, 231.070035, 36.70368)";
+
   const color1 = "steelblue";
   const color2 = "brown";
   const color3 = "goldenrod";
   const color4 = "darkolivegreen";
+  const color5 = "rebeccapurple";
 
   svg.append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
       .call(xAxis);
 
   svg.append("g")
-      .attr("transform", `translate(${marginLeft},0)`)
+      .attr("transform", `translate(${marginLeft + 50},0)`)
       .call(y1Axis)
       .call(g => g.select(".domain").remove())
       .call(g => g.selectAll(".tick line").clone()
           .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke", color1)
           .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
-          .attr("x", -marginLeft)
-          .attr("y", 10)
+          .attr("x", -marginLeft * 1.5)
+          .attr("y", 400)
           .attr("fill", color1)
           .attr("text-anchor", "start")
           .text(y1Label));
 
   svg.append("g")
-      .attr("transform", `translate(${marginLeft},0)`)
+      .attr("transform", `translate(${marginLeft + 50},0)`)
+      // .attr("transform", `translate(${marginLeft},0)`)
       .call(y2Axis)
       .call(g => g.select(".domain").remove())
       .call(g => g.selectAll(".tick line").clone()
           .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke", color2)
           .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
-          .attr("x", 0)
-          .attr("y", 10)
+          // .style("text-anchor", "end")
+          .attr("transform", "rotate(-90)")
+          // .attr("dx", "-.8em")
+          // .attr("dy", ".15em")
+          .attr("x", -250)
+          .attr("y", -75)
+          // .attr("y", 350)
           .attr("fill", color2)
-          .attr("text-anchor", "start")
+          // .attr("text-anchor", "start")
           .text(y2Label));
 
   svg.append("g")
-      .attr("transform", `translate(${width - marginRight},0)`)
+      .attr("transform", `translate(${marginLeft + 50},0)`)
+      // .attr("transform", `translate(${marginLeft},0)`)
       .call(y3Axis)
       .call(g => g.select(".domain").remove())
       .call(g => g.selectAll(".tick line").clone()
           .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke", color3)
           .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
-          .attr("x", -marginLeft - 10)
-          .attr("y", 10)
+          .attr("x", -marginLeft * 1.5)
+          .attr("y", 200)
           .attr("fill", color3)
           .attr("text-anchor", "start")
           .text(y3Label));
 
   svg.append("g")
-      .attr("transform", `translate(${width - marginRight},0)`)
+      .attr("transform", `translate(${marginLeft + 50},0)`)
+      // .attr("transform", `translate(${marginLeft},0)`)
       .call(y4Axis)
       .call(g => g.select(".domain").remove())
       .call(g => g.selectAll(".tick line").clone()
           .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke", color4)
           .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
-          .attr("x", 10)
-          .attr("y", 10)
+          .attr("x", -marginLeft * 1.5)
+          .attr("y", 100)
           .attr("fill", color4)
           .attr("text-anchor", "start")
           .text(y4Label));
 
+  svg.append("g")
+      .attr("transform", `translate(${marginLeft + 50},0)`)
+      // .attr("transform", `translate(${marginLeft},0)`)
+      .call(y5Axis)
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+          .attr("x2", width - marginLeft - marginRight)
+          .attr("stroke", color4)
+          .attr("stroke-opacity", 0.1))
+      .call(g => g.append("text")
+          .attr("x", -marginLeft * 1.5)
+          .attr("y", 0)
+          .attr("fill", color5)
+          .attr("text-anchor", "start")
+          .text(y5Label));
 
   const path1 = svg.append("g")
       .attr("fill", "none")
@@ -429,6 +863,18 @@ function LineChart(data, {
     .data(d3.group(I, i => Z[i]))
     .join("path")
       .attr("d", ([, I]) => line4(I));
+
+  const path5 = svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke", color5)
+      .attr("stroke-linecap", strokeLinecap)
+      .attr("stroke-linejoin", strokeLinejoin)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", strokeOpacity)
+      .selectAll("path")
+      .data(d3.group(I, i => Z[i]))
+      .join("path")
+      .attr("d", ([, I]) => line5(I));
 
   const dot1 = svg.append("g")
       .attr("display", "none");
