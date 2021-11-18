@@ -186,6 +186,151 @@ const column_types = {
 // Line hover crosshair and stuff:
 // http://bl.ocks.org/mikehadlow/93b471e569e31af07cd3
 // https://medium.com/@louisemoxy/create-an-accurate-tooltip-for-a-d3-area-chart-bf59783f8a2d
+
+
+function createStructureForBenchmark(key, benchmark) {
+    const div = document.createElement("div");
+    div.classList.add("benchmark");
+    div.classList.add(key);
+    div.classList.add(benchmark.kind);
+
+    // Build the title <span>
+    const titleSpan = document.createElement("span");
+    titleSpan.id = key;
+    titleSpan.classList.add("benchmark-title");
+
+    const titleAnchor = document.createElement("a");
+    titleAnchor.innerText = key;
+    titleAnchor.href = "#" + key;
+
+    // Add the titleAnchor to the titleSpan
+    titleSpan.appendChild(titleAnchor);
+
+    // Build the description
+    const descriptionSpan = document.createElement("span");
+    descriptionSpan.classList.add("benchmark-description");
+
+    const descriptionEm = document.createElement("em");
+    descriptionEm.innerText = benchmark.description;
+
+    // Add the descriptionEm to the span
+    descriptionSpan.appendChild(descriptionEm);
+
+
+    const chartDiv = document.createElement("div");
+    chartDiv.id = "chart-" + key;
+    chartDiv.classList.add("chart");
+
+    const sourceLinkParagraph = document.createElement("p")
+    const sourceLinkAnchor = document.createElement("a")
+    sourceLinkAnchor.classList.add("external-link");
+    sourceLinkAnchor.classList.add("external-link-light");
+    const src_url = "https://github.com/ziglang/gotta-go-fast/tree/master/benchmarks/" +
+      benchmark.dir + "/" + benchmark.mainPath;
+    const desc = benchmark.description;
+    sourceLinkAnchor.href = src_url;
+    sourceLinkAnchor.innerText = "Source";
+
+    sourceLinkParagraph.appendChild(sourceLinkAnchor);
+
+    div.appendChild(titleSpan);
+    div.appendChild(descriptionSpan);
+    div.appendChild(chartDiv);
+    div.appendChild(sourceLinkParagraph);
+
+    // Put the HTML we've built into the existing div#content element in layouts/perf/baseof.html
+    document.getElementById("content").querySelector("div.container").appendChild(div);
+
+}
+
+async function loadBenchmarksJSON() {
+    const response = await fetch('benchmarks.json');
+    const data = await response.json();
+    return data;
+}
+
+async function loadRecords() {
+// https://stackoverflow.com/questions/57204863/loading-csv-data-and-save-results-to-a-variable
+// Massage the data
+return await d3.csv("records.csv").then(function (data) {
+  data.forEach(function (d) {
+    // Need to multiply the unix time by 1000 so the Date initializer works.
+    d.timestamp = new Date(d.timestamp * 1000);
+    d.commit_timestamp = new Date(d.commit_timestamp * 1000);
+    d.benchmark_name = d.benchmark_name;
+    d.zig_version = d.zig_version;
+    d.samples_taken = d.samples_taken;
+
+    // stime
+    d.stime_median = +d.stime_median;
+    d.stime_mean = +d.stime_mean;
+    d.stime_min = +d.stime_min;
+    d.stime_max = +d.stime_max;
+
+    // utime
+    d.utime_median = +d.utime_median;
+    d.utime_mean = +d.utime_mean;
+    d.utime_min = +d.utime_min;
+    d.utime_max = +d.utime_max;
+
+    // Instructions
+    d.instructions_median = +d.instructions_median;
+    d.instructions_mean = +d.instructions_mean;
+    d.instructions_min = +d.instructions_min;
+    d.instructions_max = +d.instructions_max;
+
+    // CPU Cycles
+    d.cpu_cycles_median = +d.cpu_cycles_median;
+    d.cpu_cycles_mean = +d.cpu_cycles_mean;
+    d.cpu_cyces_min = +d.cpu_cycles_min;
+    d.cpu_cycles_max = +d.cpu_cycles_max;
+
+    // Cache Misses
+    d.cache_misses_median = +d.cache_misses_median;
+    d.cache_misses_mean = +d.cache_misses_mean;
+    d.cache_misses_min = +d.cache_misses_min;
+    d.cache_misses_max = +d.cache_misses_max;
+
+    // Branch Misses
+    d.branch_misses_median = +d.branch_misses_median;
+    d.branch_misses_mean = +d.branch_misses_mean;
+    d.branch_misses_min = +d.branch_misses_min;
+    d.branch_misses_max = +d.branch_misses_max;
+
+    // TODO: Make sure this is necessary. The lines are messed up without doing this, but I don't understand why.
+    // Cache References
+    d.cache_references_median = +d.cache_references_median;
+    d.cache_references_mean = +d.cache_references_mean;
+    d.cache_references_min = +d.cache_references_min;
+    d.cache_references_max = +d.cache_references_max;
+
+    // Wall Time
+    d.wall_time_median = +d.wall_time_median;
+    d.wall_time_mean = +d.wall_time_mean;
+    d.wall_time_min = +d.wall_time_min;
+    d.wall_time_max = +d.wall_time_max;
+
+    // MaxRSS
+    d.maxrss = +d.maxrss;
+  });
+  // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
+  // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
+  // The order of the sort and timestamp adjustment must be like this, need to understand why.
+  data.sort(function(a, b) {
+    return orderZigVersions(a.zig_version, b.zig_version);
+  });
+
+  for (let i = 1; i < data.length; i += 1) {
+    if (data[i].commit_timestamp < data[i-1].commit_timestamp) {
+      // Pretend it was done 30 minutes after the previous timestamp.
+      data[i].commit_timestamp = new Date((+data[i-1].commit_timestamp) + (1000 * 60 * 30));
+    }
+  }
+  return data;
+});
+}
+
+// https://github.com/cocopon/tweakpane
 const pane = new Tweakpane.Pane();
 
 const options = {
@@ -193,8 +338,8 @@ const options = {
   line: "median",
   rangeArea: true,
   xInterval: "date",
-  yStart: "zero",
-  height: 200,
+  yStart: "min",
+  height: 175,
   primaryLineStrokeColor: '#8df',
 };
 
@@ -263,7 +408,8 @@ pane.on('change', (event) => {
 const containerDiv = document.getElementById("content").querySelector("div.container");
 
 console.log(data);
-  drawRangeAreaChart("Cache References", "cache_references", data, options, containerDiv);
+  // drawRangeAreaChart("Cache References", "cache_references", data, options, containerDiv);
+  loadBenchmarksJSON();
 });
 
 // pane.addInput(options, 'primaryLineStrokeColor');
@@ -332,86 +478,50 @@ function parseZigVersion(zig_version) {
   return [+semver[0], +semver[1], +semver[2], +rev];
 }
 
-var data;
-// https://stackoverflow.com/questions/57204863/loading-csv-data-and-save-results-to-a-variable
-// Massage the data
-d3.csv("records.csv").then(function (data) {
-  data.forEach(function (d) {
-    // Need to multiply the unix time by 1000 so the Date initializer works.
-    d.timestamp = new Date(d.timestamp * 1000);
-    d.commit_timestamp = new Date(d.commit_timestamp * 1000);
-    d.benchmark_name = d.benchmark_name;
-    d.zig_version = d.zig_version;
-    d.samples_taken = d.samples_taken;
 
-    // stime
-    d.stime_median = +d.stime_median;
-    d.stime_mean = +d.stime_mean;
-    d.stime_min = +d.stime_min;
-    d.stime_max = +d.stime_max;
 
-    // utime
-    d.utime_median = +d.utime_median;
-    d.utime_mean = +d.utime_mean;
-    d.utime_min = +d.utime_min;
-    d.utime_max = +d.utime_max;
+const loadEverything = async () => {
+  const benchmark_json = await loadBenchmarksJSON();
+  const records = await loadRecords();
+  // return benchmark_json;
+  // return records;
+  return {benchmark_json, records};
+}
 
-    // Instructions
-    d.instructions_median = +d.instructions_median;
-    d.instructions_mean = +d.instructions_mean;
-    d.instructions_min = +d.instructions_min;
-    d.instructions_max = +d.instructions_max;
-
-    // CPU Cycles
-    d.cpu_cycles_median = +d.cpu_cycles_median;
-    d.cpu_cycles_mean = +d.cpu_cycles_mean;
-    d.cpu_cyces_min = +d.cpu_cycles_min;
-    d.cpu_cycles_max = +d.cpu_cycles_max;
-
-    // Cache Misses
-    d.cache_misses_median = +d.cache_misses_median;
-    d.cache_misses_mean = +d.cache_misses_mean;
-    d.cache_misses_min = +d.cache_misses_min;
-    d.cache_misses_max = +d.cache_misses_max;
-
-    // Branch Misses
-    d.branch_misses_median = +d.branch_misses_median;
-    d.branch_misses_mean = +d.branch_misses_mean;
-    d.branch_misses_min = +d.branch_misses_min;
-    d.branch_misses_max = +d.branch_misses_max;
-
-    // TODO: Make sure this is necessary. The lines are messed up without doing this, but I don't understand why.
-    // Cache References
-    d.cache_references_median = +d.cache_references_median;
-    d.cache_references_mean = +d.cache_references_mean;
-    d.cache_references_min = +d.cache_references_min;
-    d.cache_references_max = +d.cache_references_max;
-
-    // Wall Time
-    d.wall_time_median = +d.wall_time_median;
-    d.wall_time_mean = +d.wall_time_mean;
-    d.wall_time_min = +d.wall_time_min;
-    d.wall_time_max = +d.wall_time_max;
-
-    // MaxRSS
-    d.maxrss = +d.maxrss;
-  });
-  data = data.filter(data => data.benchmark_name == "self-hosted-parser");
-  // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
-  // The order of the sort and timestamp adjustment must be like this, need to understand why.
-  data.sort(function(a, b) {
-    return orderZigVersions(a.zig_version, b.zig_version);
-  });
-
-  for (let i = 1; i < data.length; i += 1) {
-    if (data[i].commit_timestamp < data[i-1].commit_timestamp) {
-      // Pretend it was done 30 minutes after the previous timestamp.
-      data[i].commit_timestamp = new Date((+data[i-1].commit_timestamp) + (1000 * 60 * 30));
-    }
-  }
-  window.data = data
+loadEverything().then(data => {
+  for (let key in data.benchmark_json) {
+    createStructureForBenchmark(key, data.benchmark_json[key]);
+    console.log(key);
+    console.log(data.benchmark_json[key]);
+    const targetChartDiv = document.getElementById("chart-" + key);
+// const containerDiv = document.getElementById("content").querySelector("div.container");
+    const benchmark_data = data.records.filter(data => data.benchmark_name == key);
+    drawRangeAreaChart("CPU Cycles", "cpu_cycles", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("CPU Instructions", "instructions", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("Cache References", "cache_references", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("Cache Misses", "cache_misses", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("Wall Time", "wall_time", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("User-Space Time", "utime", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("Kernel Time", "stime", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("Branch Misses", "branch_misses", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart("Max RSS", "maxrss", benchmark_data, options, targetChartDiv);
+  };
+  console.log(data);
 });
+// loadEverything().then(data=> {console.log(data.1);});
+// loadBenchmarksJSON().then(json=> {
+//   return json;
 
+//   // for (let key in json) {
+//   //   drawRangeAreaChart("Cache References", "cache_references", data.filter(data => data.benchmark_name == key), options, containerDiv);
+//   //   drawRangeAreaChart("Cache Misses", "cache_misses", data.filter(data => data.benchmark_name == key), options, containerDiv);
+//   //   drawRangeAreaChart("Wall Time", "wall_time", data.filter(data => data.benchmark_name == key), options, containerDiv);
+//   // };
+
+// }).catch(error => { console.error(error); });
+
+// const fetchAsyncA = async () => 
+//   await (await fetch('https://api.github.com')).json()
 // This style is cool for the top graph: https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html
 
 function drawRangeAreaChart(title, measurement, data, options, toNode) {
@@ -420,10 +530,17 @@ const margin = {top: 10, right: 10, bottom: 20, left: 100};
 const width = toNode.clientWidth
 const height =  options.height;
 
-const maxKey = measurement + "_max";
-const minKey = measurement + "_min";
+let maxKey = measurement + "_max";
+let minKey = measurement + "_min";
+
+if (measurement == "maxrss") {
+  minKey = measurement;
+  maxKey = measurement;
+}
 let primaryMeasurementKey;
-if (options.line == "median") {
+if (measurement == "maxrss") {
+  primaryMeasurementKey = measurement;
+} else if (options.line == "median") {
   primaryMeasurementKey = measurement + "_median"
 } else if (options.line == "mean") {
   primaryMeasurementKey = measurement + "_mean"
@@ -594,7 +711,8 @@ const svg = d3.create("svg");
   //     .call(d3.axisLeft(yAxisMax));
 
   // containerDiv.appendChild(svg.node());
-  toNode.children[0].replaceWith(svg.node());
+  toNode.appendChild(svg.node());
+  // toNode.children[0].replaceWith(svg.node());
 // toNode.appendChild(svg.node());
   // document.body.replaceChild(svg.node(), toNode);
 };
