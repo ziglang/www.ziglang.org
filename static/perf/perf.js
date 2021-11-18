@@ -260,7 +260,10 @@ const resetDataButton = f2.addButton({
 
 pane.on('change', (event) => {
   console.log(options.height);
+const containerDiv = document.getElementById("content").querySelector("div.container");
 
+console.log(data);
+  drawRangeAreaChart(data, options, containerDiv);
 });
 
 // pane.addInput(options, 'primaryLineStrokeColor');
@@ -329,8 +332,9 @@ function parseZigVersion(zig_version) {
   return [+semver[0], +semver[1], +semver[2], +rev];
 }
 
-// This style is cool for the top graph: https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html
-
+var data;
+// https://stackoverflow.com/questions/57204863/loading-csv-data-and-save-results-to-a-variable
+// Massage the data
 d3.csv("records.csv").then(function (data) {
   data.forEach(function (d) {
     // Need to multiply the unix time by 1000 so the Date initializer works.
@@ -368,10 +372,15 @@ d3.csv("records.csv").then(function (data) {
       data[i].commit_timestamp = new Date((+data[i-1].commit_timestamp) + (1000 * 60 * 30));
     }
   }
+  window.data = data
+});
+
+// This style is cool for the top graph: https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html
+
+function drawRangeAreaChart(options, toNode) {
 
 const margin = {top: 10, right: 10, bottom: 20, left: 100};
-const containerDiv = document.getElementById("content").querySelector("div.container");
-const width = containerDiv.clientWidth
+const width = toNode.clientWidth
 const height =  options.height;
 
 const x = d3.scaleTime().range([margin.left, width - margin.right]);
@@ -379,12 +388,23 @@ const yAxisCPUInstructionsArea = d3.scaleLinear().range([height - margin.bottom,
 const yAxisCPUInstructionsMin = d3.scaleLinear().range([height - margin.bottom,  margin.top]);
 const yAxisCPUInstructionsMax = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 const yAxisCPUInstructionsMedian = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+if (options.yStart == "zero") {
+  yAxisCPUInstructionsMedian.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisCPUInstructionsArea.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisCPUInstructionsMin.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisCPUInstructionsMax.domain([0, d3.max(data, d => d.instructions_max)]);
+} else if (options.yStart == "min") {
   yAxisCPUInstructionsMedian.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsMedian.domain([0, d3.max(data, d => d.instructions_max)]);
   yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsArea.domain([0, d3.max(data, d => d.instructions_max)]);
   yAxisCPUInstructionsMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
   yAxisCPUInstructionsMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+}
+  // yAxisCPUInstructionsMedian.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsMedian.domain([0, d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsArea.domain([0, d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisCPUInstructionsMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
   // yAxisCPUInstructionsMedian.domain(d3.extent(data, d=> d.instructions_median));
   // yAxisCPUInstructionsArea.domain(d3.extent(data, d=> d.instructions_median));
   // yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
@@ -463,10 +483,11 @@ const svg = d3.create("svg");
 
   x.domain(d3.extent(data, function (d) { return d.commit_timestamp; }));
 
+  if (options.rangeArea) {
   // Min/Max Range Area
   svg.append("path")
-      .data([data])
-      .attr("fill-opacity", 0.10)
+  .data([data])
+  .attr("fill-opacity", 0.10)
       // .attr("fill", "blue")
       .attr("fill", areaFillColor)
       .attr("d", cpuInstructionsArea)
@@ -474,24 +495,25 @@ const svg = d3.create("svg");
 
   // min
   svg.append("path")
-      .data([data])
-      .attr("transform", "translate(0,0)")
-      .style("stroke", areaStrokeColor)
-      .attr("fill", "none")
-      .attr("stroke-opacity", 0.4)
-      .attr("class", "line")
-      .attr("d", cpuInstructionsMinLine)
+  .data([data])
+  .attr("transform", "translate(0,0)")
+  .style("stroke", areaStrokeColor)
+  .attr("fill", "none")
+  .attr("stroke-opacity", 0.4)
+  .attr("class", "line")
+  .attr("d", cpuInstructionsMinLine)
 
   // // max
   svg.append("path")
-      .data([data])
-      .attr("transform", "translate(0,0)")
-      .attr("fill", "none")
-      .style("stroke", areaStrokeColor)
+  .data([data])
+  .attr("transform", "translate(0,0)")
+  .attr("fill", "none")
+  .style("stroke", areaStrokeColor)
       // .style("stroke", "blue")
       .attr("stroke-opacity", 0.4)
       .attr("class", "line")
       .attr("d", cpuInstructionsMaxLine)
+    }
 
 
   // Median Line Chart
@@ -526,8 +548,11 @@ const svg = d3.create("svg");
   // svg.append("g")
   //     .call(d3.axisLeft(yAxisCPUInstructionsMax));
 
-  containerDiv.appendChild(svg.node());
-});
+  // containerDiv.appendChild(svg.node());
+  toNode.children[0].replaceWith(svg.node());
+// toNode.appendChild(svg.node());
+  // document.body.replaceChild(svg.node(), toNode);
+};
 
 // function BenchmarkChart(data, {
 // });
