@@ -212,7 +212,7 @@ options: [
 f1.addInput(options, 'line', {
 options: [
     {text: 'Median', value: 'median'},
-    {text: 'Average', value: 'average'},
+    {text: 'Mean', value: 'mean'},
     {text: 'Minimum', value: 'minimum'},
     {text: 'Maximum', value: 'maximum'},
   ],
@@ -263,7 +263,7 @@ pane.on('change', (event) => {
 const containerDiv = document.getElementById("content").querySelector("div.container");
 
 console.log(data);
-  drawRangeAreaChart(data, options, containerDiv);
+  drawRangeAreaChart("Title", "cache_references", data, options, containerDiv);
 });
 
 // pane.addInput(options, 'primaryLineStrokeColor');
@@ -342,22 +342,59 @@ d3.csv("records.csv").then(function (data) {
     d.commit_timestamp = new Date(d.commit_timestamp * 1000);
     d.benchmark_name = d.benchmark_name;
     d.zig_version = d.zig_version;
+    d.samples_taken = d.samples_taken;
+
+    // stime
+    d.stime_median = +d.stime_median;
+    d.stime_mean = +d.stime_mean;
+    d.stime_min = +d.stime_min;
+    d.stime_max = +d.stime_max;
+
+    // utime
+    d.utime_median = +d.utime_median;
+    d.utime_mean = +d.utime_mean;
+    d.utime_min = +d.utime_min;
+    d.utime_max = +d.utime_max;
+
     // Instructions
-    // d.instructions_median = +d.instructions_median;
-    // d.instructions_min = +d.instructions_min;
-    // d.instructions_max = +d.instructions_max;
+    d.instructions_median = +d.instructions_median;
+    d.instructions_mean = +d.instructions_mean;
+    d.instructions_min = +d.instructions_min;
+    d.instructions_max = +d.instructions_max;
+
     // CPU Cycles
-    // d.instructions_median = +d.cpu_cycles_median;
-    // d.instructions_min = +d.cpu_cycles_min;
-    // d.instructions_max = +d.cpu_cycles_max;
+    d.cpu_cycles_median = +d.cpu_cycles_median;
+    d.cpu_cycles_mean = +d.cpu_cycles_mean;
+    d.cpu_cyces_min = +d.cpu_cycles_min;
+    d.cpu_cycles_max = +d.cpu_cycles_max;
+
     // Cache Misses
-    // d.instructions_median = +d.cache_misses_median;
-    // d.instructions_min = +d.cache_misses_min;
-    // d.instructions_max = +d.cache_misses_max;
+    d.cache_misses_median = +d.cache_misses_median;
+    d.cache_misses_mean = +d.cache_misses_mean;
+    d.cache_misses_min = +d.cache_misses_min;
+    d.cache_misses_max = +d.cache_misses_max;
+
+    // Branch Misses
+    d.branch_misses_median = +d.branch_misses_median;
+    d.branch_misses_mean = +d.branch_misses_mean;
+    d.branch_misses_min = +d.branch_misses_min;
+    d.branch_misses_max = +d.branch_misses_max;
+
+    // TODO: Make sure this is necessary. The lines are messed up without doing this, but I don't understand why.
     // Cache References
-    d.instructions_median = +d.cache_references_median;
-    d.instructions_min = +d.cache_references_min;
-    d.instructions_max = +d.cache_references_max;
+    d.cache_references_median = +d.cache_references_median;
+    d.cache_references_mean = +d.cache_references_mean;
+    d.cache_references_min = +d.cache_references_min;
+    d.cache_references_max = +d.cache_references_max;
+
+    // Wall Time
+    d.wall_time_median = +d.wall_time_median;
+    d.wall_time_mean = +d.wall_time_mean;
+    d.wall_time_min = +d.wall_time_min;
+    d.wall_time_max = +d.wall_time_max;
+
+    // MaxRSS
+    d.maxrss = +d.maxrss;
   });
   data = data.filter(data => data.benchmark_name == "self-hosted-parser");
   // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
@@ -377,11 +414,26 @@ d3.csv("records.csv").then(function (data) {
 
 // This style is cool for the top graph: https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html
 
-function drawRangeAreaChart(options, toNode) {
+function drawRangeAreaChart(title, measurement, data, options, toNode) {
 
 const margin = {top: 10, right: 10, bottom: 20, left: 100};
 const width = toNode.clientWidth
 const height =  options.height;
+
+const maxKey = measurement + "_max";
+const minKey = measurement + "_min";
+let primaryMeasurementKey;
+if (options.line == "median") {
+  primaryMeasurementKey = measurement + "_median"
+} else if (options.line == "mean") {
+  primaryMeasurementKey = measurement + "_mean"
+} else if (options.line == "minimum") {
+  primaryMeasurementKey = measurement + "_min"
+} else if (options.line == "maximum") {
+  primaryMeasurementKey = measurement + "_max"
+}
+// const medianKey = measurement + "_median";
+// const meanKey = measurement + "_mean";
 
 const x = d3.scaleTime().range([margin.left, width - margin.right]);
 const yAxisArea = d3.scaleLinear().range([height - margin.bottom, margin.top]);
@@ -389,36 +441,16 @@ const yAxisMin = d3.scaleLinear().range([height - margin.bottom,  margin.top]);
 const yAxisMax = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 const yAxisPrimaryMeasurement = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 if (options.yStart == "zero") {
-  yAxisPrimaryMeasurement.domain([0, d3.max(data, d => d.instructions_max)]);
-  yAxisArea.domain([0, d3.max(data, d => d.instructions_max)]);
-  yAxisMin.domain([0, d3.max(data, d => d.instructions_max)]);
-  yAxisMax.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisPrimaryMeasurement.domain([0, d3.max(data, d => d[maxKey])]);
+  yAxisArea.domain([0, d3.max(data, d => d[maxKey])]);
+  yAxisMin.domain([0, d3.max(data, d => d[maxKey])]);
+  yAxisMax.domain([0, d3.max(data, d => d[maxKey])]);
 } else if (options.yStart == "min") {
-  yAxisPrimaryMeasurement.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  yAxisArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  yAxisMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  yAxisMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  yAxisPrimaryMeasurement.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
+  yAxisArea.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
+  yAxisMin.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
+  yAxisMax.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
 }
-  // yAxisPrimaryMeasurement.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisPrimaryMeasurement.domain([0, d3.max(data, d => d.instructions_max)]);
-  // yAxisArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisArea.domain([0, d3.max(data, d => d.instructions_max)]);
-  // yAxisMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisPrimaryMeasurement.domain(d3.extent(data, d=> d.instructions_median));
-  // yAxisArea.domain(d3.extent(data, d=> d.instructions_median));
-  // yAxisArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-// const cpuInstructionsMin = d3.scaleLinear().range([height,  0]);
-// const yCacheMissesMin = d3.scaleLinear().range([height,  0]);
-// const yCacheMisses = d3.scaleLinear().range([height,  0]);
-
-// const line = d3.line()
-//     .x(function (data) {
-//       return x(data.timestamp);
-//     })
-//     .y(function (data) {
-//       return y(data.branch_misses_median);
-//     });
 
 const minLine = d3.line()
     .curve(d3.curveLinear)
@@ -426,7 +458,7 @@ const minLine = d3.line()
       return x(data.commit_timestamp);
     })
     .y(function (data) {
-      return yAxisMin(data.instructions_min);
+      return yAxisMin(data[minKey]);
     });
 const maxLine = d3.line()
     // .curve(d3.curveCatmullRom)
@@ -435,7 +467,7 @@ const maxLine = d3.line()
       return x(data.commit_timestamp);
     })
     .y(function (data) {
-      return yAxisMax(data.instructions_max);
+      return yAxisMax(data[maxKey]);
     });
 
 const primaryMeasurementLine = d3.line()
@@ -445,7 +477,7 @@ const primaryMeasurementLine = d3.line()
       return x(data.commit_timestamp);
     })
     .y(function (data) {
-      return yAxisPrimaryMeasurement(data.instructions_median);
+      return yAxisPrimaryMeasurement(data[primaryMeasurementKey]);
     });
 
 const area = d3.area()
@@ -455,10 +487,10 @@ const area = d3.area()
       return x(data.commit_timestamp);
     })
     .y0(function (data) {
-      return yAxisArea(data.instructions_min);
+      return yAxisArea(data[minKey]);
     })
     .y1(function (data) {
-      return yAxisArea(data.instructions_max);
+      return yAxisArea(data[maxKey]);
     })
 
 ;
