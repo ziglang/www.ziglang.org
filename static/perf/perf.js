@@ -263,7 +263,7 @@ pane.on('change', (event) => {
 const containerDiv = document.getElementById("content").querySelector("div.container");
 
 console.log(data);
-  drawRangeAreaChart("Title", "cache_references", data, options, containerDiv);
+  drawRangeAreaChart("Cache References", "cache_references", data, options, containerDiv);
 });
 
 // pane.addInput(options, 'primaryLineStrokeColor');
@@ -563,13 +563,26 @@ const svg = d3.create("svg");
       // X-Axis
   svg.append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
+      .attr("font-family", "ui-monospace")
       .call(d3.axisBottom(x));
 
   // Y-Axis
   svg.append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
+          .attr("font-family", "ui-monospace")
       .call(d3.axisLeft(yAxisArea).ticks(height / 80));
 
+      // Y-Axis title
+      svg.append("g")
+      .call(g => g.append("text")
+          .attr("transform", "rotate(-90)")
+          .style("text-anchor", "middle")
+          .attr("x", -(height / 2)) // with the -90 degree rotation this becomes the y
+          .attr("y", 20) // new x
+          .attr("fill", primaryLineStrokeColor)
+          .attr("font-family", "system-ui")
+          .style("font-size", "14px")
+          .text(title));
 
       svg//.selectAll()
       .data([data])
