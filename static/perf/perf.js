@@ -384,30 +384,30 @@ const width = toNode.clientWidth
 const height =  options.height;
 
 const x = d3.scaleTime().range([margin.left, width - margin.right]);
-const yAxisCPUInstructionsArea = d3.scaleLinear().range([height - margin.bottom, margin.top]);
-const yAxisCPUInstructionsMin = d3.scaleLinear().range([height - margin.bottom,  margin.top]);
-const yAxisCPUInstructionsMax = d3.scaleLinear().range([height - margin.bottom, margin.top]);
-const yAxisCPUInstructionsMedian = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+const yAxisArea = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+const yAxisMin = d3.scaleLinear().range([height - margin.bottom,  margin.top]);
+const yAxisMax = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+const yAxisPrimaryMeasurement = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 if (options.yStart == "zero") {
-  yAxisCPUInstructionsMedian.domain([0, d3.max(data, d => d.instructions_max)]);
-  yAxisCPUInstructionsArea.domain([0, d3.max(data, d => d.instructions_max)]);
-  yAxisCPUInstructionsMin.domain([0, d3.max(data, d => d.instructions_max)]);
-  yAxisCPUInstructionsMax.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisPrimaryMeasurement.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisArea.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisMin.domain([0, d3.max(data, d => d.instructions_max)]);
+  yAxisMax.domain([0, d3.max(data, d => d.instructions_max)]);
 } else if (options.yStart == "min") {
-  yAxisCPUInstructionsMedian.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  yAxisCPUInstructionsMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  yAxisCPUInstructionsMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  yAxisPrimaryMeasurement.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  yAxisArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  yAxisMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  yAxisMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
 }
-  // yAxisCPUInstructionsMedian.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsMedian.domain([0, d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsArea.domain([0, d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
-  // yAxisCPUInstructionsMedian.domain(d3.extent(data, d=> d.instructions_median));
-  // yAxisCPUInstructionsArea.domain(d3.extent(data, d=> d.instructions_median));
-  // yAxisCPUInstructionsArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisPrimaryMeasurement.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisPrimaryMeasurement.domain([0, d3.max(data, d => d.instructions_max)]);
+  // yAxisArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisArea.domain([0, d3.max(data, d => d.instructions_max)]);
+  // yAxisMin.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisMax.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
+  // yAxisPrimaryMeasurement.domain(d3.extent(data, d=> d.instructions_median));
+  // yAxisArea.domain(d3.extent(data, d=> d.instructions_median));
+  // yAxisArea.domain([d3.min(data, d => d.instructions_min), d3.max(data, d => d.instructions_max)]);
 // const cpuInstructionsMin = d3.scaleLinear().range([height,  0]);
 // const yCacheMissesMin = d3.scaleLinear().range([height,  0]);
 // const yCacheMisses = d3.scaleLinear().range([height,  0]);
@@ -420,45 +420,45 @@ if (options.yStart == "zero") {
 //       return y(data.branch_misses_median);
 //     });
 
-const cpuInstructionsMinLine = d3.line()
+const minLine = d3.line()
     .curve(d3.curveLinear)
     .x(function (data) {
       return x(data.commit_timestamp);
     })
     .y(function (data) {
-      return yAxisCPUInstructionsMin(data.instructions_min);
+      return yAxisMin(data.instructions_min);
     });
-const cpuInstructionsMaxLine = d3.line()
+const maxLine = d3.line()
     // .curve(d3.curveCatmullRom)
     .curve(d3.curveLinear)
     .x(function (data) {
       return x(data.commit_timestamp);
     })
     .y(function (data) {
-      return yAxisCPUInstructionsMax(data.instructions_max);
+      return yAxisMax(data.instructions_max);
     });
 
-const cpuInstructionsMedianLine = d3.line()
+const primaryMeasurementLine = d3.line()
     // .curve(d3.curveCatmullRom)
     .curve(d3.curveLinear)
     .x(function (data) {
       return x(data.commit_timestamp);
     })
     .y(function (data) {
-      return yAxisCPUInstructionsMedian(data.instructions_median);
+      return yAxisPrimaryMeasurement(data.instructions_median);
     });
 
-const cpuInstructionsArea = d3.area()
+const area = d3.area()
     .curve(d3.curveLinear)
     // .curve(d3.curveCatmullRom)
     .x(function (data) {
       return x(data.commit_timestamp);
     })
     .y0(function (data) {
-      return yAxisCPUInstructionsArea(data.instructions_min);
+      return yAxisArea(data.instructions_min);
     })
     .y1(function (data) {
-      return yAxisCPUInstructionsArea(data.instructions_max);
+      return yAxisArea(data.instructions_max);
     })
 
 ;
@@ -490,7 +490,7 @@ const svg = d3.create("svg");
   .attr("fill-opacity", 0.10)
       // .attr("fill", "blue")
       .attr("fill", areaFillColor)
-      .attr("d", cpuInstructionsArea)
+      .attr("d", area)
 
 
   // min
@@ -501,7 +501,7 @@ const svg = d3.create("svg");
   .attr("fill", "none")
   .attr("stroke-opacity", 0.4)
   .attr("class", "line")
-  .attr("d", cpuInstructionsMinLine)
+  .attr("d", minLine)
 
   // // max
   svg.append("path")
@@ -512,7 +512,7 @@ const svg = d3.create("svg");
       // .style("stroke", "blue")
       .attr("stroke-opacity", 0.4)
       .attr("class", "line")
-      .attr("d", cpuInstructionsMaxLine)
+      .attr("d", maxLine)
     }
 
 
@@ -526,7 +526,7 @@ const svg = d3.create("svg");
       // .style("stroke", "#aaaa00")
       .attr("stroke-opacity", 1.0)
       .attr("class", "line")
-      .attr("d", cpuInstructionsMedianLine)
+      .attr("d", primaryMeasurementLine)
 
       // X-Axis
   svg.append("g")
@@ -536,7 +536,7 @@ const svg = d3.create("svg");
   // Y-Axis
   svg.append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(yAxisCPUInstructionsArea).ticks(height / 80));
+      .call(d3.axisLeft(yAxisArea).ticks(height / 80));
 
 
       svg//.selectAll()
@@ -546,7 +546,7 @@ const svg = d3.create("svg");
     .on("mousemove", mouseMove)
     .on("mouseleave", mouseLeave)
   // svg.append("g")
-  //     .call(d3.axisLeft(yAxisCPUInstructionsMax));
+  //     .call(d3.axisLeft(yAxisMax));
 
   // containerDiv.appendChild(svg.node());
   toNode.children[0].replaceWith(svg.node());
