@@ -511,27 +511,25 @@ loadEverything().then(data => {
 
 
 function makeCharts() {
-  for (let key in benchmark_json) {
-    createStructureForBenchmark(key, benchmark_json[key]);
-    console.log(key);
-    console.log(benchmark_json[key]);
-    const targetChartDiv = document.getElementById("chart-" + key);
+  Object.keys(benchmark_json).forEach(benchmarkName => {
+    createStructureForBenchmark(benchmarkName, benchmark_json[benchmarkName]);
+
+    // Remove the old charts
+    const targetChartDiv = document.getElementById("chart-" + benchmarkName);
     while (targetChartDiv.firstChild) {
       targetChartDiv.removeChild(targetChartDiv.firstChild);
     }
     // const targetChartDiv = document.getElementById("chart-" + key);
 // const containerDiv = document.getElementById("content").querySelector("div.container");
-    const benchmark_data = records.filter(data => data.benchmark_name == key);
-    drawRangeAreaChart(key, "cpu_cycles", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "instructions", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "cache_references", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "cache_misses", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "wall_time", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "utime", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "stime", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "branch_misses", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "maxrss", benchmark_data, options, targetChartDiv);
-  };
+
+    const benchmark_data = records.filter(data => data.benchmark_name == benchmarkName);
+
+    Object.keys(MEASUREMENT_TITLES).forEach(measurement => {
+      // debugger;
+    drawRangeAreaChart(benchmarkName, measurement, benchmark_data, options, targetChartDiv);
+    });
+  })
+  ;
 }
 
 // loadEverything().then(data=> {console.log(data.1);});
