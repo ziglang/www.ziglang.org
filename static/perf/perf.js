@@ -183,11 +183,6 @@ const column_types = {
 })();
 */
 
-// Line hover crosshair and stuff:
-// http://bl.ocks.org/mikehadlow/93b471e569e31af07cd3
-// https://medium.com/@louisemoxy/create-an-accurate-tooltip-for-a-d3-area-chart-bf59783f8a2d
-
-
 function createStructureForBenchmark(key, benchmark) {
     const div = document.createElement("div");
     div.classList.add("benchmark");
@@ -405,11 +400,7 @@ const resetDataButton = f2.addButton({
 
 pane.on('change', (event) => {
   console.log(options.height);
-const containerDiv = document.getElementById("content").querySelector("div.container");
-
-console.log(data);
-  // drawRangeAreaChart("Cache References", "cache_references", data, options, containerDiv);
-  loadBenchmarksJSON();
+  makeCharts();
 });
 
 // pane.addInput(options, 'primaryLineStrokeColor');
@@ -480,22 +471,39 @@ function parseZigVersion(zig_version) {
 
 
 
+var benchmark_json;
+var records;
+
 const loadEverything = async () => {
+  console.info("Loading CSV/JSON data.");
   const benchmark_json = await loadBenchmarksJSON();
   const records = await loadRecords();
-  // return benchmark_json;
-  // return records;
   return {benchmark_json, records};
 }
 
 loadEverything().then(data => {
-  for (let key in data.benchmark_json) {
-    createStructureForBenchmark(key, data.benchmark_json[key]);
+  records = data.records;
+  benchmark_json = data.benchmark_json;
+  console.info("Data loaded.");
+  console.info(`records.csv loaded. It contains ${records.length} records.`);
+  console.info(`benchmarks.json file contains ${Object.keys(benchmark_json).length} benchmark metadata objects.`);
+  // debugger;
+  makeCharts();
+});
+
+
+function makeCharts() {
+  for (let key in benchmark_json) {
+    createStructureForBenchmark(key, benchmark_json[key]);
     console.log(key);
-    console.log(data.benchmark_json[key]);
+    console.log(benchmark_json[key]);
     const targetChartDiv = document.getElementById("chart-" + key);
+    while (targetChartDiv.firstChild) {
+      targetChartDiv.removeChild(targetChartDiv.firstChild);
+    }
+    // const targetChartDiv = document.getElementById("chart-" + key);
 // const containerDiv = document.getElementById("content").querySelector("div.container");
-    const benchmark_data = data.records.filter(data => data.benchmark_name == key);
+    const benchmark_data = records.filter(data => data.benchmark_name == key);
     drawRangeAreaChart("CPU Cycles", "cpu_cycles", benchmark_data, options, targetChartDiv);
     drawRangeAreaChart("CPU Instructions", "instructions", benchmark_data, options, targetChartDiv);
     drawRangeAreaChart("Cache References", "cache_references", benchmark_data, options, targetChartDiv);
@@ -506,8 +514,8 @@ loadEverything().then(data => {
     drawRangeAreaChart("Branch Misses", "branch_misses", benchmark_data, options, targetChartDiv);
     drawRangeAreaChart("Max RSS", "maxrss", benchmark_data, options, targetChartDiv);
   };
-  console.log(data);
-});
+}
+
 // loadEverything().then(data=> {console.log(data.1);});
 // loadBenchmarksJSON().then(json=> {
 //   return json;
@@ -522,7 +530,6 @@ loadEverything().then(data => {
 
 // const fetchAsyncA = async () => 
 //   await (await fetch('https://api.github.com')).json()
-// This style is cool for the top graph: https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html
 
 function drawRangeAreaChart(title, measurement, data, options, toNode) {
 
