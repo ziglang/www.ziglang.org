@@ -560,6 +560,7 @@ if (measurement == "maxrss") {
   minKey = measurement;
   maxKey = measurement;
 }
+
 let primaryMeasurementKey;
 if (measurement == "maxrss") {
   primaryMeasurementKey = measurement;
@@ -572,8 +573,13 @@ if (measurement == "maxrss") {
 } else if (options.line == "maximum") {
   primaryMeasurementKey = measurement + "_max"
 }
-// const medianKey = measurement + "_median";
-// const meanKey = measurement + "_mean";
+
+if (options.rangeArea == false) {
+  // If we aren't displaying the area chart with min/max values, we want our min/max to be calculated using the
+  // primary measurement, since we're only drawing that line. Otherwise we waste a lot of vertical space showing a larger, but unused range.
+  minKey = primaryMeasurementKey
+  maxKey = primaryMeasurementKey
+}
 
 const x = d3.scaleTime().range([margin.left, width - margin.right]);
 const yAxisArea = d3.scaleLinear().range([height - margin.bottom, margin.top]);
