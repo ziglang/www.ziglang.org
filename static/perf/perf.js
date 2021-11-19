@@ -1,3 +1,19 @@
+
+const MEASUREMENT_TITLES = {
+  cpu_cycles: "CPU Cycles",
+  instructions:"CPU Instructions", 
+  cache_references: "Cache References",
+  cache_misses: "Cache Misses",
+  wall_time: "Wall Time",
+  utime: "User-Space Time", 
+  stime: "Kernel Time",
+  branch_misses: "Branch Misses",
+  maxrss: "Max RSS",
+};
+
+function getTitle(measurement) {
+  return MEASUREMENT_TITLES[measurement];
+}
 /*
 const column_types = {
   timestamp: 'date',
@@ -403,6 +419,8 @@ pane.on('change', (event) => {
   makeCharts();
 });
 
+// window.addEventListener('resize', makeCharts);
+
 // pane.addInput(options, 'primaryLineStrokeColor');
 const tooltipDiv = document.createElement("div");
 tooltipDiv.id = "tooltip";
@@ -504,15 +522,15 @@ function makeCharts() {
     // const targetChartDiv = document.getElementById("chart-" + key);
 // const containerDiv = document.getElementById("content").querySelector("div.container");
     const benchmark_data = records.filter(data => data.benchmark_name == key);
-    drawRangeAreaChart(key, "CPU Cycles", "cpu_cycles", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "CPU Instructions", "instructions", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "Cache References", "cache_references", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "Cache Misses", "cache_misses", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "Wall Time", "wall_time", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "User-Space Time", "utime", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "Kernel Time", "stime", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "Branch Misses", "branch_misses", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart(key, "Max RSS", "maxrss", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "cpu_cycles", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "instructions", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "cache_references", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "cache_misses", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "wall_time", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "utime", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "stime", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "branch_misses", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "maxrss", benchmark_data, options, targetChartDiv);
   };
 }
 
@@ -531,7 +549,7 @@ function makeCharts() {
 // const fetchAsyncA = async () => 
 //   await (await fetch('https://api.github.com')).json()
 
-function drawRangeAreaChart(benchmark, title, measurement, data, options, toNode) {
+function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
 const margin = {top: 10, right: 10, bottom: 20, left: 100};
 const width = toNode.clientWidth
@@ -616,15 +634,7 @@ const area = d3.area()
     .y1(function (data) {
       return yAxisArea(data[maxKey]);
     })
-
 ;
-// const primaryLineStrokeColor = d3.schemePaired[0];
-// const areaFillColor = d3.schemePaired[1];
-// const areaStrokeColor = d3.schemePaired[1];
-
-const primaryLineStrokeColor = d3.schemeDark2[0];
-const areaFillColor = d3.schemePastel2[0];
-const areaStrokeColor = d3.schemePastel2[0];
 
 const svg = d3.create("svg");
   svg
@@ -690,7 +700,7 @@ const svg = d3.create("svg");
           .attr("class", `axis y title`)
           .attr("x", -(height / 2)) // with the -90 degree rotation this becomes the y
           .attr("y", 20) // new x
-          .text(title));
+          .text(getTitle(measurement)));
 
       svg//.selectAll()
       .data([data])
