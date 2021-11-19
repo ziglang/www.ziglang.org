@@ -587,15 +587,17 @@ const yAxisMin = d3.scaleLinear().range([height - margin.bottom,  margin.top]);
 const yAxisMax = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 const yAxisPrimaryMeasurement = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 if (options.yStart == "zero") {
-  yAxisPrimaryMeasurement.domain([0, d3.max(data, d => d[maxKey])]);
-  yAxisArea.domain([0, d3.max(data, d => d[maxKey])]);
-  yAxisMin.domain([0, d3.max(data, d => d[maxKey])]);
-  yAxisMax.domain([0, d3.max(data, d => d[maxKey])]);
+  const DOMAIN = [0, d3.max(data, d => d[maxKey])];
+  yAxisPrimaryMeasurement.domain(DOMAIN);
+  yAxisArea.domain(DOMAIN);
+  yAxisMin.domain(DOMAIN);
+  yAxisMax.domain(DOMAIN);
 } else if (options.yStart == "min") {
-  yAxisPrimaryMeasurement.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
-  yAxisArea.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
-  yAxisMin.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
-  yAxisMax.domain([d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])]);
+  const DOMAIN = [d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])];
+  yAxisPrimaryMeasurement.domain(DOMAIN);
+  yAxisArea.domain(DOMAIN);
+  yAxisMin.domain(DOMAIN);
+  yAxisMax.domain(DOMAIN);
 }
 
 const minLine = d3.line()
