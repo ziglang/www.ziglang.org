@@ -643,31 +643,30 @@ const svg = d3.create("svg");
   // Min/Max Range Area
   svg.append("path")
   .data([data])
+  .attr("class", "area range")
   .attr("fill-opacity", 0.10)
-      // .attr("fill", "blue")
-      .attr("fill", areaFillColor)
-      .attr("d", area)
+  .attr("fill", areaFillColor)
+  .attr("d", area)
 
 
   // min
   svg.append("path")
   .data([data])
   .attr("transform", "translate(0,0)")
+  .attr("class", "line min")
   .style("stroke", areaStrokeColor)
   .attr("fill", "none")
   .attr("stroke-opacity", 0.4)
-  .attr("class", "line")
   .attr("d", minLine)
 
   // // max
   svg.append("path")
   .data([data])
   .attr("transform", "translate(0,0)")
+  .attr("class", "line max")
   .attr("fill", "none")
   .style("stroke", areaStrokeColor)
-      // .style("stroke", "blue")
       .attr("stroke-opacity", 0.4)
-      .attr("class", "line")
       .attr("d", maxLine)
     }
 
@@ -675,31 +674,34 @@ const svg = d3.create("svg");
   // Median Line Chart
   svg.append("path")
       .data([data])
+      .attr("class", "line primary")
       // .attr("transform", "translate(" + margin.bottom + "," + margin.left + ")")
       .attr("fill", "none")
       .attr("stroke-width", 1.0)
       .style("stroke", primaryLineStrokeColor)
       // .style("stroke", "#aaaa00")
       .attr("stroke-opacity", 1.0)
-      .attr("class", "line")
       .attr("d", primaryMeasurementLine)
 
       // X-Axis
   svg.append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
+      .attr("class", "axis x")
       .attr("font-family", "ui-monospace")
       .call(d3.axisBottom(x));
 
   // Y-Axis
   svg.append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
-          .attr("font-family", "ui-monospace")
+      .attr("class", "axis y")
+      .attr("font-family", "ui-monospace")
       .call(d3.axisLeft(yAxisArea).ticks(height / 80));
 
       // Y-Axis title
       svg.append("g")
       .call(g => g.append("text")
           .attr("transform", "rotate(-90)")
+          .attr("class", "axis y title")
           .style("text-anchor", "middle")
           .attr("x", -(height / 2)) // with the -90 degree rotation this becomes the y
           .attr("y", 20) // new x
