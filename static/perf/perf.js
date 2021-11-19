@@ -504,15 +504,15 @@ function makeCharts() {
     // const targetChartDiv = document.getElementById("chart-" + key);
 // const containerDiv = document.getElementById("content").querySelector("div.container");
     const benchmark_data = records.filter(data => data.benchmark_name == key);
-    drawRangeAreaChart("CPU Cycles", "cpu_cycles", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("CPU Instructions", "instructions", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("Cache References", "cache_references", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("Cache Misses", "cache_misses", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("Wall Time", "wall_time", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("User-Space Time", "utime", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("Kernel Time", "stime", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("Branch Misses", "branch_misses", benchmark_data, options, targetChartDiv);
-    drawRangeAreaChart("Max RSS", "maxrss", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "CPU Cycles", "cpu_cycles", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "CPU Instructions", "instructions", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "Cache References", "cache_references", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "Cache Misses", "cache_misses", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "Wall Time", "wall_time", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "User-Space Time", "utime", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "Kernel Time", "stime", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "Branch Misses", "branch_misses", benchmark_data, options, targetChartDiv);
+    drawRangeAreaChart(key, "Max RSS", "maxrss", benchmark_data, options, targetChartDiv);
   };
 }
 
@@ -531,7 +531,7 @@ function makeCharts() {
 // const fetchAsyncA = async () => 
 //   await (await fetch('https://api.github.com')).json()
 
-function drawRangeAreaChart(title, measurement, data, options, toNode) {
+function drawRangeAreaChart(benchmark, title, measurement, data, options, toNode) {
 
 const margin = {top: 10, right: 10, bottom: 20, left: 100};
 const width = toNode.clientWidth
@@ -631,6 +631,7 @@ const svg = d3.create("svg");
     .attr("width", width)
     .attr("height", height)
     .attr("viewBox", [0, 0, width, height])
+    .attr("class", `${benchmark} ${measurement}`)
     .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
     .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
@@ -643,9 +644,7 @@ const svg = d3.create("svg");
   // Min/Max Range Area
   svg.append("path")
   .data([data])
-  .attr("class", "area range")
-  .attr("fill-opacity", 0.10)
-  .attr("fill", areaFillColor)
+  .attr("class", `area range`)
   .attr("d", area)
 
 
@@ -653,20 +652,14 @@ const svg = d3.create("svg");
   svg.append("path")
   .data([data])
   .attr("transform", "translate(0,0)")
-  .attr("class", "line min")
-  .style("stroke", areaStrokeColor)
-  .attr("fill", "none")
-  .attr("stroke-opacity", 0.4)
+  .attr("class", `line min`)
   .attr("d", minLine)
 
   // // max
   svg.append("path")
   .data([data])
   .attr("transform", "translate(0,0)")
-  .attr("class", "line max")
-  .attr("fill", "none")
-  .style("stroke", areaStrokeColor)
-      .attr("stroke-opacity", 0.4)
+  .attr("class", `line max`)
       .attr("d", maxLine)
     }
 
@@ -674,40 +667,29 @@ const svg = d3.create("svg");
   // Median Line Chart
   svg.append("path")
       .data([data])
-      .attr("class", "line primary")
+      .attr("class", `line primary ${measurement}`)
       // .attr("transform", "translate(" + margin.bottom + "," + margin.left + ")")
-      .attr("fill", "none")
-      .attr("stroke-width", 1.0)
-      .style("stroke", primaryLineStrokeColor)
-      // .style("stroke", "#aaaa00")
-      .attr("stroke-opacity", 1.0)
       .attr("d", primaryMeasurementLine)
 
       // X-Axis
   svg.append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
       .attr("class", "axis x")
-      .attr("font-family", "ui-monospace")
       .call(d3.axisBottom(x));
 
   // Y-Axis
   svg.append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
       .attr("class", "axis y")
-      .attr("font-family", "ui-monospace")
       .call(d3.axisLeft(yAxisArea).ticks(height / 80));
 
       // Y-Axis title
       svg.append("g")
       .call(g => g.append("text")
           .attr("transform", "rotate(-90)")
-          .attr("class", "axis y title")
-          .style("text-anchor", "middle")
+          .attr("class", `axis y title`)
           .attr("x", -(height / 2)) // with the -90 degree rotation this becomes the y
           .attr("y", 20) // new x
-          .attr("fill", primaryLineStrokeColor)
-          .attr("font-family", "system-ui")
-          .style("font-size", "14px")
           .text(title));
 
       svg//.selectAll()
