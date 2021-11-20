@@ -622,14 +622,14 @@ const svg = d3.create("svg");
   .attr("d", area)
 
 
-  // min
+  // Min
   svg.append("path")
   .data([data])
   .attr("transform", "translate(0,0)")
   .attr("class", `line min`)
   .attr("d", minLine)
 
-  // // max
+  // Max
   svg.append("path")
   .data([data])
   .attr("transform", "translate(0,0)")
@@ -735,10 +735,9 @@ const svg = d3.create("svg");
       });
 
 
-      svg//.selectAll()
+      svg
       .data([data])
-      // .enter()
-      .on("mouseover", (event) => {
+      .on("mouseover", (event, data) => {
         // Show a circle for each data point
         svg.selectAll('circle')
         .transition()
@@ -751,10 +750,7 @@ const svg = d3.create("svg");
 
       const commitDate = new Date(data[i].commit_timestamp);
 
-      // const titleNode = document.querySelector("div#tooltip>p.title");
-      // titleNode.innerText = data[i].cache_misses_median;
-      const titleSpanNode = document.querySelector("span.benchmark-title");
-      // const titleSpanNode = document.querySelector("div#tooltip>p.title>span.benchmark-title");
+      const titleSpanNode = document.querySelector("div#tooltip>p.title>span.benchmark-title");
       titleSpanNode.innerText = benchmark;
       const measurementTitleSpanNode = document.querySelector("div#tooltip>p.title>span.measurement-title");
       measurementTitleSpanNode.innerText = getTitle(measurement);
@@ -789,12 +785,9 @@ const svg = d3.create("svg");
         window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
       })
       .on("mousemove", (event) => {
-      // event.preventDefault();
-      // const title = tooltip.select("p.title");
-      // title.text = data[0].cache_misses_median; 
+      event.preventDefault();
       const tooltip = d3.select("div#tooltip");
       tooltip
-    //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
         .transition()
         .duration(75)
       .style("left", (event.screenX + 20) + "px")
@@ -815,8 +808,6 @@ const svg = d3.create("svg");
       .style("stroke", "none")
       .style("pointer-events", "none");
     })
-  // svg.append("g")
-  //     .call(d3.axisLeft(yAxisMax));
 
   // containerDiv.appendChild(svg.node());
   toNode.appendChild(svg.node());
