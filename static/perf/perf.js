@@ -507,7 +507,7 @@ function makeCharts() {
 
 function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
-const margin = {top: 10, right: 10, bottom: 20, left: 100};
+const margin = {top: 10, right: 10, bottom: 20, left: 130};
 const width = toNode.clientWidth
 const height =  options.height;
 
@@ -653,12 +653,7 @@ const svg = d3.create("svg");
       .attr('fill', 'orange')
       .attr('stroke', 'orange')
       .attr('stroke-width', '1px')
-      // .attr("d", d3.svg.symbolTriangleUp)
       .attr('class', 'circle');
-
-      var focus = svg.append("g");
-      focus.style("display", "none");
-
 
       // X-Axis
   svg.append("g")
@@ -681,10 +676,67 @@ const svg = d3.create("svg");
           .attr("y", 20) // new x
           .text(getTitle(measurement)));
 
+
+      // Focus indicator group
+      const focus = svg.append("g");
+      focus.style("display", "none");
+      focus.attr("id", "focus");
+
+      // Focus circle
+      focus
+      .append("circle")
+      .attr("class", "focus circle")
+      .attr("id", "focusCircle");
+
+      // Focus vertical line
+      focus
+      .append("line")
+      .attr("class", "focus line y")
+      .attr("id", "focusLine");
+
+      svg.on("pointerenter", (event, data) => {
+        event.preventDefault();
+        // Unhide the focus rectangle when the mouse enters the chart
+        focus.style("display", null);
+      });
+
+      svg
+      .on("pointermove", (event, data) => {
+        event.preventDefault();
+        // Find the commit/data point closest to the mouse
+        const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
+        const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
+        const commitIndex = bisectDate(data, commitTimestampAtPointerX);
+
+        // Position the focus y line
+        const focusLine = focus.select("#focusLine");
+        focusLine
+        .attr("x1", x(data[commitIndex].commit_timestamp))
+        .attr("y1", 0)
+        .attr("x2", x(data[commitIndex].commit_timestamp))
+        .attr("y2", height - margin.bottom)
+
+        // Position the focus circle
+        const focusCircle = focus.select("#focusCircle");
+        focusCircle
+        .attr("cx", x(data[commitIndex].commit_timestamp))
+        .attr("cy", yAxisPrimaryMeasurement(data[commitIndex][primaryMeasurementKey]))
+        .attr("r", 2);
+      });
+
+      svg.on("pointerleave", (event, data) => {
+        event.preventDefault();
+        // Hide the focus node
+        focus.style("display", "none");
+      });
+
+
       svg//.selectAll()
       .data([data])
       // .enter()
       .on("mouseover", (event) => {
+        // svg.selectAll('circle')
+        // .attr("r", 2);
         event.preventDefault();
         const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
       const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
@@ -718,26 +770,25 @@ const svg = d3.create("svg");
       tooltip
       .style("opacity", 1)
       .style("stroke", "black")
-      .style("opacity", 1)
       .style("pointer-events", "all")
-      .style("left", (screen.pageX + 10) + "px")
+      .style("left", (screen.pageX + 20) + "px")
       .style("top", (screen.pageY + 0) + "px");
     })
       .on("mousedown", (event) => {
-        event.preventDefault();
+        // event.preventDefault();
         const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
         const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
         const i = bisectDate(data, commitTimestampAtPointerX);
         window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
       })
       .on("mousemove", (event) => {
-      event.preventDefault();
+      // event.preventDefault();
       // const title = tooltip.select("p.title");
       // title.text = data[0].cache_misses_median; 
       const tooltip = d3.select("div#tooltip");
       tooltip
     //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
-      .style("left", (event.screenX + 10) + "px")
+      .style("left", (event.screenX + 20) + "px")
       .style("top", (event.screenY + -40) + "px");
       })
     .on("mouseleave", (event) => {
