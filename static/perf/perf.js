@@ -422,14 +422,6 @@ pane.on('change', (event) => {
 // window.addEventListener('resize', makeCharts);
 
 // pane.addInput(options, 'primaryLineStrokeColor');
-const tooltipDiv = document.createElement("div");
-tooltipDiv.id = "tooltip";
-tooltipDiv.classList.add("tooltip");
-const tooltipTitleP = document.createElement("p");
-tooltipTitleP.classList.add("title");
-tooltipTitleP.innerText = "WTF";
-tooltipDiv.appendChild(tooltipTitleP);
-document.body.append(tooltipDiv);
 
 function makeLabel(obj, key) {
   return obj[key] + " " + key + " @ " + obj.zig_version;
@@ -704,35 +696,27 @@ const svg = d3.create("svg");
       .style("stroke", "black")
       .style("opacity", 1)
       .style("pointer-events", "all")
-      .style("left", event.clientX + "px")
-      .style("top", event.clientY + "px");
+      .style("left", (event.pageX + 20) + "px")
+      .style("top", (event.pageY + 10) + "px");
     })
       .on("mousemove", (event) => {
       event.preventDefault();
       // const title = tooltip.select("p.title");
       // title.text = data[0].cache_misses_median; 
       const tooltip = d3.select("div#tooltip");
-    tooltip
+      tooltip
     //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
-      // .style("left", "100px")
-      // .style("top", "100px")
-      // .style("left", event.pageX + "px")
-      // .style("top", event.pageY + "px")
-
-      .style("left", event.clientX + "px")
-      .style("top", event.clientY + "px");
-      // .style("left", d3.pointer(event).clientX + "px")
-      // .style("top", d3.pointer(event).clientY + "px")
-      // .attr('transform', `translate(${d3.pointer(event)[0]}, ${y})`);
+      .style("left", (event.pageX + 10) + "px")
+      .style("top", (event.pageY + 0) + "px");
       })
     .on("mouseleave", (event) => {
+        event.preventDefault();
+
       const tooltip = d3.select("div#tooltip");
     tooltip
-      .style("opacity", 0)
-    d3.select(this)
+      .style("opacity", 0.0)
       .style("stroke", "none")
-      .style("opacity", 0.8)
-      // .style("pointer-events", "none");
+      .style("pointer-events", "none");
     })
   // svg.append("g")
   //     .call(d3.axisLeft(yAxisMax));
