@@ -720,8 +720,8 @@ const svg = d3.create("svg");
       .style("stroke", "black")
       .style("opacity", 1)
       .style("pointer-events", "all")
-      .style("left", (event.pageX + 20) + "px")
-      .style("top", (event.pageY + 10) + "px");
+      .style("left", (screen.pageX + 10) + "px")
+      .style("top", (screen.pageY + 0) + "px");
     })
       .on("mousedown", (event) => {
         event.preventDefault();
@@ -737,8 +737,8 @@ const svg = d3.create("svg");
       const tooltip = d3.select("div#tooltip");
       tooltip
     //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
-      .style("left", (event.pageX + 10) + "px")
-      .style("top", (event.pageY + 0) + "px");
+      .style("left", (event.screenX + 10) + "px")
+      .style("top", (event.screenY + -40) + "px");
       })
     .on("mouseleave", (event) => {
         event.preventDefault();
