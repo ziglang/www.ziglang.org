@@ -430,48 +430,6 @@ tooltipTitleP.classList.add("title");
 tooltipTitleP.innerText = "WTF";
 tooltipDiv.appendChild(tooltipTitleP);
 document.body.append(tooltipDiv);
-// const tooltip = document.body.append(tooltipDiv);
-  var tooltip = d3.select("div#tooltip")
-
-    var mouseOver = function(event, data) {
-      event.preventDefault();
-      // var commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
-      // var i = bisectDate(data, commitTimestampAtPointerX);
-      const titleNode = document.querySelector("div#tooltip>p.title");
-      titleNode.innerText = data[0].cache_misses_median;
-      tooltip
-      .style("opacity", 1)
-      .style("stroke", "black")
-      .style("opacity", 1)
-      .style("pointer-events", "all")
-      .style("left", event.clientX + "px")
-      .style("top", event.clientY + "px");
-    }
-  var mouseMove = function(event, data) {
-      event.preventDefault();
-      // const title = tooltip.select("p.title");
-      // title.text = data[0].cache_misses_median; 
-    tooltip
-    //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
-      // .style("left", "100px")
-      // .style("top", "100px")
-      // .style("left", event.pageX + "px")
-      // .style("top", event.pageY + "px")
-
-      .style("left", event.clientX + "px")
-      .style("top", event.clientY + "px");
-      // .style("left", d3.pointer(event).clientX + "px")
-      // .style("top", d3.pointer(event).clientY + "px")
-      // .attr('transform', `translate(${d3.pointer(event)[0]}, ${y})`);
-  }
-  var mouseLeave = function(event, data) {
-    tooltip
-      .style("opacity", 0)
-    d3.select(this)
-      .style("stroke", "none")
-      .style("opacity", 0.8)
-      // .style("pointer-events", "none");
-  }
 
 function makeLabel(obj, key) {
   return obj[key] + " " + key + " @ " + obj.zig_version;
@@ -734,9 +692,48 @@ const svg = d3.create("svg");
       svg//.selectAll()
       .data([data])
       // .enter()
-          .on("mouseover", mouseOver)
-    .on("mousemove", mouseMove)
-    .on("mouseleave", mouseLeave)
+      .on("mouseover", (event) => {
+        event.preventDefault();
+      // var commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
+      // var i = bisectDate(data, commitTimestampAtPointerX);
+      const titleNode = document.querySelector("div#tooltip>p.title");
+      titleNode.innerText = data[0].cache_misses_median;
+      const tooltip = d3.select("div#tooltip");
+      tooltip
+      .style("opacity", 1)
+      .style("stroke", "black")
+      .style("opacity", 1)
+      .style("pointer-events", "all")
+      .style("left", event.clientX + "px")
+      .style("top", event.clientY + "px");
+    })
+      .on("mousemove", (event) => {
+      event.preventDefault();
+      // const title = tooltip.select("p.title");
+      // title.text = data[0].cache_misses_median; 
+      const tooltip = d3.select("div#tooltip");
+    tooltip
+    //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
+      // .style("left", "100px")
+      // .style("top", "100px")
+      // .style("left", event.pageX + "px")
+      // .style("top", event.pageY + "px")
+
+      .style("left", event.clientX + "px")
+      .style("top", event.clientY + "px");
+      // .style("left", d3.pointer(event).clientX + "px")
+      // .style("top", d3.pointer(event).clientY + "px")
+      // .attr('transform', `translate(${d3.pointer(event)[0]}, ${y})`);
+      })
+    .on("mouseleave", (event) => {
+      const tooltip = d3.select("div#tooltip");
+    tooltip
+      .style("opacity", 0)
+    d3.select(this)
+      .style("stroke", "none")
+      .style("opacity", 0.8)
+      // .style("pointer-events", "none");
+    })
   // svg.append("g")
   //     .call(d3.axisLeft(yAxisMax));
 
