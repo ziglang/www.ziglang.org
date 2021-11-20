@@ -10,6 +10,9 @@ The goal is to prevent performance regressions, and provide understanding and ex
 <div id="tooltip" class="tooltip">
 	<p class="title">Some Title</p>
 	<p class="date">Date here</p>
+	<p class="commit"><a href="">Commit Here</a></p>
+	<p class="samples"></p>
+	<p class="measurement"></p>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.0.5/dist/tweakpane.min.js"></script>
 <script type="text/javascript" src="d3-7.1.1.min.js"></script>
