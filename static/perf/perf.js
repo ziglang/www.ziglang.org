@@ -425,36 +425,43 @@ pane.on('change', (event) => {
 const tooltipDiv = document.createElement("div");
 tooltipDiv.id = "tooltip";
 tooltipDiv.classList.add("tooltip");
+const tooltipTitleP = document.createElement("p");
+tooltipTitleP.classList.add("title");
+tooltipTitleP.innerText = "WTF";
+tooltipDiv.appendChild(tooltipTitleP);
 document.body.append(tooltipDiv);
 // const tooltip = document.body.append(tooltipDiv);
   var tooltip = d3.select("div#tooltip")
-    // .append("div")
-    .style("position", "absolute")
-    .style("opacity", 0)
-    // .attr("class", "tooltip")
-    .style("background-color", "darkgray")
-    .style("border", "solid")
-    .style("border-width", "2px")
-    .style("border-radius", "5px")
-    .style("border-color", "orange")
-    .style("padding", "5px")
 
     var mouseOver = function(event, data) {
+      event.preventDefault();
+      // var commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
+      // var i = bisectDate(data, commitTimestampAtPointerX);
+      const titleNode = document.querySelector("div#tooltip>p.title");
+      titleNode.innerText = data[0].cache_misses_median;
       tooltip
       .style("opacity", 1)
       .style("stroke", "black")
       .style("opacity", 1)
+      .style("pointer-events", "all")
+      .style("left", event.clientX + "px")
+      .style("top", event.clientY + "px");
     }
   var mouseMove = function(event, data) {
-      const [x, y] = d3.pointer(event);
+      event.preventDefault();
+      // const title = tooltip.select("p.title");
+      // title.text = data[0].cache_misses_median; 
     tooltip
-      .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
+    //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
       // .style("left", "100px")
       // .style("top", "100px")
       // .style("left", event.pageX + "px")
       // .style("top", event.pageY + "px")
-      .style("left", d3.pointer(event)[0] + "px")
-      .style("top", d3.pointer(event)[1] + "px")
+
+      .style("left", event.clientX + "px")
+      .style("top", event.clientY + "px");
+      // .style("left", d3.pointer(event).clientX + "px")
+      // .style("top", d3.pointer(event).clientY + "px")
       // .attr('transform', `translate(${d3.pointer(event)[0]}, ${y})`);
   }
   var mouseLeave = function(event, data) {
@@ -463,6 +470,7 @@ document.body.append(tooltipDiv);
     d3.select(this)
       .style("stroke", "none")
       .style("opacity", 0.8)
+      // .style("pointer-events", "none");
   }
 
 function makeLabel(obj, key) {
@@ -686,6 +694,21 @@ const svg = d3.create("svg");
       .attr("class", `line primary ${measurement}`)
       // .attr("transform", "translate(" + margin.bottom + "," + margin.left + ")")
       .attr("d", primaryMeasurementLine)
+
+      // Hover circles
+      svg.append("g").selectAll('circle').data(data).enter().append('circle')
+      .attr('cx', function(d) {  return x(d.commit_timestamp); })
+      .attr('cy', function(d) { return yAxisArea(d[primaryMeasurementKey]); })
+      .attr('r', 1)
+      .attr('fill', 'orange')
+      .attr('stroke', 'orange')
+      .attr('stroke-width', '1px')
+      // .attr("d", d3.svg.symbolTriangleUp)
+      .attr('class', 'circle');
+
+      var focus = svg.append("g");
+      focus.style("display", "none");
+
 
       // X-Axis
   svg.append("g")
