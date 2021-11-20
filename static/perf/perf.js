@@ -649,7 +649,7 @@ const svg = d3.create("svg");
       svg.append("g").selectAll('circle').data(data).enter().append('circle')
       .attr('cx', function(d) {  return x(d.commit_timestamp); })
       .attr('cy', function(d) { return yAxisArea(d[primaryMeasurementKey]); })
-      .attr('r', 1)
+      .attr('r', 0)
       .attr('fill', 'orange')
       .attr('stroke', 'orange')
       .attr('stroke-width', '1px')
@@ -711,6 +711,8 @@ const svg = d3.create("svg");
         // Position the focus y line
         const focusLine = focus.select("#focusLine");
         focusLine
+        .transition()
+        .duration(75)
         .attr("x1", x(data[commitIndex].commit_timestamp))
         .attr("y1", 0)
         .attr("x2", x(data[commitIndex].commit_timestamp))
@@ -719,6 +721,8 @@ const svg = d3.create("svg");
         // Position the focus circle
         const focusCircle = focus.select("#focusCircle");
         focusCircle
+        .transition()
+        .duration(75)
         .attr("cx", x(data[commitIndex].commit_timestamp))
         .attr("cy", yAxisPrimaryMeasurement(data[commitIndex][primaryMeasurementKey]))
         .attr("r", 2);
@@ -735,8 +739,11 @@ const svg = d3.create("svg");
       .data([data])
       // .enter()
       .on("mouseover", (event) => {
-        // svg.selectAll('circle')
-        // .attr("r", 2);
+        // Show a circle for each data point
+        svg.selectAll('circle')
+        .transition()
+        .duration(75)
+        .attr("r", 1);
         event.preventDefault();
         const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
       const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
@@ -788,11 +795,19 @@ const svg = d3.create("svg");
       const tooltip = d3.select("div#tooltip");
       tooltip
     //   .html("The exact value of<br>this cell is: " + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date(data[0].commit_timestamp)))
+        .transition()
+        .duration(75)
       .style("left", (event.screenX + 20) + "px")
       .style("top", (event.screenY + -40) + "px");
       })
     .on("mouseleave", (event) => {
         event.preventDefault();
+
+        // Hide circles for each data point
+        svg.selectAll('circle')
+        .transition()
+        .duration(75)
+        .attr("r", 0);
 
       const tooltip = d3.select("div#tooltip");
     tooltip
