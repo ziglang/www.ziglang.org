@@ -686,10 +686,23 @@ const svg = d3.create("svg");
       // .enter()
       .on("mouseover", (event) => {
         event.preventDefault();
-      // var commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
-      // var i = bisectDate(data, commitTimestampAtPointerX);
+        const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
+      const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
+      const i = bisectDate(data, commitTimestampAtPointerX);
+
+      const commitDate = new Date(data[i].commit_timestamp);
+
       const titleNode = document.querySelector("div#tooltip>p.title");
-      titleNode.innerText = data[0].cache_misses_median;
+      titleNode.innerText = data[i].cache_misses_median;
+      const dateNode = document.querySelector("div#tooltip>p.date");
+      dateNode.innerText = commitDate.toLocaleString('en-US');
+      const samplesNode = document.querySelector("div#tooltip>p.samples");
+      samplesNode.innerText = data[i].samples_taken;
+      const measurementNode = document.querySelector("div#tooltip>p.measurement");
+      measurementNode.innerText = data[i][primaryMeasurementKey];
+      const commitNode = document.querySelector("div#tooltip>p.commit>a");
+      commitNode.href = `https://github.com/ziglang/zig/commit/${data[i].commit_hash}`;
+      commitNode.innerText = data[i].commit_hash.substring(0, 7);
       const tooltip = d3.select("div#tooltip");
       tooltip
       .style("opacity", 1)
@@ -699,6 +712,13 @@ const svg = d3.create("svg");
       .style("left", (event.pageX + 20) + "px")
       .style("top", (event.pageY + 10) + "px");
     })
+      .on("mousedown", (event) => {
+        event.preventDefault();
+        const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
+        const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
+        const i = bisectDate(data, commitTimestampAtPointerX);
+        window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
+      })
       .on("mousemove", (event) => {
       event.preventDefault();
       // const title = tooltip.select("p.title");
