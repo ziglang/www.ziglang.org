@@ -612,8 +612,8 @@ const svg = d3.create("svg");
       .style("opacity", 1)
       .style("stroke", "black")
       .style("pointer-events", "all")
-      .style("left", (screen.pageX + 20) + "px")
-      .style("top", (screen.pageY + 0) + "px");
+      .style("left", (event.clientX + 30) + "px")
+      .style("top", (event.clientY + 50) + "px");
     })
       .on("mousedown", (event) => {
         // event.preventDefault();
@@ -628,8 +628,8 @@ const svg = d3.create("svg");
       tooltip
         .transition()
         .duration(75)
-      .style("left", (event.screenX + 20) + "px")
-      .style("top", (event.screenY + -40) + "px");
+      .style("left", (event.clientX + 30) + "px")
+      .style("top", (event.clientY + 50) + "px");
       })
     .on("mouseleave", (event) => {
         event.preventDefault();
