@@ -632,16 +632,31 @@ const svg = d3.create("svg");
       const vsPriorChange = data[i][measurementKey] - data[i-1][measurementKey];
       const vsPriorChangePercentage = vsPriorChange / data[i-1][measurementKey];
       const tdPriorMeasurementValue = document.createElement("td");
-      tdPriorMeasurementValue.innerText = d3.format(",")(data[i-1][measurementKey]);
-      tdPriorMeasurementValue.innerText += ` (${d3.format("+.2%")(vsPriorChangePercentage)})`;
+      // tdPriorMeasurementValue.innerText = d3.format(",")(data[i-1][measurementKey]);
+      tdPriorMeasurementValue.innerText += ` ${d3.format(".2%")(vsPriorChangePercentage)}`;
+      tdPriorMeasurementValue.classList.add(Math.sign(vsPriorChangePercentage) == 1 ? "bad" : "good");
+      // tdPriorMeasurementValue.style = `background-color: ${d3.interpolateInferno(vsPriorChangePercentage)}`
       tr.appendChild(tdPriorMeasurementValue);
 
       // Add row with the first measurement value
       const vsFirstChange = data[i][measurementKey] - data[0][measurementKey];
       const vsFirstChangePercentage = vsFirstChange / data[0][measurementKey];
       const tdFirstMeasurementValue = document.createElement("td");
-      tdFirstMeasurementValue.innerText = d3.format(",")(data[0][measurementKey]);
-      tdFirstMeasurementValue.innerText += ` (${d3.format("+.2%")(vsFirstChangePercentage)})`;
+      // tdFirstMeasurementValue.innerText = d3.format(",")(data[0][measurementKey]);
+      tdFirstMeasurementValue.innerText += ` ${d3.format(".2%")(vsFirstChangePercentage)}`;
+
+      // Add a CSS class so we can put nice +/- arrow indicators on the measurement
+      if (Math.sign(vsFirstChangePercentage) === 1) {
+        // Increase is bad!
+        tdFirstMeasurementValue.classList.add("bad");
+      } else if (Math.sign(vsFirstChangePercentage) === -1) {
+        // Decrease is good!
+        tdFirstMeasurementValue.classList.add("good");
+      } else {
+        // Input was -0 or 0, so no change
+        tdFirstMeasurementValue.innerText = `0%`;
+      }
+
       tr.appendChild(tdFirstMeasurementValue);
 
       // Add the new row for the measurement
