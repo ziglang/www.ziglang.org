@@ -683,6 +683,7 @@ const svg = d3.create("svg");
       // Add row with the sample counts 
       const tr = document.createElement("tr");
       const tdBenchmarkSampleCountTitle = document.createElement("td");
+      tdBenchmarkSampleCountTitle.classList.add("measurement-title");
       tdBenchmarkSampleCountTitle.innerText = "Samples Taken";
       tr.appendChild(tdBenchmarkSampleCountTitle);
 
@@ -704,6 +705,7 @@ const svg = d3.create("svg");
       // Add row with the commit hashes
       const trCommitHashes = document.createElement("tr");
       const tdCommitHashTitle = document.createElement("td");
+      tdCommitHashTitle.classList.add("measurement-title");
       tdCommitHashTitle.innerText = "Commit Hash";
       trCommitHashes.appendChild(tdCommitHashTitle);
 
@@ -733,14 +735,9 @@ const svg = d3.create("svg");
       // Add row with the commit date
       const trCommitDates = document.createElement("tr");
       const tdCommitDateTitle = document.createElement("td");
+      tdCommitDateTitle.classList.add("measurement-title");
       tdCommitDateTitle.innerText = "Committed";
       trCommitDates.appendChild(tdCommitDateTitle);
-
-      // const currentCommitDate = new Date(data[i].commit_timestamp);
-      // const tdCurrentCommitDate = document.createElement("td");
-      // tdCurrentCommitDate.innerText = currentCommitDate.toLocaleString('en-US');
-      // trCommitDates.appendChild(tdCurrentCommitDate);
-
 
       const currentCommitDate = new Date(data[i].commit_timestamp);
       const tdCurrentCommitDate = document.createElement("td");
@@ -778,19 +775,20 @@ const svg = d3.create("svg");
       // // Add row with the zig version
       const trZigVersions = document.createElement("tr");
       const tdZigVersionTitle = document.createElement("td");
+      tdZigVersionTitle.classList.add("measurement-title");
       tdZigVersionTitle.innerText = "Zig Version";
       trZigVersions.appendChild(tdZigVersionTitle);
 
       const tdCurrentZigVersion = document.createElement("td");
-      tdCurrentZigVersion.innerText = data[i].zig_version;
+      tdCurrentZigVersion.innerText = data[i].zig_version.split("+")[0];
       trZigVersions.appendChild(tdCurrentZigVersion);
 
       const tdPriorZigVersion = document.createElement("td");
-      tdPriorZigVersion.innerText = data[i-1].zig_version;
+      tdPriorZigVersion.innerText = data[i-1].zig_version.split("+")[0];
       trZigVersions.appendChild(tdPriorZigVersion);
 
       const tdFirstZigVersion = document.createElement("td");
-      tdFirstZigVersion.innerText = data[0].zig_version;
+      tdFirstZigVersion.innerText = data[0].zig_version.split("+")[0];
       trZigVersions.appendChild(tdFirstZigVersion);
 
       tbodyNode.appendChild(trZigVersions);
