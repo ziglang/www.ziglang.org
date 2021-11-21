@@ -605,6 +605,19 @@ const svg = d3.create("svg");
       const measurementTitleSpanNode = document.querySelector("div#tooltip>div.title>span.measurement-title");
       measurementTitleSpanNode.innerText = getTitle(measurement);
 
+      // Add the commit hashes to the table headers. These are hidden right now.
+      const currentCommitHashLink = document.getElementById("current-commit-link");
+      currentCommitHashLink.href = `https://github.com/ziglang/zig/commit/${data[i].commit_hash}`;
+      currentCommitHashLink.innerText = data[i].commit_hash.substring(0, 7);
+
+      const priorCommitHashLink = document.getElementById("prior-commit-link");
+      priorCommitHashLink.href = `https://github.com/ziglang/zig/commit/${data[i-1].commit_hash}`;
+      priorCommitHashLink.innerText = data[i-1].commit_hash.substring(0, 7);
+
+      const firstCommitHashLink = document.getElementById("first-commit-link");
+      firstCommitHashLink.href = `https://github.com/ziglang/zig/commit/${data[0].commit_hash}`;
+      firstCommitHashLink.innerText = data[0].commit_hash.substring(0, 7);
+
       const tbodyNode = document.querySelector("div#tooltip>div>table>tbody#tooltip-measurements-table-body");
 
       // Remove old benchmark rows
@@ -618,6 +631,7 @@ const svg = d3.create("svg");
       // Add row with the measurement title
       const tr = document.createElement("tr");
       const tdMeasurementName = document.createElement("td");
+      tdMeasurementName.classList.add("measurement-title");
       tdMeasurementName.innerText = MEASUREMENT_TITLES[measurement];
       tr.appendChild(tdMeasurementName);
 
@@ -625,6 +639,7 @@ const svg = d3.create("svg");
 
       // Add row with the current measurement value
       const tdCurrentMeasurementValue = document.createElement("td");
+      tdCurrentMeasurementValue.classList.add("measurement-value");
       tdCurrentMeasurementValue.innerText = d3.format(",")(data[i][measurementKey]);
       tr.appendChild(tdCurrentMeasurementValue);
 
@@ -632,6 +647,7 @@ const svg = d3.create("svg");
       const vsPriorChange = data[i][measurementKey] - data[i-1][measurementKey];
       const vsPriorChangePercentage = vsPriorChange / data[i-1][measurementKey];
       const tdPriorMeasurementValue = document.createElement("td");
+      tdPriorMeasurementValue.classList.add("measurement-value");
       // tdPriorMeasurementValue.innerText = d3.format(",")(data[i-1][measurementKey]);
       tdPriorMeasurementValue.innerText += ` ${d3.format(".2%")(vsPriorChangePercentage)}`;
       tdPriorMeasurementValue.classList.add(Math.sign(vsPriorChangePercentage) == 1 ? "bad" : "good");
@@ -642,6 +658,7 @@ const svg = d3.create("svg");
       const vsFirstChange = data[i][measurementKey] - data[0][measurementKey];
       const vsFirstChangePercentage = vsFirstChange / data[0][measurementKey];
       const tdFirstMeasurementValue = document.createElement("td");
+      tdFirstMeasurementValue.classList.add("measurement-value");
       // tdFirstMeasurementValue.innerText = d3.format(",")(data[0][measurementKey]);
       tdFirstMeasurementValue.innerText += ` ${d3.format(".2%")(vsFirstChangePercentage)}`;
 
