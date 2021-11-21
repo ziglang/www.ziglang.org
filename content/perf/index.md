@@ -15,10 +15,10 @@ The goal is to prevent performance regressions, and provide understanding and ex
 		<table class="benchmarks">
 		<thead>
 			<tr>
-				<th>Measurement</th>
-				<th><a href="/documentation/master/#Debug">This commit<br /><span class="current commit"></span></a></th>
-				<th><a href="/documentation/master/#ReleaseFast">vs previous</a></th>
-				<th><a href="/documentation/master/#ReleaseFast">vs first</a></th>
+				<th></th>
+				<th><a href="">Hovered commit</a><br /><span class="commit"><a id="current-commit-link" href=""></a></span></th>
+				<th><a href="">vs. previous</a><br /><span class="commit"><a id="prior-commit-link" href=""></a></span></th>
+				<th><a href="">vs. first</a><br /><span class="commit"><a id="first-commit-link" href=""></a></span></th>
 			</tr>
 		</thead>
 		<tbody id="tooltip-measurements-table-body">
