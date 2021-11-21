@@ -328,6 +328,20 @@ function makeCharts() {
   ;
 }
 
+function measurementKeyForSelectedOptions(measurement, options) {
+  if (measurement == "maxrss") {
+    return measurement;
+  } else if (options.line == "median") {
+    return measurement + "_median"
+  } else if (options.line == "mean") {
+    return measurement + "_mean"
+  } else if (options.line == "minimum") {
+    return measurement + "_min"
+  } else if (options.line == "maximum") {
+    return measurement + "_max"
+  }
+}
+
 // loadEverything().then(data=> {console.log(data.1);});
 // loadBenchmarksJSON().then(json=> {
 //   return json;
@@ -586,27 +600,156 @@ const svg = d3.create("svg");
       const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
       const i = bisectDate(data, commitTimestampAtPointerX);
 
-      const commitDate = new Date(data[i].commit_timestamp);
-
-      const titleSpanNode = document.querySelector("div#tooltip>p.title>span.benchmark-title");
+      const titleSpanNode = document.querySelector("div#tooltip>div.title>span.benchmark-title");
       titleSpanNode.innerText = benchmark;
-      const measurementTitleSpanNode = document.querySelector("div#tooltip>p.title>span.measurement-title");
+      const measurementTitleSpanNode = document.querySelector("div#tooltip>div.title>span.measurement-title");
       measurementTitleSpanNode.innerText = getTitle(measurement);
-      const dateNode = document.querySelector("div#tooltip>p.date");
-      dateNode.innerText = commitDate.toLocaleString('en-US');
-      const samplesNode = document.querySelector("div#tooltip>p.samples>span.samples_count");
-      samplesNode.innerText = data[i].samples_taken;
-      const measurementTitleNode = document.querySelector("div#tooltip>p.measurement>span.measurement-title");
-      measurementTitleNode.innerText = getTitle(measurement);
-      const measurementValueNode = document.querySelector("div#tooltip>p.measurement>span.measurement-value");
-      measurementValueNode.innerText = d3.format(",")(data[i][primaryMeasurementKey]);
-      const measurementDifferenceNode = document.querySelector("div#tooltip>p.measurement>span.measurement-difference");
-      measurementDifferenceNode.innerText = d3.format(",")(data[i-1][primaryMeasurementKey] - data[i][primaryMeasurementKey]);
-      const zigVersionNode = document.querySelector("div#tooltip>p.zig-version>span.zig-version");
-      zigVersionNode.innerText = data[i].zig_version;
-      const commitNode = document.querySelector("div#tooltip>p.commit>a");
-      commitNode.href = `https://github.com/ziglang/zig/commit/${data[i].commit_hash}`;
-      commitNode.innerText = data[i].commit_hash.substring(0, 7);
+
+      const tbodyNode = document.querySelector("div#tooltip>div>table>tbody#tooltip-measurements-table-body");
+
+      // Remove old benchmark rows
+      while (tbodyNode.firstChild) {
+        tbodyNode.removeChild(tbodyNode.firstChild);
+      }
+
+      // Iterate over the measurements and dump them out as rows
+      Object.keys(MEASUREMENT_TITLES).forEach(measurement => {
+
+      // Add row with the measurement title
+      const tr = document.createElement("tr");
+      const tdMeasurementName = document.createElement("td");
+      tdMeasurementName.innerText = MEASUREMENT_TITLES[measurement];
+      tr.appendChild(tdMeasurementName);
+
+      const measurementKey = measurementKeyForSelectedOptions(measurement, options);
+
+      // Add row with the current measurement value
+      const tdCurrentMeasurementValue = document.createElement("td");
+      tdCurrentMeasurementValue.innerText = d3.format(",")(data[i][measurementKey]);
+      tr.appendChild(tdCurrentMeasurementValue);
+
+      // Add row with the previous measurement value
+      const vsPriorChange = data[i][measurementKey] - data[i-1][measurementKey];
+      const vsPriorChangePercentage = vsPriorChange / data[i-1][measurementKey];
+      const tdPriorMeasurementValue = document.createElement("td");
+      tdPriorMeasurementValue.innerText = d3.format(",")(data[i-1][measurementKey]);
+      tdPriorMeasurementValue.innerText += ` (${d3.format("+.2%")(vsPriorChangePercentage)})`;
+      tr.appendChild(tdPriorMeasurementValue);
+
+      // Add row with the first measurement value
+      const vsFirstChange = data[i][measurementKey] - data[0][measurementKey];
+      const vsFirstChangePercentage = vsFirstChange / data[0][measurementKey];
+      const tdFirstMeasurementValue = document.createElement("td");
+      tdFirstMeasurementValue.innerText = d3.format(",")(data[0][measurementKey]);
+      tdFirstMeasurementValue.innerText += ` (${d3.format("+.2%")(vsFirstChangePercentage)})`;
+      tr.appendChild(tdFirstMeasurementValue);
+
+      // Add the new row for the measurement
+      tbodyNode.appendChild(tr);
+    });
+
+      // Add row with the sample counts 
+      const tr = document.createElement("tr");
+      const tdBenchmarkSampleCountTitle = document.createElement("td");
+      tdBenchmarkSampleCountTitle.innerText = "Samples Taken";
+      tr.appendChild(tdBenchmarkSampleCountTitle);
+
+      const tdCurrentBenchmarkSampleCount = document.createElement("td");
+      tdCurrentBenchmarkSampleCount.innerText = d3.format(",")(data[i].samples_taken);
+      tr.appendChild(tdCurrentBenchmarkSampleCount);
+
+      const tdPriorBenchmarkSampleCount = document.createElement("td");
+      tdPriorBenchmarkSampleCount.innerText = d3.format(",")(data[i-1].samples_taken);
+      tr.appendChild(tdPriorBenchmarkSampleCount);
+
+      const tdFirstBenchmarkSampleCount = document.createElement("td");
+      tdFirstBenchmarkSampleCount.innerText = d3.format(",")(data[0].samples_taken);
+      tr.appendChild(tdFirstBenchmarkSampleCount);
+      tbodyNode.appendChild(tr);
+
+
+      const tbodyCommitsNode = document.querySelector("div#tooltip>div>table>tbody#tooltip-commit-table-body");
+
+      // Remove old benchmark rows
+      while (tbodyCommitsNode.firstChild) {
+        tbodyCommitsNode.removeChild(tbodyCommitsNode.firstChild);
+      }
+
+      // Add row with the commit hashes
+      const trCommitHashes = document.createElement("tr");
+      const tdCommitHashTitle = document.createElement("td");
+      tdCommitHashTitle.innerText = "Commit Hash";
+      trCommitHashes.appendChild(tdCommitHashTitle);
+
+      const tdCurrentCommitHash = document.createElement("td");
+      const currentCommitLink = document.createElement("a");
+      currentCommitLink.href = `https://github.com/ziglang/zig/commit/${data[i].commit_hash}`;
+      currentCommitLink.innerText = data[i].commit_hash.substring(0, 7);
+      tdCurrentCommitHash.appendChild(currentCommitLink);
+      trCommitHashes.appendChild(tdCurrentCommitHash);
+
+      const tdPriorCommitHash = document.createElement("td");
+      const priorCommitLink = document.createElement("a");
+      priorCommitLink.href = `https://github.com/ziglang/zig/commit/${data[i-1].commit_hash}`;
+      priorCommitLink.innerText = data[i-1].commit_hash.substring(0, 7);
+      tdPriorCommitHash.appendChild(priorCommitLink);
+      trCommitHashes.appendChild(tdPriorCommitHash);
+
+      const tdFirstCommitHash = document.createElement("td");
+      const firstCommitLink = document.createElement("a");
+      firstCommitLink.href = `https://github.com/ziglang/zig/commit/${data[0].commit_hash}`;
+      firstCommitLink.innerText = data[0].commit_hash.substring(0, 7);
+      tdFirstCommitHash.appendChild(firstCommitLink);
+      trCommitHashes.appendChild(tdFirstCommitHash);
+
+      tbodyCommitsNode.appendChild(trCommitHashes);
+
+      // Add row with the commit date
+      const trCommitDates = document.createElement("tr");
+      const tdCommitDateTitle = document.createElement("td");
+      tdCommitDateTitle.innerText = "Committed";
+      trCommitDates.appendChild(tdCommitDateTitle);
+
+      const currentCommitDate = new Date(data[i].commit_timestamp);
+      const tdCurrentCommitDate = document.createElement("td");
+      tdCurrentCommitDate.innerText = currentCommitDate.toLocaleString('en-US');
+      trCommitDates.appendChild(tdCurrentCommitDate);
+
+      const priorCommitDate = new Date(data[i-1].commit_timestamp);
+      const tdPriorCommitDate = document.createElement("td");
+      tdPriorCommitDate.innerText = priorCommitDate.toLocaleString('en-US');
+      trCommitDates.appendChild(tdPriorCommitDate);
+
+      const firstCommitDate = new Date(data[0].commit_timestamp);
+      const tdFirstCommitDate = document.createElement("td");
+      tdFirstCommitDate.innerText = firstCommitDate.toLocaleString('en-US');
+      trCommitDates.appendChild(tdFirstCommitDate);
+
+
+
+      tbodyCommitsNode.appendChild(trCommitDates);
+
+      // Add row with the zig version
+      const trZigVersions = document.createElement("tr");
+      const tdZigVersionTitle = document.createElement("td");
+      tdZigVersionTitle.innerText = "Zig Version";
+      trZigVersions.appendChild(tdZigVersionTitle);
+
+      const tdCurrentZigVersion = document.createElement("td");
+      tdCurrentZigVersion.innerText = data[i].zig_version;
+      trZigVersions.appendChild(tdCurrentZigVersion);
+
+      const tdPriorZigVersion = document.createElement("td");
+      tdPriorZigVersion.innerText = data[i-1].zig_version;
+      trZigVersions.appendChild(tdPriorZigVersion);
+
+      const tdFirstZigVersion = document.createElement("td");
+      tdFirstZigVersion.innerText = data[0].zig_version;
+      trZigVersions.appendChild(tdFirstZigVersion);
+
+      tbodyCommitsNode.appendChild(trZigVersions);
+
+
       const tooltip = d3.select("div#tooltip");
       tooltip
       .style("opacity", 1)
@@ -643,7 +786,6 @@ const svg = d3.create("svg");
       const tooltip = d3.select("div#tooltip");
     tooltip
       .style("opacity", 0.0)
-      .style("stroke", "none")
       .style("pointer-events", "none");
     })
 
