@@ -699,13 +699,7 @@ const svg = d3.create("svg");
       tr.appendChild(tdFirstBenchmarkSampleCount);
       tbodyNode.appendChild(tr);
 
-
-      const tbodyCommitsNode = document.querySelector("div#tooltip>div>table>tbody#tooltip-commit-table-body");
-
-      // Remove old benchmark rows
-      while (tbodyCommitsNode.firstChild) {
-        tbodyCommitsNode.removeChild(tbodyCommitsNode.firstChild);
-      }
+      // TODO: Add a divider of some kind here
 
       // Add row with the commit hashes
       const trCommitHashes = document.createElement("tr");
@@ -734,7 +728,7 @@ const svg = d3.create("svg");
       tdFirstCommitHash.appendChild(firstCommitLink);
       trCommitHashes.appendChild(tdFirstCommitHash);
 
-      tbodyCommitsNode.appendChild(trCommitHashes);
+      tbodyNode.appendChild(trCommitHashes);
 
       // Add row with the commit date
       const trCommitDates = document.createElement("tr");
@@ -742,26 +736,46 @@ const svg = d3.create("svg");
       tdCommitDateTitle.innerText = "Committed";
       trCommitDates.appendChild(tdCommitDateTitle);
 
+      // const currentCommitDate = new Date(data[i].commit_timestamp);
+      // const tdCurrentCommitDate = document.createElement("td");
+      // tdCurrentCommitDate.innerText = currentCommitDate.toLocaleString('en-US');
+      // trCommitDates.appendChild(tdCurrentCommitDate);
+
+
       const currentCommitDate = new Date(data[i].commit_timestamp);
       const tdCurrentCommitDate = document.createElement("td");
-      tdCurrentCommitDate.innerText = currentCommitDate.toLocaleString('en-US');
+      const tdCurrentCommitDateDateP = document.createElement("p");
+      tdCurrentCommitDateDateP.innerText = currentCommitDate.toLocaleDateString('en-US');
+      tdCurrentCommitDate.appendChild(tdCurrentCommitDateDateP);
+      const tdCurrentCommitDateTimeP = document.createElement("p");
+      tdCurrentCommitDateTimeP.innerText = currentCommitDate.toLocaleTimeString('en-US');
+      tdCurrentCommitDate.appendChild(tdCurrentCommitDateTimeP);
       trCommitDates.appendChild(tdCurrentCommitDate);
+
 
       const priorCommitDate = new Date(data[i-1].commit_timestamp);
       const tdPriorCommitDate = document.createElement("td");
-      tdPriorCommitDate.innerText = priorCommitDate.toLocaleString('en-US');
+      const tdPriorCommitDateDateP = document.createElement("p");
+      tdPriorCommitDateDateP.innerText = priorCommitDate.toLocaleDateString('en-US');
+      tdPriorCommitDate.appendChild(tdPriorCommitDateDateP);
+      const tdPriorCommitDateTimeP = document.createElement("p");
+      tdPriorCommitDateTimeP.innerText = priorCommitDate.toLocaleTimeString('en-US');
+      tdPriorCommitDate.appendChild(tdPriorCommitDateTimeP);
       trCommitDates.appendChild(tdPriorCommitDate);
 
       const firstCommitDate = new Date(data[0].commit_timestamp);
       const tdFirstCommitDate = document.createElement("td");
-      tdFirstCommitDate.innerText = firstCommitDate.toLocaleString('en-US');
+      const tdFirstCommitDateDateP = document.createElement("p");
+      tdFirstCommitDateDateP.innerText = firstCommitDate.toLocaleDateString('en-US');
+      tdFirstCommitDate.appendChild(tdFirstCommitDateDateP);
+      const tdFirstCommitDateTimeP = document.createElement("p");
+      tdFirstCommitDateTimeP.innerText = firstCommitDate.toLocaleTimeString('en-US');
+      tdFirstCommitDate.appendChild(tdFirstCommitDateTimeP);
       trCommitDates.appendChild(tdFirstCommitDate);
 
+      tbodyNode.appendChild(trCommitDates);
 
-
-      tbodyCommitsNode.appendChild(trCommitDates);
-
-      // Add row with the zig version
+      // // Add row with the zig version
       const trZigVersions = document.createElement("tr");
       const tdZigVersionTitle = document.createElement("td");
       tdZigVersionTitle.innerText = "Zig Version";
@@ -779,8 +793,7 @@ const svg = d3.create("svg");
       tdFirstZigVersion.innerText = data[0].zig_version;
       trZigVersions.appendChild(tdFirstZigVersion);
 
-      tbodyCommitsNode.appendChild(trZigVersions);
-
+      tbodyNode.appendChild(trZigVersions);
 
       const tooltip = d3.select("div#tooltip");
       tooltip

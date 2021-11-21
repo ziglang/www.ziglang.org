@@ -84,42 +84,6 @@ The goal is to prevent performance regressions, and provide understanding and ex
 			</tr>
 		</tbody>
 		</table>
-		<table>
-		<thead>
-			<tr>
-				<th>Info</th>
-				<th><a href="/documentation/master/#Debug">This<br /><span class="current commit"></span></a></th>
-				<th><a href="/documentation/master/#ReleaseFast">Previous</a></th>
-				<th><a href="/documentation/master/#ReleaseFast">First</a></th>
-			</tr>
-		</thead>
-		<tbody id="tooltip-commit-table-body">
-			<tr>
-				<td>Commit Hash</td>
-				<td class="cpu_cycles this"></td>
-				<span class="cpu_cycles previous change"></span>
-				<td class="cpu_cycles first change"></td>
-			</tr>
-			<tr>
-				<td>Committed</td>
-				<td class="cpu_cycles this"></td>
-				<td class="cpu_cycles previous change"></td>
-				<td class="cpu_cycles first change"></td>
-			</tr>
-			<tr>
-				<td>Benchmark Ran</td>
-				<td class="cache_references this"></td>
-				<td class="cache_references previous change"></td>
-				<td class="cache_references first change"></td>
-			</tr>
-			<tr>
-				<td>Zig Version</td>
-				<td class="cache_misses this"></td>
-				<td class="cache_misses previous change"></td>
-				<td class="cache_misses first change"></td>
-			</tr>
-		</tbody>
-		</table>
 	</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.0.5/dist/tweakpane.min.js"></script>
