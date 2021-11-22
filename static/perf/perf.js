@@ -188,7 +188,6 @@ const options = {
   xInterval: "date",
   yStart: "min",
   height: 175,
-  primaryLineStrokeColor: '#8df',
 };
 
 const f1 = pane.addFolder({
