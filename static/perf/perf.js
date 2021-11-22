@@ -15,6 +15,7 @@ function getTitle(measurement) {
   return MEASUREMENT_TITLES[measurement];
 }
 
+// TODO: Should use this for displaying units
 const column_types = {
   timestamp: 'date',
   commit_timestamp: 'date',
