@@ -37,61 +37,6 @@ const column_types = {
   stime_max: 'ns',
 };
 
-function createStructureForBenchmark(key, benchmark) {
-    const div = document.createElement("div");
-    div.classList.add("benchmark");
-    div.classList.add(key);
-    div.classList.add(benchmark.kind);
-
-    // Build the title <span>
-    const titleSpan = document.createElement("span");
-    titleSpan.id = key;
-    titleSpan.classList.add("benchmark-title");
-
-    const titleAnchor = document.createElement("a");
-    titleAnchor.innerText = key;
-    titleAnchor.href = "#" + key;
-
-    // Add the titleAnchor to the titleSpan
-    titleSpan.appendChild(titleAnchor);
-
-    // Build the description
-    const descriptionSpan = document.createElement("span");
-    descriptionSpan.classList.add("benchmark-description");
-
-    const descriptionEm = document.createElement("em");
-    descriptionEm.innerText = benchmark.description;
-
-    // Add the descriptionEm to the span
-    descriptionSpan.appendChild(descriptionEm);
-
-
-    const chartDiv = document.createElement("div");
-    chartDiv.id = "chart-" + key;
-    chartDiv.classList.add("chart");
-
-    const sourceLinkParagraph = document.createElement("p")
-    const sourceLinkAnchor = document.createElement("a")
-    sourceLinkAnchor.classList.add("external-link");
-    sourceLinkAnchor.classList.add("external-link-light");
-    const src_url = "https://github.com/ziglang/gotta-go-fast/tree/master/benchmarks/" +
-      benchmark.dir + "/" + benchmark.mainPath;
-    const desc = benchmark.description;
-    sourceLinkAnchor.href = src_url;
-    sourceLinkAnchor.innerText = "Source";
-
-    sourceLinkParagraph.appendChild(sourceLinkAnchor);
-
-    div.appendChild(titleSpan);
-    div.appendChild(descriptionSpan);
-    div.appendChild(chartDiv);
-    div.appendChild(sourceLinkParagraph);
-
-    // Put the HTML we've built into the existing div#content element in layouts/perf/baseof.html
-    document.getElementById("content").querySelector("div.container").appendChild(div);
-
-}
-
 async function loadBenchmarksJSON() {
     const response = await fetch('benchmarks.json');
     const data = await response.json();
@@ -99,7 +44,6 @@ async function loadBenchmarksJSON() {
 }
 
 async function loadRecords() {
-// https://stackoverflow.com/questions/57204863/loading-csv-data-and-save-results-to-a-variable
 // Massage the data
 return await d3.csv("records.csv").then(function (data) {
   data.forEach(function (d) {
@@ -162,8 +106,7 @@ return await d3.csv("records.csv").then(function (data) {
     // MaxRSS
     d.maxrss = +d.maxrss;
   });
-  // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
-  // data = data.filter(data => data.benchmark_name == "self-hosted-parser");
+
   // The order of the sort and timestamp adjustment must be like this, need to understand why.
   data.sort(function(a, b) {
     return orderZigVersions(a.zig_version, b.zig_version);
@@ -177,6 +120,61 @@ return await d3.csv("records.csv").then(function (data) {
   }
   return data;
 });
+}
+
+function createStructureForBenchmark(key, benchmark) {
+    const div = document.createElement("div");
+    div.classList.add("benchmark");
+    div.classList.add(key);
+    div.classList.add(benchmark.kind);
+
+    // Build the title <span>
+    const titleSpan = document.createElement("span");
+    titleSpan.id = key;
+    titleSpan.classList.add("benchmark-title");
+
+    const titleAnchor = document.createElement("a");
+    titleAnchor.innerText = key;
+    titleAnchor.href = "#" + key;
+
+    // Add the titleAnchor to the titleSpan
+    titleSpan.appendChild(titleAnchor);
+
+    // Build the description
+    const descriptionSpan = document.createElement("span");
+    descriptionSpan.classList.add("benchmark-description");
+
+    const descriptionEm = document.createElement("em");
+    descriptionEm.innerText = benchmark.description;
+
+    // Add the descriptionEm to the span
+    descriptionSpan.appendChild(descriptionEm);
+
+
+    const chartDiv = document.createElement("div");
+    chartDiv.id = "chart-" + key;
+    chartDiv.classList.add("chart");
+
+    const sourceLinkParagraph = document.createElement("p")
+    const sourceLinkAnchor = document.createElement("a")
+    sourceLinkAnchor.classList.add("external-link");
+    sourceLinkAnchor.classList.add("external-link-light");
+    const src_url = "https://github.com/ziglang/gotta-go-fast/tree/master/benchmarks/" +
+      benchmark.dir + "/" + benchmark.mainPath;
+    const desc = benchmark.description;
+    sourceLinkAnchor.href = src_url;
+    sourceLinkAnchor.innerText = "Source";
+
+    sourceLinkParagraph.appendChild(sourceLinkAnchor);
+
+    div.appendChild(titleSpan);
+    div.appendChild(descriptionSpan);
+    div.appendChild(chartDiv);
+    div.appendChild(sourceLinkParagraph);
+
+    // Put the HTML we've built into the existing div#content element in layouts/perf/baseof.html
+    document.getElementById("content").querySelector("div.container").appendChild(div);
+
 }
 
 // https://github.com/cocopon/tweakpane
@@ -257,10 +255,6 @@ pane.on('change', (event) => {
   makeCharts();
 });
 
-// window.addEventListener('resize', makeCharts);
-
-// pane.addInput(options, 'primaryLineStrokeColor');
-
 function makeLabel(obj, key) {
   return obj[key] + " " + key + " @ " + obj.zig_version;
 }
@@ -282,11 +276,6 @@ function parseZigVersion(zig_version) {
   const rev = (parts.length === 1) ? 0 : parts[1].split(".")[1].split("+")[0];
   return [+semver[0], +semver[1], +semver[2], +rev];
 }
-
-
-
-var benchmark_json;
-var records;
 
 const loadEverything = async () => {
   console.info("Loading CSV/JSON data.");
@@ -315,9 +304,6 @@ function makeCharts() {
     while (targetChartDiv.firstChild) {
       targetChartDiv.removeChild(targetChartDiv.firstChild);
     }
-    // const targetChartDiv = document.getElementById("chart-" + key);
-// const containerDiv = document.getElementById("content").querySelector("div.container");
-
     const benchmark_data = records.filter(data => data.benchmark_name == benchmarkName);
 
     Object.keys(MEASUREMENT_TITLES).forEach(measurement => {
@@ -341,21 +327,6 @@ function measurementKeyForSelectedOptions(measurement, options) {
     return measurement + "_max"
   }
 }
-
-// loadEverything().then(data=> {console.log(data.1);});
-// loadBenchmarksJSON().then(json=> {
-//   return json;
-
-//   // for (let key in json) {
-//   //   drawRangeAreaChart("Cache References", "cache_references", data.filter(data => data.benchmark_name == key), options, containerDiv);
-//   //   drawRangeAreaChart("Cache Misses", "cache_misses", data.filter(data => data.benchmark_name == key), options, containerDiv);
-//   //   drawRangeAreaChart("Wall Time", "wall_time", data.filter(data => data.benchmark_name == key), options, containerDiv);
-//   // };
-
-// }).catch(error => { console.error(error); });
-
-// const fetchAsyncA = async () => 
-//   await (await fetch('https://api.github.com')).json()
 
 function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
@@ -812,9 +783,6 @@ const svg = d3.create("svg");
 
       tbodyNode.appendChild(trZigVersions);
 
-
-
-
       const tooltip = d3.select("div#tooltip");
       tooltip
         .transition()
@@ -837,9 +805,5 @@ const svg = d3.create("svg");
       .style("pointer-events", "none");
     })
 
-  // containerDiv.appendChild(svg.node());
   toNode.appendChild(svg.node());
-  // toNode.children[0].replaceWith(svg.node());
-// toNode.appendChild(svg.node());
-  // document.body.replaceChild(svg.node(), toNode);
 };
