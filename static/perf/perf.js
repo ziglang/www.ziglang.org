@@ -46,8 +46,8 @@ async function loadBenchmarksJSON() {
 
 async function loadRecords() {
 // Massage the data
-return await d3.csv("records.csv").then(function (data) {
-  data.forEach(function (d) {
+return await d3.csv("records.csv").then((data) => {
+  data.forEach((d) => {
     // Need to multiply the unix time by 1000 so the Date initializer works.
     d.timestamp = new Date(d.timestamp * 1000);
     d.commit_timestamp = new Date(d.commit_timestamp * 1000);
@@ -109,7 +109,7 @@ return await d3.csv("records.csv").then(function (data) {
   });
 
   // The order of the sort and timestamp adjustment must be like this, need to understand why.
-  data.sort(function(a, b) {
+  data.sort((a, b) => {
     return orderZigVersions(a.zig_version, b.zig_version);
   });
 
@@ -383,42 +383,42 @@ if (options.yStart == "zero") {
 
 const minLine = d3.line()
     .curve(d3.curveLinear)
-    .x(function (data) {
+    .x((data) => {
       return x(data.commit_timestamp);
     })
-    .y(function (data) {
+    .y((data) => {
       return yAxisMin(data[minKey]);
     });
 const maxLine = d3.line()
     // .curve(d3.curveCatmullRom)
     .curve(d3.curveLinear)
-    .x(function (data) {
+    .x((data) => {
       return x(data.commit_timestamp);
     })
-    .y(function (data) {
+    .y((data) => {
       return yAxisMax(data[maxKey]);
     });
 
 const primaryMeasurementLine = d3.line()
     // .curve(d3.curveCatmullRom)
     .curve(d3.curveLinear)
-    .x(function (data) {
+    .x((data) => {
       return x(data.commit_timestamp);
     })
-    .y(function (data) {
+    .y((data) => {
       return yAxisPrimaryMeasurement(data[primaryMeasurementKey]);
     });
 
 const area = d3.area()
     .curve(d3.curveLinear)
     // .curve(d3.curveCatmullRom)
-    .x(function (data) {
+    .x((data) => {
       return x(data.commit_timestamp);
     })
-    .y0(function (data) {
+    .y0((data) => {
       return yAxisArea(data[minKey]);
     })
-    .y1(function (data) {
+    .y1((data) => {
       return yAxisArea(data[maxKey]);
     })
 ;
@@ -435,7 +435,7 @@ const svg = d3.create("svg");
 
 
 
-  x.domain(d3.extent(data, function (d) { return d.commit_timestamp; }));
+  x.domain(d3.extent(data, (d) => { return d.commit_timestamp; }));
 
   if (options.rangeArea) {
   // Min/Max Range Area
@@ -470,8 +470,8 @@ const svg = d3.create("svg");
 
       // Hover circles
       svg.append("g").selectAll('circle').data(data).enter().append('circle')
-      .attr('cx', function(d) {  return x(d.commit_timestamp); })
-      .attr('cy', function(d) { return yAxisArea(d[primaryMeasurementKey]); })
+      .attr('cx', (d) => {  return x(d.commit_timestamp); })
+      .attr('cy', (d) => { return yAxisArea(d[primaryMeasurementKey]); })
       .attr('r', 0)
       .attr('fill', 'orange')
       .attr('stroke', 'orange')
