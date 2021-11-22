@@ -1,3 +1,5 @@
+// Load the data, and make the charts
+loadData();
 
 const MEASUREMENT_TITLES = {
   cpu_cycles: "CPU Cycles",
@@ -277,25 +279,19 @@ function parseZigVersion(zig_version) {
   return [+semver[0], +semver[1], +semver[2], +rev];
 }
 
-const loadEverything = async () => {
+async function loadData() {
   console.info("Loading CSV/JSON data.");
   const benchmark_json = await loadBenchmarksJSON();
   const records = await loadRecords();
-  return {benchmark_json, records};
-}
-
-loadEverything().then(data => {
-  records = data.records;
-  benchmark_json = data.benchmark_json;
   console.info("Data loaded.");
   console.info(`records.csv loaded. It contains ${records.length} records.`);
   console.info(`benchmarks.json file contains ${Object.keys(benchmark_json).length} benchmark metadata objects.`);
   // debugger;
-  makeCharts();
-});
+  makeCharts(benchmark_json, records);
+  return {benchmark_json, records};
+};
 
-
-function makeCharts() {
+function makeCharts(benchmark_json, records) {
   Object.keys(benchmark_json).forEach(benchmarkName => {
     createStructureForBenchmark(benchmarkName, benchmark_json[benchmarkName]);
 
