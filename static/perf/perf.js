@@ -590,12 +590,31 @@ const svg = d3.create("svg");
       svg
       .data([data])
       .on("mouseover", (event, data) => {
+        event.preventDefault();
+
         // Show a circle for each data point
         svg.selectAll('circle')
         .transition()
         .duration(75)
         .attr("r", 1);
-        event.preventDefault();
+      const tooltip = d3.select("div#tooltip");
+      tooltip
+      .style("opacity", 1)
+      .style("stroke", "black")
+      .style("pointer-events", "all")
+      .style("left", (event.clientX + 30) + "px")
+      .style("top", (event.clientY + 50) + "px");
+    })
+      .on("mousedown", (event) => {
+        // event.preventDefault();
+        const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
+        const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
+        const i = bisectDate(data, commitTimestampAtPointerX);
+        window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
+      })
+      .on("mousemove", (event) => {
+      event.preventDefault();
+
         const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
       const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
       const i = bisectDate(data, commitTimestampAtPointerX);
@@ -793,23 +812,9 @@ const svg = d3.create("svg");
 
       tbodyNode.appendChild(trZigVersions);
 
-      const tooltip = d3.select("div#tooltip");
-      tooltip
-      .style("opacity", 1)
-      .style("stroke", "black")
-      .style("pointer-events", "all")
-      .style("left", (event.clientX + 30) + "px")
-      .style("top", (event.clientY + 50) + "px");
-    })
-      .on("mousedown", (event) => {
-        // event.preventDefault();
-        const bisectDate = d3.bisector((d) => { return d.commit_timestamp; }).left;
-        const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
-        const i = bisectDate(data, commitTimestampAtPointerX);
-        window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
-      })
-      .on("mousemove", (event) => {
-      event.preventDefault();
+
+
+
       const tooltip = d3.select("div#tooltip");
       tooltip
         .transition()
