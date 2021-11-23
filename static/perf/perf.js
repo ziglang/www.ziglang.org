@@ -118,7 +118,7 @@ async function loadRecords() {
         for (let i = 1; i < data.length; i += 1) {
             if (data[i].commit_timestamp < data[i - 1].commit_timestamp) {
                 // Pretend it was done 30 minutes after the previous timestamp.
-                data[i].commit_timestamp = new Date((+data[i - 1].commit_timestamp) + (1000 * 60 * 30));
+                data[i].commit_timestamp = new Date((+data[i - 1].commit_timestamp) + (60 * 30));
             }
         }
         return data;
