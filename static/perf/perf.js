@@ -1,5 +1,5 @@
 // Load the data, and make the charts
-loadData();
+let { benchmark_json, records } = loadData();
 
 const MEASUREMENT_TITLES = {
     cpu_cycles: "CPU Cycles",
@@ -251,8 +251,8 @@ const resetDataButton = f2.addButton({
 });
 
 pane.on("change", (event) => {
-    console.log(options.height);
-    makeCharts();
+    console.log(options);
+    makeCharts(benchmark_json, records);
 });
 
 function makeLabel(obj, key) {
@@ -279,14 +279,13 @@ function parseZigVersion(zig_version) {
 
 async function loadData() {
     console.info("Loading CSV/JSON data.");
-    const benchmark_json = await loadBenchmarksJSON();
-    const records = await loadRecords();
+    benchmark_json = await loadBenchmarksJSON();
+    records = await loadRecords();
     console.info("Data loaded.");
     console.info(`records.csv loaded. It contains ${records.length} records.`);
     console.info(`benchmarks.json file contains ${Object.keys(benchmark_json).length} benchmark metadata objects.`);
     // debugger;
     makeCharts(benchmark_json, records);
-    return { benchmark_json, records };
 }
 
 function makeCharts(benchmark_json, records) {
