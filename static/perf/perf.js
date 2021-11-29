@@ -572,13 +572,23 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 .transition()
                 .duration(75)
                 .attr("r", 1);
+
+            // Make sure the tooltip doesn't go off the screen horizontally
+            const tooltipNode = document.getElementById("tooltip");
+            let tooltipLeft = event.clientX + 30;
+            let tooltipTop = event.clientY + 50;
+
+            if (tooltipNode.offsetWidth + tooltipLeft >= document.body.clientWidth) {
+                tooltipLeft = document.body.clientWidth - tooltipNode.offsetWidth;
+            }
+
             const tooltip = d3.select("div#tooltip");
             tooltip
                 .style("opacity", 1)
                 .style("stroke", "black")
                 .style("pointer-events", "all")
-                .style("left", (event.clientX + 30) + "px")
-                .style("top", (event.clientY + 50) + "px");
+                .style("left", tooltipLeft.toString() + "px")
+                .style("top", tooltipTop.toString() + "px");
         })
         .on("mousedown", (event) => {
             // event.preventDefault();
@@ -789,12 +799,21 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
             tbodyNode.appendChild(trZigVersions);
 
+            // Make sure the tooltip doesn't go off the screen horizontally
+            const tooltipNode = document.getElementById("tooltip");
+            let tooltipLeft = event.clientX + 30;
+            let tooltipTop = event.clientY + 50;
+
+            if (tooltipNode.offsetWidth + tooltipLeft >= document.body.clientWidth) {
+                tooltipLeft = document.body.clientWidth - tooltipNode.offsetWidth;
+            }
+
             const tooltip = d3.select("div#tooltip");
             tooltip
                 .transition()
                 .duration(75)
-                .style("left", (event.clientX + 30) + "px")
-                .style("top", (event.clientY + 50) + "px");
+                .style("left", tooltipLeft.toString() + "px")
+                .style("top", tooltipTop.toString() + "px");
         })
         .on("mouseleave", (event) => {
             event.preventDefault();
