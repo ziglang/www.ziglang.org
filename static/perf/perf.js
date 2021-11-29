@@ -121,6 +121,16 @@ async function loadRecords() {
                 data[i].commit_timestamp = new Date((+data[i - 1].commit_timestamp) + (60 * 30));
             }
         }
+
+        // TODO: Make Data filtering dynamic
+        data = data.filter(row => {
+            // debugger;
+            if(row.commit_timestamp >= new Date('2021-11-20T00:00:00')) {
+                return true;
+            } else {
+                return false;
+            }
+        });
         return data;
     });
 }
