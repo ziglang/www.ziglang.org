@@ -373,7 +373,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
     }
 
     const minLine = d3.line()
-        .curve(d3.curveLinear)
+        .curve(d3.curveStepAfter)
         .x((data) => {
             return x(data.commit_timestamp);
         })
@@ -382,7 +382,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         });
     const maxLine = d3.line()
         // .curve(d3.curveCatmullRom)
-        .curve(d3.curveLinear)
+        .curve(d3.curveStepAfter)
         .x((data) => {
             return x(data.commit_timestamp);
         })
@@ -392,7 +392,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
     const primaryMeasurementLine = d3.line()
         // .curve(d3.curveCatmullRom)
-        .curve(d3.curveLinear)
+        .curve(d3.curveStepAfter)
         .x((data) => {
             return x(data.commit_timestamp);
         })
@@ -401,7 +401,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         });
 
     const area = d3.area()
-        .curve(d3.curveLinear)
+        .curve(d3.curveStepAfter)
         // .curve(d3.curveCatmullRom)
         .x((data) => {
             return x(data.commit_timestamp);
