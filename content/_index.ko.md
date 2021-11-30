@@ -2,43 +2,43 @@
 title: 홈
 mobile_menu_title: "홈"
 ---
-{{< slogan get_started="시작하기" docs="문서" notes="변경사항" lang="ko" >}}
-Zig는 **튼튼**하고, **최적화**된, **재사용 가능**한 소프트웨어를 관리하기 위한 범용 프로그래밍 언어 및 툴체인입니다.
+{{< slogan get_started="GET STARTED" docs="Documentation" notes="Changes" lang="en" >}}
+Zig는 **견고**하고, **최적화**되어 있으며, **재사용이 가능한** 소프트웨어의 개발 및 관리를 위한 범용 프로그래밍 언어 및 툴체인입니다.
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
 {{% div class="features" %}}
 
 # ⚡ 간결한 언어
-당신의 프로그래밍 언어 지식을 디버깅할게 아니라 애플리케이션을 디버깅하는데 집중하십시오.
+프로그래밍 언어 지식을 디버깅하는 대신, 프로그램의 디버깅에만 집중하세요.
 
-- 숨겨진 제어 흐름 없음.
+- 숨겨진 흐름 제어 없음.
 - 숨겨진 메모리 할당 없음.
-- 전처리기, 매크로 없음.
+- 전처리기와 매크로 없음.
 
-# ⚡ Comptime
-컴파일 타임의 코드 실행 및 지연 평가에 기반한 메타프로그래밍에 대한 새로운 접근.
+# ⚡ 컴파일 타임
+컴파일 타임 코드 실행 기능과 지연 평가 기능을 활용한, 메타프로그래밍의 새로운 접근법을 확인해보세요.
 
-- 컴파일 타임에 어떤 함수든 호출하세요.
-- 런타임 오버헤드 없이 타입을 값으로 변환하세요.
-- Comptime은 대상 아키텍쳐를 에뮬레이트 합니다.
+- 어떤 함수든 컴파일 타임에 호출 가능.
+- 런타임 오버헤드 없이 모든 자료형을 값처럼 수정 가능.
+- 컴파일 과정에서 대상 아키텍처를 그대로 에뮬레이트 가능.
 
-# ⚡ 성능, 안정성을 만나다
-모든 오류 조건을 처리할 수 있는 빠르고 명료한 코드를 작성하십시오.
+# ⚡ Zig를 통한 코드 관리
+C/C++/Zig 코드베이스를 점진적으로 향상시키세요.
 
-- 오류 처리 로직을 우아하게 가이드 해줍니다.
-- 설정 가능한 런타임 체크는 성능과 안정성 보장 사이에서 균형을 맞춰줄 것입니다.
-- 벡터 타입을 이용하여 SIMD 명령어를 이식 가능하게 표현하십시오.
+- Zig를 크로스 컴파일을 지원하며, 다른 컴파일러를 바로 대체할 수 있는 독립적인 C/C++ 컴파일러로 사용 가능.
+- `zig build`를 이용하여 모든 플랫폼에서 일관성 있는 개발 환경 구축 가능.
+- 여러 언어를 대상으로 링크 타임 최적화 (LTO) 기능을 지원하여, C/C++ 프로젝트에 Zig 컴파일 단위를 부담 없이 추가 가능.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
 <h1>
-    <a href="learn/overview/" class="button" style="display: inline;">심층 개요</a>
+    <a href="learn/overview/" class="button" style="display: inline;">자세히 알아보기</a>
 </h1>
 {{% /div %}}
 {{% div  style="margin-left: 5px;" %}}
 <h1>
-    <a href="learn/samples/" class="button" style="display: inline;">더 많은 코드 샘플</a>
+    <a href="learn/samples/" class="button" style="display: inline;">코드 예제 더 보기</a>
 </h1>
 {{% /div %}}
 {{% /flexrow %}}
@@ -60,13 +60,13 @@ Zig는 **튼튼**하고, **최적화**된, **재사용 가능**한 소프트웨�
 {{% /div %}}
 
 {{% div class="community-message" %}}
-# 분산된 Zig 커뮤니티
-누구나 커뮤니티가 모일만한 자신만의 공간을 만들어 유지해도 좋습니다.
-"공식"이나 "비공식"이란 개념은 없습니다만, 각 공간에는 관리자와 규칙이 있습니다.
+# The Zig community is decentralized 
+Anyone is free to start and maintain their own space for the community to gather.  
+There is no concept of "official" or "unofficial", however, each gathering place has its own moderators and rules.
 
 <div style="">
 <h1>
-	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">전체 커뮤니티 보기</a>
+	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">See all Communities</a>
 </h1>
 </div>
 {{% /div %}}
@@ -75,9 +75,9 @@ Zig는 **튼튼**하고, **최적화**된, **재사용 가능**한 소프트웨�
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
-# 주요 개발
-Zig의 저장소는 [https://github.com/ziglang/zig](https://github.com/ziglang/zig)에 있으며, 이곳에서 이슈 트래킹과 제안에 대한 논의를 진행합니다.
-기여자는 Zig의 [행동 강령](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)을 따라야 합니다.
+# Main development
+The Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
+Contributors are expected to follow Zig's [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">
@@ -88,22 +88,22 @@ Zig의 저장소는 [https://github.com/ziglang/zig](https://github.com/ziglang/
 
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
-## ZSF는 501(c)(3) 비영리 기업입니다.
+## The ZSF is a 501(c)(3) non-profit corporation.
 
-Zig Software Foundation은 언어에 대한 개발을 지원하는 것을 목표로 Zig의 창시자인 Andrew Kelley에 의해 2020년에 설립된 비영리 기업입니다. 현재 ZSF는 소수의 주요 기여자의 작업에 대해 경쟁력 있는 수준의 비용을 제공할 수 있습니다. 앞으로 더 많은 주요 기여자들에게 이런 제공을 확대하길 바랍니다.
+The Zig Software Foundation is a non-profit corporation founded in 2020 by Andrew Kelley, the creator of Zig, with the goal of supporting the development of the language. Currently, the ZSF is able to offer paid work at competitive rates to a small number of core contributors. We hope to be able to extend this offer to more core contributors in the future.
 
-Zig Software Foundation은 기부로 유지됩니다.
+The Zig Software Foundation is sustained by donations.
 
 <h1>
-	<a href="zsf/" class="button" style="display:inline;">더 보기</a>
+	<a href="zsf/" class="button" style="display:inline;">Learn More</a>
 </h1>
 {{% /div %}}
 
 
 {{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="Sponsors" %}}
-# 기업 후원
-다음의 기업들이 Zig Software foundation에 직접적인 재정적 지원을 하고 있습니다.
+# Corporate Sponsors 
+The following companies are providing direct financial support to the Zig Software foundation.
 
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
@@ -115,11 +115,11 @@ Zig Software Foundation은 기부로 유지됩니다.
 {{% /sponsor-logos %}}
 
 # GitHub Sponsors
-[Zig를 후원](zsf/)해 주시는 분들께 감사드리며, 이 프로젝트는 기업 주주가 아닌 오픈소스 커뮤니티에 책임이 있습니다. 특히, 다음의 훌륭한 분들께서 Zig에 매달 $200 이상을 후원하고 계십니다:
+Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open source community rather than corporate shareholders. In particular, these fine folks sponsor Zig for $200/month or more:
 
 {{< ghsponsors >}}
 
-이 섹션은 매달 초 갱신됩니다.
+This section is updated at the beginning of each month.
 {{% /div %}}
 {{< /div >}}
 
