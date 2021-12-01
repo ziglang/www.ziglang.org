@@ -1035,12 +1035,12 @@
         }
 
         if (fnsList.length !== 0) {
-            var domListFnsFragment = createDomListFragment(fnsList.length, '<tr><td></td><td></td></tr>');
+            var domListFnsFragment = createDomListFragment(fnsList.length, '<tr><td><code class="zig"></code></td><td></td></tr>');
             for (var i = 0; i < fnsList.length; i += 1) {
                 var decl = fnsList[i];
                 var trDom = domListFnsFragment.children[i];
 
-                var tdFnCode = trDom.children[0];
+                var tdFnCode = trDom.children[0].firstChild;
                 var tdDesc = trDom.children[1];
 
                 tdFnCode.innerHTML = typeIndexName(decl.type, true, true, decl, navLinkDecl(decl.name), thisTypes);
