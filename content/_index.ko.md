@@ -2,8 +2,8 @@
 title: 홈
 mobile_menu_title: "홈"
 ---
-{{< slogan get_started="GET STARTED" docs="Documentation" notes="Changes" lang="en" >}}
-Zig는 **견고**하고, **최적화**되어 있으며, **재사용이 가능한** 소프트웨어의 개발 및 관리를 위한 범용 프로그래밍 언어 및 툴체인입니다.
+{{< slogan get_started="시작하기" docs="개발 문서" notes="변경 사항" lang="en" >}}
+Zig는 **견고**하고, **최적화**된, 그리고 **재사용이 가능한** 소프트웨어의 개발 및 관리를 위한 범용 프로그래밍 언어 및 툴체인입니다.
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
@@ -28,7 +28,7 @@ C/C++/Zig 코드베이스를 점진적으로 향상시키세요.
 
 - Zig를 크로스 컴파일을 지원하며, 다른 컴파일러를 바로 대체할 수 있는 독립적인 C/C++ 컴파일러로 사용 가능.
 - `zig build`를 이용하여 모든 플랫폼에서 일관성 있는 개발 환경 구축 가능.
-- 여러 언어를 대상으로 링크 타임 최적화 (LTO) 기능을 지원하여, C/C++ 프로젝트에 Zig 컴파일 단위를 부담 없이 추가 가능.
+- 여러 언어를 대상으로 링크 타임 최적화 (LTO) 기능을 지원하여, C/C++ 프로젝트에 Zig 컴파일 단위를 추가 가능.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
@@ -52,7 +52,7 @@ C/C++/Zig 코드베이스를 점진적으로 향상시키세요.
 
 
 {{% div class="alt-background" %}}
-{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Community" %}}
+{{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="커뮤니티" %}}
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div style="width:25%" %}}
@@ -60,13 +60,13 @@ C/C++/Zig 코드베이스를 점진적으로 향상시키세요.
 {{% /div %}}
 
 {{% div class="community-message" %}}
-# The Zig community is decentralized 
-Anyone is free to start and maintain their own space for the community to gather.  
-There is no concept of "official" or "unofficial", however, each gathering place has its own moderators and rules.
+# Zig의 다양한 커뮤니티를 만나보세요
+누구든지 자유롭게 모일 수 있는 커뮤니티를 만들고 관리할 수 있습니다.  
+"공식"이나 "비공식" 커뮤니티라는 개념은 따로 없지만, 각 커뮤니티마다 관리자와 규칙이 모두 다르니 주의해주세요.
 
 <div style="">
 <h1>
-	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">See all Communities</a>
+	<a href="https://github.com/ziglang/zig/wiki/Community" class="button" style="display: inline;">모든 커뮤니티 보기</a>
 </h1>
 </div>
 {{% /div %}}
@@ -75,9 +75,9 @@ There is no concept of "official" or "unofficial", however, each gathering place
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
-# Main development
-The Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
-Contributors are expected to follow Zig's [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
+# 주요 개발 커뮤니티
+Zig의 저장소 주소는 [https://github.com/ziglang/zig](https://github.com/ziglang/zig)이며, 여기에서 이슈 트래킹과 제안에 대한 논의를 진행합니다.
+프로젝트에 기여하실 분들은 Zig의 [행동 지침](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)을 따라야 합니다.
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">
@@ -88,22 +88,22 @@ Contributors are expected to follow Zig's [Code of Conduct](https://github.com/z
 
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
-## The ZSF is a 501(c)(3) non-profit corporation.
+## ZSF는 501(c)(3) 비영리 단체입니다.
 
-The Zig Software Foundation is a non-profit corporation founded in 2020 by Andrew Kelley, the creator of Zig, with the goal of supporting the development of the language. Currently, the ZSF is able to offer paid work at competitive rates to a small number of core contributors. We hope to be able to extend this offer to more core contributors in the future.
+Zig Software Foundation은 Zig를 만든 Andrew Kelley가 프로그래밍 언어의 개발을 지원하기 위해 2020년에 창립한 비영리 단체입니다. 현재, ZSF는 소수의 프로젝트 핵심 기여자에게만 회사 수준의 급여를 지급할 수 있는 상황입니다. 저희는 미래에 더 많은 프로젝트 핵심 기여자분들에게 급여를 지급할 수 있기를 바라고 있습니다.
 
-The Zig Software Foundation is sustained by donations.
+Zig Software Foundation은 기부금으로만 운영됩니다.
 
 <h1>
-	<a href="zsf/" class="button" style="display:inline;">Learn More</a>
+	<a href="zsf/" class="button" style="display:inline;">자세히 알아보기</a>
 </h1>
 {{% /div %}}
 
 
 {{< div class="alt-background" style="padding: 20px 0;">}}
-{{% div class="container" title="Sponsors" %}}
-# Corporate Sponsors 
-The following companies are providing direct financial support to the Zig Software foundation.
+{{% div class="container" title="후원자" %}}
+# 기업 후원
+아래 기업은 Zig Software Foundation을 재정적으로 지원해주고 있는 기업입니다.
 
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
@@ -114,12 +114,12 @@ The following companies are providing direct financial support to the Zig Softwa
  </a>
 {{% /sponsor-logos %}}
 
-# GitHub Sponsors
-Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open source community rather than corporate shareholders. In particular, these fine folks sponsor Zig for $200/month or more:
+# GitHub 후원자
+[Zig를 후원](zsf/)해주시는 분들 덕분에, 이 프로젝트는 기업의 주주가 아닌 오픈 소스 커뮤니티가 운영하고 있습니다. 특히, 아래 명단에 있는 분들은 Zig를 매달 $200 이상 후원하고 있습니다:
 
 {{< ghsponsors >}}
 
-This section is updated at the beginning of each month.
+이 섹션은 매달 초에 갱신됩니다.
 {{% /div %}}
 {{< /div >}}
 
