@@ -160,7 +160,11 @@ async function loadRecords() {
 
         // TODO: Localize dates?
         data = data.filter(row => {
-            if ( (row.commit_timestamp >= new Date(startDateInput.value)) && (row.commit_timestamp <= new Date(endDateInput.value))) {
+            const startDate = new Date(startDateInput.value);
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = new Date(endDateInput.value);
+            endDate.setHours(24, 0, 0, 0);
+            if ( (row.commit_timestamp >= startDate) && (row.commit_timestamp <= endDate)) {
                 return true;
             } else {
                 return false;
