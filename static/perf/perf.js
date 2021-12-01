@@ -158,13 +158,23 @@ async function loadRecords() {
         startDateInput.max = maxDate;
         endDateInput.max = maxDate;
 
-        // TODO: Localize dates?
         data = data.filter(row => {
-            const startDate = new Date(startDateInput.value);
+
+            // TODO: This needs looked at again. Need to simplify and better understand the issue here
+            // Changes may need to be made where we set the date input values instead.
+            const startDate = startDateInput.valueAsDate;
+            const startDateOffset = startDate.getTimezoneOffset();
+            const startDateOffsetMS = startDateOffset * 60_000;
+            const localStartDate = new Date(startDate.valueOf() + startDateOffsetMS);
             startDate.setHours(0, 0, 0, 0);
-            const endDate = new Date(endDateInput.value);
-            endDate.setHours(24, 0, 0, 0);
-            if ( (row.commit_timestamp >= startDate) && (row.commit_timestamp <= endDate)) {
+
+            const endDate = endDateInput.valueAsDate;
+            const endDateOffset = endDate.getTimezoneOffset();
+            const endDateOffsetMS = endDateOffset * 60_000;
+            const localEndDate = new Date(endDate.valueOf() + endDateOffsetMS);
+            localEndDate.setHours(24, 0, 0, 0);
+
+            if ( (row.commit_timestamp >= localStartDate) && (row.commit_timestamp <= localEndDate)) {
                 return true;
             } else {
                 return false;
