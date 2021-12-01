@@ -273,11 +273,11 @@
                     renderContainer(fnObj.combined, calls.map(function (call) { return zigAnalysis.calls[call].result.value }));
                 }
 
-                var domListFnExamplesFragment = createDomListFragment(calls.length, '<li></li>');
+                var domListFnExamplesFragment = createDomListFragment(calls.length, '<li><code class="zig"></code></li>');
 
                 for (var callI = 0; callI < calls.length; callI += 1) {
-                    var liDom = domListFnExamplesFragment.children[callI];
-                    liDom.innerHTML = getCallHtml(fnDecl, calls[callI]);
+                    var codeDom = domListFnExamplesFragment.children[callI].firstChild;
+                    codeDom.innerHTML = getCallHtml(fnDecl, calls[callI]);
                 }
 
                 domListFnExamples.innerHTML = "";
