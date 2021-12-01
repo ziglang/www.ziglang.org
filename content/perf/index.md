@@ -7,6 +7,18 @@ mobile_menu_title: "Performance Tracking"
 This project exists to track various benchmarks related to the Zig project regarding execution speed, memory usage, throughput, and other resource utilization statistics. 
 
 The goal is to prevent performance regressions, and provide understanding and exposure to how various code changes affect key measurements.
+<div id="perf-settings" class="perf-settings">
+	<div class="title"></div>
+	<div class="start-date">
+		<label for="start">Start:</label>
+		<input type="date" id="start-date" name="start"
+		min="2021-08-01">
+	</div>
+	<div class="end-date">
+		<label for="end">End:</label>
+		<input type="date" id="end-date" name="end" min="2021-08-01">
+	</div>
+</div>
 <div id="tooltip" class="tooltip">
 	<div class="title">
 	<span class="benchmark-title"></span> > <span class="measurement-title"></span>

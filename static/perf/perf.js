@@ -40,6 +40,22 @@ const column_types = {
     stime_max: "ns",
 };
 
+const startDateInput = document.getElementById('start-date');
+
+startDateInput.addEventListener('change', async (event) => {
+    console.log("Start date changed to: " + startDateInput.value);
+    records = await loadRecords();
+    makeCharts(benchmark_json, records);
+});
+
+const endDateInput = document.getElementById('end-date');
+
+endDateInput.addEventListener('change', async (event) => {
+    console.log("End date changed to: " + endDateInput.value);
+    records = await loadRecords();
+    makeCharts(benchmark_json, records);
+});
+
 async function loadBenchmarksJSON() {
     const response = await fetch("benchmarks.json");
     const data = await response.json();
@@ -121,11 +137,30 @@ async function loadRecords() {
                 data[i].commit_timestamp = new Date((+data[i - 1].commit_timestamp) + (60 * 30));
             }
         }
+        const startDateInput = document.getElementById("start-date");
+        const endDateInput = document.getElementById("end-date");
 
-        // TODO: Make Data filtering dynamic
+        // Set the start and end dates to match the first/last commit dates
+        const minDate = data[0].commit_timestamp.toISOString().substring(0, 10);
+        const maxDate = data[data.length - 1].commit_timestamp.toISOString().substring(0, 10);
+        startDateInput.min = minDate;
+        endDateInput.min = minDate;
+
+        // TODO: The initial setting of these will cause everything to be reloaded.
+        // Should somehow add the 'change' event listener AFTER setting the min/max/current dates.
+        if (startDateInput.value === "") {
+            startDateInput.value = minDate;
+        }
+        if (endDateInput.value === "") {
+            endDateInput.value = maxDate;
+        }
+
+        startDateInput.max = maxDate;
+        endDateInput.max = maxDate;
+
+        // TODO: Localize dates?
         data = data.filter(row => {
-            // debugger;
-            if(row.commit_timestamp >= new Date('2021-11-20T00:00:00')) {
+            if ( (row.commit_timestamp >= new Date(startDateInput.value)) && (row.commit_timestamp <= new Date(endDateInput.value))) {
                 return true;
             } else {
                 return false;
