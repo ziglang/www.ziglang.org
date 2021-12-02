@@ -17,6 +17,77 @@ function getTitle(measurement) {
     return MEASUREMENT_TITLES[measurement];
 }
 
+// Settings
+const options = {
+    type: "stacked",
+    line: "median",
+    rangeArea: true,
+    xInterval: "date",
+    yStart: "minimum",
+    height: 175,
+};
+
+// Settings Pane Events
+const chartTypeSelect = document.getElementById("chart-type");
+chartTypeSelect.addEventListener('change', async (event) => {
+    console.log(options);
+    options.type = chartTypeSelect.value;
+    makeCharts(benchmark_json, records);
+});
+
+const primaryMeasurementSelect = document.getElementById("primary-measurement");
+primaryMeasurementSelect.addEventListener('change', async (event) => {
+    options.line = primaryMeasurementSelect.value;
+    console.log(options);
+    makeCharts(benchmark_json, records);
+});
+
+const rangeAreaCheckbox = document.getElementById("range-area");
+rangeAreaCheckbox.addEventListener('change', async (event) => {
+    options.rangeArea = rangeAreaCheckbox.checked;
+    console.log(options);
+    makeCharts(benchmark_json, records);
+});
+
+const xIntervalSelect = document.getElementById("x-interval");
+xIntervalSelect.addEventListener('change', async (event) => {
+    options.xInterval = xIntervalSelect.value;
+    console.log(options);
+    makeCharts(benchmark_json, records);
+});
+
+const yStartSelect = document.getElementById("y-start");
+yStartSelect.addEventListener('change', async (event) => {
+    options.yStart = yStartSelect.value;
+    console.log(options);
+    makeCharts(benchmark_json, records);
+});
+
+const chartHeightSlider = document.getElementById("chart-height");
+chartHeightSlider.addEventListener('change', async (event) => {
+    options.height = chartHeightSlider.value;
+    console.log(options);
+    makeCharts(benchmark_json, records);
+});
+
+const startDateInput = document.getElementById('start-date');
+
+startDateInput.addEventListener('change', async (event) => {
+    console.log("Start date changed to: " + startDateInput.value);
+    records = await loadRecords();
+    makeCharts(benchmark_json, records);
+});
+
+const endDateInput = document.getElementById('end-date');
+
+endDateInput.addEventListener('change', async (event) => {
+    console.log("End date changed to: " + endDateInput.value);
+    records = await loadRecords();
+    makeCharts(benchmark_json, records);
+});
+
+
+
 // TODO: Should use this for displaying units
 const column_types = {
     timestamp: "date",
@@ -39,22 +110,6 @@ const column_types = {
     stime_min: "ns",
     stime_max: "ns",
 };
-
-const startDateInput = document.getElementById('start-date');
-
-startDateInput.addEventListener('change', async (event) => {
-    console.log("Start date changed to: " + startDateInput.value);
-    records = await loadRecords();
-    makeCharts(benchmark_json, records);
-});
-
-const endDateInput = document.getElementById('end-date');
-
-endDateInput.addEventListener('change', async (event) => {
-    console.log("End date changed to: " + endDateInput.value);
-    records = await loadRecords();
-    makeCharts(benchmark_json, records);
-});
 
 async function loadBenchmarksJSON() {
     const response = await fetch("benchmarks.json");
@@ -237,83 +292,6 @@ function createStructureForBenchmark(key, benchmark) {
     document.getElementById("content").querySelector("div.container").appendChild(div);
 }
 
-// https://github.com/cocopon/tweakpane
-const pane = new Tweakpane.Pane();
-
-const options = {
-    type: "stacked",
-    line: "median",
-    rangeArea: true,
-    xInterval: "date",
-    yStart: "min",
-    height: 175,
-};
-
-const f1 = pane.addFolder({
-    title: "Charts",
-});
-
-f1.addInput(options, "type", {
-    options: [
-        { text: "Stacked", value: "stacked" },
-        { text: "Overlay", value: "overlay" },
-    ],
-});
-
-f1.addInput(options, "line", {
-    options: [
-        { text: "Median", value: "median" },
-        { text: "Mean", value: "mean" },
-        { text: "Minimum", value: "minimum" },
-        { text: "Maximum", value: "maximum" },
-    ],
-});
-
-f1.addInput(options, "rangeArea");
-
-f1.addSeparator();
-
-f1.addInput(options, "xInterval", {
-    options: [
-        { text: "Date", value: "date" },
-        { text: "Commits", value: "commit" },
-    ],
-});
-
-f1.addInput(options, "yStart", {
-    options: [
-        { text: "0", value: "zero" },
-        { text: "Min. Value", value: "min" },
-    ],
-});
-
-f1.addSeparator();
-
-f1.addInput(options, "height", {
-    step: 1.0,
-    min: 50,
-    max: 800,
-});
-
-const f2 = pane.addFolder({
-    title: "Data",
-});
-
-const addMonthDummyDataButton = f2.addButton({
-    title: "+1 Month",
-});
-
-f2.addSeparator();
-
-const resetDataButton = f2.addButton({
-    title: "Reset",
-});
-
-pane.on("change", (event) => {
-    console.log(options);
-    makeCharts(benchmark_json, records);
-});
-
 function makeLabel(obj, key) {
     return obj[key] + " " + key + " @ " + obj.zig_version;
 }
@@ -423,7 +401,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         yAxisArea.domain(DOMAIN);
         yAxisMin.domain(DOMAIN);
         yAxisMax.domain(DOMAIN);
-    } else if (options.yStart == "min") {
+    } else if (options.yStart == "minimum") {
         const DOMAIN = [d3.min(data, d => d[minKey]), d3.max(data, d => d[maxKey])];
         yAxisPrimaryMeasurement.domain(DOMAIN);
         yAxisArea.domain(DOMAIN);

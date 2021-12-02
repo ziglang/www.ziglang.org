@@ -6,16 +6,62 @@ mobile_menu_title: "Performance Tracking"
 
 <div id="perf-settings" class="perf-settings">
 	<div class="content">
-		<div class="title"></div>
-		<span class="start-date">
-			<label for="start">Start:</label>
-			<input type="date" id="start-date" name="start"
-			min="2021-08-01">
-		</span>
-		<span class="end-date">
-			<label for="end">End:</label>
-			<input type="date" id="end-date" name="end" min="2021-08-01">
-		</span>
+		<div>
+			<div class="title"></div>
+			<span class="chart-type">
+				<label for="chart-type">Chart Type:</label>
+				<select name="chart-type" id="chart-type">
+					<option value="stacked" selected>Stacked</option>
+					<option value="overlay">Overlay</option>
+				</select>
+			</span>
+			<span class="primary-measurement">
+				<label for="primary-measurement">Primary Measurement:</label>
+				<select name="primary-measurement" id="primary-measurement">
+					<option value="median" selected>Median</option>
+					<option value="mean">Mean</option>
+					<option value="minimum">Min</option>
+					<option value="maximum">Max</option>
+				</select>
+			</span>
+			<span class="range-area">
+				<input type="checkbox" id="range-area" name="range-area"
+				checked>
+				<label for="ranged-area">Show Range Area</label>
+			</span>
+		</div>
+		<div>
+			<span class="x-interval">
+				<label for="x-interval">X Interval:</label>
+				<select name="x-interval" id="x-interval">
+					<option value="date" selected>Date</option>
+					<option value="commits">Commits</option>
+				</select>
+			</span>
+			<span class="y-start">
+				<label for="y-start">Y Start:</label>
+				<select name="y-start" id="y-start">
+					<option value="zero">0</option>
+					<option value="minimum" selected>Min. Value</option>
+				</select>
+			</span>
+			<span class="chart-height">
+				<label for="chart-height">Chart Height:</label>
+				<input type="range" min="100" max="1000" value="175" id="chart-height">
+			</span>
+		</div>
+		<div>
+			<div class="title"></div>
+			<span class="start-date">
+				<label for="start">Start:</label>
+				<input type="date" id="start-date" name="start"
+				min="2021-08-01">
+			</span>
+			<span class="end-date">
+				<label for="end">End:</label>
+				<input type="date" id="end-date" name="end" min="2021-08-01">
+			</span>
+		</div>
 	</div>
 </div>
 
@@ -101,6 +147,5 @@ The goal is to prevent performance regressions, and provide understanding and ex
 		</table>
 	</div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/tweakpane@3.0.5/dist/tweakpane.min.js"></script>
 <script type="text/javascript" src="d3-7.1.1.min.js"></script>
 <script type="text/javascript" src="perf.js"></script>
