@@ -54,21 +54,33 @@ chartHeightSlider.addEventListener('change', async (event) => {
     makeCharts(benchmark_json, records);
 });
 
-const startDateInput = document.getElementById('start-date');
+// This is called when the data is loaded, to avoid useless reloading of the data/charts
+function addDateEventListeners() {
+    const startDateInput = document.getElementById('start-date');
 
-startDateInput.addEventListener('change', async (event) => {
-    console.log("Start date changed to: " + startDateInput.value);
-    records = await loadRecords();
-    makeCharts(benchmark_json, records);
-});
+    if (startDateInput.getAttribute('hasDateInputListener')) {
+        // We've already added the event listeners for the date inputs.
+        // Don't add them again, it'll cause duplicates.
+        return;
+    }
 
-const endDateInput = document.getElementById('end-date');
+    startDateInput.addEventListener('change', async (event) => {
+        console.log("Start date changed to: " + startDateInput.value);
+        records = await loadRecords();
+        makeCharts(benchmark_json, records);
+    });
 
-endDateInput.addEventListener('change', async (event) => {
-    console.log("End date changed to: " + endDateInput.value);
-    records = await loadRecords();
-    makeCharts(benchmark_json, records);
-});
+    const endDateInput = document.getElementById('end-date');
+
+    endDateInput.addEventListener('change', async (event) => {
+        console.log("End date changed to: " + endDateInput.value);
+        records = await loadRecords();
+        makeCharts(benchmark_json, records);
+    });
+
+    // Add the flag specifying we've added both event listeners
+    startDateInput.setAttribute('hasDateInputListener', 'true');
+}
 
 
 
@@ -185,17 +197,19 @@ async function loadRecords() {
         startDateInput.min = minDate;
         endDateInput.min = minDate;
 
-        // TODO: The initial setting of these will cause everything to be reloaded.
-        // Should somehow add the 'change' event listener AFTER setting the min/max/current dates.
-        if (startDateInput.value === "") {
+        // Configure the date inputs now that we know the min/max dates available
+        if (!startDateInput.value) {
             startDateInput.value = minDate;
         }
-        if (endDateInput.value === "") {
+        if (!endDateInput.value) {
             endDateInput.value = maxDate;
         }
 
         startDateInput.max = maxDate;
         endDateInput.max = maxDate;
+
+        // Add the 'change' event listener AFTER setting the min/max/current dates to avoid reloading everything
+        addDateEventListeners();
 
         data = data.filter(row => {
 
