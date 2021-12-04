@@ -565,7 +565,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             const focusLine = focus.select("#focusLine");
             focusLine
                 .transition()
-                .duration(75)
+                .duration(50)
                 .attr("x1", x(data[commitIndex].commit_timestamp))
                 .attr("y1", 0)
                 .attr("x2", x(data[commitIndex].commit_timestamp))
@@ -575,7 +575,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             const focusCircle = focus.select("#focusCircle");
             focusCircle
                 .transition()
-                .duration(75)
+                .duration(50)
                 .attr("cx", x(data[commitIndex].commit_timestamp))
                 .attr("cy", yAxisPrimaryMeasurement(data[commitIndex][primaryMeasurementKey]))
                 .attr("r", 2);
@@ -595,7 +595,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             // Show a circle for each data point
             svg.selectAll("circle")
                 .transition()
-                .duration(75)
+                .duration(50)
                 .attr("r", 1);
 
             // Make sure the tooltip doesn't go off the screen horizontally
@@ -836,7 +836,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             const tooltip = d3.select("div#tooltip");
             tooltip
                 .transition()
-                .duration(75)
+                .duration(50)
                 .style("left", tooltipLeft.toString() + "px")
                 .style("top", tooltipTop.toString() + "px");
         })
@@ -846,7 +846,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             // Hide circles for each data point
             svg.selectAll("circle")
                 .transition()
-                .duration(75)
+                .duration(50)
                 .attr("r", 0);
 
             const tooltip = d3.select("div#tooltip");
