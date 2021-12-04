@@ -8,13 +8,6 @@ mobile_menu_title: "Performance Tracking"
 	<div class="content">
 		<div>
 			<div class="title"></div>
-			<span class="chart-type">
-				<label for="chart-type">Chart Type:</label>
-				<select name="chart-type" id="chart-type">
-					<option value="stacked" selected>Stacked</option>
-					<option value="overlay">Overlay</option>
-				</select>
-			</span>
 			<span class="primary-measurement">
 				<label for="primary-measurement">Primary Measurement:</label>
 				<select name="primary-measurement" id="primary-measurement">
@@ -31,13 +24,6 @@ mobile_menu_title: "Performance Tracking"
 			</span>
 		</div>
 		<div>
-			<span class="x-interval">
-				<label for="x-interval">X Interval:</label>
-				<select name="x-interval" id="x-interval">
-					<option value="date" selected>Date</option>
-					<option value="commits">Commits</option>
-				</select>
-			</span>
 			<span class="y-start">
 				<label for="y-start">Y Start:</label>
 				<select name="y-start" id="y-start">

@@ -19,22 +19,13 @@ function getTitle(measurement) {
 
 // Settings
 const options = {
-    type: "stacked",
     line: "median",
     rangeArea: true,
-    xInterval: "date",
     yStart: "minimum",
     height: 175,
 };
 
 // Settings Pane Events
-const chartTypeSelect = document.getElementById("chart-type");
-chartTypeSelect.addEventListener('change', async (event) => {
-    console.log(options);
-    options.type = chartTypeSelect.value;
-    makeCharts(benchmark_json, records);
-});
-
 const primaryMeasurementSelect = document.getElementById("primary-measurement");
 primaryMeasurementSelect.addEventListener('change', async (event) => {
     options.line = primaryMeasurementSelect.value;
@@ -45,13 +36,6 @@ primaryMeasurementSelect.addEventListener('change', async (event) => {
 const rangeAreaCheckbox = document.getElementById("range-area");
 rangeAreaCheckbox.addEventListener('change', async (event) => {
     options.rangeArea = rangeAreaCheckbox.checked;
-    console.log(options);
-    makeCharts(benchmark_json, records);
-});
-
-const xIntervalSelect = document.getElementById("x-interval");
-xIntervalSelect.addEventListener('change', async (event) => {
-    options.xInterval = xIntervalSelect.value;
     console.log(options);
     makeCharts(benchmark_json, records);
 });
