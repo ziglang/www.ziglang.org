@@ -636,7 +636,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             const titleSpanNode = document.querySelector("div#tooltip>div.title>span.benchmark-title");
             titleSpanNode.innerText = benchmark;
             const measurementTitleSpanNode = document.querySelector("div#tooltip>div.title>span.measurement-title");
-            measurementTitleSpanNode.innerText = getTitle(measurement);
+            measurementTitleSpanNode.innerText = getTitle(measurement) +  " (" + options.line + ")";
 
             // Add the commit hashes to the table headers. These are hidden right now.
             const currentCommitHashLink = document.getElementById("current-commit-link");
