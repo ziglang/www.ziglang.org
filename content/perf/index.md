@@ -22,8 +22,6 @@ mobile_menu_title: "Performance Tracking"
 				checked>
 				<label for="ranged-area">Show Range Area</label>
 			</span>
-		</div>
-		<div>
 			<span class="y-start">
 				<label for="y-start">Y Start:</label>
 				<select name="y-start" id="y-start">
