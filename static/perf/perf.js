@@ -533,17 +533,17 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
     focus.style("display", "none");
     focus.attr("id", "focus");
 
-    // Focus circle
-    focus
-        .append("circle")
-        .attr("class", "focus circle")
-        .attr("id", "focusCircle");
-
     // Focus vertical line
     focus
         .append("line")
         .attr("class", "focus line y")
         .attr("id", "focusLine");
+
+    // Focus circle
+    focus
+        .append("circle")
+        .attr("class", "focus circle")
+        .attr("id", "focusCircle");
 
     svg.on("pointerenter", (event, data) => {
         event.preventDefault();
