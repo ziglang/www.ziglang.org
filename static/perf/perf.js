@@ -211,7 +211,7 @@ async function loadRecords() {
             const endDateOffset = endDate.getTimezoneOffset();
             const endDateOffsetMS = endDateOffset * 60_000;
             const localEndDate = new Date(endDate.valueOf() + endDateOffsetMS);
-            localEndDate.setHours(24, 0, 0, 0);
+            localEndDate.setHours(23, 59, 59, 999);
 
             if ( (row.commit_timestamp >= localStartDate) && (row.commit_timestamp <= localEndDate)) {
                 return true;
