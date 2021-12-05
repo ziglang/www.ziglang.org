@@ -236,6 +236,7 @@ async function loadRecords() {
 
 function createStructureForBenchmark(key, benchmark) {
     const div = document.createElement("div");
+    div.id = "benchmark-" + key;
     div.classList.add("benchmark");
     div.classList.add(key);
     div.classList.add(benchmark.kind);
@@ -322,7 +323,9 @@ async function loadData() {
 
 function makeCharts(benchmark_json, records) {
     Object.keys(benchmark_json).forEach(benchmarkName => {
-        createStructureForBenchmark(benchmarkName, benchmark_json[benchmarkName]);
+        if (document.getElementById("benchmark-" + benchmarkName) === null) {
+            createStructureForBenchmark(benchmarkName, benchmark_json[benchmarkName]);
+        }
 
         // Remove the old charts
         const targetChartDiv = document.getElementById("chart-" + benchmarkName);
