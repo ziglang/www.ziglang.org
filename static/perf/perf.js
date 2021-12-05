@@ -82,8 +82,6 @@ function addDateEventListeners() {
     startDateInput.setAttribute('hasDateInputListener', 'true');
 }
 
-
-
 // TODO: Should use this for displaying units
 const column_types = {
     timestamp: "date",
@@ -555,11 +553,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         .on("pointermove", (event, data) => {
             event.preventDefault();
             // Find the commit/data point closest to the mouse
-            const bisectDate = d3.bisector((d) => {
-                return d.commit_timestamp;
-            }).left;
-            const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
-            const commitIndex = bisectDate(data, commitTimestampAtPointerX);
+            const commitIndex = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
 
             // Position the focus y line
             const focusLine = focus.select("#focusLine");
@@ -616,22 +610,14 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 .style("top", tooltipTop.toString() + "px");
         })
         .on("mousedown", (event) => {
-            // event.preventDefault();
-            const bisectDate = d3.bisector((d) => {
-                return d.commit_timestamp;
-            }).left;
-            const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
-            const i = bisectDate(data, commitTimestampAtPointerX);
+            event.preventDefault();
+            const i = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
             window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
         })
         .on("mousemove", (event) => {
             event.preventDefault();
 
-            const bisectDate = d3.bisector((d) => {
-                return d.commit_timestamp;
-            }).left;
-            const commitTimestampAtPointerX = x.invert(d3.pointer(event)[0]);
-            const i = bisectDate(data, commitTimestampAtPointerX);
+            const i = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
 
             const titleSpanNode = document.querySelector("div#tooltip>div.title>span.benchmark-title");
             titleSpanNode.innerText = benchmark;
@@ -856,4 +842,29 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         });
 
     toNode.appendChild(svg.node());
+
+    function commitIndexNearest(mouseX, mouseY, xScaleFunction, yScaleFunction, primaryMeasurementKey, data) {
+        // Calculate the closest point to the x/y coordinates provided.
+        const distances = data.map((row, index) => { 
+            const dataPointX = xScaleFunction(row.commit_timestamp);
+            const dataPointY = yScaleFunction(row[primaryMeasurementKey]);
+            return {distance: distance(mouseX, mouseY, dataPointX, dataPointY), commitIndex: index};
+        });
+
+        distances.sort((a, b) => {
+            if (a.distance > b.distance) {
+                return 1;
+            } else if (a.distance < b.distance) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+
+        return distances[0].commitIndex;
+    }
+
+    function distance(x1, y1, x2, y2) {
+        return Math.hypot(x2 - x1, y2 - y1);
+    }
 }
