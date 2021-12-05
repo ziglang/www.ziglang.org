@@ -25,8 +25,8 @@ mobile_menu_title: "Performance Tracking"
 			<span class="y-start">
 				<label for="y-start">Y Start:</label>
 				<select name="y-start" id="y-start">
-					<option value="zero">0</option>
-					<option value="minimum" selected>Min. Value</option>
+					<option value="zero" selected>0</option>
+					<option value="minimum">Min. Value</option>
 				</select>
 			</span>
 			<span class="chart-height">
