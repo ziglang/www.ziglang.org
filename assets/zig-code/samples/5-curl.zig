@@ -8,7 +8,8 @@ const cURL = @cImport({
 pub fn main() !void {
     var arena_state = std.heap.ArenaAllocator.init(std.heap.c_allocator);
     defer arena_state.deinit();
-    var allocator = &arena_state.allocator;
+
+    const allocator = arena_state.allocator();
 
     // global curl init, or fail
     if (cURL.curl_global_init(cURL.CURL_GLOBAL_ALL) != .CURLE_OK)
