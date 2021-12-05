@@ -624,7 +624,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             const firstCommit = data[0];
             const priorCommit = data[i - 1];
             // Some bools to check which columns we should show in the tooltips
-            const isLookingAtFirstCommit = (commit === firstCommit);
+            const hoveringFirstCommit = (commit === firstCommit);
             const priorCommitAvailable = (priorCommit !== undefined);
 
             const titleSpanNode = document.querySelector("div#tooltip>div.title>span.benchmark-title");
@@ -638,8 +638,14 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             currentCommitHashLink.innerText = commit.commit_hash.substring(0, 7);
 
             const priorCommitHashLink = document.getElementById("prior-commit-link");
-            priorCommitHashLink.href = `https://github.com/ziglang/zig/commit/${priorCommit.commit_hash}`;
-            priorCommitHashLink.innerText = priorCommit.commit_hash.substring(0, 7);
+            if (priorCommitAvailable) {
+                priorCommitHashLink.href = `https://github.com/ziglang/zig/commit/${priorCommit.commit_hash}`;
+                priorCommitHashLink.innerText = priorCommit.commit_hash.substring(0, 7);
+            } else {
+                priorCommitHashLink.href = ``;
+                priorCommitHashLink.innerText = "";
+
+            }
 
             const firstCommitHashLink = document.getElementById("first-commit-link");
             firstCommitHashLink.href = `https://github.com/ziglang/zig/commit/${firstCommit.commit_hash}`;
@@ -669,6 +675,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 tdCurrentMeasurementValue.innerText = d3.format(",")(commit[measurementKey]);
                 tr.appendChild(tdCurrentMeasurementValue);
 
+                if (priorCommitAvailable) {
                 // Add row with the previous measurement value
                 const vsPriorChange = commit[measurementKey] - priorCommit[measurementKey];
                 const vsPriorChangePercentage = vsPriorChange / priorCommit[measurementKey];
@@ -678,7 +685,12 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 tdPriorMeasurementValue.classList.add(Math.sign(vsPriorChangePercentage) == 1 ? "bad" : "good");
                 // tdPriorMeasurementValue.style = `background-color: ${d3.interpolateInferno(vsPriorChangePercentage)}`
                 tr.appendChild(tdPriorMeasurementValue);
+            } else {
+                const td = document.createElement("td");
+                tr.appendChild(td);
+            }
 
+            if (hoveringFirstCommit === false) {
                 // Add row with the first measurement value
                 const vsFirstChange = commit[measurementKey] - firstCommit[measurementKey];
                 const vsFirstChangePercentage = vsFirstChange / firstCommit[measurementKey];
@@ -699,6 +711,10 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 }
 
                 tr.appendChild(tdFirstMeasurementValue);
+            } else {
+                const td = document.createElement("td");
+                tr.appendChild(td);
+            }
 
                 // Add the new row for the measurement
                 tbodyNode.appendChild(tr);
@@ -715,15 +731,25 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdCurrentBenchmarkSampleCount.innerText = d3.format(",")(commit.samples_taken);
             tr.appendChild(tdCurrentBenchmarkSampleCount);
 
-            const tdPriorBenchmarkSampleCount = document.createElement("td");
-            tdPriorBenchmarkSampleCount.innerText = d3.format(",")(priorCommit.samples_taken);
-            tr.appendChild(tdPriorBenchmarkSampleCount);
+            if (priorCommitAvailable) {
+                const tdPriorBenchmarkSampleCount = document.createElement("td");
+                tdPriorBenchmarkSampleCount.innerText = d3.format(",")(priorCommit.samples_taken);
+                tr.appendChild(tdPriorBenchmarkSampleCount);
+            } else {
+                const td = document.createElement("td");
+                tr.appendChild(td);
+            }
 
-            const tdFirstBenchmarkSampleCount = document.createElement("td");
-            tdFirstBenchmarkSampleCount.innerText = d3.format(",")(firstCommit.samples_taken);
-            tr.appendChild(tdFirstBenchmarkSampleCount);
+            if (hoveringFirstCommit === false) {
+                const tdFirstBenchmarkSampleCount = document.createElement("td");
+                tdFirstBenchmarkSampleCount.innerText = d3.format(",")(firstCommit.samples_taken);
+                tr.appendChild(tdFirstBenchmarkSampleCount);
+            } else {
+                const td = document.createElement("td");
+                tr.appendChild(td);
+            }
+
             tbodyNode.appendChild(tr);
-
             // TODO: Add a divider of some kind here
 
             // Add row with the commit hashes
@@ -740,19 +766,29 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdCurrentCommitHash.appendChild(currentCommitLink);
             trCommitHashes.appendChild(tdCurrentCommitHash);
 
-            const tdPriorCommitHash = document.createElement("td");
-            const priorCommitLink = document.createElement("a");
-            priorCommitLink.href = `https://github.com/ziglang/zig/commit/${priorCommit.commit_hash}`;
-            priorCommitLink.innerText = priorCommit.commit_hash.substring(0, 7);
-            tdPriorCommitHash.appendChild(priorCommitLink);
-            trCommitHashes.appendChild(tdPriorCommitHash);
+            if (priorCommitAvailable) {
+                const tdPriorCommitHash = document.createElement("td");
+                const priorCommitLink = document.createElement("a");
+                priorCommitLink.href = `https://github.com/ziglang/zig/commit/${priorCommit.commit_hash}`;
+                priorCommitLink.innerText = priorCommit.commit_hash.substring(0, 7);
+                tdPriorCommitHash.appendChild(priorCommitLink);
+                trCommitHashes.appendChild(tdPriorCommitHash);
+            } else {
+                const td = document.createElement("td");
+                trCommitHashes.appendChild(td);
+            }
 
-            const tdFirstCommitHash = document.createElement("td");
-            const firstCommitLink = document.createElement("a");
-            firstCommitLink.href = `https://github.com/ziglang/zig/commit/${firstCommit.commit_hash}`;
-            firstCommitLink.innerText = firstCommit.commit_hash.substring(0, 7);
-            tdFirstCommitHash.appendChild(firstCommitLink);
-            trCommitHashes.appendChild(tdFirstCommitHash);
+            if (hoveringFirstCommit === false) {
+                const tdFirstCommitHash = document.createElement("td");
+                const firstCommitLink = document.createElement("a");
+                firstCommitLink.href = `https://github.com/ziglang/zig/commit/${firstCommit.commit_hash}`;
+                firstCommitLink.innerText = firstCommit.commit_hash.substring(0, 7);
+                tdFirstCommitHash.appendChild(firstCommitLink);
+                trCommitHashes.appendChild(tdFirstCommitHash);
+            } else {
+                const td = document.createElement("td");
+                trCommitHashes.appendChild(td);
+            }
 
             tbodyNode.appendChild(trCommitHashes);
 
@@ -773,25 +809,35 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdCurrentCommitDate.appendChild(tdCurrentCommitDateTimeP);
             trCommitDates.appendChild(tdCurrentCommitDate);
 
-            const priorCommitDate = new Date(priorCommit.commit_timestamp);
-            const tdPriorCommitDate = document.createElement("td");
-            const tdPriorCommitDateDateP = document.createElement("p");
-            tdPriorCommitDateDateP.innerText = priorCommitDate.toLocaleDateString("en-US");
-            tdPriorCommitDate.appendChild(tdPriorCommitDateDateP);
-            const tdPriorCommitDateTimeP = document.createElement("p");
-            tdPriorCommitDateTimeP.innerText = priorCommitDate.toLocaleTimeString("en-US");
-            tdPriorCommitDate.appendChild(tdPriorCommitDateTimeP);
-            trCommitDates.appendChild(tdPriorCommitDate);
+            if (priorCommitAvailable) {
+                const priorCommitDate = new Date(priorCommit.commit_timestamp);
+                const tdPriorCommitDate = document.createElement("td");
+                const tdPriorCommitDateDateP = document.createElement("p");
+                tdPriorCommitDateDateP.innerText = priorCommitDate.toLocaleDateString("en-US");
+                tdPriorCommitDate.appendChild(tdPriorCommitDateDateP);
+                const tdPriorCommitDateTimeP = document.createElement("p");
+                tdPriorCommitDateTimeP.innerText = priorCommitDate.toLocaleTimeString("en-US");
+                tdPriorCommitDate.appendChild(tdPriorCommitDateTimeP);
+                trCommitDates.appendChild(tdPriorCommitDate);
+            } else {
+                const td = document.createElement("td");
+                trCommitDates.appendChild(td);
+            }
 
-            const firstCommitDate = new Date(firstCommit.commit_timestamp);
-            const tdFirstCommitDate = document.createElement("td");
-            const tdFirstCommitDateDateP = document.createElement("p");
-            tdFirstCommitDateDateP.innerText = firstCommitDate.toLocaleDateString("en-US");
-            tdFirstCommitDate.appendChild(tdFirstCommitDateDateP);
-            const tdFirstCommitDateTimeP = document.createElement("p");
-            tdFirstCommitDateTimeP.innerText = firstCommitDate.toLocaleTimeString("en-US");
-            tdFirstCommitDate.appendChild(tdFirstCommitDateTimeP);
-            trCommitDates.appendChild(tdFirstCommitDate);
+            if (hoveringFirstCommit === false) {
+                const firstCommitDate = new Date(firstCommit.commit_timestamp);
+                const tdFirstCommitDate = document.createElement("td");
+                const tdFirstCommitDateDateP = document.createElement("p");
+                tdFirstCommitDateDateP.innerText = firstCommitDate.toLocaleDateString("en-US");
+                tdFirstCommitDate.appendChild(tdFirstCommitDateDateP);
+                const tdFirstCommitDateTimeP = document.createElement("p");
+                tdFirstCommitDateTimeP.innerText = firstCommitDate.toLocaleTimeString("en-US");
+                tdFirstCommitDate.appendChild(tdFirstCommitDateTimeP);
+                trCommitDates.appendChild(tdFirstCommitDate);
+            } else {
+                const td = document.createElement("td");
+                trCommitDates.appendChild(td);
+            }
 
             tbodyNode.appendChild(trCommitDates);
 
@@ -806,13 +852,23 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdCurrentZigVersion.innerText = commit.zig_version.split("+")[0];
             trZigVersions.appendChild(tdCurrentZigVersion);
 
-            const tdPriorZigVersion = document.createElement("td");
-            tdPriorZigVersion.innerText = priorCommit.zig_version.split("+")[0];
-            trZigVersions.appendChild(tdPriorZigVersion);
+            if (priorCommitAvailable) {
+                const tdPriorZigVersion = document.createElement("td");
+                tdPriorZigVersion.innerText = priorCommit.zig_version.split("+")[0];
+                trZigVersions.appendChild(tdPriorZigVersion);
+            } else {
+                const td = document.createElement("td");
+                trZigVersions.appendChild(td);
+            }
 
-            const tdFirstZigVersion = document.createElement("td");
-            tdFirstZigVersion.innerText = firstCommit.zig_version.split("+")[0];
-            trZigVersions.appendChild(tdFirstZigVersion);
+            if (hoveringFirstCommit === false) {
+                const tdFirstZigVersion = document.createElement("td");
+                tdFirstZigVersion.innerText = firstCommit.zig_version.split("+")[0];
+                trZigVersions.appendChild(tdFirstZigVersion);
+            } else {
+                const td = document.createElement("td");
+                trZigVersions.appendChild(td);
+            }
 
             tbodyNode.appendChild(trZigVersions);
 
