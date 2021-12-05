@@ -1,5 +1,6 @@
-// Load the data, and make the charts
-let { benchmark_json, records } = loadData();
+var benchmark_json;
+var records;
+loadDataAndMakeCharts();
 
 const MEASUREMENT_TITLES = {
     cpu_cycles: "CPU Cycles",
@@ -29,28 +30,24 @@ const options = {
 const primaryMeasurementSelect = document.getElementById("primary-measurement");
 primaryMeasurementSelect.addEventListener("change", async (event) => {
     options.line = primaryMeasurementSelect.value;
-    console.log(options);
     makeCharts(benchmark_json, records);
 });
 
 const rangeAreaCheckbox = document.getElementById("range-area");
 rangeAreaCheckbox.addEventListener("change", async (event) => {
     options.rangeArea = rangeAreaCheckbox.checked;
-    console.log(options);
     makeCharts(benchmark_json, records);
 });
 
 const yStartSelect = document.getElementById("y-start");
 yStartSelect.addEventListener("change", async (event) => {
     options.yStart = yStartSelect.value;
-    console.log(options);
     makeCharts(benchmark_json, records);
 });
 
 const chartHeightSlider = document.getElementById("chart-height");
 chartHeightSlider.addEventListener("change", async (event) => {
     options.height = chartHeightSlider.value;
-    console.log(options);
     makeCharts(benchmark_json, records);
 });
 
@@ -65,7 +62,6 @@ function addDateEventListeners() {
     }
 
     startDateInput.addEventListener("change", async (event) => {
-        console.log("Start date changed to: " + startDateInput.value);
         records = await loadRecords();
         makeCharts(benchmark_json, records);
     });
@@ -73,7 +69,6 @@ function addDateEventListeners() {
     const endDateInput = document.getElementById("end-date");
 
     endDateInput.addEventListener("change", async (event) => {
-        console.log("End date changed to: " + endDateInput.value);
         records = await loadRecords();
         makeCharts(benchmark_json, records);
     });
@@ -310,18 +305,14 @@ function parseZigVersion(zig_version) {
     return [+semver[0], +semver[1], +semver[2], +rev];
 }
 
-async function loadData() {
-    console.info("Loading CSV/JSON data.");
+async function loadDataAndMakeCharts() {
     benchmark_json = await loadBenchmarksJSON();
     records = await loadRecords();
-    console.info("Data loaded.");
-    console.info(`records.csv loaded. It contains ${records.length} records.`);
-    console.info(`benchmarks.json file contains ${Object.keys(benchmark_json).length} benchmark metadata objects.`);
     // debugger;
-    makeCharts(benchmark_json, records);
+    makeCharts();
 }
 
-function makeCharts(benchmark_json, records) {
+function makeCharts() {
     Object.keys(benchmark_json).forEach(benchmarkName => {
         if (document.getElementById("benchmark-" + benchmarkName) === null) {
             createStructureForBenchmark(benchmarkName, benchmark_json[benchmarkName]);
