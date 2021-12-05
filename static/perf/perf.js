@@ -27,28 +27,28 @@ const options = {
 
 // Settings Pane Events
 const primaryMeasurementSelect = document.getElementById("primary-measurement");
-primaryMeasurementSelect.addEventListener('change', async (event) => {
+primaryMeasurementSelect.addEventListener("change", async (event) => {
     options.line = primaryMeasurementSelect.value;
     console.log(options);
     makeCharts(benchmark_json, records);
 });
 
 const rangeAreaCheckbox = document.getElementById("range-area");
-rangeAreaCheckbox.addEventListener('change', async (event) => {
+rangeAreaCheckbox.addEventListener("change", async (event) => {
     options.rangeArea = rangeAreaCheckbox.checked;
     console.log(options);
     makeCharts(benchmark_json, records);
 });
 
 const yStartSelect = document.getElementById("y-start");
-yStartSelect.addEventListener('change', async (event) => {
+yStartSelect.addEventListener("change", async (event) => {
     options.yStart = yStartSelect.value;
     console.log(options);
     makeCharts(benchmark_json, records);
 });
 
 const chartHeightSlider = document.getElementById("chart-height");
-chartHeightSlider.addEventListener('change', async (event) => {
+chartHeightSlider.addEventListener("change", async (event) => {
     options.height = chartHeightSlider.value;
     console.log(options);
     makeCharts(benchmark_json, records);
@@ -56,30 +56,30 @@ chartHeightSlider.addEventListener('change', async (event) => {
 
 // This is called when the data is loaded, to avoid useless reloading of the data/charts
 function addDateEventListeners() {
-    const startDateInput = document.getElementById('start-date');
+    const startDateInput = document.getElementById("start-date");
 
-    if (startDateInput.getAttribute('hasDateInputListener')) {
+    if (startDateInput.getAttribute("hasDateInputListener")) {
         // We've already added the event listeners for the date inputs.
         // Don't add them again, it'll cause duplicates.
         return;
     }
 
-    startDateInput.addEventListener('change', async (event) => {
+    startDateInput.addEventListener("change", async (event) => {
         console.log("Start date changed to: " + startDateInput.value);
         records = await loadRecords();
         makeCharts(benchmark_json, records);
     });
 
-    const endDateInput = document.getElementById('end-date');
+    const endDateInput = document.getElementById("end-date");
 
-    endDateInput.addEventListener('change', async (event) => {
+    endDateInput.addEventListener("change", async (event) => {
         console.log("End date changed to: " + endDateInput.value);
         records = await loadRecords();
         makeCharts(benchmark_json, records);
     });
 
     // Add the flag specifying we've added both event listeners
-    startDateInput.setAttribute('hasDateInputListener', 'true');
+    startDateInput.setAttribute("hasDateInputListener", "true");
 }
 
 // TODO: Should use this for displaying units
@@ -210,7 +210,6 @@ async function loadRecords() {
         addDateEventListeners();
 
         data = data.filter(row => {
-
             // TODO: This needs looked at again. Need to simplify and better understand the issue here
             // Changes may need to be made where we set the date input values instead.
             const startDate = startDateInput.valueAsDate;
@@ -225,7 +224,7 @@ async function loadRecords() {
             const localEndDate = new Date(endDate.valueOf() + endDateOffsetMS);
             localEndDate.setHours(23, 59, 59, 999);
 
-            if ( (row.commit_timestamp >= localStartDate) && (row.commit_timestamp <= localEndDate)) {
+            if ((row.commit_timestamp >= localStartDate) && (row.commit_timestamp <= localEndDate)) {
                 return true;
             } else {
                 return false;
@@ -553,7 +552,14 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         .on("pointermove", (event, data) => {
             event.preventDefault();
             // Find the commit/data point closest to the mouse
-            const commitIndex = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
+            const commitIndex = commitIndexNearest(
+                d3.pointer(event)[0],
+                d3.pointer(event)[1],
+                x,
+                yAxisPrimaryMeasurement,
+                primaryMeasurementKey,
+                data,
+            );
 
             // Position the focus y line
             const focusLine = focus.select("#focusLine");
@@ -611,14 +617,28 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         })
         .on("mousedown", (event) => {
             event.preventDefault();
-            const i = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
+            const i = commitIndexNearest(
+                d3.pointer(event)[0],
+                d3.pointer(event)[1],
+                x,
+                yAxisPrimaryMeasurement,
+                primaryMeasurementKey,
+                data,
+            );
             window.open(`https://github.com/ziglang/zig/commit/${data[i].commit_hash}`, "_blank");
         })
         .on("mousemove", (event) => {
             event.preventDefault();
 
             // Find the commit/data point closest to the mouse
-            const i = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
+            const i = commitIndexNearest(
+                d3.pointer(event)[0],
+                d3.pointer(event)[1],
+                x,
+                yAxisPrimaryMeasurement,
+                primaryMeasurementKey,
+                data,
+            );
             // Get the data for the first, prior, and hovered commit
             const commit = data[i];
             const firstCommit = data[0];
@@ -630,7 +650,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             const titleSpanNode = document.querySelector("div#tooltip>div.title>span.benchmark-title");
             titleSpanNode.innerText = benchmark;
             const measurementTitleSpanNode = document.querySelector("div#tooltip>div.title>span.measurement-title");
-            measurementTitleSpanNode.innerText = getTitle(measurement) +  " (" + options.line + ")";
+            measurementTitleSpanNode.innerText = getTitle(measurement) + " (" + options.line + ")";
 
             // Add the commit hashes to the table headers. These are hidden right now.
             const currentCommitHashLink = document.getElementById("current-commit-link");
@@ -644,7 +664,6 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             } else {
                 priorCommitHashLink.href = ``;
                 priorCommitHashLink.innerText = "";
-
             }
 
             const firstCommitHashLink = document.getElementById("first-commit-link");
@@ -676,45 +695,45 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 tr.appendChild(tdCurrentMeasurementValue);
 
                 if (priorCommitAvailable) {
-                // Add row with the previous measurement value
-                const vsPriorChange = commit[measurementKey] - priorCommit[measurementKey];
-                const vsPriorChangePercentage = vsPriorChange / priorCommit[measurementKey];
-                const tdPriorMeasurementValue = document.createElement("td");
-                tdPriorMeasurementValue.classList.add("measurement-value");
-                tdPriorMeasurementValue.innerText += ` ${d3.format(".2%")(vsPriorChangePercentage)}`;
-                tdPriorMeasurementValue.classList.add(Math.sign(vsPriorChangePercentage) == 1 ? "bad" : "good");
-                // tdPriorMeasurementValue.style = `background-color: ${d3.interpolateInferno(vsPriorChangePercentage)}`
-                tr.appendChild(tdPriorMeasurementValue);
-            } else {
-                const td = document.createElement("td");
-                tr.appendChild(td);
-            }
-
-            if (hoveringFirstCommit === false) {
-                // Add row with the first measurement value
-                const vsFirstChange = commit[measurementKey] - firstCommit[measurementKey];
-                const vsFirstChangePercentage = vsFirstChange / firstCommit[measurementKey];
-                const tdFirstMeasurementValue = document.createElement("td");
-                tdFirstMeasurementValue.classList.add("measurement-value");
-                tdFirstMeasurementValue.innerText += ` ${d3.format(".2%")(vsFirstChangePercentage)}`;
-
-                // Add a CSS class so we can put nice +/- arrow indicators on the measurement
-                if (Math.sign(vsFirstChangePercentage) === 1) {
-                    // Increase is bad!
-                    tdFirstMeasurementValue.classList.add("bad");
-                } else if (Math.sign(vsFirstChangePercentage) === -1) {
-                    // Decrease is good!
-                    tdFirstMeasurementValue.classList.add("good");
+                    // Add row with the previous measurement value
+                    const vsPriorChange = commit[measurementKey] - priorCommit[measurementKey];
+                    const vsPriorChangePercentage = vsPriorChange / priorCommit[measurementKey];
+                    const tdPriorMeasurementValue = document.createElement("td");
+                    tdPriorMeasurementValue.classList.add("measurement-value");
+                    tdPriorMeasurementValue.innerText += ` ${d3.format(".2%")(vsPriorChangePercentage)}`;
+                    tdPriorMeasurementValue.classList.add(Math.sign(vsPriorChangePercentage) == 1 ? "bad" : "good");
+                    // tdPriorMeasurementValue.style = `background-color: ${d3.interpolateInferno(vsPriorChangePercentage)}`
+                    tr.appendChild(tdPriorMeasurementValue);
                 } else {
-                    // Input was -0 or 0, so no change
-                    tdFirstMeasurementValue.innerText = `0%`;
+                    const td = document.createElement("td");
+                    tr.appendChild(td);
                 }
 
-                tr.appendChild(tdFirstMeasurementValue);
-            } else {
-                const td = document.createElement("td");
-                tr.appendChild(td);
-            }
+                if (hoveringFirstCommit === false) {
+                    // Add row with the first measurement value
+                    const vsFirstChange = commit[measurementKey] - firstCommit[measurementKey];
+                    const vsFirstChangePercentage = vsFirstChange / firstCommit[measurementKey];
+                    const tdFirstMeasurementValue = document.createElement("td");
+                    tdFirstMeasurementValue.classList.add("measurement-value");
+                    tdFirstMeasurementValue.innerText += ` ${d3.format(".2%")(vsFirstChangePercentage)}`;
+
+                    // Add a CSS class so we can put nice +/- arrow indicators on the measurement
+                    if (Math.sign(vsFirstChangePercentage) === 1) {
+                        // Increase is bad!
+                        tdFirstMeasurementValue.classList.add("bad");
+                    } else if (Math.sign(vsFirstChangePercentage) === -1) {
+                        // Decrease is good!
+                        tdFirstMeasurementValue.classList.add("good");
+                    } else {
+                        // Input was -0 or 0, so no change
+                        tdFirstMeasurementValue.innerText = `0%`;
+                    }
+
+                    tr.appendChild(tdFirstMeasurementValue);
+                } else {
+                    const td = document.createElement("td");
+                    tr.appendChild(td);
+                }
 
                 // Add the new row for the measurement
                 tbodyNode.appendChild(tr);
@@ -907,10 +926,10 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
     function commitIndexNearest(mouseX, mouseY, xScaleFunction, yScaleFunction, primaryMeasurementKey, data) {
         // Calculate the closest point to the x/y coordinates provided.
-        const distances = data.map((row, index) => { 
+        const distances = data.map((row, index) => {
             const dataPointX = xScaleFunction(row.commit_timestamp);
             const dataPointY = yScaleFunction(row[primaryMeasurementKey]);
-            return {distance: distance(mouseX, mouseY, dataPointX, dataPointY), commitIndex: index};
+            return { distance: distance(mouseX, mouseY, dataPointX, dataPointY), commitIndex: index };
         });
 
         distances.sort((a, b) => {
