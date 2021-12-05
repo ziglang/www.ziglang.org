@@ -617,7 +617,15 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         .on("mousemove", (event) => {
             event.preventDefault();
 
+            // Find the commit/data point closest to the mouse
             const i = commitIndexNearest(d3.pointer(event)[0], d3.pointer(event)[1], x, yAxisPrimaryMeasurement, primaryMeasurementKey, data);
+            // Get the data for the first, prior, and hovered commit
+            const commit = data[i];
+            const firstCommit = data[0];
+            const priorCommit = data[i - 1];
+            // Some bools to check which columns we should show in the tooltips
+            const isLookingAtFirstCommit = (commit === firstCommit);
+            const priorCommitAvailable = (priorCommit !== undefined);
 
             const titleSpanNode = document.querySelector("div#tooltip>div.title>span.benchmark-title");
             titleSpanNode.innerText = benchmark;
@@ -626,16 +634,16 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
             // Add the commit hashes to the table headers. These are hidden right now.
             const currentCommitHashLink = document.getElementById("current-commit-link");
-            currentCommitHashLink.href = `https://github.com/ziglang/zig/commit/${data[i].commit_hash}`;
-            currentCommitHashLink.innerText = data[i].commit_hash.substring(0, 7);
+            currentCommitHashLink.href = `https://github.com/ziglang/zig/commit/${commit.commit_hash}`;
+            currentCommitHashLink.innerText = commit.commit_hash.substring(0, 7);
 
             const priorCommitHashLink = document.getElementById("prior-commit-link");
-            priorCommitHashLink.href = `https://github.com/ziglang/zig/commit/${data[i - 1].commit_hash}`;
-            priorCommitHashLink.innerText = data[i - 1].commit_hash.substring(0, 7);
+            priorCommitHashLink.href = `https://github.com/ziglang/zig/commit/${priorCommit.commit_hash}`;
+            priorCommitHashLink.innerText = priorCommit.commit_hash.substring(0, 7);
 
             const firstCommitHashLink = document.getElementById("first-commit-link");
-            firstCommitHashLink.href = `https://github.com/ziglang/zig/commit/${data[0].commit_hash}`;
-            firstCommitHashLink.innerText = data[0].commit_hash.substring(0, 7);
+            firstCommitHashLink.href = `https://github.com/ziglang/zig/commit/${firstCommit.commit_hash}`;
+            firstCommitHashLink.innerText = firstCommit.commit_hash.substring(0, 7);
 
             const tbodyNode = document.querySelector("div#tooltip>div>table>tbody#tooltip-measurements-table-body");
 
@@ -658,26 +666,24 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
                 // Add row with the current measurement value
                 const tdCurrentMeasurementValue = document.createElement("td");
                 tdCurrentMeasurementValue.classList.add("measurement-value");
-                tdCurrentMeasurementValue.innerText = d3.format(",")(data[i][measurementKey]);
+                tdCurrentMeasurementValue.innerText = d3.format(",")(commit[measurementKey]);
                 tr.appendChild(tdCurrentMeasurementValue);
 
                 // Add row with the previous measurement value
-                const vsPriorChange = data[i][measurementKey] - data[i - 1][measurementKey];
-                const vsPriorChangePercentage = vsPriorChange / data[i - 1][measurementKey];
+                const vsPriorChange = commit[measurementKey] - priorCommit[measurementKey];
+                const vsPriorChangePercentage = vsPriorChange / priorCommit[measurementKey];
                 const tdPriorMeasurementValue = document.createElement("td");
                 tdPriorMeasurementValue.classList.add("measurement-value");
-                // tdPriorMeasurementValue.innerText = d3.format(",")(data[i-1][measurementKey]);
                 tdPriorMeasurementValue.innerText += ` ${d3.format(".2%")(vsPriorChangePercentage)}`;
                 tdPriorMeasurementValue.classList.add(Math.sign(vsPriorChangePercentage) == 1 ? "bad" : "good");
                 // tdPriorMeasurementValue.style = `background-color: ${d3.interpolateInferno(vsPriorChangePercentage)}`
                 tr.appendChild(tdPriorMeasurementValue);
 
                 // Add row with the first measurement value
-                const vsFirstChange = data[i][measurementKey] - data[0][measurementKey];
-                const vsFirstChangePercentage = vsFirstChange / data[0][measurementKey];
+                const vsFirstChange = commit[measurementKey] - firstCommit[measurementKey];
+                const vsFirstChangePercentage = vsFirstChange / firstCommit[measurementKey];
                 const tdFirstMeasurementValue = document.createElement("td");
                 tdFirstMeasurementValue.classList.add("measurement-value");
-                // tdFirstMeasurementValue.innerText = d3.format(",")(data[0][measurementKey]);
                 tdFirstMeasurementValue.innerText += ` ${d3.format(".2%")(vsFirstChangePercentage)}`;
 
                 // Add a CSS class so we can put nice +/- arrow indicators on the measurement
@@ -706,15 +712,15 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tr.appendChild(tdBenchmarkSampleCountTitle);
 
             const tdCurrentBenchmarkSampleCount = document.createElement("td");
-            tdCurrentBenchmarkSampleCount.innerText = d3.format(",")(data[i].samples_taken);
+            tdCurrentBenchmarkSampleCount.innerText = d3.format(",")(commit.samples_taken);
             tr.appendChild(tdCurrentBenchmarkSampleCount);
 
             const tdPriorBenchmarkSampleCount = document.createElement("td");
-            tdPriorBenchmarkSampleCount.innerText = d3.format(",")(data[i - 1].samples_taken);
+            tdPriorBenchmarkSampleCount.innerText = d3.format(",")(priorCommit.samples_taken);
             tr.appendChild(tdPriorBenchmarkSampleCount);
 
             const tdFirstBenchmarkSampleCount = document.createElement("td");
-            tdFirstBenchmarkSampleCount.innerText = d3.format(",")(data[0].samples_taken);
+            tdFirstBenchmarkSampleCount.innerText = d3.format(",")(firstCommit.samples_taken);
             tr.appendChild(tdFirstBenchmarkSampleCount);
             tbodyNode.appendChild(tr);
 
@@ -729,22 +735,22 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
 
             const tdCurrentCommitHash = document.createElement("td");
             const currentCommitLink = document.createElement("a");
-            currentCommitLink.href = `https://github.com/ziglang/zig/commit/${data[i].commit_hash}`;
-            currentCommitLink.innerText = data[i].commit_hash.substring(0, 7);
+            currentCommitLink.href = `https://github.com/ziglang/zig/commit/${commit.commit_hash}`;
+            currentCommitLink.innerText = commit.commit_hash.substring(0, 7);
             tdCurrentCommitHash.appendChild(currentCommitLink);
             trCommitHashes.appendChild(tdCurrentCommitHash);
 
             const tdPriorCommitHash = document.createElement("td");
             const priorCommitLink = document.createElement("a");
-            priorCommitLink.href = `https://github.com/ziglang/zig/commit/${data[i - 1].commit_hash}`;
-            priorCommitLink.innerText = data[i - 1].commit_hash.substring(0, 7);
+            priorCommitLink.href = `https://github.com/ziglang/zig/commit/${priorCommit.commit_hash}`;
+            priorCommitLink.innerText = priorCommit.commit_hash.substring(0, 7);
             tdPriorCommitHash.appendChild(priorCommitLink);
             trCommitHashes.appendChild(tdPriorCommitHash);
 
             const tdFirstCommitHash = document.createElement("td");
             const firstCommitLink = document.createElement("a");
-            firstCommitLink.href = `https://github.com/ziglang/zig/commit/${data[0].commit_hash}`;
-            firstCommitLink.innerText = data[0].commit_hash.substring(0, 7);
+            firstCommitLink.href = `https://github.com/ziglang/zig/commit/${firstCommit.commit_hash}`;
+            firstCommitLink.innerText = firstCommit.commit_hash.substring(0, 7);
             tdFirstCommitHash.appendChild(firstCommitLink);
             trCommitHashes.appendChild(tdFirstCommitHash);
 
@@ -757,7 +763,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdCommitDateTitle.innerText = "Committed";
             trCommitDates.appendChild(tdCommitDateTitle);
 
-            const currentCommitDate = new Date(data[i].commit_timestamp);
+            const currentCommitDate = new Date(commit.commit_timestamp);
             const tdCurrentCommitDate = document.createElement("td");
             const tdCurrentCommitDateDateP = document.createElement("p");
             tdCurrentCommitDateDateP.innerText = currentCommitDate.toLocaleDateString("en-US");
@@ -767,7 +773,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdCurrentCommitDate.appendChild(tdCurrentCommitDateTimeP);
             trCommitDates.appendChild(tdCurrentCommitDate);
 
-            const priorCommitDate = new Date(data[i - 1].commit_timestamp);
+            const priorCommitDate = new Date(priorCommit.commit_timestamp);
             const tdPriorCommitDate = document.createElement("td");
             const tdPriorCommitDateDateP = document.createElement("p");
             tdPriorCommitDateDateP.innerText = priorCommitDate.toLocaleDateString("en-US");
@@ -777,7 +783,7 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             tdPriorCommitDate.appendChild(tdPriorCommitDateTimeP);
             trCommitDates.appendChild(tdPriorCommitDate);
 
-            const firstCommitDate = new Date(data[0].commit_timestamp);
+            const firstCommitDate = new Date(firstCommit.commit_timestamp);
             const tdFirstCommitDate = document.createElement("td");
             const tdFirstCommitDateDateP = document.createElement("p");
             tdFirstCommitDateDateP.innerText = firstCommitDate.toLocaleDateString("en-US");
@@ -797,15 +803,15 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
             trZigVersions.appendChild(tdZigVersionTitle);
 
             const tdCurrentZigVersion = document.createElement("td");
-            tdCurrentZigVersion.innerText = data[i].zig_version.split("+")[0];
+            tdCurrentZigVersion.innerText = commit.zig_version.split("+")[0];
             trZigVersions.appendChild(tdCurrentZigVersion);
 
             const tdPriorZigVersion = document.createElement("td");
-            tdPriorZigVersion.innerText = data[i - 1].zig_version.split("+")[0];
+            tdPriorZigVersion.innerText = priorCommit.zig_version.split("+")[0];
             trZigVersions.appendChild(tdPriorZigVersion);
 
             const tdFirstZigVersion = document.createElement("td");
-            tdFirstZigVersion.innerText = data[0].zig_version.split("+")[0];
+            tdFirstZigVersion.innerText = firstCommit.zig_version.split("+")[0];
             trZigVersions.appendChild(tdFirstZigVersion);
 
             tbodyNode.appendChild(trZigVersions);
