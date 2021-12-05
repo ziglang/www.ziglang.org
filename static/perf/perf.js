@@ -21,7 +21,7 @@ function getTitle(measurement) {
 const options = {
     line: "median",
     rangeArea: true,
-    yStart: "minimum",
+    yStart: "zero",
     height: 175,
 };
 
