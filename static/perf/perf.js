@@ -490,10 +490,6 @@ function drawRangeAreaChart(benchmark, measurement, data, options, toNode) {
         .attr("cy", (d) => {
             return yAxisArea(d[primaryMeasurementKey]);
         })
-        .attr("r", 0)
-        .attr("fill", "orange")
-        .attr("stroke", "orange")
-        .attr("stroke-width", "1px")
         .attr("class", "circle");
 
     // X-Axis
