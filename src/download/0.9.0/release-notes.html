@@ -727,38 +727,18 @@
     {#header_open|WebAssembly Support#}
     <ul>
       <li>wasi libc: fix wasm-ld failure in matching libc symbols, and enable tests (#9227).</li>
+      <li>link: don't link system libraries by the wasm-ld linker. The only allowed system libraries
+      that we can link are libraries that are part of the sysroot such as libc or WASI emulated
+      subcomponents. This is required as Wasm allows to defer symbol resolution until load time. For example,
+      specifying that an import is coming from <code>wasi_snapshot_preview1</code> should not generate a link flag
+      <code>-lwasi_snapshot_preview1</code> on the linker line as this is not a system library that needs to be
+      imported at link-time, but a system library that is provided by the runtime at load-time.</li>
     </ul>
     TODO:     Merge pull request #8992 from ziglang/cc-wasm32-wasi-emulations
     Merge branch 'mathetake-cc-wasi-execmodel'
     Merge branch 'mathetake-cpp-wasi'
 
-commit b82d6422ac5c0a68b812319f689b66b52b0eaf59
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Wed Jun 9 22:21:58 2021 +0200
-
-    link: don't link system libs by the wasm linker
-    
-    The only allowed system libraries that we can link are libraries
-    that are part of the sysroot such as libc or WASI emulated
-    subcomponents. This is required as Wasm allows to defer symbol
-    resolution until load time.
-    
-    For example, the following import in Zig
-    
-    ```zig
-    extern "wasi_snapshot_preview1" fn proc_exit() void;
-    ```
-    
-    would normally result in appending `-lwasi_snapshot_preview1` flag
-    to the linker line. However, for Wasm/WASI, the symbol is provided
-    at load rather than link time, therefore, the linker should not be
-    concerned with resolving the symbol. As a result, we should not
-    consider system libs by the Wasm linker.
-
- src/link/Wasm.zig | 11 -----------
- 1 file changed, 11 deletions(-)
-
-    <p>Contributors: Takeshi Yoneda</p>
+    <p>Contributors: Takeshi Yoneda, Jakub Konka</p>
     {#header_close#}
 
     {#header_open|RISC-V Support#}
@@ -1063,7 +1043,7 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
         (#9191).</li>
       <li>Add <code>--sysroot</code> link option (#9202).</li>
     </ul>
-<p>Contributors: Andrew Kelley, Jakub Konka, Jacob G-W, Robin Voetter, joachimschmidt557, Luuk de Gram, Evan Haas, Martin Wickham, Matthew Borkowski, Lee Cannon, Veikka Tuominen, Takeshi Yoneda, Travis Staloch, drew, Ryan Liptak, xackus, Emily Bellows, Jonathan Marler, g-w1, Alex Rønne Petersen, Dmitry Matveyev, J.C. Moyer, Meghan Denny, Michael Dusan, kprotty, Andrew Gutekanst, Daniele Cocca, FnControlOption, Isaac Freund, Kurt Kartaltepe, LemonBoy, Lewis Gaul, Matt Knight, Tom Maenan Read Cutting, Zen1th, jacob gw, vole-dev, Žiga Željko, AODQ, Al Hoang, Christopher Smyth, Dimenus, Exonorid, Frank Denis, Hadrien Dorio, Isaac Freund, Josh Soref, Kenta Iwasaki, Loris Cro, Michal Ziulek, Scibuild, Sebastian Ullrich, Sizhe Zhao, Stephen Gregoratto, Stephen Gutekanst, Stéphan Kochen, Tamas Kenez, Thomas Ives, Vincent Rischmann, daurnimator, pithlessly, travisstaloch, xavier</p>
+<p>Contributors: Andrew Kelley, Jakub Konka, Jacob G-W, Robin Voetter, Joachim Schmidt, Luuk de Gram, Evan Haas, Martin Wickham, Matthew Borkowski, Lee Cannon, Veikka Tuominen, Takeshi Yoneda, Travis Staloch, drew, Ryan Liptak, xackus, Emily Bellows, Jonathan Marler, g-w1, Alex Rønne Petersen, Dmitry Matveyev, J.C. Moyer, Meghan Denny, Michael Dusan, kprotty, Andrew Gutekanst, Daniele Cocca, FnControlOption, Isaac Freund, Kurt Kartaltepe, LemonBoy, Lewis Gaul, Matt Knight, Tom Maenan Read Cutting, Zen1th, jacob gw, vole-dev, Žiga Željko, AODQ, Al Hoang, Christopher Smyth, Dimenus, Exonorid, Frank Denis, Hadrien Dorio, Isaac Freund, Josh Soref, Kenta Iwasaki, Loris Cro, Michal Ziulek, Scibuild, Sebastian Ullrich, Sizhe Zhao, Stephen Gregoratto, Stephen Gutekanst, Stéphan Kochen, Tamas Kenez, Thomas Ives, Vincent Rischmann, daurnimator, pithlessly, travisstaloch, xavier</p>
 
     {#header_open|LLVM Backend#}
     <p>TODO</p>
@@ -1074,215 +1054,64 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
     {#header_close#}
 
     {#header_open|Self-Hosted Linker#}
-    <p>TODO</p>
-
-commit 961d556570e19c2fca1ba5ad1aadd843f012b7ed
-Merge: 138afd5cb a8116dcc2
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Jun 11 10:18:43 2021 +0200
-
-    Merge pull request #9069 from ziglang/zld-common-syms
-    
-    zig ld: add common (tentative) symbols support
-
-commit 05b5e49bc07b7c26dc1eea28d6a4a3a1cb42585e
-Merge: b5c117d05 6aa9c63f6
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Jun 12 11:39:23 2021 +0200
-
-    Merge pull request #9086 from ziglang/fix-9050
-    
-    zig ld: act as linker for golang
-
-commit d2427e6490587c4d9cfb1b2dfb735c20967121db
-Merge: 408d8df86 7001bde84
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Jun 15 00:15:18 2021 +0200
-
-    Merge pull request #9118 from ziglang/zld-eh-frame
-    
-    zld: handle __gcc_except_tab and __eh_frame, and streamline section mapping
-
-commit 0f4173c5d834dca2710005ffc1e040a4b307df00
-Merge: 7f9076c77 820476332
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Jun 15 14:55:12 2021 +0200
-
-    Merge pull request #9122 from ziglang/zld-proxies
-    
-    zld: clean up stubs resolution, error messages and use ld64 defaults for system libs resolution
-
-commit e006281d79a31e10bdbc07b3e33427d719ec01df
-Author: Michael Dusan <michael.dusan@gmail.com>
-Date:   Thu Jun 17 23:57:24 2021 -0400
-
-    macho: LC_RPATH: reserve byte for null-terminator
-
-commit 8216ce67895f5605d1720df4e5e6636395f2fc92
-Merge: 31c49ad64 cea8a2f50
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Thu Jun 24 18:41:33 2021 +0200
-
-    Merge pull request #9171 from ziglang/zld-tapi
-    
-    zld: add TAPI parser for linkers, ship libSystem.B.tbd with Zig, and parse tbd stubs on macOS
-
-commit 350ead9cb2ce87485569fbf630f2906864f35a6b
-Merge: 8216ce678 ddd2cd733
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Jun 25 07:51:21 2021 +0200
-
-    Merge pull request #9229 from ziglang/zld-objc-frameworks
-    
-    zig ld: link Obj-C, link frameworks, improve linker's implementation
-
-commit 370be1265240d73ca0e677287f7ecc00a15d97f9
-Author: Jacob G-W <jacoblevgw@gmail.com>
-Date:   Thu Sep 9 15:15:53 2021 -0400
-
-    plan9 linker: fix for 32 bit
-
-commit 85f065a5115b201b7b6b0b7325a4626211bbb642
-Merge: d1908c9f6 05763f43b
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Sep 14 14:20:11 2021 +0200
-
-    Merge pull request #9676 from ziglang/zld-incr
-    
-    MachO: merges stage1 with self-hosted codepath
-
-commit 25416d8121d14ec6a2a94943cfa4e2fb944e215b
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Wed Sep 15 13:15:15 2021 +0200
-
-    macho: when adding extern fn, check if already resolved
-    
-    This way, we will generate valid relocation info in the codegen.
-
-commit 50e34a063c270e1fe4fe9b0342ca300bc937d96a
-Merge: c4f97d336 ffb989169
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Sep 13 09:04:11 2021 +0200
-
-    Merge pull request #9734 from Andoryuuta/macho-zld-win-filepath
-    
-    link/include: fix invalid file path concatenation when cross-compiling for Windows -> Mac
-
-commit 983d6dcd9ea75e05abd8ce2bd247bbad3960acd7
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Wed Sep 15 16:57:10 2021 +0200
-
-    macho: implement object relinking in stage2
-    
-    * In watch mode, when changing the C source, we will trigger complete
-      relinking of objects, dylibs and archives (atoms coming from the
-      incremental updates stay put however). This means, we need to undo
-      metadata populated when linking in objects, archives and dylibs.
-    * Remove unused splitting section into atoms bit. This optimisation
-      will probably be best rewritten from scratch once self-hosted
-      matures so parking the idea for now. Also, for easier management
-      of atoms spawned from the Object file, keep the atoms subgraph as
-      part of the Object file struct.
-    * Remove obsolete ref to static initializers in object struct.
-    * Implement handling of global symbol collision in updateDeclExports.
-
-commit d722f0cc627c34f2c18681202a512d9aaa58fb18
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Sep 21 11:05:22 2021 +0200
-
-    macho: do not write temp and noname symbols to symtab
-    
-    Remove currently obsolete AtomParser from Object.
-
-commit affd8f8b59d9d803f98178ec32ab9e2f6b0b30d2
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Sep 21 15:59:20 2021 +0200
-
-    macho: fix incorrect segment/section growth calculation
-    
-    Otherwise, for last sections in segments it could happen we would
-    not expand the segment when actually required thus exceeding the
-    segment's size and causing data clobbering and dyld runtime errors.
-
-commit fc302f00a9de5de0490f4a66720e75946763c695
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sun Oct 10 10:33:15 2021 +0200
-
-    macho: redo relocation handling and lazy bind globals
-    
-    * apply late symbol resolution for globals - instead of resolving
-      the exact location of a symbol in locals, globals or undefs,
-      we postpone the exact resolution until we have a full picture
-      for relocation resolution.
-    * fixup stubs to defined symbols - this is currently a hack rather
-      than a final solution. I'll need to work out the details to make
-      it more approachable. Currently, we preemptively create a stub
-      for a lazy bound global and fix up stub offsets in stub helper
-      routine if the global turns out to be undefined only. This is quite
-      wasteful in terms of space as we create stub, stub helper and lazy ptr
-      atoms but don't use them for defined globals.
-    * change log scope to .link for macho.
-    * remove redundant code paths from Object and Atom.
-    * drastically simplify the contents of Relocation struct (i.e., it is
-      now a simple superset of macho.relocation_info), clean up relocation
-      parsing and resolution logic.
+    <p>TODO The work on the self-hosted linker has been mainly done to the MachO linker backend by Jakub and to the Wasm
+    linker backend by Luuk.</p>
+    <p>
+    The most significant milestone for the self-hosted MachO linker is that it is getting battle tested by the
+    community every day, and it can now successfully be used as a drop-in linker for other languages and environments
+    such as C, C++, Objective-C, Objective-C++, Go and Rust. It can also be used to cross-compile code dependent on
+    frameworks from a non-Apple host such as Linux to Apple platforms such as macOS, iOS, etc., with the sysroot
+    provided by the user.
+    </p>
+    <p>
+    Additionally, the linker was featured at the 2021 Handmade Seattle Conference where Jakub in a short 5 minute video
+    demonstrated the linker's current capabilities when used with the bootstrap compiler (stage1), and showcased
+    a prototype for incremental linking and what developer experience it will unlock when used with the self-hosted
+    compiler (stage2). The demo is available at the Handmade Seattle Conference media website here:
+    <a href="https://media.handmade-seattle.com/zld/">The ZLD Linker demo</a>.
+    </p>
+    <p>
+    Major improvements to the MachO linker backend:
+    </p>
+    <ul>
+      <li>Ability to correctly link common symbols (aka tentative definitions).</li>
+      <li>Ability to generate basic <code>__eh_frame</code> debug section.</li>
+      <li>Ability to link system libraries and frameworks including in cross-compilation contexts.
+       Achieving this required creating a TAPI (yaml) parser for parsing Apple's text-based definition stub files
+       such as <code>libSystem.B.tbd</code>.</li>
+      <li>Ability to target iOS and iOS simulator targets. How to do that is documented in Jakub's standalone
+        repo <a href="https://github.com/kubkon/zig-ios-example">zig-ios-example</a> on GitHub.</li>
+      <li>The linker can successfully be used as a drop-in linker for C, C++, Objective-C, Objective-C++, Go and Rust</li>
+      <li>Ability to perform incremental linking updates to Zig mixed with C objects. Current linker implementation
+       allows the user to use the self-hosted Zig compiler's watch mode to perform incremental updates to both
+       Zig and C sources at the same time. While Zig will perform the updates at the finest granularity, i.e.,
+       on a per decl/symbol basis, the linker can also relink the C object files if they are changed without
+       affecting the Zig generated decls. This is a prototype of the desired developer experience we are aiming
+       for, and it was demonstrated as part of the linker's demo at the 2021 Handmade Seattle Conference (link above).</li>
+      <li>Creation of a standalone visualisation tool for exploring differences between subsequent incremental
+       linker updates when the self-hosted compiler is run in the watch mode. The tool is called 
+       <a href="https://github.com/kubkon/zig-snapshots">zig-snapshots</a> and aims to become the debugging tool for 
+       Zig linker developers and contributors. In order to use the tool, the self-hosted Zig compiler needs to be
+       built with <code>-Dlink-snapshot</code>, and then the compiler needs to be passed <code>--debug-link-snapshot</code>.</li>
+    </ul>
+    <p>Miscellaneous bug fixes and tiny improvements:</p>
+    <ul>
+      <li>Correctly delimit rpath in LC_RPATH load command payload.</li>
+      <li>Handle Windows paths when cross-compiling from Windows to macOS.</li>
+      <li>Skip temporary and unnamed symbols from inclusion in the MachO's symbol table.</li>
+      <li>Ignore undefined symbols marked from discarding - if a symbol is undefined after we tried resolving it
+       and it is annotated with <code>N_DESC_DISCARDED</code> description flag, simply ignore it rather than throw
+       an <code>error.UndefinedSymbolReference</code>.</li>
+      <li>Add missing TbdV3 fields, allow for []TbdV3, and synthesise Objective-C ivars and eh_types symbol names.</li>
+      <li>Resolve frameworks in BFS order.</li>
+      <li>Add a GOT entry for <code>ARM64_RELOC_POINTER_TO_GOT</code> target.</li>
+    </ul>
 
 commit 75c8c4442d1dd6fe43fbef1bfeaded360a98fe51
 Author: Andrew Kelley <andrew@ziglang.org>
 Date:   Mon Oct 18 10:49:39 2021 -0700
 
     coff linking: honor the link_libunwind flag
-
-commit 372e9709ad2f4af24461f0fa601754a469091c2b
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Oct 18 21:09:03 2021 +0200
-
-    macho: fix LLVM codepaths in self-hosted linker
-    
-    * do not add linkage scope to aliased exported symbols - this is
-      not respected on macOS
-    * special-case `MachO.openPath` in `link.File.openPath` as on macOS
-      we always link with zld
-    * redirect to `MachO.flushObject` when linking relocatable objects
-      in MachO linker whereas move the entire linking logic into
-      `MachO.flushModule`
-
-commit d0dceae736edb43d4c217306a2b0445277f184ce
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Thu Oct 14 13:50:10 2021 +0200
-
-    macho: dump linker's state as JSON
-    
-    Each element of the output JSON has the VM address of the generated
-    binary nondecreasing (some elements might occupy the same VM address
-    for example the atom and the relocation might coincide in the address
-    space).
-    
-    The generated JSON can be inspected manually or via a preview tool
-    `zig-snapshots` that I am currently working on and will allow the user
-    to inspect interactively the state of the linker together with the
-    positioning of sections, symbols, atoms and relocations within each
-    snapshot state, and in the future, between snapshots too. This should
-    allow for quicker debugging of the linker which is nontrivial when
-    run in the incremental mode.
-    
-    Note that the state will only be dumped if the compiler is built with
-    `-Dlink-snapshot` flag on, and then the compiler is passed `--debug-link-snapshot`
-    flag upon compiling a source/project.
-
-commit 6cf5305e47dd8382508f867b04067be615448b41
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sun Oct 24 16:57:00 2021 +0200
-
-    macho: remove unresolved ref in the correct place
-    
-    * without this, when an included relocatable references a common symbol
-      from another translation unit would not be correctly removed from
-      the unresolved lookup table triggering a misleading assertion down
-      the line
-    * assert upon removal that we indeed removed a ref instead of silently
-      ignoring in debug
-    * add test case that covers this issue
 
 commit e89e3735f3faead04e7b2e443a1795213c927ec8
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1292,85 +1121,6 @@ Date:   Wed Nov 10 09:20:35 2021 -0700
     
     Related: #8633
 
-commit 71388b980bfc4c7eb267ed7c168c2395098f6db2
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Thu Nov 11 21:36:40 2021 -0800
-
-    macho,snapshots: fix how relocs are split
-    
-    Fixes how relocs are split for symbols contained within the atoms
-    that represent entire sections extracted from relocatable object
-    files.
-
-commit 1d55705fa42d83556346f8fcb3a8fce0d55f06ad
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Nov 12 12:17:38 2021 -0800
-
-    macho: invalidate relocs after relinking relocatables
-
-commit 691090f3429b8625252dd5cfec101f2a9e171463
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Nov 22 14:15:46 2021 +0100
-
-    zld: parse ObjC ivars and eh_types in tapi v3 and v4
-
-commit e17c4a497ff77a9da11393886a86a216705eb687
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sun Nov 21 23:30:17 2021 +0100
-
-    zld: parse []TbdV3 before TbdV3
-
-commit 40e49fe2f045ed780b7622a3b71c11003d55fa56
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sun Nov 21 23:00:53 2021 +0100
-
-    zld: add missing Tbdv3 fields to the declarative struct
-
-commit 8e6c038dd81fa7eddfdac882aa3b1d5edbdcf329
-Merge: f5c0c0803 0c1d61001
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 23 13:52:44 2021 -0500
-
-    Merge pull request #10208 from ziglang/zld-frameworks
-    
-    zld: resolve frameworks in BFS order and handle additional macOS flags
-
-commit da0ea909bcce59e265bf5651e5281b6af2216eae
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Nov 29 17:27:38 2021 +0100
-
-    macho: POINTER_TO_GOT signals a need for a GOT entry
-    
-    It also signals the need for GOT indirection (unless it can
-    be optimised away via link-time constant optimisation).
-
-commit 2873e19366400b2f11d3a99b10ea17e4f06c6b4b
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Nov 29 21:05:19 2021 +0100
-
-    macho: ignore undefined symbols marked for discarding
-    
-    If a symbol is undefined after we tried resolving it in static and
-    dynamic libraries, and it is annotated with N_DESC_DISCARDED flag,
-    we simply ignore it rather than flagging an undefined symbol error.
-
-commit 51df63a44e6d6f78676e0d43b6723d21e1cb9235
-Merge: 2873e1936 28623544c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 30 12:52:00 2021 -0800
-
-    Merge pull request #10251 from ziglang/fix-10225
-    
-    macos: fix stack traces for Zig linked with any linker including Apple's ld64
-
-commit 933999dad13ed4f4acc095a3b0d6a327f0899555
-Merge: 2af94e76a 71d19318e
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Dec 6 09:52:09 2021 +0100
-
-    Merge pull request #10280 from ziglang/zld-rel-code-path
-    
-    macho: add preliminary non-prealloc path to the linker
     {#header_close#}
 
     {#header_open|C Translation#}
@@ -1425,9 +1175,10 @@ Date:   Mon Dec 6 09:52:09 2021 +0100
     <p>Miscellaneous improvements:</p>
     <ul>
       <li>Fix path resolution on Windows (#10093).</li>
+      <li>Fix stack traces for Zig on macOS when linked with any linker including Apple's ld64.</li>
     </ul>
 
-    <p>Contributors: LemonBoy</p>
+    <p>Contributors: LemonBoy, Jakub Konka</p>
 
     {#header_open|Deprecations#}
     <ul>
