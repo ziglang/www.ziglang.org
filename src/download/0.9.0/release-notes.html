@@ -1221,13 +1221,153 @@ Date:   Wed Nov 10 09:20:35 2021 -0700
     </p>
     {#header_close#}
 
+    {#header_open|musl 1.2.2#}
+    <p>
+    Zig ships with the source code to <a href="http://musl.libc.org/">musl</a>.
+    When the musl C ABI is selected, Zig builds static musl from source for the selected target.
+    Zig also supports targeting dynamically linked musl which is useful for Linux distributions
+    that use it as their system libc, such as
+    <a href="https://www.alpinelinux.org/">Alpine Linux</a>.
+    </p>
+    <p>
+    Musl has not tagged a new release since Zig 0.8.0, so the version shipped with Zig
+    remains at 1.2.2. However, there has been a major improvement when targeting dynamically
+    linked musl libc.
+    </p>
+    <p>Zig now generates a more accurate libc.so for cross compiling purposes.
+    Previously, the way it worked is that we used
+    <a href="https://github.com/ziglang/zig/blob/0.8.0/tools/gen_stubs.zig">a script</a>
+    to process the output of <code>objdump --dynamic-syms /path/to/musl/libc.so</code>
+    and generate a libc.s file, which could then be lazily compiled by Zig into libc.so for the
+    requested target when cross compiling.
+    </p>
+    <p>
+    The problem is that the input libc.so file we used was musl built dynamically for x86_64.
+    While this is <em>almost</em> correct for other architectures besides x86_64, it is not
+    <em>completely</em> correct, leading to bugs such as #8896.
+    </p>
+    <p>
+    The <a href="https://github.com/ziglang/zig/blob/0.9.0/tools/gen_stubs.zig">updated script</a>
+    now inputs musl built for 7 different architectures:
+    </p>
+    <ul>
+      <li>libc.so built for riscv64</li>
+      <li>libc.so built for mips</li>
+      <li>libc.so built for i386</li>
+      <li>libc.so built for x86_64</li>
+      <li>libc.so built for powerpc</li>
+      <li>libc.so built for powerpc64</li>
+      <li>libc.so built for aarch64</li>
+    </ul>
+    <p>These are produced by passing {#link|zig cc#} in as the <code>CC</code>
+    environment variable when building musl
+    (<a href="https://github.com/ziglang/zig/wiki/Updating-libc#updating-the-libcs-file">instructions</a>).</p>
+    <p>
+    Next, the script identifies:
+    </p>
+    <ul>
+      <li>which symbols are common, and which are specific to some architectures</li>
+      <li>which symbols are functions, and which symbols are objects</li>
+      <li>what size (in bytes) the objects are</li>
+    </ul>
+    <p>
+    Using this information, the script creates a libc.S file, which is shipped along with
+    the Zig compiler. The file is only 104 KB because it uses the preprocessor in order
+    to support the few differences between architectures.
+    For example, if you execute Zig like this:
+    </p>
+    <pre><code>zig build-exe hello.c -target aarch64-linux-musl -dynamic</code></pre>
+    <p>
+    Zig will, under the hood, assemble libc.S with <code>-DPTR64 -DARCH_aarch64</code>,
+    producing a libc.so file that can be passed to the linker, accurately modeling the libc.so
+    that will be found on the target.
+    </p>
+    <p>
+    The preprocessor directives in libc.S are based on <em>excluding</em> symbols, so
+    even when targeting an architecture that is missing from that list of 7, will work fine;
+    it's just that there may be extra symbols that shouldn't be there, and if there happened to
+    be any special symbols that only existed for that one architecture, those will be missing.
+    It will still be a small improvement to expand that list of 7 to more targets. Regardless,
+    the changes made in this release are <strong>strictly an improvement</strong>
+    when compared with prior status quo.
+    </p>
+    {#header_close#}
+
     {#header_open|glibc 2.34#}
-    <p>TODO this is not actually done yet in zig upstream.</p>
     <p>
     Zig gains the ability to target
-    <a href="TODO">glibc 2.34</a>
-    in addition to the other 44 glibc versions.
+    <a href="https://sourceware.org/pipermail/libc-alpha/2021-August/129718.html">glibc 2.34</a>
+    in addition to the other 46 glibc versions.
     </p>
+    <p>TODO glibc 2.34 is not actually done yet in zig upstream.</p>
+    <p>There was a major improvement to targeting glibc when cross compiling.</p>
+    <p>Zig supports targeting every version of glibc for any target architecture.
+    Previously, in order to accomplish this, Zig had only the information from the .abilist
+    files from the latest verison of glibc:
+    </p>
+    <pre><code>$ cat ../lib/libc/glibc/*.txt | wc -c
+205219
+$ cat ../lib/libc/glibc/*.txt | xz | wc -c
+22976</code></pre>
+    <p>The information required to do this takes up 200 KB installation size / 22 KB tarball size,
+    and it had the following problems (which caused several bugs):
+    </p>
+    <ul>
+      <li>It failed to represent symbols that migrate from one library to another between
+        glibc versions (#7667).</li>
+      <li>It failed to represent a distinction between functions and objects (#8896).</li>
+      <li>It failed to represent object sizes.</li>
+    </ul>
+    <p>Now there is a new
+    <a href="https://github.com/ziglang/glibc-abi-tool">ziglang/glibc-abi-tool</a> that produces
+    an improved dataset. The project is quite interesting; if you are curious to learn more,
+    check out the README of that repository which explains in detail the strategy and encoding.</p>
+    <p>With the new dataset:
+    </p>
+    <pre><code>$ cat abilists | wc -c
+169421
+$ cat abilists | xz | wc -c
+24880</code></pre>
+    <p>The new data that Zig ships with is 165 KB installation size / 24 KB tarball size,
+    and all the above issues are solved.</p>
+    <p>
+    When a Zig user requests to cross compile for glibc, Zig uses this abilists file to
+    create, for the requested glibc version and CPU architecture:
+    </p>
+    <ul>
+      <li>m.s</li>
+      <li>pthread.s</li>
+      <li>c.s</li>
+      <li>dl.s</li>
+      <li>rt.s</li>
+      <li>ld.s</li>
+      <li>util.s</li>
+    </ul>
+    <p>...which are then assembled into:</p>
+    <ul>
+      <li>libm.so</li>
+      <li>libpthread.so</li>
+      <li>libc.so</li>
+      <li>libdl.so</li>
+      <li>librt.so</li>
+      <li>ld.so</li>
+      <li>libutil.so</li>
+    </ul>
+    <p>
+    These files are cached and placed on the linker line when cross compiling.
+    Thanks to this improved dataset, they now accurately model the requested version
+    of glibc.
+    </p>
+    <p>
+    If we naively shipped every version of the .abilist files:
+    </p>
+    <pre><code>$ cat (find glibc/ -name "*.abilist") | wc -c
+37041906
+$ cat (find glibc/ -name "*.abilist") | xz | wc -c
+205036</code></pre>
+    <p>...it would have been 35 MiB installation size, 200 KB tarball size.
+    So we have effectively achieved a compression ratio of 219:1 by implementing a
+    bespoke encoding of this information.</p>
     {#header_close#}
 
     {#header_open|libunwind#}
@@ -1251,8 +1391,8 @@ Date:   Wed Nov 10 09:20:35 2021 -0700
     </ul>
     <p>
     Please be aware that there are
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3A%22zig+cc%22">open zig cc issues</a>,
-    use cases that never worked in the first place, making them
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3A%22zig+cc%22">open zig cc issues</a>.
+    However, these are use cases that never worked in the first place, making them
     <em>bugs</em> and <em>enhancements</em>, not regressions.
     </p>
     <p>Contributors: Andrew Kelley, Vincent Rischmann</p>
@@ -1268,13 +1408,13 @@ int main() {
     std::cout &lt;&lt; "Hello World!" &lt;&lt; std::endl;
     return 0;
 }</code></pre>
-    <pre>$ zig c++ -o hello hello.cpp
+    <pre><code>$ zig c++ -o hello hello.cpp
 $ ./hello
-Hello World!</pre>
+Hello World!</code></pre>
     <p>Cross-compiling too, of course:</p>
-    <pre>$ zig c++ -o hello hello.cpp -target riscv64-linux
+    <pre><code>$ zig c++ -o hello hello.cpp -target riscv64-linux
 $ qemu-riscv64 ./hello
-Hello World!</pre>
+Hello World!</code></pre>
     TODO also point out objective-c
     <p>
     One thing that trips people up when they use this feature is that the
