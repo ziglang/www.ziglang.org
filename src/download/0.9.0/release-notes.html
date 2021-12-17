@@ -347,8 +347,9 @@
     </p>
     <p>
     This release features <strong>6 months of work</strong> and
-    changes from <strong>TODO different contributors</strong>, spread among
-    <strong>TODO commits</strong>.
+    changes from <strong>177 different contributors</strong>, spread among
+    <strong>2003 commits</strong>.</p>
+    <p>One sentence summary:
     The {#link|Toolchain#} "just works" in more cases,
     many {#link|bugs were fixed|Bug Fixes#},
     the {#link|Self-Hosted Compiler#} is 44% complete,
@@ -837,7 +838,7 @@
     {#header_close#}
     {#header_close#}
 
-    {#header_open|WebAssembly Support#}
+    {#header_open|WebAssembly#}
     <ul>
       <li>wasi libc: fix wasm-ld failure in matching libc symbols, and enable tests (#9227).</li>
       <li>link: don't link system libraries by the wasm-ld linker. The only allowed system libraries
@@ -892,10 +893,53 @@ Date:   Tue Nov 9 14:29:20 2021 -0700
     
     See #8633
 
-    <p>Contributors: Takeshi Yoneda, Jakub Konka, Andrew Kelley</p>
+commit b0ee911c2389e507d36a2f9c2442046133c18b93
+Author: Jakub Konka <kubkon@jakubkonka.com>
+Date:   Mon Jun 7 18:00:36 2021 +0200
+
+    wasi: always grant fd_readdir right
+    
+    Since v0.23 release of Wasmtime, if we want to iterate a directory
+    Y then directory Y needed to have been granted `fd_readdir` right.
+    However, it is now also required for directory X to carry `fd_readdir`
+    right, and so on, up-chain all the way until we reach the preopen
+    (which possesses all rights by default).
+    
+    This caused problems for us since our libstd implementation is more
+    fine-grained and allowed for parent dirs not to carry the right while
+    allow for iterating on its children. My proposal here is to always
+    grant `fd_readdir` right as part of
+    `std.fs.Dir.OpenDirOptions.access_sub_paths`. This seems to be the
+    approach taken by Rust also, plus we should be justified to take this
+    approach since WASI is experimental and snapshot1 will be discontinued
+    eventually and replaced with a new approach to access management
+    that will require a complete rewrite of our libstd anyhow.
+
+commit e8e305b67ce4993a3789e0e3e8baa6064de45114
+Author: Jakub Konka <kubkon@jakubkonka.com>
+Date:   Wed Jun 9 23:11:34 2021 +0200
+
+    Re-enable multiple wasm32 vector tests
+    
+    Fixes #5339
+
+commit acf2e8fe6484a48cef76c20368ff06fe9d7b264e
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Jun 30 18:39:04 2021 -0700
+
+    fix start code for WebAssembly
+
+
+
+    <p>Contributors: Luuk de Gram, Takeshi Yoneda, Jakub Konka, Andrew Kelley</p>
     {#header_close#}
 
-    {#header_open|RISC-V Support#}
+    {#header_open|32-bit x86#}
+    <p>Zig now has {#link|Continuous Integration#} testing enabled for {#link|Linux#} builds
+    against {#link|glibc|glibc 2.34#}.</p>
+    {#header_close#}
+
+    {#header_open|RISC-V#}
     <ul>
       <li>Fix RISC-V assembly CPU features.
         Previously, Zig did not properly communicate the target CPU features for
@@ -904,10 +948,20 @@ Date:   Tue Nov 9 14:29:20 2021 -0700
         RISC-V <code>-march</code> flag in order to communicate CPU features to
         Clang when compiling assembly files.</li>
     </ul>
+    TODO
+commit 3311ef3262c6d650d7ef23ad62ae0483835f79c4
+Merge: 84704ef43 4c1a62326
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Dec 3 16:37:56 2021 -0800
+
+    Merge pull request #10006 from akovaski/riscv-default-abi
+    
+    Default target-abi based on RISC-V extensions and user selectable -mabi/target-abi
+
     <p>Contributors: Andrew Kelley, Michael Dusan</p>
     {#header_close#}
 
-    {#header_open|NetBSD Support#}
+    {#header_open|NetBSD#}
 commit 79a4da14ad137aa52a32f9113982b706d8c5fe8b
 Author: Michael Dusan <michael.dusan@gmail.com>
 Date:   Wed Jun 16 00:35:20 2021 -0400
@@ -920,9 +974,39 @@ Date:   Wed Jun 16 00:35:20 2021 -0400
     Workaround issue by adding args `--no-rosegment` and `-znorelro`.
     
     see #9109
+
+commit bfe3558efe9faf20d68b947c9dc077963b1f87ad
+Author: Michael Dusan <michael.dusan@gmail.com>
+Date:   Wed Jun 16 02:38:43 2021 -0400
+
+    netbsd: add more std.os.bits
+
     {#header_close#}
 
-    {#header_open|Windows Support#}
+    {#header_open|Windows#}
+    <ul>
+      <li>Zig now looks for more DLL import lib path names.
+        When linking with -lfoo syntax, this indicates to Zig that the
+        dependency should either be provided by Zig, or it should be dynamically
+        provided by the system.
+        For windows-gnu targets, the search path was "foo.lib". Now it
+        additionally looks for "libfoo.dll.a" (#7799).</li>
+      <li>Removed the <code>TCHAR</code> idiom entirely.</li>
+      <li>std.Progress: use <code>*W</code> functions instead of <code>*A</code> functions (#534).
+        This eliminates the last and final call to any A functions so now we are properly using only W
+        functions in the {#link|Standard Library#}.</li>
+      <li>Added definitions for winmm.dll (#8801).</li>
+      <li>Fixed <code>OVERLAPPED</code>, add <code>OVERLAPPED_ENTRY</code>.</li>
+      <li>Support emitting DWARF on Windows (#8717).</li>
+      <li>Improved error for unsupported async sockets.</li>
+      <li>Fixed deadlock in <code>ChildProcess</code> (#9148).</li>
+      <li>Fixed compile error: "'bMenu' needs to casted" (#9426).</li>
+      <li>Removed WIN16 version of <code>WSAOVERLAPPED</code>. Use <code>LPWSAOVERLAPPED_COMPLETION_ROUTINE</code>.</li>
+      <li>Fixed {#link|Standard Library#} path resolution.
+        <code>GetCurrentDirectory</code> returns a path with a trailing slash if and only if
+        the cwd is a root directory, making the code in <code>resolveWindows</code> return an
+        invalid path with two consecutive slashes (#10093).</li>
+    </ul>
     <p>TODO</p>
 commit ed2e4a7f138322dcf5c76138586971e228c0c3c9
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -931,7 +1015,10 @@ Date:   Tue Nov 16 12:50:57 2021 -0700
     disable LTO by default on Windows when linking libc++
     
     See #8531
-    {#header_open|ARM64 Windows Support#}
+
+    <p>Contributors: Andrew Kelley, viri, mchudleigh, Jonathan Marler, Travis Martin, LemonBoy</p>
+
+    {#header_open|ARM64 Windows#}
 commit 6237dc0ab8fcb6fc14b97b2ea5494a488e94e492
 Merge: 501e6cf2f 343547d4a
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -965,16 +1052,28 @@ Date:   Tue Sep 7 10:44:21 2021 -0600
     {#header_close#}
     {#header_close#}
 
-    {#header_open|iOS Support#}
+    {#header_open|UEFI#}
+    <ul>
+      <li>boot_services: allow custom MemoryTypes.</li>
+      <li>Fixed packed struct bitfields.</li>
+      <li>FileProtocol: add Reader, Writer, SeekableStream.</li>
+      <li>MemoryDescriptor: fixed padding after memory type.</li>
+      <li>Added virtual addressing helpers (#10195).</li>
+    </ul>
+    <p>Contributors: Stephen von Takach, Nameless, Sreehari Sreedev</p>
+    {#header_close#}
+
+    {#header_open|iOS#}
     <p>Thanks to major improvements in the {#link|Self-Hosted Linker#} combined with
     support for compiling {#link|Objective-C|Objective-C and Objective-C++#}, along
     with miscellaneous improvements in the {#link|Self-Hosted Compiler#},
     Zig now targets iOS and iPhone Simulator platforms. See
     <a href="https://github.com/kubkon/zig-ios-example">kubkon/zig-ios-example</a>
     for a complete example.</p>
+    <p>(#9532)</p>
     {#header_close#}
 
-    {#header_open|Solaris/Illumos Support#}
+    {#header_open|Solaris/Illumos#}
 commit 87fd502fb68f8f488e6eba6b1f7d70902d6bfe5a
 Author: Stephen Gregoratto <dev@sgregoratto.me>
 Date:   Tue Aug 31 22:21:23 2021 +1000
@@ -982,7 +1081,7 @@ Date:   Tue Aug 31 22:21:23 2021 +1000
     Initial bringup of the Solaris/Illumos port
     {#header_close#}
 
-    {#header_open|Haiku Support#}
+    {#header_open|Haiku#}
 commit 36c8adf58922d8e357bbaf7ce914cfd4b7b56354
 Merge: e266ede6e be541ca5e
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -991,46 +1090,140 @@ Date:   Wed Nov 24 18:42:30 2021 -0800
     Merge pull request #10073 from hoanga/haiku-support-build2
     
     more haiku support
-    {#header_close#}
 
-    {#header_open|macOS Support#}
-commit 2006add8496c47804ee3b6c562f420871cb4ea0a
-Merge: 9177f5c17 a04140125
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Nov 26 01:08:16 2021 +0100
-
-    Merge pull request #10215 from ziglang/macos-versions
-    
-    Ship versioned libc headers on macOS
-
-commit 7c2cc45ad87b621831ac4b8cada809c2d88cdf0d
-Merge: a2c546fea e2b6dfa60
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Nov 26 12:00:30 2021 -0800
-
-    Merge pull request #10226 from ziglang/fix-10217
-    
-    macos: improved SDK detection and linker integration with _mh_execute_header
 
     {#header_close#}
 
-    {#header_open|Linux Support#}
-commit 19eaf54bc9ea8229dd0ae9e8e99865aba6fe4398
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Nov 29 16:51:05 2021 -0700
+    {#header_open|macOS#}
+    <p>
+    Generally, Zig 0.9.0 works <em>much better</em> than 0.8.x on macOS, due to
+    major improvements in the {#link|Self-Hosted Linker#}, {#link|Versioned C Headers#},
+    and miscellaneous improvements, such as:
+    </p>
+    <ul>
+      <li>Improved SDK detection and linker integration with
+        <code>_mh_execute_header</code> (#10217).</li>
+      <li>Fixed stack traces in aarch64-macos.</li>
+      <li>Fixed ulock usage (#9545).</li>
+    </ul>
 
-    update libc linux headers to v5.16-rc3
+    {#header_open|Versioned C Headers#}
+    TODO (#10215)
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Linux#}
+    <ul>
+      <li>Updated libc Linux headers to v5.16-rc3 (#9837). Additionally,
+      the headers have been compacted to reduce installation size by sharing
+      x86 and x86_64 headers in the same directory. There is a
+      <a href="https://github.com/ziglang/zig/blob/0.9.0/tools/update-linux-headers.zig">new tool</a>
+      for Zig maintainers to use to upgrade libc Linux headers in the future.</li>
+      <li>Fixed some BPF fn definitions. Cross-checked with bpf.h of kernel 5.12.9.</li>
+      <li>Added Linux XDP bits (#9019).</li>
+      <li>Added <code>fadvise</code> support.</li>
+      <li>Added <code>waitid</code> syscall (#9335).</li>
+      <li>Added <code>mknod</code> and <code>mknodat</code> syscalls.</li>
+      <li>Added <code>inotify_rm_watch</code> definition and made
+        <code>inotify_add_watch</code>'s pathname marked as null-terminated.</li>
+      <li>Fixed definition of RW flags (#9428).</li>
+      <li>Added missing <code>FUTEX</code> definitions.</li>
+      <li>Added recent <code>clone</code>/<code>clone3</code> and missing <code>signalfd</code> flags.</li>
+      <li>Fixed <code>rlimit_resource</code> for MIPS and {#link|SPARC#} (#9227).</li>
+      <li>Added Linux ioctl creation utilities (#9748).</li>
+      <li>Updated syscall numbers for 5.14.</li>
+      <li>Fixed edge case in TLS tp calculation.</li>
+      <li>Added missing termios definitions (#9707).</li>
+      <li>Added perf syscall bits (#10088).</li>
+      <li>Fixed invalid errno definition for Android.</li>
+
+    </ul>
+    <p>Contributors: Andrew Kelley, LemonBoy, Jens Goldberg, Vincent Rischmann, Aydin Mercan,
+    Kenta Iwasaki, Hiroaki Nakamura, Felix "xq" Queißner
+    </p>
+
+    {#header_open|io_uring#}
+    <ul>
+      <li>Addd sqe prep methods for <code>epoll_ctl</code>, <code>poll_add</code>, and <code>poll_remove</code>.</li>
+      <li>Exposed <code>register_eventfd</code>, <code>register_eventfd_async</code>, <code>unregister_eventfd</code> (#9449).</li>
+      <li>Implement read_fixed/write_fixed.</li>
+      <li>Implement statx.</li>
+      <li>Added <code>poll_update</code>. Additionally added a method from liburing to queue
+        (but not submit) a SQE to update the user data of an existing poll operation.</li>
+      <li>Added <code>cancel</code> and <code>io_uring_prep_cancel</code> (#10081).</li>
+      <li>Implemented <code>register_files_update</code>.</li>
+      <li>Added <code>link_timeout</code> (#10151).</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|OpenBSD#}
+    <ul>
+      <li>Fix dynamic linker path (#9010).</li>
+      <li>Event loop: use <code>EVFILT_TIMER</code> instead of <code>EVFILT_USER</code>.
+      OpenBSD doesn't implement EVFILT_USER filter for kqueue(2), so we couldn't use that for
+      event loop. Instead, use a EVFILT_TIMER filter with EV_ONESHOT (trigger only once) and
+      delay 0sec (which trigger immediatly). It fits the usage of EVFILT_USER which is only
+      used to "wakeup" the kevent(2) call from userland.</li>
+      <li>Added termios constants to <code>std.c.openbsd</code> (#10178).</li>
+    </ul>
+    <p>Contributors: Sébastien Marie, Dante Catalfamo</p>
+    {#header_close#}
+
+    {#header_open|SPARC#}
+    <ul>
+      <li>SPARCv9: use C calling convention for <code>restore_rt</code>. Prevents
+        infinite loop when calling <code>rt_sigreturn</code>.</li>
+      <li>Add missing C type definitions.</li>
+      <li>Miscellaneous improvements resulting in more behavior tests passing (#9853).</li>
+    </ul>
+    <p>Contributors: Koakuma</p>
+    {#header_close#}
+
+    {#header_open|Plan 9#}
+commit 7b8a968f14a8405c209f35d8a0f904d6f722e713
+Merge: b4b90af4e 476faef97
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Jul 8 17:30:28 2021 -0400
+
+    Merge pull request #9105 from g-w1/plan9
     
-     * Add missing Linux headers. Closes #9837
-     * Update existing headers to latest Linux.
-     * Consolidate headers that are the same for multiple Zig target CPU
-       architectures. For example, Linux has only an x86 directory for both
-       x86_64 and x86 CPU architectures. Now Zig only ships an x86 directory
-       for Linux headers, and will emit the proper corresponding -isystem
-       flags.
-     * tools/update-linux-headers.zig is now available for upgrading to
-       newer Linux headers, and the update process is now documented on the
-       wiki.
+    stage2: bringup plan9 target and linker
+
+commit 968d1ecf17c0a0774d43965332d00d4ad39743b9
+Author: Jacob G-W <jacoblevgw@gmail.com>
+Date:   Sat Jul 10 20:56:30 2021 -0400
+
+    stage2 plan9: add aarch64 support
+
+commit 88e0f81eefc84feaba3ea3b146c92a62efeb9c3f
+Author: Jacob G-W <jacoblevgw@gmail.com>
+Date:   Thu Sep 2 15:51:49 2021 -0400
+
+    plan9: change output executable name
+    
+    Now object files have the `name.[target char]`
+    Executables are just `name`
+    Libs are `name.a`
+
+    {#header_close#}
+
+    {#header_open|Custom Operating Systems#}
+    <p>People have started to use Zig to
+    <a href="https://boksos.com/">build</a>
+    <a href="https://github.com/FlorenceOS/Florence">their</a>
+    <a href="https://github.com/ZystemOS/pluto/">own</a></a>
+    operating systems due to the standard library being available and unopinionated.</p>
+    <p>Some improvements to this use case in 0.9.0:</p>
+    <ul>
+      <li>Made {#link|Linux#} syscalls accessible even when targeting non-Linux.</li>
+      <li>Ability to override <code>MAX_PATH_BYTES</code> for custom operating systems.</li>
+      <li>Moved {#link|Standard Library#} iovec and log levels to a common area, allowing
+          only the OSes that uses them to import them, and removing dependencies on
+          bits.zig for the <code>os/<os>/<arch>.zig</code> files.</li>
+      <li>Fixed issue where <code>root.os.panic</code> could return.</li>
+    </ul>
+    <p>Contributors: N00byEdge, mason1920, rgreenblatt</p>
     {#header_close#}
     {#header_close#}
 
@@ -1047,7 +1240,8 @@ Date:   Mon Nov 29 16:51:05 2021 -0700
 
     {#header_open|Language Changes#}
     <ul>
-      <li>{#syntax#}@byteOffsetOf{#endsyntax#} is renamed to {#syntax#}@offsetOf{#endsyntax#}</li>
+      <li>{#syntax#}@byteOffsetOf{#endsyntax#} is renamed to {#syntax#}@offsetOf{#endsyntax#}. {#link|zig fmt#}
+        automatically performs this upgrade for you.</li>
     </ul>
 
     {#header_open|More Builtins Return String Literals#}
@@ -1235,6 +1429,32 @@ test "example" {
 }
     {#code_end#}
     {#header_close#}
+
+    {#header_open|Inline Assembly Requires String Literals#}
+    TODO
+commit dd62a6d2e8de522187fd096354e7156cca1821c5
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Nov 30 19:41:14 2021 -0700
+
+    AstGen: allow non-string-literal inline assembly for stage1
+    
+    The end-game for inline assembly is that the syntax is more integrated
+    with zig, and it will not allow string concatenation for the assembler
+    code, for the same reasons that Zig does not have a preprocessor.
+    
+    However, inline assembly in zig right now is lacking for a variety of
+    use cases (take a look at the open issues having to do with inline
+    assembly for example), and being able to use comptime expressions to
+    concatenate text is a workaround that real-world users are exploiting to
+    get by in the short term.
+    
+    This commit keeps "assembly code must use string literal syntax" as a
+    compile error when using stage2, but allows it through when using
+    stage1.
+    
+    I expect to revert this commit after making enough improvements to
+    inline assembly that our real world users' needs are satisfied.
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Bootstrap Compiler#}
@@ -1332,7 +1552,7 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
 
     TODO link to my twitter thread about progress updates
 
-    TODO show perf measurement
+    TODO show perf measurement. note that AIR memory layout reworking happened this cycle
 
     TODO mention MIR and how it relates to perf
 
@@ -1340,20 +1560,14 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
     Despite the fact that .zig source code by default is still compiled in this
     release using the {#link|Bootstrap Compiler#}, the main driver code is already
     self-hosted, as well as many features, such as {#link|zig cc#}, {#link|C Translation#},
-    CPU feature detection, and the cache system. Improvements made to "stage2" in these areas
-    do in fact affect the main Zig user experience.
+    CPU feature detection, and the {#link|Cache System#}.
+    Improvements made to "stage2" in these areas do in fact affect the main Zig user experience.
     </p>
 
     <p>
     Miscellaneous improvements:
     </p>
     <ul>
-      <li>windows: look for more DLL import lib path names.
-        When linking with -lfoo syntax, this indicates to Zig that the
-        dependency should either be provided by Zig, or it should be dynamically
-        provided by the system.
-        For windows-gnu targets, the search path was "foo.lib". Now it
-        additionally looks for "libfoo.dll.a" (#7799).</li>
       <li>native libc detection: respect spaces in CC env var. 
         Zig has detection for when it is accidentally being called recursively
         when trying to find the native libc installation. However it was not
@@ -1388,11 +1602,105 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
       <li>Fixed libc file to check against compilation target instead of native (#9670).</li>
       <li><code>zig init-lib</code> and <code>zig init-exe</code> will no longer overwrite
         <code>src/main.zig</code> if it already exists.</li>
+      <li>The example generated by <code>zig init-exe</code> now demonstrates simple testing (#9919).</li>
+      <li>Made pointer variables in <code>zig init-lib</code> and <code>zig init-exe</code> build.zig const (#10057).</li>
       <li><code>zig test</code> gains a <code>--test-no-exec</code> flag.</li>
+      <li>Fixed <code>zig test --test-evented-io</code> (#9779).</li>
       <li>New CLI parameter: <code>-femit-implib</code>.</li>
       <li>Fixed incorrectly invoking LLD when building an object file.</li>
+      <li>CLI: introduce <code>-fsingle-threaded</code>/<code>-fno-single-threaded</code> (#10143).
+        <br>
+        Previously there was only <code>--single-threaded</code>.
+        <br>
+        This flag now matches other boolean flags: instead of only being able to
+        opt in to single-threaded builds, you can now force multi-threaded
+        builds. Currently this only has the possibility to emit an error
+        message, but it is a better user experience to understand why one cannot
+        choose to enable threads in some cases.
+        <br>
+        This is breaking change to the CLI.
+      </li>
+      <li>Fix lakemont CpuModel (#9099).</li>
     </ul>
+    TODO
+commit 4e5a88b28882eda156a46ecc7f70887a7bc0b49b
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Nov 20 17:23:44 2021 -0700
+
+    stage2: default dynamic libraries to be linked as needed
+    
+    After this change, the default for dynamic libraries (`-l` or
+    `--library`) is to only link them if they end up being actually used.
+    
+    With the Zig CLI, the new options `-needed-l` or `--needed-library` can
+    be used to force link against a dynamic library.
+    
+    With `zig cc`, this behavior can be overridden with `-Wl,--no-as-needed`
+    (and restored with `-Wl,--as-needed`).
+    
+    Closes #10164
+
 <p>Contributors: Andrew Kelley, Jakub Konka, Jacob G-W, Robin Voetter, Joachim Schmidt, Luuk de Gram, Evan Haas, Martin Wickham, Matthew Borkowski, Lee Cannon, Veikka Tuominen, Takeshi Yoneda, Travis Staloch, drew, Ryan Liptak, xackus, Emily Bellows, Jonathan Marler, g-w1, Alex Rønne Petersen, Dmitry Matveyev, J.C. Moyer, Meghan Denny, Michael Dusan, kprotty, Andrew Gutekanst, Daniele Cocca, FnControlOption, Isaac Freund, Kurt Kartaltepe, LemonBoy, Lewis Gaul, Matt Knight, Tom Maenan Read Cutting, Zen1th, jacob gw, vole-dev, Žiga Željko, AODQ, Al Hoang, Christopher Smyth, Dimenus, Exonorid, Frank Denis, Hadrien Dorio, Isaac Freund, Josh Soref, Kenta Iwasaki, Loris Cro, Michal Ziulek, Scibuild, Sebastian Ullrich, Sizhe Zhao, Stephen Gregoratto, Stephen Gutekanst, Stéphan Kochen, Tamas Kenez, Thomas Ives, Vincent Rischmann, daurnimator, pithlessly, travisstaloch, xavier</p>
+    {#header_open|Parser#}
+    TODO
+commit 8bf04c3a6955bc66e8d6fbbf00f12a44bb7079d5
+Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
+Date:   Sun May 30 02:20:20 2021 -0400
+
+    parse.zig: simplify `parseParamDeclList` by always using scratch buffer
+
+commit ff0a15bb7a57370091898fde7bd53364c90252df
+Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
+Date:   Sun May 30 02:24:44 2021 -0400
+
+    parse.zig: make `parseParamDeclList` check for nonfinal varargs
+
+commit f58fbb1004e26982ad83c61b3fecf5e575fb9210
+Merge: 46b9e061e 483933d88
+Author: Veikka Tuominen <git@vexu.eu>
+Date:   Sun Jun 13 19:49:41 2021 +0300
+
+    Merge pull request #9074 from mattbork/parse-always-scratch
+    
+    parse.zig: simplify parsing functions that build lists by always using scratch buffer
+
+commit ee173d512721df521b5a29bc939770e098931e21
+Author: g-w1 <58830309+g-w1@users.noreply.github.com>
+Date:   Thu Jul 15 03:55:22 2021 -0400
+
+    parser: require block in suspend expression
+
+commit 2a728f6e5f0c5d12e110313342e714f9f23c4044
+Author: Ryan Liptak <squeek502@hotmail.com>
+Date:   Mon Sep 20 17:10:32 2021 -0700
+
+    tokenizer: Fix index-out-of-bounds on string_literal_backslash right before EOF
+
+    FUZZING^
+
+commit 3b09262c1252de0d9f946630e701be65bc5b2fc7
+Author: Ryan Liptak <squeek502@hotmail.com>
+Date:   Mon Sep 20 18:00:04 2021 -0700
+
+    tokenizer: Fix index-out-of-bounds on unfinished unicode escapes before EOF
+
+commit 2ed9288246821c39ae75fa21998a53b34e713cd4
+Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
+Date:   Thu Sep 30 01:55:21 2021 -0400
+
+    parse.zig: better c pointer prefix parsing, don't index out of bounds on eof
+
+commit 9024f27d8f5cb651e2260348ce0ee6fd67fc2c32
+Merge: 3568cd4b8 c8a066f40
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Oct 27 15:58:33 2021 -0400
+
+    Merge pull request #10040 from mattbork/extern-fn-scopes
+    
+    stage2: fix extern fn decl parsing and astgen
+
+
+    {#header_close#}
 
     {#header_open|LLVM Backend#}
     <p>TODO</p>
@@ -1404,7 +1712,7 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
 
     {#header_open|Self-Hosted Linker#}
     <p>The main improvements to the self-hosted linker have been to the MachO linker backend by
-    Jakub Konka and to the {#link|WebAssembly|WebAssembly Support#} linker backend by Luuk de Gram.</p>
+    Jakub Konka and to the {#link|WebAssembly#} linker backend by Luuk de Gram.</p>
     <p>
     The most significant milestone for the self-hosted MachO linker is that it is getting battle tested by the
     community every day, and it can now successfully be used as a drop-in linker for other languages and environments
@@ -1481,7 +1789,7 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
       <li>Better support for static local variables.</li>
       <li>Don't bother with unwrapping pointers. Dereferencing a c pointer implicitly
         includes an unwrap, manually adding it just causes bugs.</li>
-      <li>Improve type parsing.</li>
+      <li>Improve type parsing (#9092).</li>
       <li>Remove usage of {#syntax#}extern enum{#endsyntax#}. Instead, translate enum
         types as the underlying integer type. Translate enum constants
         as top-level integer constants of the correct type (which does not necessarily
@@ -1515,6 +1823,7 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
     {#header_open|Cache System#}
     <p>Zig's cache system is central to its strategy to support many targets, by shipping with
     only source files and lazily building artifacts as needed.</p>
+
     {#header_open|Shared Cache Locking#}
     <p>The cache system now drops from exclusive locks to shared locks after an
     artifact is built. Additionally, when checking the cache, if an exclusive lock
@@ -1523,14 +1832,66 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
     processes to share the same read-only build artifacts, while still allowing a cache
     garbage collection utility to avoid deleting files which are being actively used.</p>
     <p>This required new {#link|Standard Library#} functionality:
-    <code>std.fs.File.setLock</code>. The {#link|Windows|Windows Support#}
-    implementation based on using
+    <code>std.fs.File.setLock</code>. The {#link|Windows#} implementation based on using
     <code>NtLockFile</code> and <code>NtUnlockFile</code> rather than relying on
     <code>ShareAccess</code> flags and manual polling.</p>
     <p>This resolved the deadlock problems reported in #9139 and #9187. It also allowed us to
     remove another workaround to a deadlock when supplying the same source file multiple times.</p>
     <p>Main issue: #7596</p>
     {#header_close#}
+
+    {#header_open|Improved Handling of Generated File builtin.zig#}
+commit 274555be21ea756d8480a586f771274a79a58d80
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Dec 6 16:38:12 2021 -0700
+
+    stage2: improve handling of the generated file builtin.zig
+    
+    All Zig code is eligible to `@import("builtin")` which is mapped to a
+    generated file, build.zig, based on the target and other settings.
+    
+    Zig invocations which share the same target settings will generate the
+    same builtin.zig file and thus the path to builtin.zig is in a shared
+    cache folder, and different projects can sometimes use the same file.
+    
+    Before this commit, this led to race conditions where multiple
+    invocations of `zig` would race to write this file. If one process
+    wanted to *read* the file while the other process *wrote* the file, the
+    reading process could observe a truncated or partially written
+    builtin.zig file.
+    
+    This commit makes the following improvements:
+     - limitations:
+       - avoid clobbering the inode, mtime in the hot path
+       - avoid creating a partially written file
+       - builtin.zig needs to be on disk for debug info / stack trace purposes
+       - don't mark the task as complete until the file is finished being populated
+         (possibly by an external process)
+     - strategy:
+       - create the `@import("builtin")` `Module.File` during the AstGen
+         work, based on generating the contents in memory rather than
+         loading from disk.
+       - write builtin.zig in a separate task that doesn't have
+         to complete until the end of the AstGen work queue so that it
+         can be done in parallel with everything else.
+       - when writing the file, first stat the file path. If it exists, we are done.
+       - otherwise, write the file to a temp file in the same directory and atomically
+         rename it into place (clobbering the inode, mtime in the cold path).
+     - summary:
+       - all limitations respected
+       - hot path: one stat() syscall that happens in a worker thread
+    
+    This required adding a missing function to the standard library:
+    `std.fs.Dir.statFile`. In this commit, it does open() and then fstat()
+    which is two syscalls. It should be improved in a future commit to only
+    make one.
+    
+    Fixes #9439.
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Debug Crash Handler#}
+    <p>TODO show off Martin's awesome crash handler</p>
     {#header_close#}
     {#header_close#}
 
@@ -1546,16 +1907,527 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
     <ul>
       <li>Fix path resolution on Windows (#10093).</li>
       <li>Fix stack traces for Zig on macOS when linked with any linker including Apple's ld64.</li>
+      <li>Better handing of POLLHUP in ChildProcess (#8988).</li>
+      <li>Changed return values of {#syntax#}SectionHeaderIterator().next(){#endsyntax#} to {#syntax#}bswapAllFields(){#endsyntax#} (#9014).</li>
+      <li>Fix bug in <code>io.FixedBufferStream</code> seekTo (#9023).</li>
+      <li>ascii: add allocation free versions of lower/upper string.</li>
+      <li>GeneralPurposeAllocator: add retain_metadata option to report more double frees.</li>
+      <li>c: add sigfillset, alarm, sigwait.</li>
+      <li>c: fix waitpid() definition.</li>
+      <li>Made <code>ChildProcess</code> exit code {#syntax#}u8{#endsyntax#} to match
+        <code>process.exit</code>.</li>
+      <li>Added <code>os.dup()</code>.</li>
+      <li>Made <code>copy_file_range</code> checks run at compile-time (#9146).</li>
+      <li>Fixed PIE startup sequence (#9168).</li>
+      <li><code>json</code>: allow scientific notation to coerce to integers as long
+        as they actually resolve to int type.</li>
+      <li><code>json</code>: catch and handle overflow when parsing floating-point
+          values with no fractional parts.</li>
+      <li><code>json.parse</code>: added support for recursive objects (#9307).</li>
+      <li>Added xoshiro256++ (#9298).</li>
+      <li>Added missing error codes to <code>os</code> functions.</li>
+      <li><code>fs.path.join</code>: skip empty strings.</li>
+      <li>{#syntax#}ArrayList(u0){#endsyntax#} works now. This type still tracks length,
+          but does not allocate additional memory.</li>
+      <li><code>DynamicBitSet.iterator</code> takes self as {#syntax#}const{#endsyntax#}.</li>
+      <li><code>mem.split</code> and <code>mem.tokenize</code> generic instead of assuming
+        {#syntax#}u8{#endsyntax#} (#9531).</li>
+      <li><code>Ip4Address</code> parser: reject 0-prefixed components (#9538).</li>
+      <li><code>rand.Random</code>: add <code>enumValue()</code> (#9583).</li>
+      <li><code>debug.LineInfo.deinit</code> and <code>debug.SymbolInfo.deinit</code>
+          are now public.</li>
+      <li>(p)writev now performs partial writes if iov.len &gt; IOV_MAX.</code>
+      <li>Fixed bad integer cast in <code>WIFSTOPPED</code> for {#link|Linux#}, FreeBSD, and
+        DragonFlyBSD. The intermediate value can be larger than an {#syntax#}u16{#endsyntax#},
+        so {#syntax#}@truncate{#endsyntax#} is needed to match the behavior of
+        {#link|musl|musl 1.2.2#}.</li>
+      <li><code>ArrayListUnmanaged</code>: implement writer().</li>
+      <li>Publicized <code>ArrayListUnmanaged.allocatedSlice</code> to match
+        <code>ArrayList</code>.</li>
+      <li>Added functions to decode an epoch timestamp (#9040).</li>
+      <li><code>net.Address</code>: Fix writing 0-bytes when formatting Unix addresses.</li>
+      <li><code>unicode</code>: cleanup allocations on error in allocating functions. Fixes
+        leaks when <code>utf16leToUtf8Alloc</code>/<code>utf16leToUtf8AllocZ</code>/<code>utf8ToUtf16LeWithNull</code>
+        return an error and adds relevant test cases.</li>
+      <li>Set the Storage socket sizes to be system defined (#9759).</li>
+      <li><code>elf</code>: added a couple missing special section indexes.</li>
+      <li><code>elf</code>: add amd64 relocation types.</li>
+      <li>Fixed <code>mem.Allocator.resize()</code> for non {#syntax#}u8{#endsyntax#}
+        element types (#9806).</li>
+      <li>Change to resolving scope IDs using IPv6 sockets.</li>
+      <li><code>os.flock</code>: FreeBSD can return <code>EOPNOTSUPP</code>.</li>
+      <li>Improved {#syntax#}@panic{#endsyntax#} hierarchy by always using
+        <code>builtin.panic</code>.</li>
+      <li><code>deflate</code>: fixed <code>bits_left</code> overflow at <code>EndOfStream</code> and {#syntax#}@intCast{#endsyntax#} truncation with empty Huffman table.</li>
+      <li><code>deflate</code>: check for distances past beginning of output stream.</li>
+      <li><code>deflate</code>: better Huffman.construct errors and error handling (#9880).</li>
+      <li><code>os</code>: handle <code>ETXTBSY</code> from <code>open()</code>.</li>
+      <li><code>PriorityQueue</code>: moved <code>compareFn</code> from init to type
+        constructor in <code>PriorityQueue</code> and <code>PriorityDequeue</code>.
+        This change significantly improves performance for simple compare functions and modifies
+        the API to be more consistent with e.g. <code>HashMap</code>.</li>
+      <li>Distinguish between unexpected child process exit code and unclean exit.</li>
+      <li><code>MultiArrayList</code>: get function take self by value.</li>
     </ul>
 
-    <p>Contributors: LemonBoy, Jakub Konka</p>
+<p>Contributors: Andrew Kelley, Robin Voetter, Jakub Konka, kprotty, Ryan Liptak, Lee Cannon, Vincent Rischmann, LemonBoy, Veikka Tuominen, Jacob G-W, Jonathan Marler, Matthew Borkowski, Evan Haas, Felix (xq) Queißner, Takeshi Yoneda, Koakuma, Luuk de Gram, Martin Wickham, Aaron Sikes, Al Hoang, Frank Denis, Isaac Freund, Marc Tiehuis, lucky, Kenta Iwasaki, Matt Chudleigh, Stephen Gregoratto, Travis Staloch, Ali Chraghi, Asherah Connor, Hiroaki Nakamura, Jens Goldberg, Lewis Gaul, Meghan, Michael Dusan, N00byEdge, Ominitay, Tom Maenan Read Cutting, jacob gw, viri, Dmitry Matveyev, Gregory Anders, InKryption, Isaac Freund, Jarred Sumner, Jeremy Fillingim, Malcolm Still, Samadi van Koten, Silver, Sizhe Zhao, Sreehari Sreedev, Stephen von Takach, Sébastien Marie, Travis Martin, codic12, daurnimator, ominitay, rgreenblatt, xackus, Adam C, Andrew Gutekanst, Arnav Singh, ArtixFox, Asa Zeren, Austin Clements, Aydin Mercan, Ayende Rahien, Biolunar, Björn Linse, Boo, Carlos Zúñiga, Chris Gregory, Chris Heyes, Coleman Broaddus, Daniele Cocca, Dante Catalfamo, Dante Catalfamo, Dustin Taylor, Edward Dean, Ellis Trisk-Grove, Emil Lerch, Exonorid, Fabio Arnold, Felix "xq" Queißner, Filippo Casarin, FnControlOption, Frank Denis, Garrett Squire, Hiroaki Nakamura, HugoFlorentino, Isaac Freund, Isaac Yonemoto, Jakub Dupak, Jan200101, Justin Whear, Kirjastonhoitaja, Klecko, LemonBoy, Luna, Mahdi Khanalizadeh, Matt Knight, Max Hollmann, Michal Ziulek, Miles Alan, Nameless, Nathan Michaels, Nguyễn Gia Phong, Philip Åkesson, Philipp Lühmann, Rohlem, Sebastien Marie, Tau, Thom Chiovoloni, Tizoner, Trioct, William Stein, Zach Banks, Zapolsky Anton, alichraghi, charlieman, chwayne, d18g, fn ⌃ ⌥, g-w1, hadroncfy, jdmichaud, joachimschmidt557, leesongun, mason1920, pfg, protty, purringChaos, tgschultz, tjohnes, viri</p>
 
     {#header_open|Deprecations#}
     <ul>
       <li>{#syntax#}ensureCapacity{#endsyntax#} is removed in favor of
         {#syntax#}ensureTotalCapacity{#endsyntax#} and
         {#syntax#}ensureUnusedCapacity{#endsyntax#}.</li>
+      <li>fs.Walker is moved to fs.Dir.Walker. Paths of entries are relative to the Dir.</li>
+      <li>{#syntax#}std.Target.current{#endsyntax#} is moved to
+        {#syntax#}@import("builtin").target{#endsyntax#} (#9388) (#9321).</li>
     </ul>
+commit 902df103c6151c257c90de9ba5f29f7f4b9dbea2
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Nov 30 00:13:07 2021 -0700
+
+    std lib API deprecations for the upcoming 0.9.0 release
+    
+    See #3811
+
+    {#header_close#}
+
+    {#header_open|Additional API#}
+    <ul>
+      <li>mem.alignPointerOffset</li>
+      <li>mem.alignPointer</li>
+      <li>Thread.Futex (#9070).</li>
+      <li>unicode.fmtUtf16le</li>
+      <li>io.Reader.readUntilDelimiter</li>
+      <li>BoundedArray: a simple way to represent small data whose max size is known (#9134).</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Crypto#}
+commit ca6951ff7959b88573bfec7c7bf0465209f3263f
+Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
+Date:   Sun Jun 6 16:37:58 2021 +0200
+
+    std.crypto: timing-safe functions to add and subtract serialized integers (#8977)
+    
+    This is useful to increment nonces and for scalar reduction.
+    
+    It will avoid code duplication in crypto/25519 and crypto/pcurves/*
+
+commit 2a7fdd56c6cb9e13634e48eef99b27755f7d2819
+Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
+Date:   Thu Jun 10 12:58:50 2021 +0200
+
+    aes 128-bit key expansion test - properly test the inverse round keys (#9065)
+
+commit b4b90af4e0a9b15a940d836d275ac9dc50198217
+Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
+Date:   Thu Jul 8 23:19:49 2021 +0200
+
+    Switch rand.DefaultPrng to Xoshiro256++ (#9301)
+    
+    Xoroshiro128+ is the current default non-cryptographic random
+    number generator.
+    
+    This algorithm was designed to generate floating-point numbers, by
+    only using the top 53 bits. Lower bits have a significant bias, that
+    contradicts the documented properties for `rand.DefaultPrng`. This
+    also has implications on everything using `Random.fill()`, including
+    the way we generate random floating-point numbers.
+    
+    In addition, Xoroshiro128+ has known issues. See for example:
+    - https://lemire.me/blog/2017/08/22/cracking-random-number-generators-xoroshiro128/
+    - https://www.pcg-random.org/posts/xoroshiro-fails-truncated.html
+    
+    Xoshiro256++ addresses these issues, while remaining very fast.
+
+commit 680fa880d63daa6058a084f1c107162e40e18aa8
+Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
+Date:   Thu Jul 22 01:27:42 2021 +0200
+
+    std.crypto: handle the top bit in 25519.field.fromBytes64() (#9435)
+    
+    The only known use case for this is the hash-to-curve operation where the top bit is always cleared.
+    
+    But the function is public, so let's make it work as one would expect in the general case.
+    
+    Also fix the comment by the way.
+
+commit 8c41a8e761cb609d927b0f2c3c3c094970d2eb58
+Author: lucky <53379023+x13a@users.noreply.github.com>
+Date:   Tue Aug 24 14:58:09 2021 +0300
+
+    add scrypt kdf (#9577)
+    
+    add phc encoding parser
+    add password hash functions to benchmark
+    change bcrypt to be consistent with scrypt
+
+commit 3611487952c4ef126689c447a60cd5cd9288b32f
+Author: lucky <53379023+x13a@users.noreply.github.com>
+Date:   Thu Sep 9 15:25:44 2021 +0300
+
+    reexport crypto/phc_encoding (#9712)
+
+commit c84147f90dd99af1352e69f698be48964573ee07
+Author: Meghan <hello@nektro.net>
+Date:   Sat Nov 20 01:37:17 2021 -0800
+
+    std: add `writer` methods on all crypto.hash types (#10168)
+
+commit 590880158a03fa97056b30a3379aab5328ccc977
+Author: lucky <53379023+x13a@users.noreply.github.com>
+Date:   Mon Nov 15 22:48:24 2021 +0300
+
+    update docs (#10150)
+    
+    add fast kdf test
+    fix inconsistent kdf error
+    refactor
+
+commit c61fbe77c8689709aac4adfa78b27ed7ea53ee5f
+Author: lucky <53379023+x13a@users.noreply.github.com>
+Date:   Mon Nov 15 06:47:57 2021 +0300
+
+    add argon2 kdf (#9756)
+
+commit bd8b94bd0ec592b62b8ae5637375a8d79cbe3e3b
+Author: Frank Denis <github@pureftpd.org>
+Date:   Mon Nov 8 14:55:27 2021 +0100
+
+    crypto/edwards25519: correctly flip the Y sign in the H2C operation
+    
+    No security implications, but the current hash-to-curve standard
+    defines the sign of the Y coordinate to be negative if `gx1`
+    is a square, positive otherwise.
+    
+    We were doing it the other way round.
+
+commit db181b173f6debc2dbb1e68342ff46a4299c19a9
+Author: Ali Chraghi <63465728+AliChraghi@users.noreply.github.com>
+Date:   Mon Sep 20 10:33:18 2021 +0430
+
+    Update `hash` and `crypto` benchmarks run comment (#9790)
+    
+    * sync function arguments name with other same functions
+
+    {#header_close#}
+
+    {#header_open|Math#}
+commit 8b0dbca32d4bc8157ffdca74c306aba6c04261b4
+Author: Filippo Casarin <casarin.filippo17@gmail.com>
+Date:   Wed Mar 24 20:59:15 2021 +0100
+
+    std.math.sqrt_int: fixed odd size integers types
+
+commit 56c0a66ce30094d199420a3f2b2d2e759c1b0613
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Fri Jun 11 09:23:48 2021 +0200
+
+    std: Fix tanh for negative inputs
+    
+    It turns out the code was not ported correctly from C and produced wrong
+    results for negative input values. As a bonus fix the NaN codepath by
+    adding yet another missing piece of code.
+    
+    Spotted in #9047
+
+commit 0bde5ce369ba59f7bc33e97cd5b03d69913108c5
+Merge: c5d412268 e56ba4cee
+Author: Veikka Tuominen <git@vexu.eu>
+Date:   Fri Jun 11 19:17:01 2021 +0300
+
+    Merge pull request #8330 from kivikakk/single-limb-bigint-overflow
+    
+    bigint add failures with aliasing
+
+commit 44cdafd9d46bed36f08effb99aa0bb7fc2145efa
+Author: LemonBoy <thatlemon@gmail.com>
+Date:   Sat Jun 12 15:35:52 2021 +0200
+
+    std: Fix complex ldexp implementation
+    
+    Two bugs in the implementation ported from musl made all the complex
+    functions relying on ldexp return incorrect results in some cases.
+    
+    Spotted in #9047
+
+commit 4afe4bdfe7dda638b35a9d388aac9a53d18cc4ba
+Author: Robin Voetter <robin@voetter.nl>
+Date:   Wed Sep 22 03:27:56 2021 +0200
+
+    big ints: 2s complement signed xor
+
+commit dd81a2147da7b8a216012be2c483c71c4a65cf8b
+Merge: a0a847f2e cd3dcc225
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Sep 23 13:17:32 2021 -0400
+
+    Merge pull request #9825 from Snektron/big-int-signed-and-or
+    
+    big ints: 2s complement signed and/or
+
+commit a28f2e0dd2d7b78464115bca4968f7c0befa6b28
+Merge: 2454459ef 95fe86e3d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Oct 4 14:29:09 2021 -0400
+
+    Merge pull request #9885 from Snektron/big-int-wrapping
+    
+    Big int wrapping/saturating
+
+commit 82ec56e47e004176cc380cc69764602c4a8d0768
+Merge: 6f30c8c09 1e09157b5
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Oct 16 15:06:13 2021 -0400
+
+    Merge pull request #9954 from Snektron/shifts
+    
+    Big int saturating left shift
+
+commit ad17108bddc3bc198190407ab5b00820b2c17cd5
+Merge: e9d1e5e53 15a0b30d8
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Oct 17 21:59:10 2021 -0400
+
+    Merge pull request #9960 from Snektron/bit-not
+    
+    Some not and vector stuff
+
+commit a3c9bfef301e0a4675fcea57356653334e07df45
+Author: Robin Voetter <robin@voetter.nl>
+Date:   Fri Oct 22 01:24:38 2021 +0200
+
+    stage2: truncation
+    
+    * Also fixes a related case where big int truncate would assume that the
+    input fits in the output limbs buffer
+
+commit 94879506ea8fe51310f38b3db1bc1ea1e71a4389
+Merge: 1690b3577 c563521d4
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Oct 23 22:49:33 2021 -0400
+
+    Merge pull request #10017 from Snektron/big-int-div
+    
+    Big ints: division fixes
+
+commit d6067db06267e37dec65202667741bc1b63fe980
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Oct 29 17:48:34 2021 -0700
+
+    stage2: implement `@popCount` for non-vectors
+
+commit 2fe7b06f3df06b7a442ffc3d9b951c5d52a11a24
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Oct 5 12:32:26 2021 -0700
+
+    add support for f128 `@mulAdd`
+    
+    std: add f128 implementations of fma, frexp, and ilogb. Expose `fmal` in
+    zig's freestanding libc. This makes `@mulAdd` work correctly for f128.
+    
+    Fixes a CI regression from yesterday, where I added a usage of f128
+    `@mulAdd` into the self-hosted compiler.
+
+commit 411e9ca4ade243344f358b14151e87e2334e76a0
+Author: Miles Alan <m@milesalan.com>
+Date:   Fri Oct 15 13:55:40 2021 -0400
+
+    Fix bug where std.math.asinh64 doesn't respect signedness for negative values (#9940)
+    
+    * std: Correct math.asinh64 to return correct signedness for negative values
+    
+    * std: Add tests for negative values for math.asinh32 and math.asinh64
+
+commit a587dd08f86bf8524b9dc405044b9b48a735db18
+Author: Jakub Konka <kubkon@jakubkonka.com>
+Date:   Mon Oct 25 01:27:05 2021 +0200
+
+    std: disable big.rational setFloat targeting wasm32
+    
+    until we fix the underlying issue resulting in `error.TargetTooSmall`
+    error.
+
+commit f890de62948a0134a8d703dd2f1ee37701ec4c00
+Author: Lewis Gaul <lewis.gaul@gmail.com>
+Date:   Tue Oct 26 23:57:58 2021 +0100
+
+    Fix bug in exp2() (#9999)
+    
+    * Fix bug in exp2_64 to handle negative values (bad translation from C)
+    
+    * Apply fix to exp2_32() as well, and modify comment on musl behaviour
+    
+    * Use +%= instead of @addWithOverflow()
+
+commit dfd604834b9bda7ba5cb8117a233ae51bcbc8c0f
+Author: Lewis Gaul <lewis.gaul@gmail.com>
+Date:   Sun Nov 14 18:04:47 2021 +0000
+
+    Fix copy-paste error that results in incorrect results from exp64()
+
+commit 8f1e417757f2172485cdea792580e2a2afb53ffa
+Author: Marc Tiehuis <marc@tiehu.is>
+Date:   Tue Nov 23 20:10:32 2021 +1300
+
+    std/math: add ldexp and make scalbn an alias
+    
+    We assume we are compiled on a base-2 radix floating point system. This
+    is a reasonable assumption. musl libc as an example also assumes this.
+    
+    We implement scalbn as an alias for ldexp, since ldexp is defined as 2
+    regardless of the float radix. This is opposite to musl which defines
+    scalbn in terms of ldexp.
+    
+    Closes #9799.
+
+commit a7828c261a0909a1ed672761adf332c978d492c7
+Merge: 9e03cf948 b02384e03
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Dec 5 14:49:04 2021 -0800
+
+    Merge pull request #10276 from tiehuis/musl-trig-reimpl
+    
+    sin/cos/tan musl reimplementation
+
+    <ul>
+      <li>Added <code>phi</code> constant.</li>
+    </ul>
+
+    {#header_close#}
+
+    {#header_open|Formatted Printing#}
+    TODO complain about formatted printing and warn everyone that doomsday is coming and I'm going to break all the API
+    <ul>
+      <li>std.fmt: Better formatting of tuple types by skipping the useless type name and the numeric field names.</li>
+      <li>Added name of type in unsupport format string compile error.</li>
+      <li>Added support for printing slices strings (#9562).</li>
+      <li>Fixed float formatting for 0.0 when precision is 0 (#9642).</li>
+      <li>Format functions take case as an enum.</li>
+      <li>Improved error message when there are missing arguments.</li>
+      <li>Added <code>fmt.fmtDurationSigned</code>.</li>
+      <li>Fixed endless loop, working around a {#link|Bootstrap Compiler#}
+        bug that may sometimes lead to an endless loop being generated when unrolling
+        the fmt impl (#9961).</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Threading#}
+commit b7da1b2d45bc42a56eea3a143e4237a0712c4769
+Merge: 5d0dad9ac c8f90a7e7
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Jul 4 22:31:02 2021 -0400
+
+    Merge pull request #9175 from kprotty/thread
+    
+    std.Thread enhancements
+
+commit 192b5d24cb4651ed2c6b6b1e5fee017d40ea5aa5
+Merge: ed174b738 df4fe8716
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Jul 29 13:25:13 2021 -0400
+
+    Merge pull request #8570 from vrischmann/thread-name
+    
+    add Thread.setName and Thread.getName
+
+commit 7aaea20e7e5e98bc5b2c4c8ddcf8f6aaa4a9c55d
+Author: Koakuma <koachan@protonmail.com>
+Date:   Fri Jul 30 21:45:28 2021 +0700
+
+    Add freeAndExit() implementation for Linux/SPARCv9
+
+commit e3840817d7a8a3e9e69a7b0e6f3c7f2ce8c8d029
+Author: Koakuma <koachan@protonmail.com>
+Date:   Tue Aug 3 20:14:40 2021 +0700
+
+    Linux/SPARCv9: account for branch delay in freeAndExit()
+
+
+    {#header_close#}
+
+    {#header_open|Allocgate#}
+    <p>TODO</p>
+    {#header_close#}
+
+    {#header_open|Random Interface#}
+    <p>TODO</p>
+commit c1a5ff34f3f68a2a0bc32828ab483328cd436fea
+Author: Ominitay <37453713+Ominitay@users.noreply.github.com>
+Date:   Wed Oct 27 15:53:29 2021 +0100
+
+    std.rand: Refactor `Random` interface
+    
+    These changes have been made to resolve issue #10037. The `Random`
+    interface was implemented in such a way that causes significant slowdown
+    when calling the `fill` function of the rng used.
+    
+    The `Random` interface is no longer stored in a field of the rng, and is
+    instead returned by the child function `random()` of the rng. This
+    avoids the performance issues caused by the interface.
+    {#header_close#}
+
+    {#header_open|Hash Maps#}
+    <ul>
+      <li>Fixed auto hash of tagged union with {#syntax#}void{#endsyntax#} field.</li>
+      <li><code>HashMap.getOrPutAssumeCapacityAdapted</code> now sets key to
+        {#syntax#}undefined{#endsyntax#} (#9138).</li>
+      <li>Fixed <code>ensureUnusedCapacity()</code> over-allocating (#9365).</li>
+      <li>Corrected <code>hasUniqueRepresentation</code> for vectors (#9333).</li>
+      <li>Added <code>ArrayHashMap.popOrNull</code>, corresponding to
+        <code>ArrayList.popOrNull</code>.</li>
+      <li>Added <code>getKey</code> methods (#9607).</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Logging#}
+    <ul>
+      <li>Introduced arbitrary code execution via
+        <code>${jndi:ldap://...</code> inside any logged string.<ul><li>just kidding</li></ul>
+      </li>
+      <li>Provide method to set logging level per scope (#8584).</li>
+      <li>Added a logging allocator that uses log (#8511).</li>
+      <li>Introduced compile error when <code>root.log</code> is not a function.</li>
+      <li>Default log logic is extracted into public function <code>std.log.defaultLog</code> (#9224).</li>
+      <li>Added <code>std.log.Level.asText</code> for getting a printable string from the log
+        level.</li>
+    </ul>
+    TODO
+
+commit f7b090d7076a20a614bf20cac05e5e18c06ad18a
+Author: Isaac Freund <mail@isaacfreund.com>
+Date:   Sun Oct 24 13:13:06 2021 +0200
+
+    std.log: simplify to 4 distinct log levels
+    
+    Over the last year of using std.log in practice, it has become clear to
+    me that having the current 8 distinct log levels does more harm than
+    good. It is too subjective which level a given message should have which
+    makes filtering based on log level weaker as not all messages will have
+    been assigned the log level one might expect.
+    
+    Instead, more granular filtering should be achieved by leveraging the
+    logging scope feature. Filtering based on a combination of scope and log
+    level should be sufficiently powerful for all use-cases.
+    
+    Note that the self hosted compiler has already limited itself to 4
+    distinct log levels for many months and implemented granular filtering
+    based on both log scope and level. This has worked very well in practice
+    while working on the self hosted compiler.
+    {#header_close#}
+
+    {#header_open|Proper Namespacing of OS Bits#}
+    <ul>
+      <li><code>errno</code> is now a nonexhaustive enum, with the 'E' prefix chopped off.</li>
+    </ul>
+commit 594271f8dba0143280990ac2e01dd68a791c05b0
+Merge: 81e2034d4 2264fca03
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Sep 2 04:51:42 2021 -0400
+
+    Merge pull request #9618 from ziglang/std-os-reorg
+    
+    std.os reorganization; new `usingnamespace` semantics
     {#header_close#}
     {#header_close#}
 
@@ -1576,7 +2448,12 @@ Date:   Thu Jun 10 11:25:33 2021 -0700
       <li>There is a new <code>zig build</code> flag, <code>--prominent-compile-errors</code>,
       which, in the case when there are compile errors, hides all the other standard error output
       besides the compile errors (#8513).</li>
+      <li>Improved API to use optionals instead of setting things to {#syntax#}undefined{#endsyntax#}, 
+        preventing some common bugs (#9013) (#8928) (#7991).</li>
+      <li>Add linkLibCpp helper to LibExeObjStep.</li>
     </ul>
+    TODO
+    <p>Contributors: Andrew Kelley, Felix (xq) Queißner, Lee Cannon, Aaron Sikes, Jonathan Marler, Isaac Freund, Jakub Konka, Martin Wickham, Evan Haas, Ryan Liptak, Tom Maenan Read Cutting, Veikka Tuominen, Andrew Gutekanst, Asa Zeren, Edward Dean, Ellis Trisk-Grove, Jacob G-W, Jan200101, Jarred Sumner, Kenta Iwasaki, LemonBoy, Luuk de Gram, Matt Knight, N00byEdge, Ominitay, Takeshi Yoneda</p>
     {#header_close#}
 
     {#header_open|Toolchain#}
@@ -1866,8 +2743,9 @@ Hello World!</code></pre>
     {#header_open|zig fmt#}
     <ul>
       <li><code>--ast-check</code> now works in combination with <code>--stdin</code>.</li>
+      <li>Now respects trailing commas in inline assembly.</li>
     </ul>
-    <p>Contributors: Jacob G-W</p>
+    <p>Contributors: Jacob G-W, jdmichaud</p>
     {#header_close#}
 
     {#header_open|zig ar#}
@@ -1937,6 +2815,68 @@ Hello from C++ and Zig</code></pre>
     <pre><code>$ zig c++ -o test test.mm Foo.mm -I. -framework Foundation</code></pre>
     <p>Contributors: Stephen Gutekanst, Jakub Konka, Andrew Kelley</p>
     {#header_close#}
+
+    {#header_open|compiler-rt#}
+    <p>
+    compiler-rt is the library that provides, for example, 64-bit integer multiplication for
+    32-bit architectures which do not have a machine code instruction for it.
+    In the <a href="https://gcc.gnu.org/">GNU</a> world, it's called libgcc.
+    </p>
+    <p>
+    Unlike most compilers, which depend on a binary build of compiler-rt being installed alongside
+    the compiler, Zig builds compiler-rt on-the-fly, from source, as needed for the
+    target platform. This release saw some improvements to Zig's compiler-rt implementation (#1290).
+    </p>
+    <ul>
+      <li>Added <code>__clzdi2</code> and <code>__clzti2</code>.</li>
+      <li>Added <code>__clzdi2</code> and <code>__clzti2</code>.</li>
+      <li>Added <code>__ffssi2</code>, <code>__ffsdi2</code> and <code>__ffsti2</code> (#10268).</li>
+      <li>Added <code>__paritysi2</code>, <code>__paritydi2</code>, <code>__parityti2</code>.</li>
+      <li>Added <code>__ctzsi2</code>, <code>__ctzdi2</code> and <code>__ctzti2</code>.</li>
+      <li>Added <code>__popcountsi2</code>, <code>__popcountdi2</code>, and
+        <code>__popcountti2</code>.</li>
+      <li>Added for 64-bit ARM:
+        <code>__chkstk</code>, <code>__divti3</code>, <code>__modti3</code>, <code>__udivti3</code>, <code>__umodti3</code>
+      </li>
+      <li>Disable spinlocks for atomic instrinsics for BPF. The BPF target does not
+        support mutable global variables. Mark the BPF target as not supporting atomic
+        variables in order to avoid including the global spinlock table.</li>
+      <li>Added <code>__isPlatformVersionAtLeast</code> which are used for
+        {#link|Objective-C and Objective-C++#} @available expressions) on
+        {#link|macOS#} (#10232).</li>
+    </ul>
+    <p>TODO mention migrating stuff into compiler-rt</p>
+commit 939f51aebba982259628f6255a0b0b0ec2d9c99a
+Author: J.C. Moyer <jcmoyer32@gmail.com>
+Date:   Tue Nov 16 21:56:55 2021 -0500
+
+    compiler_rt: export floorf, floor, and floorl
+    
+    This fixes a stage1 linker error when compiling with VS2022 on Windows.
+
+commit 5518a0aff2ab023e9021b74a0a14eb9fcfc094cc
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Oct 5 16:56:46 2021 -0700
+
+    freestanding libc: export fmal
+    
+    libc requires this to use `long double` which is sometimes the same as
+    f128, sometimes not.
+    
+    Also for an unknown reason, aarch64 is getting an invalid result for the
+    `@mulAdd` behavior test for f128. See #9900.
+
+commit 86b92809635607ff357ce96902e2aaf83c3fd029
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Oct 22 10:47:42 2021 -0700
+
+    zig libc: export floorl and ceill
+    
+    needed since self-hosted now contains calls to `@divFloor` and
+    `@divTrunc` for 128-bit floats.
+
+    <p>Contributors: Andrew Kelley, Jan Philipp Hafer, Jacob G-W, Jonathan Marler, LemonBoy, J.C. Moyer, Kenta Iwasaki, Stephen Gutekanst, Veikka Tuominen, jdmichaud</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Continuous Integration#}
@@ -1999,6 +2939,10 @@ Hello from C++ and Zig</code></pre>
     ship the {#link|Self-Hosted Compiler#}, which uses significantly less memory, side-stepping
     this problem.
     </p>
+    <p>Other miscellaneous news:</p>
+    <ul>
+      <li>The CI pipeline now uses {#link|zig fmt#} and rejects contributions which do not conform (#9106).</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Performance Tracking#}
