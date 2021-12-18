@@ -337,25 +337,23 @@
       <li><a href="https://andrewkelley.me/">Andrew Kelley</a></li>
       <li><a href="https://kristoff.it/">Loris Cro</a></li>
       <li><a href="http://www.jakubkonka.com/">Jakub Konka</a></li>
-      <li><a href="https://github.com/Vexu">Veikka Tuominen</a></li>
-      <li><a href="https://github.com/SpexGuy">Martin Wickham</a></li>
-      <li><a href="https://github.com/kprotty">kprotty</a></li>
-      <li><a href="https://github.com/alexnask">Alexandros Naskos</a></li>
     </ul>
     <p>
-    Please consider <a href="/zsf/">donating to the ZSF</a> to help us pay even more contributors!
+    Please consider a <a href="/zsf/">recurring donating to the ZSF</a>
+    to help us pay even more contributors!
     </p>
     <p>
-    This release features <strong>6 months of work</strong> and
+    This release features <strong>6 months of work</strong>:
     changes from <strong>177 different contributors</strong>, spread among
-    <strong>2003 commits</strong>.</p>
+    <strong>2012 commits</strong>.</p>
     <p>One sentence summary:
     The {#link|Toolchain#} "just works" in more cases,
     many {#link|bugs were fixed|Bug Fixes#},
     the {#link|Self-Hosted Compiler#} is 44% complete,
     the {#link|Support Table#} is expanded,
-    there are a handful of {#link|Language Changes#}, and
-    the project started {#link|Performance Tracking#}.
+    there were a handful of {#link|Language Changes#},
+    the project started {#link|Performance Tracking#},
+    and the {#link|Standard Library#} remains unstable.
     </p>
     {#header_open|Table of Contents#}
     {#nav#}
@@ -1103,7 +1101,7 @@ Date:   Wed Nov 24 18:42:30 2021 -0800
     <ul>
       <li>Improved SDK detection and linker integration with
         <code>_mh_execute_header</code> (#10217).</li>
-      <li>Fixed stack traces in aarch64-macos.</li>
+      <li>Fixed stack traces in aarch64-macos and when linking with ld64 (#10225).</li>
       <li>Fixed ulock usage (#9545).</li>
     </ul>
 
@@ -1136,7 +1134,8 @@ Date:   Wed Nov 24 18:42:30 2021 -0800
       <li>Added missing termios definitions (#9707).</li>
       <li>Added perf syscall bits (#10088).</li>
       <li>Fixed invalid errno definition for Android.</li>
-
+      <li><code>EBADLIB</code> in <code>execve</code> now maps to <code>error.InvalidExe</code>
+        rather than <code>error.Unexpected</code>.</li>
     </ul>
     <p>Contributors: Andrew Kelley, LemonBoy, Jens Goldberg, Vincent Rischmann, Aydin Mercan,
     Kenta Iwasaki, Hiroaki Nakamura, Felix "xq" Queißner
@@ -1153,6 +1152,7 @@ Date:   Wed Nov 24 18:42:30 2021 -0800
       <li>Added <code>cancel</code> and <code>io_uring_prep_cancel</code> (#10081).</li>
       <li>Implemented <code>register_files_update</code>.</li>
       <li>Added <code>link_timeout</code> (#10151).</li>
+      <li>Added more opcodes (#10322).</li>
     </ul>
     {#header_close#}
     {#header_close#}
@@ -1181,6 +1181,11 @@ Date:   Wed Nov 24 18:42:30 2021 -0800
     {#header_close#}
 
     {#header_open|Plan 9#}
+    TODO g-w1 writes:
+<p>A new linker backend for the <a href="https://9p.io/plan9/">Plan9</a> <a href="https://9p.io/magic/man2html/6/a.out">a.out executable format</a> has been written for the Self-Hosted Compiler by Jacob G-W. The linker only works with the x86_64 and aarch64 backends from the Self-Hosted Compiler because llvm cannot emit Plan9 object files. Experimental source location debug info is emitted from this linker.</p>
+<p>It can be used with <code>-target x86_64-plan9-none</code>.</p>
+<p>Hopefully Zig can soon join Go as the second modern language that is a first class citizen on Plan9!</p>
+
 commit 7b8a968f14a8405c209f35d8a0f904d6f722e713
 Merge: b4b90af4e 476faef97
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1455,6 +1460,17 @@ Date:   Tue Nov 30 19:41:14 2021 -0700
     I expect to revert this commit after making enough improvements to
     inline assembly that our real world users' needs are satisfied.
     {#header_close#}
+
+    {#header_open|@prefetch#}
+commit 97c0373fa7ee125d2d4e73f9b1dc8ea0e2c2e86a
+Merge: 75f3e7a4a 516945d7d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Dec 10 18:54:56 2021 -0800
+
+    Merge pull request #10295 from ifreund/prefetch
+    
+    Implement @prefetch()
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Bootstrap Compiler#}
@@ -1699,6 +1715,12 @@ Date:   Wed Oct 27 15:58:33 2021 -0400
     
     stage2: fix extern fn decl parsing and astgen
 
+commit c98b020ce29467e80217718e0a1856b7fccd6b53
+Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
+Date:   Thu Dec 2 03:50:23 2021 -0500
+
+    parse.zig: make chained comparison operators a parse error
+
 
     {#header_close#}
 
@@ -1776,6 +1798,20 @@ Date:   Wed Oct 27 15:58:33 2021 -0400
       <li>MachO: Fix section mapping for Go specific sections.</li>
       <li>MachO: Link against system libSystem when building natively (#9242).</li>
       <li>COFF: Add IMPLIB support (#9347).</li>
+      <li>macho: fixed writing null symbols into undef symbols section.</li>
+      <li>macho: handle non-extern <code>UNSIGNED</code> relocs on arm64.</li>
+      <li>macho: write out <code>LC_FUNCTION_START</code> data.</li>
+      <li>macho: moved load command wrappers and parsing utils to the
+        {#link|Standard Library#} (#10310).</li>
+      <li>macho: allow undefined symbols in dylibs. We now respect both
+        <code>-fallow-shlib-undefined</code> and
+        <code>-Wl,"-undefined=dynamic_lookup"</code> flags.
+        As a result of this change,
+        it is now possible to generate a valid native Node.js addon with Zig
+        for macOS (#8180) (#3000).</li>
+      <li>macho: refactor consts in <code>std.macho</code>, and fix two bugs (#10338).</li>
+      <li>macho: error instead of warning when a requested <code>-framework</code> is not
+        found.</li>
     </ul>
     {#header_close#}
 
@@ -1830,7 +1866,8 @@ Date:   Wed Oct 27 15:58:33 2021 -0400
     cannot be obtained, a shared lock will be obtained instead. Together, this solves
     a design flaw in the caching system that was causing deadlocks, and allows multiple
     processes to share the same read-only build artifacts, while still allowing a cache
-    garbage collection utility to avoid deleting files which are being actively used.</p>
+    garbage collection utility to operate concurrently with the Zig compiler even as
+    build artifacts are being actively used.</p>
     <p>This required new {#link|Standard Library#} functionality:
     <code>std.fs.File.setLock</code>. The {#link|Windows#} implementation based on using
     <code>NtLockFile</code> and <code>NtUnlockFile</code> rather than relying on
@@ -1888,6 +1925,45 @@ Date:   Mon Dec 6 16:38:12 2021 -0700
     
     Fixes #9439.
     {#header_close#}
+
+    {#header_open|Detection of Problematic Timestamps#}
+commit 77836e08a2384450b5e7933094511b61e3c22140
+Merge: 01cb0bdb8 3e618f843
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Dec 9 21:11:51 2021 -0800
+
+    Merge pull request #9930 from PhaseMage/fix-cache-timestamps
+    
+    Fix isProblematicTimestamp
+    {#header_close#}
+
+    {#header_open|Improved Hashing Logic#}
+    <p>Stephen Gutekanst writes:</p>
+    <p>While investigating slow build times with
+    <a href="https://github.com/hexops/mach/issues/124">a large project</a>,
+    I found that the compiler was reading from disk nearly every C source file in my project
+    when rebuilding despite no changes having been made. This accounted for several seconds of
+    time (approx. 20-30% of running <code>zig build</code> without any changes to the sources.)</p>
+    
+    <p>The cause of this was that comparisons of file mtimes would <em>always</em> fail
+    (the mtime of the file on disk was always newer than that stored in the cache manifest),
+    and so the cache logic would always fall back to byte-for-byte file content comparisons
+    with what is on disk versus in the cache - reading every C source file in my project from
+    disk during each rebuild. Because file contents were the same, a cache
+    hit occurred, and
+    <em>despite the mtime being different the cache manifest would not be updated</em>.</p>
+
+    <p>One could reproduce this by building a Zig project so the cache is populated,
+    and then changing mtimes of their C source files to be newer than what is in the cache
+    (without altering file contents.)</p>
+
+    <p>The fix was rather simple: always write the updated cache manifest regardless of
+    whether or not a cache hit occurred, because a cache hit doesn't indicate if a manifest
+    is dirty. Luckily, <code>writeManifest</code> already contained logic to determine if a
+    manifest is dirty and becomes no-op if no change to the manifest file is necessary,
+    so the fix was to call <code>writeManifest</code> in the {#link|Self-Hosted Compiler#}
+    even in the case of a cache hit.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Debug Crash Handler#}
@@ -1919,11 +1995,6 @@ Date:   Mon Dec 6 16:38:12 2021 -0700
       <li>Added <code>os.dup()</code>.</li>
       <li>Made <code>copy_file_range</code> checks run at compile-time (#9146).</li>
       <li>Fixed PIE startup sequence (#9168).</li>
-      <li><code>json</code>: allow scientific notation to coerce to integers as long
-        as they actually resolve to int type.</li>
-      <li><code>json</code>: catch and handle overflow when parsing floating-point
-          values with no fractional parts.</li>
-      <li><code>json.parse</code>: added support for recursive objects (#9307).</li>
       <li>Added xoshiro256++ (#9298).</li>
       <li>Added missing error codes to <code>os</code> functions.</li>
       <li><code>fs.path.join</code>: skip empty strings.</li>
@@ -1968,6 +2039,25 @@ Date:   Mon Dec 6 16:38:12 2021 -0700
         the API to be more consistent with e.g. <code>HashMap</code>.</li>
       <li>Distinguish between unexpected child process exit code and unclean exit.</li>
       <li><code>MultiArrayList</code>: get function take self by value.</li>
+      <li>Made <code>meta.trait.isContainer</code> true for opaques.</li>
+      <li><code>GeneralPurposeAllocator</code>: fixed memory limit accounting for large
+        allocations.</li>
+      <li><code>ArrayList</code>: add <code>ensureTotalCapacityPrecise</code> (#10077).</li>
+      <li><code>ppoll</code>: cast number of <code>fds</code> to <code>nfds_t</code>.</li>
+      <li>Publicize <code>Allocator.reallocBytes</code>. This is useful when dealing with
+        runtime-known alignments, eg. interfacing with C code that accepts custom allocation
+        callbacks (#9394).</li>
+      <li>Added <code>chmod</code> and <code>chown</code>.</li>
+      <li><code>builtin.StackTraceformat</code>: fix compile error when building for a target
+        that does not have stderr or <code>detectTTYConfig</code> (such as freestanding).</li>
+      <li>Added <code>NotLink</code> error (#9877) (#9872).</li>
+      <li>Fixed type error for {#syntax#}u8{#endsyntax#} in <code>writeIntSlice</code>.</li>
+      <li><code>mem.indexOfPos</code> now returns <code>start_index</code> when needle length is
+        zero (#10220) (#10216).</li>
+      <li>Fixed slice bounds in <code>system.preadMin</code>.</li>
+      <li>Handle <code>rmdirZ</code> <code>EINVAL</code> error (#10145).</li>
+      <li>Fixed test label off-by-one error (#10277).</li>
+      <li><code>PriorityQueue</code>: comparator now takes a context parameter (#10342).</li>
     </ul>
 
 <p>Contributors: Andrew Kelley, Robin Voetter, Jakub Konka, kprotty, Ryan Liptak, Lee Cannon, Vincent Rischmann, LemonBoy, Veikka Tuominen, Jacob G-W, Jonathan Marler, Matthew Borkowski, Evan Haas, Felix (xq) Queißner, Takeshi Yoneda, Koakuma, Luuk de Gram, Martin Wickham, Aaron Sikes, Al Hoang, Frank Denis, Isaac Freund, Marc Tiehuis, lucky, Kenta Iwasaki, Matt Chudleigh, Stephen Gregoratto, Travis Staloch, Ali Chraghi, Asherah Connor, Hiroaki Nakamura, Jens Goldberg, Lewis Gaul, Meghan, Michael Dusan, N00byEdge, Ominitay, Tom Maenan Read Cutting, jacob gw, viri, Dmitry Matveyev, Gregory Anders, InKryption, Isaac Freund, Jarred Sumner, Jeremy Fillingim, Malcolm Still, Samadi van Koten, Silver, Sizhe Zhao, Sreehari Sreedev, Stephen von Takach, Sébastien Marie, Travis Martin, codic12, daurnimator, ominitay, rgreenblatt, xackus, Adam C, Andrew Gutekanst, Arnav Singh, ArtixFox, Asa Zeren, Austin Clements, Aydin Mercan, Ayende Rahien, Biolunar, Björn Linse, Boo, Carlos Zúñiga, Chris Gregory, Chris Heyes, Coleman Broaddus, Daniele Cocca, Dante Catalfamo, Dante Catalfamo, Dustin Taylor, Edward Dean, Ellis Trisk-Grove, Emil Lerch, Exonorid, Fabio Arnold, Felix "xq" Queißner, Filippo Casarin, FnControlOption, Frank Denis, Garrett Squire, Hiroaki Nakamura, HugoFlorentino, Isaac Freund, Isaac Yonemoto, Jakub Dupak, Jan200101, Justin Whear, Kirjastonhoitaja, Klecko, LemonBoy, Luna, Mahdi Khanalizadeh, Matt Knight, Max Hollmann, Michal Ziulek, Miles Alan, Nameless, Nathan Michaels, Nguyễn Gia Phong, Philip Åkesson, Philipp Lühmann, Rohlem, Sebastien Marie, Tau, Thom Chiovoloni, Tizoner, Trioct, William Stein, Zach Banks, Zapolsky Anton, alichraghi, charlieman, chwayne, d18g, fn ⌃ ⌥, g-w1, hadroncfy, jdmichaud, joachimschmidt557, leesongun, mason1920, pfg, protty, purringChaos, tgschultz, tjohnes, viri</p>
@@ -1980,6 +2070,8 @@ Date:   Mon Dec 6 16:38:12 2021 -0700
       <li>fs.Walker is moved to fs.Dir.Walker. Paths of entries are relative to the Dir.</li>
       <li>{#syntax#}std.Target.current{#endsyntax#} is moved to
         {#syntax#}@import("builtin").target{#endsyntax#} (#9388) (#9321).</li>
+      <li><code>DynamicBitSet</code> functions have allocator parameters moved to be the
+          first one (after self) to match common convention (#9944).</li>
     </ul>
 commit 902df103c6151c257c90de9ba5f29f7f4b9dbea2
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1993,12 +2085,13 @@ Date:   Tue Nov 30 00:13:07 2021 -0700
 
     {#header_open|Additional API#}
     <ul>
-      <li>mem.alignPointerOffset</li>
-      <li>mem.alignPointer</li>
-      <li>Thread.Futex (#9070).</li>
-      <li>unicode.fmtUtf16le</li>
-      <li>io.Reader.readUntilDelimiter</li>
-      <li>BoundedArray: a simple way to represent small data whose max size is known (#9134).</li>
+      <li><code>mem.alignPointerOffset</code></li>
+      <li><code>mem.alignPointer</code></li>
+      <li><code>Thread.Futex</code> (#9070).</li>
+      <li><code>unicode.fmtUtf16le</code></li>
+      <li><code>io.Reader.readUntilDelimiter</code></li>
+      <li><code>BoundedArray</code>: a simple way to represent small data whose max size is known (#9134).</li>
+      <li><code>meta.Float</code></li>
     </ul>
     {#header_close#}
 
@@ -2296,6 +2389,19 @@ Date:   Sun Dec 5 14:49:04 2021 -0800
 
     {#header_close#}
 
+    {#header_open|JSON#}
+    <ul>
+      <li>Now allows scientific notation to coerce to integers as long
+        as they actually resolve to int type.</li>
+      <li>Now catches and handles overflow when parsing floating-point
+          values with no fractional parts.</li>
+      <li><code>parse</code>: added support for recursive objects (#9307).</li>
+      <li><code>stringify</code>: added an option to not write out null optional
+        fields (#8979).</li>
+      <li>Now uses a bit-stack for nesting instead of a large integer type (#5959).</li>
+    </ul>
+    {#header_close#}
+
     {#header_open|Formatted Printing#}
     TODO complain about formatted printing and warn everyone that doomsday is coming and I'm going to break all the API
     <ul>
@@ -2331,6 +2437,15 @@ Date:   Thu Jul 29 13:25:13 2021 -0400
     
     add Thread.setName and Thread.getName
 
+commit 2a0adef583d96d87fdca1bc536269931486e4349
+Merge: 36b6e95aa e376fab18
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Dec 3 17:29:55 2021 -0800
+
+    Merge pull request #9910 from mikdusan/dragonfly
+    
+    dragonfly: port Thread.setname/getname
+
 commit 7aaea20e7e5e98bc5b2c4c8ddcf8f6aaa4a9c55d
 Author: Koakuma <koachan@protonmail.com>
 Date:   Fri Jul 30 21:45:28 2021 +0700
@@ -2343,6 +2458,35 @@ Date:   Tue Aug 3 20:14:40 2021 +0700
 
     Linux/SPARCv9: account for branch delay in freeAndExit()
 
+commit 008b0ec5e58fc7e31f3b989868a7d1ea4df3f41d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Nov 9 18:27:12 2021 -0700
+
+    std.Thread.Mutex: change API to lock() and unlock()
+    
+    This is a breaking change. Before, usage looked like this:
+    
+    ```zig
+    const held = mutex.acquire();
+    defer held.release();
+    ```
+    
+    Now it looks like this:
+    
+    ```zig
+    mutex.lock();
+    defer mutex.unlock();
+    ```
+    
+    The `Held` type was an idea to make mutexes slightly safer by making it
+    more difficult to forget to release an aquired lock. However, this
+    ultimately caused more problems than it solved, when any data structures
+    needed to store a held mutex. Simplify everything by reducing the API
+    down to the primitives: lock() and unlock().
+    
+    Closes #8051
+    Closes #8246
+    Closes #10105
 
     {#header_close#}
 
@@ -2365,6 +2509,18 @@ Date:   Wed Oct 27 15:53:29 2021 +0100
     The `Random` interface is no longer stored in a field of the rng, and is
     instead returned by the child function `random()` of the rng. This
     avoids the performance issues caused by the interface.
+
+
+commit 544d7d99822912a4f85768b0df882775e5fdb80d
+Author: ominitay <37453713+ominitay@users.noreply.github.com>
+Date:   Fri Oct 29 00:34:17 2021 +0100
+
+    Add argument for `fillFn` to `Random.init`
+    
+    As suggested by @leecannon, this provides more flexibility to the
+    `Random` interface. For exmaple, this allows for an implementation to
+    provide multiple different fill functions.
+
     {#header_close#}
 
     {#header_open|Hash Maps#}
@@ -2377,6 +2533,9 @@ Date:   Wed Oct 27 15:53:29 2021 +0100
       <li>Added <code>ArrayHashMap.popOrNull</code>, corresponding to
         <code>ArrayList.popOrNull</code>.</li>
       <li>Added <code>getKey</code> methods (#9607).</li>
+      <li>Interleaving calls to <code>HashMap.removeAssertDiscard()</code> /
+        <code>HashMap.putAssumeCapacity()</code> no longer cause hash maps to run out of
+        memory (#7468).</li>
     </ul>
     {#header_close#}
 
@@ -2547,7 +2706,6 @@ Date:   Thu Sep 2 04:51:42 2021 -0400
     <a href="https://sourceware.org/pipermail/libc-alpha/2021-August/129718.html">glibc 2.34</a>
     in addition to the other 46 glibc versions.
     </p>
-    <p>TODO glibc 2.34 is not actually done yet in zig upstream.</p>
     <p>There was a major improvement to targeting glibc when cross compiling.</p>
     <p>Zig supports targeting every version of glibc for any target architecture.
     Previously, in order to accomplish this, Zig had only the information from the .abilist
@@ -2557,7 +2715,7 @@ Date:   Thu Sep 2 04:51:42 2021 -0400
 205219
 $ cat ../lib/libc/glibc/*.txt | xz | wc -c
 22976</code></pre>
-    <p>The information required to do this takes up 200 KB installation size / 22 KB tarball size,
+    <p>The information required to do this took up 200 KB installation size / 22 KB tarball size,
     and it had the following problems (which caused several bugs):
     </p>
     <ul>
@@ -2570,8 +2728,7 @@ $ cat ../lib/libc/glibc/*.txt | xz | wc -c
     <a href="https://github.com/ziglang/glibc-abi-tool">ziglang/glibc-abi-tool</a> that produces
     an improved dataset. The project is quite interesting; if you are curious to learn more,
     check out the README of that repository which explains in detail the strategy and encoding.</p>
-    <p>With the new dataset:
-    </p>
+    <p>With the new dataset:</p>
     <pre><code>$ cat abilists | wc -c
 169421
 $ cat abilists | xz | wc -c
@@ -2579,8 +2736,8 @@ $ cat abilists | xz | wc -c
     <p>The new data that Zig ships with is 165 KB installation size / 24 KB tarball size,
     and all the above issues are solved.</p>
     <p>
-    When a Zig user requests to cross compile for glibc, Zig uses this abilists file to
-    create, for the requested glibc version and CPU architecture:
+    When a Zig user requests to cross compile for glibc, Zig uses this <code>abilists</code>
+    file to create, for the requested glibc version and CPU architecture:
     </p>
     <ul>
       <li>m.s</li>
@@ -2602,9 +2759,9 @@ $ cat abilists | xz | wc -c
       <li>libutil.so</li>
     </ul>
     <p>
-    These files are cached and placed on the linker line when cross compiling.
-    Thanks to this improved dataset, they now accurately model the requested version
-    of glibc.
+    These files are {#link|cached|Cache System#} and placed on the linker line when
+    cross compiling. Thanks to this improved dataset, they now accurately model the
+    requested version of glibc.
     </p>
     <p>
     If we naively shipped every version of the .abilist files:
@@ -2616,6 +2773,39 @@ $ cat (find glibc/ -name "*.abilist") | xz | wc -c
     <p>...it would have been 35 MiB installation size, 200 KB tarball size.
     So we have effectively achieved a compression ratio of 219:1 by implementing a
     bespoke encoding of this information.</p>
+
+    {#header_open|Native Version Detection#}
+    <p>When Zig is instructed to build for the native OS (which is the default, unless
+    a <code>-target</code> argument is provided) on a glibc system, Zig first
+    checks its own executable ELF file to determine if it is dynamically linked.
+    If it is, it introspects its own dynamically loaded libraries to find libc,
+    and find out if it is glibc, and if so, what version it is.</p>
+
+    <p>When the Zig compiler is statically linked, it falls back to inspecting
+    the <code>/usr/bin/env</code> ELF file to determine the native glibc version,
+    by checking the <code>DT_RUNPATH</code>, and then calling <code>readlink()</code>
+    on the <code>libc.so</code> file, because typically the symlink will have e.g.
+    <code>libc-2.33.so</code> in the name, revealing the glibc version.</p>
+
+    <p>Until now, if the file did not have a <code>DT_RUNPATH</code>, Zig would give
+    up and fall back to the default version of glibc, which was 2.17.</p>
+
+    <p>Fortunately, this information is also in <code>readlink()</code> of
+    <code>ld.so</code>, which is available as the "INTERP" file path in the ELF file.
+    Zig now looks for e.g. <code>ld-2.33.so</code> on the symlink data for the
+    dynamic linker, which makes Zig correctly detect the native glibc version in
+    more cases.</p>
+
+    <p>In theory a more complete solution would also look at <code>/etc/ld.so.cache</code>
+    if necessary, and finally fall back to some hard coded paths, in order
+    to resolve the location of <code>libc.so</code>, in order to do this <code>readlink()</code>
+    trick on the resulting path. You can find that flow chart with <code>man ld.so</code>.
+    But it looks like this logic will be enough to get a correct answer in all real
+    world cases. Of course if we find out that is not the case, we can expand the detection
+    logic.</p>
+    <p>This has been tested on Debian Buster and glibc-based Void Linux.</p>
+    <p>See #6469 for more details.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|mingw-w64 9.0.0#}
@@ -2744,8 +2934,11 @@ Hello World!</code></pre>
     <ul>
       <li><code>--ast-check</code> now works in combination with <code>--stdin</code>.</li>
       <li>Now respects trailing commas in inline assembly.</li>
+      <li>Fixed formatting for single-line containers with comments (#8810).</li>
+      <li>Fixed {#link|performance|Performance Tracking#} issue with nested
+        arrays (#10224) (#10194).</li>
     </ul>
-    <p>Contributors: Jacob G-W, jdmichaud</p>
+    <p>Contributors: Jacob G-W, jdmichaud, tjohnes, chwayne</p>
     {#header_close#}
 
     {#header_open|zig ar#}
@@ -2833,8 +3026,13 @@ Hello from C++ and Zig</code></pre>
       <li>Added <code>__ffssi2</code>, <code>__ffsdi2</code> and <code>__ffsti2</code> (#10268).</li>
       <li>Added <code>__paritysi2</code>, <code>__paritydi2</code>, <code>__parityti2</code>.</li>
       <li>Added <code>__ctzsi2</code>, <code>__ctzdi2</code> and <code>__ctzti2</code>.</li>
+      <li>Added <code>__bswapsi2</code>, <code>__bswapdi2</code> and <code>__bswapti2</code>.</li>
+      <li>Added <code>__cmpsi2</code>, <code>__cmpdi2</code>, <code>__cmpti2</code>.</li>
+      <li>Added <code>__ucmpsi2</code>, <code>__ucmpdi2</code>, <code>__ucmpti2</code>.</li>
       <li>Added <code>__popcountsi2</code>, <code>__popcountdi2</code>, and
         <code>__popcountti2</code>.</li>
+      <li>Added <code>__mulosi2</code>.</li>
+      <li>Added <code>__negsi2</code>, <code>__negdi2</code>, <code>__negti2</code>.</li>
       <li>Added for 64-bit ARM:
         <code>__chkstk</code>, <code>__divti3</code>, <code>__modti3</code>, <code>__udivti3</code>, <code>__umodti3</code>
       </li>
@@ -2845,6 +3043,7 @@ Hello from C++ and Zig</code></pre>
         {#link|Objective-C and Objective-C++#} @available expressions) on
         {#link|macOS#} (#10232).</li>
     </ul>
+    <p>With all these additions, we nearly have a fully complete compiler-rt implementation!</p>
     <p>TODO mention migrating stuff into compiler-rt</p>
 commit 939f51aebba982259628f6255a0b0b0ec2d9c99a
 Author: J.C. Moyer <jcmoyer32@gmail.com>
@@ -3038,3 +3237,4 @@ TODO replace #numbers with github links
 TODO run tidy to validate the html
 TODO put the new mascot pictures in!
 TODO search for "commit " in case I pasted a git commit
+TODO announce ifreund as core team member
