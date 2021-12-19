@@ -229,6 +229,10 @@
       background-repeat: no-repeat;
     }
 
+    #stage2-progress-dark {
+      display: none;
+    }
+
     @media (prefers-color-scheme: dark) {
       body{
           background:#121212;
@@ -313,6 +317,12 @@
       #logo {
         background-image: url(https://ziglang.org/img/zig-logo-light.svg);
       }
+      #stage2-progress-dark {
+        display: block;
+      }
+      #stage2-progress-light {
+        display: none;
+      }
     }
   </style>
   </head><!--
@@ -355,6 +365,7 @@
     the project started {#link|Performance Tracking#},
     and the {#link|Standard Library#}, although unstable, became more useful.
     </p>
+    <img src="https://ziglang.org/img/Zero_1.svg" style="height: 14em">
     {#header_open|Table of Contents#}
     {#nav#}
     {#header_close#}
@@ -1156,6 +1167,7 @@
     {#header_close#}
 
     {#header_open|Documentation#}
+    <img src="https://ziglang.org/img/Ziggy_4.svg" style="height: 11em">
     <ul>
       <li>New section: <a href="https://ziglang.org/documentation/0.9.0/#C-Translation-CLI">C Translation CLI</a></li>
       <li>New section: <a href="https://ziglang.org/documentation/0.9.0/#C-Translation-Caching">C Translation Caching</a></li>
@@ -1167,10 +1179,8 @@
     {#header_close#}
 
     {#header_open|Language Changes#}
-    <ul>
-      <li>{#syntax#}@byteOffsetOf{#endsyntax#} is renamed to {#syntax#}@offsetOf{#endsyntax#}. {#link|zig fmt#}
-        automatically performs this upgrade for you.</li>
-    </ul>
+    <img src="https://ziglang.org/img/Zero_5.svg" style="height: 11em">
+    <p>{#syntax#}@byteOffsetOf{#endsyntax#} is renamed to {#syntax#}@offsetOf{#endsyntax#}. {#link|zig fmt#} automatically performs this upgrade for you.</p>
 
     {#header_open|More Builtins Return String Literals#}
     <p>
@@ -1641,21 +1651,43 @@ pub const PrefetchOptions = struct {
     </ul>
     {#header_close#}
 
-    {#header_open|Move Unreachable Code Errors to Self-Hosted#}
-    <p>TODO AstGen is so fast that we do it unconditionally as an extra layer
-    on top of stage1</p>
-    <p>TODO this gives us errors such as {#link|Compile Errors for Unused Locals#} even for stage1</p>
-    <p>TODO this allowed us to move unreachable code error from {#link|Bootstrap Compiler#} to
-    the {#link|Self-Hosted Compiler#}, which actually improved perf!</p>
-    <p>TODO #9219</p>
+    {#header_open|Moved Unreachable Code Errors to Self-Hosted#}
+    <p>The {#link|Self-Hosted Compiler#} is so {#link|fast|Performance Tracking#} that
+    Zig 0.9.0 additionally runs the first three phases of the self-hosted pipeline
+    (tokenizing, {#link|Parser#},
+    and <a href="/download/0.8.0/release-notes.html#Whole-File-AST-Lowering">AST lowering</a>),
+    <em>before</em> invoking the bootstrap compiler, to enable
+    {#link|Compile Errors for Unused Locals#} among other kinds of compile errors.
+    </p>
+
+    <p>At first it seemed this would be a small perf hit to additionally run part of the
+    self-hosted compiler in front of the bootstrap compiler, but it would be worth it to
+    gain access to the compile errors that are only implemented in the self-hosted compiler.</p>
+
+    <p>But something delightful happened.</p>
+
+    <p>This change allowed us to move the "unreachable code" compile error from the bootstrap
+    compiler to the self-hosted compiler. This made it possible to delete a couple of fields
+    from some structs within the bootstrap compiler, resulting in a small performance
+    improvement. But because the self-hosted compiler is so fast, the performance gain
+    outweighed the performance cost!
+    </p>
+
+    <p>So we actually <em>improved performance</em> by additionally running the self-hosted
+    compiler in front of the bootstrap compiler.</p>
     {#header_close#}
     {#header_close#}
 
     {#header_open|Self-Hosted Compiler#}
     <p>The main focus of this release cycle was the self-hosted compiler (also known
     as "stage2").</p>
+    <p>Here is an infographic to communicate a sense of progress:</p>
+    <img id="stage2-progress-light" alt="Progress Report" src="https://ziglang.org/download/0.9.0/stage2-progress-light.png" style="width: 100%">
+    <img id="stage2-progress-dark" alt="Progress Report" src="https://ziglang.org/download/0.9.0/stage2-progress-dark.png" style="width: 100%">
 
-    TODO image representing progress
+    <p>Currently we have <strong>467 out of 1072 behavior tests passing</strong> with
+    the {#link|LLVM Backend#}. Once this reaches 100% we can start shipping the self-hosted
+    compiler instead of the {#link|Bootstrap Compiler#}.</p>
 
     TODO tetris milestone with perf improvement
 
@@ -1731,23 +1763,6 @@ pub const PrefetchOptions = struct {
       </li>
       <li>Fix lakemont CpuModel (#9099).</li>
     </ul>
-    TODO
-commit 4e5a88b28882eda156a46ecc7f70887a7bc0b49b
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Nov 20 17:23:44 2021 -0700
-
-    stage2: default dynamic libraries to be linked as needed
-    
-    After this change, the default for dynamic libraries (`-l` or
-    `--library`) is to only link them if they end up being actually used.
-    
-    With the Zig CLI, the new options `-needed-l` or `--needed-library` can
-    be used to force link against a dynamic library.
-    
-    With `zig cc`, this behavior can be overridden with `-Wl,--no-as-needed`
-    (and restored with `-Wl,--as-needed`).
-    
-    Closes #10164
 
 <p>Contributors: Andrew Kelley, Jakub Konka, Jacob G-W, Robin Voetter, Joachim Schmidt, Luuk de Gram, Evan Haas, Martin Wickham, Matthew Borkowski, Lee Cannon, Veikka Tuominen, Takeshi Yoneda, Travis Staloch, drew, Ryan Liptak, xackus, Emily Bellows, Jonathan Marler, g-w1, Alex Rønne Petersen, Dmitry Matveyev, J.C. Moyer, Meghan Denny, Michael Dusan, kprotty, Andrew Gutekanst, Daniele Cocca, FnControlOption, Isaac Freund, Kurt Kartaltepe, LemonBoy, Lewis Gaul, Matt Knight, Tom Maenan Read Cutting, Zen1th, jacob gw, vole-dev, Žiga Željko, AODQ, Al Hoang, Christopher Smyth, Dimenus, Exonorid, Frank Denis, Hadrien Dorio, Isaac Freund, Josh Soref, Kenta Iwasaki, Loris Cro, Michal Ziulek, Scibuild, Sebastian Ullrich, Sizhe Zhao, Stephen Gregoratto, Stephen Gutekanst, Stéphan Kochen, Tamas Kenez, Thomas Ives, Vincent Rischmann, daurnimator, pithlessly, travisstaloch, xavier</p>
 
@@ -2104,6 +2119,22 @@ error: the following command failed with 'FileNotFound':
     <a href="https://en.wikipedia.org/wiki/Binfmt_misc">binfmt_misc</a> is installed.
     </p>
     <p>See also the new {#link|Executors#} feature of the {#link|Zig Build System#}.</p>
+    {#header_close#}
+
+    {#header_open|Link Dynamic Libraries As-Needed by Default#}
+    <p>Now, the default for dynamic libraries (<code>-l</code> or
+    <code>--library</code>) is to only link them if they end up being actually used.</p>
+
+    <p>With the Zig CLI, the new options <code>-needed-l</code> or <code>--needed-library</code>
+    can be used to force link against a dynamic library.</p>
+
+    <p>With <code>zig cc</code>, this behavior can be overridden with
+    <code>-Wl,--no-as-needed</code> (and restored with <code>-Wl,--as-needed</code>).</p>
+
+    <p>We might need to revert this change in order to satisfy the design requirement of having
+    the default be the same on all platforms due to some {#link|macOS#} considerations.</p>
+    
+    <p>Related issue: #10164</p>
     {#header_close#}
     {#header_close#}
 
@@ -2714,7 +2745,7 @@ Date:   Sun Oct 24 13:13:06 2021 +0200
     while working on the self hosted compiler.
     {#header_close#}
 
-    {#header_open|Proper Namespacing of OS Bits#}
+    {#header_open|Namespacing of OS Bits#}
     <ul>
       <li><code>errno</code> is now a nonexhaustive enum, with the 'E' prefix chopped off.</li>
     </ul>
@@ -2911,6 +2942,7 @@ All 1 tests passed.</code></pre>
     {#header_close#}
 
     {#header_open|Toolchain#}
+    <img src="https://ziglang.org/img/Zero_3.svg" style="height: 11em">
     {#header_open|LLVM 13#}
     <p>
     This release of Zig upgrades to
@@ -3394,10 +3426,12 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     {#header_close#}
 
     {#header_open|Performance Tracking#}
+    <img src="https://ziglang.org/img/Zero_2.svg" style="height: 11em">
     <p>TODO</p>
     {#header_close#}
 
     {#header_open|Bug Fixes#}
+    <img src="https://ziglang.org/img/Zero_8.svg" style="height: 11em">
     <p>
     <a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.9.0+">Full list of the 147 bug reports closed during this release cycle</a>.
     </p>
@@ -3422,10 +3456,12 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     {#header_close#}
 
     {#header_open|Please Welcome Isaac Freund to the Core Zig Team#}
+    <img src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em">
     <p>TODO</p>
     {#header_close#}
 
     {#header_open|Roadmap#}
+    <img src="https://ziglang.org/img/Ziggy_8.svg" style="height: 11em">
     TODO update this section
     <p>The goal of the 0.9.0 release cycle was
     {#link|self-hosting the compiler|Self-Hosted Compiler#}. With a longer release cycle,
@@ -3475,6 +3511,7 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     {#header_close#}
 
     {#header_open|Thank You Sponsors!#}
+    <img src="https://ziglang.org/img/Ziggy_6.svg" style="height: 18em">
     <p>
     Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
     Because of you, Zig is driven by the open source community, rather than the goal of making profit.
@@ -3574,5 +3611,4 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
 </html>
 
 TODO replace #numbers with github links
-TODO put the new mascot pictures in!
 TODO run tidy to validate the html
