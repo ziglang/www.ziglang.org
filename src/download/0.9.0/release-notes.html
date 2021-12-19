@@ -340,12 +340,12 @@
     </ul>
     <p>
     Please consider a <a href="/zsf/">recurring donating to the ZSF</a>
-    to help us pay even more contributors!
+    to help us pay more contributors!
     </p>
     <p>
     This release features <strong>6 months of work</strong>:
     changes from <strong>177 different contributors</strong>, spread among
-    <strong>2012 commits</strong>.</p>
+    <strong>2023 commits</strong>.</p>
     <p>One sentence summary:
     The {#link|Toolchain#} "just works" in more cases,
     many {#link|bugs were fixed|Bug Fixes#},
@@ -353,7 +353,7 @@
     the {#link|Support Table#} is expanded,
     there were a handful of {#link|Language Changes#},
     the project started {#link|Performance Tracking#},
-    and the {#link|Standard Library#} remains unstable.
+    and the {#link|Standard Library#}, although unstable, became more useful.
     </p>
     {#header_open|Table of Contents#}
     {#nav#}
@@ -1195,49 +1195,51 @@
     {#header_close#}
 
     {#header_open|@minimum and @maximum#}
-    TODO
-commit cdeea3b0943b070d49d8d8d0855f9a38843e3ecc
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Sun Jul 25 05:34:11 2021 +0200
+    <p>New builtins: <a href="https://ziglang.org/documentation/0.9.0/#minimum">@minimum</a> and
+    <a href="https://ziglang.org/documentation/0.9.0/#maximum">@maximum</a></p>
 
-    minimum/maximum builtins
+    <p>These builtins accept integers, floats, and vectors of either.
+    In the latter case, the operation is performed element wise.</p>
 
+    <p>NaNs are handled as follows: if one of the operands of a (pairwise) operation is NaN, the other operand is returned. If both operands are NaN, NaN is returned.</p>
+
+    <p>See also: {#link|SIMD#}</p>
     {#header_close#}
 
     {#header_open|@select#}
-    TODO
-commit 50a29f7c213d4a906839dfd625b6280663348781
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Mon Jul 26 02:37:11 2021 +0200
-
-    Add @select
-    
-    @select(
-        comptime T: type,
-        pred: std.meta.Vector(len, bool),
-        a: std.meta.Vector(len, T),
-        b: std.meta.Vector(len, T)
-    ) std.meta.Vector(len, T)
-    
-    Constructs a vector from a & b, based on the values in the predicate vector. For indices where the predicate value is true, the corresponding
-    element from the a vector is selected, and otherwise from b.
+    <p>New builtin: <a href="https://ziglang.org/documentation/0.9.0/#select">@select</a></p>
+    <pre>{#syntax#}@select(comptime T: type, pred: @Vector(len, bool), a: @Vector(len, T), b: @Vector(len, T)) @Vector(len, T){#endsyntax#}</pre>
+    <p>
+    Selects values element-wise from {#syntax#}a{#endsyntax#} or {#syntax#}b{#endsyntax#} based on {#syntax#}pred{#endsyntax#}. If {#syntax#}pred[i]{#endsyntax#} is {#syntax#}true{#endsyntax#}, the corresponding element in the result will be {#syntax#}a[i]{#endsyntax#} and otherwise {#syntax#}b[i]{#endsyntax#}.
+    </p>
+    <p>See also: {#link|SIMD#}</p>
     {#header_close#}
 
-    {#header_open|SIMD Status#}
+    {#header_open|SIMD#}
     <p>
     In this release, the following builtins have been improved to support SIMD vectors:
     </p>
     <ul>
-      <li>{#syntax#}@popCount{#endsyntax#}</li>
-      <li>{#syntax#}@ctz{#endsyntax#}</li>
-      <li>{#syntax#}@clz{#endsyntax#}</li>
+      <li><a href="https://ziglang.org/documentation/0.9.0/#popCount">@popCount</a></li>
+      <li><a href="https://ziglang.org/documentation/0.9.0/#ctz">@ctz</a></li>
+      <li><a href="https://ziglang.org/documentation/0.9.0/#clz">@clz</a></li>
     </ul>
-    TODO SIMD status
-     - mostly works great
-     - link to proposal for vector syntax
-     - docs aren't there yet
-     - still some missing functionality
-     - self-hosted compiler is where it's at
+    <p>These SIMD-enabled builtins are new in 0.9.0:</p>
+    <ul>
+      <li>{#link|@select#}</li>
+      <li>{#link|@minimum and @maximum#}</li>
+    </ul>
+    <p>
+    SIMD support in Zig pretty far along, with more improvements still planned.
+    If you try to use SIMD in your Zig codebase and you find that it does not satisfy
+    your use case, we want to hear from you! Please open an issue and describe the situation.
+    </p>
+    <p><a href="https://github.com/ziglang/zig/issues/6771">SIMD Vector Syntax</a>
+      is planned so that one is not required to use {#syntax#}@Vector{#endsyntax#}.</p>
+    <p>Documentation in the language reference is bare bones and needs to be fleshed out.</p>
+    <p>There is still some missing functionality which you can see listed in #903.</p>
+    <p>The focus now has shifted to implementing SIMD in the {#link|Self-Hosted Compiler#}
+      since that is ultimately what everyone will be using.</p>
     {#header_close#}
 
     {#header_open|@intToEnum Implicitly Performs @intCast#}
@@ -1253,86 +1255,101 @@ Date:   Mon Jul 26 02:37:11 2021 +0200
     The same as before, it is illegal behavior to pass any integer which does
     not have a corresponding enum tag.
     </p>
-    TODO change this boring description into a code example
+    <p>
+    In summary, you can change this:
+    </p>
+    <pre>{#syntax#}return @intToEnum(Tag, @intCast(@typeInfo(Tag).Enum.tag_type, number));{#endsyntax#}</pre>
+    <p>...into this:</p>
+    <pre>{#syntax#}return @intToEnum(Tag, number);{#endsyntax#}</pre>
     {#header_close#}
 
     {#header_open|Shadowing Declarations#}
-    TODO
-commit 9c95f38a7c1defc7f63a4815bfc2d76a5f9f83f6
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Aug 24 18:56:16 2021 -0700
+    <p>Locals are never allowed to shadow declarations, but declarations will sometimes
+    need to have the same name as each other. Consider this case:</p>
 
-    stage1: remove incorrect compile error for var redeclaration
-    
-    Locals are not allowed to shadow declarations, but declarations are
-    allowed to shadow each other, as long as there are no ambiguous
-    references.
-    
-    closes #678
+    <pre>{#syntax#}pub const List = struct {
+    head: *Node,
 
- src/stage1/analyze.cpp | 43 ++++---------------------------------------
- src/stage1/astgen.cpp  | 43 +++++++++++++++++++++++++------------------
- 2 files changed, 29 insertions(+), 57 deletions(-)
+    pub const Node = struct {
+        bar: i32,
+        next: *Node,
 
+        pub fn init() Node {
+            // ...
+        }
+    };
 
+    pub fn init() List {
+        // ...
+    }
+};{#endsyntax#}</pre>
 
-commit f30aa25cbf9c9a415963b4ea69d7efa09237a704
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Aug 27 21:34:13 2021 -0700
+    <p>Consider the full namespace paths of the functions:</p>
+    <ul>
+      <li><code>List.init</code></li>
+      <li><code>List.Node.init</code></li>
+    </ul>
 
-    declarations may collide with primitives with @"" syntax
-    
-     * stage2 AstGen: add missing compile error for declaring a local
-       that shadows a primitive. Even with `@""` syntax, it may not have
-       the same name as a primitive.
-     * stage2 AstGen: add a compile error for a global declaration
-       whose name matches a primitive. However it is allowed when using
-       `@""` syntax.
-     * stage1: delete all "declaration shadows primitive" compile errors
-       because they are now handled by stage2 AstGen.
-     * stage1/stage2 AstGen: notice when using `@""` syntax and:
-       - treat `_` as a regular identifier
-       - skip checking if an identifire is a primitive
-    
-    Check the new test cases for clarifications on semantics.
-    
-    closes #6062
+    <p>This is completely reasonable and expected, but it causes, within the scope of
+    <code>Node</code>, for the <code>init</code> identifier to be ambiguous. For example,
+    if we reference the <code>init</code> function from the inner scope, we get an error:
 
-commit 6a6e2cd64f3ebb1919dd0ac53d8a1f29c56e6ec2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Aug 28 10:17:47 2021 -0700
+    {#code_begin|test_err|ambiguous#}
+pub const List = struct {
+    head: *Node,
 
-    AstGen: allow locals with same name as primitives with `@""` syntax
-    
-    This makes local names follow the same rule as declaration names.
+    pub const Node = struct {
+        bar: i32,
+        next: *Node,
 
-    {#header_close#}
+        pub fn init() Node {
+            // ...
+        }
 
-    {#header_open|usingnamespace No Longer Affects Identifier Lookup#}
-    <p>
-    TODO
-    </p>
-    {#header_close#}
+        test "example" {
+            _ = init;
+        }
+    };
 
-    {#header_open|Saturating Arithmetic#}
-    TODO (#9949) (#9679) (#9619)
-    {#header_close#}
+    pub fn init() List {
+        // ...
+    }
+};
+    {#code_end#}
 
-    {#header_open|Compile Errors for Unused Locals#}
-    TODO
-    TODO also mention the end-game for this which is a button in an editor
-    which does "organize imports"-like behavior. philosohpy of having the source code
-    on disk contain the smell.
-    {#header_close#}
+    <p>This is resolved by eliminating the ambiguity by accessing the function via its
+    namespace:</p>
+    <pre>{#syntax#}pub const List = struct {
+    head: *Node,
 
-    {#header_open|@export with Field Access#}
-    AstGen: support `@export` with field access
-    
-    The Zig language specification will support identifiers and field access
-    in order to refer to which declaration to export with `@export`.
-    
-    This commit implements the change in AstGen and updates the language
-    reference.
+    pub const Node = struct {
+        bar: i32,
+        next: *Node,
+
+        pub fn init() Node {
+            // ...
+        }
+
+        test "example" {
+            _ = Node.init;
+            _ = List.init;
+        }
+    };
+
+    pub fn init() List {
+        // ...
+    }
+};{#endsyntax#}</pre>
+
+    <p>No error this time.</p>
+
+    <p>Similarly, variables are now allowed to have the same names as primitives
+    such as {#syntax#}i32{#endsyntax#} and {#syntax#}null{#endsyntax#}, however they
+    must use the {#syntax#}@""{#endsyntax#} sytax in order to disambiguate (#6062).</p>
+
+    <p>The motivation for these language decisions is to reduce the amount of
+    <strong>non-local awareness</strong> a person reading Zig code must have in
+    order to confidently make changes.</p>
     {#header_close#}
 
     {#header_open|Keywords Deleted: true, false, undefined, null#}
@@ -1358,41 +1375,199 @@ test "example" {
     {#code_end#}
     {#header_close#}
 
-    {#header_open|Inline Assembly Requires String Literals#}
-    TODO
-commit dd62a6d2e8de522187fd096354e7156cca1821c5
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 30 19:41:14 2021 -0700
+    {#header_open|usingnamespace No Longer Affects Identifier Lookup#}
+    <p>This is a <strong>breaking change</strong> that is likely to affect most codebases.</p>
+    <p>
+    {#syntax#}usingnamespace{#endsyntax#} no longer imports identifiers into the current
+    namespace:
+    </p>
+    {#code_begin|exe_build_err|undeclared#}
+const std = @import("std");
 
-    AstGen: allow non-string-literal inline assembly for stage1
+usingnamespace std.debug;
+
+pub fn main() !void {
+    try print("hello", .{});
+}
+    {#code_end#}
+    <p>It can still be used, however, to add declarations to a namespace. For example,
+    a file called <code>c.zig</code> which contains the following:</p>
+    <pre>{#syntax#}pub usingnamespace @cImport({
+    @cInclude("stdio.h");
+    @cInclude("math.h");
+    @cInclude("time.h");
+    @cInclude("epoxy/gl.h");
+    @cInclude("GLFW/glfw3.h");
+    @cDefine("STBI_ONLY_PNG", "");
+    @cDefine("STBI_NO_STDIO", "");
+    @cInclude("stb_image.h");
+});{#endsyntax#}</pre>
+
+    <p>This was the intended use case for {#syntax#}usingnamespace{#endsyntax#} all along, and
+    it still works the same.</p>
+
+    <p>The motivations for this change are:</p>
+    <ul>
+      <li>It limits the programmer's ability to abuse the feature, decreasing the
+        potential amount of <strong>non-local awareness</strong> a person reading Zig
+        code must have in order to confidently make changes.</li>
+      <li>It makes it possible for the compiler to look up identifiers prior to type-checking.
+        This has two benefits:<ul>
+          <li>Enables the compiler to report {#link|Compile Errors for Unused Locals#}.</li>
+          <li>Improves compilation speed.</li>
+        </ul></li>
+    </ul>
+
+    <p>Compilation speed is a serious goal of the project. Zig the language is willing to take on
+    restrictions and design limitations in order to facilitate potential compilation speed
+    enhancements.</p>
+
+    <p>There is an
+    <a href="https://github.com/ziglang/zig/issues/9861">open proposal to rename the keyword</a>.</p>
+    {#header_close#}
+
+    {#header_open|c_void renamed to anyopaque#}
+    <p>{#syntax#}c_void{#endsyntax#} actually has nothing to do with C; it is just an opaque type
+    that has some relaxed coercion rules surrounding type erasure.</p>
+    <p>In Zig 0.9.0 it is renamed to {#syntax#}anyopaque{#endsyntax#} but it has the exact
+    same semantics.</p>
+    <p>{#link|zig fmt#} automatically performs the rename.</p>
+    {#header_close#}
+
+    {#header_open|Saturating Arithmetic#}
+    <p>Zig now has syntax to perform arithmetic that does not wrap, overflow, or invoke
+    illegal behavior. Instead, if the result does not fit into the destination type,
+    the value is clamped to the minimum or maximum:</p>
+
+    {#code_begin|test|saturating_arithmetic#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "example" {
+    var x: u8 = 200;
+    var y: u8 = 100;
+    try expect(x +| y == 255);
+    try expect(y -| x == 0);
+    try expect(y *| x == 255);
+    try expect(y <<| x == 255);
+}
+    {#code_end#}
+    <p>Relevant issues: #9949 #9679 #9619</p>
+    {#header_close#}
+
+    {#header_open|Compile Errors for Unused Locals#}
+    <p>It is no longer possible to have a local variable or parameter that is not referenced:</p>
+    {#code_begin|test_err|unused#}
+test "example" {
+    var x: i32 = 1234;
+}
+    {#code_end#}
+
+    <p>This has been planned since before
+    <a href="/download/0.1.1/release-notes.html">0.1.0 was released</a>,
+    and it is planned to introduce more
+    <a href="https://github.com/ziglang/zig/issues/335">compile errors for unused things</a>,
+    despite this having been a controversial change.
+    <a href="https://github.com/ziglang/zig/issues/3320#issuecomment-884478906">Zig will never have a "sloppy mode" flag</a>.</p>
+
+    <p>The motivation for this change is helping with refactoring and reworking code,
+    and preventing bugs, ultimately saving developer time.</p>
+
+    <p>If a local is intentionally unused, it can be discarded, like this:</p>
+
+    {#code_begin|test|unused#}
+test "example" {
+    var x: i32 = 1234;
+    _ = x;
+}
+    {#code_end#}
+
+    <p>The eventual goal for the developer experience related to errors for unused things is
+    that it will work similar to the "Organize Imports" button in Eclipse that Java
+    developers are familiar with. Idea being that IDEs would have a simple keyboard
+    shortcut that would automatically add discards for all unused things, eliminating this
+    compile error as a stumbling block when a developer is experimenting, and yet ensuring
+    that the source code on disk documents the code smell with explicit discarding of
+    unused things.</p>
+
+    <p>Another possibility is that {#link|zig fmt#} could grow a <code>--fix-unused</code>
+    flag, performing this hypothetical operation outlined above.</p>
+    {#header_close#}
+
+    {#header_open|@export with Field Access#}
+    <p><a href="https://ziglang.org/documentation/0.9.0/#export">@export</a>
+    creates a symbol in the output object file.</p>
+    <p>Previously, <code>declaration</code> must be an identifier. Now, it could be
+    field access expression:</p>
+    <ul>
+      <li>An identifier ({#syntax#}x{#endsyntax#}) identifying a
+        <a href="https://ziglang.org/documentation/0.9.0/#Functions">function</a> or a
+        <a href="https://ziglang.org/documentation/0.9.0/#Container-Level-Variables">variable</a>.</li>
+      <li>Field access ({#syntax#}x.y{#endsyntax#}) looking up a
+        <a href="https://ziglang.org/documentation/0.9.0/#Functions">function</a> or a
+        <a href="https://ziglang.org/documentation/0.9.0/#Container-Level-Variables">variable</a>.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Inline Assembly Requires String Literals#}
+    <p>The end-game for inline assembly is that the syntax is more integrated
+    with Zig, and it will not allow string concatenation for the assembler
+    code, for the same reasons that Zig does not have a preprocessor.</p>
     
-    The end-game for inline assembly is that the syntax is more integrated
-    with zig, and it will not allow string concatenation for the assembler
-    code, for the same reasons that Zig does not have a preprocessor.
-    
-    However, inline assembly in zig right now is lacking for a variety of
+    <p>However, inline assembly in zig right now is lacking for a variety of
     use cases (take a look at the open issues having to do with inline
     assembly for example), and being able to use comptime expressions to
     concatenate text is a workaround that real-world users are exploiting to
-    get by in the short term.
+    get by in the short term.</p>
     
-    This commit keeps "assembly code must use string literal syntax" as a
-    compile error when using stage2, but allows it through when using
-    stage1.
-    
-    I expect to revert this commit after making enough improvements to
-    inline assembly that our real world users' needs are satisfied.
+    <p>This release introduces "assembly code must use string literal syntax" as a
+    compile error when using the {#link|Self-Hosted Compiler#},
+    but allows it through when using the {#link|Bootstrap Compiler#}.</p>
     {#header_close#}
 
     {#header_open|@prefetch#}
-commit 97c0373fa7ee125d2d4e73f9b1dc8ea0e2c2e86a
-Merge: 75f3e7a4a 516945d7d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Dec 10 18:54:56 2021 -0800
+    <p>New builtin: <a href="https://ziglang.org/documentation/0.9.0/#prefetch">@prefetch</a></p>
+    <pre>{#syntax#}@prefetch(ptr: anytype, comptime options: std.builtin.PrefetchOptions){#endsyntax#}</pre>
+    <p>
+    This builtin tells the compiler to emit a prefetch instruction if supported by the
+    target CPU. If the target CPU does not support the requested prefetch instruction,
+    this builtin is a noop. This function has no effect on the behavior of the program,
+    only on the performance characteristics.
+    </p>
+    <p>
+    The {#syntax#}ptr{#endsyntax#} argument may be any pointer type and determines the memory
+    address to prefetch. This function does not dereference the pointer; it is perfectly legal
+    to pass a pointer to invalid memory to this function and no illegal behavior will result.
+    </p>
+    <p>
+    The {#syntax#}options{#endsyntax#} argument is the following struct:
+    </p>
+    {#code_begin|syntax|builtin#}
+/// This data structure is used by the Zig language code generation and
+/// therefore must be kept in sync with the compiler implementation.
+pub const PrefetchOptions = struct {
+  /// Whether the prefetch should prepare for a read or a write.
+  rw: Rw = .read,
+  /// 0 means no temporal locality. That is, the data can be immediately
+  /// dropped from the cache after it is accessed.
+  ///
+  /// 3 means high temporal locality. That is, the data should be kept in
+  /// the cache as it is likely to be accessed again soon.
+  locality: u2 = 3,
+  /// The cache that the prefetch should be preformed on.
+  cache: Cache = .data,
 
-    Merge pull request #10295 from ifreund/prefetch
-    
-    Implement @prefetch()
+  pub const Rw = enum {
+      read,
+      write,
+  };
+
+  pub const Cache = enum {
+      instruction,
+      data,
+  };
+};
+    {#code_end#}
     {#header_close#}
     {#header_close#}
 
