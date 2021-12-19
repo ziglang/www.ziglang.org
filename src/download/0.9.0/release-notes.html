@@ -837,6 +837,52 @@
     {#header_close#}
 
     {#header_open|WebAssembly#}
+    <p>Luuk de Gram writes:</p>
+
+    <p>During this release we hit some major milestones. The
+    {#link|Self-Hosted Linker#} for wasm was rewritten, with knowledge gained from
+    building a
+    <a href="https://github.com/Luukdegram/zwld">stand-alone wasm linker</a>.
+    The linker is now capable of building a memory layout with a virtual stack,
+    as well as perform relocations. Those are some of the neccesary features required
+    to be able to implement <code>zig test</code>. As of today, the self-hosted wasm backend is
+    now capable of passing 13% of all the behavioral tests. With all of those changes,
+    contributing to the wasm backend is made a lot easier. The linker is now capable
+    enough where only knowledge about wasm is required to contribute to the backend.</p>
+
+    <p>Those features were implemented in the following Pull Requests:</p>
+    <ul>
+        <li>Implement the MIR pass (<a href="https://github.com/ziglang/zig/pull/10153">#10153</a>)</li>
+        <li>Upstream zwld (partly) into wasm backend  (<a href="https://github.com/ziglang/zig/pull/10229">#10229</a>)</li>
+        <li>Implement <code>zig test</code> (<a href="https://github.com/ziglang/zig/pull/10240">#10240</a>)</li>
+        <li>Initial behavior tests succeeding (<a href="https://github.com/ziglang/zig/pull/10275">#10275</a>)</li>
+    </ul>
+
+    <p>The following 4 new linker flags were added for WebAssembly (#8633):</p>
+    <ul>
+      <li><code>--import-memory</code>          - import memory from the environment</li>
+      <li><code>--initial-memory=[bytes]</code> - initial size of the linear memory</li>
+      <li><code>--max-memory=[bytes]</code>     - maximum size of the linear memory</li>
+      <li><code>--global-base=[addr]</code>     - where to start to place global data</li>
+    </ul>
+    <p>With these items addressed, Zig is one of the supported languages for the
+    <a href="https://wasm4.org/">WASM-4 Fantasy Console</a>. Tom, the creator
+    of <a href="https://www.youtube.com/ContextFree">Context Free</a>, is
+    <a href="https://itch.io/jam/wasm4">hosting a game jam</a> on January 14 - 23.</p>
+
+    <p>Additionally, the linker frontend for wasm targets now supports the following flags:</p>
+    <ul>
+      <li><code>--export</code>: Forces a symbol to be exported to the host environment.</li>
+      <li><code>-rdynamic</code>: Adds all symbols to the dynamic symbol table (known as
+        <code>--dynamic-export</code> in <code>wasm-ld</code>).</li>
+    </ul>
+
+    <p>Contributors: Luuk de Gram, Takeshi Yoneda, Jakub Konka, Andrew Kelley</p>
+
+    {#header_open|WASI#}
+    <p>WebAssembly System Interface is a pseudo-operating system that provides sandboxed I/O and
+    other system capabilities to WebAssembly.</p>
+
     <ul>
       <li>wasi libc: fix wasm-ld failure in matching libc symbols, and enable tests (#9227).</li>
       <li>link: don't link system libraries by the wasm-ld linker. The only allowed system libraries
@@ -845,91 +891,12 @@
       specifying that an import is coming from <code>wasi_snapshot_preview1</code> should not generate a link flag
       <code>-lwasi_snapshot_preview1</code> on the linker line as this is not a system library that needs to be
       imported at link-time, but a system library that is provided by the runtime at load-time.</li>
+      <li>include emulated libs in WASI libc (#8992).</li>
+      <li>added support for WASI reactor in pure Zig executables (#9178) (#9605).</li>
+      <li>improved integration with wasi-libc.</li>
+      <li>always grant <code>fd_readdir</code> right.</li>
     </ul>
-    TODO:     Merge pull request #8992 from ziglang/cc-wasm32-wasi-emulations
-    Merge branch 'mathetake-cc-wasi-execmodel'
-    Merge branch 'mathetake-cpp-wasi'
-
-commit bc7761d8e0bb70adb3c76c588f9f0b62937c6571
-Author: Takeshi Yoneda <takeshi@tetrate.io>
-Date:   Thu Jul 1 09:02:48 2021 +0900
-
-    Add support for WASI reactor in pure Zig-exe. (#9178)
-    
-    * Add command line help for "-mexec-model"
-    * Define WasmExecModel enum in std.builtin.
-    * Drop the support for the old crt1.o in favor of crt1-command.o
-
-commit 5c34c01179a4a54c0fb11d107664f8c35e9f09dc
-Author: Takeshi Yoneda <takeshi@tetrate.io>
-Date:   Sat Jul 3 12:42:42 2021 +0900
-
-    WASI: include exec-model in cache state.
-
-commit b9e896d7b076e59d6f6dd9b0bad9697875d1f6e4
-Author: Takeshi Yoneda <takeshi@tetrate.io>
-Date:   Tue Jul 6 20:49:57 2021 +0900
-
-    wasi-libc: remove crt1.o as it's not WASI ABI compatible
-
-commit 5c79370e9c3edee271d4f0e65e718d12b8db8a1e
-Author: Takeshi Yoneda <takeshi@tetrate.io>
-Date:   Tue Aug 24 21:03:50 2021 +0900
-
-    wasm: pass --export-dynamic to wasm-ld for WASI reactors. (#9605)
-
-commit d2cdfb949033cfd463cdd4ef1bbf93f94d4d190a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 9 14:29:20 2021 -0700
-
-    stage2: add 4 new linker flags for WebAssembly
-    
-    --import-memory          import memory from the environment
-    --initial-memory=[bytes] initial size of the linear memory
-    --max-memory=[bytes]     maximum size of the linear memory
-    --global-base=[addr]     where to start to place global data
-    
-    See #8633
-
-commit b0ee911c2389e507d36a2f9c2442046133c18b93
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Jun 7 18:00:36 2021 +0200
-
-    wasi: always grant fd_readdir right
-    
-    Since v0.23 release of Wasmtime, if we want to iterate a directory
-    Y then directory Y needed to have been granted `fd_readdir` right.
-    However, it is now also required for directory X to carry `fd_readdir`
-    right, and so on, up-chain all the way until we reach the preopen
-    (which possesses all rights by default).
-    
-    This caused problems for us since our libstd implementation is more
-    fine-grained and allowed for parent dirs not to carry the right while
-    allow for iterating on its children. My proposal here is to always
-    grant `fd_readdir` right as part of
-    `std.fs.Dir.OpenDirOptions.access_sub_paths`. This seems to be the
-    approach taken by Rust also, plus we should be justified to take this
-    approach since WASI is experimental and snapshot1 will be discontinued
-    eventually and replaced with a new approach to access management
-    that will require a complete rewrite of our libstd anyhow.
-
-commit e8e305b67ce4993a3789e0e3e8baa6064de45114
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Wed Jun 9 23:11:34 2021 +0200
-
-    Re-enable multiple wasm32 vector tests
-    
-    Fixes #5339
-
-commit acf2e8fe6484a48cef76c20368ff06fe9d7b264e
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jun 30 18:39:04 2021 -0700
-
-    fix start code for WebAssembly
-
-
-
-    <p>Contributors: Luuk de Gram, Takeshi Yoneda, Jakub Konka, Andrew Kelley</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|32-bit x86#}
@@ -1778,7 +1745,8 @@ Date:   Thu Dec 2 03:50:23 2021 -0500
        Zig linker developers and contributors. In order to use the tool, the self-hosted Zig compiler needs to be
        built with <code>-Dlink-snapshot</code>, and then the compiler needs to be passed <code>--debug-link-snapshot</code>.</li>
     </ul>
-    <p>Miscellaneous improvements:</p>
+
+    <p>Miscellaneous linker improvements:</p>
     <ul>
       <li>Correctly delimit rpath in LC_RPATH load command payload.</li>
       <li>Handle Windows paths when cross-compiling from Windows to macOS.</li>
@@ -1968,6 +1936,40 @@ Date:   Thu Dec 9 21:11:51 2021 -0800
 
     {#header_open|Debug Crash Handler#}
     <p>TODO show off Martin's awesome crash handler</p>
+    {#header_close#}
+
+    {#header_open|Stop Guessing Whether the System Can Execute Binaries#}
+    <p>Previously when using <code>zig run</code> or <code>zig test</code>, Zig
+    would try to guess whether the host system was capable of running the target binaries.
+    Now, it will always try. If it fails, then Zig emits a helpful warning to explain the
+    probable cause:</p>
+    <pre><code><strong>$ uname -a</strong>
+Linux ark 5.10.81 #1-NixOS SMP Sun Nov 21 12:46:37 UTC 2021 x86_64 GNU/Linux
+
+<strong>$ zig run hello.zig -target aarch64-linux</strong>
+warning: the host system (x86_64-linux.5.10.81...5.10.81-gnu.2.33) does not appear to be capable of executing binaries from the target (aarch64-linux.3.16...5.5.5-musl)
+error: the following command failed to execve with 'InvalidExe':
+/home/andy/.cache/zig/o/b61b3c9b78433477f6b5c343ce95631f/hello
+
+<strong>$ zig run hello.zig -target x86_64-linux-gnu -lc</strong>
+warning: the host system does not appear to be capable of executing binaries from the target because the host dynamic linker is located at '/nix/store/z56jcx3j1gfyk4sv7g8iaan0ssbdkhz1-glibc-2.33-56/lib/ld-linux-x86-64.so.2', while the target dynamic linker path is '/lib64/ld-linux-x86-64.so.2'. Consider using --dynamic-linker
+error: the following command failed to execve with 'FileNotFound':
+/home/andy/.cache/zig/o/f0f8bdc473cbcf7f00bd72f0450102ad/hello
+
+<strong>$ zig test behavior.zig -target aarch64-linux </strong>
+warning: the host system (x86_64-linux.5.10.81...5.10.81-gnu.2.33) does not appear to be capable of executing binaries from the target (aarch64-linux.3.16...5.5.5-musl). Consider using --test-no-exec or --test-cmd
+error: the following command failed with 'InvalidExe':
+../test/zig-cache/o/b70989a95e10772fc12652c7f94a5cf5/test zig
+
+<strong>$ zig test behavior.zig -target x86_64-linux-gnu -lc</strong>
+warning: the host system does not appear to be capable of executing binaries from the target because the host dynamic linker is located at '/nix/store/z56jcx3j1gfyk4sv7g8iaan0ssbdkhz1-glibc-2.33-56/lib/ld-linux-x86-64.so.2', while the target dynamic linker path is '/lib64/ld-linux-x86-64.so.2'. Consider using --dynamic-linker, --test-no-exec, or --test-cmd
+error: the following command failed with 'FileNotFound':
+../test/zig-cache/o/795162652b84a90baa06fbb62db5eb68/test zig</code></pre>
+    <p>
+    This integrates better when something such as
+    <a href="https://en.wikipedia.org/wiki/Binfmt_misc">binfmt_misc</a> is installed.
+    </p>
+    <p>See also the new {#link|Executors#} feature of the {#link|Zig Build System#}.</p>
     {#header_close#}
     {#header_close#}
 
@@ -2609,10 +2611,165 @@ Date:   Thu Sep 2 04:51:42 2021 -0400
       besides the compile errors (#8513).</li>
       <li>Improved API to use optionals instead of setting things to {#syntax#}undefined{#endsyntax#}, 
         preventing some common bugs (#9013) (#8928) (#7991).</li>
-      <li>Add linkLibCpp helper to LibExeObjStep.</li>
+      <li>Added <code>linkLibCpp</code> helper to <code>std.build.LibExeObjStep</code>.</li>
+      <li>Changeed <code>defineCMacro</code> to take separate name and value arugments.</li>
+      <li><code>std.build.InstallDir</code>: made <code>dupe()</code> a public function.</li>
+      <li>Added CPU feature check to <code>standardTargetOptions</code> (#8060).</li>
+      <li><code>std.build.LibExeObjStep</code>: <code>linkage</code> is now an optional that defaults
+        to {#syntax#}null{#endsyntax#}. Rather than duplicating the compiler's logic to determine
+        whether to link statically or dynamically by default, the build system simply omits the
+        flag unless overrridden.</li>
+      <li><code>zig build</code> gains new flags: <ul>
+          <li><code>--prefix-lib-dir [path]</code>: Override default library directory path</li>
+          <li><code>--prefix-exe-dir [path]</code>: Override default executable directory path</li>
+          <li><code>--prefix-include-dir [path]</code>: Override default include directory path</li>
+          <li><code>--libc [file]</code>: Provide a file which specifies libc paths.
+            This new option sets a default libc paths file to be used for all
+            <code>LibExeObjSteps</code>. Setting <code>LibExeObjStep.libc_file</code>
+            overrides this default. This is required to allow users to cross compile
+            projects linking system libraries without needing to patch the build.zig.</li>
+          <li><code>--debug-log [scope]</code>: Enable debugging the compiler.</li>
+        </ul></li>
+      <li><code>--override-lib-dir</code> is renamed to <code>--zig-lib-dir</code> to disambiguate
+        with <code>--prefix-lib-dir</code>.</li>
+      <li>Fixed transitive dependendencies on libraries incorrectly depending on the order
+        that the dependencies were declared.</li>
+      <li>Print enum values for build options in help output (#9650).</li>
+      <li>Fixed handling of <code>-Dcpu</code>. Previously, <code>-Dcpu</code> was
+        completely ignored if <code>-Dtarget</code> was not passed as well. Further,
+        <code>-Dcpu=baseline</code> was ignored even if <code>-Dtarget=native</code> was passed.
+        These two issues are now fixed; <code>zig build</code> always respects the
+        <code>-Dcpu</code> option if present.</li>
+      <li><code>RunStep</code> now distinguishes between unexpected child process exit code
+        and unclean exit.</li>
+      <li><code>RunStep</code> gains a print field, which controls whether it prints the
+        command before running it. By default it is set to <code>builder.verbose</code>.</li>
+      <li>Added missing field: <code>each_lib_rpath</code>, which corresponds to
+        <code>-feach-lib-rpath</code> and <code>-fno-each-lib-rpath</code> (#8800).</li>
+      <li><code>InstallRawStep</code>: now properly handles empty segments.</li>
+      <li><code>InstallRawStep</code>: added Intel HEX support (#9636).</li>
+      <li><code>InstallRawStep</code>: allow custom <code>dest_dir</code>.</li>
+      <li><code>InstallRawStep</code>: added single section dumping and padding.</li>
+      <li>Added emit path options to emit args in build.zig (#10278).</li>
+      <li>Added test executable builds to build.zig (#10288).</li>
+      <li>Fixed implibs for DLLs not being installed.</li>
     </ul>
-    TODO
     <p>Contributors: Andrew Kelley, Felix (xq) Queißner, Lee Cannon, Aaron Sikes, Jonathan Marler, Isaac Freund, Jakub Konka, Martin Wickham, Evan Haas, Ryan Liptak, Tom Maenan Read Cutting, Veikka Tuominen, Andrew Gutekanst, Asa Zeren, Edward Dean, Ellis Trisk-Grove, Jacob G-W, Jan200101, Jarred Sumner, Kenta Iwasaki, LemonBoy, Luuk de Gram, Matt Knight, N00byEdge, Ominitay, Takeshi Yoneda</p>
+    {#header_open|Generated Files as Inputs#}
+    <p>There has been a <strong>breaking change</strong> which breaks all projects using
+    <code>std.build.Pkg</code>.</p>
+    <p>The build system now uses <code>std.build.FileSource</code> in more places instead
+      of paths. This supports the use case of using generated files anywhere the build
+      system expects a file, such as when creating an executable or a library.</p>
+    <p>Usage example:</p>
+    <pre>{#syntax#}const std = @import("std");
+
+const TemplateStep = @import("src/TemplateStep.zig");
+
+pub fn build(b: *std.build.Builder) void {
+    const target = b.standardTargetOptions(.{});
+    const mode = b.standardReleaseOptions();
+
+    // An arbitrary step that generates a output file
+    const template_step = TemplateStep.create(b, std.build.FileSource{
+        .path = "example/layout.ztt",
+    });
+
+    const exe = b.addExecutable("demo", "example/main.zig");
+    exe.addPackage(std.build.Pkg{
+        .name = "template",
+        .path = template_step.getFileSource(), // we can now add the generated file also as a package source
+    });
+    exe.setTarget(target);
+    exe.setBuildMode(mode);
+    exe.install();
+}{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Build Options#}
+    <p>
+    Previously, there was a function <code>addBuildOption</code> which could be used
+    to create a basic build_options.zig file which could then be imported into zig code
+    and used for conditional compilation. This API had several problems:
+    </p>
+    <ul>
+      <li>It was global; there could be only one set of options.</li>
+      <li>It was hard-coded to write to <code>zig-cache/build_options.zig</code>.</li>
+    </ul>
+    <p>Now this API is reworked (this is a <strong>breaking change</strong>) with the
+    following improvements (#9623):</p>
+    <ul>
+      <li>It integrates with the {#link|FileSource abstraction|Generated Files as Inputs#}</li>
+      <li>It supports mapping as an arbitrarily named package.</li>
+      <li>It supports mapping to multiple different artifacts.</li>
+      <li>It uses a hash of contents for the filename, avoiding clobbering, and playing
+        nicely with the {#link|Cache System#}.</li>
+    </ul>
+    <p>Example usage:</p>
+    <pre>{#syntax#}const client = b.addSharedLibrary("client", "src/client/zig/client_main.zig", .unversioned);
+client.setTarget(.{
+    .cpu_arch = .wasm32,
+    .os_tag = .freestanding,
+});
+client.addPackagePath("shared", "src/shared/index.zig");
+
+const server_options = b.addOptions();
+server_options.addOptionArtifact("client_wasm_path", client);
+server_options.addOption(u32, "mem_leak_frames", mem_leak_frames);
+server_options.addOption(bool, "support_mp3", support_mp3);
+
+const server = b.addExecutable("groovebasin", "src/server/server_main.zig");
+server.setTarget(target);
+server.setBuildMode(mode);
+server.addPackagePath("shared", "src/shared/index.zig");
+
+server.addOptions("build_options", server_options);
+server.install();{#endsyntax#}</pre>
+
+    <p>In this example, we see that the server_main.zig file will be able to
+    {#syntax#}@import("build_options").client_wasm_path{#endsyntax#} and have a
+    {#syntax#}comptime{#endsyntax#} string that contains the file path of the
+    <code>client</code> {#link|WebAssembly#} file produced by Zig.</p>
+
+    <p>Additionally, there were various bug fixes for <code>addOption</code> (#10016).</p>
+    {#header_close#}
+
+    {#header_open|Executors#}
+    <p><code>zig build</code> now has the following additional flags:</p>
+    <pre><code>  -fdarling,  -fno-darling     Integration with system-installed Darling to
+                               execute macOS programs on Linux hosts
+                               (default: no)
+  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
+                               foreign-architecture programs on Linux hosts
+                               (default: no)
+  --glibc-runtimes [path]      Enhances QEMU integration by providing glibc built
+                               for multiple foreign architectures, allowing
+                               execution of non-native programs that link with glibc.
+  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
+                               ARM64 macOS hosts. (default: no)
+  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
+                               execute WASI binaries. (default: no)
+  -fwine,     -fno-wine        Integration with system-installed Wine to execute
+                               Windows programs on Linux hosts. (default: no)</code></pre>
+
+    <p>These enable integration with system-installed programs which can provide the ability
+    to test cross-compiled build artifacts. For example:</p>
+    <pre><code><strong>$ uname</strong>
+Linux
+<strong>$ uname -m</strong>
+x86_64
+<strong>$ zig init-exe</strong>
+info: Created build.zig
+info: Created src/main.zig
+info: Next, try `zig build --help` or `zig build run`
+<strong>$ zig build test</strong> # run the tests natively
+All 1 tests passed.
+<strong>$ zig build test -Dtarget=aarch64-linux</strong> # compiles but does not run the tests
+<strong>$ zig build test -Dtarget=aarch64-linux -fqemu</strong> # now it runs the tests!
+All 1 tests passed.
+<strong>$ zig build test -Dtarget=x86_64-windows -fwine</strong> # we can even test our windows code on linux 😎
+All 1 tests passed.</code></pre>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Toolchain#}
