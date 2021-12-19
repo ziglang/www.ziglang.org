@@ -1689,8 +1689,6 @@ pub const PrefetchOptions = struct {
     the {#link|LLVM Backend#}. Once this reaches 100% we can start shipping the self-hosted
     compiler instead of the {#link|Bootstrap Compiler#}.</p>
 
-    TODO tetris milestone with perf improvement
-
     TODO link to my twitter thread about progress updates
 
     TODO show perf measurement. note that AIR memory layout reworking happened this cycle
@@ -1767,78 +1765,43 @@ pub const PrefetchOptions = struct {
 <p>Contributors: Andrew Kelley, Jakub Konka, Jacob G-W, Robin Voetter, Joachim Schmidt, Luuk de Gram, Evan Haas, Martin Wickham, Matthew Borkowski, Lee Cannon, Veikka Tuominen, Takeshi Yoneda, Travis Staloch, drew, Ryan Liptak, xackus, Emily Bellows, Jonathan Marler, g-w1, Alex Rønne Petersen, Dmitry Matveyev, J.C. Moyer, Meghan Denny, Michael Dusan, kprotty, Andrew Gutekanst, Daniele Cocca, FnControlOption, Isaac Freund, Kurt Kartaltepe, LemonBoy, Lewis Gaul, Matt Knight, Tom Maenan Read Cutting, Zen1th, jacob gw, vole-dev, Žiga Željko, AODQ, Al Hoang, Christopher Smyth, Dimenus, Exonorid, Frank Denis, Hadrien Dorio, Isaac Freund, Josh Soref, Kenta Iwasaki, Loris Cro, Michal Ziulek, Scibuild, Sebastian Ullrich, Sizhe Zhao, Stephen Gregoratto, Stephen Gutekanst, Stéphan Kochen, Tamas Kenez, Thomas Ives, Vincent Rischmann, daurnimator, pithlessly, travisstaloch, xavier</p>
 
     {#header_open|Parser#}
-    TODO
-commit 8bf04c3a6955bc66e8d6fbbf00f12a44bb7079d5
-Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
-Date:   Sun May 30 02:20:20 2021 -0400
-
-    parse.zig: simplify `parseParamDeclList` by always using scratch buffer
-
-commit ff0a15bb7a57370091898fde7bd53364c90252df
-Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
-Date:   Sun May 30 02:24:44 2021 -0400
-
-    parse.zig: make `parseParamDeclList` check for nonfinal varargs
-
-commit f58fbb1004e26982ad83c61b3fecf5e575fb9210
-Merge: 46b9e061e 483933d88
-Author: Veikka Tuominen <git@vexu.eu>
-Date:   Sun Jun 13 19:49:41 2021 +0300
-
-    Merge pull request #9074 from mattbork/parse-always-scratch
-    
-    parse.zig: simplify parsing functions that build lists by always using scratch buffer
-
-commit ee173d512721df521b5a29bc939770e098931e21
-Author: g-w1 <58830309+g-w1@users.noreply.github.com>
-Date:   Thu Jul 15 03:55:22 2021 -0400
-
-    parser: require block in suspend expression
-
-commit 2a728f6e5f0c5d12e110313342e714f9f23c4044
-Author: Ryan Liptak <squeek502@hotmail.com>
-Date:   Mon Sep 20 17:10:32 2021 -0700
-
-    tokenizer: Fix index-out-of-bounds on string_literal_backslash right before EOF
-
-    FUZZING^
-
-commit 3b09262c1252de0d9f946630e701be65bc5b2fc7
-Author: Ryan Liptak <squeek502@hotmail.com>
-Date:   Mon Sep 20 18:00:04 2021 -0700
-
-    tokenizer: Fix index-out-of-bounds on unfinished unicode escapes before EOF
-
-commit 2ed9288246821c39ae75fa21998a53b34e713cd4
-Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
-Date:   Thu Sep 30 01:55:21 2021 -0400
-
-    parse.zig: better c pointer prefix parsing, don't index out of bounds on eof
-
-commit 9024f27d8f5cb651e2260348ce0ee6fd67fc2c32
-Merge: 3568cd4b8 c8a066f40
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Oct 27 15:58:33 2021 -0400
-
-    Merge pull request #10040 from mattbork/extern-fn-scopes
-    
-    stage2: fix extern fn decl parsing and astgen
-
-commit c98b020ce29467e80217718e0a1856b7fccd6b53
-Author: Matthew Borkowski <matthew.h.borkowski@gmail.com>
-Date:   Thu Dec 2 03:50:23 2021 -0500
-
-    parse.zig: make chained comparison operators a parse error
-
-
+    <ul>
+      <li>It now uses a scratch buffer to avoid heap allocations in many cases.</li>
+      <li>{#syntax#}suspend{#endsyntax#} expressions now require blocks.</li>
+      <li>tokenizer: fixed index-out-of-bounds on string_literal_backslash right before EOF.</li>
+      <li>tokenizer: fixed index-out-of-bounds on unfinished unicode escapes before EOF.</li>
+      <li>Improved C pointer prefix parsing; no longer indexes out of bounds on EOF.</li>
+      <li>Fixed parsing of extern function declarations (#10040).</li>
+      <li>Made chained comparison operators a parse error.</li>
+    </ul>
     {#header_close#}
 
     {#header_open|LLVM Backend#}
-    <p>TODO</p>
+    <p>The {#link|LLVM|LLVM 13#} backend is now passing 44% of the behavior tests.
+    This is currently the main focus of the self-hosted compiler effort, because
+    when it gets to 100%, we can start shipping the self-hosted compiler instead of
+    the {#link|Bootstrap Compiler#}.</p>
+    <p>TODO tetris milestone with perf improvement</p>
     {#header_close#}
 
     {#header_open|C Backend#}
-    <p>TODO</p>
+    <p>The C backend is now passing 22% of the behavior tests. When it gets to 100%,
+    we can delete the {#link|Bootstrap Compiler#} and
+    <a href="https://github.com/ziglang/zig/issues/6378">replace it with the self-hosted compiler converted into C code</a>.</p>
+    {#header_close#}
+
+    {#header_open|x86 Backend#}
+    <p>The x86 backend is not yet capable of executing the <code>zig test</code> runner,
+    so technically it is passing 0% of the behavior tests.</p>
+    <p>However basic codegen is already in place, we have an MIR representation, and
+    both rendering to machine code and assembly code is implemented. We are just a few
+    bug fixes and enhancements away from x86 joining the "behavior tests passing" progress bar.
+    <p>Jakub Konka has started working on this in earnest.</p>
+    {#header_close#}
+
+    {#header_open|aarch64 Backend#}
+    <p>The aarch64 backend is in a very similar state as the {#link|x86 Backend#}.
+    Joachim Schmidt has been making steady progress.</p>
     {#header_close#}
 
     {#header_open|Self-Hosted Linker#}
@@ -1993,65 +1956,59 @@ Date:   Thu Dec 2 03:50:23 2021 -0500
     {#header_close#}
 
     {#header_open|Improved Handling of Generated File builtin.zig#}
-    TODO
-commit 274555be21ea756d8480a586f771274a79a58d80
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Dec 6 16:38:12 2021 -0700
+    <p>All Zig code is eligible to {#syntax#}@import("builtin"){#endsyntax#}
+    which is mapped to a generated file, <code>builtin.zig</code>, based on the target and other settings.</p>
 
-    stage2: improve handling of the generated file builtin.zig
+    <p>Zig invocations which share the same target settings will generate the
+    same <code>builtin.zig</code> file and thus the path to <code>builtin.zig</code> is in a shared
+    cache folder, and different projects can sometimes use the same file.</p>
     
-    All Zig code is eligible to `@import("builtin")` which is mapped to a
-    generated file, build.zig, based on the target and other settings.
+    <p>In previous versions of Zig, this led to conditions where multiple
+    invocations of <code>zig</code> would race to write this file. If one process
+    wanted to <em>read</em> the file while another process <em>wrote</em> the file, the
+    reading process could observe a truncated or partially written <code>builtin.zig</code> file.
     
-    Zig invocations which share the same target settings will generate the
-    same builtin.zig file and thus the path to builtin.zig is in a shared
-    cache folder, and different projects can sometimes use the same file.
-    
-    Before this commit, this led to race conditions where multiple
-    invocations of `zig` would race to write this file. If one process
-    wanted to *read* the file while the other process *wrote* the file, the
-    reading process could observe a truncated or partially written
-    builtin.zig file.
-    
-    This commit makes the following improvements:
-     - limitations:
-       - avoid clobbering the inode, mtime in the hot path
-       - avoid creating a partially written file
-       - builtin.zig needs to be on disk for debug info / stack trace purposes
-       - don't mark the task as complete until the file is finished being populated
-         (possibly by an external process)
-     - strategy:
-       - create the `@import("builtin")` `Module.File` during the AstGen
-         work, based on generating the contents in memory rather than
-         loading from disk.
-       - write builtin.zig in a separate task that doesn't have
-         to complete until the end of the AstGen work queue so that it
-         can be done in parallel with everything else.
-       - when writing the file, first stat the file path. If it exists, we are done.
-       - otherwise, write the file to a temp file in the same directory and atomically
-         rename it into place (clobbering the inode, mtime in the cold path).
-     - summary:
-       - all limitations respected
-       - hot path: one stat() syscall that happens in a worker thread
-    
-    This required adding a missing function to the standard library:
-    `std.fs.Dir.statFile`. In this commit, it does open() and then fstat()
-    which is two syscalls. It should be improved in a future commit to only
-    make one.
-    
-    Fixes #9439.
+    <p>Zig 0.9.0 has the following improvements:</p>
+    <ul>
+      <li>In the cold path, atomically renames the <code>builtin.zig</code> file into place,
+        preventing any race conditions from occurring.</li>
+      <li>Avoids clobbering the inode and mtime in the hot path.</li>
+      <li>Avoids creating a partially written file.</li>
+      <li>Keeps <code>builtin.zig</code> on disk for debug info and stack trace purposes.</li>
+      <li>Does not mark the task as complete until the file is finished being populated
+        (possibly by an external process).</li>
+      <li>The hot path does one <code>stat()</code> syscall that happens in a worker thread.</li>
+    </ul>
+
+    <p>In summary, {#link|performance|Performance Tracking#} is improved and
+    a race condition crash was fixed (#9439).</p>
     {#header_close#}
 
     {#header_open|Detection of Problematic Timestamps#}
-    TODO 
-commit 77836e08a2384450b5e7933094511b61e3c22140
-Merge: 01cb0bdb8 3e618f843
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Dec 9 21:11:51 2021 -0800
+    <p>One problem with caching systems is that if a file is written, read, and
+      then written again all within a very short period of time, the file system mtime
+      granularity may not tell a difference between those two writes, and so a subsequent
+      read might register an unchanged file, when in fact the file was changed.</p>
 
-    Merge pull request #9930 from PhaseMage/fix-cache-timestamps
-    
-    Fix isProblematicTimestamp
+    <p>To avoid this problem, Zig recognizes the concept of
+    <strong>problematic timestamps</strong>, which notices at read() time that the current
+    time is so recent that the file system's mtime granularity would not actually tell
+    the difference from the previous write. In such case it marks the mtime as untrustworthy,
+    so that next time the cache system does not rely on the mtime, and is forced to fall
+    back to a file contents hash.</p>
+
+    <p>In previous releases of Zig, this problematic timestamp was calculated based on
+    a syscall to get the current time. This was not an accurate measurement of problematic
+    timestamps, because asking the system for the current time did not necessarily correspond
+    to the time that the file system would return, and it had no way of conveying the
+    mtime granularity of the filesystem.</p>
+
+    <p>In Zig 0.9.0, the problematic timestamp is learned by writing a temporary file to
+    the cache directory, and reading the mtime from that temporary file.
+    This mtime will have the appropriate granularity to use to check if a timestamp is
+    problematic (i.e. too recent) and should not be trusted.</p>
+
+    <p>Thank you to Travis Martin for submitting this improvement (#9930).</p>
     {#header_close#}
 
     {#header_open|Improved Hashing Logic#}
@@ -2264,298 +2221,48 @@ Date:   Tue Nov 30 00:13:07 2021 -0700
     {#header_close#}
 
     {#header_open|Crypto#}
-    TODO
-commit ca6951ff7959b88573bfec7c7bf0465209f3263f
-Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
-Date:   Sun Jun 6 16:37:58 2021 +0200
-
-    std.crypto: timing-safe functions to add and subtract serialized integers (#8977)
-    
-    This is useful to increment nonces and for scalar reduction.
-    
-    It will avoid code duplication in crypto/25519 and crypto/pcurves/*
-
-commit 2a7fdd56c6cb9e13634e48eef99b27755f7d2819
-Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
-Date:   Thu Jun 10 12:58:50 2021 +0200
-
-    aes 128-bit key expansion test - properly test the inverse round keys (#9065)
-
-commit b4b90af4e0a9b15a940d836d275ac9dc50198217
-Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
-Date:   Thu Jul 8 23:19:49 2021 +0200
-
-    Switch rand.DefaultPrng to Xoshiro256++ (#9301)
-    
-    Xoroshiro128+ is the current default non-cryptographic random
-    number generator.
-    
-    This algorithm was designed to generate floating-point numbers, by
-    only using the top 53 bits. Lower bits have a significant bias, that
-    contradicts the documented properties for `rand.DefaultPrng`. This
-    also has implications on everything using `Random.fill()`, including
-    the way we generate random floating-point numbers.
-    
-    In addition, Xoroshiro128+ has known issues. See for example:
-    - https://lemire.me/blog/2017/08/22/cracking-random-number-generators-xoroshiro128/
-    - https://www.pcg-random.org/posts/xoroshiro-fails-truncated.html
-    
-    Xoshiro256++ addresses these issues, while remaining very fast.
-
-commit 680fa880d63daa6058a084f1c107162e40e18aa8
-Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
-Date:   Thu Jul 22 01:27:42 2021 +0200
-
-    std.crypto: handle the top bit in 25519.field.fromBytes64() (#9435)
-    
-    The only known use case for this is the hash-to-curve operation where the top bit is always cleared.
-    
-    But the function is public, so let's make it work as one would expect in the general case.
-    
-    Also fix the comment by the way.
-
-commit 8c41a8e761cb609d927b0f2c3c3c094970d2eb58
-Author: lucky <53379023+x13a@users.noreply.github.com>
-Date:   Tue Aug 24 14:58:09 2021 +0300
-
-    add scrypt kdf (#9577)
-    
-    add phc encoding parser
-    add password hash functions to benchmark
-    change bcrypt to be consistent with scrypt
-
-commit 3611487952c4ef126689c447a60cd5cd9288b32f
-Author: lucky <53379023+x13a@users.noreply.github.com>
-Date:   Thu Sep 9 15:25:44 2021 +0300
-
-    reexport crypto/phc_encoding (#9712)
-
-commit c84147f90dd99af1352e69f698be48964573ee07
-Author: Meghan <hello@nektro.net>
-Date:   Sat Nov 20 01:37:17 2021 -0800
-
-    std: add `writer` methods on all crypto.hash types (#10168)
-
-commit 590880158a03fa97056b30a3379aab5328ccc977
-Author: lucky <53379023+x13a@users.noreply.github.com>
-Date:   Mon Nov 15 22:48:24 2021 +0300
-
-    update docs (#10150)
-    
-    add fast kdf test
-    fix inconsistent kdf error
-    refactor
-
-commit c61fbe77c8689709aac4adfa78b27ed7ea53ee5f
-Author: lucky <53379023+x13a@users.noreply.github.com>
-Date:   Mon Nov 15 06:47:57 2021 +0300
-
-    add argon2 kdf (#9756)
-
-commit bd8b94bd0ec592b62b8ae5637375a8d79cbe3e3b
-Author: Frank Denis <github@pureftpd.org>
-Date:   Mon Nov 8 14:55:27 2021 +0100
-
-    crypto/edwards25519: correctly flip the Y sign in the H2C operation
-    
-    No security implications, but the current hash-to-curve standard
-    defines the sign of the Y coordinate to be negative if `gx1`
-    is a square, positive otherwise.
-    
-    We were doing it the other way round.
-
-commit db181b173f6debc2dbb1e68342ff46a4299c19a9
-Author: Ali Chraghi <63465728+AliChraghi@users.noreply.github.com>
-Date:   Mon Sep 20 10:33:18 2021 +0430
-
-    Update `hash` and `crypto` benchmarks run comment (#9790)
-    
-    * sync function arguments name with other same functions
-
+    <ul>
+      <li>timing-safe functions to add and subtract serialized integers (#8977).</li>
+      <li>aes 128-bit key expansion test - properly test the inverse round keys (#9065).</li>
+      <li>Switched rand.DefaultPrng to Xoshiro256++ (#9301).</li>
+      <li>Handle the top bit in 25519.field.fromBytes64() (#9435).</li>
+      <li>added scrypt kdf (#9577).</li>
+      <li>reexport crypto/phc_encoding (#9712).</li>
+      <li>added <code>writer</code> methods on all crypto.hash types (#10168).</li>
+      <li>updated docs (#10150).</li>
+      <li>add argon2 kdf (#9756).</li>
+      <li>edwards25519: correctly flip the Y sign in the H2C operation.</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Math#}
-commit 8b0dbca32d4bc8157ffdca74c306aba6c04261b4
-Author: Filippo Casarin <casarin.filippo17@gmail.com>
-Date:   Wed Mar 24 20:59:15 2021 +0100
-
-    std.math.sqrt_int: fixed odd size integers types
-
-commit 56c0a66ce30094d199420a3f2b2d2e759c1b0613
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Fri Jun 11 09:23:48 2021 +0200
-
-    std: Fix tanh for negative inputs
-    
-    It turns out the code was not ported correctly from C and produced wrong
-    results for negative input values. As a bonus fix the NaN codepath by
-    adding yet another missing piece of code.
-    
-    Spotted in #9047
-
-commit 0bde5ce369ba59f7bc33e97cd5b03d69913108c5
-Merge: c5d412268 e56ba4cee
-Author: Veikka Tuominen <git@vexu.eu>
-Date:   Fri Jun 11 19:17:01 2021 +0300
-
-    Merge pull request #8330 from kivikakk/single-limb-bigint-overflow
-    
-    bigint add failures with aliasing
-
-commit 44cdafd9d46bed36f08effb99aa0bb7fc2145efa
-Author: LemonBoy <thatlemon@gmail.com>
-Date:   Sat Jun 12 15:35:52 2021 +0200
-
-    std: Fix complex ldexp implementation
-    
-    Two bugs in the implementation ported from musl made all the complex
-    functions relying on ldexp return incorrect results in some cases.
-    
-    Spotted in #9047
-
-commit 4afe4bdfe7dda638b35a9d388aac9a53d18cc4ba
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Wed Sep 22 03:27:56 2021 +0200
-
-    big ints: 2s complement signed xor
-
-commit dd81a2147da7b8a216012be2c483c71c4a65cf8b
-Merge: a0a847f2e cd3dcc225
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 23 13:17:32 2021 -0400
-
-    Merge pull request #9825 from Snektron/big-int-signed-and-or
-    
-    big ints: 2s complement signed and/or
-
-commit a28f2e0dd2d7b78464115bca4968f7c0befa6b28
-Merge: 2454459ef 95fe86e3d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Oct 4 14:29:09 2021 -0400
-
-    Merge pull request #9885 from Snektron/big-int-wrapping
-    
-    Big int wrapping/saturating
-
-commit 82ec56e47e004176cc380cc69764602c4a8d0768
-Merge: 6f30c8c09 1e09157b5
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Oct 16 15:06:13 2021 -0400
-
-    Merge pull request #9954 from Snektron/shifts
-    
-    Big int saturating left shift
-
-commit ad17108bddc3bc198190407ab5b00820b2c17cd5
-Merge: e9d1e5e53 15a0b30d8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Oct 17 21:59:10 2021 -0400
-
-    Merge pull request #9960 from Snektron/bit-not
-    
-    Some not and vector stuff
-
-commit a3c9bfef301e0a4675fcea57356653334e07df45
-Author: Robin Voetter <robin@voetter.nl>
-Date:   Fri Oct 22 01:24:38 2021 +0200
-
-    stage2: truncation
-    
-    * Also fixes a related case where big int truncate would assume that the
-    input fits in the output limbs buffer
-
-commit 94879506ea8fe51310f38b3db1bc1ea1e71a4389
-Merge: 1690b3577 c563521d4
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Oct 23 22:49:33 2021 -0400
-
-    Merge pull request #10017 from Snektron/big-int-div
-    
-    Big ints: division fixes
-
-commit d6067db06267e37dec65202667741bc1b63fe980
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Oct 29 17:48:34 2021 -0700
-
-    stage2: implement `@popCount` for non-vectors
-
-commit 2fe7b06f3df06b7a442ffc3d9b951c5d52a11a24
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Oct 5 12:32:26 2021 -0700
-
-    add support for f128 `@mulAdd`
-    
-    std: add f128 implementations of fma, frexp, and ilogb. Expose `fmal` in
-    zig's freestanding libc. This makes `@mulAdd` work correctly for f128.
-    
-    Fixes a CI regression from yesterday, where I added a usage of f128
-    `@mulAdd` into the self-hosted compiler.
-
-commit 411e9ca4ade243344f358b14151e87e2334e76a0
-Author: Miles Alan <m@milesalan.com>
-Date:   Fri Oct 15 13:55:40 2021 -0400
-
-    Fix bug where std.math.asinh64 doesn't respect signedness for negative values (#9940)
-    
-    * std: Correct math.asinh64 to return correct signedness for negative values
-    
-    * std: Add tests for negative values for math.asinh32 and math.asinh64
-
-commit a587dd08f86bf8524b9dc405044b9b48a735db18
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Oct 25 01:27:05 2021 +0200
-
-    std: disable big.rational setFloat targeting wasm32
-    
-    until we fix the underlying issue resulting in `error.TargetTooSmall`
-    error.
-
-commit f890de62948a0134a8d703dd2f1ee37701ec4c00
-Author: Lewis Gaul <lewis.gaul@gmail.com>
-Date:   Tue Oct 26 23:57:58 2021 +0100
-
-    Fix bug in exp2() (#9999)
-    
-    * Fix bug in exp2_64 to handle negative values (bad translation from C)
-    
-    * Apply fix to exp2_32() as well, and modify comment on musl behaviour
-    
-    * Use +%= instead of @addWithOverflow()
-
-commit dfd604834b9bda7ba5cb8117a233ae51bcbc8c0f
-Author: Lewis Gaul <lewis.gaul@gmail.com>
-Date:   Sun Nov 14 18:04:47 2021 +0000
-
-    Fix copy-paste error that results in incorrect results from exp64()
-
-commit 8f1e417757f2172485cdea792580e2a2afb53ffa
-Author: Marc Tiehuis <marc@tiehu.is>
-Date:   Tue Nov 23 20:10:32 2021 +1300
-
-    std/math: add ldexp and make scalbn an alias
-    
-    We assume we are compiled on a base-2 radix floating point system. This
-    is a reasonable assumption. musl libc as an example also assumes this.
-    
-    We implement scalbn as an alias for ldexp, since ldexp is defined as 2
-    regardless of the float radix. This is opposite to musl which defines
-    scalbn in terms of ldexp.
-    
-    Closes #9799.
-
-commit a7828c261a0909a1ed672761adf332c978d492c7
-Merge: 9e03cf948 b02384e03
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Dec 5 14:49:04 2021 -0800
-
-    Merge pull request #10276 from tiehuis/musl-trig-reimpl
-    
-    sin/cos/tan musl reimplementation
-
     <ul>
+      <li>sqrt_int: fixed odd size integers types.</li>
+      <li>Fixed <code>tanh</code> for negative inputs (#9047).</li>
+      <li>Fixed bigint add failures with aliasing (#8330).</li>
+      <li>Fixed complex ldexp implementation (#9047).</li>
+      <li>big ints: 2s complement signed xor/and/or (#9825).</li>
+      <li>Big int wrapping/saturating (#9885).</li>
+      <li>Big int saturating left shift (#9954).</li>
+      <li>Fixed a case where big int truncate would assume that the
+        input fits in the output limbs buffer.</li>
+      <li>Big ints: division fixes (#10017).</li>
+      <li>Implemented bigint popcount.</li>
+      <li>Added {#syntax#}f128{#endsyntax#} implementations of
+        <code>fma</code>, <code>frexp</code>, and <code>ilogb</code>.</li>
+      <li>Fixed bug where <code>asinh64</code> doesn't respect signedness for negative values (#9940).</li>
+      <li>Fixed bug in <code>exp2</code> (#9999).</li>
+      <li>Fixed copy-paste error that results in incorrect results from <code>exp64</code>.</li>
+      <li>Added <code>ldexp</code> and make <code>scalbn</code> an alias.
+        We assume we are compiled on a base-2 radix floating point system. This
+      is a reasonable assumption. musl libc as an example also assumes this.
+      We implement <code>scalbn</code> as an alias for <code>ldexp</code>, since
+      <code>ldexp</code> is defined as 2 regardless of the float radix.
+      This is opposite to musl which defines <code>scalbn</code> in terms of <code>ldexp</code> (#9799).</li>
+      <li>Reimplement <code>sin</code>/<code>cos</code>/<code>tan</code> based on
+        {#link|musl|musl 1.2.2#} (#10276).</li>
       <li>Added <code>phi</code> constant.</li>
     </ul>
-
     {#header_close#}
 
     {#header_open|JSON#}
