@@ -21,6 +21,7 @@
         margin: 0.5em 0 0.5em;
         line-height: 1.2;
         font-weight: bold;
+        clear: both;
       }
       h1, h2 { font-size: 2.0em; }
       h3 { font-size: 1.5em; }
@@ -331,6 +332,7 @@
     <div id="contents">
     <a href="https://ziglang.org/"><span id="logo"></span></a>
     <h1>0.9.0 Release Notes</h1>
+    <img src="https://ziglang.org/img/Zero_1.svg" style="height: 18em; float: right">
     <p>
     <a href="https://ziglang.org/download/">Download &amp; Documentation</a>
     </p>
@@ -365,7 +367,6 @@
     the project started {#link|Performance Tracking#},
     and the {#link|Standard Library#}, although unstable, became more useful.
     </p>
-    <img src="https://ziglang.org/img/Zero_1.svg" style="height: 14em">
     {#header_open|Table of Contents#}
     {#nav#}
     {#header_close#}
@@ -1167,7 +1168,7 @@
     {#header_close#}
 
     {#header_open|Documentation#}
-    <img src="https://ziglang.org/img/Ziggy_4.svg" style="height: 11em">
+    <img src="https://ziglang.org/img/Ziggy_4.svg" style="height: 13em; float: right">
     <ul>
       <li>New section: <a href="https://ziglang.org/documentation/0.9.0/#C-Translation-CLI">C Translation CLI</a></li>
       <li>New section: <a href="https://ziglang.org/documentation/0.9.0/#C-Translation-Caching">C Translation Caching</a></li>
@@ -1179,7 +1180,6 @@
     {#header_close#}
 
     {#header_open|Language Changes#}
-    <img src="https://ziglang.org/img/Zero_5.svg" style="height: 11em">
     <p>{#syntax#}@byteOffsetOf{#endsyntax#} is renamed to {#syntax#}@offsetOf{#endsyntax#}. {#link|zig fmt#} automatically performs this upgrade for you.</p>
 
     {#header_open|More Builtins Return String Literals#}
@@ -1492,6 +1492,7 @@ test "example" {
 }
     {#code_end#}
 
+    <img src="https://ziglang.org/img/Zero_5.svg" style="height: 14em; float: right">
     <p>The eventual goal for the developer experience related to errors for unused things is
     that it will work similar to the "Organize Imports" button in Eclipse that Java
     developers are familiar with. Idea being that IDEs would have a simple keyboard
@@ -1689,11 +1690,10 @@ pub const PrefetchOptions = struct {
     the {#link|LLVM Backend#}. Once this reaches 100% we can start shipping the self-hosted
     compiler instead of the {#link|Bootstrap Compiler#}.</p>
 
-    TODO link to my twitter thread about progress updates
-
-    TODO show perf measurement. note that AIR memory layout reworking happened this cycle
-
-    TODO mention MIR and how it relates to perf
+    <p>In this release cycle, we took a detour from making progress on passing more
+    tests, to invest in
+    <a href="https://media.handmade-seattle.com/practical-data-oriented-design/">applying Data-Oriented Design principles to the codebase</a>.
+    This resulted in significant {#link|performance|Performance Tracking#} improvements.</p>
 
     <p>
     Despite the fact that .zig source code by default is still compiled in this
@@ -1701,6 +1701,8 @@ pub const PrefetchOptions = struct {
     self-hosted, as well as many features, such as {#link|zig cc#}, {#link|C Translation#},
     CPU feature detection, and the {#link|Cache System#}.
     Improvements made to "stage2" in these areas do in fact affect the main Zig user experience.
+    The bullet points listed here are part of the shared code between both compiler
+    implementations.
     </p>
 
     <p>
@@ -1781,7 +1783,40 @@ pub const PrefetchOptions = struct {
     This is currently the main focus of the self-hosted compiler effort, because
     when it gets to 100%, we can start shipping the self-hosted compiler instead of
     the {#link|Bootstrap Compiler#}.</p>
-    <p>TODO tetris milestone with perf improvement</p>
+    <p>The new LLVM backend has reached a milestone: it can now produce a viable
+    binary for this <a href="https://github.com/andrewrk/tetris">Tetris clone</a>.</p>
+
+    <p>This gives us some early performance measurements. On Andrew's laptop:</p>
+    <pre><code>zig build-exe src/main.zig -fLLVM -lc -Istb_image-2.22 -lglfw -lepoxy  --main-pkg-path . stb_image-2.22/stb_image_impl.c -fno-stage1</code></pre>
+
+    <ul>
+      <li>cold {#link|zig-cache|Cache System#}</li>
+      <li>28,429 lines of Zig (26,324 of that is translated C .h files)</li>
+      <li>7,551 lines of C</li>
+    </ul>
+
+    <p>Using the {#link|Bootstrap Compiler#}:</p>
+    <ul>
+      <li>wall clock: 4.17 seconds</li>
+      <li>peak RSS: 439 MiB</li>
+    </ul>
+
+    <p>Using the {#link|Self-Hosted Compiler#}:</p>
+    <ul>
+      <li>wall clock: 2.76 seconds</li>
+      <li>peak RSS: 236 MiB</li>
+    </ul>
+
+    <p>This time includes:</p>
+    <ul>
+      <li>the llvm backend which remember is the slow one compared to the {#link|x86 Backend#}.</li>
+      <li>LLD instead of our {#link|Self-Hosted Linker#}.</li>
+      <li>building {#link|compiler-rt#} with LLVM optimizations on.</li>
+      <li>waiting for {#link|C Translation#}.</li>
+      <li>waiting for clang to build the .c files.</li>
+    </ul>
+    <p>So this is not a fair benchmark to measure how many lines/second Zig can compile.
+    Even so, it's 1.5x faster and 0.53x as much memory as the {#link|Bootstrap Compiler#}.</p>
     {#header_close#}
 
     {#header_open|C Backend#}
@@ -2279,7 +2314,6 @@ Date:   Tue Nov 30 00:13:07 2021 -0700
     {#header_close#}
 
     {#header_open|Formatted Printing#}
-    TODO complain about formatted printing and warn everyone that doomsday is coming and I'm going to break all the API
     <ul>
       <li>std.fmt: Better formatting of tuple types by skipping the useless type name and the numeric field names.</li>
       <li>Added name of type in unsupport format string compile error.</li>
@@ -2292,6 +2326,10 @@ Date:   Tue Nov 30 00:13:07 2021 -0700
         bug that may sometimes lead to an endless loop being generated when unrolling
         the fmt impl (#9961).</li>
     </ul>
+    <p>
+    Please note that the formatted printing API is <strong>unstable</strong> and
+    will very likely break everyone's formatting code before we reach 1.0.
+    </p>
     {#header_close#}
 
     {#header_open|Threading#}
@@ -2649,7 +2687,6 @@ All 1 tests passed.</code></pre>
     {#header_close#}
 
     {#header_open|Toolchain#}
-    <img src="https://ziglang.org/img/Zero_3.svg" style="height: 11em">
     {#header_open|LLVM 13#}
     <p>
     This release of Zig upgrades to
@@ -2662,6 +2699,7 @@ All 1 tests passed.</code></pre>
     {#header_close#}
 
     {#header_open|musl 1.2.2#}
+    <img src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
     <p>
     Zig ships with the source code to <a href="http://musl.libc.org/">musl</a>.
     When the musl C ABI is selected, Zig builds static musl from source for the selected target.
@@ -3138,7 +3176,6 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     {#header_close#}
 
     {#header_open|Bug Fixes#}
-    <img src="https://ziglang.org/img/Zero_8.svg" style="height: 11em">
     <p>
     <a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.9.0+">Full list of the 147 bug reports closed during this release cycle</a>.
     </p>
@@ -3146,6 +3183,7 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     Note: many bugs were both introduced and resolved within this release cycle.
     </p>
     {#header_open|This Release Contains Bugs#}
+    <img src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
     <p>
     Zig has
     <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>
@@ -3168,7 +3206,7 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     {#header_close#}
 
     {#header_open|Roadmap#}
-    <img src="https://ziglang.org/img/Ziggy_8.svg" style="height: 11em">
+    <img src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right">
     TODO update this section
     <p>The goal of the 0.9.0 release cycle was
     {#link|self-hosting the compiler|Self-Hosted Compiler#}. With a longer release cycle,
