@@ -371,6 +371,24 @@
     {#nav#}
     {#header_close#}
 
+    {#header_open|Isaac Freund Joins the Core Zig Team#}
+    <img src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em; float: right">
+    <p>To many, the reaction to this announcement will be something like, "Oh? I thought
+    he was already on the core zig team." This goes to show how obvious this decision was.</p>
+    <p>Isaac is a level-headed, talented, careful, patient, and diligent programmer.
+    You might be viewing these release notes through his dynamic tiling Wayland compositor,
+    <a href="https://github.com/riverwm/river">River</a>.</p>
+
+    <p>He also works on <a href="https://tigerbeetle.webflow.io/">TigerBeetle</a> -
+      the world's fastest financial accounting database.</p>
+
+    <p>In addition to lending his technical expertise to the Zig project,
+    Isaac has proven to be a steadfast community leader,
+    setting an example for how to treat others with kindness and respect.</p>
+
+    <p>Please give him a warm welcome to the core Zig team.</p>
+    {#header_close#}
+
     {#header_open|Support Table#}
     {#header_open|Tier System#}
     <p>
@@ -1134,6 +1152,7 @@
         infinite loop when calling <code>rt_sigreturn</code>.</li>
       <li>Add missing C type definitions.</li>
       <li>Miscellaneous improvements resulting in more behavior tests passing (#9853).</li>
+      <li>{#link|Threading#}: added a <code>freeAndExit()</code> implementation.</li>
     </ul>
     <p>Contributors: Koakuma</p>
     {#header_close#}
@@ -2443,109 +2462,63 @@ error: the following command failed with 'FileNotFound':
     {#header_close#}
 
     {#header_open|Threading#}
-    TODO
-commit b7da1b2d45bc42a56eea3a143e4237a0712c4769
-Merge: 5d0dad9ac c8f90a7e7
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Jul 4 22:31:02 2021 -0400
+    <ul>
+      <li>Thread spawning API is now similar to the
+        {#syntax#}@call(.{}, function, args_tuple){#endsyntax#} builtin.</li>
+      <li>Spawn options (first arg) with customizable thread stack size.</li>
+      <li>Renamed <code>wait()</code> to <code>join()</code>.</li>
+      <li>Renamed <code>handle()</code> to <code>getHandle()</code> for consistency.</li>
+      <li>Added ability to <code>detach()</code> thread, allowing it to clean up
+        resources when it exits instead of calling <code>join()</code>.</li>
+      <li>Moved <code>getCurrentThreadId()</code> into <code>getCurrentId()</code>.</li>
+      <li>Added <code>Thread.setName</code> and <code>Thread.getName</code> (#8570)
+        including for DragonFlyBSD (#9910).</li>
+    </ul>
 
-    Merge pull request #9175 from kprotty/thread
+    {#header_open|Mutex Lock/Unlock#}
+    <p><code>Thread.Mutex</code>: change API to <code>lock()</code> and <code>unlock()</code>.</p>
+    <p>This is a <strong>breaking change</strong>. Before, usage looked like this:</p>
     
-    std.Thread enhancements
-
-commit 192b5d24cb4651ed2c6b6b1e5fee017d40ea5aa5
-Merge: ed174b738 df4fe8716
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Jul 29 13:25:13 2021 -0400
-
-    Merge pull request #8570 from vrischmann/thread-name
+    <pre>{#syntax#}const held = mutex.acquire();
+defer held.release();{#endsyntax#}</pre>
     
-    add Thread.setName and Thread.getName
-
-commit 2a0adef583d96d87fdca1bc536269931486e4349
-Merge: 36b6e95aa e376fab18
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Dec 3 17:29:55 2021 -0800
-
-    Merge pull request #9910 from mikdusan/dragonfly
+    <p>Now it looks like this:</p>
     
-    dragonfly: port Thread.setname/getname
-
-commit 7aaea20e7e5e98bc5b2c4c8ddcf8f6aaa4a9c55d
-Author: Koakuma <koachan@protonmail.com>
-Date:   Fri Jul 30 21:45:28 2021 +0700
-
-    Add freeAndExit() implementation for Linux/SPARCv9
-
-commit e3840817d7a8a3e9e69a7b0e6f3c7f2ce8c8d029
-Author: Koakuma <koachan@protonmail.com>
-Date:   Tue Aug 3 20:14:40 2021 +0700
-
-    Linux/SPARCv9: account for branch delay in freeAndExit()
-
-commit 008b0ec5e58fc7e31f3b989868a7d1ea4df3f41d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 9 18:27:12 2021 -0700
-
-    std.Thread.Mutex: change API to lock() and unlock()
+    <pre>{#syntax#}mutex.lock();
+defer mutex.unlock();{#endsyntax#}</pre>
     
-    This is a breaking change. Before, usage looked like this:
-    
-    ```zig
-    const held = mutex.acquire();
-    defer held.release();
-    ```
-    
-    Now it looks like this:
-    
-    ```zig
-    mutex.lock();
-    defer mutex.unlock();
-    ```
-    
-    The `Held` type was an idea to make mutexes slightly safer by making it
+    <p>The <code>Held</code> type was an idea to make mutexes slightly safer by making it
     more difficult to forget to release an aquired lock. However, this
     ultimately caused more problems than it solved, when any data structures
     needed to store a held mutex. Simplify everything by reducing the API
-    down to the primitives: lock() and unlock().
+    down to the primitives: <code>lock()</code> and <code>unlock()</code>.</p>
     
-    Closes #8051
-    Closes #8246
-    Closes #10105
-
+    <p>Related issues: #8051 #8246 #10105</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Allocgate#}
-    <p>TODO</p>
+    <p>The <code>mem.Allocator</code> interface has changed in a <strong>breaking</strong> way.</p>
+    <p>In short summary, here is how to change your code:</p>
+    <ul>
+      <li>Change {#syntax#}*Allocator{#endsyntax#} to {#syntax#}Allocator{#endsyntax#} in
+        function parameter types and struct field types.</li>
+      <li>Instead of taking the pointer to an allocator field, such as
+        {#syntax#}&gpa.allocator{#endsyntax#}, use a function call like this: {#syntax#}gpa.allocator(){#endsyntax#}.</li>
+    </ul>
+    <p>
+    The motivation for this change was {#link|performance|Performance Tracking#}.
+    </p>
+    <p>
+    This blog post is an excellent piece of technical writing; I couldn't have done a better
+    job myself in these release notes:
+    <a href="https://pithlessly.github.io/allocgate.html">Allocgate is coming in Zig 0.9, and you will have to change your code</a>
+    </p>
     {#header_close#}
 
     {#header_open|Random Interface#}
-    <p>TODO</p>
-commit c1a5ff34f3f68a2a0bc32828ab483328cd436fea
-Author: Ominitay <37453713+Ominitay@users.noreply.github.com>
-Date:   Wed Oct 27 15:53:29 2021 +0100
-
-    std.rand: Refactor `Random` interface
-    
-    These changes have been made to resolve issue #10037. The `Random`
-    interface was implemented in such a way that causes significant slowdown
-    when calling the `fill` function of the rng used.
-    
-    The `Random` interface is no longer stored in a field of the rng, and is
-    instead returned by the child function `random()` of the rng. This
-    avoids the performance issues caused by the interface.
-
-
-commit 544d7d99822912a4f85768b0df882775e5fdb80d
-Author: ominitay <37453713+ominitay@users.noreply.github.com>
-Date:   Fri Oct 29 00:34:17 2021 +0100
-
-    Add argument for `fillFn` to `Random.init`
-    
-    As suggested by @leecannon, this provides more flexibility to the
-    `Random` interface. For exmaple, this allows for an implementation to
-    provide multiple different fill functions.
-
+    <p>The <code>rand.Random</code> interface was changed in an equivalent manner
+    to the {#link|Allocator interface changes|Allocgate#}, for the same reason (perf).</p>
     {#header_close#}
 
     {#header_open|Hash Maps#}
@@ -2576,43 +2549,68 @@ Date:   Fri Oct 29 00:34:17 2021 +0100
       <li>Added <code>std.log.Level.asText</code> for getting a printable string from the log
         level.</li>
     </ul>
-    TODO
 
-commit f7b090d7076a20a614bf20cac05e5e18c06ad18a
-Author: Isaac Freund <mail@isaacfreund.com>
-Date:   Sun Oct 24 13:13:06 2021 +0200
-
-    std.log: simplify to 4 distinct log levels
-    
-    Over the last year of using std.log in practice, it has become clear to
-    me that having the current 8 distinct log levels does more harm than
+    {#header_open|Only 4 Log Levels#}
+    <p>Over the last year of using <code>std.log</code> in practice, it has become clear
+    that having the previous 8 distinct log levels (to match syslog) does more harm than
     good. It is too subjective which level a given message should have which
     makes filtering based on log level weaker as not all messages will have
-    been assigned the log level one might expect.
+    been assigned the log level one might expect.</p>
     
-    Instead, more granular filtering should be achieved by leveraging the
+    <p>Instead, more granular filtering should be achieved by leveraging the
     logging scope feature. Filtering based on a combination of scope and log
-    level should be sufficiently powerful for all use-cases.
+    level should be sufficiently powerful for all use-cases.</p>
     
-    Note that the self hosted compiler has already limited itself to 4
+    <p>Note that the {#link|Self-Hosted Compiler#} has already limited itself to 4
     distinct log levels for many months and implemented granular filtering
-    based on both log scope and level. This has worked very well in practice
-    while working on the self hosted compiler.
+    based on both log scope and level. This has worked very well in practice.</p>
+
+    <p>The four log levels are:</p>
+    <ul>
+      <li><code>err</code> - <strong>Error</strong>: something has gone wrong.
+        This might be recoverable or might be followed by the program exiting.</li>
+      <li><code>warn</code> - <strong>Warning</strong>: it is uncertain if something
+        has gone wrong or not, but the circumstances would be worth investigating.</li>
+      <li><code>info</code> - <strong>Info</strong>: general messages about the
+        state of the program.</li>
+      <li><code>debug</code> - <strong>Debug</strong>: messages only useful for debugging.</li>
+    </ul>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Namespacing of OS Bits#}
+    <p>Since {#link|usingnamespace No Longer Affects Identifier Lookup#}, it helped to
+    introduce proper namespacing to the many OS-specific constants that were essentially
+    ported over from C headers (#9618).</p>
     <ul>
       <li><code>errno</code> is now a nonexhaustive enum, with the 'E' prefix chopped off.</li>
+      <li>Other stuff also is renamed so that the common prefix extracted out into a struct.</li>
     </ul>
-    TODO
-commit 594271f8dba0143280990ac2e01dd68a791c05b0
-Merge: 81e2034d4 2264fca03
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Sep 2 04:51:42 2021 -0400
+    {#header_close#}
+    {#header_close#}
 
-    Merge pull request #9618 from ziglang/std-os-reorg
-    
-    std.os reorganization; new `usingnamespace` semantics
+    {#header_open|Bug Fixes#}
+    <p>
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.9.0+">Full list of the 147 bug reports closed during this release cycle</a>.
+    </p>
+    <p>
+    Note: many bugs were both introduced and resolved within this release cycle.
+    </p>
+    {#header_open|This Release Contains Bugs#}
+    <img src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
+    <p>
+    Zig has
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>
+    and even some
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Amiscompilation">miscompilations</a>.
+    </p>
+    <p>Zig is immature. Even with Zig 0.9.0, working on a non-trivial project using Zig will
+    likely require participating in the development process.</p>
+    <p>When Zig reaches 1.0.0, a new requirement for {#link|Tier 1 Support#} will be
+    0 known bugs for that target.</p>
+    <p>
+    A <a href="https://github.com/ziglang/zig/milestone/15">0.9.1 release</a> is planned.
+    </p>
     {#header_close#}
     {#header_close#}
 
@@ -2625,7 +2623,7 @@ Date:   Thu Sep 2 04:51:42 2021 -0400
     <p>
     Although it is already essential to nearly every Zig project, the Zig Build System is
     still experimental and unstable. As a build system, stability is especially important,
-    but stabilization cannot occur until the language stabilizes. Language stability is the
+    but cannot occur until the language stabilizes. Language stability is the
     next area of focus on the {#link|Roadmap#}.
     </p>
     <p>Miscellaneous improvements:</p>
@@ -2795,6 +2793,7 @@ All 1 tests passed.
 All 1 tests passed.</code></pre>
     {#header_close#}
     {#header_close#}
+
 
     {#header_open|Toolchain#}
     {#header_open|LLVM 13#}
@@ -3180,38 +3179,30 @@ Hello from C++ and Zig</code></pre>
         {#link|macOS#} (#10232).</li>
     </ul>
     <p>With all these additions, we nearly have a fully complete compiler-rt implementation!</p>
-    <p>TODO mention migrating stuff into compiler-rt</p>
-commit 939f51aebba982259628f6255a0b0b0ec2d9c99a
-Author: J.C. Moyer <jcmoyer32@gmail.com>
-Date:   Tue Nov 16 21:56:55 2021 -0500
-
-    compiler_rt: export floorf, floor, and floorl
-    
-    This fixes a stage1 linker error when compiling with VS2022 on Windows.
-
-commit 5518a0aff2ab023e9021b74a0a14eb9fcfc094cc
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Oct 5 16:56:46 2021 -0700
-
-    freestanding libc: export fmal
-    
-    libc requires this to use `long double` which is sometimes the same as
-    f128, sometimes not.
-    
-    Also for an unknown reason, aarch64 is getting an invalid result for the
-    `@mulAdd` behavior test for f128. See #9900.
-
-commit 86b92809635607ff357ce96902e2aaf83c3fd029
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Oct 22 10:47:42 2021 -0700
-
-    zig libc: export floorl and ceill
-    
-    needed since self-hosted now contains calls to `@divFloor` and
-    `@divTrunc` for 128-bit floats.
 
     <p>Contributors: Andrew Kelley, Jan Philipp Hafer, Jacob G-W, Jonathan Marler, LemonBoy, J.C. Moyer, Kenta Iwasaki, Stephen Gutekanst, Veikka Tuominen, jdmichaud</p>
     {#header_close#}
+    {#header_close#}
+
+    {#header_open|Performance Tracking#}
+    <p>The <a href="https://github.com/ziglang/gotta-go-fast/">gotta-go-fast</a> repository
+    contains a set of benchmarks that are now run for each commit on our
+    {#link|Continuous Integration#} server, providing a
+    <a href="https://ziglang.org/perf/">set of graphs for various metrics that we track over time</a>.</p>
+
+    <img alt="Performance Dashboard" src="https://ziglang.org/download/0.9.0/perf.jpg" style="width: 100%">
+    <img src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+
+    <p>These have already helped diagnose performance regressions. As an example, the
+    pull request that implemented {#link|Allocgate#} accidentally deleted a call to free()
+    in the GeneralPurposeAllocator. This did not actually cause any tests to fail, but on
+    the performance dashboard, it was clear that a bunch more memory was getting used.</p>
+
+    <p>As Zig matures, we will add more benchmarks to this system, particularly for
+    measuring compilation speed of various users' projects, so that we can pay attention to
+    how changes to the codebase over time are affecting performance characteristics.</p>
+
+    <p>Thank you to Austin Rude for improving the user interface and display of the graphs.</p>
     {#header_close#}
 
     {#header_open|Continuous Integration#}
@@ -3280,51 +3271,12 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     </ul>
     {#header_close#}
 
-    {#header_open|Performance Tracking#}
-    <img src="https://ziglang.org/img/Zero_2.svg" style="height: 11em">
-    <p>TODO</p>
-    {#header_close#}
-
-    {#header_open|Bug Fixes#}
-    <p>
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.9.0+">Full list of the 147 bug reports closed during this release cycle</a>.
-    </p>
-    <p>
-    Note: many bugs were both introduced and resolved within this release cycle.
-    </p>
-    {#header_open|This Release Contains Bugs#}
-    <img src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
-    <p>
-    Zig has
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>
-    and even some
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Amiscompilation">miscompilations</a>.
-    </p>
-    <p>Zig is immature. Even with Zig 0.9.0, working on a non-trivial project using Zig will
-    likely require participating in the development process.</p>
-    <p>When Zig reaches 1.0.0, a new requirement for {#link|Tier 1 Support#} will be
-    0 known bugs for that target.</p>
-    <p>
-    A <a href="https://github.com/ziglang/zig/milestone/15">0.9.1 release</a> is planned.
-    </p>
-    {#header_close#}
-    {#header_close#}
-
-    {#header_open|Please Welcome Isaac Freund to the Core Zig Team#}
-    <img src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em">
-    <p>TODO</p>
-    {#header_close#}
-
     {#header_open|Roadmap#}
     <img src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right">
-    TODO update this section
-    <p>The goal of the 0.9.0 release cycle was
-    {#link|self-hosting the compiler|Self-Hosted Compiler#}. With a longer release cycle,
-    I think we could have done it. However, compared to
-    <a href="/download/0.8.0/release-notes.html">0.8.0</a>, which had a 7-month long cycle,
-    this one only had 4 months, since releases are,
-    <a href="https://kristoff.it/blog/zig-new-relationship-llvm/">for now</a>,
-    tied to LLVM releases.</p>
+    <p>The primary goal of the 0.9.0 release cycle was
+    {#link|self-hosting the compiler|Self-Hosted Compiler#}. At this time, 44% of the behavior
+    tests are passing, with the percent
+    <a href="https://twitter.com/andy_kelley/status/1467652028159561728">rising quickly</a>.</p>
 
     <p>The major theme of the 0.10.0 release cycle will be
     <strong>stabilizing the language</strong>,
@@ -3332,12 +3284,24 @@ Date:   Fri Oct 22 10:47:42 2021 -0700
     <strong>self-hosting the compiler</strong>.
     </p>
 
-    <p>
-    If you want a sense of progress, have a look at the
-    <a href="https://github.com/ziglang/zig/blob/0.9.0/test/behavior.zig">behavior tests of the language</a>.
-    Here, you can see which tests are passing for self-hosted and which are not yet. For comparison,
-    <a href="https://github.com/ziglang/zig/blob/0.8.0/test/behavior.zig">when 0.8.0 was released, this list was empty.</a>
-    </p>
+    <p>Some upcoming milestones in the next release cycle:</p>
+    <ul>
+      <li>{#link|Self-Hosted Compiler#} can build itself with the {#link|LLVM Backend#}.
+        Unlocks faster development iteration times when working on the
+        {#link|Self-Hosted Compiler#}.</li>
+      <li>All behavior tests and other tests passing with the {#link|LLVM Backend#}.
+        At this point we can ship the {#link|Self-Hosted Compiler#} instead of the
+        {#link|Bootstrap Compiler#}.</li>
+      <li>{#link|Self-Hosted Compiler#} can build itself with the {#link|C Backend#}.
+        Unlocks ability to replace the {#link|Bootstrap Compiler#} with
+        {#link|Self-Hosted Compiler#} generated C code (#6378).</li>
+      <li>{#link|Self-Hosted Linker#} support for ELF. At this point it will
+        be time to do a proof of concept of hot code swapping for {#link|Linux#}.</li>
+      <li>{#link|Self-Hosted Linker#} support for PE/COFF. At this point it will
+        be time to do a proof of concept of hot code swapping for {#link|Windows#}.</li>
+      <li>Behavior tests passing for the {#link|x86 Backend#} or {#link|aarch64 Backend#}.
+        Unleashes our full compilation speed when targeting the respective architecture.</li>
+    </ul>
 
     {#header_open|Package Manager Status#}
     <p>
