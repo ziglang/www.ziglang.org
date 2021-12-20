@@ -2076,7 +2076,112 @@ pub const PrefetchOptions = struct {
     {#header_close#}
 
     {#header_open|Debug Crash Handler#}
-    <p>TODO show off Martin's awesome crash handler</p>
+    <p>Martin Wickham added this crash report to the panic function, which
+    has been really nice for internal compiler development. Crashes now
+    look something like this:</p>
+
+    <pre><code>$ ./zig-out/bin/zig test  -fLLVM ../test/behavior/eval_stage1.zig 
+thread 831982 panic: access of inactive union field
+Analyzing ../test/behavior/eval_stage1.zig: eval_stage1.zig:test.inlined loop has array literal with elided runtime scope on first iteration but not second iteration
+      %115 = load(%111) node_offset:22:19
+      %116 = int(2)
+      %117 = cmp_lt(%115, %116) node_offset:22:21
+      %118 = as_node(@Ref.bool_type, %117) node_offset:22:21
+    &gt; %119 = condbr_inline(%118, {
+        %127 = dbg_stmt(23, 9)
+        %128 = alloc_inferred() node_offset:23:9
+        %133 = block({
+          %129 = load(%111) node_offset:23:28
+          %130 = cmp_eq(%129, @Ref.zero) node_offset:23:30
+          %131 = as_node(@Ref.bool_type, %130) node_offset:23:30
+          %132 = condbr(%131, {
+            %134 = array_type(@Ref.one, @Ref.i32_type)
+            %135 = elem_type(%134) node_offset:23:36
+            %136 = coerce_result_ptr(%134, %128)
+            %137 = elem_ptr_imm(%136, 0) node_offset:23:43
+            %138 = int(2)
+            %139 = store_node(%137, %138) node_offset:23:43
+            %140 = validate_array_init({
+              %137 = elem_ptr_imm(%136, 0) node_offset:23:43
+            }) node_offset:23:42
+            %143 = break(%133, @Ref.void_value)
+          }, {
+            %141 = load(%101) node_offset:23:51
+            %142 = store_to_block_ptr(%128, %141)
+            %144 = break(%133, @Ref.void_value)
+          }) node_offset:23:24
+        }) node_offset:23:24
+        %145 = resolve_inferred_alloc(%128) node_offset:23:9
+        %146 = dbg_stmt(24, 9)
+        %147 = load(%128) node_offset:24:13
+        %148 = ensure_result_non_error(%147) node_offset:24:13
+        %149 = break_inline(%120, @Ref.void_value)
+      }, {
+        %150 = break_inline(%114, @Ref.void_value)
+      }) node_offset:22:12
+    For full context, use the command
+      zig ast-check -t ../test/behavior/eval_stage1.zig
+
+  in ../test/behavior/eval_stage1.zig: eval_stage1.zig:test.inlined loop has array literal with elided runtime scope on first iteration but not second iteration
+    &gt; %120 = block_inline({%115..%119}) node_offset:22:12
+  in ../test/behavior/eval_stage1.zig: eval_stage1.zig:test.inlined loop has array literal with elided runtime scope on first iteration but not second iteration
+    &gt; %114 = block_inline({%120..%126}) node_offset:22:12
+
+/home/andy/Downloads/zig/src/Sema.zig:991:53: 0x3049c86 in Sema.analyzeBody (zig)
+                const break_data = datas[break_inst].@"break";
+                                                    ^
+/home/andy/Downloads/zig/src/Sema.zig:956:56: 0x3049525 in Sema.analyzeBody (zig)
+                const break_inst = try sema.analyzeBody(block, inline_body);
+                                                       ^
+/home/andy/Downloads/zig/src/Sema.zig:956:56: 0x3049525 in Sema.analyzeBody (zig)
+                const break_inst = try sema.analyzeBody(block, inline_body);
+                                                       ^
+/home/andy/Downloads/zig/src/Module.zig:4306:25: 0x301b2c5 in Module.analyzeFnBody (zig)
+    _ = sema.analyzeBody(&amp;inner_block, fn_info.body) catch |err| switch (err) {
+                        ^
+/home/andy/Downloads/zig/src/Compilation.zig:2343:47: 0x2dff765 in Compilation.processOneJob (zig)
+                var air = module.analyzeFnBody(decl, func, sema_arena) catch |err| switch (err) {
+                                              ^
+/home/andy/Downloads/zig/src/Compilation.zig:2261:30: 0x2df229d in Compilation.performAllTheWork (zig)
+            try processOneJob(self, work_item, main_progress_node);
+                             ^
+/home/andy/Downloads/zig/src/Compilation.zig:1872:31: 0x2deddd7 in Compilation.update (zig)
+    try self.performAllTheWork();
+                              ^
+/home/andy/Downloads/zig/src/main.zig:2875:20: 0x2d5812f in updateModule (zig)
+    try comp.update();
+                   ^
+/home/andy/Downloads/zig/src/main.zig:2558:17: 0x2ce4d2e in buildOutputType (zig)
+    updateModule(gpa, comp, hook) catch |err| switch (err) {
+                ^
+/home/andy/Downloads/zig/src/main.zig:216:31: 0x2cca5f6 in mainArgs (zig)
+        return buildOutputType(gpa, arena, args, .zig_test);
+                              ^
+/home/andy/Downloads/zig/src/main.zig:165:20: 0x2cc9350 in main (zig)
+    return mainArgs(gpa, arena, args);
+                   ^
+/home/andy/Downloads/zig/lib/std/start.zig:553:37: 0x3179297 in std.start.callMain (zig)
+            const result = root.main() catch |err| {
+                                    ^
+/home/andy/Downloads/zig/lib/std/start.zig:495:12: 0x2ccc037 in std.start.callMainWithArgs (zig)
+    return @call(.{ .modifier = .always_inline }, callMain, .{});
+           ^
+/home/andy/Downloads/zig/lib/std/start.zig:460:12: 0x2ccbde2 in std.start.main (zig)
+    return @call(.{ .modifier = .always_inline }, callMainWithArgs, .{ @intCast(usize, c_argc), c_argv, envp });
+           ^
+Aborted (core dumped)</code></pre>
+
+    <p>Here we can see that there is a bug in the compiler where it tried to access the wrong
+    union field. Not only do we get a stack trace pointing at the union field access, but
+    it tells us the source file, line number, and function that the compiler was analyzing
+    when it crashed, it dumps out the ZIR in text form, pointing to the exact instruction 
+    that was being analyzed, and dumps out the <em>analysis stack</em> including the ZIR
+    instructions.</p>
+
+    <p>In many cases, seeing this information is enough to completely diagnose the problem,
+    without having to resort to a debugger. It additionally makes it easier for contributors
+    to help out, and it increases the chances of error reports to include enough information
+    to reproduce or diagnose the issue.</p>
     {#header_close#}
 
     {#header_open|Stop Guessing Whether the System Can Execute Binaries#}
@@ -2231,16 +2336,21 @@ error: the following command failed with 'FileNotFound':
         {#syntax#}@import("builtin").target{#endsyntax#} (#9388) (#9321).</li>
       <li><code>DynamicBitSet</code> functions have allocator parameters moved to be the
           first one (after self) to match common convention (#9944).</li>
+      <li><code>debug.warn</code> is removed in favor of <code>debug.print</code>.</li>
+      <li><code>mem.dupe</code> is removed in favor of <code>mem.Allocator.dupe</code>.</li>
+      <li><code>mem.spanZ</code> is removed in favor of <code>mem.sliceTo</code>.</li>
+      <li><code>ensureCapacity</code> is removed in favor of <code>ensureUnusedCapacity</code> or
+        <code>ensureTotalCapacity</code>.</li>
+      <li><code>ArrayList.toUnmanaged</code> is removed in favor of <code>ArrayList.moveToUnmanaged</code> which has different semantics.</li>
+      <li><code>base64.standard_pad_char</code> is removed in favor of <code>base64.standard.pad_char</code>.</li>
+      <li><code>base64.standard_encoder</code> is removed in favor of <code>base64.standard.Encoder</code>.</li>
+      <li><code>base64.standard_decoder</code> is removed in favor of <code>base64.standard.Decoder</code>.</li>
+      <li><code>build.Version</code> is removed; use <code>std.builtin.Version</code> instead.</li>
+      <li><code>build.Target</code> is removed; use <code>std.zig.CrossTarget</code> instead.</li>
+      <li><code>hash_map.DefaultMaxLoadPercentage</code> is removed in favor of <code>hash_map.default_max_load_percentage</code>.</li>
+      <li><code>io.FindByteOutStream</code> is removed in favor of <code>io.FindByteWriter</code>.</li>
+      <li><code>io.findByteOutStream</code> is removed in favor of <code>io.findByteWriter</code>.</li>
     </ul>
-    TODO
-commit 902df103c6151c257c90de9ba5f29f7f4b9dbea2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Nov 30 00:13:07 2021 -0700
-
-    std lib API deprecations for the upcoming 0.9.0 release
-    
-    See #3811
-
     {#header_close#}
 
     {#header_open|Additional API#}
