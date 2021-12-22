@@ -1,0 +1,15 @@
+- [Pex](https://pex.com)
+- [Kirk Scheibelhut](https://scheibo.com)
+- [drfuchs](https://github.com/drfuchs)
+- [tarasbob](https://github.com/tarasbob)
+- [Lager Data](https://lagerdata.com)
+- Stephen Gutekanst
+- Derek Collison
+- Karrick McDermott
+- Joran Dirk Greef
+- The Lycus Foundation
+- Stevie Hryciw
+- Björn Linse
+- Dustin Taylor
+- José M Rico
+- Simon A. Nielsen Knights
