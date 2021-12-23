@@ -3,7 +3,7 @@ title: Home
 mobile_menu_title: "Home"
 ---
 {{< slogan get_started="INIZIA QUI" docs="Documentazione" notes="Note">}}
-Zig e' un linguaggio di programmazione general-purpose e toolchain per
+Zig è un linguaggio di programmazione general-purpose e toolchain per
 mantenere software **robusto**, **ottimale**, e **riusabile**.
 {{< /slogan >}}
 
@@ -28,8 +28,8 @@ Un nuovo approccio alla metaprogrammazione basato sull'esecuzione di codice dura
 Migliora gradualmente il tuo codice C/C++/Zig.
 
 - Il compilatore Zig puo' sostituire altri compilatori C/C++, non richiede dipendenze e supporta cross-compilazione nativamente.
-- Usa `zig build` per creare un ambiente di sviluppo consistente su piu' piattaforme.
-- Aggiungi una unita' di compilazione Zig ai tuoi progetti C/C++; LTO tra i vari linguaggi e' abilitato di default.
+- Usa `zig build` per creare un ambiente di sviluppo consistente su più piattaforme.
+- Aggiungi una unita' di compilazione Zig ai tuoi progetti C/C++; LTO tra i vari linguaggi è abilitato di default.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
@@ -88,9 +88,9 @@ I contributori sono tenuti a rispettare il [codice di comportamento](https://git
 
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
-## La ZSF e' una corporazione non-profit.
+## La ZSF è una corporazione non-profit.
 
-La Zig Software Foundation e' una corporazione non-profit fondata nel 2020 da Andrew Kelley, il creatore di Zig, con l'obbiettivo di supportare lo sviluppo del linguaggio. Al momento la fondazione è in grado di offire pagamento a rate competitivi ad un piccolo numero di contributori. Speriamo di poter estendere questa offerta a più contibutori nel prossimo futuro.
+La Zig Software Foundation è una corporazione non-profit fondata nel 2020 da Andrew Kelley, il creatore di Zig, con l'obbiettivo di supportare lo sviluppo del linguaggio. Al momento la fondazione è in grado di offire pagamenti con tariffe competitive ad un piccolo numero di contributori. Speriamo di poter estendere questa offerta a più contibutori nel prossimo futuro.
 
 La Zig Software Foundation si sostiene tramite donazioni.
 

@@ -73,7 +73,7 @@ Zig 표준 라이브러리는 libc와 연동하지만, 의존하지는 않습니
 
 x86_64-linux 타겟으로 `-O ReleaseSmall`에 디버그 심볼을 제거하고 단일 쓰레드 모드로 컴파일 하면, 정적으로 컴파일된 9.9 KiB의 실행파일이 만들어집니다:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -82,7 +82,7 @@ $ ldd hello
 
 Windows용 빌드는 더 작아서, 4096 byte입니다:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe

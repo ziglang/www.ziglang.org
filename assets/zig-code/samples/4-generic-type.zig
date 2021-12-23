@@ -8,19 +8,19 @@ pub fn Queue(comptime Child: type) type {
             data: Child,
             next: ?*Node,
         };
-        alloc: *std.mem.Allocator,
+        gpa: std.mem.Allocator,
         start: ?*Node,
         end: ?*Node,
 
-        pub fn init(alloc: *std.mem.Allocator) This {
+        pub fn init(gpa: std.mem.Allocator) This {
             return This{
-                .alloc = alloc,
+                .gpa = gpa,
                 .start = null,
                 .end = null,
             };
         }
         pub fn enqueue(this: *This, value: Child) !void {
-            const node = try this.alloc.create(Node);
+            const node = try this.gpa.create(Node);
             node.* = .{ .data = value, .next = null };
             if (this.end) |end| end.next = node //
             else this.start = node;
@@ -28,7 +28,7 @@ pub fn Queue(comptime Child: type) type {
         }
         pub fn dequeue(this: *This) ?Child {
             const start = this.start orelse return null;
-            defer this.alloc.destroy(start);
+            defer this.gpa.destroy(start);
             if (start.next) |next|
                 this.start = next
             else {
@@ -41,9 +41,7 @@ pub fn Queue(comptime Child: type) type {
 }
 
 test "queue" {
-    const alloc = std.testing.allocator;
-
-    var int_queue = Queue(i32).init(alloc);
+    var int_queue = Queue(i32).init(std.testing.allocator);
 
     try int_queue.enqueue(25);
     try int_queue.enqueue(50);

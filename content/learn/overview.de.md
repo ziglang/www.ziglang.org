@@ -72,7 +72,7 @@ Zigs Standardbibliothek kann libc einbeziehen, aber ist nicht darauf angewiesen.
 
 Mit `-O ReleaseSmall` kompiliert, ohne Debugsymbole, im Single Thread-Modus, wird für das Target x86_64-linux eine 9.8 KiB große statische Programmdatei erzeugt:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -81,7 +81,7 @@ $ ldd hello
 
 Ein Build auf Windows ist noch kleiner, nur 4096 Bytes:
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe

@@ -82,7 +82,7 @@ Voici un Hello World :
 
 Quand ce code est compilé avec `-O ReleaseSmall`, les symboles de debug retirés, sur un seul fil d'exécution, cela produit un binaire statique de 9.8 KiB pour la cible x86_64 :
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -91,7 +91,7 @@ $ ldd hello
 
 Le binaire produit pour Windows est encore plus petit, seulement 4096 octets :
 ```
-$ zig build-exe hello.zig --release-small --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe
