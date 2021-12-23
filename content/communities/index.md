@@ -5,182 +5,212 @@ mobile_menu_title: "Communities"
 toc: false
 ---
 <style>
- h1, h2, h3 {
-    /*font-size: 2rem;*/
- }
+  .community {
+    display: flex;
+    flex-direction: column;
+  }
+  .community>.name>h3 {
+    margin: 0;
+    padding-left: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f7a41d;
+  }
+  .community>.description {
+    flex: 1;
+    padding-left: 0.5rem;
+    font-size: 14px;
+    line-height: 1.25;
+    background-color: #333;
+    padding: 1rem;
+  }
+  .community>.people {
+    background-color: #333;
+    padding: 0.5rem;
+    font-size: 14px;
+  }
+  .communities {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1em;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+  }
 
- .communities {
-   display: grid;
-   grid-template-columns: repeat(2, 1fr);
-   gap: 10px;
-   flex-wrap: wrap;
-   justify-content: space-between;
-   margin-top: 1rem;
- }
- @media only screen and (max-width: 1000px) {
-   .communities {
-     grid-template-columns: repeat(1, 1fr);
-   }
-   .community {
-     margin-left: -1rem;
-     margin-right: -1rem;
-     border-radius: 0 !important;
-   }
- }
-
- .community {
-   display: flex;
-   flex-direction: column;
-   border-radius: 1rem;
-   background-color: #333;
- }
- .community p {
-   margin: 0;
- }
- .community-header, .community-references {
-   padding: .5rem;
-   padding-left: 1rem;
- }
-
-
- .community-header {
-   display: flex;
-   flex-direction: row;
-   align-items: center;
- }
- .community-header > span.title {
-   font-size: 2em;
- }
- .community-header > div > h2 {
-   margin-top: 0;
-   margin-bottom: -.25rem;
-   word-wrap: anywhere;
- }
- .community svg {
-   color: #f7a41d;
-   flex-shrink: 0;
- }
- .community-header > svg {
-   width: 2.5rem !important;
-   height: 2.5rem !important;
-   margin-right: 0.75rem;
- }
- .community-header > div > .language {
-  color: #f7a41d;
- }
- .community-header > div > .owner {
-   display: inline-block;
-   margin-top: .25rem;
- }
-
- .community-place-description {
-   border-left: 2px solid #f7a41d;
-   background-color: #444;
-   padding: 0.5rem;
-   padding-top: 0.25rem;
-   padding-bottom: 0.25rem;
-   height: 5.25rem;
-   overflow: auto;
-   margin-right: 0.5rem;
-   margin-left: 0.5rem;
-   margin-bottom: 0.5rem;
-   font-size: 14px;
- }
-
- .community-place-extra {
-   padding: 5px 15px;
- }
- .community-place-extra, .community-references {
-   text-align: center;
- }
- .community-place-extra .merchanidise-supports-zsf {
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   font-size: small;
-   font-weight: bold;
-   color: white;
- }
- .community-place-extra .merchanidise-supports-zsf > svg {
-   margin-right: .25rem;
- }
-
- #showing {
-   margin-bottom: 1rem;
- }
- .communities .community { display: none; }
- input[value="all"]:checked ~ .communities .community-irc,
- input[value="irc"]:checked ~ .communities .community-irc { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-discord,
- input[value="discord"]:checked ~ .communities .community-discord { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-telegram,
- input[value="telegram"]:checked ~ .communities .community-telegram { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-matrix,
- input[value="matrix"]:checked ~ .communities .community-matrix { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-email_list,
- input[value="email_list"]:checked ~ .communities .community-email_list { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-reddit,
- input[value="reddit"]:checked ~ .communities .community-reddit { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-forum,
- input[value="forum"]:checked ~ .communities .community-forum { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-newsletter,
- input[value="newsletter"]:checked ~ .communities .community-newsletter { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-merchandise,
- input[value="merchandise"]:checked ~ .communities .community-merchandise { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-multimedia,
- input[value="multimedia"]:checked ~ .communities .community-multimedia { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-learning,
- input[value="learning"]:checked ~ .communities .community-learning { display: flex; }
-
- input[value="all"]:checked ~ .communities .community-miscellaneous,
- input[value="miscellaneous"]:checked ~ .communities .community-miscellaneous { display: flex; }
+  .category>h2 {
+    display: flex;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 1rem;
+  }
+  .category>h2>svg {
+    width: 2em !important;
+    height: 2em !important;
+  }
+  .category.right {
+    border-bottom: 1px solid #f7a41d;
+    border-right: 1px solid #f7a41d;
+    padding-right: 1rem;
+  }
+  .category.left {
+    border-bottom: 1px solid #f7a41d;
+    border-left: 1px solid #f7a41d;
+    padding-left: 1rem;
+  }
+  .category:last-of-type {
+    border-bottom: none;
+    padding-bottom: 2rem;
+  }
+  .category.left>h2>svg {
+    margin-right: 0.5rem;
+  }
+  .category.right>h2 {
+    flex-flow: row-reverse;
+  }
+  .category.right>h2>svg {
+    margin-left: 0.5rem;
+    float: right;
+  }
+  .category.right>.communities {
+    direction: rtl;
+  }
+  .category.right>.communities>* {
+    direction: ltr;
+  }
 </style>
 
 # The Zig community is decentralized
-Anyone is free to start and maintain their own space for the community to gather.
-There is no concept of “official” or “unofficial”, however, each gathering place has its own moderators and rules. 
+Anyone is free to start and maintain their own space for the community to gather: there is no concept of “official” or “unofficial”. Each gathering place has its own moderators and rules.
 
-<form>
-  <input type=radio name="showing" id="radio-all" value="all" checked><label for="radio-all">All</label>
-  <input type=radio name="showing" id="radio-irc" value="irc"><label for="radio-irc">IRC</label>
-  <input type=radio name="showing" id="radio-discord" value="discord"><label for="radio-discord">Discord</label>
-  <input type=radio name="showing" id="radio-telegram" value="telegram"><label for="radio-telegram">Telegram</label>
-  <input type=radio name="showing" id="radio-matrix" value="matrix"><label for="radio-matrix">Matrix</label>
-  <input type=radio name="showing" id="radio-email_list" value="email_list"><label for="radio-email_list">Mailing lists</label>
-  <input type=radio name="showing" id="radio-reddit" value="reddit"><label for="radio-reddit">Reddit</label>
-  <input type=radio name="showing" id="radio-forum" value="forum"><label for="radio-forum">Forums</label>
-  <input type=radio name="showing" id="radio-newsletter" value="newsletter"><label for="radio-newsletter">Newsletters</label>
-  <input type=radio name="showing" id="radio-merchandise" value="merchandise"><label for="radio-merchandise">Merchandise</label>
-  <br/>
-  <input type=radio name="showing" id="radio-multimedia" value="multimedia"><label for="radio-multimedia">Multimedia</label>
-  <input type=radio name="showing" id="radio-learning" value="learning"><label for="radio-learning">Learning</label>
-  <input type=radio name="showing" id="radio-miscellaneous" value="miscellaneous"><label for="radio-miscellaneous">Miscellaneous</label>
+TODO(slimsag)
+- [The Zig community is decentralized](#the-zig-community-is-decentralized)
+  - [Adding your community](#adding-your-community)
 
+<div class="category left">
+  <h2>
+    <!-- https://materialdesignicons.com/icon/book-open-page-variant -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Learning</title>
+        <path fill="currentColor" d="M19 2L14 6.5V17.5L19 13V2M6.5 5C4.55 5 2.45 5.4 1 6.5V21.16C1 21.41 1.25 21.66 1.5 21.66C1.6 21.66 1.65 21.59 1.75 21.59C3.1 20.94 5.05 20.5 6.5 20.5C8.45 20.5 10.55 20.9 12 22C13.35 21.15 15.8 20.5 17.5 20.5C19.15 20.5 20.85 20.81 22.25 21.56C22.35 21.61 22.4 21.59 22.5 21.59C22.75 21.59 23 21.34 23 21.09V6.5C22.4 6.05 21.75 5.75 21 5.5V19C19.9 18.65 18.7 18.5 17.5 18.5C15.8 18.5 13.35 19.15 12 20V6.5C10.55 5.4 8.45 5 6.5 5Z" />
+    </svg>
+    Learning
+  </h2>
   <div class="communities">
-    {{< communities/places "irc" >}}
-    {{< communities/places "discord" >}}
-    {{< communities/places "telegram" >}}
-    {{< communities/places "matrix" >}}
-    {{< communities/places "email_list" >}}
-    {{< communities/places "reddit" >}}
-    {{< communities/places "forum" >}}
-    {{< communities/places "newsletter" >}}
-    {{< communities/places "merchandise" >}}
-    {{< communities/places "multimedia" >}}
     {{< communities/places "learning" >}}
-    {{< communities/places "miscellaneous" >}}
   </div>
-</form>
+</div>
+
+<div class="category right">
+  <h2>
+    <!-- https://materialdesignicons.com/icon/help-circle -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z" />
+    </svg>
+    Ask questions
+  </h2>
+  <div class="communities">
+    {{< communities/places "help" >}}
+  </div>
+</div>
+
+<div class="category left">
+  <h2>
+    <!-- https://materialdesignicons.com/icon/newspaper-variant-outline -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Newsletter</title>
+        <path fill="currentColor" d="M20 5L20 19L4 19L4 5H20M20 3H4C2.89 3 2 3.89 2 5V19C2 20.11 2.89 21 4 21H20C21.11 21 22 20.11 22 19V5C22 3.89 21.11 3 20 3M18 15H6V17H18V15M10 7H6V13H10V7M12 9H18V7H12V9M18 11H12V13H18V11Z" />
+    </svg>
+    News
+  </h2>
+  <div class="communities">
+    {{< communities/places "news" >}}
+  </div>
+</div>
+
+<div class="category right">
+  <h2>
+    <!-- https://materialdesignicons.com/icon/forum -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Forum</title>
+        <path fill="currentColor" d="M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z" />
+    </svg>
+    Forums & mailing lists
+  </h2>
+  <div class="communities">
+    {{< communities/places "forums" >}}
+  </div>
+</div>
+
+<div class="category left">
+  <h2>
+    <!-- TODO -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Forum</title>
+        <path fill="currentColor" d="M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z" />
+    </svg>
+    Multimedia
+  </h2>
+  <div class="communities">
+    {{< communities/places "multimedia" >}}
+  </div>
+</div>
+
+<div class="category right">
+  <h2>
+    <!-- TODO -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Forum</title>
+        <path fill="currentColor" d="M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z" />
+    </svg>
+    Chat
+  </h2>
+  <div class="communities">
+    {{< communities/places "chat" >}}
+  </div>
+</div>
+
+<div class="category left">
+  <h2>
+    <!-- TODO -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Forum</title>
+        <path fill="currentColor" d="M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z" />
+    </svg>
+    Localized
+  </h2>
+  <div class="communities">
+    {{< communities/places "localized" >}}
+  </div>
+</div>
+
+<div class="category right">
+  <h2>
+    <!-- TODO -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Forum</title>
+        <path fill="currentColor" d="M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z" />
+    </svg>
+    Merchandise
+  </h2>
+  <div class="communities">
+    {{< communities/places "merchandise" >}}
+  </div>
+</div>
+
+<div class="category left">
+  <h2>
+    <!-- TODO -->
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <title>Forum</title>
+        <path fill="currentColor" d="M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z" />
+    </svg>
+    Other
+  </h2>
+  <div class="communities">
+    {{< communities/places "other" >}}
+  </div>
+</div>
 
 ## Adding your community
-If you started a new Zig community, you can add it to the list above by [sending us a PR on GitHub](https://github.com/ziglang/www.ziglang.org).
+If you started a new Zig community, add to this page by [sending us a PR on GitHub](https://github.com/ziglang/www.ziglang.org)
