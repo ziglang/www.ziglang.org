@@ -170,7 +170,6 @@ async function loadRecords() {
             d.maxrss = +d.maxrss;
         });
 
-        // The order of the sort and timestamp adjustment must be like this, need to understand why.
         data.sort((a, b) => {
             return orderZigVersions(a.zig_version, b.zig_version);
         });
@@ -288,21 +287,33 @@ function makeLabel(obj, key) {
 }
 
 function orderZigVersions(a, b) {
-    const a_array = parseZigVersion(a);
-    const b_array = parseZigVersion(b);
+    a = parseZigVersion(a);
+    b = parseZigVersion(b);
+
+    // Loop through the three semvar components and revision
     for (let i = 0; i < 4; i += 1) {
-        if (a_array[i] != b_array[i]) return a_array[i] > b_array[i];
+        if (a[i] > b[i]) {
+            return 1;
+        } else if (a[i] < b[i]) {
+            return -1;
+        }
     }
     return 0;
 }
 
 function parseZigVersion(zig_version) {
-    // It looks like "0.9.0-dev.1564+08dc84024"
+    // Input examples:
+    // "0.9.0-dev.1564+08dc84024"
+    // "0.10.0-dev.23+44061cd76"
+    // "0.9.0" (no commits since release)
+
     // Return something we can order by.
     const parts = zig_version.split("-");
     const semver = parts[0].split(".");
-    const rev = (parts.length === 1) ? 0 : parts[1].split(".")[1].split("+")[0];
-    return [+semver[0], +semver[1], +semver[2], +rev];
+    // If no revision is present, use the # 1,000,000 so it is sorted as occuring AFTER all the other revisions
+    const rev = (parts.length === 1) ? 1000000 : parts[1].split(".")[1].split("+")[0];
+    // We need to use parseInt since '"10" > "9" === false' in JS
+    return [parseInt(semver[0]), parseInt(semver[1]), parseInt(semver[2]), parseInt(rev)];
 }
 
 async function loadDataAndMakeCharts() {
