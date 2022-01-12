@@ -68,4 +68,5 @@ ZSF یک سازمان کوچک است و از منابع پولی به نحو ا
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
+![](/scaleway.png)
 {{% /sponsor-logos %}}

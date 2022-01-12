@@ -62,6 +62,7 @@ As seguintes empresas estão oferecendo alguns de seus serviços para a Zig Soft
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
+![](/scaleway.png)
 {{% /sponsor-logos %}}
 
 
