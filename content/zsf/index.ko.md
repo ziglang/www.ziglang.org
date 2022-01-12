@@ -62,6 +62,7 @@ GitHub Sponsors 외의 다른 방법으로 기부할 때 필요한 정보입니�
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
+![](/scaleway.png)
 {{% /sponsor-logos %}}
 
 

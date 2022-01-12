@@ -62,6 +62,7 @@ Die folgenden Unternehmen stellen ihre Dienste der Zig Software Foundation koste
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
+![](/scaleway.png)
 {{% /sponsor-logos %}}
 
 

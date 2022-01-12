@@ -62,6 +62,7 @@ ZSF مؤسسة صغيرة وتقوم بتوظيف مواردها المالية 
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
+![](/scaleway.png)
 {{% /sponsor-logos %}}
 
 

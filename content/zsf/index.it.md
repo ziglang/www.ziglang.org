@@ -66,4 +66,5 @@ Le seguenti compagnie stanno offrendo alcuni dei loro servizi alla Zig Software 
 {{% sponsor-logos "services" %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
+![](/scaleway.png)
 {{% /sponsor-logos %}}
