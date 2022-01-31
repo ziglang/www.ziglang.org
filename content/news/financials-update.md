@@ -10,5 +10,5 @@ The Zig Software Foundation keeps public record of its financial status. In the 
 
 Being aware of the financials behind the operations of a non-profit foundaton can give you invaluable insight that you would not be able to get otherwise, [so we warmly recommend you take a look at the newly published data](https://docs.google.com/spreadsheets/d/14_ljFHGFXY5NhBhlfjgkO0RZHqeVv04fAmCxw3ZusYc/edit#gid=99104331).
 
-Kind regards,
+Kind regards,  
 Loris Cro
