@@ -3,18 +3,18 @@ title: Accueil
 mobile_menu_title: "Accueil"
 ---
 {{< slogan get_started="DÉBUTER" docs="Documentation" notes="Historique" lang="fr" >}}
-Zig est un langage de programmation générique et une chaîne de compilation ayant pour objectifs la **robustesse**, l'**optimalité** et la **réutilisation du code**.
+Zig est un langage de programmation généraliste ainsi qu'une toolchain ayant pour objectifs la **robustesse**, l'**optimisation** et la **réutilisation du code**.
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
 {{% div class="features" %}}
 
 # ⚡ Un langage simple
-L'effort doit se faire sur la correction de l'application et non votre connaissance du langage.
+Concentrez-vous sur le debug de votre application et non sur le debug de votre connaissance du langage.
 
 - Pas de flots de contrôle cachés.
 - Pas d'allocations mémoire cachées.
-- Pas de pré-processeur ou de macros.
+- Pas de préprocesseur ni de macros.
 
 # ⚡ Comptime
 Une nouvelle approche de la métaprogrammation basée sur une exécution à la compilation et une évaluation paresseuse.
@@ -23,12 +23,12 @@ Une nouvelle approche de la métaprogrammation basée sur une exécution à la c
 - Manipulez les types comme des valeurs sans coût à l'exécution.
 - Comptime émule l'architecture cible.
 
-# ⚡ Performance ET sécurité
-Écrivez rapidement du code clair et capable de gérer toutes les conditions d'erreur.
+# ⚡ Compiler avec Zig
+Améliorer progressivement votre code source C/C++/Zig.
 
-- Le langage vous guide dans la gestion des erreurs.
-- Les vérifications à l'exécution configurables vous aident à trouver le bon compromis entre sécurité et performance.
-- Profitez du type « vecteur » pour exprimer des instructions SIMD portables.
+- Remplacez votre compilateur C/C++ par Zig, il est sans dépendance et gère la compilation croisées "out-of-the-box".
+- Profitez de `zig build` pour créer un environnement de développement égal et constant sur toutes plateformes.
+- Ajoutez une partie Zig à vos projets C/C++, le LTO multi-langage est activé par défaut.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
@@ -61,8 +61,8 @@ Une nouvelle approche de la métaprogrammation basée sur une exécution à la c
 
 {{% div class="community-message" %}}
 # La communauté Zig est décentralisée
-Tout le monde peut démarrer et maintenir un canal de communication de son choix.
-Il n'y a pas un canal « officiel », en revanche, chaque canal de communication a ses propres modérateurs et règles.
+Tout le monde est libre de créer et de maintenir son propre espace d'échange et de communication pour la communauté.
+Il n'y a pas de canal « officiel », en revanche, chaque espace a ses propres modérateurs et ses propres règles.
 
 <div style="">
 <h1>
@@ -92,7 +92,7 @@ Les contributeurs doivent suivre le [code de conduite de Zig](https://github.com
 ## La ZSF est une organisation à but non lucratif 501(c)(3).
 
 La fondation Zig (*Zig Software Foundation*) est une organisation à but non lucratif fondée en 2020 par Andrew Kelley, le créateur de Zig, avec pour objectif de prendre en charge le développement du langage.
-La ZSF est actuellement en capacité de fournir du travail payé à un taux compétitif à un petit nombre de contributeurs.
+La ZSF est actuellement en capacité d'offrir du travail rémunéré à un taux compétitif à un petit nombre de contributeurs.
 Nous espérons à l'avenir pouvoir étendre cette offre à d'autres développeurs.
 
 La fondation Zig est soutenue par des dons.

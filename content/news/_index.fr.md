@@ -1,6 +1,6 @@
 ---
-title: Nouvelles
-menu_title: "Nouvelles"
-mobile_menu_title: "Nouvelles"
+title: Actualités
+menu_title: "Actualités"
+mobile_menu_title: "Actualités"
 layout: news-list
 ---
