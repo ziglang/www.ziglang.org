@@ -360,6 +360,7 @@
         </ul></li>
         <li><a id="toc-Variables" href="#Variables">Variables</a>
         <ul>
+            <li><a id="toc-Identifiers" href="#Identifiers">Identifiers</a></li>
             <li><a id="toc-Container-Level-Variables" href="#Container-Level-Variables">Container Level Variables</a></li>
             <li><a id="toc-Static-Local-Variables" href="#Static-Local-Variables">Static Local Variables</a></li>
             <li><a id="toc-Thread-Local-Variables" href="#Thread-Local-Variables">Thread Local Variables</a></li>
@@ -1678,7 +1679,7 @@
 <span class="line">2/2 test &quot;expect this to succeed&quot;... OK</span>
 <span class="line">1 passed; 0 skipped; 1 failed.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       
       <h3 id="Skip-Tests"><a href="#toc-Skip-Tests">Skip Tests</a> <a class="hdr" href="#Skip-Tests">§</a></h3>
@@ -1746,7 +1747,7 @@
 <span class="line">    <span class="tok-kw">try</span> std.testing.expect(list.items.len == <span class="tok-number">1</span>);</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
 <span class="line">1/1 test &quot;detect leak&quot;... OK</span>
-<span class="line">[gpa] (err): memory address 0x7fadef21f000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f4afedae000 leaked:</span>
 <span class="line"><span class="t1_0">/workspace/_debug/staging/lib/zig/std/array_list.zig:332:69</span>: <span class="t2_0">0x20ce89 in std.array_list.ArrayListAligned(u21,null).ensureTotalCapacityPrecise (test)</span></span>
 <span class="line">                const new_memory = try self.allocator.reallocAtLeast(self.allocatedSlice(), new_capacity);</span>
 <span class="line">                                                                    <span class="t32_1">^</span></span>
@@ -1777,7 +1778,7 @@
 <span class="line">1 errors were logged.</span>
 <span class="line">1 tests leaked memory.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>See also:</p><ul>
 <li><a href="#defer">defer</a></li>
@@ -1861,13 +1862,38 @@
       A variable is a unit of <a href="#Memory">Memory</a> storage.
       </p>
       <p>
-      Variables are never allowed to shadow identifiers from an outer scope.
-      </p>
-      <p>
       It is generally preferable to use <code><span class="line"><span class="tok-kw">const</span></span></code> rather than
       <code><span class="line"><span class="tok-kw">var</span></span></code> when declaring a variable. This causes less work for both
       humans and computers to do when reading code, and creates more optimization opportunities.
       </p>
+
+      <h3 id="Identifiers"><a href="#toc-Identifiers">Identifiers</a> <a class="hdr" href="#Identifiers">§</a></h3>
+
+      <p>
+      Variable identifiers are never allowed to shadow identifiers from an outer scope.
+      </p>
+      <p>
+      Identifiers must start with an alphabetic character or underscore and may be followed
+      by any number of alphanumeric characters or underscores.
+      They must not overlap with any keywords. See <a href="#Keyword-Reference">Keyword Reference</a>.
+      </p>
+      <p>
+      If a name that does not fit these requirements is needed, such as for linking with external libraries, the <code><span class="line">@&quot;&quot;</span></code> syntax may be used.
+      </p>
+      <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> @&quot;identifier with spaces in it&quot; = <span class="tok-number">0xff</span>;</span>
+<span class="line"><span class="tok-kw">const</span> @&quot;1SmallStep4Man&quot; = <span class="tok-number">112358</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> c = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).c;</span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;c&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">@&quot;error&quot;</span>() <span class="tok-type">anyopaque</span>;</span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;c&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">@&quot;fstat$INODE64&quot;</span>(fd: c.fd_t, buf: *c.Stat) <span class="tok-type">c_int</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> Color = <span class="tok-kw">enum</span> {</span>
+<span class="line">  red,</span>
+<span class="line">  @&quot;really red&quot;,</span>
+<span class="line">};</span>
+<span class="line"><span class="tok-kw">const</span> color: Color = .@&quot;really red&quot;;</span></code></pre></figure>
+      
+
       <h3 id="Container-Level-Variables"><a href="#toc-Container-Level-Variables">Container Level Variables</a> <a class="hdr" href="#Container-Level-Variables">§</a></h3>
 
       <p>
@@ -2063,7 +2089,7 @@
       </p>
       <p>
       Operators such as <code><span class="line">+</span></code> and <code><span class="line">-</span></code> cause undefined behavior on
-      integer overflow. Alternative operators are provided for wrapping and saturating arithmetic on all targets.  
+      integer overflow. Alternative operators are provided for wrapping and saturating arithmetic on all targets.
       <code><span class="line">+%</span></code> and <code><span class="line">-%</span></code> perform wrapping arithmetic
       while <code><span class="line">+|</span></code> and <code><span class="line">-|</span></code> perform saturating arithmetic.
       </p>
@@ -3100,32 +3126,32 @@
       or using the shorthand function <code><span class="line">std.meta.Vector</span></code>.
       </p>
       <p>
-      Vectors support the same builtin operators as their underlying base types. These operations are performed 
+      Vectors support the same builtin operators as their underlying base types. These operations are performed
       element-wise, and return a vector of the same length as the input vectors. This includes:
       </p>
       <ul>
-          <li>Arithmetic (<code><span class="line">+</span></code>, <code><span class="line">-</span></code>, <code><span class="line">/</span></code>, <code><span class="line">*</span></code>, 
-                         <code><span class="line"><span class="tok-builtin">@divFloor</span></span></code>, <code><span class="line"><span class="tok-builtin">@sqrt</span></span></code>, <code><span class="line"><span class="tok-builtin">@ceil</span></span></code>, 
+          <li>Arithmetic (<code><span class="line">+</span></code>, <code><span class="line">-</span></code>, <code><span class="line">/</span></code>, <code><span class="line">*</span></code>,
+                         <code><span class="line"><span class="tok-builtin">@divFloor</span></span></code>, <code><span class="line"><span class="tok-builtin">@sqrt</span></span></code>, <code><span class="line"><span class="tok-builtin">@ceil</span></span></code>,
                          <code><span class="line"><span class="tok-builtin">@log</span></span></code>, etc.)</li>
-          <li>Bitwise operators (<code><span class="line">&gt;&gt;</span></code>, <code><span class="line">&lt;&lt;</span></code>, <code><span class="line">&amp;</span></code>, 
+          <li>Bitwise operators (<code><span class="line">&gt;&gt;</span></code>, <code><span class="line">&lt;&lt;</span></code>, <code><span class="line">&amp;</span></code>,
                                  <code><span class="line">|</span></code>, <code><span class="line">~</span></code>, etc.)</li>
           <li>Comparison operators (<code><span class="line">&lt;</span></code>, <code><span class="line">&gt;</span></code>, <code><span class="line">==</span></code>, etc.)</li>
       </ul>
       <p>
-      It is prohibited to use a math operator on a mixture of scalars (individual numbers) and vectors. 
-      Zig provides the <a href="#splat">@splat</a> builtin to easily convert from scalars to vectors, and it supports <a href="#reduce">@reduce</a> 
-      and array indexing syntax to convert from vectors to scalars. Vectors also support assignment to and from 
+      It is prohibited to use a math operator on a mixture of scalars (individual numbers) and vectors.
+      Zig provides the <a href="#splat">@splat</a> builtin to easily convert from scalars to vectors, and it supports <a href="#reduce">@reduce</a>
+      and array indexing syntax to convert from vectors to scalars. Vectors also support assignment to and from
       fixed-length arrays with comptime known length.
       </p>
       <p>
       For rearranging elements within and between vectors, Zig provides the <a href="#shuffle">@shuffle</a> and <a href="#select">@select</a> functions.
       </p>
       <p>
-      Operations on vectors shorter than the target machine's native SIMD size will typically compile to single SIMD 
-      instructions, while vectors longer than the target machine's native SIMD size will compile to multiple SIMD 
-      instructions. If a given operation doesn't have SIMD support on the target architecture, the compiler will default 
-      to operating on each vector element one at a time. Zig supports any comptime-known vector length up to 2^32-1, 
-      although small powers of two (2-64) are most typical. Note that excessively long vector lengths (e.g. 2^20) may 
+      Operations on vectors shorter than the target machine's native SIMD size will typically compile to single SIMD
+      instructions, while vectors longer than the target machine's native SIMD size will compile to multiple SIMD
+      instructions. If a given operation doesn't have SIMD support on the target architecture, the compiler will default
+      to operating on each vector element one at a time. Zig supports any comptime-known vector length up to 2^32-1,
+      although small powers of two (2-64) are most typical. Note that excessively long vector lengths (e.g. 2^20) may
       result in compiler crashes on current versions of Zig.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">vector_example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -3183,7 +3209,7 @@
 <li><a href="#reduce">@reduce</a></li>
 </ul>
 
-      
+
       
 
       <h2 id="Pointers"><a href="#toc-Pointers">Pointers</a> <a class="hdr" href="#Pointers">§</a></h2>
@@ -3477,7 +3503,7 @@
 <span class="line">    <span class="tok-kw">const</span> int_slice = std.mem.bytesAsSlice(<span class="tok-type">u32</span>, <span class="tok-builtin">@alignCast</span>(<span class="tok-number">4</span>, slice4));</span>
 <span class="line">    <span class="tok-kw">return</span> int_slice[<span class="tok-number">0</span>];</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;pointer alignment safety&quot;... thread 100167 panic: incorrect alignment</span>
+<span class="line">1/1 test &quot;pointer alignment safety&quot;... thread 100470 panic: incorrect alignment</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:10:63</span>: <span class="t2_0">0x207f5c in foo (test)</span></span>
 <span class="line">    const int_slice = std.mem.bytesAsSlice(u32, @alignCast(4, slice4));</span>
 <span class="line">                                                              <span class="t32_1">^</span></span>
@@ -3500,7 +3526,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       
 
@@ -3589,7 +3615,7 @@
 <span class="line">    <span class="tok-comment">// Note that `slice.ptr` does not invoke safety checking, while `&amp;slice[0]`</span></span>
 <span class="line">    <span class="tok-comment">// asserts that the slice has len &gt;= 1.</span></span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;basic slices&quot;... thread 100335 panic: index out of bounds</span>
+<span class="line">1/1 test &quot;basic slices&quot;... thread 100638 panic: index out of bounds</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:22:10</span>: <span class="t2_0">0x207af3 in test &quot;basic slices&quot; (test)</span></span>
 <span class="line">    slice[10] += 1;</span>
 <span class="line">         <span class="t32_1">^</span></span>
@@ -3609,7 +3635,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>This is one reason we prefer slices to pointers.</p>
       <figure><figcaption class="zig-cap"><cite class="file">slices.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -3687,8 +3713,8 @@
 <span class="line">All 1 tests passed.</span>
 </samp></pre></figure>
       <p>
-      Sentinel-terminated slices can also be created using a variation of the slice syntax 
-      <code><span class="line">data[start..end :x]</span></code>, where <code><span class="line">data</span></code> is a many-item pointer, 
+      Sentinel-terminated slices can also be created using a variation of the slice syntax
+      <code><span class="line">data[start..end :x]</span></code>, where <code><span class="line">data</span></code> is a many-item pointer,
       array or slice and <code><span class="line">x</span></code> is the sentinel value.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">null_terminated_slicing.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -3706,7 +3732,7 @@
 <span class="line">All 1 tests passed.</span>
 </samp></pre></figure>
       <p>
-      Sentinel-terminated slicing asserts that the element in the sentinel position of the backing data is 
+      Sentinel-terminated slicing asserts that the element in the sentinel position of the backing data is
       actually the sentinel value. If this is not the case, safety-protected <a href="#Undefined-Behavior">Undefined Behavior</a> results.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -3714,17 +3740,17 @@
 <span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;sentinel mismatch&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">var</span> array = [_]<span class="tok-type">u8</span>{ <span class="tok-number">3</span>, <span class="tok-number">2</span>, <span class="tok-number">1</span>, <span class="tok-number">0</span> };</span>
-<span class="line">    </span>
-<span class="line">    <span class="tok-comment">// Creating a sentinel-terminated slice from the array with a length of 2 </span></span>
-<span class="line">    <span class="tok-comment">// will result in the value `1` occupying the sentinel element position. </span></span>
-<span class="line">    <span class="tok-comment">// This does not match the indicated sentinel value of `0` and will lead </span></span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// Creating a sentinel-terminated slice from the array with a length of 2</span></span>
+<span class="line">    <span class="tok-comment">// will result in the value `1` occupying the sentinel element position.</span></span>
+<span class="line">    <span class="tok-comment">// This does not match the indicated sentinel value of `0` and will lead</span></span>
 <span class="line">    <span class="tok-comment">// to a runtime panic.</span></span>
 <span class="line">    <span class="tok-kw">var</span> runtime_length: <span class="tok-type">usize</span> = <span class="tok-number">2</span>;</span>
 <span class="line">    <span class="tok-kw">const</span> slice = array[<span class="tok-number">0</span>..runtime_length :<span class="tok-number">0</span>];</span>
 <span class="line"></span>
 <span class="line">    _ = slice;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;sentinel mismatch&quot;... thread 100604 panic: sentinel mismatch</span>
+<span class="line">1/1 test &quot;sentinel mismatch&quot;... thread 100907 panic: sentinel mismatch</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:12:24</span>: <span class="t2_0">0x2078ba in test &quot;sentinel mismatch&quot; (test)</span></span>
 <span class="line">    const slice = array[0..runtime_length :0];</span>
 <span class="line">                       <span class="t32_1">^</span></span>
@@ -3744,7 +3770,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>See also:</p><ul>
 <li><a href="#Sentinel-Terminated-Pointers">Sentinel-Terminated Pointers</a></li>
@@ -3890,7 +3916,7 @@
 <span class="line">        .last = &amp;node,</span>
 <span class="line">        .len = <span class="tok-number">1</span>,</span>
 <span class="line">    };</span>
-<span class="line">    </span>
+<span class="line"></span>
 <span class="line">    <span class="tok-comment">// When using a pointer to a struct, fields can be accessed directly,</span></span>
 <span class="line">    <span class="tok-comment">// without explicitly dereferencing the pointer.</span></span>
 <span class="line">    <span class="tok-comment">// So you can do</span></span>
@@ -4252,7 +4278,7 @@
       </p>
       <p>
       The fields are implicitly named using numbers starting from 0. Because their names are integers,
-      the <code><span class="line">@&quot;0&quot;</span></code> syntax must be used to access them. Names inside <code><span class="line">@&quot;&quot;</span></code> are always recognised as identifiers.
+      the <code><span class="line">@&quot;0&quot;</span></code> syntax must be used to access them. Names inside <code><span class="line">@&quot;&quot;</span></code> are always recognised as <a href="#Identifiers">identifiers</a>.
       </p>
       <p>
       Like arrays, tuples have a .len field, can be indexed and  work with the ++ and ** operators. They can also be iterated over with <a href="#inline-for">inline for</a>.
@@ -4521,7 +4547,7 @@
 <span class="line">    <span class="tok-kw">var</span> payload = Payload{ .int = <span class="tok-number">1234</span> };</span>
 <span class="line">    payload.float = <span class="tok-number">12.34</span>;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;simple union&quot;... thread 101775 panic: access of inactive union field</span>
+<span class="line">1/1 test &quot;simple union&quot;... thread 102079 panic: access of inactive union field</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:8:12</span>: <span class="t2_0">0x2078cb in test &quot;simple union&quot; (test)</span></span>
 <span class="line">    payload.float = 12.34;</span>
 <span class="line">           <span class="t32_1">^</span></span>
@@ -4541,7 +4567,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>You can activate another field by assigning the entire union:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test_simple_union.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -4818,7 +4844,7 @@
 
       <h3 id="Shadowing"><a href="#toc-Shadowing">Shadowing</a> <a class="hdr" href="#Shadowing">§</a></h3>
 
-      <p>Identifiers are never allowed to "hide" other identifiers by using the same name:</p>
+      <p><a href="#Identifiers">Identifiers</a> are never allowed to "hide" other identifiers by using the same name:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> pi = <span class="tok-number">3.14</span>;</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;inside test block&quot;</span> {</span>
@@ -4836,8 +4862,8 @@
 <span class="line"></span></span>
 </samp></pre></figure>
       <p>
-      Because of this, when you read Zig code you can always rely on an identifier to consistently mean 
-      the same thing within the scope it is defined. Note that you can, however, use the same name if 
+      Because of this, when you read Zig code you can always rely on an identifier to consistently mean
+      the same thing within the scope it is defined. Note that you can, however, use the same name if
       the scopes are separate:
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">test_scopes.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;separate scopes&quot;</span> {</span>
@@ -4876,7 +4902,7 @@
 <span class="line">        <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span> =&gt; <span class="tok-number">0</span>,</span>
 <span class="line"></span>
 <span class="line">        <span class="tok-comment">// Ranges can be specified using the ... syntax. These are inclusive</span></span>
-<span class="line">        <span class="tok-comment">// both ends.</span></span>
+<span class="line">        <span class="tok-comment">// of both ends.</span></span>
 <span class="line">        <span class="tok-number">5</span>...<span class="tok-number">100</span> =&gt; <span class="tok-number">1</span>,</span>
 <span class="line"></span>
 <span class="line">        <span class="tok-comment">// Branches can be arbitrarily complex.</span></span>
@@ -5726,7 +5752,7 @@
       </p>
       <h3 id="Basics"><a href="#toc-Basics">Basics</a> <a class="hdr" href="#Basics">§</a></h3>
 
-      <figure><figcaption class="zig-cap"><cite class="file">test_unreachable.zig</cite></figcaption><pre><code><span class="line"><span class="tok-comment">// unreachable is used to assert that control flow will never happen upon a</span></span>
+      <figure><figcaption class="zig-cap"><cite class="file">test_unreachable.zig</cite></figcaption><pre><code><span class="line"><span class="tok-comment">// unreachable is used to assert that control flow will never reach a</span></span>
 <span class="line"><span class="tok-comment">// particular location:</span></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;basic math&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">const</span> x = <span class="tok-number">1</span>;</span>
@@ -5748,7 +5774,7 @@
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;this will fail&quot;</span> {</span>
 <span class="line">    assert(<span class="tok-null">false</span>);</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;this will fail&quot;... thread 103725 panic: reached unreachable code</span>
+<span class="line">1/1 test &quot;this will fail&quot;... thread 104029 panic: reached unreachable code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:3:14</span>: <span class="t2_0">0x207dab in assert (test)</span></span>
 <span class="line">    if (!ok) unreachable; // assertion failure</span>
 <span class="line">             <span class="t32_1">^</span></span>
@@ -5771,7 +5797,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       
       <h3 id="At-Compile-Time"><a href="#toc-At-Compile-Time">At Compile-Time</a> <a class="hdr" href="#At-Compile-Time">§</a></h3>
@@ -6532,7 +6558,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 105065 panic: PermissionDenied</span>
+<span class="line">thread 105369 panic: PermissionDenied</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x234fc6 in bang2 (test)</span></span>
 <span class="line">    @panic(&quot;PermissionDenied&quot;);</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -7870,7 +7896,7 @@
 <span class="line">FAIL (TestUnexpectedResult)</span>
 <span class="line">0 passed; 0 skipped; 1 failed.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>
       What happened is Zig started interpreting the <code><span class="line">expect</span></code> function with the
@@ -7943,33 +7969,51 @@
       generic data structure.
       </p>
       <p>
-      Here is an example of a generic <code><span class="line">List</span></code> data structure, that we will instantiate with
-          the type <code><span class="line"><span class="tok-type">i32</span></span></code>. In Zig we refer to the type as <code><span class="line">List(<span class="tok-type">i32</span>)</span></code>.
+			Here is an example of a generic <code><span class="line">List</span></code> data structure.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">List</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-type">type</span> {</span>
 <span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
 <span class="line">        items: []T,</span>
 <span class="line">        len: <span class="tok-type">usize</span>,</span>
 <span class="line">    };</span>
-<span class="line">}</span></code></pre></figure>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// The generic List data structure can be instantiated by passing in a type:</span></span>
+<span class="line"><span class="tok-kw">var</span> buffer: [<span class="tok-number">10</span>]<span class="tok-type">i32</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line"><span class="tok-kw">var</span> list = List(<span class="tok-type">i32</span>){</span>
+<span class="line">    .items = &amp;buffer,</span>
+<span class="line">    .len = <span class="tok-number">0</span>,</span>
+<span class="line">};</span></code></pre></figure>
       <p>
-      That's it. It's a function that returns an anonymous <code><span class="line"><span class="tok-kw">struct</span></span></code>. For the purposes of error messages
-          and debugging, Zig infers the name <code><span class="line"><span class="tok-str">&quot;List(i32)&quot;</span></span></code> from the function name and parameters invoked when creating
+      That's it. It's a function that returns an anonymous <code><span class="line"><span class="tok-kw">struct</span></span></code>.
+      To keep the language small and uniform, all aggregate types in Zig are anonymous.
+      For the purposes of error messages and debugging, Zig infers the name
+      <code><span class="line"><span class="tok-str">&quot;List(i32)&quot;</span></span></code> from the function name and parameters invoked when creating
       the anonymous struct.
       </p>
       <p>
-      To keep the language small and uniform, all aggregate types in Zig are anonymous. To give a type
-      a name, we assign it to a constant:
+      To explicitly give a type a name, we assign it to a constant.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> Node = <span class="tok-kw">struct</span> {</span>
-<span class="line">    next: *Node,</span>
-<span class="line">    name: []<span class="tok-type">u8</span>,</span>
+<span class="line">    next: ?*Node,</span>
+<span class="line">    name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">var</span> node_a = Node{</span>
+<span class="line">    .next = <span class="tok-null">null</span>,</span>
+<span class="line">    .name = &amp;<span class="tok-str">&quot;Node A&quot;</span>,</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">var</span> node_b = Node{</span>
+<span class="line">    .next = &amp;node_a,</span>
+<span class="line">    .name = &amp;<span class="tok-str">&quot;Node B&quot;</span>,</span>
 <span class="line">};</span></code></pre></figure>
       <p>
-      This works because all top level declarations are order-independent, and as long as there isn't
-      an actual infinite regression, values can refer to themselves, directly or indirectly. In this case,
-      <code><span class="line">Node</span></code> refers to itself as a pointer, which is not actually an infinite regression, so
-      it works fine.
+      In this example, the <code><span class="line">Node</span></code> struct refers to itself.
+      This works because all top level declarations are order-independent.
+      As long as the compiler can determine the size of the struct, it is free to refer to itself.
+      In this case, <code><span class="line">Node</span></code> refers to itself as a pointer, which has a
+      well-defined size at compile time, so it works fine.
       </p>
       
       <h3 id="Case-Study-print-in-Zig"><a href="#toc-Case-Study-print-in-Zig">Case Study: print in Zig</a> <a class="hdr" href="#Case-Study-print-in-Zig">§</a></h3>
@@ -8423,10 +8467,10 @@
       provided explicitly by the caller, and it can be suspended and resumed any number of times.
       </p>
       <p>
-      The code following the <code><span class="line"><span class="tok-kw">async</span></span></code> callsite runs immediately after the async 
-      function first suspends. When the return value of the async function is needed, 
-      the calling code can <code><span class="line"><span class="tok-kw">await</span></span></code> on the async function frame. 
-      This will suspend the calling code until the async function completes, at which point 
+      The code following the <code><span class="line"><span class="tok-kw">async</span></span></code> callsite runs immediately after the async
+      function first suspends. When the return value of the async function is needed,
+      the calling code can <code><span class="line"><span class="tok-kw">await</span></span></code> on the async function frame.
+      This will suspend the calling code until the async function completes, at which point
       execution resumes just after the <code><span class="line"><span class="tok-kw">await</span></span></code> callsite.
       </p>
       <p>
@@ -8542,8 +8586,8 @@
       in standard code.
       </p>
       <p>
-      However, it is possible to have an <code><span class="line"><span class="tok-kw">async</span></span></code> call 
-      without a matching <code><span class="line"><span class="tok-kw">await</span></span></code>. Upon completion of the async function, 
+      However, it is possible to have an <code><span class="line"><span class="tok-kw">async</span></span></code> call
+      without a matching <code><span class="line"><span class="tok-kw">await</span></span></code>. Upon completion of the async function,
       execution would continue at the most recent <code><span class="line"><span class="tok-kw">async</span></span></code> callsite or <code><span class="line"><span class="tok-kw">resume</span></span></code> callsite,
       and the return value of the async function would be lost.
       </p>
@@ -8581,8 +8625,8 @@
       </p>
       <p>
       <code><span class="line"><span class="tok-kw">await</span></span></code> is a suspend point, and takes as an operand anything that
-      coerces to <code><span class="line"><span class="tok-kw">anyframe</span>-&gt;T</span></code>. Calling <code><span class="line"><span class="tok-kw">await</span></span></code> on 
-      the frame of an async function will cause execution to continue at the 
+      coerces to <code><span class="line"><span class="tok-kw">anyframe</span>-&gt;T</span></code>. Calling <code><span class="line"><span class="tok-kw">await</span></span></code> on
+      the frame of an async function will cause execution to continue at the
       <code><span class="line"><span class="tok-kw">await</span></span></code> callsite once the target function completes.
       </p>
       <p>
@@ -9663,8 +9707,8 @@
       <p>This is equivalent to:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">void</span> {}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-obj test.zig</kbd></span>
 </samp></pre></figure>
-      <p>Note that even when using <code><span class="line"><span class="tok-kw">export</span></span></code>, <code><span class="line">@&quot;foo&quot;</span></code> syntax can
-      be used to choose any string for the symbol name:</p>
+      <p>Note that even when using <code><span class="line"><span class="tok-kw">export</span></span></code>, the <code><span class="line">@&quot;foo&quot;</span></code> syntax for
+      <a href="#Identifiers">identifiers</a> can be used to choose any string for the symbol name:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">@&quot;A function name that is a complete sentence.&quot;</span>() <span class="tok-type">void</span> {}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-obj test.zig</kbd></span>
 </samp></pre></figure>
       <p>
@@ -9957,7 +10001,7 @@
 <span class="line">    <span class="tok-kw">var</span> b: <span class="tok-type">u8</span> = <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, a);</span>
 <span class="line">    _ = b;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;integer cast panic&quot;... thread 109080 panic: integer cast truncated bits</span>
+<span class="line">1/1 test &quot;integer cast panic&quot;... thread 109384 panic: integer cast truncated bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:3:17</span>: <span class="t2_0">0x207885 in test &quot;integer cast panic&quot; (test)</span></span>
 <span class="line">    var b: u8 = @intCast(u8, a);</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -9977,7 +10021,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>
       To truncate the significant bits of a number out of range of the destination type, use <a href="#truncate">@truncate</a>.
@@ -10036,7 +10080,9 @@
 
       <pre><code><span class="line"><span class="tok-builtin">@intToPtr</span>(<span class="tok-kw">comptime</span> DestType: <span class="tok-type">type</span>, address: <span class="tok-type">usize</span>) DestType</span></code></pre>
       <p>
-      Converts an integer to a <a href="#Pointers">pointer</a>. To convert the other way, use <a href="#ptrToInt">@ptrToInt</a>.
+      Converts an integer to a <a href="#Pointers">pointer</a>. To convert the other way, use <a href="#ptrToInt">@ptrToInt</a>. Casting an address of 0 to a destination type
+      which in not <a href="#Optional-Pointers">optional</a> and does not have the <code><span class="line"><span class="tok-kw">allowzero</span></span></code> attribute will result in a
+      <a href="#Pointer-Cast-Invalid-Null">Pointer Cast Invalid Null</a> panic when runtime safety checks are enabled.
       </p>
       <p>
       If the destination pointer type does not allow address zero and <code><span class="line">address</span></code>
@@ -10173,7 +10219,8 @@
       <pre><code><span class="line"><span class="tok-builtin">@mod</span>(numerator: T, denominator: T) T</span></code></pre>
       <p>
       Modulus division. For unsigned integers this is the same as
-      <code><span class="line">numerator % denominator</span></code>. Caller guarantees <code><span class="line">denominator &gt; <span class="tok-number">0</span></span></code>.
+      <code><span class="line">numerator % denominator</span></code>. Caller guarantees <code><span class="line">denominator &gt; <span class="tok-number">0</span></span></code>, otherwise the
+      operation will result in a <a href="#Remainder-Division-by-Zero">Remainder Division by Zero</a> when runtime safety checks are enabled.
       </p>
       <ul>
           <li><code><span class="line"><span class="tok-builtin">@mod</span>(-<span class="tok-number">5</span>, <span class="tok-number">3</span>) == <span class="tok-number">1</span></span></code></li>
@@ -10195,7 +10242,7 @@
                   If no overflow or underflow occurs, returns <code><span class="line"><span class="tok-null">false</span></span></code>.
       </p>
       
-      
+
       <h3 id="panic"><a href="#toc-panic">@panic</a> <a class="hdr" href="#panic">§</a></h3>
 
       <pre><code><span class="line"><span class="tok-builtin">@panic</span>(message: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">noreturn</span></span></code></pre>
@@ -10313,7 +10360,8 @@
       <pre><code><span class="line"><span class="tok-builtin">@rem</span>(numerator: T, denominator: T) T</span></code></pre>
       <p>
       Remainder division. For unsigned integers this is the same as
-      <code><span class="line">numerator % denominator</span></code>. Caller guarantees <code><span class="line">denominator &gt; <span class="tok-number">0</span></span></code>.
+      <code><span class="line">numerator % denominator</span></code>. Caller guarantees <code><span class="line">denominator &gt; <span class="tok-number">0</span></span></code>, otherwise the
+      operation will result in a <a href="#Remainder-Division-by-Zero">Remainder Division by Zero</a> when runtime safety checks are enabled.
       </p>
       <ul>
           <li><code><span class="line"><span class="tok-builtin">@rem</span>(-<span class="tok-number">5</span>, <span class="tok-number">3</span>) == -<span class="tok-number">2</span></span></code></li>
@@ -10365,7 +10413,7 @@
 
       <h3 id="setCold"><a href="#toc-setCold">@setCold</a> <a class="hdr" href="#setCold">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@setCold</span>(is_cold: <span class="tok-type">bool</span>)</span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@setCold</span>(<span class="tok-kw">comptime</span> is_cold: <span class="tok-type">bool</span>)</span></code></pre>
       <p>
       Tells the optimizer that a function is rarely called.
       </p>
@@ -10373,7 +10421,7 @@
 
       <h3 id="setEvalBranchQuota"><a href="#toc-setEvalBranchQuota">@setEvalBranchQuota</a> <a class="hdr" href="#setEvalBranchQuota">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@setEvalBranchQuota</span>(new_quota: <span class="tok-type">u32</span>)</span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@setEvalBranchQuota</span>(<span class="tok-kw">comptime</span> new_quota: <span class="tok-type">u32</span>)</span></code></pre>
       <p>
       Changes the maximum number of backwards branches that compile-time code
       execution can use before giving up and making a compile error.
@@ -10415,7 +10463,7 @@
 
       <h3 id="setFloatMode"><a href="#toc-setFloatMode">@setFloatMode</a> <a class="hdr" href="#setFloatMode">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@setFloatMode</span>(mode: <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).builtin.FloatMode)</span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@setFloatMode</span>(<span class="tok-kw">comptime</span> mode: <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).builtin.FloatMode)</span></code></pre>
       <p>
       Sets the floating point mode of the current scope. Possible values are:
       </p>
@@ -10452,7 +10500,7 @@
 
       <h3 id="setRuntimeSafety"><a href="#toc-setRuntimeSafety">@setRuntimeSafety</a> <a class="hdr" href="#setRuntimeSafety">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@setRuntimeSafety</span>(safety_on: <span class="tok-type">bool</span>) <span class="tok-type">void</span></span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@setRuntimeSafety</span>(<span class="tok-kw">comptime</span> safety_on: <span class="tok-type">bool</span>) <span class="tok-type">void</span></span></code></pre>
       <p>
       Sets whether runtime safety checks are enabled for the scope that contains the function call.
       </p>
@@ -10477,9 +10525,9 @@
 <span class="line">        }</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig -OReleaseFast</kbd></span>
-<span class="line">1/1 test &quot;@setRuntimeSafety&quot;... thread 109447 panic: integer overflow</span>
+<span class="line">1/1 test &quot;@setRuntimeSafety&quot;... thread 109751 panic: integer overflow</span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/7217a6e8561abd881cb50fdc6a0c8981/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/a6bf2569c2ac690324596ba8d366d03f/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>Note: it is <a href="https://github.com/ziglang/zig/issues/978">planned</a> to replace
       <code><span class="line"><span class="tok-builtin">@setRuntimeSafety</span></span></code> with <code>@optimizeFor</code></p>
@@ -10524,7 +10572,7 @@
 </ul>
 
       
-      
+
       <h3 id="shrExact"><a href="#toc-shrExact">@shrExact</a> <a class="hdr" href="#shrExact">§</a></h3>
 
       <pre><code><span class="line"><span class="tok-builtin">@shrExact</span>(value: T, shift_amt: Log2T) T</span></code></pre>
@@ -10898,7 +10946,7 @@
                   If no overflow or underflow occurs, returns <code><span class="line"><span class="tok-null">false</span></span></code>.
       </p>
       
-      
+
       <h3 id="tagName"><a href="#toc-tagName">@tagName</a> <a class="hdr" href="#tagName">§</a></h3>
 
       <pre><code><span class="line"><span class="tok-builtin">@tagName</span>(value: <span class="tok-kw">anytype</span>) [:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span></span></code></pre>
@@ -11196,7 +11244,7 @@
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;safety check&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">unreachable</span>;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;safety check&quot;... thread 110050 panic: reached unreachable code</span>
+<span class="line">1/1 test &quot;safety check&quot;... thread 110354 panic: reached unreachable code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x20784a in test &quot;safety check&quot; (test)</span></span>
 <span class="line">    unreachable;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -11216,7 +11264,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/8fc1a4234e82e5dbe96e03049ab88597/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/330be4281ee5daabce2d90101f21b03a/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <h3 id="Reaching-Unreachable-Code"><a href="#toc-Reaching-Unreachable-Code">Reaching Unreachable Code</a> <a class="hdr" href="#Reaching-Unreachable-Code">§</a></h3>
 
@@ -11245,7 +11293,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110150 panic: reached unreachable code</span>
+<span class="line">thread 110454 panic: reached unreachable code</span>
 <span class="line"><span class="t1_0">/workspace/_debug/staging/lib/zig/std/debug.zig:234:14</span>: <span class="t2_0">0x204e7b in std.debug.assert (test)</span></span>
 <span class="line">    if (!ok) unreachable; // assertion failure</span>
 <span class="line">             <span class="t32_1">^</span></span>
@@ -11290,7 +11338,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110250 panic: index out of bounds</span>
+<span class="line">thread 110554 panic: index out of bounds</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:7:13</span>: <span class="t2_0">0x233fe9 in foo (test)</span></span>
 <span class="line">    return x[5];</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11334,7 +11382,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110350 panic: attempt to cast negative value to unsigned integer</span>
+<span class="line">thread 110654 panic: attempt to cast negative value to unsigned integer</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x22ce17 in main (test)</span></span>
 <span class="line">    var unsigned = @intCast(u32, value);</span>
 <span class="line">                   <span class="t32_1">^</span></span>
@@ -11378,7 +11426,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110450 panic: integer cast truncated bits</span>
+<span class="line">thread 110754 panic: integer cast truncated bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x22ce1c in main (test)</span></span>
 <span class="line">    const byte = @intCast(u8, spartan_count);</span>
 <span class="line">                 <span class="t32_1">^</span></span>
@@ -11434,7 +11482,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110550 panic: integer overflow</span>
+<span class="line">thread 110854 panic: integer overflow</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x22cdff in main (test)</span></span>
 <span class="line">    byte += 1;</span>
 <span class="line">         <span class="t32_1">^</span></span>
@@ -11570,7 +11618,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110851 panic: left shift overflowed bits</span>
+<span class="line">thread 111155 panic: left shift overflowed bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x22ce2b in main (test)</span></span>
 <span class="line">    var y = @shlExact(x, 2);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11610,7 +11658,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 110951 panic: right shift overflowed bits</span>
+<span class="line">thread 111255 panic: right shift overflowed bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x22ce2b in main (test)</span></span>
 <span class="line">    var y = @shrExact(x, 2);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11653,7 +11701,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111051 panic: division by zero</span>
+<span class="line">thread 111355 panic: division by zero</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x22ce09 in main (test)</span></span>
 <span class="line">    var c = a / b;</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -11696,7 +11744,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111151 panic: remainder division by zero or negative value</span>
+<span class="line">thread 111455 panic: remainder division by zero or negative value</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x22ce2b in main (test)</span></span>
 <span class="line">    var c = a % b;</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -11739,7 +11787,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111251 panic: exact division produced remainder</span>
+<span class="line">thread 111555 panic: exact division produced remainder</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x22ce4d in main (test)</span></span>
 <span class="line">    var c = @divExact(a, b);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11780,7 +11828,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111351 panic: attempt to use null value</span>
+<span class="line">thread 111655 panic: attempt to use null value</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x22cebc in main (test)</span></span>
 <span class="line">    var number = optional_number.?;</span>
 <span class="line">                                <span class="t32_1">^</span></span>
@@ -11847,7 +11895,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111518 panic: attempt to unwrap error: UnableToReturnNumber</span>
+<span class="line">thread 111822 panic: attempt to unwrap error: UnableToReturnNumber</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x234134 in getNumberOrFail (test)</span></span>
 <span class="line">    return error.UnableToReturnNumber;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -11919,7 +11967,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111685 panic: invalid error code</span>
+<span class="line">thread 111989 panic: invalid error code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x22ce73 in main (test)</span></span>
 <span class="line">    var invalid_err = @intToError(number);</span>
 <span class="line">                      <span class="t32_1">^</span></span>
@@ -11974,7 +12022,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111785 panic: invalid enum value</span>
+<span class="line">thread 112089 panic: invalid enum value</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x22ce49 in main (test)</span></span>
 <span class="line">    var b = @intToEnum(Foo, a);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -12032,7 +12080,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111885 panic: invalid error code</span>
+<span class="line">thread 112189 panic: invalid error code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x23412c in foo (test)</span></span>
 <span class="line">    const x = @errSetCast(Set2, set1);</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -12081,7 +12129,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 111985 panic: incorrect alignment</span>
+<span class="line">thread 112289 panic: incorrect alignment</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:9:59</span>: <span class="t2_0">0x23443c in foo (test)</span></span>
 <span class="line">    const int_slice = mem.bytesAsSlice(u32, @alignCast(4, slice4));</span>
 <span class="line">                                                          <span class="t32_1">^</span></span>
@@ -12138,7 +12186,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 112085 panic: access of inactive union field</span>
+<span class="line">thread 112389 panic: access of inactive union field</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x241a8a in bar (test)</span></span>
 <span class="line">    f.float = 12.34;</span>
 <span class="line">     <span class="t32_1">^</span></span>
@@ -12247,7 +12295,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 112319 panic: cast causes pointer to be null</span>
+<span class="line">thread 112623 panic: cast causes pointer to be null</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:3:15</span>: <span class="t2_0">0x22cd40 in main (test)</span></span>
 <span class="line">    var ptr = @ptrCast(*i32, opt_ptr);</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -12355,7 +12403,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe cli_allocation.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./cli_allocation</kbd></span>
-<span class="line">ptr=i32@7f1680666018</span>
+<span class="line">ptr=i32@7f63012ba018</span>
 </samp></pre></figure>
               When using this kind of allocator, there is no need to free anything manually. Everything
               gets freed at once with the call to <code><span class="line">arena.deinit()</span></code>.
@@ -12557,7 +12605,7 @@
       <figure><figcaption class="zig-cap"><cite>@import("builtin")</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"><span class="tok-comment">/// Zig version. When writing code that supports multiple versions of Zig, prefer</span></span>
 <span class="line"><span class="tok-comment">/// feature detection (i.e. with `@hasDecl` or `@hasField`) over version checks.</span></span>
-<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.10.0-dev.555+1b6a1e691&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.10.0-dev.560+01d48e55a&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_backend = std.builtin.CompilerBackend.stage1;</span>
 <span class="line"><span class="tok-comment">/// Temporary until self-hosted supports the `cpu.arch` value.</span></span>
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> stage2_arch: std.Target.Cpu.Arch = .x86_64;</span>
@@ -12961,9 +13009,9 @@
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {</span>
 <span class="line">    _ = c;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe verbose.zig -lc --verbose-cimport</kbd></span>
-<span class="line">info(compilation): C import source: docgen_tmp/zig-cache/o/c043e06d9ba25d1a992102c4203aa7f0/cimport.h</span>
-<span class="line">info(compilation): C import .d file: docgen_tmp/zig-cache/o/c043e06d9ba25d1a992102c4203aa7f0/cimport.h.d</span>
-<span class="line">info(compilation): C import output: docgen_tmp/zig-cache/o/937358d612697ca499b3edd4cf29cbf3/cimport.zig</span>
+<span class="line">info(compilation): C import source: docgen_tmp/zig-cache/o/3cc92d13d091960609e1210d77b7aa7b/cimport.h</span>
+<span class="line">info(compilation): C import .d file: docgen_tmp/zig-cache/o/3cc92d13d091960609e1210d77b7aa7b/cimport.h.d</span>
+<span class="line">info(compilation): C import output: docgen_tmp/zig-cache/o/34a57ebee66fdfe7f3f86b7135e35f07/cimport.zig</span>
 <span class="line"></span>
 <span class="line">$ <kbd>./verbose</kbd></span>
 </samp></pre></figure>
