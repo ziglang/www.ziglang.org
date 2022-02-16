@@ -33,12 +33,12 @@ Zig로 프로그래밍할 준비가 되었다면, 이 가이드가 환경설정�
 ## 온라인 학습 자료
 - [Zig Learn](https://ziglearn.org)  
 - Zig에 대한 구조적인 소개 by [Sobeston](https://github.com/sobeston).
-- Learn Zig by fixing tiny broken programs with [ziglings](https://github.com/ratfactor/ziglings).
+- [ziglings](https://github.com/ratfactor/ziglings)를 통해 동작하지 않는 작은 프로그램들을 고쳐 Zig을 배우기.
 
 ## 관련 동영상 및 블로그 글
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
 Zig와 그 철학을 소개하는 [Andrew Kelley](https://andrewkelley.me)의 동영상.
-- [Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)  
+- [Zig와 LLVM의 새로운 관계](https://kristoff.it/blog/zig-new-relationship-llvm/)  
 [lwn.net 기사](https://lwn.net/Articles/833400/)에도 게재된, 자체 호스팅 컴파일러인 Zig를 만들기 위해 수행한 작업에 대한 블로그 글.
 
 
