@@ -644,6 +644,7 @@
             <li><a id="toc-typeName" href="#typeName">@typeName</a></li>
             <li><a id="toc-TypeOf" href="#TypeOf">@TypeOf</a></li>
             <li><a id="toc-unionInit" href="#unionInit">@unionInit</a></li>
+            <li><a id="toc-Vector" href="#Vector">@Vector</a></li>
         </ul></li>
         <li><a id="toc-Build-Mode" href="#Build-Mode">Build Mode</a>
         <ul>
@@ -1680,7 +1681,7 @@
 <span class="line">2/2 test &quot;expect this to succeed&quot;... OK</span>
 <span class="line">1 passed; 0 skipped; 1 failed.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       
       <h3 id="Skip-Tests"><a href="#toc-Skip-Tests">Skip Tests</a> <a class="hdr" href="#Skip-Tests">§</a></h3>
@@ -1748,7 +1749,7 @@
 <span class="line">    <span class="tok-kw">try</span> std.testing.expect(list.items.len == <span class="tok-number">1</span>);</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
 <span class="line">1/1 test &quot;detect leak&quot;... OK</span>
-<span class="line">[gpa] (err): memory address 0x7f8dad9a9000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7fe2e636f000 leaked:</span>
 <span class="line"><span class="t1_0">/workspace/_debug/staging/lib/zig/std/array_list.zig:332:69</span>: <span class="t2_0">0x2294d9 in std.array_list.ArrayListAligned(u21,null).ensureTotalCapacityPrecise (test)</span></span>
 <span class="line">                const new_memory = try self.allocator.reallocAtLeast(self.allocatedSlice(), new_capacity);</span>
 <span class="line">                                                                    <span class="t32_1">^</span></span>
@@ -1779,7 +1780,7 @@
 <span class="line">1 errors were logged.</span>
 <span class="line">1 tests leaked memory.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>See also:</p><ul>
 <li><a href="#defer">defer</a></li>
@@ -3122,13 +3123,14 @@
       <h2 id="Vectors"><a href="#toc-Vectors">Vectors</a> <a class="hdr" href="#Vectors">§</a></h2>
 
       <p>
-      A vector is a group of booleans, <a href="#Integers">Integers</a>, <a href="#Floats">Floats</a>, or <a href="#Pointers">Pointers</a> which are operated on
-      in parallel using SIMD instructions. Vector types are created with the builtin function <a href="#Type">@Type</a>,
-      or using the shorthand function <code><span class="line">std.meta.Vector</span></code>.
+      A vector is a group of booleans, <a href="#Integers">Integers</a>, <a href="#Floats">Floats</a>, or
+      <a href="#Pointers">Pointers</a> which are operated on in parallel, using SIMD instructions if possible.
+      Vector types are created with the builtin function <a href="#Vector">@Vector</a>.
       </p>
       <p>
-      Vectors support the same builtin operators as their underlying base types. These operations are performed
-      element-wise, and return a vector of the same length as the input vectors. This includes:
+      Vectors support the same builtin operators as their underlying base types.
+      These operations are performed element-wise, and return a vector of the same length
+      as the input vectors. This includes:
       </p>
       <ul>
           <li>Arithmetic (<code><span class="line">+</span></code>, <code><span class="line">-</span></code>, <code><span class="line">/</span></code>, <code><span class="line">*</span></code>,
@@ -3139,10 +3141,11 @@
           <li>Comparison operators (<code><span class="line">&lt;</span></code>, <code><span class="line">&gt;</span></code>, <code><span class="line">==</span></code>, etc.)</li>
       </ul>
       <p>
-      It is prohibited to use a math operator on a mixture of scalars (individual numbers) and vectors.
-      Zig provides the <a href="#splat">@splat</a> builtin to easily convert from scalars to vectors, and it supports <a href="#reduce">@reduce</a>
-      and array indexing syntax to convert from vectors to scalars. Vectors also support assignment to and from
-      fixed-length arrays with comptime known length.
+      It is prohibited to use a math operator on a mixture of scalars (individual numbers)
+      and vectors. Zig provides the <a href="#splat">@splat</a> builtin to easily convert from scalars
+      to vectors, and it supports <a href="#reduce">@reduce</a> and array indexing syntax to convert
+      from vectors to scalars. Vectors also support assignment to and from fixed-length
+      arrays with comptime known length.
       </p>
       <p>
       For rearranging elements within and between vectors, Zig provides the <a href="#shuffle">@shuffle</a> and <a href="#select">@select</a> functions.
@@ -3156,16 +3159,14 @@
       result in compiler crashes on current versions of Zig.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">vector_example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
-<span class="line"><span class="tok-kw">const</span> Vector = std.meta.Vector;</span>
 <span class="line"><span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;Basic vector usage&quot;</span> {</span>
-<span class="line">    <span class="tok-comment">// Vectors have a compile-time known length and base type,</span></span>
-<span class="line">    <span class="tok-comment">// and can be assigned to using array literal syntax</span></span>
-<span class="line">    <span class="tok-kw">const</span> a: Vector(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [_]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
-<span class="line">    <span class="tok-kw">const</span> b: Vector(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [_]<span class="tok-type">i32</span>{ <span class="tok-number">5</span>, <span class="tok-number">6</span>, <span class="tok-number">7</span>, <span class="tok-number">8</span> };</span>
+<span class="line">    <span class="tok-comment">// Vectors have a compile-time known length and base type.</span></span>
+<span class="line">    <span class="tok-kw">const</span> a = <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>){ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> b = <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>){ <span class="tok-number">5</span>, <span class="tok-number">6</span>, <span class="tok-number">7</span>, <span class="tok-number">8</span> };</span>
 <span class="line"></span>
-<span class="line">    <span class="tok-comment">// Math operations take place element-wise</span></span>
+<span class="line">    <span class="tok-comment">// Math operations take place element-wise.</span></span>
 <span class="line">    <span class="tok-kw">const</span> c = a + b;</span>
 <span class="line"></span>
 <span class="line">    <span class="tok-comment">// Individual vector elements can be accessed using array indexing syntax.</span></span>
@@ -3178,19 +3179,19 @@
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;Conversion between vectors, arrays, and slices&quot;</span> {</span>
 <span class="line">    <span class="tok-comment">// Vectors and fixed-length arrays can be automatically assigned back and forth</span></span>
 <span class="line">    <span class="tok-kw">var</span> arr1: [<span class="tok-number">4</span>]<span class="tok-type">f32</span> = [_]<span class="tok-type">f32</span>{ <span class="tok-number">1.1</span>, <span class="tok-number">3.2</span>, <span class="tok-number">4.5</span>, <span class="tok-number">5.6</span> };</span>
-<span class="line">    <span class="tok-kw">var</span> vec: Vector(<span class="tok-number">4</span>, <span class="tok-type">f32</span>) = arr1;</span>
+<span class="line">    <span class="tok-kw">var</span> vec: <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">f32</span>) = arr1;</span>
 <span class="line">    <span class="tok-kw">var</span> arr2: [<span class="tok-number">4</span>]<span class="tok-type">f32</span> = vec;</span>
 <span class="line">    <span class="tok-kw">try</span> expectEqual(arr1, arr2);</span>
 <span class="line"></span>
 <span class="line">    <span class="tok-comment">// You can also assign from a slice with comptime-known length to a vector using .*</span></span>
-<span class="line">    <span class="tok-kw">const</span> vec2: Vector(<span class="tok-number">2</span>, <span class="tok-type">f32</span>) = arr1[<span class="tok-number">1</span>..<span class="tok-number">3</span>].*;</span>
+<span class="line">    <span class="tok-kw">const</span> vec2: <span class="tok-builtin">@Vector</span>(<span class="tok-number">2</span>, <span class="tok-type">f32</span>) = arr1[<span class="tok-number">1</span>..<span class="tok-number">3</span>].*;</span>
 <span class="line"></span>
 <span class="line">    <span class="tok-kw">var</span> slice: []<span class="tok-kw">const</span> <span class="tok-type">f32</span> = &amp;arr1;</span>
 <span class="line">    <span class="tok-kw">var</span> offset: <span class="tok-type">u32</span> = <span class="tok-number">1</span>;</span>
 <span class="line">    <span class="tok-comment">// To extract a comptime-known length from a runtime-known offset,</span></span>
 <span class="line">    <span class="tok-comment">// first extract a new slice from the starting offset, then an array of</span></span>
 <span class="line">    <span class="tok-comment">// comptime known length</span></span>
-<span class="line">    <span class="tok-kw">const</span> vec3: Vector(<span class="tok-number">2</span>, <span class="tok-type">f32</span>) = slice[offset..][<span class="tok-number">0</span>..<span class="tok-number">2</span>].*;</span>
+<span class="line">    <span class="tok-kw">const</span> vec3: <span class="tok-builtin">@Vector</span>(<span class="tok-number">2</span>, <span class="tok-type">f32</span>) = slice[offset..][<span class="tok-number">0</span>..<span class="tok-number">2</span>].*;</span>
 <span class="line">    <span class="tok-kw">try</span> expectEqual(slice[offset], vec2[<span class="tok-number">0</span>]);</span>
 <span class="line">    <span class="tok-kw">try</span> expectEqual(slice[offset + <span class="tok-number">1</span>], vec2[<span class="tok-number">1</span>]);</span>
 <span class="line">    <span class="tok-kw">try</span> expectEqual(vec2, vec3);</span>
@@ -3504,7 +3505,7 @@
 <span class="line">    <span class="tok-kw">const</span> int_slice = std.mem.bytesAsSlice(<span class="tok-type">u32</span>, <span class="tok-builtin">@alignCast</span>(<span class="tok-number">4</span>, slice4));</span>
 <span class="line">    <span class="tok-kw">return</span> int_slice[<span class="tok-number">0</span>];</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;pointer alignment safety&quot;... thread 116647 panic: incorrect alignment</span>
+<span class="line">1/1 test &quot;pointer alignment safety&quot;... thread 116704 panic: incorrect alignment</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:10:63</span>: <span class="t2_0">0x207ddc in foo (test)</span></span>
 <span class="line">    const int_slice = std.mem.bytesAsSlice(u32, @alignCast(4, slice4));</span>
 <span class="line">                                                              <span class="t32_1">^</span></span>
@@ -3527,7 +3528,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       
 
@@ -3616,7 +3617,7 @@
 <span class="line">    <span class="tok-comment">// Note that `slice.ptr` does not invoke safety checking, while `&amp;slice[0]`</span></span>
 <span class="line">    <span class="tok-comment">// asserts that the slice has len &gt;= 1.</span></span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;basic slices&quot;... thread 116815 panic: index out of bounds</span>
+<span class="line">1/1 test &quot;basic slices&quot;... thread 116872 panic: index out of bounds</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:22:10</span>: <span class="t2_0">0x207993 in test &quot;basic slices&quot; (test)</span></span>
 <span class="line">    slice[10] += 1;</span>
 <span class="line">         <span class="t32_1">^</span></span>
@@ -3636,7 +3637,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>This is one reason we prefer slices to pointers.</p>
       <figure><figcaption class="zig-cap"><cite class="file">slices.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -3751,7 +3752,7 @@
 <span class="line"></span>
 <span class="line">    _ = slice;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;sentinel mismatch&quot;... thread 117084 panic: sentinel mismatch</span>
+<span class="line">1/1 test &quot;sentinel mismatch&quot;... thread 117141 panic: sentinel mismatch</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:12:24</span>: <span class="t2_0">0x20773a in test &quot;sentinel mismatch&quot; (test)</span></span>
 <span class="line">    const slice = array[0..runtime_length :0];</span>
 <span class="line">                       <span class="t32_1">^</span></span>
@@ -3771,7 +3772,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>See also:</p><ul>
 <li><a href="#Sentinel-Terminated-Pointers">Sentinel-Terminated Pointers</a></li>
@@ -4548,7 +4549,7 @@
 <span class="line">    <span class="tok-kw">var</span> payload = Payload{ .int = <span class="tok-number">1234</span> };</span>
 <span class="line">    payload.float = <span class="tok-number">12.34</span>;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;simple union&quot;... thread 118256 panic: access of inactive union field</span>
+<span class="line">1/1 test &quot;simple union&quot;... thread 118313 panic: access of inactive union field</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:8:12</span>: <span class="t2_0">0x20773b in test &quot;simple union&quot; (test)</span></span>
 <span class="line">    payload.float = 12.34;</span>
 <span class="line">           <span class="t32_1">^</span></span>
@@ -4568,7 +4569,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>You can activate another field by assigning the entire union:</p>
       <figure><figcaption class="zig-cap"><cite class="file">test_simple_union.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
@@ -5775,7 +5776,7 @@
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;this will fail&quot;</span> {</span>
 <span class="line">    assert(<span class="tok-null">false</span>);</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;this will fail&quot;... thread 120206 panic: reached unreachable code</span>
+<span class="line">1/1 test &quot;this will fail&quot;... thread 120263 panic: reached unreachable code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:3:14</span>: <span class="t2_0">0x207c3b in assert (test)</span></span>
 <span class="line">    if (!ok) unreachable; // assertion failure</span>
 <span class="line">             <span class="t32_1">^</span></span>
@@ -5798,7 +5799,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       
       <h3 id="At-Compile-Time"><a href="#toc-At-Compile-Time">At Compile-Time</a> <a class="hdr" href="#At-Compile-Time">§</a></h3>
@@ -6346,7 +6347,7 @@
 <span class="line">    <span class="tok-kw">try</span> std.testing.expectError(<span class="tok-kw">error</span>.InvalidParam, createFoo(std.testing.allocator, <span class="tok-number">2468</span>));</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
 <span class="line">1/1 test &quot;createFoo&quot;... OK</span>
-<span class="line">[gpa] (err): memory address 0x7fe66bbef000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f6a8a602000 leaked:</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:9:28</span>: <span class="t2_0">0x20a3fb in tryToAllocateFoo (test)</span></span>
 <span class="line">    return allocator.create(Foo);</span>
 <span class="line">                           <span class="t32_1">^</span></span>
@@ -6377,7 +6378,7 @@
 <span class="line">1 errors were logged.</span>
 <span class="line">1 tests leaked memory.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>
       To ensure that <code><span class="line">deallocateFoo</span></code> is properly called
@@ -6462,7 +6463,7 @@
 <span class="line">    <span class="tok-kw">try</span> std.testing.expectError(<span class="tok-kw">error</span>.TooManyFoos, genFoos(std.testing.allocator, <span class="tok-number">5</span>));</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
 <span class="line">1/1 test &quot;genFoos&quot;... OK</span>
-<span class="line">[gpa] (err): memory address 0x7fbe43966000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7fce91473000 leaked:</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:17:40</span>: <span class="t2_0">0x209618 in genFoos (test)</span></span>
 <span class="line">        foo.data = try allocator.create(u32);</span>
 <span class="line">                                       <span class="t32_1">^</span></span>
@@ -6486,7 +6487,7 @@
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line"></span>
 <span class="line"></span>
-<span class="line">[gpa] (err): memory address 0x7fbe43966004 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7fce91473004 leaked:</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:17:40</span>: <span class="t2_0">0x209618 in genFoos (test)</span></span>
 <span class="line">        foo.data = try allocator.create(u32);</span>
 <span class="line">                                       <span class="t32_1">^</span></span>
@@ -6510,7 +6511,7 @@
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line"></span>
 <span class="line"></span>
-<span class="line">[gpa] (err): memory address 0x7fbe43966008 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7fce91473008 leaked:</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:17:40</span>: <span class="t2_0">0x209618 in genFoos (test)</span></span>
 <span class="line">        foo.data = try allocator.create(u32);</span>
 <span class="line">                                       <span class="t32_1">^</span></span>
@@ -6538,7 +6539,7 @@
 <span class="line">3 errors were logged.</span>
 <span class="line">1 tests leaked memory.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>
       Special care must be taken with code that allocates in a loop
@@ -6844,7 +6845,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 121816 panic: PermissionDenied</span>
+<span class="line">thread 121873 panic: PermissionDenied</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:38:5</span>: <span class="t2_0">0x22cbb6 in bang2 (test)</span></span>
 <span class="line">    @panic(&quot;PermissionDenied&quot;);</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -8182,7 +8183,7 @@
 <span class="line">FAIL (TestUnexpectedResult)</span>
 <span class="line">0 passed; 0 skipped; 1 failed.</span>
 <span class="line">error: the following test command failed with exit code 1:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>
       What happened is Zig started interpreting the <code><span class="line">expect</span></code> function with the
@@ -10287,7 +10288,7 @@
 <span class="line">    <span class="tok-kw">var</span> b: <span class="tok-type">u8</span> = <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, a);</span>
 <span class="line">    _ = b;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;integer cast panic&quot;... thread 125831 panic: integer cast truncated bits</span>
+<span class="line">1/1 test &quot;integer cast panic&quot;... thread 125888 panic: integer cast truncated bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:3:17</span>: <span class="t2_0">0x207705 in test &quot;integer cast panic&quot; (test)</span></span>
 <span class="line">    var b: u8 = @intCast(u8, a);</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -10307,7 +10308,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>
       To truncate the significant bits of a number out of range of the destination type, use <a href="#truncate">@truncate</a>.
@@ -10679,7 +10680,7 @@
 
       <h3 id="select"><a href="#toc-select">@select</a> <a class="hdr" href="#select">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@select</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, pred: std.meta.Vector(len, <span class="tok-type">bool</span>), a: std.meta.Vector(len, T), b: std.meta.Vector(len, T)) std.meta.Vector(len, T)</span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@select</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, pred: <span class="tok-builtin">@Vector</span>(len, <span class="tok-type">bool</span>), a: <span class="tok-builtin">@Vector</span>(len, T), b: <span class="tok-builtin">@Vector</span>(len, T)) <span class="tok-builtin">@Vector</span>(len, T)</span></code></pre>
       <p>
       Selects values element-wise from <code><span class="line">a</span></code> or <code><span class="line">b</span></code> based on <code><span class="line">pred</span></code>. If <code><span class="line">pred[i]</span></code> is <code><span class="line"><span class="tok-null">true</span></span></code>, the corresponding element in the result will be <code><span class="line">a[i]</span></code> and otherwise <code><span class="line">b[i]</span></code>.
       </p>
@@ -10811,9 +10812,9 @@
 <span class="line">        }</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig -OReleaseFast</kbd></span>
-<span class="line">1/1 test &quot;@setRuntimeSafety&quot;... thread 126198 panic: integer overflow</span>
+<span class="line">1/1 test &quot;@setRuntimeSafety&quot;... thread 126255 panic: integer overflow</span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f0b3273a59f56ebefc8cfac263e42b8b/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/c376232f269ced856b7880f6a5804421/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <p>Note: it is <a href="https://github.com/ziglang/zig/issues/978">planned</a> to replace
       <code><span class="line"><span class="tok-builtin">@setRuntimeSafety</span></span></code> with <code>@optimizeFor</code></p>
@@ -10879,7 +10880,7 @@
 
       <h3 id="shuffle"><a href="#toc-shuffle">@shuffle</a> <a class="hdr" href="#shuffle">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@shuffle</span>(<span class="tok-kw">comptime</span> E: <span class="tok-type">type</span>, a: std.meta.Vector(a_len, E), b: std.meta.Vector(b_len, E), <span class="tok-kw">comptime</span> mask: std.meta.Vector(mask_len, <span class="tok-type">i32</span>)) std.meta.Vector(mask_len, E)</span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@shuffle</span>(<span class="tok-kw">comptime</span> E: <span class="tok-type">type</span>, a: <span class="tok-builtin">@Vector</span>(a_len, E), b: <span class="tok-builtin">@Vector</span>(b_len, E), <span class="tok-kw">comptime</span> mask: <span class="tok-builtin">@Vector</span>(mask_len, <span class="tok-type">i32</span>)) <span class="tok-builtin">@Vector</span>(mask_len, E)</span></code></pre>
       <p>
       Constructs a new <a href="#Vectors">vector</a> by selecting elements from <code><span class="line">a</span></code> and
       <code><span class="line">b</span></code> based on <code><span class="line">mask</span></code>.
@@ -10913,22 +10914,21 @@
       length determines the result length.
       </p>
       <figure><figcaption class="zig-cap"><cite class="file">vector_shuffle.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
-<span class="line"><span class="tok-kw">const</span> Vector = std.meta.Vector;</span>
 <span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;vector @shuffle&quot;</span> {</span>
-<span class="line">    <span class="tok-kw">const</span> a: Vector(<span class="tok-number">7</span>, <span class="tok-type">u8</span>) = [_]<span class="tok-type">u8</span>{ <span class="tok-str">'o'</span>, <span class="tok-str">'l'</span>, <span class="tok-str">'h'</span>, <span class="tok-str">'e'</span>, <span class="tok-str">'r'</span>, <span class="tok-str">'z'</span>, <span class="tok-str">'w'</span> };</span>
-<span class="line">    <span class="tok-kw">const</span> b: Vector(<span class="tok-number">4</span>, <span class="tok-type">u8</span>) = [_]<span class="tok-type">u8</span>{ <span class="tok-str">'w'</span>, <span class="tok-str">'d'</span>, <span class="tok-str">'!'</span>, <span class="tok-str">'x'</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> a = <span class="tok-builtin">@Vector</span>(<span class="tok-number">7</span>, <span class="tok-type">u8</span>){ <span class="tok-str">'o'</span>, <span class="tok-str">'l'</span>, <span class="tok-str">'h'</span>, <span class="tok-str">'e'</span>, <span class="tok-str">'r'</span>, <span class="tok-str">'z'</span>, <span class="tok-str">'w'</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> b = <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">u8</span>){ <span class="tok-str">'w'</span>, <span class="tok-str">'d'</span>, <span class="tok-str">'!'</span>, <span class="tok-str">'x'</span> };</span>
 <span class="line"></span>
 <span class="line">    <span class="tok-comment">// To shuffle within a single vector, pass undefined as the second argument.</span></span>
 <span class="line">    <span class="tok-comment">// Notice that we can re-order, duplicate, or omit elements of the input vector</span></span>
-<span class="line">    <span class="tok-kw">const</span> mask1: Vector(<span class="tok-number">5</span>, <span class="tok-type">i32</span>) = [_]<span class="tok-type">i32</span>{ <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">1</span>, <span class="tok-number">1</span>, <span class="tok-number">0</span> };</span>
-<span class="line">    <span class="tok-kw">const</span> res1: Vector(<span class="tok-number">5</span>, <span class="tok-type">u8</span>) = <span class="tok-builtin">@shuffle</span>(<span class="tok-type">u8</span>, a, <span class="tok-null">undefined</span>, mask1);</span>
+<span class="line">    <span class="tok-kw">const</span> mask1 = <span class="tok-builtin">@Vector</span>(<span class="tok-number">5</span>, <span class="tok-type">i32</span>){ <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">1</span>, <span class="tok-number">1</span>, <span class="tok-number">0</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> res1: <span class="tok-builtin">@Vector</span>(<span class="tok-number">5</span>, <span class="tok-type">u8</span>) = <span class="tok-builtin">@shuffle</span>(<span class="tok-type">u8</span>, a, <span class="tok-null">undefined</span>, mask1);</span>
 <span class="line">    <span class="tok-kw">try</span> expect(std.mem.eql(<span class="tok-type">u8</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">5</span>]<span class="tok-type">u8</span>, res1), <span class="tok-str">&quot;hello&quot;</span>));</span>
 <span class="line"></span>
 <span class="line">    <span class="tok-comment">// Combining two vectors</span></span>
-<span class="line">    <span class="tok-kw">const</span> mask2: Vector(<span class="tok-number">6</span>, <span class="tok-type">i32</span>) = [_]<span class="tok-type">i32</span>{ -<span class="tok-number">1</span>, <span class="tok-number">0</span>, <span class="tok-number">4</span>, <span class="tok-number">1</span>, -<span class="tok-number">2</span>, -<span class="tok-number">3</span> };</span>
-<span class="line">    <span class="tok-kw">const</span> res2: Vector(<span class="tok-number">6</span>, <span class="tok-type">u8</span>) = <span class="tok-builtin">@shuffle</span>(<span class="tok-type">u8</span>, a, b, mask2);</span>
+<span class="line">    <span class="tok-kw">const</span> mask2 = <span class="tok-builtin">@Vector</span>(<span class="tok-number">6</span>, <span class="tok-type">i32</span>){ -<span class="tok-number">1</span>, <span class="tok-number">0</span>, <span class="tok-number">4</span>, <span class="tok-number">1</span>, -<span class="tok-number">2</span>, -<span class="tok-number">3</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> res2: <span class="tok-builtin">@Vector</span>(<span class="tok-number">6</span>, <span class="tok-type">u8</span>) = <span class="tok-builtin">@shuffle</span>(<span class="tok-type">u8</span>, a, b, mask2);</span>
 <span class="line">    <span class="tok-kw">try</span> expect(std.mem.eql(<span class="tok-type">u8</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">6</span>]<span class="tok-type">u8</span>, res2), <span class="tok-str">&quot;world!&quot;</span>));</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test vector_shuffle.zig</kbd></span>
 <span class="line">1/1 test &quot;vector @shuffle&quot;... OK</span>
@@ -10966,7 +10966,7 @@
 
       <h3 id="splat"><a href="#toc-splat">@splat</a> <a class="hdr" href="#splat">§</a></h3>
 
-      <pre><code><span class="line"><span class="tok-builtin">@splat</span>(<span class="tok-kw">comptime</span> len: <span class="tok-type">u32</span>, scalar: <span class="tok-kw">anytype</span>) std.meta.Vector(len, <span class="tok-builtin">@TypeOf</span>(scalar))</span></code></pre>
+      <pre><code><span class="line"><span class="tok-builtin">@splat</span>(<span class="tok-kw">comptime</span> len: <span class="tok-type">u32</span>, scalar: <span class="tok-kw">anytype</span>) <span class="tok-builtin">@Vector</span>(len, <span class="tok-builtin">@TypeOf</span>(scalar))</span></code></pre>
       <p>
       Produces a vector of length <code><span class="line">len</span></code> where each element is the value
       <code><span class="line">scalar</span></code>:
@@ -10977,7 +10977,7 @@
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;vector @splat&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">const</span> scalar: <span class="tok-type">u32</span> = <span class="tok-number">5</span>;</span>
 <span class="line">    <span class="tok-kw">const</span> result = <span class="tok-builtin">@splat</span>(<span class="tok-number">4</span>, scalar);</span>
-<span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(result) == std.meta.Vector(<span class="tok-number">4</span>, <span class="tok-type">u32</span>));</span>
+<span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(result) == <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">u32</span>));</span>
 <span class="line">    <span class="tok-kw">try</span> expect(std.mem.eql(<span class="tok-type">u32</span>, &amp;<span class="tok-builtin">@as</span>([<span class="tok-number">4</span>]<span class="tok-type">u32</span>, result), &amp;[_]<span class="tok-type">u32</span>{ <span class="tok-number">5</span>, <span class="tok-number">5</span>, <span class="tok-number">5</span>, <span class="tok-number">5</span> }));</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test vector_splat.zig</kbd></span>
 <span class="line">1/1 test &quot;vector @splat&quot;... OK</span>
@@ -11023,10 +11023,10 @@
 <span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;vector @reduce&quot;</span> {</span>
-<span class="line">    <span class="tok-kw">const</span> value: std.meta.Vector(<span class="tok-number">4</span>, <span class="tok-type">i32</span>) = [_]<span class="tok-type">i32</span>{ <span class="tok-number">1</span>, -<span class="tok-number">1</span>, <span class="tok-number">1</span>, -<span class="tok-number">1</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> value = <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">i32</span>){ <span class="tok-number">1</span>, -<span class="tok-number">1</span>, <span class="tok-number">1</span>, -<span class="tok-number">1</span> };</span>
 <span class="line">    <span class="tok-kw">const</span> result = value &gt; <span class="tok-builtin">@splat</span>(<span class="tok-number">4</span>, <span class="tok-builtin">@as</span>(<span class="tok-type">i32</span>, <span class="tok-number">0</span>));</span>
 <span class="line">    <span class="tok-comment">// result is { true, false, true, false };</span></span>
-<span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(result) == std.meta.Vector(<span class="tok-number">4</span>, <span class="tok-type">bool</span>));</span>
+<span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(result) == <span class="tok-builtin">@Vector</span>(<span class="tok-number">4</span>, <span class="tok-type">bool</span>));</span>
 <span class="line">    <span class="tok-kw">const</span> is_all_true = <span class="tok-builtin">@reduce</span>(.And, result);</span>
 <span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(is_all_true) == <span class="tok-type">bool</span>);</span>
 <span class="line">    <span class="tok-kw">try</span> expect(is_all_true == <span class="tok-null">false</span>);</span>
@@ -11418,6 +11418,13 @@
       <code><span class="line"><span class="tok-builtin">@unionInit</span></span></code> forwards its <a href="#Result-Location-Semantics">result location</a> to <code><span class="line">init_expr</span></code>.
       </p>
       
+
+
+      <h3 id="Vector"><a href="#toc-Vector">@Vector</a> <a class="hdr" href="#Vector">§</a></h3>
+
+      <pre><code><span class="line"><span class="tok-builtin">@Vector</span>(len: <span class="tok-type">comptime_int</span>, Element: <span class="tok-type">type</span>) <span class="tok-type">type</span></span></code></pre>
+      <p>Creates <a href="#Vectors">Vectors</a>.</p>
+      
       
 
       <h2 id="Build-Mode"><a href="#toc-Build-Mode">Build Mode</a> <a class="hdr" href="#Build-Mode">§</a></h2>
@@ -11535,7 +11542,7 @@
       <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;safety check&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">unreachable</span>;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test &quot;safety check&quot;... thread 126801 panic: reached unreachable code</span>
+<span class="line">1/1 test &quot;safety check&quot;... thread 126858 panic: reached unreachable code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x2076da in test &quot;safety check&quot; (test)</span></span>
 <span class="line">    unreachable;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -11555,7 +11562,7 @@
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">docgen_tmp/zig-cache/o/f676ea0055ee0d5de0e18be4af0bb870/test /workspace/_debug/staging/bin/zig</span>
+<span class="line">docgen_tmp/zig-cache/o/6362e487a7014cfce874a8f5453a07fa/test /workspace/_debug/staging/bin/zig</span>
 </samp></pre></figure>
       <h3 id="Reaching-Unreachable-Code"><a href="#toc-Reaching-Unreachable-Code">Reaching Unreachable Code</a> <a class="hdr" href="#Reaching-Unreachable-Code">§</a></h3>
 
@@ -11584,7 +11591,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 126901 panic: reached unreachable code</span>
+<span class="line">thread 126958 panic: reached unreachable code</span>
 <span class="line"><span class="t1_0">/workspace/_debug/staging/lib/zig/std/debug.zig:234:14</span>: <span class="t2_0">0x204ebb in std.debug.assert (test)</span></span>
 <span class="line">    if (!ok) unreachable; // assertion failure</span>
 <span class="line">             <span class="t32_1">^</span></span>
@@ -11629,7 +11636,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127001 panic: index out of bounds</span>
+<span class="line">thread 127058 panic: index out of bounds</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:7:13</span>: <span class="t2_0">0x22a6b9 in foo (test)</span></span>
 <span class="line">    return x[5];</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11673,7 +11680,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127101 panic: attempt to cast negative value to unsigned integer</span>
+<span class="line">thread 127158 panic: attempt to cast negative value to unsigned integer</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:20</span>: <span class="t2_0">0x224997 in main (test)</span></span>
 <span class="line">    var unsigned = @intCast(u32, value);</span>
 <span class="line">                   <span class="t32_1">^</span></span>
@@ -11717,7 +11724,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127201 panic: integer cast truncated bits</span>
+<span class="line">thread 127258 panic: integer cast truncated bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x22499c in main (test)</span></span>
 <span class="line">    const byte = @intCast(u8, spartan_count);</span>
 <span class="line">                 <span class="t32_1">^</span></span>
@@ -11773,7 +11780,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127301 panic: integer overflow</span>
+<span class="line">thread 127358 panic: integer overflow</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:10</span>: <span class="t2_0">0x22497f in main (test)</span></span>
 <span class="line">    byte += 1;</span>
 <span class="line">         <span class="t32_1">^</span></span>
@@ -11909,7 +11916,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127602 panic: left shift overflowed bits</span>
+<span class="line">thread 127659 panic: left shift overflowed bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x2249bb in main (test)</span></span>
 <span class="line">    var y = @shlExact(x, 2);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11949,7 +11956,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127702 panic: right shift overflowed bits</span>
+<span class="line">thread 127759 panic: right shift overflowed bits</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:13</span>: <span class="t2_0">0x2249bb in main (test)</span></span>
 <span class="line">    var y = @shrExact(x, 2);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -11992,7 +11999,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127802 panic: division by zero</span>
+<span class="line">thread 127859 panic: division by zero</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x224989 in main (test)</span></span>
 <span class="line">    var c = a / b;</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -12035,7 +12042,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 127902 panic: remainder division by zero or negative value</span>
+<span class="line">thread 127959 panic: remainder division by zero or negative value</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:15</span>: <span class="t2_0">0x2249ab in main (test)</span></span>
 <span class="line">    var c = a % b;</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -12078,7 +12085,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128002 panic: exact division produced remainder</span>
+<span class="line">thread 128059 panic: exact division produced remainder</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:13</span>: <span class="t2_0">0x2249cd in main (test)</span></span>
 <span class="line">    var c = @divExact(a, b);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -12119,7 +12126,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128102 panic: attempt to use null value</span>
+<span class="line">thread 128159 panic: attempt to use null value</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:5:33</span>: <span class="t2_0">0x224a4c in main (test)</span></span>
 <span class="line">    var number = optional_number.?;</span>
 <span class="line">                                <span class="t32_1">^</span></span>
@@ -12186,7 +12193,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128269 panic: attempt to unwrap error: UnableToReturnNumber</span>
+<span class="line">thread 128326 panic: attempt to unwrap error: UnableToReturnNumber</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:9:5</span>: <span class="t2_0">0x22a804 in getNumberOrFail (test)</span></span>
 <span class="line">    return error.UnableToReturnNumber;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -12258,7 +12265,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128436 panic: invalid error code</span>
+<span class="line">thread 128493 panic: invalid error code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:6:23</span>: <span class="t2_0">0x224a03 in main (test)</span></span>
 <span class="line">    var invalid_err = @intToError(number);</span>
 <span class="line">                      <span class="t32_1">^</span></span>
@@ -12313,7 +12320,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128536 panic: invalid enum value</span>
+<span class="line">thread 128593 panic: invalid enum value</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:11:13</span>: <span class="t2_0">0x2249d9 in main (test)</span></span>
 <span class="line">    var b = @intToEnum(Foo, a);</span>
 <span class="line">            <span class="t32_1">^</span></span>
@@ -12371,7 +12378,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128636 panic: invalid error code</span>
+<span class="line">thread 128693 panic: invalid error code</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:15:15</span>: <span class="t2_0">0x22a7e6 in foo (test)</span></span>
 <span class="line">    const x = @errSetCast(Set2, set1);</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -12420,7 +12427,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128736 panic: incorrect alignment</span>
+<span class="line">thread 128793 panic: incorrect alignment</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:9:59</span>: <span class="t2_0">0x22ab0c in foo (test)</span></span>
 <span class="line">    const int_slice = mem.bytesAsSlice(u32, @alignCast(4, slice4));</span>
 <span class="line">                                                          <span class="t32_1">^</span></span>
@@ -12477,7 +12484,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 128836 panic: access of inactive union field</span>
+<span class="line">thread 128893 panic: access of inactive union field</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:14:6</span>: <span class="t2_0">0x23814a in bar (test)</span></span>
 <span class="line">    f.float = 12.34;</span>
 <span class="line">     <span class="t32_1">^</span></span>
@@ -12586,7 +12593,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./test</kbd></span>
-<span class="line">thread 129070 panic: cast causes pointer to be null</span>
+<span class="line">thread 129127 panic: cast causes pointer to be null</span>
 <span class="line"><span class="t1_0">/workspace/docgen_tmp/test.zig:3:15</span>: <span class="t2_0">0x2248d0 in main (test)</span></span>
 <span class="line">    var ptr = @ptrCast(*i32, opt_ptr);</span>
 <span class="line">              <span class="t32_1">^</span></span>
@@ -12694,7 +12701,7 @@
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe cli_allocation.zig</kbd></span>
 <span class="line"></span>
 <span class="line">$ <kbd>./cli_allocation</kbd></span>
-<span class="line">ptr=i32@7efd910ac018</span>
+<span class="line">ptr=i32@7f6d69da7018</span>
 </samp></pre></figure>
               When using this kind of allocator, there is no need to free anything manually. Everything
               gets freed at once with the call to <code><span class="line">arena.deinit()</span></code>.
@@ -12899,7 +12906,7 @@
       <figure><figcaption class="zig-cap"><cite>@import("builtin")</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"><span class="tok-comment">/// Zig version. When writing code that supports multiple versions of Zig, prefer</span></span>
 <span class="line"><span class="tok-comment">/// feature detection (i.e. with `@hasDecl` or `@hasField`) over version checks.</span></span>
-<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.10.0-dev.1301+cb3b1dd6d&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_version = std.SemanticVersion.parse(<span class="tok-str">&quot;0.10.0-dev.1309+5919b1004&quot;</span>) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> zig_backend = std.builtin.CompilerBackend.stage1;</span>
 <span class="line"><span class="tok-comment">/// Temporary until self-hosted supports the `cpu.arch` value.</span></span>
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> stage2_arch: std.Target.Cpu.Arch = .x86_64;</span>
@@ -13303,9 +13310,9 @@
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {</span>
 <span class="line">    _ = c;</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe verbose.zig -lc --verbose-cimport</kbd></span>
-<span class="line">info(compilation): C import source: docgen_tmp/zig-cache/o/b3780ea9553450c6d317e31dcc231d9a/cimport.h</span>
-<span class="line">info(compilation): C import .d file: docgen_tmp/zig-cache/o/b3780ea9553450c6d317e31dcc231d9a/cimport.h.d</span>
-<span class="line">info(compilation): C import output: docgen_tmp/zig-cache/o/086a9bcd135846b364b9311d32ba58d9/cimport.zig</span>
+<span class="line">info(compilation): C import source: docgen_tmp/zig-cache/o/b67f7e7de3fd35401841a9a1516a7db4/cimport.h</span>
+<span class="line">info(compilation): C import .d file: docgen_tmp/zig-cache/o/b67f7e7de3fd35401841a9a1516a7db4/cimport.h.d</span>
+<span class="line">info(compilation): C import output: docgen_tmp/zig-cache/o/426b2962a3c3b50e0673233497634829/cimport.zig</span>
 <span class="line"></span>
 <span class="line">$ <kbd>./verbose</kbd></span>
 </samp></pre></figure>
