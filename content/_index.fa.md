@@ -86,7 +86,7 @@ Zig یک زبان همه منظوره و ابزاری برای نگهداری ن
 # توسعه اصلی
 
 میتوانید مخزن Zig را در [https://github.com/ziglang/zig](https://github.com/ziglang/zig) پیدا کنید, جایی که ما ایشو ها را دنبال میکنیم و در مورد پیشنهادات بحث میکنیم.
-ما انتظار داریم مشارکت کننده ها [قانون کد](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md) را بخوانند.
+ما انتظار داریم مشارکت کننده ها [قانون کد](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md) را بخوانند.
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">

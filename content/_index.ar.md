@@ -77,7 +77,7 @@ Zig هي لغة برمجة متعددة الأغراض وسلسلة أدوات �
 {{% div class="main-development-message" %}}
 # التطوير الرئيسي
 مصدر Zig الأصلي موجود في [https://github.com/ziglang/zig](https://github.com/ziglang/zig) حيث نقوم ايضًا بمتابعة المشاكل ومناقشة الاقترحات.
-يتوقع من المشاركين أن يتبعوا [قواعد سلوك Zig](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
+يتوقع من المشاركين أن يتبعوا [قواعد سلوك Zig](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px; transform: scaleX(-1)">

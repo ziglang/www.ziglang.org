@@ -77,7 +77,7 @@ There is no concept of "official" or "unofficial", however, each gathering place
 {{% div class="main-development-message" %}}
 # Main development
 The Zig repository can be found at [https://github.com/ziglang/zig](https://github.com/ziglang/zig), where we also host the issue tracker and discuss proposals.  
-Contributors are expected to follow Zig's [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
+Contributors are expected to follow Zig's [Code of Conduct](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">
