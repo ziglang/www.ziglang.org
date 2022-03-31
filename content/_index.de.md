@@ -77,7 +77,7 @@ Es gibt kein "offiziell" oder "inoffiziell", aber jeder Versammlungsort hat sein
 {{% div class="main-development-message" %}}
 # Entwicklung
 Das Zig-Repository ist unter [https://github.com/ziglang/zig](https://github.com/ziglang/zig) zu finden, wo wir auch den Issue-Tracker betreiben und Vorschläge diskutieren.  
-Mitwirkende müssen sich an Zigs [Code of Conduct](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md) halten.
+Mitwirkende müssen sich an Zigs [Code of Conduct](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md) halten.
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="https://raw.githubusercontent.com/ziglang/logo/master/zero.svg" style="max-height: 200px">

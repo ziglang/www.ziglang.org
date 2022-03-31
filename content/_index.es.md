@@ -77,7 +77,7 @@ No existe el concepto de "oficial" o "no oficial", no obstante, cada lugar de re
 {{% div class="main-development-message" %}}
 # Desarrollo principal
 El repositorio de Zig se encuentra en [https://github.com/ziglang/zig](https://github.com/ziglang/zig), donde también damos seguimiento a errores y discusiones de propuestas.
-Los contribuyentes deberán seguir el [Código de conducta de Zig](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md).
+Los contribuyentes deberán seguir el [Código de conducta de Zig](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md).
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">

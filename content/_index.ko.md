@@ -77,7 +77,7 @@ C/C++/Zig 코드베이스를 점진적으로 향상시키세요.
 {{% div class="main-development-message" %}}
 # 주요 개발 커뮤니티
 Zig의 저장소 주소는 [https://github.com/ziglang/zig](https://github.com/ziglang/zig)이며, 여기에서 이슈 트래킹과 제안에 대한 논의를 진행합니다.
-프로젝트에 기여하실 분들은 Zig의 [행동 지침](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)을 따라야 합니다.
+프로젝트에 기여하실 분들은 Zig의 [행동 지침](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md)을 따라야 합니다.
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">

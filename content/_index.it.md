@@ -77,7 +77,7 @@ Non c'è nessuna distinzione tra spazi "ufficiali" e non, ma ogni posto ha le pr
 {{% div class="main-development-message" %}}
 # Sviluppo del progetto
 Il repository di Zig può essere trovato a [https://github.com/ziglang/zig](https://github.com/ziglang/zig), dove manteniamo anche l'issue tracker e discutiamo le proposte di miglioramento.  
-I contributori sono tenuti a rispettare il [codice di comportamento](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md) di Zig.
+I contributori sono tenuti a rispettare il [codice di comportamento](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md) di Zig.
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">

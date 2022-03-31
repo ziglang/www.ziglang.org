@@ -78,7 +78,7 @@ Il n'y a pas de canal « officiel », en revanche, chaque espace a ses propres m
 # Développement principal
 Le dépôt Zig se trouve ici [https://github.com/ziglang/zig](https://github.com/ziglang/zig).
 Nous y listons les problèmes rencontrés et discutons des propositions.
-Les contributeurs doivent suivre le [code de conduite de Zig](https://github.com/ziglang/zig/blob/master/CODE_OF_CONDUCT.md)
+Les contributeurs doivent suivre le [code de conduite de Zig](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md)
 {{% /div %}}
 {{% div style="width:40%" %}}
 <img src="/zero.svg" style="max-height: 200px">
