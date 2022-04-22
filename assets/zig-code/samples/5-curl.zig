@@ -12,7 +12,7 @@ pub fn main() !void {
     const allocator = arena_state.allocator();
 
     // global curl init, or fail
-    if (cURL.curl_global_init(cURL.CURL_GLOBAL_ALL) != .CURLE_OK)
+    if (cURL.curl_global_init(cURL.CURL_GLOBAL_ALL) != cURL.CURLE_OK)
         return error.CURLGlobalInitFailed;
     defer cURL.curl_global_cleanup();
 
@@ -27,24 +27,24 @@ pub fn main() !void {
     defer response_buffer.deinit();
 
     // setup curl options
-    if (cURL.curl_easy_setopt(handle, .CURLOPT_URL, "https://ziglang.org") != .CURLE_OK)
+    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_URL, "https://ziglang.org") != cURL.CURLE_OK)
         return error.CouldNotSetURL;
 
     // set write function callbacks
-    if (cURL.curl_easy_setopt(handle, .CURLOPT_WRITEFUNCTION, writeToArrayListCallback) != .CURLE_OK)
+    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_WRITEFUNCTION, writeToArrayListCallback) != cURL.CURLE_OK)
         return error.CouldNotSetWriteCallback;
-    if (cURL.curl_easy_setopt(handle, .CURLOPT_WRITEDATA, &response_buffer) != .CURLE_OK)
+    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_WRITEDATA, &response_buffer) != cURL.CURLE_OK)
         return error.CouldNotSetWriteCallback;
 
     // perform
-    if (cURL.curl_easy_perform(handle) != .CURLE_OK)
+    if (cURL.curl_easy_perform(handle) != cURL.CURLE_OK)
         return error.FailedToPerformRequest;
 
     std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
     std.debug.print("{s}\n", .{response_buffer.items});
 }
 
-fn writeToArrayListCallback(data: *c_void, size: c_uint, nmemb: c_uint, user_data: *c_void) callconv(.C) c_uint {
+fn writeToArrayListCallback(data: *anyopaque, size: c_uint, nmemb: c_uint, user_data: *anyopaque) callconv(.C) c_uint {
     var buffer = @intToPtr(*std.ArrayList(u8), @ptrToInt(user_data));
     var typed_data = @intToPtr([*]u8, @ptrToInt(data));
     buffer.appendSlice(typed_data[0 .. nmemb * size]) catch return 0;
