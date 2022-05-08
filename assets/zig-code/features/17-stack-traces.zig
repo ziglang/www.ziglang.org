@@ -1,6 +1,5 @@
 // zig-doctest: run --name stack_traces
 const std = @import("std");
-const builtin = @import("builtin");
 
 var address_buffer: [8]usize = undefined;
 
