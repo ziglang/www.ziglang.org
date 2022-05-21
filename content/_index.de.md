@@ -122,26 +122,3 @@ Dank vieler Unterstützer ist das Projekt der Open-Source-Community und nicht Ak
 Dieser Abschnitt wird zu Beginn jedes Monats aktualisiert.
 {{% /div %}}
 {{< /div >}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
