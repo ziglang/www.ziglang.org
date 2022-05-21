@@ -82,7 +82,7 @@ Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**最�
 {{% div class="main-development-message" %}}
 
 # 发展情况
-Zig 源码仓库可以在 [https://github.com/ziglang/zig](https://github.com/ziglang/zig)找到，我们同时也在那里跟踪问题和讨论提案  
+Zig 源码仓库可以在[https://github.com/ziglang/zig](https://github.com/ziglang/zig)找到，我们同时也在那里跟踪问题和讨论提案  
 贡献者应该遵守Zig的[行为准则](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md)
 {{% /div %}}
 {{% div style="width:40%" %}}
@@ -110,7 +110,7 @@ Zig 软件基金会由捐款维持
 {{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="赞助商" %}}
 # 企业赞助商
-以下公司为 Zig 软件基金会提供直接的资金支持
+以下公司为Zig软件基金会提供直接的资金支持
 
 {{% sponsor-logos "monetary" %}}
  <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
@@ -128,7 +128,7 @@ Zig 软件基金会由捐款维持
  </a>
 {{% /sponsor-logos %}}
 
-# GitHub 赞助
+# GitHub赞助
 感谢那些[赞助Zig](zsf/)的人，该项目对开源社区而不是公司股东负责。特别地，这些好心人以200$/月或更高的金额赞助了Zig：
 
 {{< ghsponsors >}}
