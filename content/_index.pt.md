@@ -128,24 +128,3 @@ Graças a pessoas que [Patrocine Zig](zsf/), o projeto é responsável perante a
 Esta seção é atualizada no início de cada mês.
 {{% /div %}}
 {{< /div >}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
