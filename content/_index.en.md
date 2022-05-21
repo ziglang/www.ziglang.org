@@ -3,7 +3,7 @@ title: Home
 mobile_menu_title: "Home"
 ---
 {{< slogan get_started="GET STARTED" docs="Documentation" notes="Changes" lang="en" >}}
-Zig is a general-purpose programming language and toolchain for maintaining **robust**, **optimal**, and **reusable** software.  
+Zig is a general-purpose programming language and toolchain for maintaining **robust**, **optimal** and **reusable** software.  
 {{< /slogan >}}
 
 {{< flexrow class="container" style="padding: 20px 0; justify-content: space-between;" >}}
