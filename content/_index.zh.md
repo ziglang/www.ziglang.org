@@ -96,7 +96,7 @@ Zig 源码仓库可以在 [https://github.com/ziglang/zig](https://github.com/zi
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig软件基金会" %}}
 ## ZSF是一家501(c)(3)非营利公司
 
-Zig 软件基金会是由 Zig 的创造者 Andrew Kelley 在 2020 年成立的非营利性公司，目标是支持该语言的发展。目前，ZSF 能够以有竞争力的价格向少数核心贡献者提供有偿工作。我们希望在未来能够将这一优惠扩大到更多的核心贡献者 
+Zig软件基金会是由Zig的创造者Andrew Kelley在2020年成立的非营利性公司，目标是支持该语言的发展。目前，ZSF能够以有竞争力的价格向少数核心贡献者提供有偿工作。我们希望在未来能够将这一优惠扩大到更多的核心贡献者 
 
 Zig 软件基金会由捐款维持
 
