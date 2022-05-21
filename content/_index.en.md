@@ -128,27 +128,3 @@ Thanks to people who [sponsor Zig](zsf/), the project is accountable to the open
 This section is updated at the beginning of each month.
 {{% /div %}}
 {{< /div >}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
