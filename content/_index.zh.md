@@ -1,5 +1,5 @@
 ---
-title: "主页"
+title: 主页
 mobile_menu_title: "主页"
 ---
 {{< slogan get_started="立即开始" docs="文档" notes="变化" lang="zh">}}
