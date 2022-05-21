@@ -122,27 +122,3 @@ Grazie a tutte le persone che [supportano Zig](zsf/), il progetto fa riferimento
 Questa sezione e' aggiornata all'inizio di ogni mese.
 {{% /div %}}
 {{< /div >}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
