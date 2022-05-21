@@ -1,15 +1,15 @@
 ---
-title: "赞助 Zig"
-menu_title: "赞助 Zig 软件基金会"
+title: "赞助ZSF"
+menu_title: "赞助Zig软件基金会"
 mobile_menu_title: "赞助 ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
 {{< sponsor-title-cta "赞助 Zig 软件基金会" >}}
 
 ## 目标说明
-Zig 软件基金会的使命是促进、保护和推动 Zig 编程语言的发展，支持和促进一个多元化的国际 Zig 程序员社区的成长，并为学生提供教育和指导，教导下一代程序员要有能力、有道德，并以高标准来要求对方。
+Zig软件基金会的使命是促进、保护和发展Zig编程语言。支持和促进Zig程序员的多元化和国际化社区的发展，并为学生提供教育和指导，教育下一代程序员具备能力，有道德，并相互保持高标准。
 
-**ZSF是一家 501(c)(3) 非营利公司。** 财务、会议记录和其他细节都是[公开可获取的](https://drive.google.com/drive/folders/1ucHARxVbhrBbuZDbhrGHYDTsYAs8_bMH?usp=sharing)。
+**ZSF是一家501(c)(3)非营利公司。** 财务、会议记录和其他细节都是[公开可获取的](https://drive.google.com/drive/folders/1ucHARxVbhrBbuZDbhrGHYDTsYAs8_bMH?usp=sharing)。
 
 ## 董事会成员
 
