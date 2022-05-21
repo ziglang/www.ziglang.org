@@ -2,7 +2,7 @@
 title: 홈
 mobile_menu_title: "홈"
 ---
-{{< slogan get_started="시작하기" docs="개발 문서" notes="변경 사항" lang="en" >}}
+{{< slogan get_started="시작하기" docs="개발 문서" notes="변경 사항" lang="ko" >}}
 Zig는 **견고**하고, **최적화**된, 그리고 **재사용이 가능한** 소프트웨어의 개발 및 관리를 위한 범용 프로그래밍 언어 및 툴체인입니다.
 {{< /slogan >}}
 
