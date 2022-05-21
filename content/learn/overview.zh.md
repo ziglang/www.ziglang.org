@@ -65,7 +65,7 @@ Zig 将[未定义行为](https://ziglang.org/documentation/master/#Undefined-Beh
 - [列举各种未定义的行为，甚至是无法进行安全检查的行为（英文）](https://github.com/ziglang/zig/issues/1966)
 - [使 Debug 和 ReleaseSafe 模式完全安全（英文）](https://github.com/ziglang/zig/issues/2301)
 
-## Zig 与 C 竞争，而不是依赖于它
+## Zig与C竞争，而不是依赖于它
 
 Zig标准库里集成了libc，但是不依赖于它：
 
