@@ -2,7 +2,7 @@
 title: 家
 mobile_menu_title: "家"
 ---
-{{< slogan get_started="GET STARTED" docs="文档" notes="变化" lang="zh" >}}
+{{< slogan get_started="立即开始" docs="文档" notes="变化" lang="zh" >}}
 Zig 是一种通用的编程语言和工具链，用于维护**健壮**、**最优**和**可重用**的软件  
 {{< /slogan >}}
 
