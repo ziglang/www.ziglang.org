@@ -111,6 +111,12 @@ Las siguientes compañías proveen apoyo económico directo a la Zig Software Fo
      <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
      <img src="/pex-dark.svg">
    </picture>
+ </a> 
+ <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
+   <picture>
+     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/coil-logo-black.svg">
+   </picture>
  </a>
 {{% /sponsor-logos %}}
 
