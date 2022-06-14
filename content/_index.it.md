@@ -2,7 +2,7 @@
 title: Home
 mobile_menu_title: "Home"
 ---
-{{< slogan get_started="INIZIA QUI" docs="Documentazione" notes="Modifiche" lang="it" >}}
+{{< slogan get_started="INIZIA QUI" docs="Documentazione" notes="Modifiche" lang="en" >}}
 Zig è un linguaggio di programmazione general-purpose e toolchain per
 mantenere software **robusto**, **ottimale**, e **riusabile**.
 {{< /slogan >}}
