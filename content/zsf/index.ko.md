@@ -53,6 +53,12 @@ GitHub Sponsors 외의 다른 방법으로 기부할 때 필요한 정보입니�
      <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
      <img src="/pex-dark.svg">
    </picture>
+ </a> 
+ <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
+   <picture>
+     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/coil-logo-black.svg">
+   </picture>
  </a>
 {{% /sponsor-logos %}}
 

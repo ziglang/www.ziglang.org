@@ -53,6 +53,12 @@ ZSF 是一个小组织，并且有效地利用了货币资源。我们的计划�
      <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
      <img src="/pex-dark.svg">
    </picture>
+ </a> 
+ <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
+   <picture>
+     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
+     <img src="/coil-logo-black.svg">
+   </picture>
  </a>
 {{% /sponsor-logos %}}
 
