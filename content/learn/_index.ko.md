@@ -17,7 +17,7 @@ layout: single
 
 - [심층 개요](overview/)  
 시스템 프로그래밍 관점에서 Zig의 주요 기능에 대해 자세히 설명합니다.
-- [C++, D나 Rust를 배우면 되는데 왜 굳이 Zig를 배워야 하나요?](why_zig_rust_d_cpp/)  
+- [C++, D나 Rust가 있는데 왜 굳이 Zig를 배워야 하나요?](why_zig_rust_d_cpp/)  
 C++, D, 그리고 Rust 프로그래머를 대상으로 Zig에 대해 소개합니다.
 - [코드 예제](samples/)  
 Zig로 짠 코드가 어떻게 생겼는지를 보여주는 짧은 코드 예시들을 확인하실 수 있습니다.
@@ -40,4 +40,4 @@ Zig로 프로그래밍을 할 준비가 되셨다면, 아래 가이드는 여러
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [동영상]  
 [Andrew Kelley](https://andrewkelley.me)가 Zig와 이 프로그래밍 언어의 철학에 대해 소개하는 영상입니다.
 - [Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)  
-Zig 셀프-호스팅 컴파일러의 개발 과정에 대해 설명하는 글이며, [lwn.net의 뉴스 기사](https://lwn.net/Articles/833400/)에서도 소개되었습니다.
+Zig 셀프-호스팅 컴파일러의 개발 과정에 대해 설명하는 글이며, [lwn.net에 게재된 기사](https://lwn.net/Articles/833400/)에서도 소개되었습니다.
