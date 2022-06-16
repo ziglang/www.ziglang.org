@@ -3,23 +3,23 @@ const c = @cImport(@cInclude("soundio/soundio.h"));
 const std = @import("std");
 
 fn sio_err(err: c_int) !void {
-    switch (@intToEnum(c.SoundIoError, err)) {
-        .None => {},
-        .NoMem => return error.NoMem,
-        .InitAudioBackend => return error.InitAudioBackend,
-        .SystemResources => return error.SystemResources,
-        .OpeningDevice => return error.OpeningDevice,
-        .NoSuchDevice => return error.NoSuchDevice,
-        .Invalid => return error.Invalid,
-        .BackendUnavailable => return error.BackendUnavailable,
-        .Streaming => return error.Streaming,
-        .IncompatibleDevice => return error.IncompatibleDevice,
-        .NoSuchClient => return error.NoSuchClient,
-        .IncompatibleBackend => return error.IncompatibleBackend,
-        .BackendDisconnected => return error.BackendDisconnected,
-        .Interrupted => return error.Interrupted,
-        .Underflow => return error.Underflow,
-        .EncodingString => return error.EncodingString,
+    switch (err) {
+        c.SoundIoErrorNone => {},
+        c.SoundIoErrorNoMem => return error.NoMem,
+        c.SoundIoErrorInitAudioBackend => return error.InitAudioBackend,
+        c.SoundIoErrorSystemResources => return error.SystemResources,
+        c.SoundIoErrorOpeningDevice => return error.OpeningDevice,
+        c.SoundIoErrorNoSuchDevice => return error.NoSuchDevice,
+        c.SoundIoErrorInvalid => return error.Invalid,
+        c.SoundIoErrorBackendUnavailable => return error.BackendUnavailable,
+        c.SoundIoErrorStreaming => return error.Streaming,
+        c.SoundIoErrorIncompatibleDevice => return error.IncompatibleDevice,
+        c.SoundIoErrorNoSuchClient => return error.NoSuchClient,
+        c.SoundIoErrorIncompatibleBackend => return error.IncompatibleBackend,
+        c.SoundIoErrorBackendDisconnected => return error.BackendDisconnected,
+        c.SoundIoErrorInterrupted => return error.Interrupted,
+        c.SoundIoErrorUnderflow => return error.Underflow,
+        c.SoundIoErrorEncodingString => return error.EncodingString,
         else => return error.Unknown,
     }
 }
@@ -31,6 +31,7 @@ fn write_callback(
     frame_count_min: c_int,
     frame_count_max: c_int,
 ) callconv(.C) void {
+    _ = frame_count_min;
     const outstream = @ptrCast(*c.SoundIoOutStream, maybe_outstream);
     const layout = &outstream.layout;
     const float_sample_rate = outstream.sample_rate;
@@ -91,7 +92,7 @@ pub fn main() !void {
     const outstream = c.soundio_outstream_create(device) orelse return error.OutOfMemory;
     defer c.soundio_outstream_destroy(outstream);
 
-    outstream.*.format = @intToEnum(c.SoundIoFormat, c.SoundIoFormatFloat32NE);
+    outstream.*.format = c.SoundIoFormatFloat32NE;
     outstream.*.write_callback = write_callback;
 
     try sio_err(c.soundio_outstream_open(outstream));
