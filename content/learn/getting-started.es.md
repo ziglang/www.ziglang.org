@@ -121,4 +121,4 @@ Felicidades, ahora tienes una instalación de Zig funcional!
 Zig es un proyecto joven y desafortunadamente aún no tenemos la capacidad para producir documentación y materiales extensivos para todas sus características, así que considera [unirte a alguna de las comunidades existentes de Zig](https://github.com/ziglang/zig/wiki/Community) para obtener ayuda. También da un vistazo a [Zig SHOWTIME](https://zig.show).
 
 Finalmente, si disfrutas Zig y quieres ayudar a acelerar su desarrollo, [considera donar a la Zig Software Foundation](../../zsf)
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">.
