@@ -135,4 +135,4 @@ Zig는 젊은 프로젝트이며 안타깝게도 아직 모든 것에 대한 충
 막히는게 있을 때에는 도움을 구하고, [Zig SHOWTIME](https://zig.show) 같은 계획을 확인하세요.
 
 마지막으로, Zig를 사용하는 것이 즐거우며 Zig의 개발 속도를 높이는데 도움을 주고 싶으시다면, [Zig Software Foundation에 기부하는 것을 고려해 주세요](../../zsf).
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">.

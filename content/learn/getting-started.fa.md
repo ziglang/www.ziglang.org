@@ -155,4 +155,4 @@ Zig یک پروژه جوان است و متأسفانه ما هنوز توانا
 برای دریافت کمک هنگام گیر افتادن، و همچنین بررسی ابتکاراتی مانند [Zig SHOWTIME](https://zig.show) را بررسی کنید.
 
 در نهایت، اگر از Zig لذت می برید و می خواهید به سرعت بخشیدن به توسعه کمک کنید، [کمک مالی به Zig Software Foundation را فراموش نکنید](../../zsf)
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">.
