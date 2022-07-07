@@ -23,8 +23,6 @@ Zig는 코딩 인터뷰에 *최적화*되어 있습니다 (실제로는 아님).
 
 
 ## Generic 타입
-In Zig types are comptime values and we use functions that return a type to implement generic algorithms and data structures. In this example we implement a simple generic queue and test its behaviour.
-
 Zig의 모든 자료형은 컴파일 시간에 결정되며, 제너릭 (generic)한 알고리즘과 자료 구조를 구현하기 위해 자료형을 반환하는 함수를 사용합니다. 아래 예제에서는 간단한 제너릭 큐를 구현하고 큐가 제대로 구현이 되었는지 테스트해봅니다.
 
 {{< zigdoctest "assets/zig-code/samples/4-generic-type.zig" >}}
