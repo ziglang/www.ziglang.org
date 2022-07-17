@@ -28,7 +28,7 @@ Zig با مدیریت کل جریان کنترل منحصراً با کلمات 
 
 ## عملکرد و ایمنی: هر دو را انتخاب کنید
 
-Zig دارای چهار [نوع ساخت](https://ziglang.org/documentation/master/#Build-Mode) است، و همه آنها را می توان مخلوط کرده و تا سطح [دانه بندی محدوده](https://ziglang.org/documentation/master/#setRuntimeSafety) مطابقت داد.
+Zig دارای چهار [حالت ساخت](https://ziglang.org/documentation/master/#Build-Mode) است، و همه آنها را می توان مخلوط کرده و تا سطح [دانه بندی محدوده](https://ziglang.org/documentation/master/#setRuntimeSafety) مطابقت داد.
 
 | پارامتر | [اشکال زدایی](/documentation/master/#Debug) | [انتشار امن](/documentation/master/#ReleaseSafe) | [انتشار سریع](/documentation/master/#ReleaseFast) | [انتشار کوچک](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
@@ -39,7 +39,7 @@ Zig دارای چهار [نوع ساخت](https://ziglang.org/documentation/mast
 
 {{< zigdoctest "assets/zig-code/features/1-integer-overflow.zig" >}}
 
-Runtime در ساخت های دارای ایمنی:
+Runtime در build های دارای ایمنی:
 
 {{< zigdoctest "assets/zig-code/features/2-integer-overflow-runtime.zig" >}}
 
@@ -80,7 +80,7 @@ $ ldd hello
   not a dynamic executable
 ```
 
-این ساخت در ویندوز حتی کوچک تر است و به 4KB میرسد:
+این build در ویندوز حتی کوچک تر است و به 4KB میرسد:
 ```
 $ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
 $ wc -c hello.exe
@@ -166,7 +166,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 {{< zigdoctest "assets/zig-code/features/16-unreachable.zig" >}}
 
-[رفتار نامشخص](#عملکرد-و-ایمنی:-هر-دو-را-انتخاب-کنید) را در حالت های ساخت ناامن فرا خوانده میشود، بنابراین مطمئن شوید که فقط در مواقعی که موفقیت تضمین شده است از آن استفاده کنید.
+[رفتار نامشخص](#عملکرد-و-ایمنی:-هر-دو-را-انتخاب-کنید) را در حالت های build ناامن فرا خوانده میشود، بنابراین مطمئن شوید که فقط در مواقعی که موفقیت تضمین شده است از آن استفاده کنید.
 
 ### ردگیری استک روی همه اهداف
 
@@ -276,7 +276,7 @@ $ zig build-lib mathtest.zig
 $ zig build-lib mathtest.zig -dynamic
 ```
 
-اینجا یک نمونه با [سیستم ساخت Zig](#سیستم-ساخت-zig) وجود دارد:
+اینجا یک نمونه با [سیستم ساخت Zig](#سیستم-build-zig) وجود دارد:
 
 <u>test.c</u>
 ```c
@@ -411,13 +411,13 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically lin
 
 از جهاتی، Zig کامپایلر C بهتری نسبت به کامپایلرهای C است!
 
-این قابلیت فراتر از یک cross-toolchain به همراه Zig است. به عنوان مثال، اندازه کل هدر های libc که Zig ارسال می کند 22 مگابایت غیر فشرده است. در همین حال، هدر های musl libc + headers در x86_64 به تنهایی 8 MiB و برای glibc 3.1 MiB است (glibc هدر های لینوکس را ندارد)، اما Zig در حال حاضر با 40 libc کار می کند. که با یک ساخت ساده 444 MiB خواهد بود. به هر حال، به لطف [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) که من ساختم، و چند [کار دستی خوب قدیمی](https://github.com/ziglang/zig/wiki/Updating-libc)، مجموع سایز باینری به 30 MiB میرسد. با وجود پشتیبانی از libc برای همه این اهداف و همچنین compiler-rt، libunwind و libcxx، با وجود اینکه یک کامپایلر C سازگار با clang است. ساختار باینری  clang 8.0 ویندوز در خود سایت llvm.org به 130 MB میرسد.
+این قابلیت فراتر از یک cross-toolchain به همراه Zig است. به عنوان مثال، اندازه کل هدر های libc که Zig ارسال می کند 22 مگابایت غیر فشرده است. در همین حال، هدر های musl libc + headers در x86_64 به تنهایی 8 MiB و برای glibc 3.1 MiB است (glibc هدر های لینوکس را ندارد)، اما Zig در حال حاضر با 40 libc کار می کند. که با یک build ساده 444 MiB خواهد بود. به هر حال، به لطف [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) که من ساختم، و چند [کار دستی خوب قدیمی](https://github.com/ziglang/zig/wiki/Updating-libc)، مجموع سایز باینری به 30 MiB میرسد. با وجود پشتیبانی از libc برای همه این اهداف و همچنین compiler-rt، libunwind و libcxx، با وجود اینکه یک کامپایلر C سازگار با clang است. ساختار باینری  clang 8.0 ویندوز در خود سایت llvm.org به 130 MB میرسد.
 
 توجه داشته باشید که فقط اهداف [ردیف پشتیبانی 1](#ردیف-پشتیبانی-1) به طور کامل آزمایش شده است. برنامه ریزی شده است [اضافه کردن libcs بیشتر](https://github.com/ziglang/zig/issues/514) (از جمله برای Windows)، و [افزودن پوشش آزمایش برای ساخت در برابر همه libcs](https://github.com/ziglang/zig/issues/2058)
 
 توجه داشته باشید که فقط اهداف [هدف ردیف 1](#اهداف-ردیف-1) به طور کامل آزمایش شده اند. [اضافه کردن libcs بیشتر](https://github.com/ziglang/zig/issues/514) برنامه ریزی شده است (از جمله برای Windows). [افزودن پوشش آزمایش برای ساخت در برابر همه libcs](https://github.com/ziglang/zig/issues/2058)
 
-[برنامه ریزی شده است که یک Zig Package Manager داشته باشید](https://github.com/ziglang/zig/issues/943)، اما هنوز انجام نشده است. یکی از مواردی که امکان پذیر است ایجاد بسته برای کتابخانه های C است. این امر [Zig Build System](#سیستم-ساخت-zig) را برای برنامه نویسان Zig و برنامه نویسان C جذاب می کند.
+[برنامه ریزی شده است که یک Zig Package Manager داشته باشید](https://github.com/ziglang/zig/issues/943)، اما هنوز انجام نشده است. یکی از مواردی که امکان پذیر است ایجاد بسته برای کتابخانه های C است. این امر [Zig Build System](#سیستم-build-zig) را برای برنامه نویسان Zig و برنامه نویسان C جذاب می کند.
 
 ## سیستم ساخت Zig
 
