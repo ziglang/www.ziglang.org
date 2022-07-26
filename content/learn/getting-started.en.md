@@ -134,4 +134,4 @@ materials for everything, so you should consider [joining one of the existing Zi
 to get help when you get stuck, as well as checking out initiatives like [Zig SHOWTIME](https://zig.show).
 
 Finally, if you enjoy Zig and want to help speed up the development, [consider donating to the Zig Software Foundation](../../zsf)
-<img src="../../heart.svg" style="vertical-align:middle; margin-right: 5px">.
+<img src="/heart.svg" style="vertical-align:middle; margin-right: 5px">.
