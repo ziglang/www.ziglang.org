@@ -618,15 +618,18 @@ var zigAnalysis;
         for (let i = 0; i < fields.length; i += 1) {
             let field = fields[i];
             let fieldNode = zigAnalysis.astNodes[field];
+            let docs = fieldNode.docs;
             if (fieldNode.docs == null) {
                 continue;
             }
+            let docsNonEmpty = docs !== "";
             let divDom = domListParams.children[domIndex];
             domIndex += 1;
 
 
             let value = typeObj.params[i];
-            let html = '<pre>' + escapeHtml((fieldNode.name)) + ": ";
+            let preClass = docsNonEmpty ? ' class="fieldHasDocs"' : "";
+            let html = '<pre' + preClass + '>' + escapeHtml((fieldNode.name)) + ": ";
             if (isVarArgs && i === typeObj.params.length - 1) {
                 html += '...';
             } else {
@@ -636,9 +639,8 @@ var zigAnalysis;
 
             html += ',</pre>';
 
-            let docs = fieldNode.docs;
-            if (docs != null) {
-                html += markdown(docs);
+            if (docsNonEmpty) {
+                html += '<div class="fieldDocs">' + markdown(docs) + '</div>';
             }
             divDom.innerHTML = html;
         }
@@ -2270,8 +2272,11 @@ var zigAnalysis;
                 let fieldNode = zigAnalysis.astNodes[containerNode.fields[i]];
                 let divDom = domListFields.children[i];
                 let fieldName = (fieldNode.name);
+                let docs = fieldNode.docs;
+                let docsNonEmpty = docs != null && docs !== "";
+                let extraPreClass = docsNonEmpty ? " fieldHasDocs" : "";
 
-                let html = '<div class="mobile-scroll-container"><pre class="scroll-item">' + escapeHtml(fieldName);
+                let html = '<div class="mobile-scroll-container"><pre class="scroll-item' + extraPreClass + '">' + escapeHtml(fieldName);
 
                 if (container.kind === typeKinds.Enum) {
                     html += ' = <span class="tok-number">' + fieldName + '</span>';
@@ -2289,9 +2294,8 @@ var zigAnalysis;
 
                 html += ',</pre></div>';
 
-                let docs = fieldNode.docs;
-                if (docs != null) {
-                    html += markdown(docs);
+                if (docsNonEmpty) {
+                    html += '<div class="fieldDocs">' + markdown(docs) + '</div>';
                 }
                 divDom.innerHTML = html;
             }
@@ -2639,14 +2643,23 @@ var zigAnalysis;
         });
     }
 
-    
+
     function shortDescMarkdown(docs) {
-        let parts = docs.trim().split("\n");
-        let firstLine = parts[0];
-        return markdown(firstLine);
+        const trimmed_docs = docs.trim();
+        let index = trimmed_docs.indexOf('.');
+        if (index < 0) {
+            index = trimmed_docs.indexOf('\n');
+            if (index < 0) {
+                index = trimmed_docs.length;
+            }
+        } else {
+            index += 1; // include the period
+        }
+        const slice = trimmed_docs.slice(0, index);
+        return markdown(slice);
     }
 
-    
+
     function markdown(input) {
         const raw_lines = input.split('\n'); // zig allows no '\r', so we don't need to split on CR
         
