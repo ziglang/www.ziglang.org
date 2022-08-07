@@ -24,7 +24,7 @@ Run `hugo serve`. On first launch it will use doctest to run all code snippets p
 
 After Hugo is launched you can use it to preview in realtime changes to the content. Right now Hugo has a limitation where changing a code snippet will not cause a re-render unless the page that lists it changes too (or you restart Hugo).
 
-Tests are cached so you should not worry about having to sit through the entire testing routine after restarting Hugo.
+Tests are cached so don't worry about having to sit through the entire testing routine after restarting Hugo.
 
 ## Writing a translation
 
