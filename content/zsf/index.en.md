@@ -47,29 +47,17 @@ Make sure to check your local law to see if you can deduct donations from your t
 ### Monetary donations
 The following companies are providing direct financial support to the Zig Software foundation by donating more than $1000/mo.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a>
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
+
 
 ### Infrastructure
 The following companies are offering some of their services to the Zig Software Foundation free of charge.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}
 
 
 

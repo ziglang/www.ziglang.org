@@ -47,27 +47,14 @@ Asegúrate de revisar la ley vigente en tu lugar de origen para saber si tus don
 ### Donativos monetarios
 Las siguientes compañías proveen apoyo económico a la Zig Software Foundation por mas de $1000 USD mensuales.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 ### Infraestructura
 Las siguientes compañías ofrecen en forma gratuita algunos de sus servicios a la Zig Software Foundation.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}
 

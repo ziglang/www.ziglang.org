@@ -47,29 +47,16 @@ ZSF مؤسسة صغيرة وتقوم بتوظيف مواردها المالية 
 ### التبرعات المالية
 الشركات التالية توفر دعم مادي مباشر لمؤسسة Zig للبرمجيات بالتبرع بأكثر من $1000 في الشهر.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 ### البنية التحتية
 الشركات التالية توفر بعض خدماتها لمؤسسة Zig للبرمجيات دون مقابل.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}
 
 
 

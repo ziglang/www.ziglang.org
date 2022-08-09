@@ -112,21 +112,7 @@ Zig 软件基金会由捐款维持
 # 企业赞助商
 以下公司为Zig软件基金会提供直接的资金支持
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 # GitHub赞助
 感谢那些[赞助Zig](zsf/)的人，该项目对开源社区而不是公司股东负责。特别地，这些好心人以200$/月或更高的金额赞助了Zig：

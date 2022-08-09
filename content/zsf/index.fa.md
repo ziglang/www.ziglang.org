@@ -52,27 +52,14 @@ ZSF یک سازمان کوچک است و از منابع پولی به نحو ا
 
 شرکت‌های زیر حمایت مالی مستقیمی را با اهدای بیش از 1000 دلار در ماه به این بنیاد نرم‌افزار ارایه می‌کنند.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 ### زیر ساخت
 
 شرکت های زیر برخی از خدمات خود را به بنیاد نرم افزار Zig به صورت رایگان ارائه می دهند.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}

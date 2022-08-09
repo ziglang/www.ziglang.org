@@ -105,20 +105,7 @@ La Zig Software Foundation se mantiene con donaciones.
 # Patrocinadores Corporativos
 Las siguientes compañías proveen apoyo económico directo a la Zig Software Foundation.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 # Patrocinadores en GitHub
 Gracias a la [gente que patrocina Zig](zsf/), el proyecto se debe a la comunidad open source y no a entes corporativos. En particular, estos queridos amigos patrocinan a Zig por un monto de $200 USD mensuales o más:

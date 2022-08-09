@@ -108,20 +108,7 @@ La fondation Zig est soutenue par des dons.
 # Entreprises sponsors 
 Les entreprises suivantes fournissent un support financier direct à la fondation Zig (ZSF).
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 # Parrainages GitHub
 Merci aux personnes qui [parrainent Zig](zsf/), le projet est davantage redevable à la communauté open source qu'aux entreprises.

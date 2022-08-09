@@ -53,26 +53,13 @@ Vérifiez vos lois locales pour savoir s'il est possible de déduire une partie 
 ### Dons financiers
 Les entreprises suivantes financent la Zig Software Foundation à hauteur de 1000 $/mois ou plus.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 ### Infrastructure
 Les entreprises suivantes fournissent gratuitement certains de leurs services à la Zig Software Foundation.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}

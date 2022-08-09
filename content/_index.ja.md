@@ -105,20 +105,7 @@ Zigソフトウェア財団は、寄付金によって運営されています�
 # 企業スポンサー
 以下の企業は、Zig Software財団に直接的な資金援助を行っています。
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a>
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 # GitHubスポンサー
 [Zigをスポンサー](zsf/)してくださる方々のおかげで、このプロジェクトは企業の株主ではなく、オープンソースコミュニティに対して説明責任を果たすことができるのです。特に、月々200ドル以上でZigのスポンサーになってくださっている方々は素晴らしい方々です:

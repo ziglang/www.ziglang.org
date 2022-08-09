@@ -105,20 +105,7 @@ Zig Software Foundation은 기부금으로만 운영됩니다.
 # 기업 후원
 아래 기업은 Zig Software Foundation을 재정적으로 지원해주고 있는 기업입니다.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 # GitHub 후원자
 [Zig를 후원](zsf/)해주시는 분들 덕분에, 이 프로젝트는 기업의 주주가 아닌 오픈 소스 커뮤니티가 운영하고 있습니다. 특히, 아래 명단에 있는 분들은 Zig를 매달 $200 이상 후원하고 있습니다:

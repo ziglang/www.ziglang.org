@@ -47,29 +47,16 @@ Nützliche Informationen, um auf anderem Wege als durch GitHub Sponsors zu spend
 ### Geldspenden
 Die folgenden Unternehmen bieten der Zig Software Foundation direkte finanzielle Unterstützung, indem sie mehr als $1000 monatlich spenden.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 ### Infrastruktur
 Die folgenden Unternehmen stellen ihre Dienste der Zig Software Foundation kostenfrei zur Verfügung.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}
 
 
 

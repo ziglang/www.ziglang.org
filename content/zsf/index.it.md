@@ -51,26 +51,13 @@ Ecco alcune informazioni utili a donare tramite metodi diversi da GitHub Sponsor
 ### Donazioni monetarie
 Le seguenti compagnie offrono diretto supporto finanziario alla Zig Software Foundation donando piu' di 1000 USD al mese.
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="../../pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="../../pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 ### Infrastruttura
 Le seguenti compagnie stanno offrendo alcuni dei loro servizi alla Zig Software Foundation gratuitamente.
 
-{{% sponsor-logos "services" %}}
+{{% services-sponsor-logos %}}
 ![](/lavatech.png)
 ![](/dropbox.png)
 ![](/scaleway.png)
-{{% /sponsor-logos %}}
+{{% /services-sponsor-logos %}}

@@ -105,20 +105,7 @@ Zig هي لغة برمجة متعددة الأغراض وسلسلة أدوات �
 # الجهات الراعية
 الشركات التالية توفر دعم مادي مباشر لمؤسسة Zig للبرمجيات (ZSF).
 
-{{% sponsor-logos "monetary" %}}
- <a href="https://pex.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/pex-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/pex-dark.svg">
-   </picture>
- </a> 
- <a href="https://coil.com" rel="noopener nofollow" target="_blank"><picture>
-   <picture>
-     <source srcset="/coil-logo-white.svg" media="(prefers-color-scheme: dark)">
-     <img src="/coil-logo-black.svg">
-   </picture>
- </a>
-{{% /sponsor-logos %}}
+{{% monetary-sponsor-logos %}}
 
 # رعاة GitHub
  بفضل كل من [يدعم Zig](zsf/)، فالمشروع ملك لمجتمع البرمجيات مفتوحة المصدر وليس للشركات الراعية. تحديدًا، هذه القائمة هي لأفراد يدعمون Zig بـ200$ شهريًا أو أكثر:
