@@ -1089,9 +1089,61 @@ Hello, World!</code></pre>
     {#header_open|Language Changes#}
 
     {#header_open|Packed Structs#}
-    TODO show the new semantics
-    TODO eliminate confusion with extern structs and alignment
-    TODO mention that the syntax will change
+    <p>In previous releases of Zig there have been some nasty bugs that
+    unfortunately did not get fixed for a long time, resulting in packed
+    structs having a deservedly poor reputation. Finally, the situation is
+    resolved. Packed structs have been reworked, both in terms of the Zig
+    language specification, as well as the implementation.</p>
+    <p>Now, one can reason about packed structs in a similar way as one reasons about
+    <a href="/documentation/0.10.0/#enum">enums</a> - that is - they are merely integers
+    wearing fancy hats.</p>
+    <p>
+    Each packed struct has a <em>backing integer</em> which defines the ABI of the type as
+    well as the memory layout. The backing integer can be specified explicitly, or it can
+    be inferred from the total bits of all the fields. If the backing integer is explicitly
+    specified, then a compile error enforces that all the fields add up to that number of bits:
+    </p>
+    {#code_begin|test_err|backing integer#}
+const S = packed struct(u32) {
+    a: u29,
+    b: u2,
+};
+
+test "packed struct" {
+    var s: S = .{
+        .a = 1234,
+        .b = 3,
+    };
+    _ = s;
+}
+    {#code_end#}
+    <p>The fields are specified in order starting from logically
+    <em>least-significant</em> and ending with logically <em>most-significant</em> within
+    the backing integer. The backing integer is stored in memory with the same
+    endianness as the equivalent integer type for that target. This makes Zig's
+    packed structs have a well-defined memory layout, unlike in C where the
+    memory layout is implementation-defined and therefore usually cannot be
+    relied upon.</p>
+
+
+    <p>In the near future, the syntax will change to avoid confusion with C's packed structs,
+    which is a different concept that relates to padding. In Zig, such a struct is done by
+    using {#syntax#}extern{#endsyntax#} and setting each field's alignment to 1 byte:
+    </p>
+    {#code_begin|test|align-1#}
+const std = @import("std");
+const assert = std.debug.assert;
+
+// Equivalent of C's __attribute__((__packed__))
+const S = extern struct {
+    a: u64 align(1),
+    b: u8 align(1),
+};
+
+comptime {
+    assert(@sizeOf([2]S) == 18);
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Inline Switch Cases#}
