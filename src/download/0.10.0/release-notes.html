@@ -350,7 +350,7 @@
       <li><a href="https://vexu.eu/">Veikka Tuominen</a></li>
     </ul>
     <p>
-    Please consider a <a href="/zsf/">recurring donating to the ZSF</a>
+    Please consider a <a href="/zsf/">recurring donation to the ZSF</a>
     to help us pay more contributors!
     </p>
     <p>
@@ -939,7 +939,6 @@
 
     {#header_open|macOS#}
     <ul>
-      <li>The default C ABI was changed from <code>gnu</code> to <code>none</code> (#11684)</li>
       <li>libc headers are updated and more complete (copyfile.h).</li>
       <li>Use libc if_nametoindex for macOS when parsing IPs (#10576)</li>
       <li>Implement segfault handler for macOS (both x86_64 and aarch64).</li>
@@ -951,6 +950,19 @@
       <li>Extend CodeSignature to accept entitlements.</li>
       <li>Fixed child process spawn on macos hanging with stdin, stdout behavior set to pipe (#11480)</li>
     </ul>
+
+    {#header_open|Default C ABI changed from gnu to none#}
+    <p>Prior to this change Zig would assume the ABI for Apple targets to be GNU
+    which could result in subtle errors of emitting calls to non-existent
+    system libc provided functions such as <code>_sincosf</code> which is a GNU
+    extension and therefore not provided by macOS. This would result in linker
+    errors due to not finding the symbol in <code>libSystem.tbd</code>.</p>
+    <p>With this change, Zig now correctly identifies macOS (and other Apple platforms such as
+    iPhoneOS, tvOS, and watchOS) as having ABI <code>none</code> (#11684).</p>
+    <p>In {#link|LLVM|LLVM 15#}, this translates to <code>unknown</code>:</p>
+    <pre><code>// main.ll
+target triple = "aarch64-unknown-macos-unknown"</code></pre>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|OpenBSD#}
@@ -1412,13 +1424,13 @@ pub const CompilerBackend = enum(u64) {
     {#header_open|f80#}
     <p>Zig now has {#syntax#}f80{#endsyntax#}, a primitive type that provides
     <a href="https://en.wikipedia.org/wiki/Extended_precision#x86_extended_precision_format">x86 extended precision format</a>.
-    This type is fully supported on all systems, even those which lack hardware
-    support for this type, via {#link|compiler-rt#}.
+    This type is fully supported on all systems. On those which lack hardware
+    support for this type, softfloat implementations are provided by {#link|compiler-rt#}.
     </p>
-    <p>When would you use this? Well
-    <a href="https://github.com/Vexu/arocc/issues/213">if you were implementing a C compiler for instance</a>.
-    It's also part of the C ABI - on some systems when <code>long double</code> is used in a
-    function prototype, {#syntax#}f80{#endsyntax#} is how the data is passed.</p>
+    <p>When would you use this? Well if you were
+    <a href="https://github.com/Vexu/arocc/issues/213">implementing a C compiler</a> for instance.
+    It's also part of the C ABI - for some C targets <code>long double</code> is an alias for
+    {#syntax#}f80{#endsyntax#}.</p>
     <p>This is implemented in both the {#link|Bootstrap Compiler#} and
     {#link|Self-Hosted Compiler#}.</p>
     {#header_close#}
@@ -1953,155 +1965,6 @@ section about C ABI
 thanks to nicer llvm abstraction for C ABI
     {#header_close#}
 
-    {#header_open|Self-Hosted Linker#}
-    <p>There has been progress on ELF and COFF however they are not generally usable yet.
-    By default, LLD will be used for these object formats, however, one can opt in to
-    the self-hosted linker with <code>-fno-LLD</code>.</p>
-
-    TODO ask Luuk what is the status on self-hosted wasm linker compared to LLD
-
-
-commit 75b6637d6013b735d36da0ab6e5655002a1b59e9
-Merge: 7e76aab98 5cde5f947
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Jan 13 22:09:42 2022 -0500
-
-    Merge pull request #10584 from ziglang/macho-rustc-fixes
-    
-    zld: a couple of fixes which result in better rustc support
-
-commit 5eaac2fb99ad7357eb7bf2451adcaeec4108aec3
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Thu Jan 20 00:14:00 2022 +0100
-
-    macho: do not write out ZEROFILL physically to file
-    
-    Prior to this change, `__DATA,__bss` and `__DATA,__thread_bss` would
-    get actually, physically written out to the output file, unnecessarily
-    filling the output file with 0s.
-commit 16ec848d2ab5702ad3794d30ed5d776b5abb60ce
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Feb 12 18:54:08 2022 +0100
-
-    macho: put linker symlink for cache invalidation in zig-cache
-    
-    Due to differences in where the output gets emitted in stage1 and stage2,
-    we were putting the symlink next to the binary rather than in `zig-cache`
-    directory when building with stage2.
-commit 0376fd09bc9f29ceeb83760e32532923e4fe7f98
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Mar 19 16:54:11 2022 +0100
-
-    macho: extend CodeSignature to accept entitlements
-    
-    With this change, we can now bake in entitlements into the binary.
-    Additionally, I see this as the first step towards full code signature
-    support which includes baking in Apple issued certificates for
-    redistribution, etc.
-commit 8b5d5f44e23c86082fba480f01092f2f7ffb3dfe
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Apr 1 14:33:37 2022 +0200
-
-    macho: set CS_LINKER_SIGNED flag in code signature generated by zld
-    
-    This way, if the user wants to use `codesign` (or other tool) they
-    will not be forced to `-f` force signature update. This matches
-    the behavior promoted by Apple's `ld64` linker.
-commit 74ed7c1f0998e9dd89aa3f3480fff845afd6b422
-Merge: a97a39bea 8752db328
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Mon Jun 20 17:51:20 2022 +0200
-
-    Merge pull request #11875 from motiejus/pagezero-size
-    
-    [MachO] add -pagezero_size
-commit 0078d36ff39f2ef35e32f2d58e5d447b62f3a37e
-Merge: 905a18849 8f00bc9d2
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Jun 25 17:55:26 2022 +0200
-
-    Merge pull request #11917 from motiejus/wl-search-paths
-    
-    macho: implement `-search_paths_first` and `-search_dylibs_first`
-commit 76b28ed45238fff843e04e94657e2790ee95954b
-Merge: 0078d36ff 589bf6763
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Jun 25 21:15:59 2022 +0200
-
-    Merge pull request #11929 from ziglang/headerpad_max_install_names
-    
-    macho: handle `-headerpad` and `-headerpad_max_install_names`
-commit d4623a8a07bf8fe3bed3b4ee50339960d623958e
-Merge: a76775b50 0dd28920d
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Jun 28 07:22:19 2022 +0200
-
-    Merge pull request #11941 from ziglang/macho-stripping-dylibs
-    
-    macho: handle `-dead_strip_dylibs`, `-needed-lx` and `-needed_framework x` flags
-commit 9e8298b864e076221ca9c487412209d8a08c43b2
-Merge: ca3c4ff2d 5834a608f
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Tue Jun 28 20:29:20 2022 +0200
-
-    Merge pull request #11950 from ziglang/macho-weak-libs-frameworks
-    
-    macho: fully implement `-weak-lx` and `-weak_framework x` flags
-commit b79884eaf003ad32e800213c20da5c6b8935af34
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Wed Jun 29 08:05:32 2022 +0200
-
-    macho: implement pruning of unused segments and sections
-commit a8bfddfaeae4f48c044fd134aac1e977e6a161f8
-Merge: a035d75a1 cf6cfc830
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Jul 23 00:01:09 2022 -0700
-
-    Merge pull request #12140 from ziglang/macho-gc-sections
-    
-    macho: add support for `-dead_strip` (GC sections) and simplify symbol resolution
-commit 45c444ff18b43d30a7277e346174ba6eca4a6193
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Thu Aug 11 00:06:31 2022 +0200
-
-    macho: allow unaligned offsets in object files
-commit d5233ee85ce13cba3dd03e4c0c938cee193b9b19
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Thu Aug 25 12:38:56 2022 +0200
-
-    add ability to pass force undefined symbols to the linker
-    
-    This commit enables `-u <symbol>` for ELF and `-include:<symbol>` for
-    COFF linkers for use internally. This means we do not expose these
-    flags to the users just yet, however, we make use of them internally
-    whenever required. One such use case is forcing inclusion of
-    `_tls_index` when linking for Windows with mingw and LTO and dead
-    code stripping enabled. This ensures we add `_tls_index` to the symbol
-    resolver as an undefined symbol and force the linker to include an atom
-    that provides it marking it a dead-code-stripping root - meaning it will
-    not be garbage collected by the linker no matter what.
-commit 5391541f11570dc444bfb79e5cf0e89aa872d0b8
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Sat Sep 17 16:37:26 2022 +0200
-
-    macho: do not assume every object has a symtab
-    
-    For example, building stage2 requires an empty `empty.cc` source file
-    compiling which generates a valid translation unit with no symtab/strtab.
-    In this case, we cannot simply assume that every translation unit will
-    have a valid symtab; instead, we cautiously default the input symtab
-    and strtab fields to optional `null` to signal symtab's presence or its lack of.
-    In case the symtab is not present, we catch this fact when splitting
-    input sections into subsections and create a synthetic symbol per every
-    suitable section.
-
-
-    TODO broken ground on basic COFF linking
-
-
-    TODO added linker tests
-    {#header_close#}
-
     {#header_open|C Translation#}
     <ul>
       <li>Handle typedef'ed void return type for functions (#10356)</li>
@@ -2218,9 +2081,21 @@ https://github.com/ziglang/zig/pull/12837
     {#header_close#}
 
     {#header_open|x86 Backend#}
-    <p>This backend remains <strong>experimental</strong>, however it is now passing
-    <strong>875/1365 (64%)</strong> of the behavior tests. It will need to get very close to
-    100% before being enabled by default for debug mode.</p>
+    <p>Although this backend remains <strong>experimental</strong>, it has seen considerable
+    progress during this release cycle. Notable milestones reached:</p>
+    <ul>
+      <li>Partially implemented SystemV calling convention.</li>
+      <li>Implemented {#link|Windows#} x64 calling convention.</li>
+      <li>Enhanced the <code>x86_64</code> encoder to handle most of general purpose register
+        encodings such as <code>I</code>, <code>OI</code>, <code>MI</code>, <code>RM</code>,
+        <code>MR</code>, and <code>RMI</code>.</li>
+      <li>Added basic support for the VEX prefix and SSE/AVX encodings such as <code>MV</code>, <code>RVM</code> and <code>RVMI</code>.</li>
+      <li>Implemented lowerings for many fundamental
+        <a href="https://github.com/ziglang/zig/wiki/Glossary#air">AIR</a> instructions.</li>
+    </ul>
+    <p>All of the above culminates in the x86_64 self-hosted backend passing
+    <strong>875/1365 (64%)</strong> of the behavior tests compared to the LLVM backend.
+    It will need to get very close to 100% before being enabled by default for debug mode.</p>
     {#header_close#}
 
     {#header_open|aarch64 Backend#}
@@ -2239,11 +2114,221 @@ https://github.com/ziglang/zig/pull/12837
 
     {#header_close#}
 
+    {#header_open|Self-Hosted Linker#}
+    <p>The self-hosted linker is <em>tightly coupled</em> with the {#link|Self-Hosted Compiler#}.
+    There has been progress on {#link|ELF#} and {#link|COFF#} however they are not generally usable yet.
+    By default, LLD will be used for these object formats, however, one can opt in to
+    the self-hosted linker with <code>-fno-LLD</code>.</p>
+
+    {#header_open|MachO#}
+    <p>
+The incremental MachO linker, like its traditional linking counterpart, has seen
+a major rewrite where Zig now lays out the incrementally linked binary such that
+there is one section per segment. This might sound wasteful but it allows Zig to
+use the quick file space allocation algorithm used already in the {#link|ELF#} and
+{#link|COFF#} linkers.
+    </p><p>
+How does it work? By enclosing a single section within a single segment Zig is
+able to disassociate the file offsets from the allocated virtual memory
+addresses. This provides the uncanny ability to reorder and move the sections
+within the underlying binary file without affecting the ordering in
+the virtual memory space. This implies that if the section grows
+beyond what was originally allocated, Zig only needs to copy its contents in the
+file to a new location without any virtual address space recalculations unless
+the section has also exceeded its allocated virtual address space. But even
+then only some atoms are affected in subsequent sections in the virtual address
+space.
+    </p><p>
+Thanks to this trick, Zig is on the path of achieving truly incremental linking
+for MachO which should also make implementing hot-code swapping for MachO much
+simpler and more efficient.
+    </p>
+    <p>For a more in-depth look into the changes involved have a look at this pull request:
+    <a href="https://github.com/ziglang/zig/pull/12893">macho: rewrite incremental linker, and init splitting of linking contexts</a></p>
+    <p>In addition, the following improvements have been made:</p>
+    <ul>
+      <li>The linker no longer artificially limits the maximum jump size to ISA's
+        <code>b/bl</code>'s 28bits signed displacement which roughly equates to 128MB of compiled
+        machine code section. The linker now extends the jump range via thunks which
+        load the target address into the scratch register followed by a branch via
+        register <code>blr</code> (#13260) (#13274)</li>
+      <li>do not write out ZEROFILL physically to file</li>
+      <Li>extend <code>CodeSignature</code> to accept entitlements</li>
+      <li>set <code>CS_LINKER_SIGNED</code> flag in code signature generated by Zig</li>
+      <li>round down pagezero size to page size. If page aligned requested pagezero size is 0,
+        skip generating <code>__PAGEZERO</code> segment. Add misc improvements to the pipeline, and correctly
+        transfer the requested <code>__PAGEZERO</code> size to the linker.</li>
+      <li> <code>-pagezero_size</code> is always in hex. This matches the behavior of other linkers out
+        there including <code>ld64</code> and <code>lld</code>.</li>
+      <li>fix aligning linkedit sections</li>
+      <li>implement <code>-search_dylibs_first</code> linker option</li>
+      <li>verbose print all input linker args verbatim</li>
+      <li>implement -headerpad_size option</li>
+      <li>prefill any space between <code>__DATA</code> and <code>__LINKEDIT</code> with 0s if required. If there are zerofill
+      sections, the loader may copy the contents of the physical space in file directly into memory 
+      and attach that to the zerofill section. This is a performance optimisation in the loader
+      but requires us, the linker, to properly zero-out any space between <code>__DATA</code> and
+      <code>__LINKEDIT</code>
+      segments in file. This is of course completely skipped if there are no zerofill sections present.</li>
+      <li>implement <code>-headerpad_size</code> and <code>-headerpad_max_install_names</code> options</li>
+      <li>implement <code>-dead_strip_dylibs</code> linker flag</li>
+      <li>implement and handle <code>-needed-*</code> and <code>-needed_*</code> family of flags</li>
+      <li>implement <code>-weak-lx</code> and <code>-weak_framework x</code> flags</li>
+      <li>implement <code>-dead_strip</code> flag. Dead-code stripping is on by default for release build modes, and
+        off for debug builds, but can be opted in/out via <code>--gc-sections</code> and <code>--no-gc-sections</code> flags.</li>
+      <li>mark <code>__mh_execute_header</code> as referenced dynamically</li>
+      <li>build.zig: handle weakly imported libs and frameworks</li>
+      <li>support <code>-force_load=archive_path</code> flag</li>
+    </ul>
+
+    {#header_close#}
+
+    {#header_open|COFF#}
+    <p>The COFF linker has been reimplemented from scratch giving our {#link|Windows#} users
+    a chance to finally be able to play with the incremental linking
+    (using the <code>--watch</code> flag and {#link|x86 Backend#} via <code>-fno-LLVM</code>).
+    In addition, the linker now matches the implementation progress of
+    both {#link|ELF#} and {#link|MachO#}, and hence, it is now possible to run the behavior tests on
+    <code>x86_64-windows</code> successfully:</p>
+    {#shell_samp#}
+> C:\Users\kubkon\dev\zig\stage3\bin\zig.exe test test\behavior.zig -Itest -fno-LLVM -fno-unwind-tables -fno-emit-implib
+817 passed; 571 skipped; 0 failed.
+    {#end_shell_samp#}
+    <p>For more detailed description of the implementation, have a look at this pull request:
+    <a href="https://github.com/ziglang/zig/pull/12772">coff: implement enough of the incremental linker to pass behavior and incremental tests on Windows</a></p>
+    {#header_close#}
+
+    {#header_open|ELF#}
+    <p>The self-hosted ELF linker remains <strong>experimental</strong>, capable
+    of incremental compilation of simple Zig programs but not capable of acting as a traditional
+    linker.</p>
+    {#header_close#}
+
+    {#header_open|WASM Modules#}
+    <p>TODO ask Luuk what is the status on self-hosted wasm linker compared to LLD</p>
+    {#header_close#}
+
+    {#header_open|DWARF Linking#}
+    <p>The incremental DWARF emitter/linker is now capable of emitting correctly
+    relocated debug info for <code>x86_64</code>, <code>arm</code> and
+    <code>aarch64</code> architectures on Linux and macOS. The state of
+    implementation varies slightly between architectures with <code>x86_64</code>
+    being the farthest ahead.</p>
+    <p>Example progress includes correctly generating DWARF debug info for
+    slices including {#syntax#}[]const u8{#endsyntax#} for passing as formal parameters.
+    Breaking on a function accepting a slice in <code>gdb</code> will now yield
+    the same behavior as the {#link|Bootstrap Compiler#} and LLVM backend:</p>
+    {#code_begin|syntax#}
+fn sumArrayLens(a: []const u32, b: []const u8) usize {
+    return a.len + b.len;
+}
+    {#code_end#}
+    <p>Both <code>a</code> and <code>b</code> can now be inspected in the debugger:</p>
+    <pre><code>Breakpoint 1, sumArrayLens (a=..., b=...) at arr.zig:59
+(gdb) p a
+$1 = {ptr = 0x7fffffff685c, len = 5}
+(gdb) p b
+$2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
+(gdb)</code></pre>
+    {#header_close#}
+
+    {#header_open|Linker Performance#}
+    <p>This release saw a general rewrite of the majority of the linker in the spirit of
+    <a href="https://media.handmade-seattle.com/practical-data-oriented-design/">data-oriented design</a> which led to:</p>
+    <ul>
+      <li>significantly reduced link times to the point where, dare I say, we start to become competitive with <code>lld</code> and <code>ld64</code></li>
+      <li>reduced memory usage by avoiding unnecessary allocs, and instead re-parsing data when actually needed.</li>
+    </ul>
+    <p>In the benchmarks below, <code>zld</code> refers to our linker as a standalone binary
+    (which you can find at <a href="https://github.com/kubkon/zld">kubkon/zld</a>),
+    <code>lld</code> to LLVM's linker, and <code>ld64</code> to Apple's linker.
+    I should also point out that we are still missing a number of optimisations in
+    the linker such as cstring deduplication, compression of dynamic linker's
+    relocations, and synthesising of the unwind info section, so this difference
+    between <code>zld</code> and other linkers will most likely shrink a little.</p>
+    <p>I've run the benchmarks on a MacBook Pro 16" with M1 Pro SoC and 32GB RAM. The
+    generated code for the linker was <strong>not</strong> using hardware sha256 extensions.</p>
+    <p><strong>Linking <a href="https://github.com/redis/redis/">redis-server</a> binary</strong>:</p>
+    {#shell_samp#}
+❯ hyperfine ./zld ./lld ./ld64 --warmup 60
+Benchmark 1: ./zld
+  Time (mean ± σ):      35.6 ms ±   0.4 ms    [User: 35.9 ms, System: 10.4 ms]
+  Range (min … max):    34.8 ms …  36.4 ms    79 runs
+ 
+Benchmark 2: ./lld
+  Time (mean ± σ):      49.2 ms ±   0.8 ms    [User: 42.6 ms, System: 17.6 ms]
+  Range (min … max):    48.0 ms …  51.2 ms    59 runs
+ 
+Benchmark 3: ./ld64
+  Time (mean ± σ):      47.2 ms ±   0.5 ms    [User: 60.1 ms, System: 14.4 ms]
+  Range (min … max):    46.2 ms …  48.1 ms    61 runs
+ 
+Summary
+  './zld' ran
+    1.32 ± 0.02 times faster than './ld64'
+    1.38 ± 0.03 times faster than './lld'
+    {#end_shell_samp#}
+    <p><strong>Linking {#link|Self-Hosted Compiler#} binary</strong>:</p>
+    {#shell_samp#}
+❯ hyperfine ./zld ./lld ./ld64 --warmup 5
+Benchmark 1: ./zld
+  Time (mean ± σ):      1.934 s ±  0.012 s    [User: 2.870 s, System: 0.468 s]
+  Range (min … max):    1.923 s …  1.962 s    10 runs
+ 
+Benchmark 2: ./lld
+  Time (mean ± σ):      1.153 s ±  0.014 s    [User: 1.289 s, System: 0.230 s]
+  Range (min … max):    1.141 s …  1.179 s    10 runs
+ 
+Benchmark 3: ./ld64
+  Time (mean ± σ):      2.349 s ±  0.006 s    [User: 3.875 s, System: 0.218 s]
+  Range (min … max):    2.341 s …  2.357 s    10 runs
+ 
+Summary
+  './lld' ran
+    1.68 ± 0.02 times faster than './zld'
+    2.04 ± 0.02 times faster than './ld64'
+    {#end_shell_samp#}
+    {#header_close#}
+
+    {#header_open|Linker Test Harness#}
+    <p>The incremental compilation that utilises Zig's
+    {#link|self-hosted native backends|Code Generation#} has
+    seen the addition of a vastly improved and easily extensible test harness. In
+    order to add a new incremental test (emulating the <code>--watch</code> flag), it is now
+    only required to drop a Zig source file in the test harness directory with a
+    specially crafted comment instructing the harness of several test parameters
+    such as test target, and that's it. Thanks to this dynamic approach there is no
+    longer any need in recompiling the harness (#11530) (#11572).</p>
+
+    <p>Linkers also have received a new test harness, which is based on the
+    <code>StandaloneTestContext</code> and <code>CheckFileStep</code>, and as
+    such assumes each test case specifies a <code>build.zig</code> script where
+    we instruct the harness what the link flags/conditions are the expected
+    results such as a runtime result or a greppable contents of the generated
+    binary file (#11910).</p>
+
+    <p>Notable features:</p>
+    <ul>
+      <li><code>CheckObjectStep</code> specialises <code>CheckFileStep</code>
+        into directed (surgical) MachO file fuzzy searches. This will be the
+        building block for comprehensive linker tests.</li>
+      <li>dump metadata to string and grep results. This approach is more
+        inline with what LLVM/LLD does for testing of their output, and seems
+        to be more generic and easier to extend than implementing a lot of
+        repetitive and nontrivial comparison logic when working directly on structures.</li>
+      <li>extract values from parsed binaries into variables. We can then
+        collect multiple variables (currently assumed always in global scope)
+        and run a comparison with some very basic arithmetic on the values.</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+
     {#header_open|Standard Library#}
     <p>The Zig standard library is still unstable and mainly serves as a
     testbed for the language. After the {#link|Self-Hosted Compiler#} is completed,
     the {#link|language|Language Changes#} stabilized, and
-    {#link|Package Manager|Package Manager Status#} completed, then it will be time
+    {#link|Package Manager#} completed, then it will be time
     to start working on stabilizing the standard library.
     Until then, experimentation and breakage without warning is allowed.</p>
     <ul>
@@ -2266,7 +2351,7 @@ https://github.com/ziglang/zig/pull/12837
       <li>mem: add indexOfMin and indexOfMax (#9915)</li>
       <li>Allow `mem.zeroes` to work at comptime with extern union (#10797)</li>
       <li>mem.zeroes: Zero sized structs with uninitialized members (#12246)</li>
-      <li>mem.zeroInit: Fix behaviour with empty initialiser</li>
+      <li>mem.zeroInit: Fix behavior with empty initialiser</li>
       <li>mem: added concatWithSentinel</li>
       <li>mem: add peek() to TokenIterator(T)</li>
       <li>mem: add splitBackwards (#11908)</li>
@@ -2998,12 +3083,12 @@ Hello World!
     {#header_close#}
 
     {#header_open|Roadmap#}
-    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right">
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right; transform: scaleX(-1)">
     <p>Now that the {#link|Self-Hosted Compiler#} is launched, we can move on with the roadmap!
     </p>
 
     <p>The major themes of the 0.11.0 release cycle will be
-    <strong>language specification</strong>,
+    <strong>language iteration</strong>,
     <strong>compilation speed</strong>, and <strong>package management</strong>.
     </p>
 
@@ -3013,42 +3098,45 @@ Hello World!
         to pass a strict superset of tests passed by the {#link|Bootstrap Compiler#}. This is
         down to a few dozen compile error tests.</li>
       <li>{#link|Self-Hosted Compiler#} can build itself with the {#link|C Backend#}.
-        Unlocks ability to replace the {#link|Bootstrap Compiler#} with
-        {#link|Self-Hosted Compiler#} generated C code (#5246).</li>
-      <li>Many language changes implemented.</li>
+        Unlocks ability to replace the {#link|Bootstrap Compiler#} with generated C
+        code (#5246).</li>
+      <li>Many {#link|Accepted Proposals#} implemented. Expect breakage!</li>
       <li>Behavior tests passing for the {#link|x86 Backend#}, {#link|aarch64 Backend#}, or
         {#link|WebAssembly Backend#}.
         Unleashes our full compilation speed when targeting the respective architecture.</li>
-      <li>Experimental first implementation of the official package manager.</li>
+      <li>Experimental first implementation of the {#link|official package manager|Package Manager#}.</li>
       <li>Fuzz test incremental compilation so that we can enable it and gain compilation
         speed for all backends, including the {#link|llvm backend|LLVM 15#}.</li>
-      <li>Hot code swapping proof-of-concept for {#link|macOS#}.</li>
-      <li>{#link|Self-Hosted Linker#} support for ELF. At this point it will
-        be time to do a proof of concept of hot code swapping for {#link|Linux#}.</li>
-      <li>{#link|Self-Hosted Linker#} support for PE/COFF. At this point it will
-        be time to do a proof of concept of hot code swapping for {#link|Windows#}.</li>
+      <li>{#link|Self-Hosted Linker#} support for {#link|ELF#} and {#link|COFF#}.
+        Eliminate dependency on <a href="https://lld.llvm.org/">LLD</a>.</li>
+      <li>Hot code swapping for {#link|Windows#}, {#link|macOS#}, and {#link|Linux#}.</li>
+      <li>Introduce concurrency to semantic analysis to further increase compilation speed.</li>
     </ul>
 
-    <p>Here are the steps for Zig to reach 1.0:</p>
+    <p>Here are the <strong>steps for Zig to reach 1.0</strong>:</p>
     <ol>
       <li>Stabilize the language. No more {#link|Language Changes#} after this.</li>
       <li>Complete the language specification first draft.</li>
-      <li>Implement the official package manager.</li>
+      <li>Implement the {#link|official package manager|Package Manager#}.</li>
       <li>Stabilize the {#link|Standard Library#}. That means to add any missing functionality,
         audit the existing functionality, curate it, re-organize everything, and
-        fix all the bugs.</li>
+        fix all the {#link|bugs|Bug Fixes#}.</li>
       <li>Go one full release cycle without any breaking changes.</li>
       <li>Finally we can tag 1.0.</li>
     </ol>
 
-    {#header_open|Package Manager Status#}
+    {#header_open|Package Manager#}
     <p>
     Having a package manager built into the Zig compiler is a
     <a href="https://github.com/ziglang/zig/issues/943">long-anticipated feature</a>.
     Zig 0.10.0 does not have this feature.
     However, all the prerequisites are finally done, and work begins now!
     </p>
-    TODO link to package manager talk
+    <p>
+    We will do our best to
+    <a href="https://www.youtube.com/watch?v=stChOsejLEQ">keep in mind the needs of system package maintainers</a>
+    while working on this language package manager.
+    </p>
     {#header_close#}
 
     {#header_open|Accepted Proposals#}
