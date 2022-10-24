@@ -1618,18 +1618,33 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <h3 id="TypeInfoDeclaration-no-longer-has-a-data-field"><a href="#toc-TypeInfoDeclaration-no-longer-has-a-data-field">TypeInfo.Declaration no longer has a data field</a> <a class="hdr" href="#TypeInfoDeclaration-no-longer-has-a-data-field">§</a></h3>
 
-commit 0298442100b2d5707099f09d29af554e8c6ac87e
-Merge: 44b105a38 4d22fa5a2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Feb 1 13:16:00 2022 -0500
-
-    Merge pull request #10753 from ziglang/nerf-type-info
-    
-    stage1: remove the `data` field from `TypeInfo.Declaration`
-
- src/translate_c.zig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
+    <p>It used to be possbile to inspect declarations via
+    <a href="/documentation/0.10.0/#typeInfo">@typeInfo</a>, but not any longer (#10753):</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;type info on declarations&quot;</span> {</span>
+<span class="line">    _ = <span class="tok-builtin">@typeInfo</span>(<span class="tok-builtin">@This</span>()).Struct.decls[<span class="tok-number">0</span>].data;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:3:44: </span><span class="t31_1">error: </span><span class="t1_0">no field named 'data' in struct 'builtin.Type.Declaration'</span>
+<span class="line"></span>    _ = @typeInfo(@This()).Struct.decls[0].data;</span>
+<span class="line">                                           <span class="t32_1">^~~~</span>
+<span class="line"></span><span class="t1_0">/home/andy/Downloads/zig/lib/std/builtin.zig:410:29: </span><span class="t36_1">note: </span><span class="t1_0">struct declared here</span>
+<span class="line"></span>    pub const Declaration = struct {</span>
+<span class="line">                            <span class="t32_1">^~~~~~</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <p>The data field looked like this:</p>
+    <pre><code><span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Data = <span class="tok-kw">union</span>(<span class="tok-kw">enum</span>) {</span>
+<span class="line">    Type: <span class="tok-type">type</span>,</span>
+<span class="line">    Var: <span class="tok-type">type</span>,</span>
+<span class="line">    Fn: FnDecl,</span>
+<span class="line">};</span></code></pre>
+    <p>This was removed because it was an unnecessary complication. There are already alternatives
+    for each of these fields:</p>
+    <ul>
+      <li>Var - <code><span class="line"><span class="tok-builtin">@typeOf</span>(<span class="tok-builtin">@field</span>(a, b))</span></code></li>
+      <li>Type - <code><span class="line"><span class="tok-builtin">@field</span>(a, b)</span></code> (after checking the <code><span class="line"><span class="tok-builtin">@typeOf</span></span></code>)</li>
+      <li>Fn - <code><span class="line"><span class="tok-builtin">@field</span>(a, b)</span></code> (after checking the <code><span class="line"><span class="tok-builtin">@typeOf</span></span></code>)</li>
+    </ul>
     <p>This is implemented in both the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> and
     <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.</p>
     
@@ -2276,7 +2291,7 @@ https://github.com/ziglang/zig/pull/12837
     <p>A new contributor jacobly0 came out of nowhere and did a massive amount of work
     to Zig's C backend, reaching these notable milestones:</p>
     <ul>
-      <li>The C backend is now passing <strong>1191/1366 (87%)</strong> of the behavior tests.</li>
+      <li>The C backend is now passing <strong>1198/1365 (88%)</strong> of the behavior tests.</li>
       <li>The official <a href="/documentation/0.10.0/#Hello-World">hello world</a>
         now works on at least <code>x86_64-linux</code> (with and without libc).</li>
       <li>The test runner now prints output to the console.</li>

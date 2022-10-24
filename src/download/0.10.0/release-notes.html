@@ -1436,18 +1436,27 @@ pub const CompilerBackend = enum(u64) {
     {#header_close#}
 
     {#header_open|TypeInfo.Declaration no longer has a data field#}
-commit 0298442100b2d5707099f09d29af554e8c6ac87e
-Merge: 44b105a38 4d22fa5a2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Feb 1 13:16:00 2022 -0500
-
-    Merge pull request #10753 from ziglang/nerf-type-info
-    
-    stage1: remove the `data` field from `TypeInfo.Declaration`
-
- src/translate_c.zig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
+    <p>It used to be possbile to inspect declarations via
+    <a href="/documentation/0.10.0/#typeInfo">@typeInfo</a>, but not any longer (#10753):</p>
+    {#code_begin|test_err|no field named#}
+const std = @import("std");
+test "type info on declarations" {
+    _ = @typeInfo(@This()).Struct.decls[0].data;
+}
+    {#code_end#}
+    <p>The data field looked like this:</p>
+    <pre>{#syntax#}pub const Data = union(enum) {
+    Type: type,
+    Var: type,
+    Fn: FnDecl,
+};{#endsyntax#}</pre>
+    <p>This was removed because it was an unnecessary complication. There are already alternatives
+    for each of these fields:</p>
+    <ul>
+      <li>Var - {#syntax#}@typeOf(@field(a, b)){#endsyntax#}</li>
+      <li>Type - {#syntax#}@field(a, b){#endsyntax#} (after checking the {#syntax#}@typeOf{#endsyntax#})</li>
+      <li>Fn - {#syntax#}@field(a, b){#endsyntax#} (after checking the {#syntax#}@typeOf{#endsyntax#})</li>
+    </ul>
     <p>This is implemented in both the {#link|Bootstrap Compiler#} and
     {#link|Self-Hosted Compiler#}.</p>
     {#header_close#}
@@ -2067,7 +2076,7 @@ https://github.com/ziglang/zig/pull/12837
     <p>A new contributor jacobly0 came out of nowhere and did a massive amount of work
     to Zig's C backend, reaching these notable milestones:</p>
     <ul>
-      <li>The C backend is now passing <strong>1191/1366 (87%)</strong> of the behavior tests.</li>
+      <li>The C backend is now passing <strong>1198/1365 (88%)</strong> of the behavior tests.</li>
       <li>The official <a href="/documentation/0.10.0/#Hello-World">hello world</a>
         now works on at least <code>x86_64-linux</code> (with and without libc).</li>
       <li>The test runner now prints output to the console.</li>
