@@ -1482,7 +1482,7 @@
     <h3 id="Runtime-Array-Concatenation--Multiplication"><a href="#toc-Runtime-Array-Concatenation--Multiplication">Runtime Array Concatenation & Multiplication</a> <a class="hdr" href="#Runtime-Array-Concatenation--Multiplication">§</a></h3>
 
     <p>The <code><span class="line">++</span></code> and <code><span class="line">**</span></code> operators now support
-    runtime-known operands, as long as the length is compile-time known:</p>
+    runtime-known operands, as long as the length is compile-time-known:</p>
     <figure><figcaption class="zig-cap"><cite class="file">array_cat.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
@@ -1508,12 +1508,85 @@
 
     <h3 id="stdbuiltinCompilerBackend"><a href="#toc-stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a> <a class="hdr" href="#stdbuiltinCompilerBackend">§</a></h3>
 
-    TODO
+    <p>Now that there are multiple competing <a href="#Code-Generation">Code Generation</a> backends, it may
+    be necessary to work around <a href="#This-Release-Contains-Bugs">bugs</a> in one of them.
+    Similarly, as Zig gains
+    <a href="https://tjpalmer.github.io/languish/">popularity</a>,
+    there may be third party compiler implementations
+    which have quirks. Zig now provides a <code><span class="line"><span class="tok-kw">comptime</span></span></code> enum
+    value so that one can use conditional compilation to work around such issues.</p>
+    <p><strong>Think carefully before using this!</strong> Documentation comments are reproduced here:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-comment">/// This enum is set by the compiler and communicates which compiler backend is</span></span>
+<span class="line"><span class="tok-comment">/// used to produce machine code.</span></span>
+<span class="line"><span class="tok-comment">/// Think carefully before deciding to observe this value. Nearly all code should</span></span>
+<span class="line"><span class="tok-comment">/// be agnostic to the backend that implements the language. The use case</span></span>
+<span class="line"><span class="tok-comment">/// to use this value is to **work around problems with compiler implementations.**</span></span>
+<span class="line"><span class="tok-comment">///</span></span>
+<span class="line"><span class="tok-comment">/// Avoid failing the compilation if the compiler backend does not match a</span></span>
+<span class="line"><span class="tok-comment">/// whitelist of backends; rather one should detect that a known problem would</span></span>
+<span class="line"><span class="tok-comment">/// occur in a blacklist of backends.</span></span>
+<span class="line"><span class="tok-comment">///</span></span>
+<span class="line"><span class="tok-comment">/// The enum is nonexhaustive so that alternate Zig language implementations may</span></span>
+<span class="line"><span class="tok-comment">/// choose a number as their tag (please use a random number generator rather</span></span>
+<span class="line"><span class="tok-comment">/// than a &quot;cute&quot; number) and codebases can interact with these values even if</span></span>
+<span class="line"><span class="tok-comment">/// this upstream enum does not have a name for the number. Of course, upstream</span></span>
+<span class="line"><span class="tok-comment">/// is happy to accept pull requests to add Zig implementations to this enum.</span></span>
+<span class="line"><span class="tok-comment">///</span></span>
+<span class="line"><span class="tok-comment">/// This data structure is part of the Zig language specification, however, the</span></span>
+<span class="line"><span class="tok-comment">/// specific tag names and values are implementation defined.</span></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> CompilerBackend = <span class="tok-kw">enum</span>(<span class="tok-type">u64</span>) {</span>
+<span class="line">    <span class="tok-comment">/// It is allowed for a compiler implementation to not reveal its identity,</span></span>
+<span class="line">    <span class="tok-comment">/// in which case this value is appropriate. Be cool and make sure your</span></span>
+<span class="line">    <span class="tok-comment">/// code supports `other` Zig compilers!</span></span>
+<span class="line">    other = <span class="tok-number">0</span>,</span>
+<span class="line">    <span class="tok-comment">/// The original Zig compiler created in 2015 by Andrew Kelley.</span></span>
+<span class="line">    <span class="tok-comment">/// Implemented in C++. Uses LLVM.</span></span>
+<span class="line">    stage1 = <span class="tok-number">1</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// LLVM backend.</span></span>
+<span class="line">    stage2_llvm = <span class="tok-number">2</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// backend that generates C source code.</span></span>
+<span class="line">    <span class="tok-comment">/// Note that one can observe whether the compilation will output C code</span></span>
+<span class="line">    <span class="tok-comment">/// directly with `object_format` value rather than the `compiler_backend` value.</span></span>
+<span class="line">    stage2_c = <span class="tok-number">3</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// WebAssembly backend.</span></span>
+<span class="line">    stage2_wasm = <span class="tok-number">4</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// arm backend.</span></span>
+<span class="line">    stage2_arm = <span class="tok-number">5</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// x86_64 backend.</span></span>
+<span class="line">    stage2_x86_64 = <span class="tok-number">6</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// aarch64 backend.</span></span>
+<span class="line">    stage2_aarch64 = <span class="tok-number">7</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// x86 backend.</span></span>
+<span class="line">    stage2_x86 = <span class="tok-number">8</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// riscv64 backend.</span></span>
+<span class="line">    stage2_riscv64 = <span class="tok-number">9</span>,</span>
+<span class="line">    <span class="tok-comment">/// The reference implementation self-hosted compiler of Zig, using the</span></span>
+<span class="line">    <span class="tok-comment">/// sparc64 backend.</span></span>
+<span class="line">    stage2_sparc64 = <span class="tok-number">10</span>,</span>
+<span class="line"></span>
+<span class="line">    _,</span>
+<span class="line">};</span></code></pre></figure>
     
 
     <h3 id="f80"><a href="#toc-f80">f80</a> <a class="hdr" href="#f80">§</a></h3>
 
-    TODO
+    <p>Zig now has <code><span class="line"><span class="tok-type">f80</span></span></code>, a primitive type that provides
+    <a href="https://en.wikipedia.org/wiki/Extended_precision#x86_extended_precision_format">x86 extended precision format</a>.
+    This type is fully supported on all systems, even those which lack hardware
+    support for this type, via <a href="#compiler-rt">compiler-rt</a>.
+    </p>
+    <p>When would you use this? Well
+    <a href="https://github.com/Vexu/arocc/issues/213">if you were implementing a C compiler for instance</a>.
+    It's also part of the C ABI - on some systems when <code>long double</code> is used in a
+    function prototype, <code><span class="line"><span class="tok-type">f80</span></span></code> is how the data is passed.</p>
     <p>This is implemented in both the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> and
     <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.</p>
     
