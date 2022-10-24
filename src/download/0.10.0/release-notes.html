@@ -1220,23 +1220,122 @@ pub fn iterate(base: *Node, index: usize) ?*Node {
     {#header_close#}
 
     {#header_open|Equality Testing of Error Unions#}
-    TODO https://github.com/ziglang/zig/issues/1302
+    <p>Similar to how the {#syntax#}=={#endsyntax#} operator can be used to check if
+    an optional is {#syntax#}null{#endsyntax#}, it can now also be used to check if an
+    error union is a specific error code:</p>
+    {#code_begin|test|error-equality#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "equality testing of error unions" {
+    try expect(foo() == error.Bad);
+    try expect(bar() == error.RealBad);
+}
+fn foo() anyerror {
+    return error.Bad;
+}
+fn bar() anyerror!void {
+    return error.RealBad;
+}
+    {#code_end#}
     {#header_close#}
 
-    {#header_open|Zero-Bit Types#}
-    TODO
+    {#header_open|Pointers to Zero-Bit Types#}
+    <p>Before, a pointer to a zero-bit type was itself a zero bit type. Now,
+    pointers to zero-bit types store addresses the same as regular pointers.</p>
+    <p>This change is unlikely to affect many codebases. A use case where it might be
+    relevant is representing a struct that has a variable-sized last field,
+    as demonstrated by the <code>name</code> field here:</p>
+    {#code_begin|test|vla#}
+const std = @import("std");
+const testing = std.testing;
+
+test "struct with variable length last field" {
+    const foo = try make(testing.allocator, "Blah blah");
+    defer foo.free(testing.allocator);
+
+    try testing.expect(foo.a == 1234);
+    try testing.expectEqualStrings(foo.getName(), "Blah blah");
+
+    // The pointer address of the 'name' field is still well-defined and meaningful:
+    try testing.expect(@ptrCast(*u8, &foo.name).* == 'B');
+}
+
+const S = extern struct {
+    a: i32,
+    name: [0]u8 = .{},
+
+    fn getName(s: *const S) []const u8 {
+        return std.mem.sliceTo(@ptrCast([*:0]const u8, &s.name), 0);
+    }
+
+    fn free(s: *S, gpa: std.mem.Allocator) void {
+        const buf = @ptrCast([*]u8, s)[0 .. @sizeOf(S) + s.getName().len + 1];
+        gpa.free(buf);
+    }
+};
+
+fn make(gpa: std.mem.Allocator, name: []const u8) !*S {
+    const s = try make_vla(gpa, S, name.len + 1);
+    s.* = .{ .a = 1234 };
+    const name_ptr = @ptrCast([*]u8, &s.name);
+    std.mem.copy(u8, name_ptr[0..name.len], name);
+    name_ptr[name.len] = 0;
+    return s;
+}
+
+fn make_vla(gpa: std.mem.Allocator, comptime T: type, extra_bytes: usize) !*T {
+    const buf = try gpa.alignedAlloc(u8, @alignOf(T), @sizeOf(T) + extra_bytes);
+    const ptr = @ptrCast(*T, buf);
+    return ptr;
+}
+    {#code_end#}
+    <p>This is implemented in {#link|Self-Hosted Compiler#} only.</p>
     {#header_close#}
 
     {#header_open|@minimum and @maximum renamed to @min and @max#}
-    TODO
+    <p>See the {#link|Language Reference#}:
+      <a href="/documentation/0.10.0/#min">@min</a>
+      <a href="/documentation/0.10.0/#max">@max</a>
+    </p>
+    <p>{#link|zig fmt#} will automatically perform the rename.</p>
     {#header_close#}
 
     {#header_open|Removed Type Parameter from Bit Builtins#}
-    TODO @byteSwap, @bitReverse, @clz, @ctz, @popCount
+    <p>The following builtins no longer have types as the first parameter:</p>
+    <ul style="columns: 3">
+      <li><a href="/documentation/0.10.0/#byteSwap">@byteSwap</a></li>
+      <li><a href="/documentation/0.10.0/#bitReverse">@bitReverse</a></li>
+      <li><a href="/documentation/0.10.0/#clz">@clz</a></li>
+      <li><a href="/documentation/0.10.0/#ctz">@ctz</a></li>
+      <li><a href="/documentation/0.10.0/#popCount">@popCount</a></li>
+    </ul>
+    <p>Instead, the type is inferred from the operand. This makes the builtins more
+    ergonomic for <a href="/documentation/0.10.0/#Vectors">SIMD</a>.</p>
     {#header_close#}
 
     {#header_open|Runtime Array Concatenation & Multiplication#}
-    TODO
+    <p>The {#syntax#}++{#endsyntax#} and {#syntax#}**{#endsyntax#} operators now support
+    runtime-known operands, as long as the length is compile-time-known:</p>
+    {#code_begin|exe|array_cat#}
+const std = @import("std");
+
+pub fn main() !void {
+    var array1 = "hellp".*;
+    var array2 = "!world ".*;
+
+    array1[array1.len - 1] -= 1;
+    std.mem.swap(u8, &array2[0], &array2[array2.len - 1]);
+
+    const final = array1 ++ array2 ++ "\n";
+    try std.io.getStdOut().writeAll(final);
+}
+    {#code_end#}
+
+    <p>This may be a breaking change for some people who were relying on Zig to automatically
+    evaluate the operands in a {#syntax#}comptime{#endsyntax#} scope. The previous behavior
+    can be obtained with explicit use of the {#syntax#}comptime{#endsyntax#} keyword.</p>
+    <p>This is implemented in {#link|Self-Hosted Compiler#} only.</p>
     {#header_close#}
 
     {#header_open|std.builtin.CompilerBackend#}
@@ -1654,7 +1753,7 @@ const S = struct {
 };
 ```
 
-This test passes with stage1 despite having a critical bug: a temporary is created by taking the address of the the [pass-by-value parameter](https://ziglang.org/documentation/master/#Pass-by-value-Parameters) which is then returned from the function.
+This test passes with stage1 despite having a critical bug: a temporary is created by taking the address of the the [pass-by-value parameter](https://ziglang.org/documentation/0.10.0/#Pass-by-value-Parameters) which is then returned from the function.
 
 Stage1 is naive, always passing structs by pointer in code such as this. Meanwhile, the self-hosted compiler efficiently takes advantage of smaller arguments such as this, passing them truly by value, revealing the bug.
 

@@ -393,7 +393,7 @@
             <li><a id="toc-Packed-Structs" href="#Packed-Structs">Packed Structs</a></li>
             <li><a id="toc-Inline-Switch-Cases" href="#Inline-Switch-Cases">Inline Switch Cases</a></li>
             <li><a id="toc-Equality-Testing-of-Error-Unions" href="#Equality-Testing-of-Error-Unions">Equality Testing of Error Unions</a></li>
-            <li><a id="toc-Zero-Bit-Types" href="#Zero-Bit-Types">Zero-Bit Types</a></li>
+            <li><a id="toc-Pointers-to-Zero-Bit-Types" href="#Pointers-to-Zero-Bit-Types">Pointers to Zero-Bit Types</a></li>
             <li><a id="toc-minimum-and-maximum-renamed-to-min-and-max" href="#minimum-and-maximum-renamed-to-min-and-max">@minimum and @maximum renamed to @min and @max</a></li>
             <li><a id="toc-Removed-Type-Parameter-from-Bit-Builtins" href="#Removed-Type-Parameter-from-Bit-Builtins">Removed Type Parameter from Bit Builtins</a></li>
             <li><a id="toc-Runtime-Array-Concatenation--Multiplication" href="#Runtime-Array-Concatenation--Multiplication">Runtime Array Concatenation & Multiplication</a></li>
@@ -1380,27 +1380,130 @@
 
     <h3 id="Equality-Testing-of-Error-Unions"><a href="#toc-Equality-Testing-of-Error-Unions">Equality Testing of Error Unions</a> <a class="hdr" href="#Equality-Testing-of-Error-Unions">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/1302
+    <p>Similar to how the <code><span class="line">==</span></code> operator can be used to check if
+    an optional is <code><span class="line"><span class="tok-null">null</span></span></code>, it can now also be used to check if an
+    error union is a specific error code:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">error-equality.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;equality testing of error unions&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> expect(foo() == <span class="tok-kw">error</span>.Bad);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(bar() == <span class="tok-kw">error</span>.RealBad);</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">anyerror</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Bad;</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.RealBad;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test error-equality.zig</kbd></span>
+<span class="line">1/1 test.equality testing of error unions... OK</span>
+<span class="line">All 1 tests passed.</span>
+</samp></pre></figure>
     
 
-    <h3 id="Zero-Bit-Types"><a href="#toc-Zero-Bit-Types">Zero-Bit Types</a> <a class="hdr" href="#Zero-Bit-Types">§</a></h3>
+    <h3 id="Pointers-to-Zero-Bit-Types"><a href="#toc-Pointers-to-Zero-Bit-Types">Pointers to Zero-Bit Types</a> <a class="hdr" href="#Pointers-to-Zero-Bit-Types">§</a></h3>
 
-    TODO
+    <p>Before, a pointer to a zero-bit type was itself a zero bit type. Now,
+    pointers to zero-bit types store addresses the same as regular pointers.</p>
+    <p>This change is unlikely to affect many codebases. A use case where it might be
+    relevant is representing a struct that has a variable-sized last field,
+    as demonstrated by the <code>name</code> field here:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">vla.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> testing = std.testing;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;struct with variable length last field&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> foo = <span class="tok-kw">try</span> make(testing.allocator, <span class="tok-str">&quot;Blah blah&quot;</span>);</span>
+<span class="line">    <span class="tok-kw">defer</span> foo.free(testing.allocator);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> testing.expect(foo.a == <span class="tok-number">1234</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> testing.expectEqualStrings(foo.getName(), <span class="tok-str">&quot;Blah blah&quot;</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// The pointer address of the 'name' field is still well-defined and meaningful:</span></span>
+<span class="line">    <span class="tok-kw">try</span> testing.expect(<span class="tok-builtin">@ptrCast</span>(*<span class="tok-type">u8</span>, &amp;foo.name).* == <span class="tok-str">'B'</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> S = <span class="tok-kw">extern</span> <span class="tok-kw">struct</span> {</span>
+<span class="line">    a: <span class="tok-type">i32</span>,</span>
+<span class="line">    name: [<span class="tok-number">0</span>]<span class="tok-type">u8</span> = .{},</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">getName</span>(s: *<span class="tok-kw">const</span> S) []<span class="tok-kw">const</span> <span class="tok-type">u8</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> std.mem.sliceTo(<span class="tok-builtin">@ptrCast</span>([*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>, &amp;s.name), <span class="tok-number">0</span>);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">free</span>(s: *S, gpa: std.mem.Allocator) <span class="tok-type">void</span> {</span>
+<span class="line">        <span class="tok-kw">const</span> buf = <span class="tok-builtin">@ptrCast</span>([*]<span class="tok-type">u8</span>, s)[<span class="tok-number">0</span> .. <span class="tok-builtin">@sizeOf</span>(S) + s.getName().len + <span class="tok-number">1</span>];</span>
+<span class="line">        gpa.free(buf);</span>
+<span class="line">    }</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">make</span>(gpa: std.mem.Allocator, name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) !*S {</span>
+<span class="line">    <span class="tok-kw">const</span> s = <span class="tok-kw">try</span> make_vla(gpa, S, name.len + <span class="tok-number">1</span>);</span>
+<span class="line">    s.* = .{ .a = <span class="tok-number">1234</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> name_ptr = <span class="tok-builtin">@ptrCast</span>([*]<span class="tok-type">u8</span>, &amp;s.name);</span>
+<span class="line">    std.mem.copy(<span class="tok-type">u8</span>, name_ptr[<span class="tok-number">0</span>..name.len], name);</span>
+<span class="line">    name_ptr[name.len] = <span class="tok-number">0</span>;</span>
+<span class="line">    <span class="tok-kw">return</span> s;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">make_vla</span>(gpa: std.mem.Allocator, <span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, extra_bytes: <span class="tok-type">usize</span>) !*T {</span>
+<span class="line">    <span class="tok-kw">const</span> buf = <span class="tok-kw">try</span> gpa.alignedAlloc(<span class="tok-type">u8</span>, <span class="tok-builtin">@alignOf</span>(T), <span class="tok-builtin">@sizeOf</span>(T) + extra_bytes);</span>
+<span class="line">    <span class="tok-kw">const</span> ptr = <span class="tok-builtin">@ptrCast</span>(*T, buf);</span>
+<span class="line">    <span class="tok-kw">return</span> ptr;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test vla.zig</kbd></span>
+<span class="line">1/1 test.struct with variable length last field... OK</span>
+<span class="line">All 1 tests passed.</span>
+</samp></pre></figure>
+    <p>This is implemented in <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> only.</p>
     
 
     <h3 id="minimum-and-maximum-renamed-to-min-and-max"><a href="#toc-minimum-and-maximum-renamed-to-min-and-max">@minimum and @maximum renamed to @min and @max</a> <a class="hdr" href="#minimum-and-maximum-renamed-to-min-and-max">§</a></h3>
 
-    TODO
+    <p>See the <a href="#Language-Reference">Language Reference</a>:
+      <a href="/documentation/0.10.0/#min">@min</a>
+      <a href="/documentation/0.10.0/#max">@max</a>
+    </p>
+    <p><a href="#zig-fmt">zig fmt</a> will automatically perform the rename.</p>
     
 
     <h3 id="Removed-Type-Parameter-from-Bit-Builtins"><a href="#toc-Removed-Type-Parameter-from-Bit-Builtins">Removed Type Parameter from Bit Builtins</a> <a class="hdr" href="#Removed-Type-Parameter-from-Bit-Builtins">§</a></h3>
 
-    TODO @byteSwap, @bitReverse, @clz, @ctz, @popCount
+    <p>The following builtins no longer have types as the first parameter:</p>
+    <ul style="columns: 3">
+      <li><a href="/documentation/0.10.0/#byteSwap">@byteSwap</a></li>
+      <li><a href="/documentation/0.10.0/#bitReverse">@bitReverse</a></li>
+      <li><a href="/documentation/0.10.0/#clz">@clz</a></li>
+      <li><a href="/documentation/0.10.0/#ctz">@ctz</a></li>
+      <li><a href="/documentation/0.10.0/#popCount">@popCount</a></li>
+    </ul>
+    <p>Instead, the type is inferred from the operand. This makes the builtins more
+    ergonomic for <a href="/documentation/0.10.0/#Vectors">SIMD</a>.</p>
     
 
     <h3 id="Runtime-Array-Concatenation--Multiplication"><a href="#toc-Runtime-Array-Concatenation--Multiplication">Runtime Array Concatenation & Multiplication</a> <a class="hdr" href="#Runtime-Array-Concatenation--Multiplication">§</a></h3>
 
-    TODO
+    <p>The <code><span class="line">++</span></code> and <code><span class="line">**</span></code> operators now support
+    runtime-known operands, as long as the length is compile-time known:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">array_cat.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> array1 = <span class="tok-str">&quot;hellp&quot;</span>.*;</span>
+<span class="line">    <span class="tok-kw">var</span> array2 = <span class="tok-str">&quot;!world &quot;</span>.*;</span>
+<span class="line"></span>
+<span class="line">    array1[array1.len - <span class="tok-number">1</span>] -= <span class="tok-number">1</span>;</span>
+<span class="line">    std.mem.swap(<span class="tok-type">u8</span>, &amp;array2[<span class="tok-number">0</span>], &amp;array2[array2.len - <span class="tok-number">1</span>]);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">const</span> final = array1 ++ array2 ++ <span class="tok-str">&quot;\n&quot;</span>;</span>
+<span class="line">    <span class="tok-kw">try</span> std.io.getStdOut().writeAll(final);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe array_cat.zig</kbd></span>
+<span class="line"></span>
+<span class="line">$ <kbd>./array_cat</kbd></span>
+<span class="line">hello world!</span>
+</samp></pre></figure>
+
+    <p>This may be a breaking change for some people who were relying on Zig to automatically
+    evaluate the operands in a <code><span class="line"><span class="tok-kw">comptime</span></span></code> scope. The previous behavior
+    can be obtained with explicit use of the <code><span class="line"><span class="tok-kw">comptime</span></span></code> keyword.</p>
+    <p>This is implemented in <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> only.</p>
     
 
     <h3 id="stdbuiltinCompilerBackend"><a href="#toc-stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a> <a class="hdr" href="#stdbuiltinCompilerBackend">§</a></h3>
@@ -1837,7 +1940,7 @@ const S = struct {
 };
 ```
 
-This test passes with stage1 despite having a critical bug: a temporary is created by taking the address of the the [pass-by-value parameter](https://ziglang.org/documentation/master/#Pass-by-value-Parameters) which is then returned from the function.
+This test passes with stage1 despite having a critical bug: a temporary is created by taking the address of the the [pass-by-value parameter](https://ziglang.org/documentation/0.10.0/#Pass-by-value-Parameters) which is then returned from the function.
 
 Stage1 is naive, always passing structs by pointer in code such as this. Meanwhile, the self-hosted compiler efficiently takes advantage of smaller arguments such as this, passing them truly by value, revealing the bug.
 
