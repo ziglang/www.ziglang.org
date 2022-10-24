@@ -1127,24 +1127,25 @@
     <h3 id="WASI"><a href="#toc-WASI">WASI</a> <a class="hdr" href="#WASI">§</a></h3>
 
     <p>Zig can now build itself for the WASI target.</p>
-    <pre><code><strong>$ uname -m</strong>
-x86_64
-<strong>$ zig build -Dtarget=wasm32-wasi -Drelease</strong>
-<strong>$ file zig-out/bin/zig.wasm</strong>
-zig-out/bin/zig.wasm: WebAssembly (wasm) binary module version 0x1 (MVP)
-<strong>$ ls -hl zig-out/bin/zig.wasm </strong>
--rwxr-xr-x 1 andy users 37M Oct 19 12:24 zig-out/bin/zig.wasm
-<strong>$ cat hello.zig</strong>
-const std = @import("std");
-pub fn main() void {
-    std.io.getStdOut().writeAll("Hello, World!\n") catch {};
-}
-<strong>$ wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::"$HOME/.cache/zig" --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl</strong>
-<strong>$ chmod +x hello</strong>
-<strong>$ file hello</strong>
-hello: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped
-<strong>$ ./hello</strong>
-Hello, World!</code></pre>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>uname -m</kbd></span>
+<span class="line">x86_64</span>
+<span class="line">$ <kbd>zig build -Dtarget=wasm32-wasi -Drelease</kbd></span>
+<span class="line">$ <kbd>file zig-out/bin/zig.wasm</kbd></span>
+<span class="line">zig-out/bin/zig.wasm: WebAssembly (wasm) binary module version 0x1 (MVP)</span>
+<span class="line">$ <kbd>ls -hl zig-out/bin/zig.wasm</kbd></span>
+<span class="line">-rwxr-xr-x 1 andy users 37M Oct 19 12:24 zig-out/bin/zig.wasm</span>
+<span class="line">$ <kbd>cat hello.zig</kbd></span>
+<span class="line">const std = @import("std");</span>
+<span class="line">pub fn main() void {</span>
+<span class="line">    std.io.getStdOut().writeAll("Hello, World!\n") catch {};</span>
+<span class="line">}</span>
+<span class="line">$ <kbd>wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::"$HOME/.cache/zig" --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl</kbd></span>
+<span class="line">$ <kbd>chmod +x hello</kbd></span>
+<span class="line">$ <kbd>file hello</kbd></span>
+<span class="line">hello: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped</span>
+<span class="line">$ <kbd>./hello</kbd></span>
+<span class="line">Hello, World!</span>
+</samp></pre></figure>
     <p>The <code>chmod</code> is because of
     <a href="https://github.com/WebAssembly/wasi-filesystem/issues/33">WebAssembly/wasi-filesystem#33</a>.</p>
     <p>This snippet demonstrates creating a WASI build of Zig, then executing it with
@@ -1184,6 +1185,7 @@ Hello, World!</code></pre>
       <li>Added documentation for common mistakes in errdefer scoping.</li>
       <li>Clarify behavior of slicing with constant indexes (#11219)</li>
       <li>Add pointer arithmetic example.</li>
+      <li>Updated to keep in sync with <a href="#Language-Changes">Language Changes</a>.</li>
       <li>Miscellaneous minor improvements and corrections.</li>
     </ul>
     
@@ -1242,8 +1244,8 @@ Hello, World!</code></pre>
     <h3 id="Packed-Structs"><a href="#toc-Packed-Structs">Packed Structs</a> <a class="hdr" href="#Packed-Structs">§</a></h3>
 
     <p>In previous releases of Zig there have been some nasty bugs that
-    unfortunately did not get fixed for a few releases, resulting in packed
-    structs getting a deservedly poor reputation. Finally, the situation is
+    unfortunately did not get fixed for a long time, resulting in packed
+    structs having a deservedly poor reputation. Finally, the situation is
     resolved. Packed structs have been reworked, both in terms of the Zig
     language specification, as well as the implementation.</p>
     <p>Now, one can reason about packed structs in a similar way as one reasons about
@@ -1304,22 +1306,76 @@ Hello, World!</code></pre>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test align-1.zig</kbd></span>
 <span class="line">All 0 tests passed.</span>
 </samp></pre></figure>
-
-    TODO show the new semantics
-    TODO eliminate confusion with extern structs and alignment
-    TODO mention that the syntax will change
     
 
     <h3 id="Inline-Switch-Cases"><a href="#toc-Inline-Switch-Cases">Inline Switch Cases</a> <a class="hdr" href="#Inline-Switch-Cases">§</a></h3>
 
-commit ff534d22676b8a934acf1931f91d70c554a4bdca
-Merge: 9d5462dcb 17eea918a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Oct 3 23:43:09 2022 -0400
+    <p>The <code><span class="line"><span class="tok-kw">inline</span></span></code> keyword can now be placed in front of
+    <code><span class="line"><span class="tok-kw">switch</span></span></code> cases. This effectively turns a runtime-known value into a
+    compile-time-known value:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">inline-switch.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> arena_instance = std.heap.ArenaAllocator.init(std.heap.page_allocator);</span>
+<span class="line">    <span class="tok-kw">const</span> arena = arena_instance.allocator();</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">const</span> args = <span class="tok-kw">try</span> std.process.argsAlloc(arena);</span>
+<span class="line">    <span class="tok-kw">const</span> arg = <span class="tok-kw">if</span> (args.len &gt;= <span class="tok-number">2</span>) args[<span class="tok-number">1</span>] <span class="tok-kw">else</span> <span class="tok-str">&quot;50&quot;</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> some_number = <span class="tok-kw">try</span> std.fmt.parseInt(<span class="tok-type">i32</span>, arg, <span class="tok-number">10</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">switch</span> (some_number) {</span>
+<span class="line">        <span class="tok-kw">inline</span> <span class="tok-number">1</span>...<span class="tok-number">100</span> =&gt; |x| {</span>
+<span class="line">            foo(x);</span>
+<span class="line">        },</span>
+<span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;not in range&quot;</span>),</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(<span class="tok-kw">comptime</span> x: <span class="tok-type">i32</span>) <span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-comment">// Doing something that requires a comptime number, such as</span></span>
+<span class="line">    <span class="tok-comment">// using it as the length of an array:</span></span>
+<span class="line">    <span class="tok-kw">var</span> array: [x]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-kw">for</span> (array) |*elem, i| {</span>
+<span class="line">        elem.* = <span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, i);</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe inline-switch.zig</kbd></span>
+<span class="line"></span>
+<span class="line">$ <kbd>./inline-switch</kbd></span>
+</samp></pre></figure>
+    <p>
+    In this example, we take a number that was passed in as a command line parameter at runtime,
+    and pass it to a function that requires a <code><span class="line"><span class="tok-kw">comptime</span></span></code> parameter. This
+    works because the <code><span class="line"><span class="tok-kw">switch</span></span></code> gets <em>inlined</em> - 100 prongs are
+    generated, similar to unrolling an <code><span class="line"><span class="tok-kw">inline</span> <span class="tok-kw">for</span></span></code> loop that looped from
+    1 to 100.
+    </p>
+    <p>Let's look at a less contrived example. Here is the use case where this pattern is the
+    most useful: dynamic dispatch for enums and tagged unions.</p>
+    <p>Before:</p>
+    <pre><code><span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">iterate</span>(base: *Node, index: <span class="tok-type">usize</span>) ?*Node {</span>
+<span class="line">    <span class="tok-kw">inline</span> <span class="tok-kw">for</span> (<span class="tok-builtin">@typeInfo</span>(Tag).Enum.fields) |field| {</span>
+<span class="line">        <span class="tok-kw">const</span> tag = <span class="tok-builtin">@intToEnum</span>(Tag, field.value);</span>
+<span class="line">        <span class="tok-kw">if</span> (base.tag == tag) {</span>
+<span class="line">            <span class="tok-kw">return</span> <span class="tok-builtin">@fieldParentPtr</span>(tag.Type(), <span class="tok-str">&quot;base&quot;</span>, base).iterate(index);</span>
+<span class="line">        }</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">unreachable</span>;</span>
+<span class="line">}</span></code></pre>
+    <p>After:</p>
+    <pre><code><span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">iterate</span>(base: *Node, index: <span class="tok-type">usize</span>) ?*Node {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (base.tag) {</span>
+<span class="line">        <span class="tok-kw">inline</span> <span class="tok-kw">else</span> =&gt; |tag| <span class="tok-builtin">@fieldParentPtr</span>(tag.Type(), <span class="tok-str">&quot;base&quot;</span>, base).iterate(index),</span>
+<span class="line">    };</span>
+<span class="line">}</span></code></pre>
 
-    Merge pull request #12979 from Vexu/inline-switch
-    
-    Implement inline switch cases
+    <p>Unfortunately, we cannot use this feature in the <a href="#Standard-Library">Standard Library</a> or
+    the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> yet, because this feature is not implemented in the
+    <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>. The <a href="#Roadmap">next steps</a> to accomplish this will
+    be enhancing the <a href="#C-Backend">C Backend</a> until we can
+    <a href="https://github.com/ziglang/zig/issues/5246">replace the bootstrap compiler</a>.</p>
+
+    <p>See the <a href="/documentation/0.10.0/#Inline-switch">full inline switch documentation</a> in the <a href="#Language-Reference">Language Reference</a>.</p>
     
 
     <h3 id="Equality-Testing-of-Error-Unions"><a href="#toc-Equality-Testing-of-Error-Unions">Equality Testing of Error Unions</a> <a class="hdr" href="#Equality-Testing-of-Error-Unions">§</a></h3>
@@ -2900,18 +2956,21 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
     parameter, but I made a separate heading here because I realized that some people are
     not aware that Zig supports compiling C++ code and providing libc++ too!
     </p>
-    <pre><code>#include &lt;iostream&gt;
-int main() {
-    std::cout &lt;&lt; "Hello World!" &lt;&lt; std::endl;
-    return 0;
-}</code></pre>
-    <pre><code>$ zig c++ -o hello hello.cpp
-$ ./hello
-Hello World!</code></pre>
+
+    <figure><figcaption class="c-cap"><cite class="file">hello.cpp</cite></figcaption><pre><code><span class="line">#include &lt;iostream&gt;</span>
+<span class="line">int main() {</span>
+<span class="line">    std::cout &lt;&lt; &quot;Hello World!&quot; &gt;&gt; std::endl;</span>
+<span class="line">    return 0;</span>
+<span class="line">}</span></code></pre></figure>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig c++ -o hello hello.cpp</kbd></span>
+<span class="line">$ <kbd>./hello</kbd></span>
+<span class="line">Hello World!</span>
+</samp></pre></figure>
     <p>Cross-compiling too, of course:</p>
-    <pre><code>$ zig c++ -o hello hello.cpp -target riscv64-linux
-$ qemu-riscv64 ./hello
-Hello World!</code></pre>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig c++ -o hello hello.cpp -target riscv64-linux</kbd></span>
+<span class="line">$ <kbd>qemu-riscv64 ./hello</kbd></span>
+<span class="line">Hello World!</span>
+</samp></pre></figure>
     <p>
     One thing that trips people up when they use this feature is that the
     <strong>C++ ABI is not stable across compilers</strong>, so always remember the rule:

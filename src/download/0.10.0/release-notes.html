@@ -981,24 +981,26 @@
 
     {#header_open|WASI#}
     <p>Zig can now build itself for the WASI target.</p>
-    <pre><code><strong>$ uname -m</strong>
+    {#shell_samp#}
+    $ uname -m
 x86_64
-<strong>$ zig build -Dtarget=wasm32-wasi -Drelease</strong>
-<strong>$ file zig-out/bin/zig.wasm</strong>
+$ zig build -Dtarget=wasm32-wasi -Drelease
+$ file zig-out/bin/zig.wasm
 zig-out/bin/zig.wasm: WebAssembly (wasm) binary module version 0x1 (MVP)
-<strong>$ ls -hl zig-out/bin/zig.wasm </strong>
+$ ls -hl zig-out/bin/zig.wasm 
 -rwxr-xr-x 1 andy users 37M Oct 19 12:24 zig-out/bin/zig.wasm
-<strong>$ cat hello.zig</strong>
+$ cat hello.zig
 const std = @import("std");
 pub fn main() void {
     std.io.getStdOut().writeAll("Hello, World!\n") catch {};
 }
-<strong>$ wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::"$HOME/.cache/zig" --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl</strong>
-<strong>$ chmod +x hello</strong>
-<strong>$ file hello</strong>
+$ wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::"$HOME/.cache/zig" --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl
+$ chmod +x hello
+$ file hello
 hello: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped
-<strong>$ ./hello</strong>
-Hello, World!</code></pre>
+$ ./hello
+Hello, World!
+    {#end_shell_samp#}
     <p>The <code>chmod</code> is because of
     <a href="https://github.com/WebAssembly/wasi-filesystem/issues/33">WebAssembly/wasi-filesystem#33</a>.</p>
     <p>This snippet demonstrates creating a WASI build of Zig, then executing it with
@@ -1035,6 +1037,7 @@ Hello, World!</code></pre>
       <li>Added documentation for common mistakes in errdefer scoping.</li>
       <li>Clarify behavior of slicing with constant indexes (#11219)</li>
       <li>Add pointer arithmetic example.</li>
+      <li>Updated to keep in sync with {#link|Language Changes#}.</li>
       <li>Miscellaneous minor improvements and corrections.</li>
     </ul>
     {#header_close#}
@@ -1147,14 +1150,73 @@ comptime {
     {#header_close#}
 
     {#header_open|Inline Switch Cases#}
-commit ff534d22676b8a934acf1931f91d70c554a4bdca
-Merge: 9d5462dcb 17eea918a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Oct 3 23:43:09 2022 -0400
+    <p>The {#syntax#}inline{#endsyntax#} keyword can now be placed in front of
+    {#syntax#}switch{#endsyntax#} cases. This effectively turns a runtime-known value into a
+    compile-time-known value:
+    </p>
+    {#code_begin|exe|inline-switch#}
+const std = @import("std");
 
-    Merge pull request #12979 from Vexu/inline-switch
-    
-    Implement inline switch cases
+pub fn main() !void {
+    var arena_instance = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const arena = arena_instance.allocator();
+
+    const args = try std.process.argsAlloc(arena);
+    const arg = if (args.len >= 2) args[1] else "50";
+    const some_number = try std.fmt.parseInt(i32, arg, 10);
+
+    switch (some_number) {
+        inline 1...100 => |x| {
+            foo(x);
+        },
+        else => @panic("not in range"),
+    }
+}
+
+fn foo(comptime x: i32) void {
+    // Doing something that requires a comptime number, such as
+    // using it as the length of an array:
+    var array: [x]u8 = undefined;
+    for (array) |*elem, i| {
+        elem.* = @intCast(u8, i);
+    }
+}
+    {#code_end#}
+    <p>
+    In this example, we take a number that was passed in as a command line parameter at runtime,
+    and pass it to a function that requires a {#syntax#}comptime{#endsyntax#} parameter. This
+    works because the {#syntax#}switch{#endsyntax#} gets <em>inlined</em> - 100 prongs are
+    generated, similar to unrolling an {#syntax#}inline for{#endsyntax#} loop that looped from
+    1 to 100.
+    </p>
+    <p>Let's look at a less contrived example. Here is the use case where this pattern is the
+    most useful: dynamic dispatch for enums and tagged unions.</p>
+    <p>Before:</p>
+    <pre>{#syntax#}pub fn iterate(base: *Node, index: usize) ?*Node {
+    inline for (@typeInfo(Tag).Enum.fields) |field| {
+        const tag = @intToEnum(Tag, field.value);
+        if (base.tag == tag) {
+            return @fieldParentPtr(tag.Type(), "base", base).iterate(index);
+        }
+    }
+    unreachable;
+}{#endsyntax#}</pre>
+    <p>After:</p>
+    <pre>{#syntax#}
+pub fn iterate(base: *Node, index: usize) ?*Node {
+    return switch (base.tag) {
+        inline else => |tag| @fieldParentPtr(tag.Type(), "base", base).iterate(index),
+    };
+}
+    {#endsyntax#}</pre>
+
+    <p>Unfortunately, we cannot use this feature in the {#link|Standard Library#} or
+    the {#link|Self-Hosted Compiler#} yet, because this feature is not implemented in the
+    {#link|Bootstrap Compiler#}. The {#link|next steps|Roadmap#} to accomplish this will
+    be enhancing the {#link|C Backend#} until we can
+    <a href="https://github.com/ziglang/zig/issues/5246">replace the bootstrap compiler</a>.</p>
+
+    <p>See the <a href="/documentation/0.10.0/#Inline-switch">full inline switch documentation</a> in the {#link|Language Reference#}.</p>
     {#header_close#}
 
     {#header_open|Equality Testing of Error Unions#}
@@ -2671,18 +2733,25 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
     parameter, but I made a separate heading here because I realized that some people are
     not aware that Zig supports compiling C++ code and providing libc++ too!
     </p>
-    <pre><code>#include &lt;iostream&gt;
+
+    {#syntax_block|c|hello.cpp#}
+    #include <iostream>
 int main() {
-    std::cout &lt;&lt; "Hello World!" &lt;&lt; std::endl;
+    std::cout << "Hello World!" >> std::endl;
     return 0;
-}</code></pre>
-    <pre><code>$ zig c++ -o hello hello.cpp
+}
+    {#end_syntax_block#}
+    {#shell_samp#}
+$ zig c++ -o hello hello.cpp
 $ ./hello
-Hello World!</code></pre>
+Hello World!
+    {#end_shell_samp#}
     <p>Cross-compiling too, of course:</p>
-    <pre><code>$ zig c++ -o hello hello.cpp -target riscv64-linux
+    {#shell_samp#}
+    $ zig c++ -o hello hello.cpp -target riscv64-linux
 $ qemu-riscv64 ./hello
-Hello World!</code></pre>
+Hello World!
+    {#end_shell_samp#}
     <p>
     One thing that trips people up when they use this feature is that the
     <strong>C++ ABI is not stable across compilers</strong>, so always remember the rule:
