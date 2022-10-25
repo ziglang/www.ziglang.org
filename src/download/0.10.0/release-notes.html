@@ -1641,6 +1641,7 @@ var y: i32 = 01234;
     {#header_close#}
 
     {#header_open|Self-Hosted Compiler#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
     <p>The main feature of this release cycle is the debut of the self-hosted compiler.
     It is now enabled by default, however the {#link|Bootstrap Compiler#} is available
     behind the <code>-fstage1</code> flag for those not ready to {#link|upgrade|How to Upgrade#}.
@@ -2121,7 +2122,7 @@ test "example" {
     <a href="https://github.com/ziglang/zig/issues/13295">make the stack trace point at the switch expression rather than the prong</a>.</p>
     {#header_close#}
 
-    {#header_open|Referenced-by trace#}
+    {#header_open|Referenced-By Traces#}
     <p>You can find referenced-by traces in a few other example snippets throughout this
     document, but here is illustrated a real world example that was particularly helpful:</p>
 
@@ -2144,6 +2145,8 @@ test "example" {
     {#header_close#}
 
     {#header_open|Error Return Traces#}
+    {#header_open|Unwrapping Errors in Switch#}
+    {#header_close#}
 commit 902f6db67b2d25f238fb13e458a12e06df62dadb
 Merge: 62ecc154d d7d21672b
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -2153,10 +2156,179 @@ Date:   Wed Sep 21 02:56:21 2022 -0400
     
     safety: show error return trace when unwrapping error in switch
 
+    {#header_open|Removal of Useless Stack Frames#}
+    <p>This was an
+    <a href="https://github.com/ziglang/zig/issues/1923">old issue that plagued Zig developers for a long time</a>. We have {#link|Cody Tapscott|Cody Tapscott Joins the Core Zig Team#} to thank
+    for solving it.</p>
+    <p>Error return traces now have a basic ownership-style algorithm for
+    errors (#12837). It guarantees that error return frames follow a strict stack
+    discipline, which we need to correctly accumulate them in a single
+    stack-per-thread.</p>
+    <p>Error return traces <em>live</em> when:</p>
+    <ul>
+      <li>stored in a {#syntax#}const{#endsyntax#} variable</li>
+      <li>handled in a {#syntax#}catch { ... }{#endsyntax#} or {#syntax#}else |err| { ... }{#endsyntax#} block</li>
+      <li>propagated to caller via {#syntax#}return{#endsyntax#} or {#syntax#}try{#endsyntax#}</li>
+      <li>passed to a function as an argument</li>
+    </ul>
+    <p>Error return traces are <em>killed</em> when:</p>
+    <ul>
+      <li>stored in a mutable {#syntax#}var{#endsyntax#}</li>
+      <li>leaving a {#syntax#}catch{#endsyntax#} or {#syntax#}else |err|{#endsyntax#} block with a non-error value</li>
+      <li>the {#syntax#}const{#endsyntax#} variable associated with an error trace falls out of scope</li>
+      <li>a function receives an error as an argument and returns a non-error</li>
+    </ul>
+    <p>Here's a code snippet that tries to show most of this together:</p>
+    <pre>{#syntax#}fn foo() !void {
+    eat_dinner() catch {
+        // Begin error handling here
+        find_recipe() catch {};        // find_recipe() is removed from trace upon leaving this catch block
+        if (cond)
+            return error.HouseOnFire;  //      error result: Includes eat_dinner() in the error return trace, but not find_recipe()
+        try cook_recipe();             //      error result: If this fails, the error return trace includes eat_dinner(), followed by cook_recipe()
+    }
+    // We made it out of another catch block, eat_dinner() is removed from the trace 
+    return error.MyInlawsAreComing;    //      error result: Error trace starts fresh here
+}
 
-    topolarity's error return trace improvements
-https://github.com/ziglang/zig/pull/12837
+fn bar() !void {
+    // In addition to returning from within the block, you can pass
+    // the result to an external return, try, catch, or if:
+    return try_me() catch |err| switch(err) {
+        error.IgnorableError => null,   // non-error result: Pops try_me() from the error return trace
+        error.ImportantError => b: {
+            break :b error.FatalError;  //     error result: Includes try_me() in the error return trace
+        },
+        else => err,                    //     error result: Includes try_me() in the error return trace
+    };
+}
+test {
+    try expectError(error.FatalError, bar());         // If this fails, `bar()` appears in the error return trace
+    try expectError(error.MyInlawsAreComing, foo());  // If this fails, `foo()` appears in the error return trace (`bar` was already popped)
+}{#endsyntax#}</pre>
+    <p>Here's a real world example. Before, one might get debug output that looks like this:</p>
+    {#shell_samp#}
+$ ~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32
+error: FileNotFound
+tools/copy-from-glibc.zig:21:23: 0x218e39 in main (copy-from-glibc)
+        var sub_dir = try glibcs_dir.openIterableDir(sub_path, .{});
+                      ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:1689:23: 0x24b498 in openatZ (copy-from-glibc)
+            .NOENT => return error.FileNotFound,
+                      ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1747:25: 0x23dbf1 in openDirFlagsZ (copy-from-glibc)
+            else => |e| return e,
+                        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1717:13: 0x21e0a6 in openDirZ (copy-from-glibc)
+            return self.openDirFlagsZ(sub_path_c, os.O.DIRECTORY | os.O.RDONLY | os.O.CLOEXEC | symlink_flags);
+            ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1654:40: 0x2180e5 in openIterableDir (copy-from-glibc)
+            return IterableDir{ .dir = try self.openDirZ(&sub_path_c, args, true) };
+                                       ^
+    {#end_shell_samp#}
+    <p>After this improvement, we see this instead:</p>
+    {#shell_samp#}
+$ ~/zig-bootstrap/out/host/bin/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32
+error: FileNotFound
+/home/andy/zig-bootstrap/out/host/lib/zig/std/os.zig:1689:23: 0x24c038 in openatZ (copy-from-glibc)
+            .NOENT => return error.FileNotFound,
+                      ^
+/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1747:25: 0x23e4e8 in openDirFlagsZ (copy-from-glibc)
+            else => |e| return e,
+                        ^
+/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1717:13: 0x21e406 in openDirZ (copy-from-glibc)
+            return self.openDirFlagsZ(sub_path_c, os.O.DIRECTORY | os.O.RDONLY | os.O.CLOEXEC | symlink_flags);
+            ^
+/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1654:40: 0x2182d5 in openIterableDir (copy-from-glibc)
+            return IterableDir{ .dir = try self.openDirZ(&sub_path_c, args, true) };
+                                       ^
+tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)
+        var sub_dir = try glibcs_dir.openIterableDir(sub_path, .{});
+                      ^
+    {#end_shell_samp#}
 
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Code Generation#}
@@ -2173,7 +2345,7 @@ https://github.com/ziglang/zig/pull/12837
     </p>
 
     {#header_open|WebAssembly Backend#}
-    TODO
+    <p>TODO get release notes from luuk</p>
     {#header_close#}
 
     {#header_open|C Backend#}
@@ -2228,6 +2400,7 @@ https://github.com/ziglang/zig/pull/12837
     {#header_close#}
 
     {#header_open|Self-Hosted Linker#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_2.svg" style="height: 16em; float: right">
     <p>The self-hosted linker is <em>tightly coupled</em> with the {#link|Self-Hosted Compiler#}.
     There has been progress on {#link|ELF#} and {#link|COFF#} however they are not generally usable yet.
     By default, LLD will be used for these object formats, however, one can opt in to
@@ -2551,6 +2724,7 @@ Summary
       <li>Fixed <code>WalkerEntry.dir</code> not always being the containing dir</li>
     </ul>
     {#header_open|Optimized Tree Deletion#}
+    TODO
 commit c23b3e6fd924725d21ecbbc85ef086d330dd4322
 Merge: 260b0ff7c 1468eb12f
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -2763,16 +2937,17 @@ Date:   Wed Oct 12 13:37:06 2022 -0400
     {#header_close#}
 
     {#header_open|Networking#}
-    TODO mostly quiet but it's about to get lit
     <ul>
-      <li>Added http definitions for Method and Status (#10661)</li>
-      <li>Handle HOSTUNREACH for blocking and non-blocking connects</li>
-      <li>net.getAddressList: fix segfault on bad hostname (#12065)</li>
-      <li>Added AFNOSUPPORT error to bind (#12560)</li>
-      <li>add tcdrain on linux</li>
-      <li>os: handle error.UnreachableAddress in send()</li>
-      <li>fix setsockopt returning ENODEV</li>
+      <li>Added http definitions for <code>Method</code> and <code>Status</code> (#10661)</li>
+      <li>Handle <code>HOSTUNREACH</code> for blocking and non-blocking connects</li>
+      <li><code>net.getAddressList</code>: fix segfault on bad hostname (#12065)</li>
+      <li>Added <code>AFNOSUPPORT</code> error to bind (#12560)</li>
+      <li>Added <code>tcdrain</code> on {#link|Linux#}</li>
+      <li><code>std.os</code> now handles <code>error.UnreachableAddress</code> in <code>send()</code></li>
+      <li>Fixed <code>setsockopt</code> returning <code>ENODEV</code></li>
     </ul>
+    <p>Networking has mostly been quiet until now, but it's about to get lit
+    as we dive into the {#link|Package Manager#} in the {#link|next release cycle|Roadmap#}.</p>
     {#header_close#}
 
     {#header_open|Testing#}
@@ -2890,6 +3065,7 @@ fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
     {#header_close#}
 
     {#header_open|New Deflate Compressor#}
+    TODO
 commit 0c1df96b17fcafdb0aa973dfcb1819929719d650
 Merge: f0ddc7f7a 490f067de
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -2919,12 +3095,8 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
     {#header_close#}
 
     {#header_open|Bug Fixes#}
-    <p>
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0+">Full list of the TODO bug reports closed during this release cycle</a>.
-    </p>
-    <p>
-    Note: many bugs were both introduced and resolved within this release cycle.
-    </p>
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 421 (TODO update this number) bug reports closed during this release cycle</a>.</p>
+    <p>Note: many bugs were both introduced and resolved within this release cycle.</p>
     {#header_open|This Release Contains Bugs#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
     <p>
