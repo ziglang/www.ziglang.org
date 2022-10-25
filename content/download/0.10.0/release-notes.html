@@ -385,6 +385,7 @@
             <li><a id="toc-PowerPC" href="#PowerPC">PowerPC</a></li>
             <li><a id="toc-WASI" href="#WASI">WASI</a></li>
             <li><a id="toc-UEFI" href="#UEFI">UEFI</a></li>
+            <li><a id="toc-GPU-Programming" href="#GPU-Programming">GPU Programming</a></li>
         </ul></li>
         <li><a id="toc-Documentation" href="#Documentation">Documentation</a>
         <ul>
@@ -405,7 +406,7 @@
             <li><a id="toc-TypeInfoDeclaration-no-longer-has-a-data-field" href="#TypeInfoDeclaration-no-longer-has-a-data-field">TypeInfo.Declaration no longer has a data field</a></li>
             <li><a id="toc-Removed-anytype-fields" href="#Removed-anytype-fields">Removed anytype fields</a></li>
             <li><a id="toc-Address-Spaces" href="#Address-Spaces">Address Spaces</a></li>
-            <li><a id="toc-Compile-Error-for-Confusing-Whitespace" href="#Compile-Error-for-Confusing-Whitespace">Compile Error for Confusing Whitespace</a></li>
+            <li><a id="toc-Compile-Error-for-Misleading-Whitespace" href="#Compile-Error-for-Misleading-Whitespace">Compile Error for Misleading Whitespace</a></li>
             <li><a id="toc-Compile-Error-for-Pointless-Discards" href="#Compile-Error-for-Pointless-Discards">Compile Error for Pointless Discards</a></li>
             <li><a id="toc-Disallow-Leading-Zeroes-in-Literals" href="#Disallow-Leading-Zeroes-in-Literals">Disallow Leading Zeroes in Literals</a></li>
             <li><a id="toc-More-Calling-Conventions" href="#More-Calling-Conventions">More Calling Conventions</a></li>
@@ -1042,7 +1043,7 @@
       <li>Use explicit integer bit widths for windows GUID.</li>
       <li>Improved comptime windows GUID.parse performance.</li>
       <li>child_process: collectOutputWindows handle broken_pipe from ReadFile (#10813)</li>
-      <li>std.os: throw compile error for `argv` on Windows</li>
+      <li>std.os: throw compile error for <code>argv</code> on Windows</li>
       <li>std.Thread.getName/setName: rework windows implementation (#10003)</li>
       <li>Added GetProcessTimes binding to the kernel32.zig (#11488)</li>
       <li>std.coff: parse out codebase and entrypoint from optionalheader</li>
@@ -1056,9 +1057,9 @@
 
     <h3 id="Linux"><a href="#toc-Linux">Linux</a> <a class="hdr" href="#Linux">§</a></h3>
 
-    <p>Previously, updating the `SYS` enum for each architecture required
+    <p>Previously, updating the <code>SYS</code> enum for each architecture required
     manually looking at the syscall tables and inserting any new additions.
-    Now there is a tool, `generate_linux_syscalls.zig`, that automates
+    Now there is a tool, <code>generate_linux_syscalls.zig</code>, that automates
     this process using the syscall tables in the Linux source tree. On
     architectures without a table, it runs <a href="#zig-cc">zig cc</a> as a pre-processor to
     extract the system-call numbers from the Linux headers.</p>
@@ -1190,7 +1191,17 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <ul>
       <li><a href="#Standard-Library">Standard Library</a> improvements/fixes (#10566) (#10604) (#12897)</li>
       <li>Fixed GUID formatting (#11452)</li>
-      <li>Added `BlockIoProtocol`</li>
+      <li>Added <code>BlockIoProtocol</code></li>
+    </ul>
+    
+
+    <h3 id="GPU-Programming"><a href="#toc-GPU-Programming">GPU Programming</a> <a class="hdr" href="#GPU-Programming">§</a></h3>
+
+    <ul>
+      <li>Added experimental support for AMDGPU.</li>
+      <li>Added support for debug info on NVPTX.</li>
+      <li>Added <code>std.os.panic</code> implementation for NVPTX.</li>
+      <li>Made <a href="#Address-Spaces">Address Spaces</a> easier to use when targeting GPUs.</li>
     </ul>
     
 
@@ -1618,7 +1629,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <h3 id="TypeInfoDeclaration-no-longer-has-a-data-field"><a href="#toc-TypeInfoDeclaration-no-longer-has-a-data-field">TypeInfo.Declaration no longer has a data field</a> <a class="hdr" href="#TypeInfoDeclaration-no-longer-has-a-data-field">§</a></h3>
 
-    <p>It used to be possbile to inspect declarations via
+    <p>Zig 0.9.x allows inspecting declarations via
     <a href="/documentation/0.10.0/#typeInfo">@typeInfo</a>, but not any longer (#10753):</p>
     <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;type info on declarations&quot;</span> {</span>
@@ -1651,62 +1662,115 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <h3 id="Removed-anytype-fields"><a href="#toc-Removed-anytype-fields">Removed anytype fields</a> <a class="hdr" href="#Removed-anytype-fields">§</a></h3>
 
-commit 3eb8d01f522cf23d484411794ac10777b3de1cfa
-Merge: f95fcb2b1 449554a73
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Feb 2 13:39:27 2022 -0500
-
-    Merge pull request #10766 from ziglang/yeet-anytype-fields
-    
-    remove anytype fields from the language
-
- src/AstGen.zig | 20 ++------------------
- 1 file changed, 2 insertions(+), 18 deletions(-)
+    <p>Zig 0.9.x allows declaring a struct field <code><span class="line"><span class="tok-kw">anytype</span></span></code>
+    which made the struct be a compile-time-only type and made the field's type
+    allowed to be changed during <code><span class="line"><span class="tok-kw">comptime</span></span></code> code execution.</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> { x: <span class="tok-kw">anytype</span> };</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:1:23: </span><span class="t31_1">error: </span><span class="t1_0">expected type expression, found 'anytype'</span>
+<span class="line"></span>const S = struct { x: anytype };</span>
+<span class="line">                      <span class="t32_1">^~~~~~~</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <p>This was removed in order to simplify the language (#10766).</p>
     <p>This is implemented in both the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> and
     <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.</p>
     
 
     <h3 id="Address-Spaces"><a href="#toc-Address-Spaces">Address Spaces</a> <a class="hdr" href="#Address-Spaces">§</a></h3>
 
-    TODO
+    <p>TODO get release notes from snektron</p>
+    <p>TODO added @addrSpaceCast makes it easier to use GPU address spaces</p>
     
 
-    <h3 id="Compile-Error-for-Confusing-Whitespace"><a href="#toc-Compile-Error-for-Confusing-Whitespace">Compile Error for Confusing Whitespace</a> <a class="hdr" href="#Compile-Error-for-Confusing-Whitespace">§</a></h3>
+    <h3 id="Compile-Error-for-Misleading-Whitespace"><a href="#toc-Compile-Error-for-Misleading-Whitespace">Compile Error for Misleading Whitespace</a> <a class="hdr" href="#Compile-Error-for-Misleading-Whitespace">§</a></h3>
 
-commit 911c839e97194eb270389b03d4d364659c46a5ac
-Author: Daniel Hooper <danielchasehooper@gmail.com>
-Date:   Sun Mar 20 06:55:04 2022 -0400
+    <p>Have a look at this code:</p>
+    <pre><code><span class="line"><span class="tok-kw">const</span> directions = [_]<span class="tok-type">isize</span>{</span>
+<span class="line">    -pitch-<span class="tok-number">1</span>,</span>
+<span class="line">    -pitch,</span>
+<span class="line">    -pitch+<span class="tok-number">1</span></span>
+<span class="line">    -<span class="tok-number">1</span>,</span>
+<span class="line">    <span class="tok-number">1</span>,</span>
+<span class="line">    pitch-<span class="tok-number">1</span>,</span>
+<span class="line">    pitch,</span>
+<span class="line">    pitch+<span class="tok-number">1</span>,</span>
+<span class="line">};</span></code></pre>
+    <p>See the bug? It took me a minute.</p>
 
-    add error when binary ops don't have matching whitespace on both sides
-    
-    This change also moves the warning about "&&" from the AstGen into the parser so that the "&&" warning can supersede the whitespace warning.
+    <p>Answer: the <code>,</code> is missing from the third item in the list.
+    This makes the list 7 items long instead of 8, and the third item
+    <code>-pitch+1-1</code>.</p>
+
+    <p>This code is now a compile error due to a new rule in the language:
+    misleading whitespace is a compile error. In this case the misleading whitespace is
+    being inconsistent on either side of a binary operator.</p>
+
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> directions = [_]<span class="tok-type">isize</span>{</span>
+<span class="line">    -pitch-<span class="tok-number">1</span>,</span>
+<span class="line">    -pitch,</span>
+<span class="line">    -pitch+<span class="tok-number">1</span></span>
+<span class="line">    -<span class="tok-number">1</span>,</span>
+<span class="line">    <span class="tok-number">1</span>,</span>
+<span class="line">    pitch-<span class="tok-number">1</span>,</span>
+<span class="line">    pitch,</span>
+<span class="line">    pitch+<span class="tok-number">1</span>,</span>
+<span class="line">};</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:5: </span><span class="t31_1">error: </span><span class="t1_0">binary operator `-` has whitespace on one side, but not the other.</span>
+<span class="line"></span>    -1,</span>
+<span class="line">    <span class="t32_1">^</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <p><a href="https://github.com/ziglang/zig/issues/35">More compile errors for misleading whitespace are planned</a>.</p>
     
 
     <h3 id="Compile-Error-for-Pointless-Discards"><a href="#toc-Compile-Error-for-Pointless-Discards">Compile Error for Pointless Discards</a> <a class="hdr" href="#Compile-Error-for-Pointless-Discards">§</a></h3>
 
-    TODO look at 0.9.0 release notes unused locals for a nice template
-    TODO mention autofix
+    <p>It is no longer possible to discard a local variable or parameter that is referenced:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;example&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> x: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>;</span>
+<span class="line">    _ = x;</span>
+<span class="line">    <span class="tok-kw">var</span> y = x;</span>
+<span class="line">    _ = y;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:3:9: </span><span class="t31_1">error: </span><span class="t1_0">pointless discard of local variable</span>
+<span class="line"></span>    _ = x;</span>
+<span class="line">        <span class="t32_1">^</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:4:13: </span><span class="t36_1">note: </span><span class="t1_0">used here</span>
+<span class="line"></span>    var y = x;</span>
+<span class="line">            <span class="t32_1">^</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_5.svg" style="height: 14em; float: right">
+    <p>The fix is simple - delete the pointless discard. This compile error dovetails
+    with the
+    <a href="https://ziglang.org/download/0.9.0/release-notes.html#Compile-Errors-for-Unused-Locals">compile error for unused locals introduced in Zig 0.9.0</a>.
+    Together, these compile errors ensure that when you are reading Zig code, whether it's
+    yours or some rando's on the Internet, you can be assured that all locals are used somewhere,
+    and that any discarded locals are otherwise unused.</p>
+    <p>This is a divisive feature of Zig. Generally, those with large codebases favor the
+    errors since they help prevent bugs and aid refactoring, while those with small codebases
+    find these errors annoying and unproductive.</p>
+    <p>There is an
+    <a href="https://github.com/ziglang/zig/pull/12803">upcoming autofix feature</a> that
+    unfortunately did not make it in time for 0.10.0 which can be used by those who find this
+    pair of compile errors problematic for their workflow.</p>
     
 
     <h3 id="Disallow-Leading-Zeroes-in-Literals"><a href="#toc-Disallow-Leading-Zeroes-in-Literals">Disallow Leading Zeroes in Literals</a> <a class="hdr" href="#Disallow-Leading-Zeroes-in-Literals">§</a></h3>
 
-commit 4055e6055b5c0727f5e85a30760c9bccf525f4de
-Author: zooster <r00ster91@proton.me>
-Date:   Thu Aug 18 18:54:51 2022 +0200
-
-    AstGen: disallow leading zeroes in int literals and int types
-    
-    This makes `0123` and `u0123` etc. illegal.
-    
-    I'm now confident that this is a good change because
-    I actually caught two C header translation mistakes in `haiku.zig` with this.
-    Clearly, `0123` being octal in C (TIL) can cause confusion, and we make this easier to read by
-    requiring `0o` as the prefix and now also disallowing leading zeroes in integers.
-    
-    For consistency and because it looks weird, we disallow it for integer types too (e.g. `u0123`).
-    
-    Fixes #11963
-    Fixes #12417
+    <p>This new compile error helps catch bugs (#11963) (#12417):</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">var</span> x: <span class="tok-type">i032</span> = <span class="tok-number">1234</span>;</span>
+<span class="line"><span class="tok-kw">var</span> y: <span class="tok-type">i32</span> = <span class="tok-number">01234</span>;</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:1:8: </span><span class="t31_1">error: </span><span class="t1_0">primitive integer type 'i032' has leading zero</span>
+<span class="line"></span>var x: i032 = 1234;</span>
+<span class="line">       <span class="t32_1">^~~~</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:2:14: </span><span class="t31_1">error: </span><span class="t1_0">number '01234' has leading zero</span>
+<span class="line"></span>var y: i32 = 01234;</span>
+<span class="line">             <span class="t32_1">^~~~~</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:2:14: </span><span class="t36_1">note: </span><span class="t1_0">use '0o' prefix for octal literals</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <p>This caught two C header translation mistakes in <code>haiku.zig</code>.</p>
     
 
     <h3 id="More-Calling-Conventions"><a href="#toc-More-Calling-Conventions">More Calling Conventions</a> <a class="hdr" href="#More-Calling-Conventions">§</a></h3>
@@ -1730,7 +1794,31 @@ Date:   Thu Aug 18 18:54:51 2022 +0200
 
     <h3 id="Inline-Assembly"><a href="#toc-Inline-Assembly">Inline Assembly</a> <a class="hdr" href="#Inline-Assembly">§</a></h3>
 
-    TODO mention comptime expressions being allowed and the discussions being had
+    <p>The sub-project of parsing inline assembly in the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> has
+    been delayed in the past due to the large tables of instructions that would be declared
+    in source files, likely running into the unwieldly memory consumption properties of the
+    <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>. But now that we are shipping a <strong>stage3</strong>
+    build, this obstacle has been overcome.</p>
+    <p>Zig 0.9.x allowed <code><span class="line"><span class="tok-kw">comptime</span></span></code> expressions to produce the
+    assembly template for inline assembly. For most of the 0.10.0 release cycle,
+    Zig emitted a compile error when inline assembly source code was not a string literal,
+    however, that restriction was lifted just before this 0.10.0 release.</p>
+    <p>Zig is at a crossroads right now with regards to inline assembly. On one hand,
+    there is this proposal:
+    <a href="https://github.com/ziglang/zig/issues/10761">parse inline assembly syntax according to a set of dialects; integrate inline assembly more closely with the zig language</a></p>
+    <p>Meanwhile, other stakeholders have rightfully pointed out that inline
+    assembly abstractions based on string concatenation are easy to reason
+    about and do not require any more language features added.</p>
+    <p>Either way, Zig needs to gain the ability to parse inline assembly for all targets,
+    so that it can get lowered to the <a href="#LLVM-15">LLVM</a> backend as well as the other
+    <a href="#Code-Generation">Code Generation</a> backends, so that error handling, semantic analysis, and
+    language features of inline assembly can be uniform across backends, something that
+    would not be the case if LLVM is sometimes responsible for assembly code parsing and
+    sometimes not.</p>
+    <p>Whichever path Zig ends up going down, we will make sure to involve the users who
+    will ultimately be affected, such as the
+    <a href="https://microzig.tech/">Zig Embedded Group</a>, and the various folks
+    who have started operating system projects written in Zig.</p>
     
 
     
@@ -1738,9 +1826,11 @@ Date:   Thu Aug 18 18:54:51 2022 +0200
     <h2 id="Bootstrap-Compiler"><a href="#toc-Bootstrap-Compiler">Bootstrap Compiler</a> <a class="hdr" href="#Bootstrap-Compiler">§</a></h2>
 
     <p>In the previous release, the main Zig compiler everybody used
-    was the bootstrap compiler, written in C++, also known as "stage1".</p>
-    <p>This release changes the default to become the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>, however,
-    there were some improvements to stage1 as well.</p>
+    was the bootstrap compiler, written in C++, also known as "stage1".
+    This release changes the default to become the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>, however,
+    the legacy compiler can be selected with <code>-fstage1</code>.</p>
+    <p>Despite the main focus being the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>,
+    this release brings some improvements to the legacy compiler codebase as well:</p>
     <ul>
       <li>Fixed access of slice sentinel at comptime.</li>
       <li>Fixed <code><span class="line"><span class="tok-builtin">@errorName</span></span></code> null termination.</li>
@@ -2190,8 +2280,8 @@ thanks to nicer llvm abstraction for C ABI
         float constant using scientific notation with no decimal point.</li>
       <li>Fix issues translating macro define of hex float constant<ul>
           <li>Fix incorrect result when the first digit after the decimal point is not 0-9 - eg 0x0.ap0</li>
-          <li>Fix compiler panic when the number starts with `0X` with a capital `X` - eg 0X0p0</li>
-          <li>Fix compiler panic when the number has a decimal point immediately after `0x` - eg 0x.0p0</li>
+          <li>Fix compiler panic when the number starts with <code>0X</code> with a capital <code>X</code> - eg 0X0p0</li>
+          <li>Fix compiler panic when the number has a decimal point immediately after <code>0x</code> - eg 0x.0p0</li>
         </ul>
       </li>
       <li>Improve error messages when expecting specific tokens.</li>
@@ -2580,13 +2670,13 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
         <code><span class="line">mem.zeroes()</span></code> (#10406)</li>
       <li>Rename mem.bswapAllFields to byteSwapAllFields</li>
       <li>mem: add indexOfMin and indexOfMax (#9915)</li>
-      <li>Allow `mem.zeroes` to work at comptime with extern union (#10797)</li>
+      <li>Allow <code>mem.zeroes</code> to work at comptime with extern union (#10797)</li>
       <li>mem.zeroes: Zero sized structs with uninitialized members (#12246)</li>
       <li>mem.zeroInit: Fix behavior with empty initialiser</li>
       <li>mem: added concatWithSentinel</li>
       <li>mem: add peek() to TokenIterator(T)</li>
       <li>mem: add splitBackwards (#11908)</li>
-      <li>mem: add `first` and `reset` method to `SplitIterator` and `SplitBackwardsIterator`</li>
+      <li>mem: add <code>first</code> and <code>reset</code> method to <code>SplitIterator</code> and <code>SplitBackwardsIterator</code></li>
       <li>Support parsing tz timezone data (#10456)</li>
       <li>Added json.stringifyAlloc</li>
       <li>json: fix compile error for comptime fields (#10849)</li>
@@ -2603,7 +2693,7 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>readUntilDelimiter: read only if buffer not full (#9594)</li>
       <li>Avoid duplicate TLS startup symbols</li>
       <li>Correct rounding in parse_hex_float.zig (#10743)</li>
-      <li>Progress: make the API infallible by handling `error.TimerUnsupported`.
+      <li>Progress: make the API infallible by handling <code>error.TimerUnsupported</code>.
         In this case, only explicit calls to refresh() will cause the progress
         line to be printed.</li>
       <li>Progress: fix suffix printing</li>
@@ -2612,14 +2702,14 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>Fixed sigaction double panic (#8357)</li>
       <li>Added sem_open and sem_close</li>
       <li>Added SIMD utility functions</li>
-      <li>Added `unicode.replacement_character`</li>
+      <li>Added <code>unicode.replacement_character</code></li>
       <li>unicode: add utf16 byte length and codepoints counting routines (#11663)</li>
       <li>os.getenvW: Fix case-insensitivity for Unicode env var names (#10595)</li>
       <li>Added memfd_create for FreeBSD. This is minorly breaking as e.g.
         std.os.linux.MFD_CLOEXEC is now std.os.linux.MFD.CLOEXEC.</li>
       <li>Added FreeBSD support to std.os.getFdPath</li>
       <li>Audit FreeBSD structs to match header files/ABI</li>
-      <li>Added functions from `dirent.h` to std.c (#11598)</li>
+      <li>Added functions from <code>dirent.h</code> to std.c (#11598)</li>
       <li>std.c: Fix incorrect dirent structure (#11602)</li>
       <li>Added const to msghdr_const iov and control pointers</li>
       <li>Mark fstype argument to mount as optional.</li>
@@ -2641,13 +2731,13 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>Complex: add 'negation' and 'mulitply by i'</li>
       <li>Added new float-parser based on eisel-lemire algorithm (#11566)</li>
       <li>Added math.sign</li>
-      <li>`powi`: use standard definition of underflow/overflow, implement `u0`, `i0`, `i1`
+      <li><code>powi</code>: use standard definition of underflow/overflow, implement <code><span class="line"><span class="tok-type">u0</span></span></code>, <code><span class="line"><span class="tok-type">i0</span></span></code>, <code><span class="line"><span class="tok-type">i1</span></span></code>
         edge case (#11499)</li>
-      <li>Made `cast` return optional instead of an error.</li>
+      <li>Made <code>cast</code> return optional instead of an error.</li>
       <li>Added O(log N) implementation of log2(x) for <code><span class="line"><span class="tok-type">comptime_int</span></span></code></li>
       <li>big int: update Managed.toString() to use provided allocator (#11839)</li>
       <li>big int: breaking API changes to prevent UAF (#11897)</li>
-      <li>Added `degreesToRadians` and `radiansToDegrees`</li>
+      <li>Added <code>degreesToRadians</code> and <code>radiansToDegrees</code></li>
       <li>Fixed big.Rational order/orderAbs (#12440)</li>
       <li>Added "Greatest common divisor" (gcd)</li>
       <li>Fixed memory leak on OutOfMemory error in math.big.int and math.big.rational</li>
@@ -2659,16 +2749,16 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
 
     <ul>
       <li>fs.getAppDataDir: recognize <code>XDG_DATA_HOME</code></li>
-      <li>fs: Use `OpenMode` enum instead of read/write flags.</li>
+      <li>fs: Use <code>OpenMode</code> enum instead of read/write flags.</li>
       <li>Define static error set for fs.Dir.copyFile</li>
       <li>Fixed using <code><span class="line">fs.Dir.Iterator</span></code> twice (#10404)</li>
       <li>Implemented cross-platform metadata API (#10486)</li>
       <li>Added File.sync (#11410)</li>
       <li>Prevent possible integer overflow in Dir.makePath (#11397)</li>
-      <li>Split `Dir` into `IterableDir` (#12060)</li>
-      <li>End iteration on Linux/WASI during Iterator.next when hitting `ENOENT` (#12211)</li>
+      <li>Split <code>Dir</code> into <code>IterableDir</code> (#12060)</li>
+      <li>End iteration on Linux/WASI during Iterator.next when hitting <code>ENOENT</code> (#12211)</li>
       <li>Split Iterator.next on <a href="#Linux">Linux</a> and <a href="#WASI">WASI</a> to allow for handling platform-specific errors</li>
-      <li>Fixed `WalkerEntry.dir` not always being the containing dir</li>
+      <li>Fixed <code>WalkerEntry.dir</code> not always being the containing dir</li>
     </ul>
     <h4 id="Optimized-Tree-Deletion"><a href="#toc-Optimized-Tree-Deletion">Optimized Tree Deletion</a> <a class="hdr" href="#Optimized-Tree-Deletion">§</a></h4>
 
@@ -2700,7 +2790,7 @@ Date:   Wed Oct 12 13:37:06 2022 -0400
       <li>BoundedArray: Add Writer interface</li>
       <li>MultiArrayList: fixed insert compile error.</li>
       <li>Added sort method to ArrayHashMap and MultiArrayList</li>
-      <li>MultiArrayList: add functions `addOne`, `pop`, and `popOrNull` (#11553)</li>
+      <li>MultiArrayList: add functions <code>addOne</code>, <code>pop</code>, and <code>popOrNull</code> (#11553)</li>
       <li>enums: make directEnumArrayLen public</li>
       <li>bit_set: add setRangeValue(Range, bool)</li>
       <li>Added ArrayList.clone</li>
@@ -2872,12 +2962,12 @@ Date:   Wed Oct 12 13:37:06 2022 -0400
 
     <ul>
       <li>Fixed a bug in Thread.Condition and add a basic Condition test (#10538)</li>
-      <li>Renamed `sched_yield` to `yield` and move it to `std.Thread`</li>
+      <li>Renamed <code>sched_yield</code> to <code>yield</code> and move it to <code>std.Thread</code></li>
       <li>Thread: Mutex and Condition improvements (#11497)</li>
       <li>Added Thread.Condition.timedWait (#11352)</li>
       <li>Thread.Futex improvements (#11464)</li>
       <li>Thread: ResetEvent improvements (#11523)</li>
-      <li>Single-threaded `panicImpl` sleep is unreachable (#11569)</li>
+      <li>Single-threaded <code>panicImpl</code> sleep is unreachable (#11569)</li>
       <li>std.event: use .{} to initiate Lock to unlocked state</li>
       <li>Thread: fix freeAndExit on x86_64 <a href="#Linux">Linux</a> (#12693)</li>
       <li>Update RwLock to use static initialization (#10838)</li>
@@ -2909,8 +2999,8 @@ Date:   Wed Oct 12 13:37:06 2022 -0400
         environment variable (#11633)</li>
       <li>Fixed expectStringEndsWith error output. Before it started outputting the
         actual starting, not ending characters.</li>
-      <li>Fixed progress indicator for `zig test` (#10859)</li>
-      <li>Added `refAllDeclsRecursive` function</li>
+      <li>Fixed progress indicator for <code>zig test</code> (#10859)</li>
+      <li>Added <code>refAllDeclsRecursive</code> function</li>
       <li>Made the caret indicator line more helpful</li>
     </ul>
 
@@ -3003,8 +3093,8 @@ fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
         cases, so now it behaves properly with regards to allocations and file descriptors.
       </li>
       <li>Fixed ConfigurableTrace.dump OOB</li>
-      <li>Fixed stack traces with non-null `first_address` on <a href="#Windows">Windows</a> (#6687)</li>
-      <li>Added stack trace capturing to `FailingAllocator` and use it to improve
+      <li>Fixed stack traces with non-null <code>first_address</code> on <a href="#Windows">Windows</a> (#6687)</li>
+      <li>Added stack trace capturing to <code>FailingAllocator</code> and use it to improve
         <a href="#Check-All-Allocation-Failures">checkAllAllocationFailures</a> (#11919)</li>
       <li>Dwarf: Added stroffsetsptr support (#12270)</li>
       <li>Fixed incorrect output on <a href="#Windows">Windows</a> when .pdb file is not found during stack trace</li>
@@ -3039,12 +3129,12 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
       <li>Handle FormatOptions in fmtDuration/fmtDurationSigned</li>
       <li>Fixed out-of-bounds array write in float printing</li>
       <li>Allow uppercase prefix to be parsed in std.fmt.parseInt()</li>
-      <li>Fixed false positive for `zig.isValidId` with empty string (#11104)</li>
+      <li>Fixed false positive for <code>zig.isValidId</code> with empty string (#11104)</li>
       <li>Fixed incorrect behavior with large floating point integers (#11283)</li>
       <li>fmtIntSizeDec/fmtIntSizeBin support FormatOptions (#9184)</li>
       <li>Require specifier for unwrapping ?T and E!T</li>
       <li>Added more invalid format string errors</li>
-      <li>Made `fmt.formatAsciiChar` respect `options` parameter</li>
+      <li>Made <code>fmt.formatAsciiChar</code> respect <code>options</code> parameter</li>
     </ul>
     
 
@@ -3088,15 +3178,15 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
       <li>TranslateCStep: add C macro support</li>
       <li>Allow tests to use cache and setOutputDir</li>
       <li>Use response files for long command lines (#10950)</li>
-      <li>OptionsStep: Always use `fmtId` for type names.</li>
-      <li>Renamed `std.build.Pkg.path` to `std.build.Pkg.source` (#11557)</li>
+      <li>OptionsStep: Always use <code>fmtId</code> for type names.</li>
+      <li>Renamed <code>std.build.Pkg.path</code> to <code>std.build.Pkg.source</code> (#11557)</li>
       <li>Added EmulatableRunStep (#12059)</li>
       <li>Allow <code><span class="line"><span class="tok-type">comptime_int</span></span></code> in <code><span class="line">OptionsStep.addOption</span></code></li>
       <li>Fixed transitive linkSystemLibraryName() dependencies</li>
       <li>Made no_dll_export_fns accessible in build step</li>
       <li>Added flag for <code>-fstack-protector</code></li>
-      <li>Made `runPkgConfig` pub</li>
-      <li>Fixed `Step.cast` for `OptionsStep` and `CheckObjectStep`</li>
+      <li>Made <code>runPkgConfig</code> pub</li>
+      <li>Fixed <code>Step.cast</code> for <code>OptionsStep</code> and <code>CheckObjectStep</code></li>
     </ul>
     
 
@@ -3800,4 +3890,3 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
 </html>
 TODO: check with tidy
 TODO: run that regex to make the github issues into links
-TODO: replace backticks with html
