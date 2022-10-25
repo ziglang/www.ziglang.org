@@ -326,7 +326,26 @@
       }
     }
   </style>
-  </head><!-- TODO --><body>
+  </head><!--
+              o
+               \
+                \         o         __  _       _        _
+                 \mmm    /         (_, (_)     /-\ \/\/ /-\ \/ ,
+            o    (' ')  /               ___  _   __         /
+             \  __\^/__/                 |  |_) |  | |   |
+              \/       \-----o           |  | \ |__| |__ |__
+              //|     |\\
+             (( |  \  | ))
+              \\|___\_|//
+               W(    o)W
+               /|  |  |
+              / | / \ |\
+             /  ( ) ( ) \
+            o   | | | |  \
+                |_| |_|   o
+                (_) (_)
+David Riley
+  --><body>
     <div id="contents">
     <a href="https://ziglang.org/"><span id="logo"></span></a>
     <h1>0.10.0 Release Notes</h1>
@@ -1101,7 +1120,7 @@ Hello, World!
     comptime metaprogramming.</p>
 
     <p>Autodoc is still a work in progress and in fact it's still relying on
-    ZIR information only. There's a tremendous amount of work ahead of us and,
+    ZIR information only. There is a tremendous amount of work ahead of us and,
     while we encourage you to check out
     <a href="https://ziglang.org/documentation/0.10.0/std/">Zig's stdlib docs</a>,
     there are plenty of basic things that still need to be implemented. If you see something
@@ -1708,7 +1727,7 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
     One option you have is to simply wait for 0.10.1, or even 0.11.0, before
     attempting an upgrade. This gives you the smoothest experience, letting other,
     more brave souls, help with quality assurance before you get your hands dirty.
-    There's no shame in this, do what works for you.
+    There is no shame in this; do what works for you.
     </p>
     <p>
     If anything goes wrong in the upgrade, you can always start using <code>-fstage1</code> to
@@ -2145,16 +2164,60 @@ test "example" {
     {#header_close#}
 
     {#header_open|Error Return Traces#}
-    {#header_open|Unwrapping Errors in Switch#}
-    {#header_close#}
-commit 902f6db67b2d25f238fb13e458a12e06df62dadb
-Merge: 62ecc154d d7d21672b
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Sep 21 02:56:21 2022 -0400
 
-    Merge pull request #12889 from ziglang/unwrap-error-switch
-    
-    safety: show error return trace when unwrapping error in switch
+    {#header_open|Unwrapping Errors in Switch#}
+    <p>A small quality-of-life improvement Veikka thought of while trying to
+    figure out where an {#syntax#}error.GenericPoison{#endsyntax#} was coming from (#12889).
+    Example situation:</p>
+    {#code_begin|test_err|attempt to unwrap#}
+fn foo() !void {
+    return error.Foo;
+}
+fn bar() !void {
+    try foo();
+}
+fn baz() void {
+    // bar() catch unreachable;
+    // bar() catch @panic("foo");
+    // const S = struct {
+    //     const S = struct {
+    //         const fooo = "foo";
+    //     };
+    // };
+    bar() catch |err| switch (err) {
+        // error.Foo => @panic(S.S.fooo),
+        error.Foo => unreachable,
+    };
+}
+test {
+    baz();
+}
+    {#code_end#}
+    <p>Before, it did this instead:</p>
+    {#shell_samp#}
+Test [1/1] test_0... thread 18432 panic: reached unreachable code
+./a.zig:17:22: 0x20f0fc in baz (test)
+        error.Foo => unreachable,
+                     ^
+./a.zig:21:8: 0x20f078 in test_0 (test)
+    baz();
+       ^
+/home/vexu/Documents/zig/zig/lib/test_runner.zig:79:28: 0x2105b5 in main (test)
+        } else test_fn.func();
+                           ^
+/home/vexu/Documents/zig/zig/lib/std/start.zig:568:22: 0x20f9bd in posixCallMainAndExit (test)
+            root.main();
+                     ^
+/home/vexu/Documents/zig/zig/lib/std/start.zig:340:5: 0x20f3c2 in _start (test)
+    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
+    ^
+error: the following test command crashed:
+    {#end_shell_samp#}
+
+    <p>This also makes {#syntax#}@panic{#endsyntax#} show error return trace in
+    these same situations which you can test by uncommenting lines in the
+    example.</p>
+    {#header_close#}
 
     {#header_open|Removal of Useless Stack Frames#}
     <p>This was an
@@ -2178,7 +2241,7 @@ Date:   Wed Sep 21 02:56:21 2022 -0400
       <li>the {#syntax#}const{#endsyntax#} variable associated with an error trace falls out of scope</li>
       <li>a function receives an error as an argument and returns a non-error</li>
     </ul>
-    <p>Here's a code snippet that tries to show most of this together:</p>
+    <p>Putting the code snippet aside, here is a code snippet that tries to show most of this together:</p>
     <pre>{#syntax#}fn foo() !void {
     eat_dinner() catch {
         // Begin error handling here
@@ -2206,7 +2269,7 @@ test {
     try expectError(error.FatalError, bar());         // If this fails, `bar()` appears in the error return trace
     try expectError(error.MyInlawsAreComing, foo());  // If this fails, `foo()` appears in the error return trace (`bar` was already popped)
 }{#endsyntax#}</pre>
-    <p>Here's a real world example. Before, one might get debug output that looks like this:</p>
+    <p>Here is a real world example. Before, one might get debug output that looks like this:</p>
     {#shell_samp#}
 $ ~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32
 error: FileNotFound
@@ -2400,13 +2463,13 @@ tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)
     {#header_close#}
 
     {#header_open|Self-Hosted Linker#}
-    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_2.svg" style="height: 16em; float: right">
     <p>The self-hosted linker is <em>tightly coupled</em> with the {#link|Self-Hosted Compiler#}.
     There has been progress on {#link|ELF#} and {#link|COFF#} however they are not generally usable yet.
     By default, LLD will be used for these object formats, however, one can opt in to
     the self-hosted linker with <code>-fno-LLD</code>.</p>
 
     {#header_open|MachO#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_2.svg" style="height: 16em; float: right">
     <p>
 The incremental MachO linker, like its traditional linking counterpart, has seen
 a major rewrite where Zig now lays out the incrementally linked binary such that
@@ -2990,7 +3053,7 @@ The strategy employed is to:
 
 ---
 
-Here's an example of using a simple test case that will cause a leak when the
+Here is an example of using a simple test case that will cause a leak when the
 allocation of `bar` fails (but will pass normally):
 
 ```zig

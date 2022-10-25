@@ -326,7 +326,26 @@
       }
     }
   </style>
-  </head><!-- TODO --><body>
+  </head><!--
+              o
+               \
+                \         o         __  _       _        _
+                 \mmm    /         (_, (_)     /-\ \/\/ /-\ \/ ,
+            o    (' ')  /               ___  _   __         /
+             \  __\^/__/                 |  |_) |  | |   |
+              \/       \-----o           |  | \ |__| |__ |__
+              //|     |\\
+             (( |  \  | ))
+              \\|___\_|//
+               W(    o)W
+               /|  |  |
+              / | / \ |\
+             /  ( ) ( ) \
+            o   | | | |  \
+                |_| |_|   o
+                (_) (_)
+David Riley
+  --><body>
     <div id="contents">
     <a href="https://ziglang.org/"><span id="logo"></span></a>
     <h1>0.10.0 Release Notes</h1>
@@ -1269,7 +1288,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     comptime metaprogramming.</p>
 
     <p>Autodoc is still a work in progress and in fact it's still relying on
-    ZIR information only. There's a tremendous amount of work ahead of us and,
+    ZIR information only. There is a tremendous amount of work ahead of us and,
     while we encourage you to check out
     <a href="https://ziglang.org/documentation/0.10.0/std/">Zig's stdlib docs</a>,
     there are plenty of basic things that still need to be implemented. If you see something
@@ -1931,7 +1950,7 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
     One option you have is to simply wait for 0.10.1, or even 0.11.0, before
     attempting an upgrade. This gives you the smoothest experience, letting other,
     more brave souls, help with quality assurance before you get your hands dirty.
-    There's no shame in this, do what works for you.
+    There is no shame in this; do what works for you.
     </p>
     <p>
     If anything goes wrong in the upgrade, you can always start using <code>-fstage1</code> to
@@ -2350,7 +2369,7 @@ thanks to nicer llvm abstraction for C ABI
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 341387 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 364369 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2396,17 +2415,83 @@ thanks to nicer llvm abstraction for C ABI
 
     <h3 id="Error-Return-Traces"><a href="#toc-Error-Return-Traces">Error Return Traces</a> <a class="hdr" href="#Error-Return-Traces">§</a></h3>
 
+
     <h4 id="Unwrapping-Errors-in-Switch"><a href="#toc-Unwrapping-Errors-in-Switch">Unwrapping Errors in Switch</a> <a class="hdr" href="#Unwrapping-Errors-in-Switch">§</a></h4>
 
-    
-commit 902f6db67b2d25f238fb13e458a12e06df62dadb
-Merge: 62ecc154d d7d21672b
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Sep 21 02:56:21 2022 -0400
+    <p>A small quality-of-life improvement Veikka thought of while trying to
+    figure out where an <code><span class="line"><span class="tok-kw">error</span>.GenericPoison</span></code> was coming from (#12889).
+    Example situation:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Foo;</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> foo();</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">baz</span>() <span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-comment">// bar() catch unreachable;</span></span>
+<span class="line">    <span class="tok-comment">// bar() catch @panic(&quot;foo&quot;);</span></span>
+<span class="line">    <span class="tok-comment">// const S = struct {</span></span>
+<span class="line">    <span class="tok-comment">//     const S = struct {</span></span>
+<span class="line">    <span class="tok-comment">//         const fooo = &quot;foo&quot;;</span></span>
+<span class="line">    <span class="tok-comment">//     };</span></span>
+<span class="line">    <span class="tok-comment">// };</span></span>
+<span class="line">    bar() <span class="tok-kw">catch</span> |err| <span class="tok-kw">switch</span> (err) {</span>
+<span class="line">        <span class="tok-comment">// error.Foo =&gt; @panic(S.S.fooo),</span></span>
+<span class="line">        <span class="tok-kw">error</span>.Foo =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line">    };</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    baz();</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line">1/1 test_0... thread 364502 panic: attempt to unwrap error: Foo</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
+<span class="line">    return error.Foo;</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:5</span>: <span class="t2_0">0x212543 in bar (test)</span></span>
+<span class="line">    try foo();</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:17:22</span>: <span class="t2_0">0x211b21 in baz (test)</span></span>
+<span class="line">        error.Foo =&gt; unreachable,</span>
+<span class="line">                     <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:21:8</span>: <span class="t2_0">0x211a98 in test_0 (test)</span></span>
+<span class="line">    baz();</span>
+<span class="line">       <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:62:28</span>: <span class="t2_0">0x2132d8 in main (test)</span></span>
+<span class="line">        } else test_fn.func();</span>
+<span class="line">                           <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:568:22</span>: <span class="t2_0">0x21240d in posixCallMainAndExit (test)</span></span>
+<span class="line">            root.main();</span>
+<span class="line">                     <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x211ed2 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line">error: the following test command crashed:</span>
+<span class="line">/home/andy/.cache/zig/o/7d7fd7c38f1273383f54e28c80994393/test</span>
+</samp></pre></figure>
+    <p>Before, it did this instead:</p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">Test [1/1] test_0... thread 18432 panic: reached unreachable code</span>
+<span class="line">./a.zig:17:22: 0x20f0fc in baz (test)</span>
+<span class="line">        error.Foo => unreachable,</span>
+<span class="line">                     ^</span>
+<span class="line">./a.zig:21:8: 0x20f078 in test_0 (test)</span>
+<span class="line">    baz();</span>
+<span class="line">       ^</span>
+<span class="line">/home/vexu/Documents/zig/zig/lib/test_runner.zig:79:28: 0x2105b5 in main (test)</span>
+<span class="line">        } else test_fn.func();</span>
+<span class="line">                           ^</span>
+<span class="line">/home/vexu/Documents/zig/zig/lib/std/start.zig:568:22: 0x20f9bd in posixCallMainAndExit (test)</span>
+<span class="line">            root.main();</span>
+<span class="line">                     ^</span>
+<span class="line">/home/vexu/Documents/zig/zig/lib/std/start.zig:340:5: 0x20f3c2 in _start (test)</span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    ^</span>
+<span class="line">error: the following test command crashed:</span>
+</samp></pre></figure>
 
-    Merge pull request #12889 from ziglang/unwrap-error-switch
+    <p>This also makes <code><span class="line"><span class="tok-builtin">@panic</span></span></code> show error return trace in
+    these same situations which you can test by uncommenting lines in the
+    example.</p>
     
-    safety: show error return trace when unwrapping error in switch
 
     <h4 id="Removal-of-Useless-Stack-Frames"><a href="#toc-Removal-of-Useless-Stack-Frames">Removal of Useless Stack Frames</a> <a class="hdr" href="#Removal-of-Useless-Stack-Frames">§</a></h4>
 
@@ -2431,7 +2516,7 @@ Date:   Wed Sep 21 02:56:21 2022 -0400
       <li>the <code><span class="line"><span class="tok-kw">const</span></span></code> variable associated with an error trace falls out of scope</li>
       <li>a function receives an error as an argument and returns a non-error</li>
     </ul>
-    <p>Here's a code snippet that tries to show most of this together:</p>
+    <p>Putting the code snippet aside, here is a code snippet that tries to show most of this together:</p>
     <pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {</span>
 <span class="line">    eat_dinner() <span class="tok-kw">catch</span> {</span>
 <span class="line">        <span class="tok-comment">// Begin error handling here</span></span>
@@ -2459,7 +2544,7 @@ Date:   Wed Sep 21 02:56:21 2022 -0400
 <span class="line">    <span class="tok-kw">try</span> expectError(<span class="tok-kw">error</span>.FatalError, bar());         <span class="tok-comment">// If this fails, `bar()` appears in the error return trace</span></span>
 <span class="line">    <span class="tok-kw">try</span> expectError(<span class="tok-kw">error</span>.MyInlawsAreComing, foo());  <span class="tok-comment">// If this fails, `foo()` appears in the error return trace (`bar` was already popped)</span></span>
 <span class="line">}</span></code></pre>
-    <p>Here's a real world example. Before, one might get debug output that looks like this:</p>
+    <p>Here is a real world example. Before, one might get debug output that looks like this:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32</kbd></span>
 <span class="line">error: FileNotFound</span>
 <span class="line">tools/copy-from-glibc.zig:21:23: 0x218e39 in main (copy-from-glibc)</span>
@@ -2658,7 +2743,6 @@ Date:   Wed Sep 21 02:56:21 2022 -0400
 
     <h2 id="Self-Hosted-Linker"><a href="#toc-Self-Hosted-Linker">Self-Hosted Linker</a> <a class="hdr" href="#Self-Hosted-Linker">§</a></h2>
 
-    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_2.svg" style="height: 16em; float: right">
     <p>The self-hosted linker is <em>tightly coupled</em> with the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.
     There has been progress on <a href="#ELF">ELF</a> and <a href="#COFF">COFF</a> however they are not generally usable yet.
     By default, LLD will be used for these object formats, however, one can opt in to
@@ -2666,6 +2750,7 @@ Date:   Wed Sep 21 02:56:21 2022 -0400
 
     <h3 id="MachO"><a href="#toc-MachO">MachO</a> <a class="hdr" href="#MachO">§</a></h3>
 
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_2.svg" style="height: 16em; float: right">
     <p>
 The incremental MachO linker, like its traditional linking counterpart, has seen
 a major rewrite where Zig now lays out the incrementally linked binary such that
@@ -3262,7 +3347,7 @@ The strategy employed is to:
 
 ---
 
-Here's an example of using a simple test case that will cause a leak when the
+Here is an example of using a simple test case that will cause a leak when the
 allocation of `bar` fails (but will pass normally):
 
 ```zig
