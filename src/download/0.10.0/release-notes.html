@@ -2075,21 +2075,27 @@ thanks to nicer llvm abstraction for C ABI
     {#header_close#}
 
     {#header_open|Cache System#}
+    <p>Zig now places the <code>zig-cache</code> directory next to
+    <code>build.zig</code>. If no <code>build.zig</code> file is found, it
+    falls back to using the global cache directory (#11672).</p>
 
-commit 81fa31c05456facea1d1963a1e7f665351fb248d
-Merge: 850b053ea d94303be2
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Jan 3 16:50:29 2022 -0500
-    Merge pull request #10451 from ziglang/cache-mode
-    stage2: introduce CacheMode
+    <p>Internally, there are now two <strong>cache modes</strong>:
+    <em>incremental</em> and <em>whole</em>. <strong>Whole cache mode</strong> is what
+    everyone is used to from previous Zig releases. It relies on hashing the full set of
+    inputs, including every source file that is directly or indirectly imported.
+    <strong>Incremental cache mode</strong> is new and is based on re-opening
+    existing build artifacts and rebuilding only the modified symbols. Although
+    Zig's incremental compilation system is still experimental, it can be
+    enabled with the <code>--watch</code> flag.</p>
 
-
-    <ul>
-      <li>Zig now places the <code>zig-cache</code> directory next to <code>build.zig</code>.
-        If no <code>build.zig</code> file is found, it falls back to using the global cache directory (#11672)</li>
-    </ul>
-
+    <p>Incremental cache mode is the default for the
+    {#link|self-hosted code generation backends|Code Generation#}, and for the
+    {#link|LLVM|LLVM 15#} backend when not using the {#link|Build System#}. Because the compiler
+    does not yet serialize and restore its state, without the <code>--watch</code> flag,
+    this will result in recompiling with every invocation of the compiler. On the other hand,
+    it results in less garbage accumulating into the <code>zig-cache</code> directory.</p>
     {#header_close#}
+
     {#header_open|Safety for Switching on Corrupted Enums#}
     TODO https://github.com/ziglang/zig/issues/7053
     {#header_close#}
