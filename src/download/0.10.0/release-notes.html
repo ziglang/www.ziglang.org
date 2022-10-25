@@ -2097,21 +2097,50 @@ thanks to nicer llvm abstraction for C ABI
     {#header_close#}
 
     {#header_open|Safety for Switching on Corrupted Enums#}
-    TODO https://github.com/ziglang/zig/issues/7053
+    <p>The following code, when run with Zig 0.9.1, will invoke
+    <em>undefined behavior</em>:</p>
+    {#code_begin|test_safety|switch on corrupt#}
+const std = @import("std");
+
+const E = enum(u32) {
+    one = 1,
+    two = 2,
+};
+
+test "example" {
+    var a: E = .two;
+    @ptrCast(*u32, &a).* = 255;
+    switch (a) {
+        .one => @panic("one"),
+        else => return,
+    }
+}
+    {#code_end#}
+    <p>As you can see, with Zig 0.10.0, this problem is caught with a safety check.
+    A future enhancement will further refine this to
+    <a href="https://github.com/ziglang/zig/issues/13295">make the stack trace point at the switch expression rather than the prong</a>.</p>
     {#header_close#}
 
     {#header_open|Referenced-by trace#}
-    TODO
-    <pre>
-[nix-shell:~/Downloads/zig/build-release]$ time stage3/bin/zig build -p wasi -Dskip-install-lib-files -Dtarget=wasm32-wasi
-/home/andy/Downloads/zig/lib/std/os.zig:110:28: error: root struct of file 'os.wasi' has no member named 'PATH_MAX'
-pub const PATH_MAX = system.PATH_MAX;
-                     ~~~~~~^~~~~~~~~
-referenced by:
-    calcInstallNameLen: /home/andy/Downloads/zig/src/link/MachO.zig:3540:53
-    calcLCsSize: /home/andy/Downloads/zig/src/link/MachO.zig:3577:24
-    remaining reference traces hidden; use '-freference-trace' to see all reference traces
-    </pre>
+    <p>You can find referenced-by traces in a few other example snippets throughout this
+    document, but here is illustrated a real world example that was particularly helpful:</p>
+
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>stage3/bin/zig build -p wasi -Dskip-install-lib-files -Dtarget=wasm32-wasi</kbd></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/os.zig:110:28: </span><span class="t31_1">error: </span><span class="t1_0">root struct of file 'os.wasi' has no member named 'PATH_MAX'</span></span>
+<span class="line">pub const PATH_MAX = system.PATH_MAX;</span>
+<span class="line t32_1">                     ~~~~~~^~~~~~~~~</span>
+<span class="line t2_0">referenced by:</span>
+<span class="line t2_0">    calcInstallNameLen: /home/andy/Downloads/zig/src/link/MachO.zig:3540:53</span>
+<span class="line t2_0">    calcLCsSize: /home/andy/Downloads/zig/src/link/MachO.zig:3577:24</span>
+<span class="line t2_0">    remaining reference traces hidden; use '-freference-trace' to see all reference traces</span>
+</samp></pre></figure>
+    <p>Here I tried to build the {#link|Self-Hosted Compiler#} for {#link|WASI#} but ran
+    into some code that incorrectly tried to reference {#syntax#}std.os.PATH_MAX{#endsyntax#}
+    even though no such definition exists for the WASI target.</p>
+    <p>You can see that without the referenced-by trace,
+    <a href="https://github.com/ziglang/zig/issues/13229">this bug</a>
+    would have been annoying to fix, but with it,
+    <a href="https://github.com/ziglang/zig/commit/a4eb221b9ef7dab8fa1c6cc07c7891e25d98d2b6">the fix was trivial</a>.</p>
     {#header_close#}
 
     {#header_open|Error Return Traces#}

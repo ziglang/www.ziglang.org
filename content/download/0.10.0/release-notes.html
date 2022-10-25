@@ -2328,22 +2328,65 @@ thanks to nicer llvm abstraction for C ABI
 
     <h3 id="Safety-for-Switching-on-Corrupted-Enums"><a href="#toc-Safety-for-Switching-on-Corrupted-Enums">Safety for Switching on Corrupted Enums</a> <a class="hdr" href="#Safety-for-Switching-on-Corrupted-Enums">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/7053
+    <p>The following code, when run with Zig 0.9.1, will invoke
+    <em>undefined behavior</em>:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> E = <span class="tok-kw">enum</span>(<span class="tok-type">u32</span>) {</span>
+<span class="line">    one = <span class="tok-number">1</span>,</span>
+<span class="line">    two = <span class="tok-number">2</span>,</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;example&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> a: E = .two;</span>
+<span class="line">    <span class="tok-builtin">@ptrCast</span>(*<span class="tok-type">u32</span>, &amp;a).* = <span class="tok-number">255</span>;</span>
+<span class="line">    <span class="tok-kw">switch</span> (a) {</span>
+<span class="line">        .one =&gt; <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;one&quot;</span>),</span>
+<span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line">1/1 test.example... thread 171915 panic: switch on corrupt value</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
+<span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
+<span class="line">                <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:62:28</span>: <span class="t2_0">0x213178 in main (test)</span></span>
+<span class="line">        } else test_fn.func();</span>
+<span class="line">                           <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:568:22</span>: <span class="t2_0">0x21241d in posixCallMainAndExit (test)</span></span>
+<span class="line">            root.main();</span>
+<span class="line">                     <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x211ee2 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line">error: the following test command crashed:</span>
+<span class="line">/home/andy/.cache/zig/o/7d7fd7c38f1273383f54e28c80994393/test</span>
+</samp></pre></figure>
+    <p>As you can see, with Zig 0.10.0, this problem is caught with a safety check.
+    A future enhancement will further refine this to
+    <a href="https://github.com/ziglang/zig/issues/13295">make the stack trace point at the switch expression rather than the prong</a>.</p>
     
 
     <h3 id="Referenced-by-trace"><a href="#toc-Referenced-by-trace">Referenced-by trace</a> <a class="hdr" href="#Referenced-by-trace">§</a></h3>
 
-    TODO
-    <pre>
-[nix-shell:~/Downloads/zig/build-release]$ time stage3/bin/zig build -p wasi -Dskip-install-lib-files -Dtarget=wasm32-wasi
-/home/andy/Downloads/zig/lib/std/os.zig:110:28: error: root struct of file 'os.wasi' has no member named 'PATH_MAX'
-pub const PATH_MAX = system.PATH_MAX;
-                     ~~~~~~^~~~~~~~~
-referenced by:
-    calcInstallNameLen: /home/andy/Downloads/zig/src/link/MachO.zig:3540:53
-    calcLCsSize: /home/andy/Downloads/zig/src/link/MachO.zig:3577:24
-    remaining reference traces hidden; use '-freference-trace' to see all reference traces
-    </pre>
+    <p>You can find referenced-by traces in a few other example snippets throughout this
+    document, but here is illustrated a real world example that was particularly helpful:</p>
+
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>stage3/bin/zig build -p wasi -Dskip-install-lib-files -Dtarget=wasm32-wasi</kbd></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/os.zig:110:28: </span><span class="t31_1">error: </span><span class="t1_0">root struct of file 'os.wasi' has no member named 'PATH_MAX'</span></span>
+<span class="line">pub const PATH_MAX = system.PATH_MAX;</span>
+<span class="line t32_1">                     ~~~~~~^~~~~~~~~</span>
+<span class="line t2_0">referenced by:</span>
+<span class="line t2_0">    calcInstallNameLen: /home/andy/Downloads/zig/src/link/MachO.zig:3540:53</span>
+<span class="line t2_0">    calcLCsSize: /home/andy/Downloads/zig/src/link/MachO.zig:3577:24</span>
+<span class="line t2_0">    remaining reference traces hidden; use '-freference-trace' to see all reference traces</span>
+</samp></pre></figure>
+    <p>Here I tried to build the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> for <a href="#WASI">WASI</a> but ran
+    into some code that incorrectly tried to reference <code><span class="line">std.os.PATH_MAX</span></code>
+    even though no such definition exists for the WASI target.</p>
+    <p>You can see that without the referenced-by trace,
+    <a href="https://github.com/ziglang/zig/issues/13229">this bug</a>
+    would have been annoying to fix, but with it,
+    <a href="https://github.com/ziglang/zig/commit/a4eb221b9ef7dab8fa1c6cc07c7891e25d98d2b6">the fix was trivial</a>.</p>
     
 
     <h3 id="Error-Return-Traces"><a href="#toc-Error-Return-Traces">Error Return Traces</a> <a class="hdr" href="#Error-Return-Traces">§</a></h3>
