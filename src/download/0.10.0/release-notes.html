@@ -3232,15 +3232,55 @@ test {
     {#header_close#}
 
     {#header_open|New Deflate Compressor#}
-    TODO
-commit 0c1df96b17fcafdb0aa973dfcb1819929719d650
-Merge: f0ddc7f7a 490f067de
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jan 26 00:43:13 2022 -0500
+    <p>Hadrien Dorio provided a new deflate implementation (#10552).</p>
+    <p>Old API:</p>
+    <pre>{#syntax#}inflateStream(reader: anytype, window_slice: []u8){#endsyntax#}</pre>
+    <p>New API:</p>
+    <pre>{#syntax#}decompressor(allocator: mem.Allocator, reader: anytype, dictionary: ?[]const u8)
+compressor(allocator: mem.Allocator, writer: anytype, options: CompressorOptions){#endsyntax#}</pre>
+    <p>The implementation is a port of the compress/flate package from Go, and appears
+    to be about 2-3x faster.</p>
+    {#shell_samp#}
+$ zig run bench.zig -O ReleaseFast
 
-    Merge pull request #10552 from hdorio/deflate
+size: 100B
+deflate_old: 20.459ms
+deflate_new: 38.101us
+new is 536.98x faster
 
-    compress: add a deflate compressor
+size: 1KiB
+deflate_old: 30.71us
+deflate_new: 15.159us
+new is 2.03x faster
+
+size: 1MiB
+deflate_old: 2.824ms
+deflate_new: 916.366us
+new is 3.08x faster
+
+size: 10MiB
+deflate_old: 28.298ms
+deflate_new: 8.246ms
+new is 3.43x faster
+
+size: 22MiB
+deflate_old: 62.643ms
+deflate_new: 24.133ms
+new is 2.60x faster
+
+size: 100MiB
+deflate_old: 288.08ms
+deflate_new: 107.465ms
+new is 2.68x faster
+
+size: 220MiB
+deflate_old: 628.471ms
+deflate_new: 232.427ms
+new is 2.70x faster
+    {#end_shell_samp#}
+    <p><a href="https://github.com/ziglang/zig/pull/10552/#issuecomment-1009806592">Benchmark details</a></p>
+    <p>Big thanks to Ryan Liptak for fuzz testing.</p>
+    <p>There is still a lot of room for performance improvement beyond this.</p>
     {#header_close#}
 
     {#header_open|Formatted Printing#}

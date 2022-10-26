@@ -2322,7 +2322,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 672793 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 675349 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2396,7 +2396,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 672839 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 675394 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -3475,7 +3475,7 @@ Summary
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x214b6d in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7f2c9cfa5000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7fb7dbb8e000 leaked:</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213ff4 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
@@ -3553,7 +3553,7 @@ Summary
 
     <p>This is a new API that you can use to efficiently save small stack traces for later,
     along with relevant data, so that when a problematic behavior is observed, you can dump
-    the relevant stack trace (#11819):</p>
+    the corresponding stack trace (#11819):</p>
     <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
@@ -3613,30 +3613,68 @@ Summary
 <span class="line">    <span class="t32_1">^</span></span>
 </samp></pre></figure>
 
-    <p>Here, we attach debug info to relevant data, and then selectively
-    dump the debug info when problematic data is observed. This provides insight about
-    the state the program was in at a cross-section according to specific objects, which
-    can lead directly to bug fixes that otherwise would be unapproachable.</p>
+    <p>This provides insight about the state of the program at a cross-section
+    according to specific objects, which can lead directly to identifying bugs
+    that otherwise would be completely opaque.</p>
 
     <p>By default the <code><span class="line">Trace</span></code> objects are empty in
-    release modes, so the cost is only paid when debugging. Even when debugging, the size of
-    the Trace objects are small - only one <code><span class="line"><span class="tok-type">usize</span></span></code> per stack frame. It
-    defaults to 2 events, 4 stack frames, but can be configured with
+    release modes, so the cost is only paid when debugging. Even when debugging, however,
+    the size of the Trace objects are small - only one <code><span class="line"><span class="tok-type">usize</span></span></code> per stack
+    frame. It defaults to 2 events, 4 stack frames, but can be configured with
     <code><span class="line">std.debug.ConfigurableTrace</span></code>.</p>
     
     
 
     <h3 id="New-Deflate-Compressor"><a href="#toc-New-Deflate-Compressor">New Deflate Compressor</a> <a class="hdr" href="#New-Deflate-Compressor">§</a></h3>
 
-    TODO
-commit 0c1df96b17fcafdb0aa973dfcb1819929719d650
-Merge: f0ddc7f7a 490f067de
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jan 26 00:43:13 2022 -0500
-
-    Merge pull request #10552 from hdorio/deflate
-
-    compress: add a deflate compressor
+    <p>Hadrien Dorio provided a new deflate implementation (#10552).</p>
+    <p>Old API:</p>
+    <pre><code><span class="line">inflateStream(reader: <span class="tok-kw">anytype</span>, window_slice: []<span class="tok-type">u8</span>)</span></code></pre>
+    <p>New API:</p>
+    <pre><code><span class="line">decompressor(allocator: mem.Allocator, reader: <span class="tok-kw">anytype</span>, dictionary: ?[]<span class="tok-kw">const</span> <span class="tok-type">u8</span>)</span>
+<span class="line">compressor(allocator: mem.Allocator, writer: <span class="tok-kw">anytype</span>, options: CompressorOptions)</span></code></pre>
+    <p>The implementation is a port of the compress/flate package from Go, and appears
+    to be about 2-3x faster.</p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig run bench.zig -O ReleaseFast</kbd></span>
+<span class="line"></span>
+<span class="line">size: 100B</span>
+<span class="line">deflate_old: 20.459ms</span>
+<span class="line">deflate_new: 38.101us</span>
+<span class="line">new is 536.98x faster</span>
+<span class="line"></span>
+<span class="line">size: 1KiB</span>
+<span class="line">deflate_old: 30.71us</span>
+<span class="line">deflate_new: 15.159us</span>
+<span class="line">new is 2.03x faster</span>
+<span class="line"></span>
+<span class="line">size: 1MiB</span>
+<span class="line">deflate_old: 2.824ms</span>
+<span class="line">deflate_new: 916.366us</span>
+<span class="line">new is 3.08x faster</span>
+<span class="line"></span>
+<span class="line">size: 10MiB</span>
+<span class="line">deflate_old: 28.298ms</span>
+<span class="line">deflate_new: 8.246ms</span>
+<span class="line">new is 3.43x faster</span>
+<span class="line"></span>
+<span class="line">size: 22MiB</span>
+<span class="line">deflate_old: 62.643ms</span>
+<span class="line">deflate_new: 24.133ms</span>
+<span class="line">new is 2.60x faster</span>
+<span class="line"></span>
+<span class="line">size: 100MiB</span>
+<span class="line">deflate_old: 288.08ms</span>
+<span class="line">deflate_new: 107.465ms</span>
+<span class="line">new is 2.68x faster</span>
+<span class="line"></span>
+<span class="line">size: 220MiB</span>
+<span class="line">deflate_old: 628.471ms</span>
+<span class="line">deflate_new: 232.427ms</span>
+<span class="line">new is 2.70x faster</span>
+</samp></pre></figure>
+    <p><a href="https://github.com/ziglang/zig/pull/10552/#issuecomment-1009806592">Benchmark details</a></p>
+    <p>Big thanks to Ryan Liptak for fuzz testing.</p>
+    <p>There is still a lot of room for performance improvement beyond this.</p>
     
 
     <h3 id="Formatted-Printing"><a href="#toc-Formatted-Printing">Formatted Printing</a> <a class="hdr" href="#Formatted-Printing">§</a></h3>
