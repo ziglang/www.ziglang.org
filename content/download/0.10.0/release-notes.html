@@ -494,7 +494,10 @@ David Riley
             <ul>
                 <li><a id="toc-Check-All-Allocation-Failures" href="#Check-All-Allocation-Failures">Check All Allocation Failures</a></li>
             </ul></li>
-            <li><a id="toc-Debugging" href="#Debugging">Debugging</a></li>
+            <li><a id="toc-Debugging" href="#Debugging">Debugging</a>
+            <ul>
+                <li><a id="toc-stddebugTrace" href="#stddebugTrace">std.debug.Trace</a></li>
+            </ul></li>
             <li><a id="toc-New-Deflate-Compressor" href="#New-Deflate-Compressor">New Deflate Compressor</a></li>
             <li><a id="toc-Formatted-Printing" href="#Formatted-Printing">Formatted Printing</a></li>
         </ul></li>
@@ -2319,7 +2322,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 668862 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 672793 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2393,7 +2396,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 668906 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 672839 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -3472,7 +3475,7 @@ Summary
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x214b6d in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7f51561fa000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f2c9cfa5000 leaked:</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213ff4 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
@@ -3546,9 +3549,81 @@ Summary
       <li>Check for overflow in dumpStackTraceFromBase</li>
     </ul>
 
-    TODO show a code example here
-    Introduce std.debug.Trace and use it to debug a LazySrcLoc in stage2 that is set to a bogus value
-    Merge pull request #11819 from ziglang/std.debug.Trace
+    <h4 id="stddebugTrace"><a href="#toc-stddebugTrace">std.debug.Trace</a> <a class="hdr" href="#stddebugTrace">§</a></h4>
+
+    <p>This is a new API that you can use to efficiently save small stack traces for later,
+    along with relevant data, so that when a problematic behavior is observed, you can dump
+    the relevant stack trace (#11819):</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> s1 = make();</span>
+<span class="line">    <span class="tok-kw">var</span> s2 = make();</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">if</span> (std.crypto.random.uintLessThanBiased(<span class="tok-type">u8</span>, <span class="tok-number">100</span>) &lt; <span class="tok-number">100</span>) {</span>
+<span class="line">        s1.trace.add(<span class="tok-str">&quot;got lucky&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">if</span> (std.crypto.random.uintLessThanBiased(<span class="tok-type">u8</span>, <span class="tok-number">100</span>) &lt; <span class="tok-number">100</span>) {</span>
+<span class="line">        s2.trace.add(<span class="tok-str">&quot;got very lucky&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">if</span> (std.crypto.random.uintLessThanBiased(<span class="tok-type">u8</span>, <span class="tok-number">100</span>) &lt; <span class="tok-number">50</span>) {</span>
+<span class="line">        s1.trace.dump();</span>
+<span class="line">    } <span class="tok-kw">else</span> {</span>
+<span class="line">        s2.trace.dump();</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {</span>
+<span class="line">    blah: <span class="tok-type">i32</span>,</span>
+<span class="line">    trace: std.debug.Trace = .{},</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">make</span>() S {</span>
+<span class="line">    <span class="tok-kw">var</span> result: S = .{</span>
+<span class="line">        .blah = <span class="tok-number">1234</span>,</span>
+<span class="line">    };</span>
+<span class="line">    result.trace.add(<span class="tok-str">&quot;initial creation&quot;</span>);</span>
+<span class="line">    <span class="tok-kw">return</span> result;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
+<span class="line"></span>
+<span class="line">$ <kbd>./test</kbd></span>
+<span class="line">initial creation:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:30:21</span>: <span class="t2_0">0x210f86 in make (test)</span></span>
+<span class="line">    result.trace.add(&quot;initial creation&quot;);</span>
+<span class="line">                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x210e67 in main (test)</span></span>
+<span class="line">    var s2 = make();</span>
+<span class="line">                 <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:578:37</span>: <span class="t2_0">0x2109f9 in posixCallMainAndExit (test)</span></span>
+<span class="line">            const result = root.main() catch |err| {</span>
+<span class="line">                                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x210482 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line">got very lucky:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:11:21</span>: <span class="t2_0">0x210eee in main (test)</span></span>
+<span class="line">        s2.trace.add(&quot;got very lucky&quot;);</span>
+<span class="line">                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:578:37</span>: <span class="t2_0">0x2109f9 in posixCallMainAndExit (test)</span></span>
+<span class="line">            const result = root.main() catch |err| {</span>
+<span class="line">                                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x210482 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+</samp></pre></figure>
+
+    <p>Here, we attach debug info to relevant data, and then selectively
+    dump the debug info when problematic data is observed. This provides insight about
+    the state the program was in at a cross-section according to specific objects, which
+    can lead directly to bug fixes that otherwise would be unapproachable.</p>
+
+    <p>By default the <code><span class="line">Trace</span></code> objects are empty in
+    release modes, so the cost is only paid when debugging. Even when debugging, the size of
+    the Trace objects are small - only one <code><span class="line"><span class="tok-type">usize</span></span></code> per stack frame. It
+    defaults to 2 events, 4 stack frames, but can be configured with
+    <code><span class="line">std.debug.ConfigurableTrace</span></code>.</p>
+    
     
 
     <h3 id="New-Deflate-Compressor"><a href="#toc-New-Deflate-Compressor">New Deflate Compressor</a> <a class="hdr" href="#New-Deflate-Compressor">§</a></h3>
