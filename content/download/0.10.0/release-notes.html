@@ -2319,7 +2319,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 656838 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 668862 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2393,7 +2393,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 656882 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 668906 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -2638,7 +2638,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     behavior tests, compared to 13% of Zig 0.9.x. At this point, most Zig features are
     supported. For features of which the WebAsssembly architecture has no
     support, the backend is already capable of generating calls into
-    <a href="#compiler-rt">compiler-rt</a>, and correctly link with it. This is thanks to the
+    <a href="#compiler-rt">compiler-rt</a>, and correctly <a href="#Wasm-Modules">link</a> with it. This is thanks to the
     <a href="#C-ABI-Compatibility">C ABI Compatibility</a> work that was done during this release. This
     also benefitted the <a href="#LLVM-15">LLVM</a> backend with regards to its
     <a href="#WebAssembly">WebAssembly</a> target, as the logic for the C ABI implemtation is
@@ -3363,79 +3363,164 @@ Summary
 
     <h4 id="Check-All-Allocation-Failures"><a href="#toc-Check-All-Allocation-Failures">Check All Allocation Failures</a> <a class="hdr" href="#Check-All-Allocation-Failures">§</a></h4>
 
-    TODO
-Adds a function that allows checking for memory leaks (and other problems) caused by allocation failures by taking advantage of the FailingAllocator and inducing failure at every allocation point within the provided `test_fn` (based on the strategy employed in the Zig parser tests, which can now use this function).
+    <p>There is a new API that checks for memory leaks (and other
+    problems) caused by allocation failures by taking advantage of the
+    <code><span class="line">FailingAllocator</span></code> and inducing failure at every
+    allocation point within the provided function (#10586).</p>
+    <p>Below is the function's giant doc comment in a more readable form:</p>
 
-Below is the function's giant doc comment in a more readable form:
+    <p>Exhaustively check that allocation failures within <code><span class="line">test_fn</span></code> are handled
+    without introducing memory leaks. If used with the <code><span class="line">testing.allocator</span></code> as the
+    <code><span class="line">backing_allocator</span></code>, it will also perform memory sanitization when
+    runtime safety is enabled.</p>
 
----
+    <p>The provided <code><span class="line">test_fn</span></code> must have a <code><span class="line">std.mem.Allocator</span></code> as its first argument,
+    and must have a return type of <code><span class="line">!<span class="tok-type">void</span></span></code>. Any extra arguments of <code><span class="line">test_fn</span></code> can
+    be provided via the <code><span class="line">extra_args</span></code> tuple.</p>
 
-Exhaustively check that allocation failures within `test_fn` are handled without
-introducing memory leaks. If used with the `testing.allocator` as the `backing_allocator`,
-it will also be able to detect double frees, etc (when runtime safety is enabled).
+    <p>Any relevant state shared between runs of <code><span class="line">test_fn</span></code>
+    <em>must</em> be reset within <code><span class="line">test_fn</span></code>.</p>
 
-The provided `test_fn` must have a `std.mem.Allocator` as its first argument,
-and must have a return type of `!void`. Any extra arguments of `test_fn` can
-be provided via the `extra_args` tuple.
+    <p>Expects that the <code><span class="line">test_fn</span></code> has a deterministic number of memory allocations. An error will be returned if non-deterministic allocations are detected.</p>
 
-Any relevant state shared between runs of `test_fn` *must* be reset within `test_fn`.
+    <p>The strategy employed is to:</p>
+    <ul>
+      <li>Run the test function once to get the total number of allocations.</li>
+      <li>Then, iterate and run the function X more times, incrementing
+      the failing index each iteration (where X is the total number of
+      allocations determined previously)</li>
+    </ul>
 
-Expects that the `test_fn` has a deterministic number of memory allocations
-(an error will be returned if non-deterministic allocations are detected).
+    <p>Here is an example of using a simple test case that will cause a leak when the
+    allocation of <code><span class="line">bar</span></code> fails (but will pass normally):</p>
 
-The strategy employed is to:
-- Run the test function once to get the total number of allocations.
-- Then, iterate and run the function X more times, incrementing
-  the failing index each iteration (where X is the total number of
-  allocations determined previously)
+    <figure><figcaption class="zig-cap"><cite class="file">cleanup_leak.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> length: <span class="tok-type">usize</span> = <span class="tok-number">10</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> allocator = std.testing.allocator;</span>
+<span class="line">    <span class="tok-kw">var</span> foo = <span class="tok-kw">try</span> allocator.alloc(<span class="tok-type">u8</span>, length);</span>
+<span class="line">    <span class="tok-kw">var</span> bar = <span class="tok-kw">try</span> allocator.alloc(<span class="tok-type">u8</span>, length);</span>
+<span class="line"></span>
+<span class="line">    allocator.free(foo);</span>
+<span class="line">    allocator.free(bar);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test cleanup_leak.zig</kbd></span>
+<span class="line">1/1 test_0... OK</span>
+<span class="line">All 1 tests passed.</span>
+</samp></pre></figure>
 
----
+    <p>When the test case is converted to use the new
+    <code>checkAllAllocationFailures</code> API, the test fails:</p>
 
-Here is an example of using a simple test case that will cause a leak when the
-allocation of `bar` fails (but will pass normally):
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">testImpl</span>(allocator: std.mem.Allocator, length: <span class="tok-type">usize</span>) !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> foo = <span class="tok-kw">try</span> allocator.alloc(<span class="tok-type">u8</span>, length);</span>
+<span class="line">    <span class="tok-kw">var</span> bar = <span class="tok-kw">try</span> allocator.alloc(<span class="tok-type">u8</span>, length);</span>
+<span class="line"></span>
+<span class="line">    allocator.free(foo);</span>
+<span class="line">    allocator.free(bar);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> length: <span class="tok-type">usize</span> = <span class="tok-number">10</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> allocator = std.testing.allocator;</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line">1/1 test_0...</span>
+<span class="line">fail_index: 1/2</span>
+<span class="line">allocated bytes: 10</span>
+<span class="line">freed bytes: 0</span>
+<span class="line">allocations: 1</span>
+<span class="line">deallocations: 0</span>
+<span class="line">allocation that was made to fail:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:34</span>: <span class="t2_0">0x214069 in testImpl (test)</span></span>
+<span class="line">    var bar = try allocator.alloc(u8, length);</span>
+<span class="line">                                 <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:693:13</span>: <span class="t2_0">0x2145e1 in checkAllAllocationFailures__anon_1923 (test)</span></span>
+<span class="line">        if (@call(.{}, test_fn, args)) |_| {</span>
+<span class="line">            <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:47</span>: <span class="t2_0">0x214b5a in test_0 (test)</span></span>
+<span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
+<span class="line">                                              <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:62:28</span>: <span class="t2_0">0x21cac8 in main (test)</span></span>
+<span class="line">        } else test_fn.func();</span>
+<span class="line">                           <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:568:22</span>: <span class="t2_0">0x2153fd in posixCallMainAndExit (test)</span></span>
+<span class="line">            root.main();</span>
+<span class="line">                     <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x214ec2 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line"></span>
+<span class="line">FAIL (MemoryLeakDetected)</span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:72:13</span>: <span class="t2_0">0x229716 in allocImpl (test)</span></span>
+<span class="line">            return @call(.{ .modifier = .always_inline }, allocFn, .{ self, len, ptr_align, len_align, ret_addr });</span>
+<span class="line">            <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:301:24</span>: <span class="t2_0">0x21ba7c in allocAdvancedWithRetAddr__anon_3762 (test)</span></span>
+<span class="line">    const byte_slice = try self.rawAlloc(byte_count, a, len_align, return_address);</span>
+<span class="line">                       <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:194:5</span>: <span class="t2_0">0x21416b in alloc__anon_2365 (test)</span></span>
+<span class="line">    return self.allocAdvancedWithRetAddr(T, null, n, .exact, @returnAddress());</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:15</span>: <span class="t2_0">0x214087 in testImpl (test)</span></span>
+<span class="line">    var bar = try allocator.alloc(u8, length);</span>
+<span class="line">              <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:714:21</span>: <span class="t2_0">0x214736 in checkAllAllocationFailures__anon_1923 (test)</span></span>
+<span class="line">                    return error.MemoryLeakDetected;</span>
+<span class="line">                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x214b6d in test_0 (test)</span></span>
+<span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line">[gpa] (err): memory address 0x7f51561fa000 leaked:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213ff4 in testImpl (test)</span></span>
+<span class="line">    var foo = try allocator.alloc(u8, length);</span>
+<span class="line">                                 <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:693:13</span>: <span class="t2_0">0x2145e1 in checkAllAllocationFailures__anon_1923 (test)</span></span>
+<span class="line">        if (@call(.{}, test_fn, args)) |_| {</span>
+<span class="line">            <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:47</span>: <span class="t2_0">0x214b5a in test_0 (test)</span></span>
+<span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
+<span class="line">                                              <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:62:28</span>: <span class="t2_0">0x21cac8 in main (test)</span></span>
+<span class="line">        } else test_fn.func();</span>
+<span class="line">                           <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:568:22</span>: <span class="t2_0">0x2153fd in posixCallMainAndExit (test)</span></span>
+<span class="line">            root.main();</span>
+<span class="line">                     <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x214ec2 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line">0 passed; 0 skipped; 1 failed.</span>
+<span class="line">1 errors were logged.</span>
+<span class="line">1 tests leaked memory.</span>
+<span class="line">error: the following test command failed with exit code 1:</span>
+<span class="line">/home/andy/.cache/zig/o/4c6012d5fac7f38614b05aea38a6dc59/test</span>
+</samp></pre></figure>
 
-```zig
-test {
-    const length: usize = 10;
-    const allocator = std.testing.allocator;
-    var foo = try allocator.alloc(u8, length);
-    var bar = try allocator.alloc(u8, length);
+    <p>Running this test will show that <code><span class="line">foo</span></code> is leaked when the allocation of
+    <code><span class="line">bar</span></code> fails. The simplest fix, in this case, would be to use
+    <code><span class="line"><span class="tok-kw">defer</span></span></code>:</p>
 
-    allocator.free(foo);
-    allocator.free(bar);
-}
-```
-
-The test case can be converted to something that this function can use by
-doing:
-
-```zig
-fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
-    var foo = try allocator.alloc(u8, length);
-    var bar = try allocator.alloc(u8, length);
-
-    allocator.free(foo);
-    allocator.free(bar);
-}
-
-test {
-    const length: usize = 10;
-    const allocator = std.testing.allocator;
-    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});
-}
-```
-
-Running this test will show that `foo` is leaked when the allocation of
-`bar` fails. The simplest fix, in this case, would be to use defer like so:
-
-```zig
-fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
-    var foo = try allocator.alloc(u8, length);
-    defer allocator.free(foo);
-    var bar = try allocator.alloc(u8, length);
-    defer allocator.free(bar);
-}
-```
+    <figure><figcaption class="zig-cap"><cite class="file">leak_fixed.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">testImpl</span>(allocator: std.mem.Allocator, length: <span class="tok-type">usize</span>) !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> foo = <span class="tok-kw">try</span> allocator.alloc(<span class="tok-type">u8</span>, length);</span>
+<span class="line">    <span class="tok-kw">defer</span> allocator.free(foo);</span>
+<span class="line">    <span class="tok-kw">var</span> bar = <span class="tok-kw">try</span> allocator.alloc(<span class="tok-type">u8</span>, length);</span>
+<span class="line">    <span class="tok-kw">defer</span> allocator.free(bar);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> length: <span class="tok-type">usize</span> = <span class="tok-number">10</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> allocator = std.testing.allocator;</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test leak_fixed.zig</kbd></span>
+<span class="line">1/1 test_0... OK</span>
+<span class="line">All 1 tests passed.</span>
+</samp></pre></figure>
     
     
 

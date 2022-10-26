@@ -2340,7 +2340,7 @@ tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)
     behavior tests, compared to 13% of Zig 0.9.x. At this point, most Zig features are
     supported. For features of which the WebAsssembly architecture has no
     support, the backend is already capable of generating calls into
-    {#link|compiler-rt#}, and correctly link with it. This is thanks to the
+    {#link|compiler-rt#}, and correctly {#link|link|Wasm Modules#} with it. This is thanks to the
     {#link|C ABI Compatibility#} work that was done during this release. This
     also benefitted the {#link|LLVM|LLVM 15#} backend with regards to its
     {#link|WebAssembly#} target, as the logic for the C ABI implemtation is
@@ -3046,38 +3046,40 @@ Summary
     </ul>
 
     {#header_open|Check All Allocation Failures#}
-    TODO
-Adds a function that allows checking for memory leaks (and other problems) caused by allocation failures by taking advantage of the FailingAllocator and inducing failure at every allocation point within the provided `test_fn` (based on the strategy employed in the Zig parser tests, which can now use this function).
+    <p>There is a new API that checks for memory leaks (and other
+    problems) caused by allocation failures by taking advantage of the
+    {#syntax#}FailingAllocator{#endsyntax#} and inducing failure at every
+    allocation point within the provided function (#10586).</p>
+    <p>Below is the function's giant doc comment in a more readable form:</p>
 
-Below is the function's giant doc comment in a more readable form:
+    <p>Exhaustively check that allocation failures within {#syntax#}test_fn{#endsyntax#} are handled
+    without introducing memory leaks. If used with the {#syntax#}testing.allocator{#endsyntax#} as the
+    {#syntax#}backing_allocator{#endsyntax#}, it will also perform memory sanitization when
+    runtime safety is enabled.</p>
 
----
+    <p>The provided {#syntax#}test_fn{#endsyntax#} must have a {#syntax#}std.mem.Allocator{#endsyntax#} as its first argument,
+    and must have a return type of {#syntax#}!void{#endsyntax#}. Any extra arguments of {#syntax#}test_fn{#endsyntax#} can
+    be provided via the {#syntax#}extra_args{#endsyntax#} tuple.</p>
 
-Exhaustively check that allocation failures within `test_fn` are handled without
-introducing memory leaks. If used with the `testing.allocator` as the `backing_allocator`,
-it will also be able to detect double frees, etc (when runtime safety is enabled).
+    <p>Any relevant state shared between runs of {#syntax#}test_fn{#endsyntax#}
+    <em>must</em> be reset within {#syntax#}test_fn{#endsyntax#}.</p>
 
-The provided `test_fn` must have a `std.mem.Allocator` as its first argument,
-and must have a return type of `!void`. Any extra arguments of `test_fn` can
-be provided via the `extra_args` tuple.
+    <p>Expects that the {#syntax#}test_fn{#endsyntax#} has a deterministic number of memory allocations. An error will be returned if non-deterministic allocations are detected.</p>
 
-Any relevant state shared between runs of `test_fn` *must* be reset within `test_fn`.
+    <p>The strategy employed is to:</p>
+    <ul>
+      <li>Run the test function once to get the total number of allocations.</li>
+      <li>Then, iterate and run the function X more times, incrementing
+      the failing index each iteration (where X is the total number of
+      allocations determined previously)</li>
+    </ul>
 
-Expects that the `test_fn` has a deterministic number of memory allocations
-(an error will be returned if non-deterministic allocations are detected).
+    <p>Here is an example of using a simple test case that will cause a leak when the
+    allocation of {#syntax#}bar{#endsyntax#} fails (but will pass normally):</p>
 
-The strategy employed is to:
-- Run the test function once to get the total number of allocations.
-- Then, iterate and run the function X more times, incrementing
-  the failing index each iteration (where X is the total number of
-  allocations determined previously)
+    {#code_begin|test|cleanup_leak#}
+const std = @import("std");
 
----
-
-Here is an example of using a simple test case that will cause a leak when the
-allocation of `bar` fails (but will pass normally):
-
-```zig
 test {
     const length: usize = 10;
     const allocator = std.testing.allocator;
@@ -3087,12 +3089,14 @@ test {
     allocator.free(foo);
     allocator.free(bar);
 }
-```
+    {#code_end#}
 
-The test case can be converted to something that this function can use by
-doing:
+    <p>When the test case is converted to use the new
+    <code>checkAllAllocationFailures</code> API, the test fails:</p>
 
-```zig
+    {#code_begin|test_err|leak#}
+const std = @import("std");
+
 fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
     var foo = try allocator.alloc(u8, length);
     var bar = try allocator.alloc(u8, length);
@@ -3106,19 +3110,28 @@ test {
     const allocator = std.testing.allocator;
     try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});
 }
-```
+    {#code_end#}
 
-Running this test will show that `foo` is leaked when the allocation of
-`bar` fails. The simplest fix, in this case, would be to use defer like so:
+    <p>Running this test will show that {#syntax#}foo{#endsyntax#} is leaked when the allocation of
+    {#syntax#}bar{#endsyntax#} fails. The simplest fix, in this case, would be to use
+    {#syntax#}defer{#endsyntax#}:</p>
 
-```zig
+    {#code_begin|test|leak_fixed#}
+const std = @import("std");
+
 fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
     var foo = try allocator.alloc(u8, length);
     defer allocator.free(foo);
     var bar = try allocator.alloc(u8, length);
     defer allocator.free(bar);
 }
-```
+
+test {
+    const length: usize = 10;
+    const allocator = std.testing.allocator;
+    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});
+}
+    {#code_end#}
     {#header_close#}
     {#header_close#}
 
