@@ -236,9 +236,11 @@
 
     .diff-red {
       background-color: #ffaeae;
+      display: block;
     }
     .diff-green {
       background-color: #bfb;
+      display: block;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -1198,7 +1200,7 @@ fn foo() S {
     </ul>
 
     <p>The solution is to make the function into a function pointer:</p>
-    <pre><code><div class="diff-red">-    fnPtr: fn () void,</div><div class="diff-green">+    fnPtr: *const fn () void,</div></code></pre>
+    <pre><code><span class="diff-red">-    fnPtr: fn () void,</span><span class="diff-green">+    fnPtr: *const fn () void,</span></code></pre>
 
     <p>Ideally, the compile error for this will be enhanced to make the
     solution more obvious, however, that enhancement will come later.</p>
@@ -1472,7 +1474,7 @@ fn foo() []const u8 {
     {#code_end#}
     <p>The previous behavior
     can be obtained with explicit use of the {#syntax#}comptime{#endsyntax#} keyword:</p>
-    <pre><code><div class="diff-red">-    const a = foo() ++ "bb";</div><div class="diff-green">+    const a = comptime foo() ++ "bb";</div></code></pre>
+    <pre><code><span class="diff-red">-    const a = foo() ++ "bb";</span><span class="diff-green">+    const a = comptime foo() ++ "bb";</span></code></pre>
     <p>This language change is implemented in {#link|Self-Hosted Compiler#} only.</p>
     {#header_close#}
 
@@ -1494,8 +1496,8 @@ test {
     To fix this code, extract the temporary into an explicit {#syntax#}var{#endsyntax#}.
     This makes the mutable temporary more obvious, which is safer.</p>
 
-    <pre><code><div class="diff-red">-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</div><div class="diff-green">+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-+    const arena = arena_state.allocator();</div></code></pre>
+    <pre><code><span class="diff-red">-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</span><span class="diff-green">+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
++    const arena = arena_state.allocator();</span></code></pre>
     {#header_close#}
 
     {#header_open|std.builtin.CompilerBackend#}
@@ -1937,7 +1939,7 @@ test {
 
     <p>{#syntax#}.{}{#endsyntax#} is a struct literal; {#syntax#}{}{#endsyntax#} is a void value. It has always been a bug for the {#link|Bootstrap Compiler#} to accept this code. Just change {#syntax#}.{}{#endsyntax#} to {#syntax#}{}{#endsyntax#}.</p>
 
-    <pre><code><div class="diff-red">-    var x: void = .{};</div><div class="diff-green">+    var x: void = {};</div></code></pre>
+    <pre><code><span class="diff-red">-    var x: void = .{};</span><span class="diff-green">+    var x: void = {};</span></code></pre>
     {#header_close#}
 
     {#header_open|Escaped Pointer to Parameter#}
@@ -1975,7 +1977,7 @@ const S = struct {
 
     <p>Once the problem has been identified, the fix is simple:</p>
 
-    <pre><code><div class="diff-red">-    fn foo(s: S) *const i32 {</div><div class="diff-green">+    fn foo(s: *const S) *const i32 {</div></code></pre>
+    <pre><code><span class="diff-red">-    fn foo(s: S) *const i32 {</span><span class="diff-green">+    fn foo(s: *const S) *const i32 {</span></code></pre>
     {#header_close#}
     {#header_close#}
 
@@ -3440,7 +3442,7 @@ new is 2.70x faster
         instead of <code>zig cc</code> and using the
         <code>--enable-cache</code> parameter, matching what the {#link|Build System#} does.
       </li>
-      <li>Support for <code>-Wl,--export=<symbol></code></li>
+      <li>Support for <code>-Wl,--export=&lt;symbol&gt;</code></li>
       <li>Support <code>--subsystem</code> linker flag (<a href="https://github.com/ziglang/zig/issues/11396">#11396</a>)</li>
       <li>Integrate with <code>-fstack-check</code>, <code>-fno-stack-check</code></li>
       <li>Introduce special handling of <code>/dev/null</code>
@@ -4038,4 +4040,3 @@ Hello World!
     </div>
   </body>
 </html>
-TODO: check with tidy

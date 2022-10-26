@@ -236,9 +236,11 @@
 
     .diff-red {
       background-color: #ffaeae;
+      display: block;
     }
     .diff-green {
       background-color: #bfb;
+      display: block;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -1208,11 +1210,11 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">$ <kbd>ls -hl zig-out/bin/zig.wasm</kbd></span>
 <span class="line">-rwxr-xr-x 1 andy users 37M Oct 19 12:24 zig-out/bin/zig.wasm</span>
 <span class="line">$ <kbd>cat hello.zig</kbd></span>
-<span class="line">const std = @import("std");</span>
+<span class="line">const std = @import(&quot;std&quot;);</span>
 <span class="line">pub fn main() void {</span>
-<span class="line">    std.io.getStdOut().writeAll("Hello, World!\n") catch {};</span>
+<span class="line">    std.io.getStdOut().writeAll(&quot;Hello, World!\n&quot;) catch {};</span>
 <span class="line">}</span>
-<span class="line">$ <kbd>wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::"$HOME/.cache/zig" --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl</kbd></span>
+<span class="line">$ <kbd>wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::&quot;$HOME/.cache/zig&quot; --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl</kbd></span>
 <span class="line">$ <kbd>chmod +x hello</kbd></span>
 <span class="line">$ <kbd>file hello</kbd></span>
 <span class="line">hello: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped</span>
@@ -1375,7 +1377,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     </ul>
 
     <p>The solution is to make the function into a function pointer:</p>
-    <pre><code><div class="diff-red">-    fnPtr: fn () void,</div><div class="diff-green">+    fnPtr: *const fn () void,</div></code></pre>
+    <pre><code><span class="diff-red">-    fnPtr: fn () void,</span><span class="diff-green">+    fnPtr: *const fn () void,</span></code></pre>
 
     <p>Ideally, the compile error for this will be enhanced to make the
     solution more obvious, however, that enhancement will come later.</p>
@@ -1671,7 +1673,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 </samp></pre></figure>
     <p>The previous behavior
     can be obtained with explicit use of the <code><span class="line"><span class="tok-kw">comptime</span></span></code> keyword:</p>
-    <pre><code><div class="diff-red">-    const a = foo() ++ "bb";</div><div class="diff-green">+    const a = comptime foo() ++ "bb";</div></code></pre>
+    <pre><code><span class="diff-red">-    const a = foo() ++ "bb";</span><span class="diff-green">+    const a = comptime foo() ++ "bb";</span></code></pre>
     <p>This language change is implemented in <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> only.</p>
     
 
@@ -1698,8 +1700,8 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     To fix this code, extract the temporary into an explicit <code><span class="line"><span class="tok-kw">var</span></span></code>.
     This makes the mutable temporary more obvious, which is safer.</p>
 
-    <pre><code><div class="diff-red">-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</div><div class="diff-green">+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-+    const arena = arena_state.allocator();</div></code></pre>
+    <pre><code><span class="diff-red">-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</span><span class="diff-green">+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
++    const arena = arena_state.allocator();</span></code></pre>
     
 
     <h3 id="stdbuiltinCompilerBackend"><a href="#toc-stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a> <a class="hdr" href="#stdbuiltinCompilerBackend">§</a></h3>
@@ -2184,7 +2186,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <p><code><span class="line">.{}</span></code> is a struct literal; <code><span class="line">{}</span></code> is a void value. It has always been a bug for the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> to accept this code. Just change <code><span class="line">.{}</span></code> to <code><span class="line">{}</span></code>.</p>
 
-    <pre><code><div class="diff-red">-    var x: void = .{};</div><div class="diff-green">+    var x: void = {};</div></code></pre>
+    <pre><code><span class="diff-red">-    var x: void = .{};</span><span class="diff-green">+    var x: void = {};</span></code></pre>
     
 
     <h4 id="Escaped-Pointer-to-Parameter"><a href="#toc-Escaped-Pointer-to-Parameter">Escaped Pointer to Parameter</a> <a class="hdr" href="#Escaped-Pointer-to-Parameter">§</a></h4>
@@ -2232,7 +2234,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <p>Once the problem has been identified, the fix is simple:</p>
 
-    <pre><code><div class="diff-red">-    fn foo(s: S) *const i32 {</div><div class="diff-green">+    fn foo(s: *const S) *const i32 {</div></code></pre>
+    <pre><code><span class="diff-red">-    fn foo(s: S) *const i32 {</span><span class="diff-green">+    fn foo(s: *const S) *const i32 {</span></code></pre>
     
     
 
@@ -2329,7 +2331,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 681059 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 701509 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2403,7 +2405,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 681103 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 701606 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -2431,7 +2433,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <p>Before, it did this instead:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">Test [1/1] test_0... thread 18432 panic: reached unreachable code</span>
 <span class="line">./a.zig:17:22: 0x20f0fc in baz (test)</span>
-<span class="line">        error.Foo => unreachable,</span>
+<span class="line">        error.Foo =&gt; unreachable,</span>
 <span class="line">                     ^</span>
 <span class="line">./a.zig:21:8: 0x20f078 in test_0 (test)</span>
 <span class="line">    baz();</span>
@@ -2511,113 +2513,113 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        var sub_dir = try glibcs_dir.openIterableDir(sub_path, .{});</span>
 <span class="line">                      ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)</span>
-<span class="line">        .EXIST => return error.PathAlreadyExists,</span>
+<span class="line">        .EXIST =&gt; return error.PathAlreadyExists,</span>
 <span class="line">                  ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)</span>
-<span class="line">        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);</span>
+<span class="line">        return mkdiratZ(dir_fd, &amp;sub_dir_path_c, mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)</span>
 <span class="line">        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);</span>
 <span class="line">        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:1689:23: 0x24b498 in openatZ (copy-from-glibc)</span>
-<span class="line">            .NOENT => return error.FileNotFound,</span>
+<span class="line">            .NOENT =&gt; return error.FileNotFound,</span>
 <span class="line">                      ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1747:25: 0x23dbf1 in openDirFlagsZ (copy-from-glibc)</span>
-<span class="line">            else => |e| return e,</span>
+<span class="line">            else =&gt; |e| return e,</span>
 <span class="line">                        ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1717:13: 0x21e0a6 in openDirZ (copy-from-glibc)</span>
 <span class="line">            return self.openDirFlagsZ(sub_path_c, os.O.DIRECTORY | os.O.RDONLY | os.O.CLOEXEC | symlink_flags);</span>
 <span class="line">            ^</span>
 <span class="line">/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1654:40: 0x2180e5 in openIterableDir (copy-from-glibc)</span>
-<span class="line">            return IterableDir{ .dir = try self.openDirZ(&sub_path_c, args, true) };</span>
+<span class="line">            return IterableDir{ .dir = try self.openDirZ(&amp;sub_path_c, args, true) };</span>
 <span class="line">                                       ^</span>
 </samp></pre></figure>
     <p>After this improvement, we see this instead:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>~/zig-bootstrap/out/host/bin/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32</kbd></span>
 <span class="line">error: FileNotFound</span>
 <span class="line">/home/andy/zig-bootstrap/out/host/lib/zig/std/os.zig:1689:23: 0x24c038 in openatZ (copy-from-glibc)</span>
-<span class="line">            .NOENT => return error.FileNotFound,</span>
+<span class="line">            .NOENT =&gt; return error.FileNotFound,</span>
 <span class="line">                      ^</span>
 <span class="line">/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1747:25: 0x23e4e8 in openDirFlagsZ (copy-from-glibc)</span>
-<span class="line">            else => |e| return e,</span>
+<span class="line">            else =&gt; |e| return e,</span>
 <span class="line">                        ^</span>
 <span class="line">/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1717:13: 0x21e406 in openDirZ (copy-from-glibc)</span>
 <span class="line">            return self.openDirFlagsZ(sub_path_c, os.O.DIRECTORY | os.O.RDONLY | os.O.CLOEXEC | symlink_flags);</span>
 <span class="line">            ^</span>
 <span class="line">/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1654:40: 0x2182d5 in openIterableDir (copy-from-glibc)</span>
-<span class="line">            return IterableDir{ .dir = try self.openDirZ(&sub_path_c, args, true) };</span>
+<span class="line">            return IterableDir{ .dir = try self.openDirZ(&amp;sub_path_c, args, true) };</span>
 <span class="line">                                       ^</span>
 <span class="line">tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)</span>
 <span class="line">        var sub_dir = try glibcs_dir.openIterableDir(sub_path, .{});</span>
@@ -2816,7 +2818,7 @@ simpler and more efficient.
     In addition, the linker now matches the implementation progress of
     both <a href="#ELF">ELF</a> and <a href="#MachO">MachO</a>, and hence, it is now possible to run the behavior tests on
     <code>x86_64-windows</code> successfully:</p>
-    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">> C:\Users\kubkon\dev\zig\stage3\bin\zig.exe test test\behavior.zig -Itest -fno-LLVM -fno-unwind-tables -fno-emit-implib</span>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">&gt; C:\Users\kubkon\dev\zig\stage3\bin\zig.exe test test\behavior.zig -Itest -fno-LLVM -fno-unwind-tables -fno-emit-implib</span>
 <span class="line">817 passed; 571 skipped; 0 failed.</span>
 </samp></pre></figure>
     <p>For more detailed description of the implementation, have a look at this pull request:
@@ -3482,7 +3484,7 @@ Summary
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x214b6d in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7fa45772c000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f576f625000 leaked:</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213ff4 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
@@ -3844,7 +3846,7 @@ Summary
         instead of <code>zig cc</code> and using the
         <code>--enable-cache</code> parameter, matching what the <a href="#Build-System">Build System</a> does.
       </li>
-      <li>Support for <code>-Wl,--export=<symbol></code></li>
+      <li>Support for <code>-Wl,--export=&lt;symbol&gt;</code></li>
       <li>Support <code>--subsystem</code> linker flag (<a href="https://github.com/ziglang/zig/issues/11396">#11396</a>)</li>
       <li>Integrate with <code>-fstack-check</code>, <code>-fno-stack-check</code></li>
       <li>Introduce special handling of <code>/dev/null</code>
@@ -4446,5 +4448,3 @@ Summary
     </div>
   </body>
 </html>
-TODO: check with tidy
-TODO: run that regex to make the github issues into links
