@@ -234,6 +234,13 @@
       display: none;
     }
 
+    .diff-red {
+      background-color: #ffaeae;
+    }
+    .diff-green {
+      background-color: #bfb;
+    }
+
     @media (prefers-color-scheme: dark) {
       body{
           background:#121212;
@@ -323,6 +330,12 @@
       }
       #stage2-progress-light {
         display: none;
+      }
+      .diff-red {
+        background-color: #410000;
+      }
+      .diff-green {
+        background-color: #002d00;
       }
     }
   </style>
@@ -1185,8 +1198,7 @@ fn foo() S {
     </ul>
 
     <p>The solution is to make the function into a function pointer:</p>
-    <pre><code>-    fnPtr: fn () void,
-+    fnPtr: *const fn () void,</code></pre>
+    <pre><code><div class="diff-red">-    fnPtr: fn () void,</div><div class="diff-green">+    fnPtr: *const fn () void,</div></code></pre>
 
     <p>Ideally, the compile error for this will be enhanced to make the
     solution more obvious, however, that enhancement will come later.</p>
@@ -1460,8 +1472,7 @@ fn foo() []const u8 {
     {#code_end#}
     <p>The previous behavior
     can be obtained with explicit use of the {#syntax#}comptime{#endsyntax#} keyword:</p>
-    <pre><code>-    const a = foo() ++ "bb";
-+    const a = comptime foo() ++ "bb";</code></pre>
+    <pre><code><div class="diff-red">-    const a = foo() ++ "bb";</div><div class="diff-green">+    const a = comptime foo() ++ "bb";</div></code></pre>
     <p>This language change is implemented in {#link|Self-Hosted Compiler#} only.</p>
     {#header_close#}
 
@@ -1483,9 +1494,8 @@ test {
     To fix this code, extract the temporary into an explicit {#syntax#}var{#endsyntax#}.
     This makes the mutable temporary more obvious, which is safer.</p>
 
-    <pre><code>-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-+    const arena = arena_state.allocator();</code></pre>
+    <pre><code><div class="diff-red">-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</div><div class="diff-green">+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
++    const arena = arena_state.allocator();</div></code></pre>
     {#header_close#}
 
     {#header_open|std.builtin.CompilerBackend#}
@@ -1618,8 +1628,7 @@ const S = struct { x: anytype };
     {#header_close#}
 
     {#header_open|Address Spaces#}
-    <p>TODO get release notes from snektron</p>
-    <p>TODO added @addrSpaceCast makes it easier to use GPU address spaces</p>
+    <p>New builtin: <a href="https://ziglang.org/documentation/0.10.0/#addrSpaceCast">@addrSpaceCast</a></p>
     {#header_close#}
 
     {#header_open|Compile Error for Misleading Whitespace#}
@@ -1928,8 +1937,7 @@ test {
 
     <p>{#syntax#}.{}{#endsyntax#} is a struct literal; {#syntax#}{}{#endsyntax#} is a void value. It has always been a bug for the {#link|Bootstrap Compiler#} to accept this code. Just change {#syntax#}.{}{#endsyntax#} to {#syntax#}{}{#endsyntax#}.</p>
 
-    <pre><code>-    var x: void = .{};
-+    var x: void = {};</code></pre>
+    <pre><code><div class="diff-red">-    var x: void = .{};</div><div class="diff-green">+    var x: void = {};</div></code></pre>
     {#header_close#}
 
     {#header_open|Escaped Pointer to Parameter#}
@@ -1967,8 +1975,7 @@ const S = struct {
 
     <p>Once the problem has been identified, the fix is simple:</p>
 
-    <pre><code>-    fn foo(s: S) *const i32 {
-+    fn foo(s: *const S) *const i32 {</code></pre>
+    <pre><code><div class="diff-red">-    fn foo(s: S) *const i32 {</div><div class="diff-green">+    fn foo(s: *const S) *const i32 {</div></code></pre>
     {#header_close#}
     {#header_close#}
 
@@ -3302,7 +3309,7 @@ new is 2.70x faster
     {#header_close#}
 
     {#header_open|Bug Fixes#}
-    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 421 (TODO update this number) bug reports closed during this release cycle</a>.</p>
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 424 bug reports closed during this release cycle</a>.</p>
     <p>Note: many bugs were both introduced and resolved within this release cycle.</p>
     {#header_open|This Release Contains Bugs#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
@@ -3375,19 +3382,18 @@ new is 2.70x faster
 
     {#header_open|glibc 2.34#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
-    <p>TODO glibc 2.35 and 2.36 are out but zig does not provide those yet</p>
-    <p>TODO however zig works better with native glibc that is fresher than the shipped one</p>
-
+    <p>The bad news is that although glibc 2.35 and 2.36 have already been released,
+       Zig is behind in adding cross-compilation support for them due to exploring
+       the <a href="https://github.com/ziglang/universal-headers/">Universal Headers</a> project.
+       The good news, however, is that Zig can now integrate with system glibc that is newer than
+       what Zig can provide (#12797).</p>
+    <p>Additionally:</p>
     <ul>
-      <li>Restore compatibility with glibc&lt;=2.33 for global initializers (#10587)</li>
+      <li>Restored compatibility with glibc&lt;=2.33 for global initializers (#10587)</li>
       <li>Added <code>libresolv</code> stubs (#12629)</li>
-      <li>Support integrating with system glibc that is newer than the newest one Zig provides (#12797)</li>
-      <li>Support targeting glibc for the native system target even when no system C compiler is installed (#12814)</li>
+      <li>Added support for targeting glibc for the native system target even when no system C compiler is installed (#12814)</li>
       <li>Version-gate <code>_DYNAMIC_STACK_SIZE_SOURCE</code> (#10713)</li>
     </ul>
-    <p>
-    TODO mention that some of these patches would be better off with universal-headers
-    </p>
     {#header_close#}
 
     {#header_open|mingw-w64 10.0.0#}
@@ -4034,4 +4040,3 @@ Hello World!
 </html>
 TODO: check with tidy
 TODO: run that regex to make the github issues into links
-TODO: give the diffs green/red highlighting
