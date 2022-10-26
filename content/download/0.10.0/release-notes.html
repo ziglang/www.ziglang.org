@@ -413,6 +413,7 @@ David Riley
         </ul></li>
         <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
         <ul>
+            <li><a id="toc-Function-Pointers" href="#Function-Pointers">Function Pointers</a></li>
             <li><a id="toc-Packed-Structs" href="#Packed-Structs">Packed Structs</a></li>
             <li><a id="toc-Inline-Switch-Cases" href="#Inline-Switch-Cases">Inline Switch Cases</a></li>
             <li><a id="toc-Equality-Testing-of-Error-Unions" href="#Equality-Testing-of-Error-Unions">Equality Testing of Error Unions</a></li>
@@ -420,6 +421,7 @@ David Riley
             <li><a id="toc-minimum-and-maximum-renamed-to-min-and-max" href="#minimum-and-maximum-renamed-to-min-and-max">@minimum and @maximum renamed to @min and @max</a></li>
             <li><a id="toc-Removed-Type-Parameter-from-Bit-Builtins" href="#Removed-Type-Parameter-from-Bit-Builtins">Removed Type Parameter from Bit Builtins</a></li>
             <li><a id="toc-Runtime-Array-Concatenation--Multiplication" href="#Runtime-Array-Concatenation--Multiplication">Runtime Array Concatenation & Multiplication</a></li>
+            <li><a id="toc-Address-of-Temporaries-Now-Produces-Const-Pointers" href="#Address-of-Temporaries-Now-Produces-Const-Pointers">Address-of Temporaries Now Produces Const Pointers</a></li>
             <li><a id="toc-stdbuiltinCompilerBackend" href="#stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a></li>
             <li><a id="toc-f80" href="#f80">f80</a></li>
             <li><a id="toc-TypeInfoDeclaration-no-longer-has-a-data-field" href="#TypeInfoDeclaration-no-longer-has-a-data-field">TypeInfo.Declaration no longer has a data field</a></li>
@@ -441,13 +443,8 @@ David Riley
             </ul></li>
             <li><a id="toc-How-to-Upgrade" href="#How-to-Upgrade">How to Upgrade</a>
             <ul>
-                <li><a id="toc-Function-Pointers" href="#Function-Pointers">Function Pointers</a></li>
                 <li><a id="toc-Void-Literal-Syntax" href="#Void-Literal-Syntax">Void Literal Syntax</a></li>
-                <li><a id="toc-Address-of-Temporaries-Now-Produces-Const-Pointers" href="#Address-of-Temporaries-Now-Produces-Const-Pointers">Address-of Temporaries Now Produces Const Pointers</a></li>
-                <li><a id="toc-Pointers-to-Zero-Bit-Types-are-No-Longer-Themselves-Zero-Bit-Types" href="#Pointers-to-Zero-Bit-Types-are-No-Longer-Themselves-Zero-Bit-Types">Pointers to Zero-Bit Types are No Longer Themselves Zero-Bit Types</a></li>
                 <li><a id="toc-Escaped-Pointer-to-Parameter" href="#Escaped-Pointer-to-Parameter">Escaped Pointer to Parameter</a></li>
-                <li><a id="toc-Runtime-Slice-Concatenation--Multiplication" href="#Runtime-Slice-Concatenation--Multiplication">Runtime Slice Concatenation & Multiplication</a></li>
-                <li><a id="toc-Using-builtinzig_backend" href="#Using-builtinzig_backend">Using builtin.zig_backend</a></li>
             </ul></li>
             <li><a id="toc-C-ABI-Compatibility" href="#C-ABI-Compatibility">C ABI Compatibility</a></li>
             <li><a id="toc-C-Translation" href="#C-Translation">C Translation</a></li>
@@ -1300,6 +1297,64 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
 
 
+    <h3 id="Function-Pointers"><a href="#toc-Function-Pointers">Function Pointers</a> <a class="hdr" href="#Function-Pointers">§</a></h3>
+
+    <p>In Zig 0.9.x and the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>, the type <code><span class="line"><span class="tok-kw">fn</span> () <span class="tok-type">void</span></span></code> is a function pointer and acts like a pointer. However, the language spec, which is not written yet, will have this type be a <strong>function body</strong> type. It must be compile-time-known, and in order to get a function pointer, <code><span class="line">*<span class="tok-kw">const</span> <span class="tok-kw">fn</span> () <span class="tok-type">void</span></span></code> must be used.</p>
+    <p>The <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> implements this correctly, which means
+    your project will likely break everywhere that you use a function
+    pointer.</p>
+    <p>Here is the problem most people will run into:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;function pointer&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> s = foo();</span>
+<span class="line">    s.fnPtr();</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {</span>
+<span class="line">    fnPtr: <span class="tok-kw">fn</span> () <span class="tok-type">void</span>,</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() <span class="tok-type">void</span> {}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">baz</span>() <span class="tok-type">void</span> {}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">var</span> runtime: <span class="tok-type">bool</span> = <span class="tok-null">true</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() S {</span>
+<span class="line">    <span class="tok-kw">if</span> (runtime) {</span>
+<span class="line">        <span class="tok-kw">return</span> .{</span>
+<span class="line">            .fnPtr = bar,</span>
+<span class="line">        };</span>
+<span class="line">    } <span class="tok-kw">else</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> .{</span>
+<span class="line">            .fnPtr = baz,</span>
+<span class="line">        };</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:16:9: </span><span class="t31_1">error: </span><span class="t1_0">unable to resolve comptime value</span>
+<span class="line"></span>    if (runtime) {</span>
+<span class="line">        <span class="t32_1">^~~~~~~</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:16:9: </span><span class="t36_1">note: </span><span class="t1_0">condition in comptime branch must be comptime-known</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:2:18: </span><span class="t36_1">note: </span><span class="t1_0">called from here</span>
+<span class="line"></span>    const s = foo();</span>
+<span class="line">              <span class="t32_1">~~~^~</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <p>This happens because:</p>
+    <ul>
+      <li><code><span class="line"><span class="tok-kw">fn</span> () <span class="tok-type">void</span></span></code> is a <strong>function body</strong> type, not a function pointer type.</li>
+      <li>Function body types are comptime-only, while function pointers may be runtime-known.</li>
+      <li>The struct <code><span class="line">S</span></code> is a comptime-only type due to its comptime-only field.</li>
+      <li>The function <code><span class="line">foo</span></code> is a comptime-only function due to its comptime-only return type.</li>
+      <li>Therefore, <code><span class="line">foo()</span></code> is called at comptime, however it tries to read a global variable, which is runtime-known.</li>
+    </ul>
+
+    <p>The solution is to make the function into a function pointer:</p>
+    <pre><code>-    fnPtr: fn () void,
++    fnPtr: *const fn () void,</code></pre>
+
+    <p>Ideally, the compile error for this will be enhanced to make the
+    solution more obvious, however, that enhancement will come later.</p>
+    
+
     <h3 id="Packed-Structs"><a href="#toc-Packed-Structs">Packed Structs</a> <a class="hdr" href="#Packed-Structs">§</a></h3>
 
     <p>In previous releases of Zig there have been some nasty bugs that
@@ -1512,7 +1567,18 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">1/1 test.struct with variable length last field... OK</span>
 <span class="line">All 1 tests passed.</span>
 </samp></pre></figure>
-    <p>This is implemented in <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> only.</p>
+    <p>This assertion does not pass with the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> but it does with the
+    <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">ptrs.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> assert = std.debug.assert;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">comptime</span> {</span>
+<span class="line">    assert(<span class="tok-builtin">@sizeOf</span>(*<span class="tok-type">u0</span>) == <span class="tok-builtin">@sizeOf</span>(*<span class="tok-type">u8</span>));</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test ptrs.zig</kbd></span>
+<span class="line">All 0 tests passed.</span>
+</samp></pre></figure>
+    <p>However, pointers to comptime-only types are still zero bit types, such as
+    <code><span class="line">*<span class="tok-type">comptime_int</span></span></code>.</p>
     
 
     <h3 id="minimum-and-maximum-renamed-to-min-and-max"><a href="#toc-minimum-and-maximum-renamed-to-min-and-max">@minimum and @maximum renamed to @min and @max</a> <a class="hdr" href="#minimum-and-maximum-renamed-to-min-and-max">§</a></h3>
@@ -1560,9 +1626,56 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 </samp></pre></figure>
 
     <p>This may be a breaking change for some people who were relying on Zig to automatically
-    evaluate the operands in a <code><span class="line"><span class="tok-kw">comptime</span></span></code> scope. The previous behavior
-    can be obtained with explicit use of the <code><span class="line"><span class="tok-kw">comptime</span></span></code> keyword.</p>
-    <p>This is implemented in <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> only.</p>
+    evaluate the operands in a <code><span class="line"><span class="tok-kw">comptime</span></span></code> scope, like this:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> a = foo() ++ <span class="tok-str">&quot;bb&quot;</span>;</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(a.len == <span class="tok-number">5</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() []<span class="tok-kw">const</span> <span class="tok-type">u8</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-str">&quot;aaa&quot;</span>;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:4:18: </span><span class="t31_1">error: </span><span class="t1_0">unable to resolve comptime value</span>
+<span class="line"></span>    const a = foo() ++ &quot;bb&quot;;</span>
+<span class="line">              <span class="t32_1">~~~^~</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:4:18: </span><span class="t36_1">note: </span><span class="t1_0">slice value being concatenated must be comptime-known</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+    <p>The previous behavior
+    can be obtained with explicit use of the <code><span class="line"><span class="tok-kw">comptime</span></span></code> keyword:</p>
+    <pre><code>-    const a = foo() ++ "bb";
++    const a = comptime foo() ++ "bb";</code></pre>
+    <p>This language change is implemented in <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> only.</p>
+    
+
+    <h3 id="Address-of-Temporaries-Now-Produces-Const-Pointers"><a href="#toc-Address-of-Temporaries-Now-Produces-Const-Pointers">Address-of Temporaries Now Produces Const Pointers</a> <a class="hdr" href="#Address-of-Temporaries-Now-Produces-Const-Pointers">§</a></h3>
+
+    <p>Zig 0.9.x and the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> allow this code:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">const</span> ptr = <span class="tok-kw">try</span> arena.create(<span class="tok-type">i32</span>);</span>
+<span class="line">    ptr.* = <span class="tok-number">1234</span>;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:4:72: </span><span class="t31_1">error: </span><span class="t1_0">expected type '*heap.arena_allocator.ArenaAllocator', found '*const heap.arena_allocator.ArenaAllocator'</span>
+<span class="line"></span>    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</span>
+<span class="line">                  <span class="t32_1">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~</span>
+<span class="line"></span><span class="t1_0">docgen_tmp/test.zig:4:72: </span><span class="t36_1">note: </span><span class="t1_0">cast discards const qualifier</span>
+<span class="line"></span></span>
+</samp></pre></figure>
+
+    <p>Zig 0.10.0 does not allow this.
+    Address of temporaries produces constant pointers for safety reasons.
+    To fix this code, extract the temporary into an explicit <code><span class="line"><span class="tok-kw">var</span></span></code>.
+    This makes the mutable temporary more obvious, which is safer.</p>
+
+    <pre><code>-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
++    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
++    const arena = arena_state.allocator();</code></pre>
     
 
     <h3 id="stdbuiltinCompilerBackend"><a href="#toc-stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a> <a class="hdr" href="#stdbuiltinCompilerBackend">§</a></h3>
@@ -1574,7 +1687,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     there may be third party compiler implementations
     which have quirks. Zig now provides a <code><span class="line"><span class="tok-kw">comptime</span></span></code> enum
     value so that one can use conditional compilation to work around such issues.</p>
-    <p><strong>Think carefully before using this!</strong> Documentation comments are reproduced here:</p>
+    <p>Documentation comments are reproduced here:</p>
     <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-comment">/// This enum is set by the compiler and communicates which compiler backend is</span></span>
 <span class="line"><span class="tok-comment">/// used to produce machine code.</span></span>
 <span class="line"><span class="tok-comment">/// Think carefully before deciding to observe this value. Nearly all code should</span></span>
@@ -1633,6 +1746,12 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"></span>
 <span class="line">    _,</span>
 <span class="line">};</span></code></pre></figure>
+    <p>Please <strong>read the documentation comments carefully before using this value</strong>.
+    In summary, you can work around compiler issues by doing something like this:</p>
+    <pre><code><span class="line"><span class="tok-kw">const</span> FnPtr = <span class="tok-kw">switch</span> (builtin.zig_backend) {</span>
+<span class="line">    .stage1 =&gt; <span class="tok-kw">fn</span>()<span class="tok-type">void</span>,</span>
+<span class="line">    <span class="tok-kw">else</span> =&gt; *<span class="tok-kw">const</span> <span class="tok-kw">fn</span>()<span class="tok-type">void</span>,</span>
+<span class="line">};</span></code></pre>
     
 
     <h3 id="f80"><a href="#toc-f80">f80</a> <a class="hdr" href="#f80">§</a></h3>
@@ -1861,8 +1980,8 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
       <li>C ABI fixes related to <code><span class="line"><span class="tok-kw">packed</span> <span class="tok-kw">struct</span></span></code> (#10499)</li>
       <li>Fixed <code><span class="line"><span class="tok-kw">packed</span> <span class="tok-kw">struct</span></span></code> (#11279)</li>
       <li>Fixed exporting of symbols on <a href="#WebAssembly">WebAssembly</a>.</li>
-      <li>Fix bigint_init_bigfloat for single-limb negative floats (#10592)</li>
-      <li>Fix big-endian handling in stage1 bigint_write_twos_complement (#10858)</li>
+      <li>Fixed bigint_init_bigfloat for single-limb negative floats (#10592)</li>
+      <li>Fixed big-endian handling in stage1 bigint_write_twos_complement (#10858)</li>
       <li>Removed the noisy "referenced here" error note. The <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a> has
         this implemented in a better way.</li>
       <li>Fixed saturating arithmetic on type <code><span class="line"><span class="tok-type">comptime_int</span></span></code> (#10393)</li>
@@ -1887,17 +2006,23 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     It is now enabled by default, however the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> is available
     behind the <code>-fstage1</code> flag for those not ready to <a href="#How-to-Upgrade">upgrade</a>.
     </p>
+    <p>This compiler implementation beats the older one in terms of
+    performance and memory usage. Here are two data points for the compiler building itself
+    (measured on an Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz):</p>
+    <ul>
+      <li><strong>Wall Clock Time</strong>: 43 seconds to 40 seconds (<strong>7% faster</strong>)</li>
+      <li><strong>Peak RSS</strong>: 9.6 GiB to 2.8 GiB (<strong>3.5x less memory</strong> used)</li>
+    </ul>
 
+    <p>The new compiler implementation is slightly faster despite that, unlike
+    the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a>, it is capable of incremental compilation
+    due to being tightly coupled with the <a href="#Self-Hosted-Linker">linker</a>.
+    The bigger compilation speed wins will come with the <a href="#Code-Generation">Code Generation</a>
+    backends that do not use <a href="#LLVM-15">LLVM</a>.</p>
 
-    TODO this is measured of building the compiler itself in debug mode
-    TODO mention CPU
-stage1 vs stage3
-Wall Clock: 43.08 -> 40.08 (7% faster)
-Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
-    llvm backend
-
-    <p>Despite the vast majority of the development effort of this release cycle being
-    spent on this new compiler implementation, the <a href="#Language-Changes">Language Changes</a> are minimal.
+    <p>The vast majority of the development effort of this release cycle was
+    spent on this new compiler implementation, and therefore the <a href="#Language-Changes">Language Changes</a>
+    are minimal.
     Instead, this new codebase lays the groundwork for <em>major enhancements</em>,
     mainly concerned with speeding up the edit/test/debug cycle. Now that the self-hosted
     compiler is no longer sucking up so much effort, you should expect to see significant,
@@ -1927,7 +2052,7 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
       <li>Added support for <code>-fbuild-id</code>, <code>-fno-build-id</code> (#3047)</li>
       <li>Enable full RELRO by default (#11825)</li>
       <li>Remove <code>-z noexecstack</code> option (#11826)</li>
-      <li>Fix crash when building static library in the same directory where Zig source is located (#11833)</li>
+      <li>Fixed crash when building static library in the same directory where Zig source is located (#11833)</li>
       <li>Improve error reporting when libc is missing.</li>
       <li>Added <code>ZIG_GLOBAL_CACHE_DIR</code> environment variable.</li>
       <li>Improved glibc version and dynamic linker detection (#12788)</li>
@@ -1957,7 +2082,7 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
     get the old compiler, or put the equivalent in your build.zig file, so that
     your users can continue using <code>zig build</code> as usual.
     </p>
-    <pre><code><span class="line">zig exe.use_stage1 = <span class="tok-null">true</span>;</span></code></pre>
+    <pre><code><span class="line">exe.use_stage1 = <span class="tok-null">true</span>;</span></code></pre>
     <p>
     The new compiler, sometimes called "stage2" or "stage3", is in many ways better
     than the old compiler (also called "stage1"), however it is not yet strictly
@@ -2006,313 +2131,127 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
     this:</p>
     <ol>
       <li>Have a different branch for when using Zig self-hosted. Once you decide to commit to the upgrade, merge that branch into your main branch.</li>
-      <li>Make the codebase support both stage1 and self-hosted at the same time using conditional compilation based on <code><span class="line"><span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>).zig_backend</span></code>.</li>
+      <li>Make the codebase support both stage1 and self-hosted at the same
+        time using conditional compilation based on
+        <a href="#stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a>.</li>
     </ol>
-
-    <h4 id="Function-Pointers"><a href="#toc-Function-Pointers">Function Pointers</a> <a class="hdr" href="#Function-Pointers">§</a></h4>
-
-In stage1, the type `fn () void` is a function pointer and acts like a pointer. However, the language spec, which is not written yet, will have this type be a "function body" type. It must be compile-time known, and in order to get a function pointer, `*const fn () void` must be used.
-
-Self-hosted implements this correctly, which means your project will likely break everywhere that you use a function pointer.
-
-Here is the problem most people will run into:
-
-```zig
-test "function pointer" {
-    const s = foo();
-    s.fnPtr();
-}
-
-const S = struct {
-    fnPtr: fn () void,
-};
-
-fn bar() void {}
-fn baz() void {}
-
-var runtime: bool = true;
-
-fn foo() S {
-    if (runtime) {
-        return .{
-            .fnPtr = bar,
-        };
-    } else {
-        return .{
-            .fnPtr = baz,
-        };
-    }
-}
-```
-
-With self-hosted, this produces:
-
-```
-test.zig:16:9: error: cannot load runtime value in comptime block
-    if (runtime) {
-        ^~~~~~~
-test.zig:2:18: note: called from here
-    const s = foo();
-              ~~~^~
-```
-
-This happens because:
- * `fn () void` is a **function body** type, not a function pointer type.
- * Function body types are comptime-only, while function pointers may be runtime-known.
- * The struct `S` is a comptime-only type due to its comptime-only field.
- * The function `foo` is a comptime-only function due to its comptime-only return type.
- * Therefore, `foo()` is called at comptime, however it tries to read a global variable, which is runtime-known.
-
-The solution is to make the function into a function pointer:
-
-```diff
--    fnPtr: fn () void,
-+    fnPtr: *const fn () void,
-```
-
-Ideally, the compile error for this will be enhanced to make the solution more obvious, however, that enhancement will come later.
-    
+    <p>In addition to the sub-sections below, see also these <a href="#Language-Changes">Language Changes</a> which
+    should be considered part of the upgrade guide:</p>
+    <ul>
+      <li><a href="#Function-Pointers">Function Pointers</a></li>
+      <li><a href="#Runtime-Array-Concatenation--Multiplication">Runtime Array Concatenation & Multiplication</a></li>
+      <li><a href="#Address-of-Temporaries-Now-Produces-Const-Pointers">Address-of Temporaries Now Produces Const Pointers</a></li>
+      <li><a href="#Pointers-to-Zero-Bit-Types">Pointers to Zero-Bit Types</a></li>
+      <li><a href="#stdbuiltinCompilerBackend">std.builtin.CompilerBackend</a></li>
+    </ul>
 
     <h4 id="Void-Literal-Syntax"><a href="#toc-Void-Literal-Syntax">Void Literal Syntax</a> <a class="hdr" href="#Void-Literal-Syntax">§</a></h4>
 
     <p><code><span class="line">{}</span></code> vs <code><span class="line">.{}</span></code></p>
-This one is pretty simple:
+    <p>This one is pretty simple:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> x: <span class="tok-type">void</span> = .{};</span>
+<span class="line">    _ = x;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:2:20: </span><span class="t31_1">error: </span><span class="t1_0">expected type 'void', found '@TypeOf(.{})'</span>
+<span class="line"></span>    var x: void = .{};</span>
+<span class="line">                  <span class="t32_1">~^~</span>
+<span class="line"></span></span>
+</samp></pre></figure>
 
-```zig
-test {
-    var x: void = .{};
-    _ = x;
-}
-```
+    <p><code><span class="line">.{}</span></code> is a struct literal; <code><span class="line">{}</span></code> is a void value. It has always been a bug for the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> to accept this code. Just change <code><span class="line">.{}</span></code> to <code><span class="line">{}</span></code>.</p>
 
-```
-test.zig:2:20: error: expected type 'void', found '@TypeOf(.{})'
-    var x: void = .{};
-                  ~^~
-```
-
-`.{}` is a struct literal; `{}` is a void value. It has always been a bug that stage1 accepts this code. Just change `.{}` to `{}`.
-
-```diff
--    var x: void = .{};
-+    var x: void = {};
-```
-    
-
-    <h4 id="Address-of-Temporaries-Now-Produces-Const-Pointers"><a href="#toc-Address-of-Temporaries-Now-Produces-Const-Pointers">Address-of Temporaries Now Produces Const Pointers</a> <a class="hdr" href="#Address-of-Temporaries-Now-Produces-Const-Pointers">§</a></h4>
-
-stage1 allowed this code:
-
-```zig
-const std = @import("std");
-
-test {
-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-
-    const ptr = try arena.create(i32);
-    ptr.* = 1234;
-}
-```
-
-```
-test.zig:4:72: error: expected type '*heap.arena_allocator.ArenaAllocator', found '*const heap.arena_allocator.ArenaAllocator'
-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
-test.zig:4:72: note: cast discards const qualifier
-```
-
-The lang spec will not allow this. Address of temporaries produces constant pointers for safety reasons. To fix this code, extract the temporary into an explicit `var`. This makes the mutable temporary more obvious, which is safer.
-
-```diff
--    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-+    const arena = arena_state.allocator();
-```
-    
-
-    <h4 id="Pointers-to-Zero-Bit-Types-are-No-Longer-Themselves-Zero-Bit-Types"><a href="#toc-Pointers-to-Zero-Bit-Types-are-No-Longer-Themselves-Zero-Bit-Types">Pointers to Zero-Bit Types are No Longer Themselves Zero-Bit Types</a> <a class="hdr" href="#Pointers-to-Zero-Bit-Types-are-No-Longer-Themselves-Zero-Bit-Types">§</a></h4>
-
-This assertion does not pass with stage1 but it does with self-hosted:
-
-```zig
-const std = @import("std");
-const assert = std.debug.assert;
-
-comptime {
-    assert(@sizeOf(*u0) == @sizeOf(*u8));
-}
-```
-
-However, pointers to comptime-only types are still zero bit types, such as `*comptime_int`.
+    <pre><code>-    var x: void = .{};
++    var x: void = {};</code></pre>
     
 
     <h4 id="Escaped-Pointer-to-Parameter"><a href="#toc-Escaped-Pointer-to-Parameter">Escaped Pointer to Parameter</a> <a class="hdr" href="#Escaped-Pointer-to-Parameter">§</a></h4>
 
-```zig
-const std = @import("std");
-const expect = std.testing.expect;
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;escaped pointer to parameter&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> s: S = .{ .field = <span class="tok-number">1234</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> value = s.foo();</span>
+<span class="line">    <span class="tok-kw">try</span> expect(value == &amp;s.field);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {</span>
+<span class="line">    field: <span class="tok-type">i32</span>,</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(s: S) *<span class="tok-kw">const</span> <span class="tok-type">i32</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> &amp;s.field; <span class="tok-comment">// XXX: escaped pointer to parameter</span></span>
+<span class="line">    }</span>
+<span class="line">};</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
+<span class="line">1/1 test.escaped pointer to parameter... FAIL (TestUnexpectedResult)</span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:347:14</span>: <span class="t2_0">0x211acf in expect (test)</span></span>
+<span class="line">    if (!ok) return error.TestUnexpectedResult;</span>
+<span class="line">             <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:7:5</span>: <span class="t2_0">0x211c07 in test.escaped pointer to parameter (test)</span></span>
+<span class="line">    try expect(value == &amp;s.field);</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line">0 passed; 0 skipped; 1 failed.</span>
+<span class="line">error: the following test command failed with exit code 1:</span>
+<span class="line">/home/andy/.cache/zig/o/da89401b90ed2a45f2611608594c9a97/test</span>
+</samp></pre></figure>
+    <p>This test passes with the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> despite having a
+    critical bug: a temporary is created by taking the address of the the
+    <a href="/documentation/0.10.0/#Pass-by-value-Parameters">pass-by-value parameter</a>
+    which is then returned from the function.</p>
 
-test "escaped pointer to parameter" {
-    var s: S = .{ .field = 1234 };
-    const value = s.foo();
-    try expect(value == &s.field);
-}
+    <p>The legacy compiler is naive, always passing structs by pointer in code such as this.
+    Meanwhile, the self-hosted compiler efficiently takes advantage of smaller
+    arguments such as this, passing them truly by value, revealing the bug.</p>
 
-const S = struct {
-    field: i32,
+    <p>Hopefully in the future Zig will have
+    <a href="https://github.com/ziglang/zig/issues/3180">runtime safety for this</a>,
+    however, currently this will manifest as a use-after-free. So if you find a
+    pointer to bogus data, double check that the pointer was not created this way.</p>
 
-    fn foo(s: S) *const i32 {
-        return &s.field; // XXX: escaped pointer to parameter
-    }
-};
-```
+    <p>Once the problem has been identified, the fix is simple:</p>
 
-This test passes with stage1 despite having a critical bug: a temporary is created by taking the address of the the [pass-by-value parameter](https://ziglang.org/documentation/0.10.0/#Pass-by-value-Parameters) which is then returned from the function.
-
-Stage1 is naive, always passing structs by pointer in code such as this. Meanwhile, the self-hosted compiler efficiently takes advantage of smaller arguments such as this, passing them truly by value, revealing the bug.
-
-Hopefully in the future Zig will have [runtime safety for this](https://github.com/ziglang/zig/issues/3180), however, currently this will manifest as a use-after-free. So if you find a pointer to bogus data, double check that the pointer was not created this way.
-
-Once the problem has been identified, the fix is simple:
-
-```diff
--    fn foo(s: S) *const i32 {
-+    fn foo(s: *const S) *const i32 {
-```
-    
-
-    <h4 id="Runtime-Slice-Concatenation--Multiplication"><a href="#toc-Runtime-Slice-Concatenation--Multiplication">Runtime Slice Concatenation & Multiplication</a> <a class="hdr" href="#Runtime-Slice-Concatenation--Multiplication">§</a></h4>
-
-Slice concatenation in stage 2 now works on [any two slices with comptime-known length](https://github.com/ziglang/zig/issues/11773). This [stops the arguments from being implicitly comptime](https://github.com/ziglang/zig/issues/11773#issuecomment-1144110692), which means that function calls within a slice-concatenation expression now need to be explicitly called at comptime.
-
-This can prevent the following example from compiling in stage 2 where it previously did in stage 1:
-
-```zig
-const std = @import("std");
-
-test {
-    const a = foo() ++ "bb";
-    try std.testing.expect(a.len == 5);
-}
-
-fn foo() []const u8 {
-    return "aaa";
-}
-```
-
-This fix here is simple:
-
-```diff
--    const a = foo() ++ "bb";
-+    const a = comptime foo() ++ "bb";
-```
-    
-
-    <h4 id="Using-builtinzig_backend"><a href="#toc-Using-builtinzig_backend">Using builtin.zig_backend</a> <a class="hdr" href="#Using-builtinzig_backend">§</a></h4>
-
-There is a new declaration available in `@import("builtin").zig_backend`. Contents reproduced here:
-
-```zig
-/// This enum is set by the compiler and communicates which compiler backend is
-/// used to produce machine code.
-/// Think carefully before deciding to observe this value. Nearly all code should
-/// be agnostic to the backend that implements the language. The use case
-/// to use this value is to **work around problems with compiler implementations.**
-///
-/// Avoid failing the compilation if the compiler backend does not match a
-/// whitelist of backends; rather one should detect that a known problem would
-/// occur in a blacklist of backends.
-///
-/// The enum is nonexhaustive so that alternate Zig language implementations may
-/// choose a number as their tag (please use a random number generator rather
-/// than a "cute" number) and codebases can interact with these values even if
-/// this upstream enum does not have a name for the number. Of course, upstream
-/// is happy to accept pull requests to add Zig implementations to this enum.
-///
-/// This data structure is part of the Zig language specification.
-pub const CompilerBackend = enum(u64) {
-    /// It is allowed for a compiler implementation to not reveal its identity,
-    /// in which case this value is appropriate. Be cool and make sure your
-    /// code supports `other` Zig compilers!
-    other = 0,
-    /// The original Zig compiler created in 2015 by Andrew Kelley.
-    /// Implemented in C++. Uses LLVM.
-    stage1 = 1,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// LLVM backend.
-    stage2_llvm = 2,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// backend that generates C source code.
-    /// Note that one can observe whether the compilation will output C code
-    /// directly with `object_format` value rather than the `compiler_backend` value.
-    stage2_c = 3,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// WebAssembly backend.
-    stage2_wasm = 4,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// arm backend.
-    stage2_arm = 5,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// x86_64 backend.
-    stage2_x86_64 = 6,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// aarch64 backend.
-    stage2_aarch64 = 7,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// x86 backend.
-    stage2_x86 = 8,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// riscv64 backend.
-    stage2_riscv64 = 9,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// sparc64 backend.
-    stage2_sparc64 = 10,
-
-    _,
-};
-```
-
-Please read the doc comments carefully before using this value. In summary, you can work around compiler issues by doing something like this:
-
-```zig
-const FnPtr = switch (builtin.zig_backend) {
-    .stage1 => fn()void,
-    else => *const fn()void,
-};
-```
+    <pre><code>-    fn foo(s: S) *const i32 {
++    fn foo(s: *const S) *const i32 {</code></pre>
     
     
 
     <h3 id="C-ABI-Compatibility"><a href="#toc-C-ABI-Compatibility">C ABI Compatibility</a> <a class="hdr" href="#C-ABI-Compatibility">§</a></h3>
 
-    TODO
-section about C ABI
- - x86_64  close to 100%
- - aarch64 close to 100%
- - wasm32  close to 100%
- - arm, x86 - complex numbers
-
-thanks to nicer llvm abstraction for C ABI
+    <p>C ABI compatibility is notoriously difficult when using <a href="#LLVM-15">LLVM</a>. In
+    Zig 0.9.x, there were several major miscompilations for functions with C calling convention,
+    especially when using an architecture other than x86_64.</p>
+    <p>Thanks to a nicer abstraction for dealing with the C ABI, plus some good
+    old-fashioned hard work, in 0.10.0, Zig has near full C ABI compliance on several targets:</p>
+    <ul>
+      <li>x86_64 - close to 100%</li>
+      <li>aarch64 - close to 100%</li>
+      <li>wasm32 - close to 100%</li>
+      <li>arm, x86 - complex numbers are not handled correctly yet</li>
+    </ul>
+    <p>You can have a look at the
+      <a href="https://github.com/ziglang/zig/blob/0.10.0/test/tests.zig#L1272-L1349">new test harness</a>
+      to see what exactly is covered. Each of these targets are now tested with
+      every CI run with QEMU.</p>
     
 
     <h3 id="C-Translation"><a href="#toc-C-Translation">C Translation</a> <a class="hdr" href="#C-Translation">§</a></h3>
 
     <ul>
       <li>Handle typedef'ed void return type for functions (#10356)</li>
-      <li>Fix macro define of float constant using scientific notation. Fixes
+      <li>Fixed macro define of float constant using scientific notation. Fixes
         compiler attempting to use null value when translating macro define of
         float constant using scientific notation with no decimal point.</li>
-      <li>Fix issues translating macro define of hex float constant<ul>
-          <li>Fix incorrect result when the first digit after the decimal point is not 0-9 - eg 0x0.ap0</li>
-          <li>Fix compiler panic when the number starts with <code>0X</code> with a capital <code>X</code> - eg 0X0p0</li>
-          <li>Fix compiler panic when the number has a decimal point immediately after <code>0x</code> - eg 0x.0p0</li>
+      <li>Fixed issues translating macro define of hex float constant<ul>
+          <li>Fixed incorrect result when the first digit after the decimal point is not 0-9 - eg 0x0.ap0</li>
+          <li>Fixed compiler panic when the number starts with <code>0X</code> with a capital <code>X</code> - eg 0X0p0</li>
+          <li>Fixed compiler panic when the number has a decimal point immediately after <code>0x</code> - eg 0x.0p0</li>
         </ul>
       </li>
       <li>Improve error messages when expecting specific tokens.</li>
       <li>Add support for cast-to-union (#10955)</li>
       <li>Use nested scope for comma operator in macros (#11040)</li>
       <li>Check child records for opaque types (#10461)</li>
-      <li>Fix cast or call macro with parenthesis (#11962)</li>
+      <li>Fixed cast or call macro with parenthesis (#11962)</li>
       <li>Do not try to get rid of do while loop because it might contain
         breaks and continues (#11994)</li>
       <li>Take address of functions before passing them to <code><span class="line"><span class="tok-builtin">@ptrToInt</span></span></code> (#12194)</li>
@@ -2369,7 +2308,7 @@ thanks to nicer llvm abstraction for C ABI
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 364369 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 614358 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2383,7 +2322,7 @@ thanks to nicer llvm abstraction for C ABI
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">/home/andy/.cache/zig/o/7d7fd7c38f1273383f54e28c80994393/test</span>
+<span class="line">/home/andy/.cache/zig/o/da89401b90ed2a45f2611608594c9a97/test</span>
 </samp></pre></figure>
     <p>As you can see, with Zig 0.10.0, this problem is caught with a safety check.
     A future enhancement will further refine this to
@@ -2443,7 +2382,7 @@ thanks to nicer llvm abstraction for C ABI
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 364502 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 614402 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -2466,7 +2405,7 @@ thanks to nicer llvm abstraction for C ABI
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
-<span class="line">/home/andy/.cache/zig/o/7d7fd7c38f1273383f54e28c80994393/test</span>
+<span class="line">/home/andy/.cache/zig/o/da89401b90ed2a45f2611608594c9a97/test</span>
 </samp></pre></figure>
     <p>Before, it did this instead:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">Test [1/1] test_0... thread 18432 panic: reached unreachable code</span>
@@ -2983,7 +2922,7 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>mem: add indexOfMin and indexOfMax (#9915)</li>
       <li>Allow <code>mem.zeroes</code> to work at comptime with extern union (#10797)</li>
       <li>mem.zeroes: Zero sized structs with uninitialized members (#12246)</li>
-      <li>mem.zeroInit: Fix behavior with empty initialiser</li>
+      <li>mem.zeroInit: Fixed behavior with empty initialiser</li>
       <li>mem: added concatWithSentinel</li>
       <li>mem: add peek() to TokenIterator(T)</li>
       <li>mem: add splitBackwards (#11908)</li>
@@ -2994,7 +2933,7 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>json: correctly handle sentinel terminated slices</li>
       <li>JSON stringify string setting affects keys (#11618)</li>
       <li>json: Support disabling indent (#11823)</li>
-      <li>json: Fix parsing of large numbers</li>
+      <li>json: Fixed parsing of large numbers</li>
       <li>json: expose encodeJsonString and encodeJsonStringChars</li>
       <li>Added meta.DeclEnum</li>
       <li>Makes std.meta.Tuple and std.meta.ArgsTuple generate a unique type instead of generating one per invocation.</li>
@@ -3015,13 +2954,13 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>Added SIMD utility functions</li>
       <li>Added <code>unicode.replacement_character</code></li>
       <li>unicode: add utf16 byte length and codepoints counting routines (#11663)</li>
-      <li>os.getenvW: Fix case-insensitivity for Unicode env var names (#10595)</li>
+      <li>os.getenvW: Fixed case-insensitivity for Unicode env var names (#10595)</li>
       <li>Added memfd_create for FreeBSD. This is minorly breaking as e.g.
         std.os.linux.MFD_CLOEXEC is now std.os.linux.MFD.CLOEXEC.</li>
       <li>Added FreeBSD support to std.os.getFdPath</li>
       <li>Audit FreeBSD structs to match header files/ABI</li>
       <li>Added functions from <code>dirent.h</code> to std.c (#11598)</li>
-      <li>std.c: Fix incorrect dirent structure (#11602)</li>
+      <li>std.c: Fixed incorrect dirent structure (#11602)</li>
       <li>Added const to msghdr_const iov and control pointers</li>
       <li>Mark fstype argument to mount as optional.</li>
       <li>Renamed systemz to s390x</li>
@@ -3682,11 +3621,11 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
       <li>Respect trailing commas in inline assembly, however, remove trailing comma
         at the end of clobbers.</li>
       <li>Keep <code><span class="line"><span class="tok-kw">callconv</span>(.Inline)</span></code> on function pointer types.</li>
-      <li>Fix formatting for single-line containers with comments (#8810)</li>
-      <li>Fix performance issue with nested arrays (#10224)</li>
+      <li>Fixed formatting for single-line containers with comments (#8810)</li>
+      <li>Fixed performance issue with nested arrays (#10224)</li>
       <li>Handle doc comments on struct members (#10443)</li>
-      <li>Fix switch cases dropping comments in certain situations (#11131)</li>
-      <li>Fix idempotency with newlines surrounding doc comment (#11802)</li>
+      <li>Fixed switch cases dropping comments in certain situations (#11131)</li>
+      <li>Fixed idempotency with newlines surrounding doc comment (#11802)</li>
       <li>Stop deleting container doc comments (#12617)</li>
       <li><code>--exclude</code> now ignores missing directories.</li>
     </ul>
@@ -4200,3 +4139,4 @@ Date:   Wed Jan 26 00:43:13 2022 -0500
 </html>
 TODO: check with tidy
 TODO: run that regex to make the github issues into links
+TODO: give the diffs green/red highlighting

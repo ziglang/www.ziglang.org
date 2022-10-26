@@ -1131,6 +1131,56 @@ Hello, World!
 
     {#header_open|Language Changes#}
 
+    {#header_open|Function Pointers#}
+    <p>In Zig 0.9.x and the {#link|Bootstrap Compiler#}, the type {#syntax#}fn () void{#endsyntax#} is a function pointer and acts like a pointer. However, the language spec, which is not written yet, will have this type be a <strong>function body</strong> type. It must be compile-time-known, and in order to get a function pointer, {#syntax#}*const fn () void{#endsyntax#} must be used.</p>
+    <p>The {#link|Self-Hosted Compiler#} implements this correctly, which means
+    your project will likely break everywhere that you use a function
+    pointer.</p>
+    <p>Here is the problem most people will run into:</p>
+    {#code_begin|test_err|unable to resolve comptime#}
+test "function pointer" {
+    const s = foo();
+    s.fnPtr();
+}
+
+const S = struct {
+    fnPtr: fn () void,
+};
+
+fn bar() void {}
+fn baz() void {}
+
+var runtime: bool = true;
+
+fn foo() S {
+    if (runtime) {
+        return .{
+            .fnPtr = bar,
+        };
+    } else {
+        return .{
+            .fnPtr = baz,
+        };
+    }
+}
+    {#code_end#}
+    <p>This happens because:</p>
+    <ul>
+      <li>{#syntax#}fn () void{#endsyntax#} is a <strong>function body</strong> type, not a function pointer type.</li>
+      <li>Function body types are comptime-only, while function pointers may be runtime-known.</li>
+      <li>The struct {#syntax#}S{#endsyntax#} is a comptime-only type due to its comptime-only field.</li>
+      <li>The function {#syntax#}foo{#endsyntax#} is a comptime-only function due to its comptime-only return type.</li>
+      <li>Therefore, {#syntax#}foo(){#endsyntax#} is called at comptime, however it tries to read a global variable, which is runtime-known.</li>
+    </ul>
+
+    <p>The solution is to make the function into a function pointer:</p>
+    <pre><code>-    fnPtr: fn () void,
++    fnPtr: *const fn () void,</code></pre>
+
+    <p>Ideally, the compile error for this will be enhanced to make the
+    solution more obvious, however, that enhancement will come later.</p>
+    {#header_close#}
+
     {#header_open|Packed Structs#}
     <p>In previous releases of Zig there have been some nasty bugs that
     unfortunately did not get fixed for a long time, resulting in packed
@@ -1330,7 +1380,18 @@ fn make_vla(gpa: std.mem.Allocator, comptime T: type, extra_bytes: usize) !*T {
     return ptr;
 }
     {#code_end#}
-    <p>This is implemented in {#link|Self-Hosted Compiler#} only.</p>
+    <p>This assertion does not pass with the {#link|Bootstrap Compiler#} but it does with the
+    {#link|Self-Hosted Compiler#}:</p>
+    {#code_begin|test|ptrs#}
+const std = @import("std");
+const assert = std.debug.assert;
+
+comptime {
+    assert(@sizeOf(*u0) == @sizeOf(*u8));
+}
+    {#code_end#}
+    <p>However, pointers to comptime-only types are still zero bit types, such as
+    {#syntax#}*comptime_int{#endsyntax#}.</p>
     {#header_close#}
 
     {#header_open|@minimum and @maximum renamed to @min and @max#}
@@ -1373,9 +1434,47 @@ pub fn main() !void {
     {#code_end#}
 
     <p>This may be a breaking change for some people who were relying on Zig to automatically
-    evaluate the operands in a {#syntax#}comptime{#endsyntax#} scope. The previous behavior
-    can be obtained with explicit use of the {#syntax#}comptime{#endsyntax#} keyword.</p>
-    <p>This is implemented in {#link|Self-Hosted Compiler#} only.</p>
+    evaluate the operands in a {#syntax#}comptime{#endsyntax#} scope, like this:</p>
+    {#code_begin|test_err|unable to resolve comptime#}
+const std = @import("std");
+
+test {
+    const a = foo() ++ "bb";
+    try std.testing.expect(a.len == 5);
+}
+
+fn foo() []const u8 {
+    return "aaa";
+}
+    {#code_end#}
+    <p>The previous behavior
+    can be obtained with explicit use of the {#syntax#}comptime{#endsyntax#} keyword:</p>
+    <pre><code>-    const a = foo() ++ "bb";
++    const a = comptime foo() ++ "bb";</code></pre>
+    <p>This language change is implemented in {#link|Self-Hosted Compiler#} only.</p>
+    {#header_close#}
+
+    {#header_open|Address-of Temporaries Now Produces Const Pointers#}
+    <p>Zig 0.9.x and the {#link|Bootstrap Compiler#} allow this code:</p>
+    {#code_begin|test_err|expected type#}
+const std = @import("std");
+
+test {
+    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
+
+    const ptr = try arena.create(i32);
+    ptr.* = 1234;
+}
+    {#code_end#}
+
+    <p>Zig 0.10.0 does not allow this.
+    Address of temporaries produces constant pointers for safety reasons.
+    To fix this code, extract the temporary into an explicit {#syntax#}var{#endsyntax#}.
+    This makes the mutable temporary more obvious, which is safer.</p>
+
+    <pre><code>-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
++    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
++    const arena = arena_state.allocator();</code></pre>
     {#header_close#}
 
     {#header_open|std.builtin.CompilerBackend#}
@@ -1386,7 +1485,7 @@ pub fn main() !void {
     there may be third party compiler implementations
     which have quirks. Zig now provides a {#syntax#}comptime{#endsyntax#} enum
     value so that one can use conditional compilation to work around such issues.</p>
-    <p><strong>Think carefully before using this!</strong> Documentation comments are reproduced here:</p>
+    <p>Documentation comments are reproduced here:</p>
     {#code_begin|syntax#}
 /// This enum is set by the compiler and communicates which compiler backend is
 /// used to produce machine code.
@@ -1447,6 +1546,12 @@ pub const CompilerBackend = enum(u64) {
     _,
 };
     {#code_end#}
+    <p>Please <strong>read the documentation comments carefully before using this value</strong>.
+    In summary, you can work around compiler issues by doing something like this:</p>
+    <pre>{#syntax#}const FnPtr = switch (builtin.zig_backend) {
+    .stage1 => fn()void,
+    else => *const fn()void,
+};{#endsyntax#}</pre>
     {#header_close#}
 
     {#header_open|f80#}
@@ -1640,8 +1745,8 @@ var y: i32 = 01234;
       <li>C ABI fixes related to {#syntax#}packed struct{#endsyntax#} (#10499)</li>
       <li>Fixed {#syntax#}packed struct{#endsyntax#} (#11279)</li>
       <li>Fixed exporting of symbols on {#link|WebAssembly#}.</li>
-      <li>Fix bigint_init_bigfloat for single-limb negative floats (#10592)</li>
-      <li>Fix big-endian handling in stage1 bigint_write_twos_complement (#10858)</li>
+      <li>Fixed bigint_init_bigfloat for single-limb negative floats (#10592)</li>
+      <li>Fixed big-endian handling in stage1 bigint_write_twos_complement (#10858)</li>
       <li>Removed the noisy "referenced here" error note. The {#link|Self-Hosted Compiler#} has
         this implemented in a better way.</li>
       <li>Fixed saturating arithmetic on type {#syntax#}comptime_int{#endsyntax#} (#10393)</li>
@@ -1665,17 +1770,23 @@ var y: i32 = 01234;
     It is now enabled by default, however the {#link|Bootstrap Compiler#} is available
     behind the <code>-fstage1</code> flag for those not ready to {#link|upgrade|How to Upgrade#}.
     </p>
+    <p>This compiler implementation beats the older one in terms of
+    performance and memory usage. Here are two data points for the compiler building itself
+    (measured on an Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz):</p>
+    <ul>
+      <li><strong>Wall Clock Time</strong>: 43 seconds to 40 seconds (<strong>7% faster</strong>)</li>
+      <li><strong>Peak RSS</strong>: 9.6 GiB to 2.8 GiB (<strong>3.5x less memory</strong> used)</li>
+    </ul>
 
+    <p>The new compiler implementation is slightly faster despite that, unlike
+    the {#link|Bootstrap Compiler#}, it is capable of incremental compilation
+    due to being tightly coupled with the {#link|linker|Self-Hosted Linker#}.
+    The bigger compilation speed wins will come with the {#link|Code Generation#}
+    backends that do not use {#link|LLVM|LLVM 15#}.</p>
 
-    TODO this is measured of building the compiler itself in debug mode
-    TODO mention CPU
-stage1 vs stage3
-Wall Clock: 43.08 -> 40.08 (7% faster)
-Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
-    llvm backend
-
-    <p>Despite the vast majority of the development effort of this release cycle being
-    spent on this new compiler implementation, the {#link|Language Changes#} are minimal.
+    <p>The vast majority of the development effort of this release cycle was
+    spent on this new compiler implementation, and therefore the {#link|Language Changes#}
+    are minimal.
     Instead, this new codebase lays the groundwork for <em>major enhancements</em>,
     mainly concerned with speeding up the edit/test/debug cycle. Now that the self-hosted
     compiler is no longer sucking up so much effort, you should expect to see significant,
@@ -1705,7 +1816,7 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
       <li>Added support for <code>-fbuild-id</code>, <code>-fno-build-id</code> (#3047)</li>
       <li>Enable full RELRO by default (#11825)</li>
       <li>Remove <code>-z noexecstack</code> option (#11826)</li>
-      <li>Fix crash when building static library in the same directory where Zig source is located (#11833)</li>
+      <li>Fixed crash when building static library in the same directory where Zig source is located (#11833)</li>
       <li>Improve error reporting when libc is missing.</li>
       <li>Added <code>ZIG_GLOBAL_CACHE_DIR</code> environment variable.</li>
       <li>Improved glibc version and dynamic linker detection (#12788)</li>
@@ -1734,9 +1845,7 @@ Peak RSS: 9.6 GiB -> 2.8 GiB (3.5x less memory)
     get the old compiler, or put the equivalent in your build.zig file, so that
     your users can continue using <code>zig build</code> as usual.
     </p>
-    <pre>{#syntax#}
-zig exe.use_stage1 = true;
-    {#endsyntax#}</pre>
+    <pre>{#syntax#}exe.use_stage1 = true;{#endsyntax#}</pre>
     <p>
     The new compiler, sometimes called "stage2" or "stage3", is in many ways better
     than the old compiler (also called "stage1"), however it is not yet strictly
@@ -1782,144 +1891,38 @@ zig exe.use_stage1 = true;
     this:</p>
     <ol>
       <li>Have a different branch for when using Zig self-hosted. Once you decide to commit to the upgrade, merge that branch into your main branch.</li>
-      <li>Make the codebase support both stage1 and self-hosted at the same time using conditional compilation based on {#syntax#}@import("builtin").zig_backend{#endsyntax#}.</li>
+      <li>Make the codebase support both stage1 and self-hosted at the same
+        time using conditional compilation based on
+        {#link|std.builtin.CompilerBackend#}.</li>
     </ol>
-
-    {#header_open|Function Pointers#}
-In stage1, the type `fn () void` is a function pointer and acts like a pointer. However, the language spec, which is not written yet, will have this type be a "function body" type. It must be compile-time known, and in order to get a function pointer, `*const fn () void` must be used.
-
-Self-hosted implements this correctly, which means your project will likely break everywhere that you use a function pointer.
-
-Here is the problem most people will run into:
-
-```zig
-test "function pointer" {
-    const s = foo();
-    s.fnPtr();
-}
-
-const S = struct {
-    fnPtr: fn () void,
-};
-
-fn bar() void {}
-fn baz() void {}
-
-var runtime: bool = true;
-
-fn foo() S {
-    if (runtime) {
-        return .{
-            .fnPtr = bar,
-        };
-    } else {
-        return .{
-            .fnPtr = baz,
-        };
-    }
-}
-```
-
-With self-hosted, this produces:
-
-```
-test.zig:16:9: error: cannot load runtime value in comptime block
-    if (runtime) {
-        ^~~~~~~
-test.zig:2:18: note: called from here
-    const s = foo();
-              ~~~^~
-```
-
-This happens because:
- * `fn () void` is a **function body** type, not a function pointer type.
- * Function body types are comptime-only, while function pointers may be runtime-known.
- * The struct `S` is a comptime-only type due to its comptime-only field.
- * The function `foo` is a comptime-only function due to its comptime-only return type.
- * Therefore, `foo()` is called at comptime, however it tries to read a global variable, which is runtime-known.
-
-The solution is to make the function into a function pointer:
-
-```diff
--    fnPtr: fn () void,
-+    fnPtr: *const fn () void,
-```
-
-Ideally, the compile error for this will be enhanced to make the solution more obvious, however, that enhancement will come later.
-    {#header_close#}
+    <p>In addition to the sub-sections below, see also these {#link|Language Changes#} which
+    should be considered part of the upgrade guide:</p>
+    <ul>
+      <li>{#link|Function Pointers#}</li>
+      <li>{#link|Runtime Array Concatenation & Multiplication#}</li>
+      <li>{#link|Address-of Temporaries Now Produces Const Pointers#}</li>
+      <li>{#link|Pointers to Zero-Bit Types#}</li>
+      <li>{#link|std.builtin.CompilerBackend#}</li>
+    </ul>
 
     {#header_open|Void Literal Syntax#}
     <p>{#syntax#}{}{#endsyntax#} vs {#syntax#}.{}{#endsyntax#}</p>
-This one is pretty simple:
-
-```zig
+    <p>This one is pretty simple:</p>
+    {#code_begin|test_err|expected#}
 test {
     var x: void = .{};
     _ = x;
 }
-```
+    {#code_end#}
 
-```
-test.zig:2:20: error: expected type 'void', found '@TypeOf(.{})'
-    var x: void = .{};
-                  ~^~
-```
+    <p>{#syntax#}.{}{#endsyntax#} is a struct literal; {#syntax#}{}{#endsyntax#} is a void value. It has always been a bug for the {#link|Bootstrap Compiler#} to accept this code. Just change {#syntax#}.{}{#endsyntax#} to {#syntax#}{}{#endsyntax#}.</p>
 
-`.{}` is a struct literal; `{}` is a void value. It has always been a bug that stage1 accepts this code. Just change `.{}` to `{}`.
-
-```diff
--    var x: void = .{};
-+    var x: void = {};
-```
-    {#header_close#}
-
-    {#header_open|Address-of Temporaries Now Produces Const Pointers#}
-stage1 allowed this code:
-
-```zig
-const std = @import("std");
-
-test {
-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-
-    const ptr = try arena.create(i32);
-    ptr.* = 1234;
-}
-```
-
-```
-test.zig:4:72: error: expected type '*heap.arena_allocator.ArenaAllocator', found '*const heap.arena_allocator.ArenaAllocator'
-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
-test.zig:4:72: note: cast discards const qualifier
-```
-
-The lang spec will not allow this. Address of temporaries produces constant pointers for safety reasons. To fix this code, extract the temporary into an explicit `var`. This makes the mutable temporary more obvious, which is safer.
-
-```diff
--    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
-+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-+    const arena = arena_state.allocator();
-```
-    {#header_close#}
-
-    {#header_open|Pointers to Zero-Bit Types are No Longer Themselves Zero-Bit Types#}
-This assertion does not pass with stage1 but it does with self-hosted:
-
-```zig
-const std = @import("std");
-const assert = std.debug.assert;
-
-comptime {
-    assert(@sizeOf(*u0) == @sizeOf(*u8));
-}
-```
-
-However, pointers to comptime-only types are still zero bit types, such as `*comptime_int`.
+    <pre><code>-    var x: void = .{};
++    var x: void = {};</code></pre>
     {#header_close#}
 
     {#header_open|Escaped Pointer to Parameter#}
-```zig
+    {#code_begin|test_safety|TestUnexpectedResult#}
 const std = @import("std");
 const expect = std.testing.expect;
 
@@ -1936,150 +1939,63 @@ const S = struct {
         return &s.field; // XXX: escaped pointer to parameter
     }
 };
-```
+    {#code_end#}
+    <p>This test passes with the {#link|Bootstrap Compiler#} despite having a
+    critical bug: a temporary is created by taking the address of the the
+    <a href="/documentation/0.10.0/#Pass-by-value-Parameters">pass-by-value parameter</a>
+    which is then returned from the function.</p>
 
-This test passes with stage1 despite having a critical bug: a temporary is created by taking the address of the the [pass-by-value parameter](https://ziglang.org/documentation/0.10.0/#Pass-by-value-Parameters) which is then returned from the function.
+    <p>The legacy compiler is naive, always passing structs by pointer in code such as this.
+    Meanwhile, the self-hosted compiler efficiently takes advantage of smaller
+    arguments such as this, passing them truly by value, revealing the bug.</p>
 
-Stage1 is naive, always passing structs by pointer in code such as this. Meanwhile, the self-hosted compiler efficiently takes advantage of smaller arguments such as this, passing them truly by value, revealing the bug.
+    <p>Hopefully in the future Zig will have
+    <a href="https://github.com/ziglang/zig/issues/3180">runtime safety for this</a>,
+    however, currently this will manifest as a use-after-free. So if you find a
+    pointer to bogus data, double check that the pointer was not created this way.</p>
 
-Hopefully in the future Zig will have [runtime safety for this](https://github.com/ziglang/zig/issues/3180), however, currently this will manifest as a use-after-free. So if you find a pointer to bogus data, double check that the pointer was not created this way.
+    <p>Once the problem has been identified, the fix is simple:</p>
 
-Once the problem has been identified, the fix is simple:
-
-```diff
--    fn foo(s: S) *const i32 {
-+    fn foo(s: *const S) *const i32 {
-```
-    {#header_close#}
-
-    {#header_open|Runtime Slice Concatenation & Multiplication#}
-Slice concatenation in stage 2 now works on [any two slices with comptime-known length](https://github.com/ziglang/zig/issues/11773). This [stops the arguments from being implicitly comptime](https://github.com/ziglang/zig/issues/11773#issuecomment-1144110692), which means that function calls within a slice-concatenation expression now need to be explicitly called at comptime.
-
-This can prevent the following example from compiling in stage 2 where it previously did in stage 1:
-
-```zig
-const std = @import("std");
-
-test {
-    const a = foo() ++ "bb";
-    try std.testing.expect(a.len == 5);
-}
-
-fn foo() []const u8 {
-    return "aaa";
-}
-```
-
-This fix here is simple:
-
-```diff
--    const a = foo() ++ "bb";
-+    const a = comptime foo() ++ "bb";
-```
-    {#header_close#}
-
-    {#header_open|Using builtin.zig_backend#}
-There is a new declaration available in `@import("builtin").zig_backend`. Contents reproduced here:
-
-```zig
-/// This enum is set by the compiler and communicates which compiler backend is
-/// used to produce machine code.
-/// Think carefully before deciding to observe this value. Nearly all code should
-/// be agnostic to the backend that implements the language. The use case
-/// to use this value is to **work around problems with compiler implementations.**
-///
-/// Avoid failing the compilation if the compiler backend does not match a
-/// whitelist of backends; rather one should detect that a known problem would
-/// occur in a blacklist of backends.
-///
-/// The enum is nonexhaustive so that alternate Zig language implementations may
-/// choose a number as their tag (please use a random number generator rather
-/// than a "cute" number) and codebases can interact with these values even if
-/// this upstream enum does not have a name for the number. Of course, upstream
-/// is happy to accept pull requests to add Zig implementations to this enum.
-///
-/// This data structure is part of the Zig language specification.
-pub const CompilerBackend = enum(u64) {
-    /// It is allowed for a compiler implementation to not reveal its identity,
-    /// in which case this value is appropriate. Be cool and make sure your
-    /// code supports `other` Zig compilers!
-    other = 0,
-    /// The original Zig compiler created in 2015 by Andrew Kelley.
-    /// Implemented in C++. Uses LLVM.
-    stage1 = 1,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// LLVM backend.
-    stage2_llvm = 2,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// backend that generates C source code.
-    /// Note that one can observe whether the compilation will output C code
-    /// directly with `object_format` value rather than the `compiler_backend` value.
-    stage2_c = 3,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// WebAssembly backend.
-    stage2_wasm = 4,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// arm backend.
-    stage2_arm = 5,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// x86_64 backend.
-    stage2_x86_64 = 6,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// aarch64 backend.
-    stage2_aarch64 = 7,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// x86 backend.
-    stage2_x86 = 8,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// riscv64 backend.
-    stage2_riscv64 = 9,
-    /// The reference implementation self-hosted compiler of Zig, using the
-    /// sparc64 backend.
-    stage2_sparc64 = 10,
-
-    _,
-};
-```
-
-Please read the doc comments carefully before using this value. In summary, you can work around compiler issues by doing something like this:
-
-```zig
-const FnPtr = switch (builtin.zig_backend) {
-    .stage1 => fn()void,
-    else => *const fn()void,
-};
-```
+    <pre><code>-    fn foo(s: S) *const i32 {
++    fn foo(s: *const S) *const i32 {</code></pre>
     {#header_close#}
     {#header_close#}
 
     {#header_open|C ABI Compatibility#}
-    TODO
-section about C ABI
- - x86_64  close to 100%
- - aarch64 close to 100%
- - wasm32  close to 100%
- - arm, x86 - complex numbers
-
-thanks to nicer llvm abstraction for C ABI
+    <p>C ABI compatibility is notoriously difficult when using {#link|LLVM|LLVM 15#}. In
+    Zig 0.9.x, there were several major miscompilations for functions with C calling convention,
+    especially when using an architecture other than x86_64.</p>
+    <p>Thanks to a nicer abstraction for dealing with the C ABI, plus some good
+    old-fashioned hard work, in 0.10.0, Zig has near full C ABI compliance on several targets:</p>
+    <ul>
+      <li>x86_64 - close to 100%</li>
+      <li>aarch64 - close to 100%</li>
+      <li>wasm32 - close to 100%</li>
+      <li>arm, x86 - complex numbers are not handled correctly yet</li>
+    </ul>
+    <p>You can have a look at the
+      <a href="https://github.com/ziglang/zig/blob/0.10.0/test/tests.zig#L1272-L1349">new test harness</a>
+      to see what exactly is covered. Each of these targets are now tested with
+      every CI run with QEMU.</p>
     {#header_close#}
 
     {#header_open|C Translation#}
     <ul>
       <li>Handle typedef'ed void return type for functions (#10356)</li>
-      <li>Fix macro define of float constant using scientific notation. Fixes
+      <li>Fixed macro define of float constant using scientific notation. Fixes
         compiler attempting to use null value when translating macro define of
         float constant using scientific notation with no decimal point.</li>
-      <li>Fix issues translating macro define of hex float constant<ul>
-          <li>Fix incorrect result when the first digit after the decimal point is not 0-9 - eg 0x0.ap0</li>
-          <li>Fix compiler panic when the number starts with <code>0X</code> with a capital <code>X</code> - eg 0X0p0</li>
-          <li>Fix compiler panic when the number has a decimal point immediately after <code>0x</code> - eg 0x.0p0</li>
+      <li>Fixed issues translating macro define of hex float constant<ul>
+          <li>Fixed incorrect result when the first digit after the decimal point is not 0-9 - eg 0x0.ap0</li>
+          <li>Fixed compiler panic when the number starts with <code>0X</code> with a capital <code>X</code> - eg 0X0p0</li>
+          <li>Fixed compiler panic when the number has a decimal point immediately after <code>0x</code> - eg 0x.0p0</li>
         </ul>
       </li>
       <li>Improve error messages when expecting specific tokens.</li>
       <li>Add support for cast-to-union (#10955)</li>
       <li>Use nested scope for comma operator in macros (#11040)</li>
       <li>Check child records for opaque types (#10461)</li>
-      <li>Fix cast or call macro with parenthesis (#11962)</li>
+      <li>Fixed cast or call macro with parenthesis (#11962)</li>
       <li>Do not try to get rid of do while loop because it might contain
         breaks and continues (#11994)</li>
       <li>Take address of functions before passing them to {#syntax#}@ptrToInt{#endsyntax#} (#12194)</li>
@@ -2700,7 +2616,7 @@ Summary
       <li>mem: add indexOfMin and indexOfMax (#9915)</li>
       <li>Allow <code>mem.zeroes</code> to work at comptime with extern union (#10797)</li>
       <li>mem.zeroes: Zero sized structs with uninitialized members (#12246)</li>
-      <li>mem.zeroInit: Fix behavior with empty initialiser</li>
+      <li>mem.zeroInit: Fixed behavior with empty initialiser</li>
       <li>mem: added concatWithSentinel</li>
       <li>mem: add peek() to TokenIterator(T)</li>
       <li>mem: add splitBackwards (#11908)</li>
@@ -2711,7 +2627,7 @@ Summary
       <li>json: correctly handle sentinel terminated slices</li>
       <li>JSON stringify string setting affects keys (#11618)</li>
       <li>json: Support disabling indent (#11823)</li>
-      <li>json: Fix parsing of large numbers</li>
+      <li>json: Fixed parsing of large numbers</li>
       <li>json: expose encodeJsonString and encodeJsonStringChars</li>
       <li>Added meta.DeclEnum</li>
       <li>Makes std.meta.Tuple and std.meta.ArgsTuple generate a unique type instead of generating one per invocation.</li>
@@ -2732,13 +2648,13 @@ Summary
       <li>Added SIMD utility functions</li>
       <li>Added <code>unicode.replacement_character</code></li>
       <li>unicode: add utf16 byte length and codepoints counting routines (#11663)</li>
-      <li>os.getenvW: Fix case-insensitivity for Unicode env var names (#10595)</li>
+      <li>os.getenvW: Fixed case-insensitivity for Unicode env var names (#10595)</li>
       <li>Added memfd_create for FreeBSD. This is minorly breaking as e.g.
         std.os.linux.MFD_CLOEXEC is now std.os.linux.MFD.CLOEXEC.</li>
       <li>Added FreeBSD support to std.os.getFdPath</li>
       <li>Audit FreeBSD structs to match header files/ABI</li>
       <li>Added functions from <code>dirent.h</code> to std.c (#11598)</li>
-      <li>std.c: Fix incorrect dirent structure (#11602)</li>
+      <li>std.c: Fixed incorrect dirent structure (#11602)</li>
       <li>Added const to msghdr_const iov and control pointers</li>
       <li>Mark fstype argument to mount as optional.</li>
       <li>Renamed systemz to s390x</li>
@@ -3378,11 +3294,11 @@ Hello World!
       <li>Respect trailing commas in inline assembly, however, remove trailing comma
         at the end of clobbers.</li>
       <li>Keep {#syntax#}callconv(.Inline){#endsyntax#} on function pointer types.</li>
-      <li>Fix formatting for single-line containers with comments (#8810)</li>
-      <li>Fix performance issue with nested arrays (#10224)</li>
+      <li>Fixed formatting for single-line containers with comments (#8810)</li>
+      <li>Fixed performance issue with nested arrays (#10224)</li>
       <li>Handle doc comments on struct members (#10443)</li>
-      <li>Fix switch cases dropping comments in certain situations (#11131)</li>
-      <li>Fix idempotency with newlines surrounding doc comment (#11802)</li>
+      <li>Fixed switch cases dropping comments in certain situations (#11131)</li>
+      <li>Fixed idempotency with newlines surrounding doc comment (#11802)</li>
       <li>Stop deleting container doc comments (#12617)</li>
       <li><code>--exclude</code> now ignores missing directories.</li>
     </ul>
@@ -3890,3 +3806,4 @@ Hello World!
 </html>
 TODO: check with tidy
 TODO: run that regex to make the github issues into links
+TODO: give the diffs green/red highlighting
