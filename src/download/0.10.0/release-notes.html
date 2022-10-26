@@ -2703,15 +2703,39 @@ Summary
       <li>Fixed <code>WalkerEntry.dir</code> not always being the containing dir</li>
     </ul>
     {#header_open|Optimized Tree Deletion#}
-    TODO
-commit c23b3e6fd924725d21ecbbc85ef086d330dd4322
-Merge: 260b0ff7c 1468eb12f
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Oct 12 13:37:06 2022 -0400
+    <p>Ryan Liptak improved the performance of {#syntax#}std.fs.Dir.deleteTree{#endsyntax#}
+    (#13073).
+    The new implementation has the same constraints:</p>
+    <ul>
+      <li>No heap-allocating any memory or requiring an Allocator parameter.</li>
+      <li>No possibility of stack overflow due to a deeply nested file system tree.</li>
+    </ul>
+    <p>The new implementation has better performance than <code>rm -rf</code> (at least
+    on {#link|Linux#} - see <a href="https://github.com/ziglang/zig/issues/13048#issuecomment-1265224210">benchmark details</a>):</p>
 
-    Merge pull request #13073 from squeek502/fs-delete-tree-2
-    
-    `fs.Dir.deleteTree`: Optimize for non-deeply-nested directories
+    <pre><code>$ hyperfine "./rm-fast my-app-copy" "./rm-master my-app-copy" "rm -rf my-app-copy" --prepare="cp -r my-app my-app-copy" --warmup 1 --runs 20
+Benchmark #1: ./rm-fast my-app-copy
+  Time (mean ± σ):     382.7 ms ±   7.8 ms    [User: 13.6 ms, System: 358.9 ms]
+  Range (min … max):   372.2 ms … 395.9 ms    20 runs
+ 
+Benchmark #2: ./rm-master my-app-copy
+  Time (mean ± σ):     701.2 ms ±  28.3 ms    [User: 36.8 ms, System: 646.2 ms]
+  Range (min … max):   673.4 ms … 799.4 ms    20 runs
+
+Benchmark #3: rm -rf my-app-copy
+  Time (mean ± σ):     423.9 ms ±  35.4 ms    [User: 17.5 ms, System: 379.4 ms]
+  Range (min … max):   391.6 ms … 518.9 ms    20 runs
+ 
+Summary
+  './rm-fast my-app-copy' ran
+    1.11 ± 0.10 times faster than 'rm -rf my-app-copy'
+    1.83 ± 0.08 times faster than './rm-master my-app-copy'</code></pre>
+
+    <p>The new implementation accomplishes this by having a fixed-size buffer
+    on the stack, temporarily falling back to a slower algorithm when it
+    encounters deeply nested file system trees. The fallback implementation is
+    also optimized to reduce the number of syscalls emitted.</p>
+
     {#header_close#}
     {#header_close#}
 
