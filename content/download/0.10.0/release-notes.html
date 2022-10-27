@@ -477,8 +477,8 @@ David Riley
                 <li><a id="toc-WebAssembly-Backend" href="#WebAssembly-Backend">WebAssembly Backend</a></li>
                 <li><a id="toc-C-Backend" href="#C-Backend">C Backend</a></li>
                 <li><a id="toc-x86-Backend" href="#x86-Backend">x86 Backend</a></li>
-                <li><a id="toc-aarch64-Backend" href="#aarch64-Backend">aarch64 Backend</a></li>
                 <li><a id="toc-arm-Backend" href="#arm-Backend">arm Backend</a></li>
+                <li><a id="toc-aarch64-Backend" href="#aarch64-Backend">aarch64 Backend</a></li>
             </ul></li>
         </ul></li>
         <li><a id="toc-Self-Hosted-Linker" href="#Self-Hosted-Linker">Self-Hosted Linker</a>
@@ -1083,7 +1083,7 @@ David Riley
 
     <p>Improvements to the <a href="#Standard-Library">Standard Library</a>:</p>
     <ul>
-      <li>libc++ now includes the fs/filesystem module.</li>
+      <li><a href="#zig-c">libc++</a> now includes the fs/filesystem module.</li>
       <li>Removed <code>__muloti4</code> from libc++ (<a href="https://github.com/ziglang/zig/issues/10719">#10719</a>)
         <br>
         <a href="#compiler-rt">compiler-rt</a> already provides this symbol but libc++ was also providing it
@@ -1287,9 +1287,8 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <p>This feature is still experimental.</p>
 
-    <p>With version 0.6.0, Zig gained a first (experimental) implementation of
-    automated doc generation, as mentioned in
-    <a href="https://ziglang.org/download/0.6.0/release-notes.html#Documentation-Generation">the relative release notes</a>.
+    <p>Zig gained a first (experimental) implementation of
+    <a href="/download/0.6.0/release-notes.html#Documentation-Generation">automated doc generation in version 0.6.0</a>.
     That version integrated with the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> and, more
     specifically, it observed the data resulting from semantic analysis.</p>
 
@@ -1797,16 +1796,16 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     </p>
     <p>When would you use this? Well if you were
     <a href="https://github.com/Vexu/arocc/issues/213">implementing a C compiler</a> for instance.
-    It is also part of the C ABI - for some C targets <code>long double</code> is an alias for
-    <code><span class="line"><span class="tok-type">f80</span></span></code>.</p>
+    It is also required for <a href="#C-ABI-Compatibility">C ABI Compatibility</a> - for some C targets
+    <code>long double</code> is an alias for <code><span class="line"><span class="tok-type">f80</span></span></code>.</p>
     <p>This is implemented in both the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> and
     <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.</p>
     
 
     <h3 id="TypeInfoDeclaration-no-longer-has-a-data-field"><a href="#toc-TypeInfoDeclaration-no-longer-has-a-data-field">TypeInfo.Declaration no longer has a data field</a> <a class="hdr" href="#TypeInfoDeclaration-no-longer-has-a-data-field">§</a></h3>
 
-    <p>Zig 0.9.x allows inspecting declarations via
-    <a href="/documentation/0.10.0/#typeInfo">@typeInfo</a>, but not any longer (<a href="https://github.com/ziglang/zig/issues/10753">#10753</a>):</p>
+    <p>Zig 0.9.x allows inspecting certain kinds of extra information about declarations via
+    <a href="/documentation/0.10.0/#typeInfo">@typeInfo</a>, but 0.10.0 does not (<a href="https://github.com/ziglang/zig/issues/10753">#10753</a>):</p>
     <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;type info on declarations&quot;</span> {</span>
 <span class="line">    _ = <span class="tok-builtin">@typeInfo</span>(<span class="tok-builtin">@This</span>()).Struct.decls[<span class="tok-number">0</span>].data;</span>
@@ -1920,8 +1919,8 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     with the
     <a href="https://ziglang.org/download/0.9.0/release-notes.html#Compile-Errors-for-Unused-Locals">compile error for unused locals introduced in Zig 0.9.0</a>.
     Together, these compile errors ensure that when you are reading Zig code, whether it is
-    yours or some rando's on the Internet, you can be assured that all locals are used somewhere,
-    and that any discarded locals are otherwise unused.</p>
+    yours or some random codebase on the Internet, you can be assured that all locals are
+    used somewhere, and that any discarded locals are otherwise unused.</p>
     <p>This is a divisive feature of Zig. Generally, those with large codebases favor the
     errors since they help prevent bugs and aid refactoring, while those with small codebases
     find these errors annoying and unproductive.</p>
@@ -2001,7 +2000,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <h2 id="Bootstrap-Compiler"><a href="#toc-Bootstrap-Compiler">Bootstrap Compiler</a> <a class="hdr" href="#Bootstrap-Compiler">§</a></h2>
 
     <p>In the previous release, the main Zig compiler everybody used
-    was the bootstrap compiler, written in C++, also known as "stage1".
+    was the bootstrap compiler, written in C++, also known as <strong>stage1</strong>.
     This release changes the default to become the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>, however,
     the legacy compiler can be selected with <code>-fstage1</code>.</p>
     <p>Despite the main focus being the <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>,
@@ -2036,7 +2035,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <h2 id="Self-Hosted-Compiler"><a href="#toc-Self-Hosted-Compiler">Self-Hosted Compiler</a> <a class="hdr" href="#Self-Hosted-Compiler">§</a></h2>
 
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
-    <p>The main feature of this release cycle is the debut of the self-hosted compiler.
+    <p>The main feature of this release cycle is the début of the self-hosted compiler.
     It is now enabled by default, however the <a href="#Bootstrap-Compiler">Bootstrap Compiler</a> is available
     behind the <code>-fstage1</code> flag for those not ready to <a href="#How-to-Upgrade">upgrade</a>.
     </p>
@@ -2161,7 +2160,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <p>Assuming that you have decided the time is nigh, here are some tips.</p>
     <p>Although most of the language is the same between stage1 and self-hosted,
-    there are some incompatibilities. There are two strategies to deal with
+    there are some incompatibilities. Here are two strategies to deal with
     this:</p>
     <ol>
       <li>Have a different branch for when using Zig self-hosted. Once you decide to commit to the upgrade, merge that branch into your main branch.</li>
@@ -2340,7 +2339,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 737872 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 770184 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211b16 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2414,7 +2413,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 737924 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 770230 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212448 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -2487,7 +2486,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
       <li>the <code><span class="line"><span class="tok-kw">const</span></span></code> variable associated with an error trace falls out of scope</li>
       <li>a function receives an error as an argument and returns a non-error</li>
     </ul>
-    <p>Putting the code snippet aside, here is a code snippet that tries to show most of this together:</p>
+    <p>Here is a code snippet that tries to show most of this together:</p>
     <pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {</span>
 <span class="line">    eat_dinner() <span class="tok-kw">catch</span> {</span>
 <span class="line">        <span class="tok-comment">// Begin error handling here</span></span>
@@ -2515,7 +2514,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">    <span class="tok-kw">try</span> expectError(<span class="tok-kw">error</span>.FatalError, bar());         <span class="tok-comment">// If this fails, `bar()` appears in the error return trace</span></span>
 <span class="line">    <span class="tok-kw">try</span> expectError(<span class="tok-kw">error</span>.MyInlawsAreComing, foo());  <span class="tok-comment">// If this fails, `foo()` appears in the error return trace (`bar` was already popped)</span></span>
 <span class="line">}</span></code></pre>
-    <p>Here is a real world example. Before, one might get debug output that looks like this:</p>
+    <p>Putting the code snippet aside, here is a real world example. Before, one might get debug output that looks like this:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32</kbd></span>
 <span class="line">error: FileNotFound</span>
 <span class="line">tools/copy-from-glibc.zig:21:23: 0x218e39 in main (copy-from-glibc)</span>
@@ -2643,9 +2642,9 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <p>While the default backend is still <a href="#LLVM-15">LLVM</a>, Zig is starting
     to invest in providing its own code generation. The primary motivation for this
     is <strong>compilation speed</strong>. However, there is also a benefit to providing
-    a bootstrapping process that does not depend on C++, CMake, and Python, all of which
-    LLVM require in order to build. Furthermore, there is value in providing healthy
-    competition so that compiler backends do not become a monoculture.</p>
+    a bootstrapping process that does not depend on C++, CMake, Python, libxml, zlib, and zstd,
+    all of which LLVM require in order to build. Furthermore, there is value in
+    providing healthy competition so that compiler backends do not become a monoculture.</p>
     <p>
     As a point of comparison, a stripped release build of Zig <em>with LLVM</em>
     is 169 MiB, while <em>without LLVM</em> (but with
@@ -2656,7 +2655,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <p>One of the visible improvements to the self-hosted Wasm backend is its
     capabilities to generate code. The backend is now capable of passing 75% of the
-    behavior tests, compared to 13% of Zig 0.9.x. At this point, most Zig features are
+    behavior tests, compared to 13% in Zig 0.9.x. At this point, most Zig features are
     supported. For features of which the WebAsssembly architecture has no
     support, the backend is already capable of generating calls into
     <a href="#compiler-rt">compiler-rt</a>, and correctly <a href="#Wasm-Modules">link</a> with it. This is thanks to the
@@ -2665,8 +2664,8 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <a href="#WebAssembly">WebAssembly</a> target, as the logic for the C ABI implemtation is
     fully shared between the backends. This will ensure that regardless of the
     chosen backend, the function signatures they generate are equal. One
-    notable feature that was previously missing was support for DWARF when
-    targetting WebAssembly. This is now fully supported in the LLVM backend,
+    notable feature that was previously missing was support for <a href="#DWARF-Linking">DWARF Linking</a>
+    when targetting WebAssembly. This is now fully supported in the LLVM backend,
     and partly in the native backend. This allows for a great developer
     experience when targetting WebAssembly. The goal is to add full support to
     the native backend by its next release.</p>
@@ -2697,7 +2696,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <p>A new contributor jacobly0 came out of nowhere and did a massive amount of work
     to Zig's C backend, reaching these notable milestones:</p>
     <ul>
-      <li>The C backend is now passing <strong>1198/1365 (88%)</strong> of the behavior tests.</li>
+      <li>The C backend is now passing <strong>1236/1366 (90%)</strong> of the behavior tests.</li>
       <li>The official <a href="/documentation/0.10.0/#Hello-World">hello world</a>
         now works on at least <code>x86_64-linux</code> (with and without libc).</li>
       <li>The test runner now prints output to the console.</li>
@@ -2729,19 +2728,20 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     It will need to get very close to 100% before being enabled by default for debug mode.</p>
     
 
+    <h4 id="arm-Backend"><a href="#toc-arm-Backend">arm Backend</a> <a class="hdr" href="#arm-Backend">§</a></h4>
+
+    <p>This backend remains <strong>experimental</strong>, however it now supports error unions,
+    structs, and switch statements and is thereby passing <strong>790/1365 (58%)</strong>
+    of the behavior tests. It will need to get very close to 100% before being enabled by default
+    for debug mode.</p>
+    
+
     <h4 id="aarch64-Backend"><a href="#toc-aarch64-Backend">aarch64 Backend</a> <a class="hdr" href="#aarch64-Backend">§</a></h4>
 
     <p>This backend remains <strong>experimental</strong>, however it now supports error unions,
     structs, and switch statements and is thereby passing <strong>560/1365 (41%)</strong>
     of the behavior tests. It will need to get very close to 100% before being enabled by default
     for debug mode.</p>
-    
-
-    <h4 id="arm-Backend"><a href="#toc-arm-Backend">arm Backend</a> <a class="hdr" href="#arm-Backend">§</a></h4>
-
-    <p>This backend remains <strong>experimental</strong>, however it now supports error unions,
-    structs, and switch statements and is thereby passing <strong>790/1365 (58%)</strong>
-    of the behavior tests.</p>
     
     
 
@@ -2849,7 +2849,7 @@ simpler and more efficient.
     files, while also being able to link with archive files such as <a href="#compiler-rt">compiler-rt</a>.
     During linking, it now correctly relocates <a href="#Debugging">Debugging</a> information.
     The next milestone would be to make the in-house linker the default linker.
-    To accomplish this, the following features will have to be implemented:</p>
+    To accomplish this, the following features must be implemented:</p>
     <ul>
       <li><strong>Garbage collection</strong> - Remove unused code and sections
         to ensure binaries remain small which is crucial for Wasm.</li>
@@ -2887,7 +2887,7 @@ simpler and more efficient.
     relocated debug info for <code>x86_64</code>, <code>arm</code> and
     <code>aarch64</code> architectures on Linux and macOS. The state of
     implementation varies slightly between architectures with <code>x86_64</code>
-    being the farthest ahead.</p>
+    being the furthest ahead.</p>
     <p>Example progress includes correctly generating DWARF debug info for
     slices including <code><span class="line">[]<span class="tok-kw">const</span> <span class="tok-type">u8</span></span></code> for passing as formal parameters.
     Breaking on a function accepting a slice in <code>gdb</code> will now yield
@@ -3349,7 +3349,7 @@ Summary
       <li>Update RwLock to use static initialization (<a href="https://github.com/ziglang/zig/issues/10838">#10838</a>)</li>
       <li>time: introduce Instant (<a href="https://github.com/ziglang/zig/issues/10972">#10972</a>)</li>
       <li>std.os: add timerfd_create, timerfd_settime and timerfd_gettime</li>
-      <li>Fixed android definition of pthread_rwlock_t (<a href="https://github.com/ziglang/zig/issues/12830">#12830</a>)</li>
+      <li>Fixed Android definition of pthread_rwlock_t (<a href="https://github.com/ziglang/zig/issues/12830">#12830</a>)</li>
       <li>Fixed DefaultRwLock accumulating write-waiters, eventually failing to write lock (<a href="https://github.com/ziglang/zig/issues/13180">#13180</a>)</li>
     </ul>
     
@@ -3492,7 +3492,7 @@ Summary
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x214b6d in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7fe8f386d000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f39ce852000 leaked:</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213ff4 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
@@ -3650,8 +3650,8 @@ Summary
     <p>New API:</p>
     <pre><code><span class="line">decompressor(allocator: mem.Allocator, reader: <span class="tok-kw">anytype</span>, dictionary: ?[]<span class="tok-kw">const</span> <span class="tok-type">u8</span>)</span>
 <span class="line">compressor(allocator: mem.Allocator, writer: <span class="tok-kw">anytype</span>, options: CompressorOptions)</span></code></pre>
-    <p>The implementation is a port of the compress/flate package from Go, and appears
-    to be about 2-3x faster.</p>
+    <p>The implementation is a port of the compress/flate package from
+    <a href="https://go.dev/">Go</a>, and appears to be about 2-3x faster.</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig run bench.zig -O ReleaseFast</kbd></span>
 <span class="line"></span>
 <span class="line">size: 100B</span>
@@ -3716,7 +3716,7 @@ Summary
     <h2 id="Bug-Fixes"><a href="#toc-Bug-Fixes">Bug Fixes</a> <a class="hdr" href="#Bug-Fixes">§</a></h2>
 
     <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 424 bug reports closed during this release cycle</a>.</p>
-    <p>Note: many bugs were both introduced and resolved within this release cycle.</p>
+    <p>Many bugs were both introduced and resolved within this release cycle.</p>
     <h3 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h3>
 
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
@@ -3769,12 +3769,14 @@ Summary
     <a href="http://releases.llvm.org/15.0.0/docs/ReleaseNotes.html">LLVM 15.0.3</a>.
     </p>
     <p>
-    Note that the Zig 0.9.x series used LLVM 13 - there is no Zig release that depends on
+    Note that the
+    <a href="/download/0.9.0/release-notes.html#toc-LLVM-13">Zig 0.9.x series used LLVM 13</a> -
+    there is no Zig release that depends on
     <a href="http://releases.llvm.org/14.0.0/docs/ReleaseNotes.html">LLVM 14</a>.
     </p>
     <ul>
       <li>CMake: Improve usage of <code>llvm-config</code>, especially for consistent static/shared linking (<a href="https://github.com/ziglang/zig/issues/12136">#12136</a>)</li>
-      <li>CMake: Print all LLVM config errors instead of just the last one. Helps when there are multiple llvm-config executables in PATH.</li>
+      <li>CMake: Print all LLVM config errors instead of just the last one. Helps when there are multiple <code>llvm-config</code> executables in PATH.</li>
     </ul>
     
 
@@ -3892,7 +3894,7 @@ Summary
       <li>Add <code>--print-gc-sections</code>, <code>--print-icf-sections</code>, and
         <code>--print-map</code></li>
       <li>Ensure that assembly source file command lines get the <code>-g</code> flag when appropriate.</li>
-      <li>When passing arguments to <code>zig clang</code> internally, Zig will now 
+      <li>When passing arguments to <code>zig clang</code> internally, Zig will now
         use a response file (.rsp) if the CLI length would exceed what the system supports.
         This fixes a CI test failure on Windows (<a href="https://github.com/ziglang/zig/issues/12540">#12540</a>)</li>
     </ul>
@@ -3934,6 +3936,8 @@ Summary
     <ul>
       <li>Normalized C++ compilation options for single-threaded targets (<a href="https://github.com/ziglang/zig/issues/10143">#10143</a>)</li>
       <li>Improved <a href="#Windows">Windows</a> compatibility.</li>
+      <li>Only pass <code>-DHAVE___CXA_THREAD_ATEXIT_IMPL</code> for <a href="#glibc-234">glibc</a>
+          (<a href="https://github.com/ziglang/zig/issues/13314">#13314</a>)</li>
     </ul>
     
 
@@ -3993,7 +3997,7 @@ Summary
         <br>It was hypothesized that this could improve
         <a href="#Self-Hosted-Linker">Self-Hosted Linker</a> performance, however <code>-ffunction-sections</code>
         plus garbage collection ended up being faster.</li>
-      <li>Support compiling for the android NDK (<a href="https://github.com/ziglang/zig/issues/13245">#13245</a>)</li>
+      <li>Support compiling for the Android NDK (<a href="https://github.com/ziglang/zig/issues/13245">#13245</a>)</li>
     </ul>
     
     
@@ -4005,7 +4009,7 @@ Summary
     </p>
 
     <p>The major themes of the 0.11.0 release cycle will be
-    <strong>language iteration</strong>,
+    <strong>language changes</strong>,
     <strong>compilation speed</strong>, and <strong>package management</strong>.
     </p>
 
@@ -4023,11 +4027,11 @@ Summary
         Unleashes our full compilation speed when targeting the respective architecture.</li>
       <li>Experimental first implementation of the <a href="#Package-Manager">official package manager</a>.</li>
       <li>Fuzz test incremental compilation so that we can enable it and gain compilation
-        speed for all backends, including the <a href="#LLVM-15">llvm backend</a>.</li>
+        speed for all backends, including the <a href="#LLVM-15">LLVM</a> backend.</li>
       <li><a href="#Self-Hosted-Linker">Self-Hosted Linker</a> support for <a href="#ELF">ELF</a> and <a href="#COFF">COFF</a>.
         Eliminate dependency on <a href="https://lld.llvm.org/">LLD</a>.</li>
       <li>Hot code swapping for <a href="#Windows">Windows</a>, <a href="#macOS">macOS</a>, and <a href="#Linux">Linux</a>.</li>
-      <li>Introduce concurrency to semantic analysis to further increase compilation speed.</li>
+      <li>Introduce <a href="#Concurrency">Concurrency</a> to semantic analysis to further increase compilation speed.</li>
     </ul>
 
     <p>Here are the <strong>steps for Zig to reach 1.0</strong>:</p>
@@ -4149,8 +4153,6 @@ Summary
 <li>vi</li>
 <li>xReveres</li>
 <li>Al Hoang</li>
-<li>Ali Chraghi</li>
-<li>Ali Chraghi</li>
 <li>Austin Rude</li>
 <li>Ben Fiedler</li>
 <li>BratishkaErik</li>
@@ -4230,7 +4232,6 @@ Summary
 <li>Ersikan</li>
 <li>Exonorid</li>
 <li>Felix "xq" Queißner</li>
-<li>Felix Queißner</li>
 <li>FlandreScarlet</li>
 <li>Gaëtan</li>
 <li>GethDW</li>
@@ -4306,7 +4307,6 @@ Summary
 <li>Tom Manner</li>
 <li>Travis Staloch</li>
 <li>Tw</li>
-<li>Vesim</li>
 <li>Wei Fu</li>
 <li>Will Hawkins</li>
 <li>YeonJiKun</li>
@@ -4324,7 +4324,6 @@ Summary
 <li>cryptocode</li>
 <li>dan</li>
 <li>daurnimator</li>
-<li>der-teufel-programming</li>
 <li>devins2518</li>
 <li>djg</li>
 <li>drew</li>
