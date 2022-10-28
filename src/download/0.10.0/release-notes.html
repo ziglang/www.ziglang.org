@@ -2965,18 +2965,83 @@ Summary
     <p>The entire set of ECDSA-P256-SHA256 test vectors from Project Wycheproof
     is included here. Zero defects were found in this implementation.</p>
 
-    <p>The public API differs from the Ed25519 one. Instead of raw byte strings
-    for keys and signatures, we introduce Signature, PublicKey and SecretKey
+    <p>Instead of raw byte strings for keys and signatures, we introduce the
+    <code>Signature</code>, <code>PublicKey</code> and <code>SecretKey</code>
     structures.</p>
 
     <p>The reason is that a raw byte representation would not be optimal.
     There are multiple standard representations for keys and signatures,
     and decoding/encoding them may not be cheap (field elements have to be
     converted from/to the montgomery domain).</p>
+    {#header_close#}
 
-    <p>So, the intent is to eventually move ed25519 to the same API, which
-    is not going to introduce any performance regression, but will bring
-    us a consistent API, that we can also reuse for RSA.</p>
+    {#header_open|Ed25519 API changes#}
+    <p>The <code>std.crypto.sign.ed25519</code> API has been changed to adopt the
+    same structure as the ECDSA API. This is a breaking change.</p>
+
+    <p>Instead of raw bytes, Ed25519 keys are now represented with the newly
+    introduced <code>Ed25519.PublicKey</code> and <code>Ed25519.SecretKey</code>
+    types.</p>
+
+    <p>Similarly, the <code>Ed25519.Signature</code> type is now used to store
+    signatures.</p>
+
+    <p>In Zig 0.9, key pair creation, signature computation and verification were
+    typically done that way:</p>
+
+    {#code_begin#}
+    const Ed25519 = std.crypto.sign.Ed25519;
+
+    // Key pair creation
+    const key_pair = try Ed25519.KeyPair.create(null);
+
+    // Signature computation
+    const sig = try Ed25519.sign("message", key_pair, null);
+
+    // Signature verification
+    try Ed25519.verify(sig, "message", key_pair.public_key);
+    {#code_end#}
+
+    <p>In Zig 0.10</p>, the code above becomes:
+
+    {#code_begin|test|cleanup_leak#}
+    const Ed25519 = std.crypto.sign.Ed25519;
+
+    // Key pair creation
+    const key_pair = try Ed25519.KeyPair.create(null);
+
+    // Signature computation
+    const sig = try key_pair.sign("message", null);
+
+    // Signature verification
+    try sig.verify("message", key_pair.public_key);
+    {#code_end#}
+
+    <p>In Zig 0.9, the entire message to be signed had to be loaded in memory
+    before signing. In Zig 0.10, the message can be streamed, which is
+    especially useful for large messages.</p>
+
+    <p>For example, the following code signs a message that is too large to fit
+    in memory:</p>
+
+    {#code_begin#}
+    var signer = try key_pair.signer(null);
+    signer.update("message_part_1");
+    signer.update("message_part_2");
+    signer.update("message_part_3");
+    const sig = signer.finalize();
+    {#code_end#}
+
+    <p>Similarly, the following code verifies a multi-part message:</p>
+
+    {#code_begin#}
+    var verifier = try sig.verifier(key_pair.public_key);
+    verifier.update("message_part_1");
+    verifier.update("message_part_2");
+    verifier.update("message_part_3");
+    try verifier.verify();
+    {#code_end#}
+
     {#header_close#}
 
     {#header_open|Add Xoodoo, Deprecate Gimli#}
