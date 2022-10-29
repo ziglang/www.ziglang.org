@@ -504,6 +504,7 @@ David Riley
             <ul>
                 <li><a id="toc-ECDSA-Signatures" href="#ECDSA-Signatures">ECDSA Signatures</a></li>
                 <li><a id="toc-Add-Xoodoo-Deprecate-Gimli" href="#Add-Xoodoo-Deprecate-Gimli">Add Xoodoo, Deprecate Gimli</a></li>
+                <li><a id="toc-Exploit-CPU-Features-for-SHA-256" href="#Exploit-CPU-Features-for-SHA-256">Exploit CPU Features for SHA-256</a></li>
             </ul></li>
             <li><a id="toc-Concurrency" href="#Concurrency">Concurrency</a></li>
             <li><a id="toc-Networking" href="#Networking">Networking</a></li>
@@ -2306,6 +2307,8 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
       <li>Translate clang packed struct C into Zig extern struct with align(1) (<a href="https://github.com/ziglang/zig/issues/12745">#12745</a>)</li>
       <li>Fixed function pointers, add cast to subscripts in macros (<a href="https://github.com/ziglang/zig/issues/13126">#13126</a>)</li>
       <li>Added missing builtins used by CRuby</li>
+      <li>Better support for division in macros by performing C-style arithmetic conversions on
+        operands to division operator (<a href="https://github.com/ziglang/zig/issues/13162">#13162</a>)</li>
     </ul>
     
 
@@ -2351,7 +2354,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 965284 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 1231307 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211716 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2426,7 +2429,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 965330 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 1231352 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x212048 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -2933,7 +2936,8 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
     relocations, and synthesising of the unwind info section, so this difference
     between <code>zld</code> and other linkers will most likely shrink a little.</p>
     <p>I've run the benchmarks on a MacBook Pro 16" with M1 Pro SoC and 32GB RAM. The
-    generated code for the linker was <strong>not</strong> using hardware sha256 extensions.</p>
+    generated code for the linker was <strong>not</strong> using
+    <a href="#Exploit-CPU-Features-for-SHA-256">hardware sha256 extensions</a>.</p>
     <p><strong>Linking <a href="https://github.com/redis/redis/">redis-server</a> binary</strong>:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">❯ hyperfine ./zld ./lld ./ld64 --warmup 60</span>
 <span class="line">Benchmark 1: ./zld</span>
@@ -3042,6 +3046,7 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
       <li>mem: add peek() to TokenIterator(T)</li>
       <li>mem: add splitBackwards (<a href="https://github.com/ziglang/zig/issues/11908">#11908</a>)</li>
       <li>mem: add <code>first</code> and <code>reset</code> method to <code>SplitIterator</code> and <code>SplitBackwardsIterator</code></li>
+      <li>Enhanced <code><span class="line">ascii.indexOfIgnoreCase</span></code> with Boyer-Moore-Horspool algorithm.</li>
       <li>Support parsing tz timezone data (<a href="https://github.com/ziglang/zig/issues/10456">#10456</a>)</li>
       <li>Added json.stringifyAlloc</li>
       <li>json: fix compile error for comptime fields (<a href="https://github.com/ziglang/zig/issues/10849">#10849</a>)</li>
@@ -3345,6 +3350,16 @@ Summary
     <p>In order to prepare for the Gimli deprecation, the default
     CSPRNG was changed to a Xoodoo-based that works exactly the same way.</p>
     
+
+    <h4 id="Exploit-CPU-Features-for-SHA-256"><a href="#toc-Exploit-CPU-Features-for-SHA-256">Exploit CPU Features for SHA-256</a> <a class="hdr" href="#Exploit-CPU-Features-for-SHA-256">§</a></h4>
+
+    <p>On x86_64 and AArch64, SHA-256 now takes advantage of specialized CPU features
+    when they are enabled.</p>
+    <p>This can affect <a href="#MachO">MachO</a> linking performance due to Apple's signature requirement.</p>
+    <p>On my Intel(R) Core(TM) i9-9980HK, for example, this CPU feature is not available,
+    and I therefore do not observe any improved performance. However, Apple's M1 laptops
+    do have this feature, and I observed SHA-256 increase from 199 MiB/s to 2.1 GiB/s.</p>
+    
     
 
     <h3 id="Concurrency"><a href="#toc-Concurrency">Concurrency</a> <a class="hdr" href="#Concurrency">§</a></h3>
@@ -3505,7 +3520,7 @@ Summary
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x21475d in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7fc74a63f000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f9247f7a000 leaked:</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213bf4 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>

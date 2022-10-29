@@ -2036,6 +2036,8 @@ const S = struct {
       <li>Translate clang packed struct C into Zig extern struct with align(1) (<a href="https://github.com/ziglang/zig/issues/12745">#12745</a>)</li>
       <li>Fixed function pointers, add cast to subscripts in macros (<a href="https://github.com/ziglang/zig/issues/13126">#13126</a>)</li>
       <li>Added missing builtins used by CRuby</li>
+      <li>Better support for division in macros by performing C-style arithmetic conversions on
+        operands to division operator (<a href="https://github.com/ziglang/zig/issues/13162">#13162</a>)</li>
     </ul>
     {#header_close#}
 
@@ -2613,7 +2615,8 @@ $2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
     relocations, and synthesising of the unwind info section, so this difference
     between <code>zld</code> and other linkers will most likely shrink a little.</p>
     <p>I've run the benchmarks on a MacBook Pro 16" with M1 Pro SoC and 32GB RAM. The
-    generated code for the linker was <strong>not</strong> using hardware sha256 extensions.</p>
+    generated code for the linker was <strong>not</strong> using
+    {#link|hardware sha256 extensions|Exploit CPU Features for SHA-256#}.</p>
     <p><strong>Linking <a href="https://github.com/redis/redis/">redis-server</a> binary</strong>:</p>
     {#shell_samp#}
 ❯ hyperfine ./zld ./lld ./ld64 --warmup 60
@@ -2722,6 +2725,7 @@ Summary
       <li>mem: add peek() to TokenIterator(T)</li>
       <li>mem: add splitBackwards (<a href="https://github.com/ziglang/zig/issues/11908">#11908</a>)</li>
       <li>mem: add <code>first</code> and <code>reset</code> method to <code>SplitIterator</code> and <code>SplitBackwardsIterator</code></li>
+      <li>Enhanced {#syntax#}ascii.indexOfIgnoreCase{#endsyntax#} with Boyer-Moore-Horspool algorithm.</li>
       <li>Support parsing tz timezone data (<a href="https://github.com/ziglang/zig/issues/10456">#10456</a>)</li>
       <li>Added json.stringifyAlloc</li>
       <li>json: fix compile error for comptime fields (<a href="https://github.com/ziglang/zig/issues/10849">#10849</a>)</li>
@@ -3017,6 +3021,16 @@ Summary
 
     <p>In order to prepare for the Gimli deprecation, the default
     CSPRNG was changed to a Xoodoo-based that works exactly the same way.</p>
+    {#header_close#}
+
+    {#header_open|Exploit CPU Features for SHA-256#}
+    <p>On x86_64 and AArch64, SHA-256 now takes advantage of specialized CPU features
+    when available.</p>
+    <p>This can affect {#link|MachO#} linking performance due to Apple's signature requirement.</p>
+    <p>On my Intel(R) Core(TM) i9-9980HK, for example, this CPU feature is not available,
+    and I therefore do not observe any improved performance. However, Apple's M1 laptops
+    do have this feature, and I observed SHA-256 increase from 199 MiB/s to 2.1 GiB/s in the
+    <a href="https://github.com/ziglang/zig/blob/0.10.0/lib/std/crypto/benchmark.zig">crypto benchmark</a>.</p>
     {#header_close#}
     {#header_close#}
 
