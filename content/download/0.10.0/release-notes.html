@@ -503,6 +503,7 @@ David Riley
             <li><a id="toc-Crypto" href="#Crypto">Crypto</a>
             <ul>
                 <li><a id="toc-ECDSA-Signatures" href="#ECDSA-Signatures">ECDSA Signatures</a></li>
+                <li><a id="toc-Ed25519-API-changes" href="#Ed25519-API-changes">Ed25519 API changes</a></li>
                 <li><a id="toc-Add-Xoodoo-Deprecate-Gimli" href="#Add-Xoodoo-Deprecate-Gimli">Add Xoodoo, Deprecate Gimli</a></li>
                 <li><a id="toc-Exploit-CPU-Features-for-SHA-256" href="#Exploit-CPU-Features-for-SHA-256">Exploit CPU Features for SHA-256</a></li>
             </ul></li>
@@ -2354,7 +2355,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 1297696 panic: switch on corrupt value</span>
+<span class="line">1/1 test.example... thread 1318992 panic: switch on corrupt value</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211596 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
@@ -2429,7 +2430,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 1297742 panic: attempt to unwrap error: Foo</span>
+<span class="line">1/1 test_0... thread 1319038 panic: attempt to unwrap error: Foo</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x211ed8 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
@@ -3292,18 +3293,76 @@ Summary
     <p>The entire set of ECDSA-P256-SHA256 test vectors from Project Wycheproof
     is included here. Zero defects were found in this implementation.</p>
 
-    <p>The public API differs from the Ed25519 one. Instead of raw byte strings
-    for keys and signatures, we introduce Signature, PublicKey and SecretKey
+    <p>Instead of raw byte strings for keys and signatures, we introduce the
+    <code>Signature</code>, <code>PublicKey</code> and <code>SecretKey</code>
     structures.</p>
 
     <p>The reason is that a raw byte representation would not be optimal.
     There are multiple standard representations for keys and signatures,
     and decoding/encoding them may not be cheap (field elements have to be
     converted from/to the montgomery domain).</p>
+    
 
-    <p>So, the intent is to eventually move ed25519 to the same API, which
-    is not going to introduce any performance regression, but will bring
-    us a consistent API, that we can also reuse for RSA.</p>
+    <h4 id="Ed25519-API-changes"><a href="#toc-Ed25519-API-changes">Ed25519 API changes</a> <a class="hdr" href="#Ed25519-API-changes">§</a></h4>
+
+    <p>The <code>std.crypto.sign.ed25519</code> API has been changed to adopt the
+    same structure as the ECDSA API. This is a breaking change.</p>
+
+    <p>Instead of raw bytes, Ed25519 keys are now represented with the newly
+    introduced <code>Ed25519.PublicKey</code> and <code>Ed25519.SecretKey</code>
+    types.</p>
+
+    <p>Similarly, the <code>Ed25519.Signature</code> type is now used to store
+    signatures.</p>
+
+    <p>In Zig 0.9.x, key pair creation, signature computation and verification were
+    typically done this way:</p>
+
+    <pre><code><span class="line"><span class="tok-kw">const</span> Ed25519 = std.crypto.sign.Ed25519;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// Key pair creation</span></span>
+<span class="line"><span class="tok-kw">const</span> key_pair = <span class="tok-kw">try</span> Ed25519.KeyPair.create(<span class="tok-null">null</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// Signature computation</span></span>
+<span class="line"><span class="tok-kw">const</span> sig = <span class="tok-kw">try</span> Ed25519.sign(<span class="tok-str">&quot;message&quot;</span>, key_pair, <span class="tok-null">null</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// Signature verification</span></span>
+<span class="line"><span class="tok-kw">try</span> Ed25519.verify(sig, <span class="tok-str">&quot;message&quot;</span>, key_pair.public_key);</span></code></pre>
+
+    <p>In Zig 0.10.0, the code above becomes:</p>
+
+    <pre><code><span class="line"><span class="tok-kw">const</span> Ed25519 = std.crypto.sign.Ed25519;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// Key pair creation</span></span>
+<span class="line"><span class="tok-kw">const</span> key_pair = <span class="tok-kw">try</span> Ed25519.KeyPair.create(<span class="tok-null">null</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// Signature computation</span></span>
+<span class="line"><span class="tok-kw">const</span> sig = <span class="tok-kw">try</span> key_pair.sign(<span class="tok-str">&quot;message&quot;</span>, <span class="tok-null">null</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-comment">// Signature verification</span></span>
+<span class="line"><span class="tok-kw">try</span> sig.verify(<span class="tok-str">&quot;message&quot;</span>, key_pair.public_key);</span></code></pre>
+
+    <p>In Zig 0.9.x, the entire message to be signed had to be loaded in memory
+    before signing. In Zig 0.10, the message can be streamed, which is
+    especially useful for large messages.</p>
+
+    <p>For example, the following code signs a message that is too large to fit
+    in memory:</p>
+
+    <pre><code><span class="line"><span class="tok-kw">var</span> signer = <span class="tok-kw">try</span> key_pair.signer(<span class="tok-null">null</span>);</span>
+<span class="line">signer.update(<span class="tok-str">&quot;message_part_1&quot;</span>);</span>
+<span class="line">signer.update(<span class="tok-str">&quot;message_part_2&quot;</span>);</span>
+<span class="line">signer.update(<span class="tok-str">&quot;message_part_3&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> sig = signer.finalize();</span></code></pre>
+
+    <p>Similarly, the following code verifies a multi-part message:</p>
+
+    <pre><code><span class="line"><span class="tok-kw">var</span> verifier = <span class="tok-kw">try</span> sig.verifier(key_pair.public_key);</span>
+<span class="line">verifier.update(<span class="tok-str">&quot;message_part_1&quot;</span>);</span>
+<span class="line">verifier.update(<span class="tok-str">&quot;message_part_2&quot;</span>);</span>
+<span class="line">verifier.update(<span class="tok-str">&quot;message_part_3&quot;</span>);</span>
+<span class="line"><span class="tok-kw">try</span> verifier.verify();</span></code></pre>
+
     
 
     <h4 id="Add-Xoodoo-Deprecate-Gimli"><a href="#toc-Add-Xoodoo-Deprecate-Gimli">Add Xoodoo, Deprecate Gimli</a> <a class="hdr" href="#Add-Xoodoo-Deprecate-Gimli">§</a></h4>
@@ -3521,7 +3580,7 @@ Summary
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x2145ed in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7f2962df6000 leaked:</span>
+<span class="line">[gpa] (err): memory address 0x7f995c4af000 leaked:</span>
 <span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213a84 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
@@ -3852,12 +3911,12 @@ Summary
     <p>Zig now passes <code>-D__USE_MINGW_ANSI_STDIO=0</code> for crt files. This was supposed
     to be happening all along, and it was a bug that Zig did not do this before (<a href="https://github.com/ziglang/zig/issues/7356">#7356</a>). Thanks to
     <a href="https://github.com/sponsors/mstorsjo">Martin Storsjö</a> for
-    helping me discover this on IRC. This fix means that Zig no longer carries
+    helping us discover this on IRC. This fix means that Zig no longer carries
     any patches on top of upstream mingw-w64 sources!</p>
     <p>Speaking of Martin, he has just a couple days ago signed up for GitHub Sponsors.
     He does brilliant work on mingw-w64, and he has patiently helped us when we go into
     the IRC channel asking for troubleshooting tips from Zig's unusual way of building mingw-w64
-    from source. Most people would (understandably!) say, "sorry, that's unsupported."
+    from source. Most people would (understandably) say, "sorry, that's unsupported."
     We are proud to be Martin's first sponsor and hope you will
     <a href="https://github.com/sponsors/mstorsjo">join us in showing support</a>!</p>
     
