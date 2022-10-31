@@ -389,8 +389,8 @@ David Riley
     </p>
     <p>
     This release features <strong>10 months of work</strong>:
-    changes from <strong>290 different contributors</strong>, spread among
-    <strong>4560 commits</strong>. It is the début of the
+    changes from <strong>272 different contributors</strong>, spread among
+    <strong>4737 commits</strong>. It is the début of the
     <a href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>.</p>
     <h2 id="Table-of-Contents"><a href="#toc-Table-of-Contents">Table of Contents</a> <a class="hdr" href="#Table-of-Contents">§</a></h2>
 
@@ -449,6 +449,7 @@ David Riley
             <li><a id="toc-Disallow-Leading-Zeroes-in-Literals" href="#Disallow-Leading-Zeroes-in-Literals">Disallow Leading Zeroes in Literals</a></li>
             <li><a id="toc-More-Calling-Conventions" href="#More-Calling-Conventions">More Calling Conventions</a></li>
             <li><a id="toc-Inline-Assembly" href="#Inline-Assembly">Inline Assembly</a></li>
+            <li><a id="toc-Boolean-Logic-with-comptime-RHS" href="#Boolean-Logic-with-comptime-RHS">Boolean Logic with comptime RHS</a></li>
         </ul></li>
         <li><a id="toc-Bootstrap-Compiler" href="#Bootstrap-Compiler">Bootstrap Compiler</a></li>
         <li><a id="toc-Self-Hosted-Compiler" href="#Self-Hosted-Compiler">Self-Hosted Compiler</a>
@@ -2009,6 +2010,39 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     who have started operating system projects written in Zig.</p>
     
 
+    <h3 id="Boolean-Logic-with-comptime-RHS"><a href="#toc-Boolean-Logic-with-comptime-RHS">Boolean Logic with comptime RHS</a> <a class="hdr" href="#Boolean-Logic-with-comptime-RHS">§</a></h3>
+
+    <p><code><span class="line">foo() <span class="tok-kw">and</span> <span class="tok-null">false</span></span></code> as well as <code><span class="line">bar() <span class="tok-kw">or</span> <span class="tok-null">true</span></span></code>
+    are now compile-time-known expressions. The left-hand side is allowed to contain
+    runtime side effects, which are preserved as expected. Allows code like this to compile:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">var</span> i: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">bool</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> stdout = std.io.getStdOut().writer();</span>
+<span class="line">    stdout.print(<span class="tok-str">&quot;i = {}\n&quot;</span>, .{i}) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-null">true</span>;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">if</span> (<span class="tok-null">false</span> <span class="tok-kw">and</span> foo()) { <span class="tok-comment">// This works already today</span></span>
+<span class="line">        <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;Condition should be comptime-false&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line">    i += <span class="tok-number">1</span>;</span>
+<span class="line">    <span class="tok-kw">if</span> (foo() <span class="tok-kw">and</span> <span class="tok-null">false</span>) { <span class="tok-comment">// PR allows this condition to be comptime-known</span></span>
+<span class="line">        <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;Condition should be comptime-false&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
+<span class="line"></span>
+<span class="line">$ <kbd>./test</kbd></span>
+<span class="line">i = 1</span>
+</samp></pre></figure>
+    <p>Note that side effects are still respected, but the result can be
+    compile-time-known despite them. This is the same way Zig handles, e.g.
+    <code><span class="line">x * <span class="tok-number">0</span></span></code> and <code><span class="line"><span class="tok-number">0</span> * x</span></code>
+    (<a href="https://github.com/ziglang/zig/issues/6768">#6768</a>).</p>
+    
+
     
 
     <h2 id="Bootstrap-Compiler"><a href="#toc-Bootstrap-Compiler">Bootstrap Compiler</a> <a class="hdr" href="#Bootstrap-Compiler">§</a></h2>
@@ -2230,10 +2264,10 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">    }</span>
 <span class="line">};</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
 <span class="line">1/1 test.escaped pointer to parameter... FAIL (TestUnexpectedResult)</span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:347:14</span>: <span class="t2_0">0x21154f in expect (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:347:14</span>: <span class="t2_0">0x21156f in expect (test)</span></span>
 <span class="line">    if (!ok) return error.TestUnexpectedResult;</span>
 <span class="line">             <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:7:5</span>: <span class="t2_0">0x211687 in test.escaped pointer to parameter (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:7:5</span>: <span class="t2_0">0x2116a7 in test.escaped pointer to parameter (test)</span></span>
 <span class="line">    try expect(value == &amp;s.field);</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">0 passed; 0 skipped; 1 failed.</span>
@@ -2355,17 +2389,17 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">        <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span>,</span>
 <span class="line">    }</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test.example... thread 1318992 panic: switch on corrupt value</span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x211596 in test.example (test)</span></span>
+<span class="line">1/1 test.example... thread 1459957 panic: switch on corrupt value</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:12:17</span>: <span class="t2_0">0x2115b6 in test.example (test)</span></span>
 <span class="line">        .one =&gt; @panic(&quot;one&quot;),</span>
 <span class="line">                <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x212bc8 in main (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x212be8 in main (test)</span></span>
 <span class="line">        } else test_fn.func();</span>
 <span class="line">                           <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x211e9d in posixCallMainAndExit (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x211ebd in posixCallMainAndExit (test)</span></span>
 <span class="line">            root.main();</span>
 <span class="line">                     <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x211961 in _start (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x211981 in _start (test)</span></span>
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
@@ -2401,6 +2435,10 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <h3 id="Error-Return-Traces"><a href="#toc-Error-Return-Traces">Error Return Traces</a> <a class="hdr" href="#Error-Return-Traces">§</a></h3>
 
+    <p>Zig's error return traces are a resource-efficient alternative to the
+    tracebacks provided by exceptions in other languages. With the default
+    limit of 32 stack frames, only 256 bytes per-thread are needed to maintain
+    the error trace.</p>
 
     <h4 id="Unwrapping-Errors-in-Switch"><a href="#toc-Unwrapping-Errors-in-Switch">Unwrapping Errors in Switch</a> <a class="hdr" href="#Unwrapping-Errors-in-Switch">§</a></h4>
 
@@ -2430,26 +2468,26 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line"><span class="tok-kw">test</span> {</span>
 <span class="line">    baz();</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig test test.zig</kbd></span>
-<span class="line">1/1 test_0... thread 1319038 panic: attempt to unwrap error: Foo</span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x211ed8 in foo (test)</span></span>
+<span class="line">1/1 test_0... thread 1460001 panic: attempt to unwrap error: Foo</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:2:5</span>: <span class="t2_0">0x211ef8 in foo (test)</span></span>
 <span class="line">    return error.Foo;</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:5</span>: <span class="t2_0">0x211fd3 in bar (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:5</span>: <span class="t2_0">0x211ff3 in bar (test)</span></span>
 <span class="line">    try foo();</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:17:22</span>: <span class="t2_0">0x2115b1 in baz (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:17:22</span>: <span class="t2_0">0x2115d1 in baz (test)</span></span>
 <span class="line">        error.Foo =&gt; unreachable,</span>
 <span class="line">                     <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:21:8</span>: <span class="t2_0">0x211528 in test_0 (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:21:8</span>: <span class="t2_0">0x211548 in test_0 (test)</span></span>
 <span class="line">    baz();</span>
 <span class="line">       <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x212d38 in main (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x212d58 in main (test)</span></span>
 <span class="line">        } else test_fn.func();</span>
 <span class="line">                           <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x211e9d in posixCallMainAndExit (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x211ebd in posixCallMainAndExit (test)</span></span>
 <span class="line">            root.main();</span>
 <span class="line">                     <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x211961 in _start (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x211981 in _start (test)</span></span>
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line">error: the following test command crashed:</span>
@@ -2482,56 +2520,45 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 
     <h4 id="Removal-of-Useless-Stack-Frames"><a href="#toc-Removal-of-Useless-Stack-Frames">Removal of Useless Stack Frames</a> <a class="hdr" href="#Removal-of-Useless-Stack-Frames">§</a></h4>
 
-    <p>This was an
-    <a href="https://github.com/ziglang/zig/issues/1923">old issue that plagued Zig developers for a long time</a>. We have <a href="#Cody-Tapscott-Joins-the-Core-Zig-Team">Cody Tapscott</a> to thank
-    for solving it.</p>
-    <p>Error return traces now have a basic ownership-style algorithm for
-    errors (<a href="https://github.com/ziglang/zig/issues/12837">#12837</a>). It guarantees that error return frames follow a strict stack
-    discipline, which we need to correctly accumulate them in a single
-    stack-per-thread.</p>
-    <p>Error return traces <em>live</em> when:</p>
-    <ul>
-      <li>stored in a <code><span class="line"><span class="tok-kw">const</span></span></code> variable</li>
-      <li>handled in a <code><span class="line"><span class="tok-kw">catch</span> { ... }</span></code> or <code><span class="line"><span class="tok-kw">else</span> |err| { ... }</span></code> block</li>
-      <li>propagated to caller via <code><span class="line"><span class="tok-kw">return</span></span></code> or <code><span class="line"><span class="tok-kw">try</span></span></code></li>
-      <li>passed to a function as an argument</li>
-    </ul>
-    <p>Error return traces are <em>killed</em> when:</p>
-    <ul>
-      <li>stored in a mutable <code><span class="line"><span class="tok-kw">var</span></span></code></li>
-      <li>leaving a <code><span class="line"><span class="tok-kw">catch</span></span></code> or <code><span class="line"><span class="tok-kw">else</span> |err|</span></code> block with a non-error value</li>
-      <li>the <code><span class="line"><span class="tok-kw">const</span></span></code> variable associated with an error trace falls out of scope</li>
-      <li>a function receives an error as an argument and returns a non-error</li>
-    </ul>
-    <p>Here is a code snippet that tries to show most of this together:</p>
-    <pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {</span>
-<span class="line">    eat_dinner() <span class="tok-kw">catch</span> {</span>
-<span class="line">        <span class="tok-comment">// Begin error handling here</span></span>
-<span class="line">        find_recipe() <span class="tok-kw">catch</span> {};        <span class="tok-comment">// find_recipe() is removed from trace upon leaving this catch block</span></span>
-<span class="line">        <span class="tok-kw">if</span> (cond)</span>
-<span class="line">            <span class="tok-kw">return</span> <span class="tok-kw">error</span>.HouseOnFire;  <span class="tok-comment">//      error result: Includes eat_dinner() in the error return trace, but not find_recipe()</span></span>
-<span class="line">        <span class="tok-kw">try</span> cook_recipe();             <span class="tok-comment">//      error result: If this fails, the error return trace includes eat_dinner(), followed by cook_recipe()</span></span>
-<span class="line">    }</span>
-<span class="line">    <span class="tok-comment">// We made it out of another catch block, eat_dinner() is removed from the trace</span></span>
-<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.MyInlawsAreComing;    <span class="tok-comment">//      error result: Error trace starts fresh here</span></span>
-<span class="line">}</span>
+    <p>Prior to this release, error return traces suffered from a major
+    drawback: handled errors were never cleaned up and would pollute the error
+    trace. Zig now intelligently removes any error traces corresponding to
+    errors handled in a <code><span class="line"><span class="tok-kw">catch</span> { ... }</span></code> or
+    <code><span class="line"><span class="tok-kw">if</span> ... <span class="tok-kw">else</span> |err| { ... }</span></code> block.</p>
+
+    <pre><code><span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    makeEggs() <span class="tok-kw">catch</span> {</span>
+<span class="line">        <span class="tok-kw">if</span> (money &lt; <span class="tok-number">10</span>)  </span>
+<span class="line">            <span class="tok-kw">return</span> <span class="tok-kw">error</span>.OutOfMoney; <span class="tok-comment">// If executed: trace shows makeEggs()'s error, followed by this line</span></span>
 <span class="line"></span>
-<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">bar</span>() !<span class="tok-type">void</span> {</span>
-<span class="line">    <span class="tok-comment">// In addition to returning from within the block, you can pass</span></span>
-<span class="line">    <span class="tok-comment">// the result to an external return, try, catch, or if:</span></span>
-<span class="line">    <span class="tok-kw">return</span> try_me() <span class="tok-kw">catch</span> |err| <span class="tok-kw">switch</span>(err) {</span>
-<span class="line">        <span class="tok-kw">error</span>.IgnorableError =&gt; <span class="tok-null">null</span>,   <span class="tok-comment">// non-error result: Pops try_me() from the error return trace</span></span>
-<span class="line">        <span class="tok-kw">error</span>.ImportantError =&gt; b: {</span>
-<span class="line">            <span class="tok-kw">break</span> :b <span class="tok-kw">error</span>.FatalError;  <span class="tok-comment">//     error result: Includes try_me() in the error return trace</span></span>
-<span class="line">        },</span>
-<span class="line">        <span class="tok-kw">else</span> =&gt; err,                    <span class="tok-comment">//     error result: Includes try_me() in the error return trace</span></span>
+<span class="line">        <span class="tok-kw">try</span> buyIngredients();           <span class="tok-comment">// On error: trace shows makeEggs()'s error, then buyIngredients()'s error</span></span>
 <span class="line">    };</span>
-<span class="line">}</span>
-<span class="line"><span class="tok-kw">test</span> {</span>
-<span class="line">    <span class="tok-kw">try</span> expectError(<span class="tok-kw">error</span>.FatalError, bar());         <span class="tok-comment">// If this fails, `bar()` appears in the error return trace</span></span>
-<span class="line">    <span class="tok-kw">try</span> expectError(<span class="tok-kw">error</span>.MyInlawsAreComing, foo());  <span class="tok-comment">// If this fails, `foo()` appears in the error return trace (`bar` was already popped)</span></span>
+<span class="line">    <span class="tok-comment">// makeEggs() removed from the trace here</span></span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> serveBreakfast();               <span class="tok-comment">// On error: trace shows serveBreakfast()'s error only</span></span>
 <span class="line">}</span></code></pre>
-    <p>Putting the code snippet aside, here is a real world example. Before, one might get debug output that looks like this:</p>
+
+    <p>Very long error return traces are also trimmed correctly and print a
+    helpful note to let you know about the missing entries:</p>
+
+    <pre><code>...
+./test_err.zig:5:5: 0x10224b39e in recursive__anon_1055 (test_err)
+    return recursive(N - 1);
+    ^
+./test_err.zig:5:5: 0x10224b35e in recursive__anon_1054 (test_err)
+    return recursive(N - 1);
+    ^
+(98 additional stack frames skipped...)</code></pre>
+
+    <p>There is one restriction to be aware of: error traces do not follow
+    errors into local variables (<code><span class="line"><span class="tok-kw">var</span></span></code>) by default.
+    This restriction is what allows all functions in the thread to share the same 256-byte
+    error trace storage.</p>
+
+    <p>The new <a href="#stddebugTrace">std.debug.Trace</a> API allows users to copy and store error return
+    traces for mutable variables where needed.</p>
+
+    <p>Here is a real world example. Before, one might get debug output that looks like this:</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32</kbd></span>
 <span class="line">error: FileNotFound</span>
 <span class="line">tools/copy-from-glibc.zig:21:23: 0x218e39 in main (copy-from-glibc)</span>
@@ -2651,6 +2678,9 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
 <span class="line">                      ^</span>
 </samp></pre></figure>
 
+    <p>This was an <a href="https://github.com/ziglang/zig/issues/1923">old issue that plagued Zig developers for a long time</a>. We have <a href="#Cody-Tapscott-Joins-the-Core-Zig-Team">Cody Tapscott</a> to thank for solving it.</p>
+
+
     
     
 
@@ -2713,7 +2743,7 @@ target triple = "aarch64-unknown-macos-unknown"</code></pre>
     <p>A new contributor jacobly0 came out of nowhere and did a massive amount of work
     to Zig's C backend, reaching these notable milestones:</p>
     <ul>
-      <li>The C backend is now passing <strong>1236/1366 (90%)</strong> of the behavior tests.</li>
+      <li>The C backend is now passing <strong>1259/1374 (92%)</strong> of the behavior tests.</li>
       <li>The official <a href="/documentation/0.10.0/#Hello-World">hello world</a>
         now works on at least <code>x86_64-linux</code> (with and without libc).</li>
       <li>The test runner now prints output to the console.</li>
@@ -3542,61 +3572,61 @@ Summary
 <span class="line">allocations: 1</span>
 <span class="line">deallocations: 0</span>
 <span class="line">allocation that was made to fail:</span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:34</span>: <span class="t2_0">0x213af9 in testImpl (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:34</span>: <span class="t2_0">0x213b19 in testImpl (test)</span></span>
 <span class="line">    var bar = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:693:13</span>: <span class="t2_0">0x214061 in checkAllAllocationFailures__anon_1935 (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:693:13</span>: <span class="t2_0">0x214081 in checkAllAllocationFailures__anon_1936 (test)</span></span>
 <span class="line">        if (@call(.{}, test_fn, args)) |_| {</span>
 <span class="line">            <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:47</span>: <span class="t2_0">0x2145da in test_0 (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:47</span>: <span class="t2_0">0x2145fa in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">                                              <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x21c4f8 in main (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x21c568 in main (test)</span></span>
 <span class="line">        } else test_fn.func();</span>
 <span class="line">                           <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x214e7d in posixCallMainAndExit (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x214e9d in posixCallMainAndExit (test)</span></span>
 <span class="line">            root.main();</span>
 <span class="line">                     <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x214941 in _start (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x214961 in _start (test)</span></span>
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line"></span>
 <span class="line">FAIL (MemoryLeakDetected)</span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:72:13</span>: <span class="t2_0">0x2291b6 in allocImpl (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:72:13</span>: <span class="t2_0">0x229226 in allocImpl (test)</span></span>
 <span class="line">            return @call(.{ .modifier = .always_inline }, allocFn, .{ self, len, ptr_align, len_align, ret_addr });</span>
 <span class="line">            <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:302:24</span>: <span class="t2_0">0x21b4e2 in allocAdvancedWithRetAddr__anon_3778 (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:302:24</span>: <span class="t2_0">0x21b552 in allocAdvancedWithRetAddr__anon_3779 (test)</span></span>
 <span class="line">    const byte_slice = try self.rawAlloc(byte_count, a, len_align, return_address);</span>
 <span class="line">                       <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:194:5</span>: <span class="t2_0">0x213bfb in alloc__anon_2376 (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/mem/Allocator.zig:194:5</span>: <span class="t2_0">0x213c1b in alloc__anon_2377 (test)</span></span>
 <span class="line">    return self.allocAdvancedWithRetAddr(T, null, n, .exact, @returnAddress());</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:15</span>: <span class="t2_0">0x213b17 in testImpl (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:15</span>: <span class="t2_0">0x213b37 in testImpl (test)</span></span>
 <span class="line">    var bar = try allocator.alloc(u8, length);</span>
 <span class="line">              <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:714:21</span>: <span class="t2_0">0x2141b6 in checkAllAllocationFailures__anon_1935 (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:714:21</span>: <span class="t2_0">0x2141d6 in checkAllAllocationFailures__anon_1936 (test)</span></span>
 <span class="line">                    return error.MemoryLeakDetected;</span>
 <span class="line">                    <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x2145ed in test_0 (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:5</span>: <span class="t2_0">0x21460d in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">    <span class="t32_1">^</span></span>
-<span class="line">[gpa] (err): memory address 0x7f995c4af000 leaked:</span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213a84 in testImpl (test)</span></span>
+<span class="line">[gpa] (err): memory address 0x7fb0d0987000 leaked:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:4:34</span>: <span class="t2_0">0x213aa4 in testImpl (test)</span></span>
 <span class="line">    var foo = try allocator.alloc(u8, length);</span>
 <span class="line">                                 <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:693:13</span>: <span class="t2_0">0x214061 in checkAllAllocationFailures__anon_1935 (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/testing.zig:693:13</span>: <span class="t2_0">0x214081 in checkAllAllocationFailures__anon_1936 (test)</span></span>
 <span class="line">        if (@call(.{}, test_fn, args)) |_| {</span>
 <span class="line">            <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:47</span>: <span class="t2_0">0x2145da in test_0 (test)</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:14:47</span>: <span class="t2_0">0x2145fa in test_0 (test)</span></span>
 <span class="line">    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});</span>
 <span class="line">                                              <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x21c4f8 in main (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/test_runner.zig:63:28</span>: <span class="t2_0">0x21c568 in main (test)</span></span>
 <span class="line">        } else test_fn.func();</span>
 <span class="line">                           <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x214e7d in posixCallMainAndExit (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:596:22</span>: <span class="t2_0">0x214e9d in posixCallMainAndExit (test)</span></span>
 <span class="line">            root.main();</span>
 <span class="line">                     <span class="t32_1">^</span></span>
-<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x214941 in _start (test)</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:368:5</span>: <span class="t2_0">0x214961 in _start (test)</span></span>
 <span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
 <span class="line">    <span class="t32_1">^</span></span>
 <span class="line"></span>
@@ -3803,7 +3833,7 @@ Summary
 
     <h2 id="Bug-Fixes"><a href="#toc-Bug-Fixes">Bug Fixes</a> <a class="hdr" href="#Bug-Fixes">§</a></h2>
 
-    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 424 bug reports closed during this release cycle</a>.</p>
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 452 bug reports closed during this release cycle</a>.</p>
     <p>Many bugs were both introduced and resolved within this release cycle.</p>
     <h3 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h3>
 
@@ -4289,7 +4319,6 @@ Summary
 <li>cod1r</li>
 <li>fn ⌃ ⌥</li>
 <li>gwenzek</li>
-<li>jacobly0</li>
 <li>leesongun</li>
 <li>m</li>
 <li>martinhath</li>

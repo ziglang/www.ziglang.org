@@ -389,8 +389,8 @@ David Riley
     </p>
     <p>
     This release features <strong>10 months of work</strong>:
-    changes from <strong>290 different contributors</strong>, spread among
-    <strong>4560 commits</strong>. It is the début of the
+    changes from <strong>272 different contributors</strong>, spread among
+    <strong>4737 commits</strong>. It is the début of the
     {#link|Self-Hosted Compiler#}.</p>
     {#header_open|Table of Contents#}
     {#nav#}
@@ -1759,6 +1759,36 @@ var y: i32 = 01234;
     who have started operating system projects written in Zig.</p>
     {#header_close#}
 
+    {#header_open|Boolean Logic with comptime RHS#}
+    <p>{#syntax#}foo() and false{#endsyntax#} as well as {#syntax#}bar() or true{#endsyntax#}
+    are now compile-time-known expressions. The left-hand side is allowed to contain
+    runtime side effects, which are preserved as expected. Allows code like this to compile:</p>
+    {#code_begin|exe#}
+const std = @import("std");
+
+var i: usize = 0;
+fn foo() bool {
+    const stdout = std.io.getStdOut().writer();
+    stdout.print("i = {}\n", .{i}) catch unreachable;
+    return true;
+}
+
+pub fn main() void {
+    if (false and foo()) { // This works already today
+        @compileError("Condition should be comptime-false");
+    }
+    i += 1;
+    if (foo() and false) { // PR allows this condition to be comptime-known
+        @compileError("Condition should be comptime-false");
+    }
+}
+    {#code_end#}
+    <p>Note that side effects are still respected, but the result can be
+    compile-time-known despite them. This is the same way Zig handles, e.g.
+    {#syntax#}x * 0{#endsyntax#} and {#syntax#}0 * x{#endsyntax#}
+    (<a href="https://github.com/ziglang/zig/issues/6768">#6768</a>).</p>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Bootstrap Compiler#}
@@ -2111,6 +2141,10 @@ test "example" {
     {#header_close#}
 
     {#header_open|Error Return Traces#}
+    <p>Zig's error return traces are a resource-efficient alternative to the
+    tracebacks provided by exceptions in other languages. With the default
+    limit of 32 stack frames, only 256 bytes per-thread are needed to maintain
+    the error trace.</p>
 
     {#header_open|Unwrapping Errors in Switch#}
     <p>A small quality-of-life improvement {#link|Vexu|Veikka Tuominen Goes Full-Time#}
@@ -2168,56 +2202,45 @@ error: the following test command crashed:
     {#header_close#}
 
     {#header_open|Removal of Useless Stack Frames#}
-    <p>This was an
-    <a href="https://github.com/ziglang/zig/issues/1923">old issue that plagued Zig developers for a long time</a>. We have {#link|Cody Tapscott|Cody Tapscott Joins the Core Zig Team#} to thank
-    for solving it.</p>
-    <p>Error return traces now have a basic ownership-style algorithm for
-    errors (<a href="https://github.com/ziglang/zig/issues/12837">#12837</a>). It guarantees that error return frames follow a strict stack
-    discipline, which we need to correctly accumulate them in a single
-    stack-per-thread.</p>
-    <p>Error return traces <em>live</em> when:</p>
-    <ul>
-      <li>stored in a {#syntax#}const{#endsyntax#} variable</li>
-      <li>handled in a {#syntax#}catch { ... }{#endsyntax#} or {#syntax#}else |err| { ... }{#endsyntax#} block</li>
-      <li>propagated to caller via {#syntax#}return{#endsyntax#} or {#syntax#}try{#endsyntax#}</li>
-      <li>passed to a function as an argument</li>
-    </ul>
-    <p>Error return traces are <em>killed</em> when:</p>
-    <ul>
-      <li>stored in a mutable {#syntax#}var{#endsyntax#}</li>
-      <li>leaving a {#syntax#}catch{#endsyntax#} or {#syntax#}else |err|{#endsyntax#} block with a non-error value</li>
-      <li>the {#syntax#}const{#endsyntax#} variable associated with an error trace falls out of scope</li>
-      <li>a function receives an error as an argument and returns a non-error</li>
-    </ul>
-    <p>Here is a code snippet that tries to show most of this together:</p>
-    <pre>{#syntax#}fn foo() !void {
-    eat_dinner() catch {
-        // Begin error handling here
-        find_recipe() catch {};        // find_recipe() is removed from trace upon leaving this catch block
-        if (cond)
-            return error.HouseOnFire;  //      error result: Includes eat_dinner() in the error return trace, but not find_recipe()
-        try cook_recipe();             //      error result: If this fails, the error return trace includes eat_dinner(), followed by cook_recipe()
-    }
-    // We made it out of another catch block, eat_dinner() is removed from the trace
-    return error.MyInlawsAreComing;    //      error result: Error trace starts fresh here
-}
+    <p>Prior to this release, error return traces suffered from a major
+    drawback: handled errors were never cleaned up and would pollute the error
+    trace. Zig now intelligently removes any error traces corresponding to
+    errors handled in a {#syntax#}catch { ... }{#endsyntax#} or
+    {#syntax#}if ... else |err| { ... }{#endsyntax#} block.</p>
 
-fn bar() !void {
-    // In addition to returning from within the block, you can pass
-    // the result to an external return, try, catch, or if:
-    return try_me() catch |err| switch(err) {
-        error.IgnorableError => null,   // non-error result: Pops try_me() from the error return trace
-        error.ImportantError => b: {
-            break :b error.FatalError;  //     error result: Includes try_me() in the error return trace
-        },
-        else => err,                    //     error result: Includes try_me() in the error return trace
+    <pre>{#syntax#}pub fn main() !void {
+    makeEggs() catch {
+        if (money < 10)  
+            return error.OutOfMoney; // If executed: trace shows makeEggs()'s error, followed by this line
+
+        try buyIngredients();           // On error: trace shows makeEggs()'s error, then buyIngredients()'s error
     };
-}
-test {
-    try expectError(error.FatalError, bar());         // If this fails, `bar()` appears in the error return trace
-    try expectError(error.MyInlawsAreComing, foo());  // If this fails, `foo()` appears in the error return trace (`bar` was already popped)
+    // makeEggs() removed from the trace here
+
+    try serveBreakfast();               // On error: trace shows serveBreakfast()'s error only
 }{#endsyntax#}</pre>
-    <p>Putting the code snippet aside, here is a real world example. Before, one might get debug output that looks like this:</p>
+
+    <p>Very long error return traces are also trimmed correctly and print a
+    helpful note to let you know about the missing entries:</p>
+
+    <pre><code>...
+./test_err.zig:5:5: 0x10224b39e in recursive__anon_1055 (test_err)
+    return recursive(N - 1);
+    ^
+./test_err.zig:5:5: 0x10224b35e in recursive__anon_1054 (test_err)
+    return recursive(N - 1);
+    ^
+(98 additional stack frames skipped...)</code></pre>
+
+    <p>There is one restriction to be aware of: error traces do not follow
+    errors into local variables ({#syntax#}var{#endsyntax#}) by default.
+    This restriction is what allows all functions in the thread to share the same 256-byte
+    error trace storage.</p>
+
+    <p>The new {#link|std.debug.Trace#} API allows users to copy and store error return
+    traces for mutable variables where needed.</p>
+
+    <p>Here is a real world example. Before, one might get debug output that looks like this:</p>
     {#shell_samp#}
 $ ~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32
 error: FileNotFound
@@ -2339,6 +2362,9 @@ tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)
                       ^
     {#end_shell_samp#}
 
+    <p>This was an <a href="https://github.com/ziglang/zig/issues/1923">old issue that plagued Zig developers for a long time</a>. We have {#link|Cody Tapscott|Cody Tapscott Joins the Core Zig Team#} to thank for solving it.</p>
+
+
     {#header_close#}
     {#header_close#}
 
@@ -2398,7 +2424,7 @@ tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)
     <p>A new contributor jacobly0 came out of nowhere and did a massive amount of work
     to Zig's C backend, reaching these notable milestones:</p>
     <ul>
-      <li>The C backend is now passing <strong>1236/1366 (90%)</strong> of the behavior tests.</li>
+      <li>The C backend is now passing <strong>1259/1374 (92%)</strong> of the behavior tests.</li>
       <li>The official <a href="/documentation/0.10.0/#Hello-World">hello world</a>
         now works on at least <code>x86_64-linux</code> (with and without libc).</li>
       <li>The test runner now prints output to the console.</li>
@@ -3392,7 +3418,7 @@ new is 2.70x faster
     {#header_close#}
 
     {#header_open|Bug Fixes#}
-    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 424 bug reports closed during this release cycle</a>.</p>
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 452 bug reports closed during this release cycle</a>.</p>
     <p>Many bugs were both introduced and resolved within this release cycle.</p>
     {#header_open|This Release Contains Bugs#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
@@ -3867,7 +3893,6 @@ Hello World!
 <li>cod1r</li>
 <li>fn ⌃ ⌥</li>
 <li>gwenzek</li>
-<li>jacobly0</li>
 <li>leesongun</li>
 <li>m</li>
 <li>martinhath</li>
