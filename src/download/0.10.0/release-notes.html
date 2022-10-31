@@ -1,0 +1,4161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>0.10.0 Release Notes ⚡ The Zig Programming Language</title>
+    <link rel="icon" href="https://ziglang.org/favicon.png">
+    <style>
+      :root{
+         --nav-width: 24em;
+         --nav-margin-l: 1em;
+      }
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+      header {
+        padding: 0 1em;
+      }
+      h1, h2, h3, h4, h5 {
+        margin: 0.5em 0 0.5em;
+        line-height: 1.2;
+        font-weight: bold;
+        clear: both;
+      }
+      h1, h2 { font-size: 2.0em; }
+      h3 { font-size: 1.5em; }
+      h4 { font-size: 1.25em; }
+      h5 { font-size: 1.0em; }
+      #contents {
+        max-width: 60em;
+        margin: auto;
+        padding: 0 1em;
+      }
+      #navigation {
+        padding: 0 1em;
+      }
+
+      @media screen and (min-width: 1025px) {
+        header {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+        header h1 {
+          margin: auto;
+          max-width: 30em;
+        }
+        #navigation {
+          overflow: auto;
+          width: var(--nav-width);
+          height: 100vh;
+          position: fixed;
+          top:0;
+          left:0;
+          bottom:0;
+          padding: unset;
+          margin-left: var(--nav-margin-l);
+        }
+        #navigation nav ul {
+          padding-left: 1em;
+        }
+        #contents-wrapper {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+    }
+
+    a:hover,a:focus {
+      background: #fff2a8;
+    }
+    dt {
+      font-weight: bold;
+    }
+    th, td {
+      padding: 0.6em;
+    }
+    tr:nth-child(even) {
+      background: #f2f3f3;
+    }
+    .t0_1, .t37, .t37_1 {
+      font-weight: bold;
+    }
+    .t2_0 {
+      color: #575757;
+    }
+    .t31_1 {
+      color: #b40000;
+    }
+    .t32_1 {
+      color: green;
+    }
+    .t36_1 {
+      color: #005C7A;
+    }
+    .file {
+      font-weight: bold;
+      border: unset;
+    }
+    code {
+      background: #f8f8f8;
+      border: 1px dotted silver;
+      padding-left: 0.3em;
+      padding-right: 0.3em;
+    }
+    pre > code {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    samp {
+      background: #fafafa;
+    }
+    pre > samp {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    kbd {
+      font-weight: bold;
+    }
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .tok-kw {
+        color: #333;
+        font-weight: bold;
+    }
+    .tok-str {
+        color: #d14;
+    }
+    .tok-builtin {
+        color: #005C7A;
+    }
+    .tok-comment {
+        color: #545454;
+        font-style: italic;
+    }
+    .tok-fn {
+        color: #900;
+        font-weight: bold;
+    }
+    .tok-null {
+        color: #005C5C;
+    }
+    .tok-number {
+        color: #005C5C;
+    }
+    .tok-type {
+        color: #458;
+        font-weight: bold;
+    }
+
+    figure {
+      margin: auto 0;
+    }
+    figure pre {
+      margin-top: 0;
+    }
+
+    figcaption {
+      padding-left: 0.5em;
+      font-size: small;
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+    figcaption.zig-cap {
+      background: #fcdba5;
+    }
+    figcaption.c-cap {
+      background: #a8b9cc;
+      color: #000;
+    }
+    figcaption.peg-cap {
+      background: #fcdba5;
+    }
+    figcaption.javascript-cap {
+      background: #365d95;
+      color: #fff;
+    }
+    figcaption.shell-cap {
+      background: #ccc;
+      color: #000;
+    }
+
+    aside {
+      border-left: 0.25em solid #f7a41d;
+      padding: 0 1em 0 1em;
+    }
+
+    h1 a, h2 a, h3 a, h4 a, h5 a {
+      text-decoration: none;
+      color: #333;
+    }
+
+    a.hdr {
+      visibility: hidden;
+    }
+    h1:hover > a.hdr, h2:hover > a.hdr, h3:hover > a.hdr, h4:hover > a.hdr, h5:hover > a.hdr {
+      visibility: visible;
+    }
+
+    pre {
+      counter-reset: line;
+    }
+    pre .line:before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      padding-right: 1em;
+      width: 2em;
+      text-align: right;
+      color: #999;
+    }
+    th pre code {
+        background: none;
+    }
+    th .line:before {
+        display: none;
+    }
+
+    #logo {
+      width: 100%;
+      height: 7em;
+      display: block;
+      background-image: url(https://ziglang.org/img/zig-logo-dark.svg);
+      background-repeat: no-repeat;
+    }
+
+    #stage2-progress-dark {
+      display: none;
+    }
+
+    .diff-red {
+      background-color: #ffaeae;
+      display: block;
+    }
+    .diff-green {
+      background-color: #bfb;
+      display: block;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body{
+          background:#121212;
+          color: #ccc;
+      }
+      a {
+          color: #88f;
+      }
+      a:hover,a:focus {
+          color: #000;
+      }
+      tr:nth-child(even) {
+        background: #1e1e1e;
+      }
+      .t2_0 {
+          color: grey;
+      }
+      .t31_1 {
+          color: red;
+      }
+      .t32_1 {
+          color: #00B800;
+      }
+      .t36_1 {
+          color: #0086b3;
+      }
+      code {
+        background: #222;
+        border-color: #444;
+      }
+      pre > code {
+          color: #ccc;
+          background: #222;
+          border: unset;
+      }
+      samp {
+        background: #000;
+        color: #ccc;
+      }
+      pre > samp {
+        border: unset;
+      }
+      .tok-kw {
+          color: #eee;
+      }
+      .tok-str {
+          color: #2e5;
+      }
+      .tok-builtin {
+          color: #ff894c;
+      }
+      .tok-comment {
+          color: #aa7;
+      }
+      .tok-fn {
+          color: #B1A0F8;
+      }
+      .tok-null {
+          color: #ff8080;
+      }
+      .tok-number {
+          color: #ff8080;
+      }
+      .tok-type {
+          color: #68f;
+      }
+      h1 a, h2 a, h3 a, h4 a, h5 a {
+          color: #aaa;
+      }
+      figcaption.zig-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.peg-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.shell-cap {
+        background: #2a2a2a;
+        color: #fff;
+      }
+      #logo {
+        background-image: url(https://ziglang.org/img/zig-logo-light.svg);
+      }
+      #stage2-progress-dark {
+        display: block;
+      }
+      #stage2-progress-light {
+        display: none;
+      }
+      .diff-red {
+        background-color: #410000;
+      }
+      .diff-green {
+        background-color: #002d00;
+      }
+    }
+  </style>
+  </head><!--
+              o
+               \
+                \         o         __  _       _        _
+                 \mmm    /         (_, (_)     /-\ \/\/ /-\ \/ ,
+            o    (' ')  /               ___  _   __         /
+             \  __\^/__/                 |  |_) |  | |   |
+              \/       \-----o           |  | \ |__| |__ |__
+              //|     |\\
+             (( |  \  | ))
+              \\|___\_|//
+               W(    o)W
+               /|  |  |
+              / | / \ |\
+             /  ( ) ( ) \
+            o   | | | |  \
+                |_| |_|   o
+                (_) (_)
+David Riley
+  --><body>
+    <div id="contents">
+    <a href="https://ziglang.org/"><span id="logo"></span></a>
+    <h1>0.10.0 Release Notes</h1>
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_1.svg" style="height: 18em; float: right">
+    <p>
+    <a href="https://ziglang.org/download/#release-0.10.0">Download &amp; Documentation</a>
+    </p>
+    <p>
+    Zig is a general-purpose programming language and toolchain for maintaining
+    <strong>robust</strong>, <strong>optimal</strong>, and <strong>reusable</strong> software.
+    </p>
+    <p>
+    Backed by the <a href="/zsf/">Zig Software Foundation</a>,
+    the project is <strong>financially sustainable</strong>. These core team members
+    work on Zig full-time:
+    </p>
+    <ul style="columns: 3">
+      <li><a href="https://andrewkelley.me/">Andrew Kelley</a></li>
+      <li><a href="https://kristoff.it/">Loris Cro</a></li>
+      <li><a href="http://www.jakubkonka.com/">Jakub Konka</a></li>
+      <li><a href="https://vexu.eu/">Veikka Tuominen</a></li>
+    </ul>
+    <p>
+    Please consider a <a href="/zsf/">recurring donation to the ZSF</a>
+    to help us pay more contributors!
+    </p>
+    <p>
+    This release features <strong>10 months of work</strong>:
+    changes from <strong>272 different contributors</strong>, spread among
+    <strong>4737 commits</strong>. It is the début of the
+    {#link|Self-Hosted Compiler#}.</p>
+    {#header_open|Table of Contents#}
+    {#nav#}
+    {#header_close#}
+
+    {#header_open|Cody Tapscott Joins the Core Zig Team#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em; float: right">
+    <p>
+    I am pleased to announce our newest Zig team member, Cody Tapscott
+    (screenname: <a href="https://github.com/topolarity">topolarity</a>).
+    </p><p>
+    Cody excels at troubleshooting and debugging. He fearlessly deep dives
+    into unfamiliar areas of code, relentlessly attacking the problem until
+    a solution presents itself.
+    </p><p>
+    In addition, Cody has proven to be a steadfast community leader,
+    setting an example for how to treat others with kindness and respect.
+    </p>
+    <p>Please give him a warm welcome to the core Zig team.</p>
+    {#header_close#}
+
+    {#header_open|Veikka Tuominen Goes Full-Time#}
+    <p>If you have been following along with Zig's development process lately, you might
+    have noticed a distinct uptick in {#link|pull requests|Thank You Contributors!#}
+    being merged, {#link|Bug Fixes#} to the {#link|Self-Hosted Compiler#},
+    and implementation of {#link|Language Changes#}.</p>
+    <p><a href="https://vexu.eu/">Vexu</a> has been doing brilliant work, and
+    we are all fortunate that, one, he has decided to take on full-time hours lately, and
+    two, {#link|donations|Thank You Sponsors!#} have been steadily rising so that
+    there are enough funds to offer the hours.</p>
+    {#header_close#}
+
+    {#header_open|Support Table#}
+    {#header_open|Tier System#}
+    <p>
+    A green check mark (✅) indicates the target meets all the requirements for the
+    support tier. The other icons indicate what is <em>preventing the target from
+      reaching the support tier</em>. In other words, the icons are
+    <strong>to-do items</strong>. If you find any wrong data here please
+    <a href="https://github.com/ziglang/www.ziglang.org">submit a pull request</a>!
+    </p>
+    {#header_open|Tier 1 Support#}
+    <ul>
+      <li>Not only can Zig generate machine code for these targets, but the
+        {#link|Standard Library#} cross-platform abstractions have implementations
+        for these targets.</li>
+      <li>The CI server automatically tests these targets on every commit to master
+        branch. The 🧪 icon means this target does not yet have CI test coverage.</li>
+      <li>The CI server automatically produces pre-built binaries for these targets,
+        on every commit to master, and updates
+        <a href="https://ziglang.org/download/">the download page</a> with links.
+        The 📦 icon means the download page is missing this target.
+      </li>
+      <li>These targets have {#link|debug info capabilities|Debugging#} and therefore
+        produce stack traces on failed assertions.</li>
+      <li>libc is available for this target even when cross compiling.</li>
+      <li>All the behavior tests and applicable standard library tests pass for this target.
+          All language features are known to work correctly. Experimental features do not
+          count towards disqualifying an operating system or architecture from Tier 1.
+          The 🐛 icon means there are known {#link|bugs|This Release Contains Bugs#} preventing
+          this target from reaching Tier 1.
+      </li>
+      <li>{#link|zig cc#}, {#link|zig c++#}, and related toolchain commands support
+        this target.</li>
+      <li>If the Operating System is proprietary then the target is not marked deprecated
+        by the vendor. The 💀 icon means the OS is officially deprecated,
+        <a href="https://support.apple.com/en-us/HT208436">such as macos/x86</a>.</li>
+    </ul>
+    <table>
+    <thead>
+    <tr>
+    <th></th>
+    <th>freestanding</th>
+    <th>Linux 3.16+</th>
+    <th>macOS 11+</th>
+    <th>Windows 8.1+</th>
+    <th>WASI</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>x86_64</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>x86</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/1929">#1929</a> 🐛📦</td>
+    <td>💀</td>
+    <td><a href="https://github.com/ziglang/zig/issues/537">#537</a> 🐛📦</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>aarch64</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/2443">#2443</a> 🐛</td>
+    <td>✅</td>
+    <td>🐛📦🧪</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>arm</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/3174">#3174</a> 🐛📦</td>
+    <td>💀</td>
+    <td>🐛📦🧪</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>mips</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/3345">#3345</a> 🐛📦</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>riscv64</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/4456">#4456</a> 🐛📦</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>sparc64</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/4931">#4931</a> 🐛📦🧪</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc64</td>
+    <td>✅</td>
+    <td>🐛📦</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>wasm32</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>✅</td>
+    </tr>
+    </tbody>
+    </table>
+    {#header_close#}
+
+    {#header_open|Tier 2 Support#}
+    <ul>
+    <li>The {#link|Standard Library#} supports this target, but it is possible that some
+      APIs will give an "Unsupported OS" compile error. One can link with libc or other
+      libraries to fill in the gaps in the standard library. The 📖 icon means the
+      standard library is too incomplete to be considered Tier 2 worthy.</li>
+    <li>These targets are known to work, but may not be automatically tested, so there
+      are occasional regressions. 🔍 means that nobody has really looked into this target
+      so whether or not it works is unknown.</li>
+    <li>Some tests may be disabled for these targets as we work toward
+      {#link|Tier 1 Support#}.</li>
+    </ul>
+    <table>
+    <thead>
+    <tr>
+    <th></th>
+    <th>free standing</th>
+    <th>Linux 3.16+</th>
+    <th>macOS 11+</th>
+    <th>Windows 8.1+</th>
+    <th>FreeBSD 12.0+</th>
+    <th>NetBSD 8.0+</th>
+    <th>DragonFlyBSD 5.8+</th>
+    <th>UEFI</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>x86_64</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    </tr>
+    <tr>
+    <td>x86</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>✅</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>✅</td>
+    </tr>
+    <tr>
+    <td>aarch64</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    </tr>
+    <tr>
+    <td>arm</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    </tr>
+    <tr>
+    <td>mips64</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>mips</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc64</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>riscv64</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    </tr>
+    <tr>
+    <td>sparc64</td>
+    <td>{#link|Tier 1|Tier 1 Support#}</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    </tbody>
+    </table>
+    {#header_close#}
+
+    {#header_open|Tier 3 Support#}
+    <ul>
+    <li>The standard library has little to no knowledge of the existence of this
+        target.</li>
+    <li>If this target is provided by LLVM, LLVM has the target enabled by default.</li>
+    <li>These targets are not frequently tested; one will likely need to contribute
+      to Zig in order to build for these targets.</li>
+    <li>The Zig compiler might need to be updated with a few things such as<ul>
+       <li>what sizes are the C integer types</li>
+       <li>C ABI calling convention for this target</li>
+       <li>start code and default panic handler</li>
+      </ul></li>
+     <li><code>zig targets</code> is guaranteed to include this target.</li>
+    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>freestanding</th>
+          <th>Linux 3.16+</th>
+          <th>Windows 8.1+</th>
+          <th>FreeBSD 12.0+</th>
+          <th>NetBSD 8.0+</th>
+          <th>UEFI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>x86_64</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+        </tr>
+        <tr>
+          <td>x86</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+        </tr>
+        <tr>
+          <td>aarch64</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>arm</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>mips64</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>mips</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>riscv64</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>powerpc32</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>powerpc64</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>{#link|Tier 2|Tier 2 Support#}</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>bpf</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>hexagon</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>amdgcn</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>sparc</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>s390x</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>lanai</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>csky</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>freestanding</th>
+          <th>emscripten</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>wasm32</td>
+          <td>{#link|Tier 1|Tier 1 Support#}</td>
+          <td>✅</td>
+        </tr>
+      </tbody>
+    </table>
+    {#header_close#}
+
+    {#header_open|Tier 4 Support#}
+    <ul>
+      <li>Support for these targets is entirely experimental.</li>
+      <li>If this target is provided by LLVM, LLVM may have the target as an
+        experimental target, which means that you need to use Zig-provided binaries
+        for the target to be available, or build LLVM from source with special configure flags.
+        <code>zig targets</code> will display the target if it is available.</li>
+      <li>This target may be considered deprecated by an official party, in
+        which case this target will remain forever stuck in Tier 4.</li>
+      <li>This target may only support <code>-femit-asm</code> and cannot emit
+        object files, in which case <code>-fno-emit-bin</code> is enabled by
+        default and cannot be overridden.</li>
+    </ul>
+    <p>Tier 4 targets:</p>
+    <ul style="columns: 3">
+      <li>avr</li>
+      <li>riscv32</li>
+      <li>xcore</li>
+      <li>nvptx</li>
+      <li>msp430</li>
+      <li>r600</li>
+      <li>arc</li>
+      <li>tce</li>
+      <li>le</li>
+      <li>amdil</li>
+      <li>hsail</li>
+      <li>spir</li>
+      <li>kalimba</li>
+      <li>shave</li>
+      <li>renderscript</li>
+      <li>32-bit x86 macOS, 32-bit ARM macOS, powerpc32 and powerpc64 macOS, because
+        <a href="https://support.apple.com/en-us/HT208436">Apple has officially dropped support for them</a>.</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|WebAssembly#}
+    <p>During this release cycle, a lot of time was spent on both visible and invisible
+       improvements. Refactors were done to increase readability,
+       maintainability, and also the performance of the backend and its generated
+       code. With this release, we're one step closer to being able to make the
+       {#link|WebAssembly Backend#} the default for
+       <a href="https://ziglang.org/documentation/0.10.0/#Debug">debug mode</a>.</p>
+    <p>Resolved issues:</p>
+    <ul>
+      <li>Wasm has a max stack size of ~66K (<a href="https://github.com/ziglang/zig/issues/3735">#3735</a>)</li>
+      <li>{#link|zig cc#} doesn't support clang Wasm linker arg --export (<a href="https://github.com/ziglang/zig/issues/12126">#12126</a>)</li>
+      <li>Missing "name" section from binary (<a href="https://github.com/ziglang/zig/issues/11420">#11420</a>)</li>
+      <li>No {#link|Debugging#} symbols for Wasm target (<a href="https://github.com/ziglang/zig/issues/11330">#11330</a>)</li>
+      <li>Compile Zig (compiler) to Wasm/{#link|WASI#} (<a href="https://github.com/ziglang/zig/issues/10716">#10716</a>)</li>
+      <li>Saturating shift-left error on wasm32 with &gt; 64 bits (<a href="https://github.com/ziglang/zig/issues/9668">#9668</a>)</li>
+      <li>{#syntax#}crypto.25519.field.Fe.isSquare{#endsyntax#} causes too many locals to be emitted (<a href="https://github.com/ziglang/zig/issues/11947">#11947</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Windows#}
+    <p>Improvements to the {#link|Standard Library#}:</p>
+    <ul>
+      <li>{#link|libc++|zig c++#} now includes the fs/filesystem module.</li>
+      <li>Removed <code>__muloti4</code> from libc++ (<a href="https://github.com/ziglang/zig/issues/10719">#10719</a>)
+        <br>
+        {#link|compiler-rt#} already provides this symbol but libc++ was also providing it
+        and when linking libc++ it caused a crash on Windows.</li>
+      <li><code>zig test</code> has proper detection for Windows console.</li>
+      <li>Add CANNOT_DELETE as a possible error in os.windows.DeleteFile.</li>
+      <li>Use explicit integer bit widths for windows GUID.</li>
+      <li>Improved comptime windows GUID.parse performance.</li>
+      <li>child_process: collectOutputWindows handle broken_pipe from ReadFile (<a href="https://github.com/ziglang/zig/issues/10813">#10813</a>)</li>
+      <li>std.os: throw compile error for <code>argv</code> on Windows</li>
+      <li>std.Thread.getName/setName: rework windows implementation (<a href="https://github.com/ziglang/zig/issues/10003">#10003</a>)</li>
+      <li>Added GetProcessTimes binding to the kernel32.zig (<a href="https://github.com/ziglang/zig/issues/11488">#11488</a>)</li>
+      <li>std.coff: parse out codebase and entrypoint from optionalheader</li>
+      <li>Introduce std.process.EnvMap which handles case insensitivity on Windows (<a href="https://github.com/ziglang/zig/issues/10796">#10796</a>)</li>
+      <li>Added missing error to WriteFile</li>
+      <li>Fixed HANDLER_ROUTINE callconv</li>
+      <li>Changed <code>HKEY</code> to {#syntax#}*opaque {}{#endsyntax#}</li>
+      <li>Added os check for std.fs.setAsCwd() to work with Windows</li>
+    </ul>
+    <p>The 32-bit Windows tarball is missing for this release due to
+    (<a href="https://github.com/ziglang/zig/issues/12886">#12886</a>). It will be available
+    again in the 0.10.1 bugfix release.</p>
+    {#header_close#}
+
+    {#header_open|Linux#}
+    <p>Previously, updating the <code>SYS</code> enum for each architecture required
+    manually looking at the syscall tables and inserting any new additions.
+    Now there is a tool, <code>generate_linux_syscalls.zig</code>, that automates
+    this process using the syscall tables in the Linux source tree. On
+    architectures without a table, it runs {#link|zig cc#} as a pre-processor to
+    extract the system-call numbers from the Linux headers.</p>
+    <p>Improvements to the {#link|Standard Library#}:</p>
+    <ul>
+      <li>In the path names of Linux headers that Zig distributes, rename arm64
+        to aarch64 for consistency (<a href="https://github.com/ziglang/zig/issues/10699">#10699</a>)</li>
+      <li>io_uring: fix version check in tests (<a href="https://github.com/ziglang/zig/issues/10466">#10466</a>)</li>
+      <li>io_uring: improve IO_Uring.copy_cqe</li>
+      <li>io_uring: add recvmsg and sendmsg (<a href="https://github.com/ziglang/zig/issues/10212">#10212</a>)</li>
+      <li>io_uring: implemented automatic buffer selection (<a href="https://github.com/ziglang/zig/issues/10197">#10197</a>)</li>
+      <li>io_uring: added new flags and opcodes</li>
+      <li>io_uring: allow for optional arguments</li>
+      <li>Fixed os.rusage when linking with c library on Linux (<a href="https://github.com/ziglang/zig/issues/10543">#10543</a>)</li>
+      <li>std.c: add shm_open and shm_unlink</li>
+      <li>fchown: use the 32-bit uid/gid variant of the syscall on 32-bit linux targets.</li>
+      <li>Fixed preadv/pwritev bug on 64bit platform</li>
+      <li>Added Linux support for POSIX file locking with fcntl</li>
+      <li>Fixed ucontext_t</li>
+      <li>std.fs: Handle EINVAL from getdents64 (<a href="https://github.com/ziglang/zig/issues/11178">#11178</a>)</li>
+      <li>Added Seccomp bits for linux (<a href="https://github.com/ziglang/zig/issues/10717">#10717</a>)</li>
+      <li>Fixed signature of setgroups</li>
+      <li>Ported signal handling in abort() from musl (<a href="https://github.com/ziglang/zig/issues/11565">#11565</a>)</li>
+      <li>Added IN_MASK_CREATE and corresponding error handling in inotify_add_watch</li>
+      <li>Fixed os.linux.S function signatures to use mode_t</li>
+      <li>Added linux support for packet sockaddr</li>
+      <li>Fixes to BPF module</li>
+      <li>copy_file_range: save a syscall for most operations</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|macOS#}
+    <p>Added support for macOS 13 (Ventura); dropped support for macOS 10 (Catalina).
+    This matches Apple's security policy.</p>
+    <ul>
+      <li>libc headers are updated and more complete (copyfile.h).</li>
+      <li>Use libc if_nametoindex for macOS when parsing IPs (<a href="https://github.com/ziglang/zig/issues/10576">#10576</a>)</li>
+      <li>Implement segfault handler for macOS (both x86_64 and aarch64).</li>
+      <li>std.debug: fix edge cases in macOS debug symbol lookup</li>
+      <li>std: add mach_* syscalls for process mgmt</li>
+      <li>Added more darwin primitives to the {#link|Standard Library#}</li>
+      <li>Updated Mach routines for accessing page info</li>
+      <li>Fixed incorrect return types on some libc functions (<a href="https://github.com/ziglang/zig/issues/12964">#12964</a>)</li>
+      <li>Extend CodeSignature to accept entitlements.</li>
+      <li>Fixed child process spawn on macos hanging with stdin, stdout behavior set to pipe (<a href="https://github.com/ziglang/zig/issues/11480">#11480</a>)</li>
+    </ul>
+
+    {#header_open|Default C ABI changed from gnu to none#}
+    <p>Prior to this change Zig would assume the ABI for Apple targets to be GNU
+    which could result in subtle errors of emitting calls to non-existent
+    system libc provided functions such as <code>_sincosf</code> which is a GNU
+    extension and therefore not provided by macOS. This would result in linker
+    errors due to not finding the symbol in <code>libSystem.tbd</code>.</p>
+    <p>With this change, Zig now correctly identifies macOS (and other Apple platforms such as
+    iPhoneOS, tvOS, and watchOS) as having ABI <code>none</code> (<a href="https://github.com/ziglang/zig/issues/11684">#11684</a>).</p>
+    <p>In {#link|LLVM|LLVM 15#}, this translates to <code>unknown</code>:</p>
+    <pre><code>// main.ll
+target triple = "aarch64-unknown-macos-unknown"</code></pre>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|OpenBSD#}
+    <ul>
+      <li>Added OpenBSD Authentication constants and functions (<a href="https://github.com/ziglang/zig/issues/10376">#10376</a>)</li>
+      <li>Fixed i386-openbsd failing to build from source (<a href="https://github.com/ziglang/zig/issues/9705">#9705</a>)</li>
+      <li>Fixed sigcontext struct and avoid defining fxsave64</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|SPARC#}
+    <ul>
+      <li>sparcv9 has been renamed to sparc64.</li>
+      <li>More {#link|compiler-rt#} routines were added.</li>
+      <li>libunwind is updated to be compatible with sparc64.</li>
+      <li>Fixed <code>stat</code> struct definition for sparc64.</li>
+      <li>The {#link|Self-Hosted Compiler#} now has an experimental
+        sparc64 backend (not based on {#link|LLVM|LLVM 15#}).</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|PowerPC#}
+    <p>powerpc64 moved from {#link|Tier 3 Support#} to {#link|Tier 2 Support#}.</p>
+    <p>powerpc64le now has CI test coverage for the behavior tests, the {#link|Standard Library#},
+    targeting {#link|musl|musl 1.2.3#}, and targeting {#link|glibc|glibc 2.34#}.</p>
+    <p>Softfloat support was added in {#link|compiler-rt#}.</p>
+    {#header_close#}
+
+    {#header_open|WASI#}
+    <p>Zig can now build itself for the WASI target.</p>
+    {#shell_samp#}
+    $ uname -m
+x86_64
+$ zig build -Dtarget=wasm32-wasi -Drelease
+$ file zig-out/bin/zig.wasm
+zig-out/bin/zig.wasm: WebAssembly (wasm) binary module version 0x1 (MVP)
+$ ls -hl zig-out/bin/zig.wasm
+-rwxr-xr-x 1 andy users 37M Oct 19 12:24 zig-out/bin/zig.wasm
+$ cat hello.zig
+const std = @import("std");
+pub fn main() void {
+    std.io.getStdOut().writeAll("Hello, World!\n") catch {};
+}
+$ wasmtime --dir=. --mapdir=/cwd::. --mapdir=/cache::"$HOME/.cache/zig" --mapdir=/zig::zig-out zig-out/bin/zig.wasm build-exe /cwd/hello.zig -target x86_64-linux-musl
+$ chmod +x hello
+$ file hello
+hello: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped
+$ ./hello
+Hello, World!
+    {#end_shell_samp#}
+    <p>The <code>chmod</code> is because of
+    <a href="https://github.com/WebAssembly/wasi-filesystem/issues/33">WebAssembly/wasi-filesystem#33</a>.</p>
+    <p>This snippet demonstrates creating a WASI build of Zig, then executing it with
+    <a href="https://wasmtime.dev/">wasmtime 1.0.1</a>, cross compiling an executable for
+    x86_64-linux, and then executing the cross-compiled executable. Computers are fun!</p>
+    <p>Additionally:</p>
+    <ul>
+      <li>Zig's WASI libc has been synchronized with upstream (<a href="https://github.com/ziglang/zig/issues/11864">#11864</a>)</li>
+      <li>The {#link|Standard Library#} is modified to integrate with libc when
+        linking against it.</li>
+      <li>Added emulated CWD to {#syntax#}std.os{#endsyntax#} for WASI targets (<a href="https://github.com/ziglang/zig/issues/11021">#11021</a>)</li>
+      <li>The {#link|Standard Library#} has been synchronized with the latest WASI snapshot, which includes sock_accept (<a href="https://github.com/ziglang/zig/pull/13011">#13011</a>)<br>
+      This makes it possible to run web servers in WASI.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|UEFI#}
+    <ul>
+      <li>{#link|Standard Library#} improvements/fixes (<a href="https://github.com/ziglang/zig/issues/10566">#10566</a>) (<a href="https://github.com/ziglang/zig/issues/10604">#10604</a>) (<a href="https://github.com/ziglang/zig/issues/12897">#12897</a>)</li>
+      <li>Fixed GUID formatting (<a href="https://github.com/ziglang/zig/issues/11452">#11452</a>)</li>
+      <li>Added <code>BlockIoProtocol</code></li>
+      <li>Querying memory map size with no allocation<br>
+          This makes possible to query the memory map size from EFI firmware
+          without making any allocation beforehand. This makes possible to be
+          precise about the size of the allocation which will own a copy of
+          the memory map from the UEFI application.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|GPU Programming#}
+    <ul>
+      <li>Added experimental support for AMDGPU.</li>
+      <li>Added support for debug info on NVPTX.</li>
+      <li>Added <code>std.os.panic</code> implementation for NVPTX.</li>
+      <li>Made {#link|Address Spaces#} easier to use when targeting GPUs.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Documentation#}
+    <p>There were minimal changes to the {#link|Language Reference#} in 0.10.0, however,
+    the big news is that {#link|Autodoc#} has been completely rewritten!</p>
+    {#header_open|Language Reference#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_4.svg" style="height: 13em; float: right">
+    <ul>
+      <li>Replace mentions of {#syntax#}c_void{#endsyntax#} with {#syntax#}anyopaque{#endsyntax#}.</li>
+      <li>Added documentation for implicit struct pointer dereferencing.</li>
+      <li>Reorganize {#syntax#}@truncate{#endsyntax#} and {#syntax#}@intCast{#endsyntax#} for clarity.</li>
+      <li>Added documentation for common mistakes in errdefer scoping.</li>
+      <li>Clarify behavior of slicing with constant indexes (<a href="https://github.com/ziglang/zig/issues/11219">#11219</a>)</li>
+      <li>Add pointer arithmetic example.</li>
+      <li>Updated to keep in sync with {#link|Language Changes#}.</li>
+      <li>Miscellaneous minor improvements and corrections.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Autodoc#}
+    <p>This feature is still experimental.</p>
+
+    <p>Zig gained a first (experimental) implementation of
+    <a href="/download/0.6.0/release-notes.html#Documentation-Generation">automated doc generation in version 0.6.0</a>.
+    That version integrated with the {#link|Bootstrap Compiler#} and, more
+    specifically, it observed the data resulting from semantic analysis.</p>
+
+    <p>With the new {#link|Self-Hosted Compiler#} we needed to re-implement the
+    main part of the system (now internally named <strong>Autodoc</strong>) to make it consume
+    the new data format, but we took the opportunity of also re-designing its
+    entire approach to data collection.</p>
+
+    <p>The first Autodoc proof-of-concept (from Zig 0.6.0) relied entirely on
+    semantic analysis data, which had the main downside of only showing the
+    information that had been typechecked. The most annoying result of this
+    fact was that the docs would leave holes in the documentation, making them
+    feel unreliable.</p>
+
+    <p>The new Autodoc is instead based on a <em>two pass</em> approach.</p>
+
+    <p>The main source of information consumed by Autodoc is ZIR, an untyped
+    intermediate representation close to an AST, which gets generated
+    unconditionally for the entire codebase everytime a Zig project is built.
+    This makes sure that Autodoc doesn't have blind spots.</p>
+
+    <p>The problem with ZIR is that it is untyped, which means that it describes
+    the program before any comptime logic is run. This means that ZIR alone
+    won't be enough to find out all the concrete instantiations of a generic
+    type, for example.</p>
+
+    <p>To solve this problem, we plan to use ZIR information as the main
+    <em>skeleton</em> for Autodoc, and to overlay semantic analysis information on top
+    of that, in order to obtain both full coverage and also full resolution of
+    comptime metaprogramming.</p>
+
+    <p>Autodoc is still a work in progress and in fact it is still relying on
+    ZIR information only. There is a tremendous amount of work ahead of us and,
+    while we encourage you to check out
+    <a href="https://ziglang.org/documentation/0.10.0/std/">Zig's stdlib docs</a>,
+    there are plenty of basic things that still need to be implemented. If you see something
+    missing or broken in Autodoc, please file an issue or, even better, consider
+    <a href="https://github.com/ziglang/zig/wiki/How-to-contribute-to-Autodoc">becoming a contributor</a>.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Language Changes#}
+
+    {#header_open|Function Pointers#}
+    <p>In Zig 0.9.x and the {#link|Bootstrap Compiler#}, the type {#syntax#}fn () void{#endsyntax#} is a function pointer and acts like a pointer. However, the language spec, which is not written yet, will have this type be a <strong>function body</strong> type. It must be compile-time-known, and in order to get a function pointer, {#syntax#}*const fn () void{#endsyntax#} must be used.</p>
+    <p>The {#link|Self-Hosted Compiler#} implements this correctly, which means
+    your project will likely break everywhere that you use a function
+    pointer.</p>
+    <p>Here is the problem most people will run into:</p>
+    {#code_begin|test_err|unable to resolve comptime#}
+test "function pointer" {
+    const s = foo();
+    s.fnPtr();
+}
+
+const S = struct {
+    fnPtr: fn () void,
+};
+
+fn bar() void {}
+fn baz() void {}
+
+var runtime: bool = true;
+
+fn foo() S {
+    if (runtime) {
+        return .{
+            .fnPtr = bar,
+        };
+    } else {
+        return .{
+            .fnPtr = baz,
+        };
+    }
+}
+    {#code_end#}
+    <p>The solution becomes obvious upon reading the compile error notes:</p>
+    <pre><code><span class="diff-red">-    fnPtr: fn () void,</span><span class="diff-green">+    fnPtr: *const fn () void,</span></code></pre>
+    {#header_close#}
+
+    {#header_open|Packed Structs#}
+    <p>In previous releases of Zig there have been some nasty bugs that
+    unfortunately did not get fixed for a long time, resulting in packed
+    structs having a deservedly poor reputation. Finally, the situation is
+    resolved. Packed structs have been reworked, both in terms of the Zig
+    language specification, as well as the implementation.</p>
+    <p>Now, one can reason about packed structs in a similar way as one reasons about
+    <a href="/documentation/0.10.0/#enum">enums</a> - that is - they are merely integers
+    wearing fancy hats.</p>
+    <p>
+    Each packed struct has a <em>backing integer</em> which defines the ABI of the type as
+    well as the memory layout. The backing integer can be specified explicitly, or it can
+    be inferred from the total bits of all the fields. If the backing integer is explicitly
+    specified, then a compile error enforces that all the fields add up to that number of bits:
+    </p>
+    {#code_begin|test_err|backing integer#}
+const S = packed struct(u32) {
+    a: u29,
+    b: u2,
+};
+
+test "packed struct" {
+    var s: S = .{
+        .a = 1234,
+        .b = 3,
+    };
+    _ = s;
+}
+    {#code_end#}
+    <p>The fields are specified in order starting from logically
+    <em>least-significant</em> and ending with logically <em>most-significant</em> within
+    the backing integer. The backing integer is stored in memory with the same
+    endianness as the equivalent integer type for that target. This makes Zig's
+    packed structs have a well-defined memory layout, unlike in C where the
+    memory layout is implementation-defined and therefore usually cannot be
+    relied upon.</p>
+
+
+    <p>In the near future, the syntax will change to avoid confusion with C's packed structs,
+    which is a different concept that relates to padding. In Zig, such a struct is done by
+    using {#syntax#}extern{#endsyntax#} and setting each field's alignment to 1 byte:
+    </p>
+    {#code_begin|test|align-1#}
+const std = @import("std");
+const assert = std.debug.assert;
+
+// Equivalent of C's __attribute__((__packed__))
+const S = extern struct {
+    a: u64 align(1),
+    b: u8 align(1),
+};
+
+comptime {
+    assert(@sizeOf([2]S) == 18);
+}
+    {#code_end#}
+    {#header_close#}
+
+    {#header_open|Inline Switch Cases#}
+    <p>The {#syntax#}inline{#endsyntax#} keyword can now be placed in front of
+    {#syntax#}switch{#endsyntax#} cases. This effectively turns a runtime-known value into a
+    compile-time-known value:
+    </p>
+    {#code_begin|exe|inline-switch#}
+const std = @import("std");
+
+pub fn main() !void {
+    var arena_instance = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const arena = arena_instance.allocator();
+
+    const args = try std.process.argsAlloc(arena);
+    const arg = if (args.len >= 2) args[1] else "50";
+    const some_number = try std.fmt.parseInt(i32, arg, 10);
+
+    switch (some_number) {
+        inline 1...100 => |x| {
+            foo(x);
+        },
+        else => @panic("not in range"),
+    }
+}
+
+fn foo(comptime x: i32) void {
+    // Doing something that requires a comptime number, such as
+    // using it as the length of an array:
+    var array: [x]u8 = undefined;
+    for (array) |*elem, i| {
+        elem.* = @intCast(u8, i);
+    }
+}
+    {#code_end#}
+    <p>
+    In this example, we take a number that was passed in as a command line parameter at runtime,
+    and pass it to a function that requires a {#syntax#}comptime{#endsyntax#} parameter. This
+    works because the {#syntax#}switch{#endsyntax#} gets <em>inlined</em> - 100 prongs are
+    generated, similar to unrolling an {#syntax#}inline for{#endsyntax#} loop that looped from
+    1 to 100.
+    </p>
+    <p>Let's look at a less contrived example. Here is the use case where this pattern is the
+    most useful: dynamic dispatch for enums and tagged unions.</p>
+    <p>Before:</p>
+    <pre>{#syntax#}pub fn iterate(base: *Node, index: usize) ?*Node {
+    inline for (@typeInfo(Tag).Enum.fields) |field| {
+        const tag = @intToEnum(Tag, field.value);
+        if (base.tag == tag) {
+            return @fieldParentPtr(tag.Type(), "base", base).iterate(index);
+        }
+    }
+    unreachable;
+}{#endsyntax#}</pre>
+    <p>After:</p>
+    <pre>{#syntax#}
+pub fn iterate(base: *Node, index: usize) ?*Node {
+    return switch (base.tag) {
+        inline else => |tag| @fieldParentPtr(tag.Type(), "base", base).iterate(index),
+    };
+}
+    {#endsyntax#}</pre>
+
+    <p>Unfortunately, we cannot use this feature in the {#link|Standard Library#} or
+    the {#link|Self-Hosted Compiler#} yet, because this feature is not implemented in the
+    {#link|Bootstrap Compiler#}. The {#link|next steps|Roadmap#} to accomplish this will
+    be enhancing the {#link|C Backend#} until we can
+    <a href="https://github.com/ziglang/zig/issues/5246">replace the bootstrap compiler</a>.</p>
+
+    <p>See the <a href="/documentation/0.10.0/#Inline-switch">full inline switch documentation</a> in the {#link|Language Reference#}.</p>
+    {#header_close#}
+
+    {#header_open|Equality Testing of Error Unions#}
+    <p>Similar to how the {#syntax#}=={#endsyntax#} operator can be used to check if
+    an optional is {#syntax#}null{#endsyntax#}, it can now also be used to check if an
+    error union is a specific error code:</p>
+    {#code_begin|test|error-equality#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "equality testing of error unions" {
+    try expect(foo() == error.Bad);
+    try expect(bar() == error.RealBad);
+}
+fn foo() anyerror {
+    return error.Bad;
+}
+fn bar() anyerror!void {
+    return error.RealBad;
+}
+    {#code_end#}
+    {#header_close#}
+
+    {#header_open|Pointers to Zero-Bit Types#}
+    <p>Before, a pointer to a zero-bit type was itself a zero bit type. Now,
+    pointers to zero-bit types store addresses the same as regular pointers.</p>
+    <p>This change is unlikely to affect many codebases. A use case where it might be
+    relevant is representing a struct that has a variable-sized last field,
+    as demonstrated by the <code>name</code> field here:</p>
+    {#code_begin|test|vla#}
+const std = @import("std");
+const testing = std.testing;
+
+test "struct with variable length last field" {
+    const foo = try make(testing.allocator, "Blah blah");
+    defer foo.free(testing.allocator);
+
+    try testing.expect(foo.a == 1234);
+    try testing.expectEqualStrings(foo.getName(), "Blah blah");
+
+    // The pointer address of the 'name' field is still well-defined and meaningful:
+    try testing.expect(@ptrCast(*u8, &foo.name).* == 'B');
+}
+
+const S = extern struct {
+    a: i32,
+    name: [0]u8 = .{},
+
+    fn getName(s: *const S) []const u8 {
+        return std.mem.sliceTo(@ptrCast([*:0]const u8, &s.name), 0);
+    }
+
+    fn free(s: *S, gpa: std.mem.Allocator) void {
+        const buf = @ptrCast([*]u8, s)[0 .. @sizeOf(S) + s.getName().len + 1];
+        gpa.free(buf);
+    }
+};
+
+fn make(gpa: std.mem.Allocator, name: []const u8) !*S {
+    const s = try make_vla(gpa, S, name.len + 1);
+    s.* = .{ .a = 1234 };
+    const name_ptr = @ptrCast([*]u8, &s.name);
+    std.mem.copy(u8, name_ptr[0..name.len], name);
+    name_ptr[name.len] = 0;
+    return s;
+}
+
+fn make_vla(gpa: std.mem.Allocator, comptime T: type, extra_bytes: usize) !*T {
+    const buf = try gpa.alignedAlloc(u8, @alignOf(T), @sizeOf(T) + extra_bytes);
+    const ptr = @ptrCast(*T, buf);
+    return ptr;
+}
+    {#code_end#}
+    <p>This assertion does not pass with the {#link|Bootstrap Compiler#} but it does with the
+    {#link|Self-Hosted Compiler#}:</p>
+    {#code_begin|test|ptrs#}
+const std = @import("std");
+const assert = std.debug.assert;
+
+comptime {
+    assert(@sizeOf(*u0) == @sizeOf(*u8));
+}
+    {#code_end#}
+    <p>However, pointers to comptime-only types are still zero bit types, such as
+    {#syntax#}*comptime_int{#endsyntax#}.</p>
+    {#header_close#}
+
+    {#header_open|@minimum and @maximum renamed to @min and @max#}
+    <p>See the {#link|Language Reference#}:
+      <a href="/documentation/0.10.0/#min">@min</a>
+      <a href="/documentation/0.10.0/#max">@max</a>
+    </p>
+    <p>{#link|zig fmt#} will automatically perform the rename.</p>
+    {#header_close#}
+
+    {#header_open|Removed Type Parameter from Bit Builtins#}
+    <p>The following builtins no longer have types as the first parameter:</p>
+    <ul style="columns: 3">
+      <li><a href="/documentation/0.10.0/#byteSwap">@byteSwap</a></li>
+      <li><a href="/documentation/0.10.0/#bitReverse">@bitReverse</a></li>
+      <li><a href="/documentation/0.10.0/#clz">@clz</a></li>
+      <li><a href="/documentation/0.10.0/#ctz">@ctz</a></li>
+      <li><a href="/documentation/0.10.0/#popCount">@popCount</a></li>
+    </ul>
+    <p>Instead, the type is inferred from the operand. This makes the builtins more
+    ergonomic for <a href="/documentation/0.10.0/#Vectors">SIMD</a>.</p>
+    {#header_close#}
+
+    {#header_open|Runtime Array Concatenation & Multiplication#}
+    <p>The {#syntax#}++{#endsyntax#} and {#syntax#}**{#endsyntax#} operators now support
+    runtime-known operands, as long as the length is compile-time-known:</p>
+    {#code_begin|exe|array_cat#}
+const std = @import("std");
+
+pub fn main() !void {
+    var array1 = "hellp".*;
+    var array2 = "!world ".*;
+
+    array1[array1.len - 1] -= 1;
+    std.mem.swap(u8, &array2[0], &array2[array2.len - 1]);
+
+    const final = array1 ++ array2 ++ "\n";
+    try std.io.getStdOut().writeAll(final);
+}
+    {#code_end#}
+
+    <p>This may be a breaking change for some people who were relying on Zig to automatically
+    evaluate the operands in a {#syntax#}comptime{#endsyntax#} scope, like this:</p>
+    {#code_begin|test_err|unable to resolve comptime#}
+const std = @import("std");
+
+test {
+    const a = foo() ++ "bb";
+    try std.testing.expect(a.len == 5);
+}
+
+fn foo() []const u8 {
+    return "aaa";
+}
+    {#code_end#}
+    <p>The previous behavior
+    can be obtained with explicit use of the {#syntax#}comptime{#endsyntax#} keyword:</p>
+    <pre><code><span class="diff-red">-    const a = foo() ++ "bb";</span><span class="diff-green">+    const a = comptime foo() ++ "bb";</span></code></pre>
+    <p>This language change is implemented in {#link|Self-Hosted Compiler#} only.</p>
+    {#header_close#}
+
+    {#header_open|Address-of Temporaries Now Produces Const Pointers#}
+    <p>Zig 0.9.x and the {#link|Bootstrap Compiler#} allow this code:</p>
+    {#code_begin|test_err|expected type#}
+const std = @import("std");
+
+test {
+    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();
+
+    const ptr = try arena.create(i32);
+    ptr.* = 1234;
+}
+    {#code_end#}
+
+    <p>Zig 0.10.0 does not allow this.
+    Address of temporaries produces constant pointers for safety reasons.
+    To fix this code, extract the temporary into an explicit {#syntax#}var{#endsyntax#}.
+    This makes the mutable temporary more obvious, which is safer.</p>
+
+    <pre><code><span class="diff-red">-    const arena = std.heap.ArenaAllocator.init(std.heap.page_allocator).allocator();</span><span class="diff-green">+    var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
++    const arena = arena_state.allocator();</span></code></pre>
+    {#header_close#}
+
+    {#header_open|std.builtin.CompilerBackend#}
+    <p>Now that there are multiple competing {#link|Code Generation#} backends, it may
+    be necessary to work around {#link|bugs|This Release Contains Bugs#} in one of them.
+    Similarly, as Zig gains
+    <a href="https://tjpalmer.github.io/languish/">popularity</a>,
+    there may be third party compiler implementations
+    which have quirks. Zig now provides a {#syntax#}comptime{#endsyntax#} enum
+    value so that one can use conditional compilation to work around such issues.</p>
+    <p>Documentation comments are reproduced here:</p>
+    {#code_begin|syntax#}
+/// This enum is set by the compiler and communicates which compiler backend is
+/// used to produce machine code.
+/// Think carefully before deciding to observe this value. Nearly all code should
+/// be agnostic to the backend that implements the language. The use case
+/// to use this value is to **work around problems with compiler implementations.**
+///
+/// Avoid failing the compilation if the compiler backend does not match a
+/// whitelist of backends; rather one should detect that a known problem would
+/// occur in a blacklist of backends.
+///
+/// The enum is nonexhaustive so that alternate Zig language implementations may
+/// choose a number as their tag (please use a random number generator rather
+/// than a "cute" number) and codebases can interact with these values even if
+/// this upstream enum does not have a name for the number. Of course, upstream
+/// is happy to accept pull requests to add Zig implementations to this enum.
+///
+/// This data structure is part of the Zig language specification, however, the
+/// specific tag names and values are implementation defined.
+pub const CompilerBackend = enum(u64) {
+    /// It is allowed for a compiler implementation to not reveal its identity,
+    /// in which case this value is appropriate. Be cool and make sure your
+    /// code supports `other` Zig compilers!
+    other = 0,
+    /// The original Zig compiler created in 2015 by Andrew Kelley.
+    /// Implemented in C++. Uses LLVM.
+    stage1 = 1,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// LLVM backend.
+    stage2_llvm = 2,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// backend that generates C source code.
+    /// Note that one can observe whether the compilation will output C code
+    /// directly with `object_format` value rather than the `compiler_backend` value.
+    stage2_c = 3,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// WebAssembly backend.
+    stage2_wasm = 4,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// arm backend.
+    stage2_arm = 5,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// x86_64 backend.
+    stage2_x86_64 = 6,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// aarch64 backend.
+    stage2_aarch64 = 7,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// x86 backend.
+    stage2_x86 = 8,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// riscv64 backend.
+    stage2_riscv64 = 9,
+    /// The reference implementation self-hosted compiler of Zig, using the
+    /// sparc64 backend.
+    stage2_sparc64 = 10,
+
+    _,
+};
+    {#code_end#}
+    <p>Please <strong>read the documentation comments carefully before using this value</strong>.
+    In summary, you can work around compiler issues by doing something like this:</p>
+    <pre>{#syntax#}const FnPtr = switch (builtin.zig_backend) {
+    .stage1 => fn()void,
+    else => *const fn()void,
+};{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|f80#}
+    <p>Zig now has {#syntax#}f80{#endsyntax#}, a primitive type that provides
+    <a href="https://en.wikipedia.org/wiki/Extended_precision#x86_extended_precision_format">x86 extended precision format</a>.
+    This type is fully supported on all systems. On those which lack hardware
+    support for this type, softfloat implementations are provided by {#link|compiler-rt#}.
+    </p>
+    <p>When would you use this? Well if you were
+    <a href="https://github.com/Vexu/arocc/issues/213">implementing a C compiler</a> for instance.
+    It is also required for {#link|C ABI Compatibility#} - for some C targets
+    <code>long double</code> is an alias for {#syntax#}f80{#endsyntax#}.</p>
+    <p>This is implemented in both the {#link|Bootstrap Compiler#} and
+    {#link|Self-Hosted Compiler#}.</p>
+    {#header_close#}
+
+    {#header_open|TypeInfo.Declaration no longer has a data field#}
+    <p>Zig 0.9.x allows inspecting certain kinds of extra information about declarations via
+    <a href="/documentation/0.10.0/#typeInfo">@typeInfo</a>, but 0.10.0 does not (<a href="https://github.com/ziglang/zig/issues/10753">#10753</a>):</p>
+    {#code_begin|test_err|no field named#}
+const std = @import("std");
+test "type info on declarations" {
+    _ = @typeInfo(@This()).Struct.decls[0].data;
+}
+    {#code_end#}
+    <p>The data field looked like this:</p>
+    <pre>{#syntax#}pub const Data = union(enum) {
+    Type: type,
+    Var: type,
+    Fn: FnDecl,
+};{#endsyntax#}</pre>
+    <p>This was removed because it was an unnecessary complication. There are already alternatives
+    for each of these fields:</p>
+    <ul>
+      <li>Var - {#syntax#}@typeOf(@field(a, b)){#endsyntax#}</li>
+      <li>Type - {#syntax#}@field(a, b){#endsyntax#} (after checking the {#syntax#}@typeOf{#endsyntax#})</li>
+      <li>Fn - {#syntax#}@field(a, b){#endsyntax#} (after checking the {#syntax#}@typeOf{#endsyntax#})</li>
+    </ul>
+    <p>This is implemented in both the {#link|Bootstrap Compiler#} and
+    {#link|Self-Hosted Compiler#}.</p>
+    {#header_close#}
+
+    {#header_open|Removed anytype fields#}
+    <p>Zig 0.9.x allows declaring a struct field {#syntax#}anytype{#endsyntax#}
+    which made the struct be a compile-time-only type and made the field's type
+    allowed to be changed during {#syntax#}comptime{#endsyntax#} code execution.</p>
+    {#code_begin|test_err|expected type#}
+const S = struct { x: anytype };
+    {#code_end#}
+    <p>This was removed in order to simplify the language (<a href="https://github.com/ziglang/zig/issues/10766">#10766</a>).</p>
+    <p>This is implemented in both the {#link|Bootstrap Compiler#} and
+    {#link|Self-Hosted Compiler#}.</p>
+    {#header_close#}
+
+    {#header_open|Address Spaces#}
+    <p>New builtin: <a href="https://ziglang.org/documentation/0.10.0/#addrSpaceCast">@addrSpaceCast</a></p>
+    {#header_close#}
+
+    {#header_open|Compile Error for Misleading Whitespace#}
+    <p>Have a look at this code:</p>
+    <pre>{#syntax#}const directions = [_]isize{
+    -pitch-1,
+    -pitch,
+    -pitch+1
+    -1,
+    1,
+    pitch-1,
+    pitch,
+    pitch+1,
+};{#endsyntax#}</pre>
+    <p>See the bug? It took me a minute.</p>
+
+    <p>Answer: the <code>,</code> is missing from the third item in the list.
+    This makes the list 7 items long instead of 8, and the third item
+    <code>-pitch+1-1</code>.</p>
+
+    <p>This code is now a compile error due to a new rule in the language:
+    misleading whitespace is a compile error. In this case the misleading whitespace is
+    being inconsistent on either side of a binary operator.</p>
+
+    {#code_begin|test_err|whitespace on one side#}
+const directions = [_]isize{
+    -pitch-1,
+    -pitch,
+    -pitch+1
+    -1,
+    1,
+    pitch-1,
+    pitch,
+    pitch+1,
+};
+    {#code_end#}
+    <p><a href="https://github.com/ziglang/zig/issues/35">More compile errors for misleading whitespace are planned</a>.</p>
+    {#header_close#}
+
+    {#header_open|Compile Error for Pointless Discards#}
+    <p>It is no longer possible to discard a local variable or parameter that is referenced:</p>
+    {#code_begin|test_err|pointless#}
+test "example" {
+    var x: i32 = 1234;
+    _ = x;
+    var y = x;
+    _ = y;
+}
+    {#code_end#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_5.svg" style="height: 14em; float: right">
+    <p>The fix is simple - delete the pointless discard. This compile error dovetails
+    with the
+    <a href="https://ziglang.org/download/0.9.0/release-notes.html#Compile-Errors-for-Unused-Locals">compile error for unused locals introduced in Zig 0.9.0</a>.
+    Together, these compile errors ensure that when you are reading Zig code, whether it is
+    yours or some random codebase on the Internet, you can be assured that all locals are
+    used somewhere, and that any discarded locals are otherwise unused.</p>
+    <p>This is a divisive feature of Zig. Generally, those with large codebases favor the
+    errors since they help prevent bugs and aid refactoring, while those with small codebases
+    find these errors annoying and unproductive.</p>
+    <p>There is an
+    <a href="https://github.com/ziglang/zig/pull/12803">upcoming autofix feature</a> that
+    unfortunately did not make it in time for 0.10.0 which can be used by those who find this
+    pair of compile errors problematic for their workflow.</p>
+    {#header_close#}
+
+    {#header_open|Disallow Leading Zeroes in Literals#}
+    <p>This new compile error helps catch bugs (<a href="https://github.com/ziglang/zig/issues/11963">#11963</a>) (<a href="https://github.com/ziglang/zig/issues/12417">#12417</a>):</p>
+    {#code_begin|test_err|leading zero#}
+var x: i032 = 1234;
+var y: i32 = 01234;
+    {#code_end#}
+    <p>This caught two C header translation mistakes in <code>haiku.zig</code>.</p>
+    {#header_close#}
+
+    {#header_open|More Calling Conventions#}
+    <p>The Win64 calling convention is the same as Cdecl on {#link|Windows#}
+    x64, however using the C calling convention as a stand-in for the Win64
+    calling convention only works when the compiler targets Windows. This
+    means, before Zig 0.10.0, one was not able to create a function with the
+    Win64 calling convention when targeting an OS other than {#link|Windows#}.
+    Now the Win64 calling convention can be used from Zig code on any target,
+    using {#syntax#}std.builtin.CallingConvention.Win64{#endsyntax#}
+    (<a href="https://github.com/ziglang/zig/issues/11585">#11585</a>).</p>
+    <p>Also added in this release:</p>
+    <ul>
+      <li><code>PtxKernel</code></li>
+      <li><code>AmdgpuKernel</code></li>
+    </ul>
+    <p>This is implemented in both the {#link|Bootstrap Compiler#} and
+    {#link|Self-Hosted Compiler#}.</p>
+    {#header_close#}
+
+    {#header_open|Inline Assembly#}
+    <p>The sub-project of parsing inline assembly in the {#link|Self-Hosted Compiler#} has
+    been delayed in the past due to the large tables of instructions that would be declared
+    in source files, likely running into the unwieldly memory consumption properties of the
+    {#link|Bootstrap Compiler#}. But now that we are shipping a <strong>stage3</strong>
+    build, this obstacle has been overcome.</p>
+    <p>Zig 0.9.x allowed {#syntax#}comptime{#endsyntax#} expressions to produce the
+    assembly template for inline assembly. For most of the 0.10.0 release cycle,
+    Zig emitted a compile error when inline assembly source code was not a string literal,
+    however, that restriction was lifted just before this 0.10.0 release.</p>
+    <p>Zig is at a crossroads right now with regards to inline assembly. On one hand,
+    there is this proposal:
+    <a href="https://github.com/ziglang/zig/issues/10761">parse inline assembly syntax according to a set of dialects; integrate inline assembly more closely with the zig language</a></p>
+    <p>Meanwhile, other stakeholders have rightfully pointed out that inline
+    assembly abstractions based on string concatenation are easy to reason
+    about and do not require any more language features added.</p>
+    <p>Either way, Zig needs to gain the ability to parse inline assembly for all targets,
+    so that it can get lowered to the {#link|LLVM|LLVM 15#} backend as well as the other
+    {#link|Code Generation#} backends, so that error handling, semantic analysis, and
+    language features of inline assembly can be uniform across backends, something that
+    would not be the case if LLVM is sometimes responsible for assembly code parsing and
+    sometimes not.</p>
+    <p>Whichever path Zig ends up going down, we will make sure to involve the users who
+    will ultimately be affected, such as the
+    <a href="https://microzig.tech/">Zig Embedded Group</a>, and the various folks
+    who have started operating system projects written in Zig.</p>
+    {#header_close#}
+
+    {#header_open|Boolean Logic with comptime RHS#}
+    <p>{#syntax#}foo() and false{#endsyntax#} as well as {#syntax#}bar() or true{#endsyntax#}
+    are now compile-time-known expressions. The left-hand side is allowed to contain
+    runtime side effects, which are preserved as expected. Allows code like this to compile:</p>
+    {#code_begin|exe#}
+const std = @import("std");
+
+var i: usize = 0;
+fn foo() bool {
+    const stdout = std.io.getStdOut().writer();
+    stdout.print("i = {}\n", .{i}) catch unreachable;
+    return true;
+}
+
+pub fn main() void {
+    if (false and foo()) { // This works already today
+        @compileError("Condition should be comptime-false");
+    }
+    i += 1;
+    if (foo() and false) { // PR allows this condition to be comptime-known
+        @compileError("Condition should be comptime-false");
+    }
+}
+    {#code_end#}
+    <p>Note that side effects are still respected, but the result can be
+    compile-time-known despite them. This is the same way Zig handles, e.g.
+    {#syntax#}x * 0{#endsyntax#} and {#syntax#}0 * x{#endsyntax#}
+    (<a href="https://github.com/ziglang/zig/issues/6768">#6768</a>).</p>
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Bootstrap Compiler#}
+    <p>In the previous release, the main Zig compiler everybody used
+    was the bootstrap compiler, written in C++, also known as <strong>stage1</strong>.
+    This release changes the default to become the {#link|Self-Hosted Compiler#}, however,
+    the legacy compiler can be selected with <code>-fstage1</code>.</p>
+    <p>Despite the main focus being the {#link|Self-Hosted Compiler#},
+    this release brings some improvements to the legacy compiler codebase as well:</p>
+    <ul>
+      <li>Fixed access of slice sentinel at comptime.</li>
+      <li>Fixed {#syntax#}@errorName{#endsyntax#} null termination.</li>
+      <li>Improved compilation speed of comptime format string parsing.</li>
+      <li>C ABI fixes related to {#syntax#}packed struct{#endsyntax#} (<a href="https://github.com/ziglang/zig/issues/10499">#10499</a>)</li>
+      <li>Fixed {#syntax#}packed struct{#endsyntax#} (<a href="https://github.com/ziglang/zig/issues/11279">#11279</a>)</li>
+      <li>Fixed exporting of symbols on {#link|WebAssembly#}.</li>
+      <li>Fixed bigint_init_bigfloat for single-limb negative floats (<a href="https://github.com/ziglang/zig/issues/10592">#10592</a>)</li>
+      <li>Fixed big-endian handling in stage1 bigint_write_twos_complement (<a href="https://github.com/ziglang/zig/issues/10858">#10858</a>)</li>
+      <li>Removed the noisy "referenced here" error note. The {#link|Self-Hosted Compiler#} has
+        this implemented in a better way.</li>
+      <li>Fixed saturating arithmetic on type {#syntax#}comptime_int{#endsyntax#} (<a href="https://github.com/ziglang/zig/issues/10393">#10393</a>)</li>
+      <li>Fixed x86 i128 C ABI for extern structs (<a href="https://github.com/ziglang/zig/issues/10834">#10834</a>)</li>
+      <li>Improve error message if error union is cast to payload (<a href="https://github.com/ziglang/zig/issues/10770">#10770</a>)</li>
+      <li>Implemented {#syntax#}f128{#endsyntax#} {#syntax#}@rem{#endsyntax#}</li>
+      <li>Fixed comptime saturation subtraction (<a href="https://github.com/ziglang/zig/issues/10870">#10870</a>)</li>
+      <li>Improved error message when casting tuples (<a href="https://github.com/ziglang/zig/issues/10913">#10913</a>)</li>
+      <li>Made type names more unique (<a href="https://github.com/ziglang/zig/issues/11226">#11226</a>)</li>
+      <li>Implemented casting from {#syntax#}u0{#endsyntax#}</li>
+      <li>Fixed crash when generating a particular error note</li>
+      <li>Fixed crash when slicing string literal with sentinel</li>
+      <li>Fixed referencing type info alignment causes error in unrelated function (<a href="https://github.com/ziglang/zig/issues/6944">#6944</a>)</li>
+      <li>Fixed building with Clang 16</li>
+      <li>CMake: detect use of <code>CMAKE_PREFIX_PATH</code> env var (<a href="https://github.com/ziglang/zig/issues/13242">#13242</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Self-Hosted Compiler#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+    <p>The main feature of this release cycle is the début of the self-hosted compiler.
+    It is now enabled by default, however the {#link|Bootstrap Compiler#} is available
+    behind the <code>-fstage1</code> flag for those not ready to {#link|upgrade|How to Upgrade#}.
+    </p>
+    <p>This compiler implementation beats the older one in terms of
+    performance and memory usage. Here are two data points for the compiler building itself
+    (measured on an Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz):</p>
+    <ul>
+      <li><strong>Wall Clock Time</strong>: 43 seconds to 40 seconds (<strong>7% faster</strong>)</li>
+      <li><strong>Peak RSS</strong>: 9.6 GiB to 2.8 GiB (<strong>3.5x less memory</strong> used)</li>
+    </ul>
+
+    <p>The new compiler implementation is slightly faster despite that, unlike
+    the {#link|Bootstrap Compiler#}, it is capable of incremental compilation
+    due to being tightly coupled with the {#link|linker|Self-Hosted Linker#}.
+    The bigger compilation speed wins will come with the {#link|Code Generation#}
+    backends that do not use {#link|LLVM|LLVM 15#}.</p>
+
+    <p>The vast majority of the development effort of this release cycle was
+    spent on this new compiler implementation, and therefore the {#link|Language Changes#}
+    are minimal.
+    Instead, this new codebase lays the groundwork for <em>major enhancements</em>,
+    mainly concerned with speeding up the edit/test/debug cycle. Now that the self-hosted
+    compiler is no longer sucking up so much effort, you should expect to see significant,
+    visible progress on these {#link|Roadmap#} milestones.</p>
+
+    <p>Miscellaneous improvements:</p>
+    <ul>
+      <li>Introduce <code>--entry [name]</code> to set entrypoint symbol name (<a href="https://github.com/ziglang/zig/issues/10475">#10475</a>)</li>
+      <li><code>--strip</code> is renamed to <code>-fstrip</code> and <code>-fno-strip</code>
+        is introduced. Stripping is enabled by default for
+        <a href="https://ziglang.org/documentation/0.10.0/#ReleaseSmall">ReleaseSmall</a>
+        and the flag is properly forwarded to LLD.</li>
+      <li>Linking libc++ now implies also linking libc.</li>
+      <li>CLI: ignore <code>-lgcc_s</code> when it is redundant with {#link|compiler-rt#}.
+        <br>
+        For some projects, they can't help themselves, <code>-lgcc_s</code> ends up on the
+        compiler command line even though it does not belong there. In Zig we
+        know what <code>-lgcc_s</code> does. It is an alternative to {#link|compiler-rt#}. With this
+        commit we emit a warning telling that it is unnecessary to put such
+        thing on the command line, and happily ignore it, since we will fulfill
+        the dependency with {#link|compiler-rt#}.
+        <br>
+        Since libgcc also provides exception handling functions, this flag on the linker
+        line additionally links libunwind, which is also provided by Zig. Furthermore,
+        linking libunwind implies linking libc.
+      </li>
+      <li>Added support for <code>-fbuild-id</code>, <code>-fno-build-id</code> (<a href="https://github.com/ziglang/zig/issues/3047">#3047</a>)</li>
+      <li>Enable full RELRO by default (<a href="https://github.com/ziglang/zig/issues/11825">#11825</a>)</li>
+      <li>Remove <code>-z noexecstack</code> option (<a href="https://github.com/ziglang/zig/issues/11826">#11826</a>)</li>
+      <li>Fixed crash when building static library in the same directory where Zig source is located (<a href="https://github.com/ziglang/zig/issues/11833">#11833</a>)</li>
+      <li>Improve error reporting when libc is missing.</li>
+      <li>Added <code>ZIG_GLOBAL_CACHE_DIR</code> environment variable.</li>
+      <li>Improved glibc version and dynamic linker detection (<a href="https://github.com/ziglang/zig/issues/12788">#12788</a>)</li>
+      <li><code>zig env</code> now includes a field for the native target.</li>
+      <li>Improved header searchlist handling (<a href="https://github.com/ziglang/zig/issues/12888">#12888</a>)</li>
+      <li>Better error message for <code>--name</code> operand containing folder separator.</li>
+      <li>Better template for <code>zig init-exe</code></li>
+      <li>Native target detection now supports the case when <code>/usr/bin/env</code> happens
+        to be a shell script. It will follow the shebang line until it finds an ELF file from
+        which to learn the native dynamic linker path. Additionally, glibc version detection is
+        improved.</li>
+      <li>Fixed header searchlist priorities (<a href="https://github.com/ziglang/zig/issues/12888">#12888</a>)</li>
+      <li>Native include dir and lib dir are now aware of <a href="https://guix.gnu.org/">GUIX</a>
+        environment variables (<a href="https://github.com/ziglang/zig/issues/13145">#13145</a>)</li>
+    </ul>
+
+    {#header_open|Is it time to upgrade?#}
+    <p>
+    One option you have is to simply wait for 0.10.1, or even 0.11.0, before
+    attempting an upgrade. This gives you the smoothest experience, letting other,
+    more brave souls, help with quality assurance before you get your hands dirty.
+    There is no shame in this; do what works for you.
+    </p>
+    <p>
+    If anything goes wrong in the upgrade, you can always start using <code>-fstage1</code> to
+    get the old compiler, or put the equivalent in your build.zig file, so that
+    your users can continue using <code>zig build</code> as usual.
+    </p>
+    <pre>{#syntax#}exe.use_stage1 = true;{#endsyntax#}</pre>
+    <p>
+    The new compiler, sometimes called "stage2" or "stage3", is in many ways better
+    than the old compiler (also called "stage1"), however it is not yet strictly
+    better.
+    </p>
+    <p>
+    All 0.10.x releases will have the <code>-fstage1</code> option; the upgrade only will
+    become mandatory starting with 0.11.0. For some users, sticking with stage1 for
+    the duration of the 0.10.x release will be the best move; for others, upgrading
+    to self-hosted earlier will be right for them. This guide should help you
+    decide which category you fall into.
+    </p>
+
+    {#header_open|Improvements over stage1#}
+    <ul>
+      <li>Many bugs are fixed, which could never be fixed in stage1 due to fundamental design flaws.</li>
+      <li>Performance is minorly improved. For Zig, we observe 7% speed improvement in building itself.</li>
+      <li>Memory usage is improved by a factor of about 3.5x. For Zig, building itself went from using 9.6 GiB to 2.8 GiB.</li>
+      <li>The LLVM code generated is better. LLVM has an easier time optimizing. You likely will have small improvements in perf of your project.</li>
+      <li>Many compile errors are more helpful.</li>
+      <li>The core design is fundamentally different so that
+        <a href="https://www.youtube.com/watch?v=AqDdWEiSwMM">game-changing performance enhancements become possible</a></li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Falling short of stage1#}
+    <p>Although we fully intend to make the self-hosted compiler a strict improvement, that is not the case yet.</p>
+    <ul>
+      <li>There are some fresh bugs.</li>
+      <li>async/await is not done yet (<a href="https://github.com/ziglang/zig/issues/6025">#6025</a>). Users of async/await cannot upgrade until a few more months when this feature is complete.</li>
+      <li>Some compile errors are still missing.</li>
+      <li>Some compile errors are less helpful.</li>
+      <li>There are some patterns that generate
+        <a href="https://github.com/ziglang/zig/issues/12713">worse runtime performance</a>.</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|How to Upgrade#}
+    <p>Assuming that you have decided the time is nigh, here are some tips.</p>
+    <p>Although most of the language is the same between stage1 and self-hosted,
+    there are some incompatibilities. Here are two strategies to deal with
+    this:</p>
+    <ol>
+      <li>Have a different branch for when using Zig self-hosted. Once you decide to commit to the upgrade, merge that branch into your main branch.</li>
+      <li>Make the codebase support both stage1 and self-hosted at the same
+        time using conditional compilation based on
+        {#link|std.builtin.CompilerBackend#}.</li>
+    </ol>
+    <p>In addition to the sub-sections below, see also these {#link|Language Changes#} which
+    should be considered part of the upgrade guide:</p>
+    <ul>
+      <li>{#link|Function Pointers#}</li>
+      <li>{#link|Runtime Array Concatenation & Multiplication#}</li>
+      <li>{#link|Address-of Temporaries Now Produces Const Pointers#}</li>
+      <li>{#link|Pointers to Zero-Bit Types#}</li>
+      <li>{#link|std.builtin.CompilerBackend#}</li>
+    </ul>
+
+    {#header_open|Void Literal Syntax#}
+    <p>{#syntax#}{}{#endsyntax#} vs {#syntax#}.{}{#endsyntax#}</p>
+    <p>This one is pretty simple:</p>
+    {#code_begin|test_err|expected#}
+test {
+    var x: void = .{};
+    _ = x;
+}
+    {#code_end#}
+
+    <p>{#syntax#}.{}{#endsyntax#} is a struct literal; {#syntax#}{}{#endsyntax#} is a void value. It has always been a bug for the {#link|Bootstrap Compiler#} to accept this code. Just change {#syntax#}.{}{#endsyntax#} to {#syntax#}{}{#endsyntax#}.</p>
+
+    <pre><code><span class="diff-red">-    var x: void = .{};</span><span class="diff-green">+    var x: void = {};</span></code></pre>
+    {#header_close#}
+
+    {#header_open|Escaped Pointer to Parameter#}
+    {#code_begin|test_safety|TestUnexpectedResult#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "escaped pointer to parameter" {
+    var s: S = .{ .field = 1234 };
+    const value = s.foo();
+    try expect(value == &s.field);
+}
+
+const S = struct {
+    field: i32,
+
+    fn foo(s: S) *const i32 {
+        return &s.field; // XXX: escaped pointer to parameter
+    }
+};
+    {#code_end#}
+    <p>This test passes with the {#link|Bootstrap Compiler#} despite having a
+    critical bug: a temporary is created by taking the address of the the
+    <a href="/documentation/0.10.0/#Pass-by-value-Parameters">pass-by-value parameter</a>
+    which is then returned from the function.</p>
+
+    <p>The legacy compiler is naive, always passing structs by pointer in code such as this.
+    Meanwhile, the self-hosted compiler efficiently takes advantage of smaller
+    arguments such as this, passing them truly by value, revealing the bug.</p>
+
+    <p>Hopefully in the future Zig will have
+    <a href="https://github.com/ziglang/zig/issues/3180">runtime safety for this</a>,
+    however, currently this will manifest as a use-after-free. So if you find a
+    pointer to bogus data, double check that the pointer was not created this way.</p>
+
+    <p>Once the problem has been identified, the fix is simple:</p>
+
+    <pre><code><span class="diff-red">-    fn foo(s: S) *const i32 {</span><span class="diff-green">+    fn foo(s: *const S) *const i32 {</span></code></pre>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|C ABI Compatibility#}
+    <p>C ABI compatibility is notoriously difficult when using {#link|LLVM|LLVM 15#}. In
+    Zig 0.9.x, there were several major miscompilations for functions with C calling convention,
+    especially when using an architecture other than x86_64.</p>
+    <p>Thanks to a nicer abstraction for dealing with the C ABI, plus some good
+    old-fashioned hard work, in 0.10.0, Zig has near full C ABI compliance on several targets:</p>
+    <ul>
+      <li>x86_64 - close to 100%</li>
+      <li>aarch64 - close to 100%</li>
+      <li>wasm32 - close to 100%</li>
+      <li>arm, x86 - complex numbers are not handled correctly yet</li>
+    </ul>
+    <p>You can have a look at the
+      <a href="https://github.com/ziglang/zig/blob/0.10.0/test/tests.zig#L1272-L1349">new test harness</a>
+      to see what exactly is covered. Each of these targets are now tested with
+      every CI run with QEMU.</p>
+    {#header_close#}
+
+    {#header_open|C Translation#}
+    <ul>
+      <li>Handle typedef'ed void return type for functions (<a href="https://github.com/ziglang/zig/issues/10356">#10356</a>)</li>
+      <li>Fixed macro define of float constant using scientific notation. Fixes
+        compiler attempting to use null value when translating macro define of
+        float constant using scientific notation with no decimal point.</li>
+      <li>Fixed issues translating macro define of hex float constant<ul>
+          <li>Fixed incorrect result when the first digit after the decimal point is not 0-9 - eg 0x0.ap0</li>
+          <li>Fixed compiler panic when the number starts with <code>0X</code> with a capital <code>X</code> - eg 0X0p0</li>
+          <li>Fixed compiler panic when the number has a decimal point immediately after <code>0x</code> - eg 0x.0p0</li>
+        </ul>
+      </li>
+      <li>Improve error messages when expecting specific tokens.</li>
+      <li>Add support for cast-to-union (<a href="https://github.com/ziglang/zig/issues/10955">#10955</a>)</li>
+      <li>Use nested scope for comma operator in macros (<a href="https://github.com/ziglang/zig/issues/11040">#11040</a>)</li>
+      <li>Check child records for opaque types (<a href="https://github.com/ziglang/zig/issues/10461">#10461</a>)</li>
+      <li>Fixed cast or call macro with parenthesis (<a href="https://github.com/ziglang/zig/issues/11962">#11962</a>)</li>
+      <li>Do not try to get rid of do while loop because it might contain
+        breaks and continues (<a href="https://github.com/ziglang/zig/issues/11994">#11994</a>)</li>
+      <li>Take address of functions before passing them to {#syntax#}@ptrToInt{#endsyntax#} (<a href="https://github.com/ziglang/zig/issues/12194">#12194</a>)</li>
+      <li>Use correct number of initializers for vectors (<a href="https://github.com/ziglang/zig/issues/12264">#12264</a>)</li>
+      <li>Fixed alignment in pointer casts</li>
+      <li>Don't add self-defined macros to global name table (<a href="https://github.com/ziglang/zig/issues/12471">#12471</a>)</li>
+      <li>Convert tabs to <code>\t</code> in object-like macro string literals (<a href="https://github.com/ziglang/zig/issues/12549">#12549</a>)</li>
+      <li>Escape non-ASCII characters that appear in macros (<a href="https://github.com/ziglang/zig/issues/12784">#12784</a>)</li>
+      <li>Translate clang packed struct C into Zig extern struct with align(1) (<a href="https://github.com/ziglang/zig/issues/12745">#12745</a>)</li>
+      <li>Fixed function pointers, add cast to subscripts in macros (<a href="https://github.com/ziglang/zig/issues/13126">#13126</a>)</li>
+      <li>Added missing builtins used by CRuby</li>
+      <li>Better support for division in macros by performing C-style arithmetic conversions on
+        operands to division operator (<a href="https://github.com/ziglang/zig/issues/13162">#13162</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Cache System#}
+    <p>Zig now places the <code>zig-cache</code> directory next to
+    <code>build.zig</code>. If no <code>build.zig</code> file is found, it
+    falls back to using the global cache directory (<a href="https://github.com/ziglang/zig/issues/11672">#11672</a>).</p>
+
+    <p>Internally, there are now two <strong>cache modes</strong>:
+    <em>incremental</em> and <em>whole</em>. <strong>Whole cache mode</strong> is what
+    everyone is used to from previous Zig releases. It relies on hashing the full set of
+    inputs, including every source file that is directly or indirectly imported.
+    <strong>Incremental cache mode</strong> is new and is based on re-opening
+    existing build artifacts and rebuilding only the modified symbols. Although
+    Zig's incremental compilation system is still experimental, it can be
+    enabled with the <code>--watch</code> flag.</p>
+
+    <p>Incremental cache mode is the default for the
+    {#link|self-hosted code generation backends|Code Generation#}, and for the
+    {#link|LLVM|LLVM 15#} backend when not using the {#link|Build System#}. Because the compiler
+    does not yet serialize and restore its state, without the <code>--watch</code> flag,
+    this will result in recompiling with every invocation of the compiler. On the other hand,
+    it results in less garbage accumulating into the <code>zig-cache</code> directory.</p>
+    {#header_close#}
+
+    {#header_open|Safety for Switching on Corrupted Enums#}
+    <p>The following code, when run with Zig 0.9.1, will invoke
+    <em>undefined behavior</em>:</p>
+    {#code_begin|test_safety|switch on corrupt#}
+const std = @import("std");
+
+const E = enum(u32) {
+    one = 1,
+    two = 2,
+};
+
+test "example" {
+    var a: E = .two;
+    @ptrCast(*u32, &a).* = 255;
+    switch (a) {
+        .one => @panic("one"),
+        else => return,
+    }
+}
+    {#code_end#}
+    <p>As you can see, with Zig 0.10.0, this problem is caught with a safety check.
+    A future enhancement will further refine this to
+    <a href="https://github.com/ziglang/zig/issues/13295">make the stack trace point at the switch expression rather than the prong</a>.</p>
+    {#header_close#}
+
+    {#header_open|Referenced-By Traces#}
+    <p>You can find referenced-by traces in a few other example snippets throughout this
+    document, but here is illustrated a real world example that was particularly helpful:</p>
+
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>stage3/bin/zig build -p wasi -Dskip-install-lib-files -Dtarget=wasm32-wasi</kbd></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/os.zig:110:28: </span><span class="t31_1">error: </span><span class="t1_0">root struct of file 'os.wasi' has no member named 'PATH_MAX'</span></span>
+<span class="line">pub const PATH_MAX = system.PATH_MAX;</span>
+<span class="line t32_1">                     ~~~~~~^~~~~~~~~</span>
+<span class="line t2_0">referenced by:</span>
+<span class="line t2_0">    calcInstallNameLen: /home/andy/Downloads/zig/src/link/MachO.zig:3540:53</span>
+<span class="line t2_0">    calcLCsSize: /home/andy/Downloads/zig/src/link/MachO.zig:3577:24</span>
+<span class="line t2_0">    remaining reference traces hidden; use '-freference-trace' to see all reference traces</span>
+</samp></pre></figure>
+    <p>Here I tried to build the {#link|Self-Hosted Compiler#} for {#link|WASI#} but ran
+    into some code that incorrectly tried to reference {#syntax#}std.os.PATH_MAX{#endsyntax#}
+    even though no such definition exists for the WASI target.</p>
+    <p>You can see that without the referenced-by trace,
+    <a href="https://github.com/ziglang/zig/issues/13229">this bug</a>
+    would have been annoying to fix, but with it,
+    <a href="https://github.com/ziglang/zig/commit/a4eb221b9ef7dab8fa1c6cc07c7891e25d98d2b6">the fix was trivial</a>.</p>
+    {#header_close#}
+
+    {#header_open|Error Return Traces#}
+    <p>Zig's error return traces are a resource-efficient alternative to the
+    tracebacks provided by exceptions in other languages. With the default
+    limit of 32 stack frames, only 256 bytes per-thread are needed to maintain
+    the error trace.</p>
+
+    {#header_open|Unwrapping Errors in Switch#}
+    <p>A small quality-of-life improvement {#link|Vexu|Veikka Tuominen Goes Full-Time#}
+    thought of while trying to
+    figure out where an {#syntax#}error.GenericPoison{#endsyntax#} was coming from (<a href="https://github.com/ziglang/zig/issues/12889">#12889</a>).
+    Example situation:</p>
+    {#code_begin|test_err|attempt to unwrap#}
+fn foo() !void {
+    return error.Foo;
+}
+fn bar() !void {
+    try foo();
+}
+fn baz() void {
+    // bar() catch unreachable;
+    // bar() catch @panic("foo");
+    // const S = struct {
+    //     const S = struct {
+    //         const fooo = "foo";
+    //     };
+    // };
+    bar() catch |err| switch (err) {
+        // error.Foo => @panic(S.S.fooo),
+        error.Foo => unreachable,
+    };
+}
+test {
+    baz();
+}
+    {#code_end#}
+    <p>Before, it did this instead:</p>
+    {#shell_samp#}
+Test [1/1] test_0... thread 18432 panic: reached unreachable code
+./a.zig:17:22: 0x20f0fc in baz (test)
+        error.Foo => unreachable,
+                     ^
+./a.zig:21:8: 0x20f078 in test_0 (test)
+    baz();
+       ^
+/home/vexu/Documents/zig/zig/lib/test_runner.zig:79:28: 0x2105b5 in main (test)
+        } else test_fn.func();
+                           ^
+/home/vexu/Documents/zig/zig/lib/std/start.zig:568:22: 0x20f9bd in posixCallMainAndExit (test)
+            root.main();
+                     ^
+/home/vexu/Documents/zig/zig/lib/std/start.zig:340:5: 0x20f3c2 in _start (test)
+    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});
+    ^
+error: the following test command crashed:
+    {#end_shell_samp#}
+
+    <p>This also makes {#syntax#}@panic{#endsyntax#} show error return trace in
+    these same situations which you can test by uncommenting lines in the
+    example.</p>
+    {#header_close#}
+
+    {#header_open|Removal of Useless Stack Frames#}
+    <p>Prior to this release, error return traces suffered from a major
+    drawback: handled errors were never cleaned up and would pollute the error
+    trace. Zig now intelligently removes any error traces corresponding to
+    errors handled in a {#syntax#}catch { ... }{#endsyntax#} or
+    {#syntax#}if ... else |err| { ... }{#endsyntax#} block.</p>
+
+    <pre>{#syntax#}pub fn main() !void {
+    makeEggs() catch {
+        if (money < 10)  
+            return error.OutOfMoney; // If executed: trace shows makeEggs()'s error, followed by this line
+
+        try buyIngredients();           // On error: trace shows makeEggs()'s error, then buyIngredients()'s error
+    };
+    // makeEggs() removed from the trace here
+
+    try serveBreakfast();               // On error: trace shows serveBreakfast()'s error only
+}{#endsyntax#}</pre>
+
+    <p>Very long error return traces are also trimmed correctly and print a
+    helpful note to let you know about the missing entries:</p>
+
+    <pre><code>...
+./test_err.zig:5:5: 0x10224b39e in recursive__anon_1055 (test_err)
+    return recursive(N - 1);
+    ^
+./test_err.zig:5:5: 0x10224b35e in recursive__anon_1054 (test_err)
+    return recursive(N - 1);
+    ^
+(98 additional stack frames skipped...)</code></pre>
+
+    <p>There is one restriction to be aware of: error traces do not follow
+    errors into local variables ({#syntax#}var{#endsyntax#}) by default.
+    This restriction is what allows all functions in the thread to share the same 256-byte
+    error trace storage.</p>
+
+    <p>The new {#link|std.debug.Trace#} API allows users to copy and store error return
+    traces for mutable variables where needed.</p>
+
+    <p>Here is a real world example. Before, one might get debug output that looks like this:</p>
+    {#shell_samp#}
+$ ~/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32
+error: FileNotFound
+tools/copy-from-glibc.zig:21:23: 0x218e39 in main (copy-from-glibc)
+        var sub_dir = try glibcs_dir.openIterableDir(sub_path, .{});
+                      ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2755:19: 0x21f936 in mkdiratZ (copy-from-glibc)
+        .EXIST => return error.PathAlreadyExists,
+                  ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:2715:9: 0x218537 in mkdirat (copy-from-glibc)
+        return mkdiratZ(dir_fd, &sub_dir_path_c, mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1402:9: 0x21842b in makeDir (copy-from-glibc)
+        try os.mkdirat(self.fd, sub_path, default_new_dir_mode);
+        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/os.zig:1689:23: 0x24b498 in openatZ (copy-from-glibc)
+            .NOENT => return error.FileNotFound,
+                      ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1747:25: 0x23dbf1 in openDirFlagsZ (copy-from-glibc)
+            else => |e| return e,
+                        ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1717:13: 0x21e0a6 in openDirZ (copy-from-glibc)
+            return self.openDirFlagsZ(sub_path_c, os.O.DIRECTORY | os.O.RDONLY | os.O.CLOEXEC | symlink_flags);
+            ^
+/home/andy/tmp/zig-linux-x86_64-0.10.0-dev.4474+b41b35f57/lib/std/fs.zig:1654:40: 0x2180e5 in openIterableDir (copy-from-glibc)
+            return IterableDir{ .dir = try self.openDirZ(&sub_path_c, args, true) };
+                                       ^
+    {#end_shell_samp#}
+    <p>After this improvement, we see this instead:</p>
+    {#shell_samp#}
+$ ~/zig-bootstrap/out/host/bin/zig run tools/copy-from-glibc.zig -- ~/glibc/multi-2.32/install/glibcs headers 2.32
+error: FileNotFound
+/home/andy/zig-bootstrap/out/host/lib/zig/std/os.zig:1689:23: 0x24c038 in openatZ (copy-from-glibc)
+            .NOENT => return error.FileNotFound,
+                      ^
+/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1747:25: 0x23e4e8 in openDirFlagsZ (copy-from-glibc)
+            else => |e| return e,
+                        ^
+/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1717:13: 0x21e406 in openDirZ (copy-from-glibc)
+            return self.openDirFlagsZ(sub_path_c, os.O.DIRECTORY | os.O.RDONLY | os.O.CLOEXEC | symlink_flags);
+            ^
+/home/andy/zig-bootstrap/out/host/lib/zig/std/fs.zig:1654:40: 0x2182d5 in openIterableDir (copy-from-glibc)
+            return IterableDir{ .dir = try self.openDirZ(&sub_path_c, args, true) };
+                                       ^
+tools/copy-from-glibc.zig:21:23: 0x219059 in main (copy-from-glibc)
+        var sub_dir = try glibcs_dir.openIterableDir(sub_path, .{});
+                      ^
+    {#end_shell_samp#}
+
+    <p>This was an <a href="https://github.com/ziglang/zig/issues/1923">old issue that plagued Zig developers for a long time</a>. We have {#link|Cody Tapscott|Cody Tapscott Joins the Core Zig Team#} to thank for solving it.</p>
+
+
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Code Generation#}
+    <p>While the default backend is still {#link|LLVM|LLVM 15#}, Zig is starting
+    to invest in providing its own code generation. The primary motivation for this
+    is <strong>compilation speed</strong>. However, there is also a benefit to providing
+    a bootstrapping process that does not depend on C++, CMake, Python, libxml, zlib, and zstd,
+    all of which LLVM require in order to build. Furthermore, there is value in
+    providing healthy competition so that compiler backends do not become a monoculture.</p>
+    <p>
+    As a point of comparison, a stripped release build of Zig <em>with LLVM</em>
+    is 169 MiB, while <em>without LLVM</em> (but with
+    all the code generation backends you see here) it is 4.4 MiB.
+    </p>
+
+    {#header_open|WebAssembly Backend#}
+    <p>One of the visible improvements to the self-hosted Wasm backend is its
+    capabilities to generate code. The backend is now capable of passing 75% of the
+    behavior tests, compared to 13% in Zig 0.9.x. At this point, most Zig features are
+    supported. For features of which the WebAsssembly architecture has no
+    support, the backend is already capable of generating calls into
+    {#link|compiler-rt#}, and correctly {#link|link|Wasm Modules#} with it. This is thanks to the
+    {#link|C ABI Compatibility#} work that was done during this release. This
+    also benefitted the {#link|LLVM|LLVM 15#} backend with regards to its
+    {#link|WebAssembly#} target, as the logic for the C ABI implemtation is
+    fully shared between the backends. This will ensure that regardless of the
+    chosen backend, the function signatures they generate are equal. One
+    notable feature that was previously missing was support for {#link|DWARF Linking#}
+    when targetting WebAssembly. This is now fully supported in the LLVM backend,
+    and partly in the native backend. This allows for a great developer
+    experience when targetting WebAssembly. The goal is to add full support to
+    the native backend by its next release.</p>
+    <p>Some invisible improvements were done also. The backend was refactored
+    to be aware of the Wasm stack and leave locals there when possible, avoiding
+    unnecessary stores. This means we not only generate fewer instructions, but
+    also create fewer locals. Besides this, the backend now integrates with
+    Liveness Analysis, reusing locals that are no longer being referenced. All
+    of those changes are with the goal of making the native backends not only
+    compile fast, but also generate code which runs faster than when using the
+    LLVM backend.</p>
+    <p>Some notable changes that were partly responsible for the above include:</p>
+    <ul>
+      <li>Move responsibilities <code>lowerUnnamedConst</code> (<a href="https://github.com/ziglang/zig/issues/10983">#10983</a>)</li>
+      <li>Unify {#link|Code Generation#} with other backends (<a href="https://github.com/ziglang/zig/issues/11070">#11070</a>)</li>
+      <li>Add support for {#link|Debugging#} information (LLVM backend)(<a href="https://github.com/ziglang/zig/issues/11461">#11461</a>)</li>
+      <li>Initial {#link|C ABI|C ABI Compatibility#} implementation (native backend) (<a href="https://github.com/ziglang/zig/issues/11521">#11521</a>)</li>
+      <li>DWARF support (native backend) (<a href="https://github.com/ziglang/zig/issues/11610">#11610</a>)</li>
+      <li>Prerequisites {#link|compiler-rt#} integration (<a href="https://github.com/ziglang/zig/issues/11904">#11904</a>)</li>
+      <li>Implement C ABI when targetting wasm32 ({#link|LLVM|LLVM 15#} backend) (<a href="https://github.com/ziglang/zig/issues/12188">#12188</a>)</li>
+      <li>Reuse (temporary) locals (<a href="https://github.com/ziglang/zig/issues/12394">#12394</a>)</li>
+      <li>Integrate liveness analysis for locals reusal (<a href="https://github.com/ziglang/zig/issues/13193">#13193</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|C Backend#}
+    <p>A new contributor jacobly0 came out of nowhere and did a massive amount of work
+    to Zig's C backend, reaching these notable milestones:</p>
+    <ul>
+      <li>The C backend is now passing <strong>1259/1374 (92%)</strong> of the behavior tests.</li>
+      <li>The official <a href="/documentation/0.10.0/#Hello-World">hello world</a>
+        now works on at least <code>x86_64-linux</code> (with and without libc).</li>
+      <li>The test runner now prints output to the console.</li>
+    </ul>
+    <p>Additionally, in this release zig.h moved to become an installation
+    file. Instead of zig.h being baked into the compiler binary, it is a header
+    file distributed along with all the other header files distributed with Zig
+    (<a href="https://github.com/ziglang/zig/issues/11643">#11643</a>).</p>
+    <p>Soon, this backend will be used to replace the {#link|Bootstrap Compiler#} with
+    a C implementation that outputs C code (<a href="https://github.com/ziglang/zig/issues/5246">#5246</a>).</p>
+    {#header_close#}
+
+    {#header_open|x86 Backend#}
+    <p>Although this backend remains <strong>experimental</strong>, it has seen considerable
+    progress during this release cycle. Notable milestones reached:</p>
+    <ul>
+      <li>Partially implemented SystemV calling convention.</li>
+      <li>Implemented {#link|Windows#} x64 calling convention.</li>
+      <li>Enhanced the <code>x86_64</code> encoder to handle most of general purpose register
+        encodings such as <code>I</code>, <code>OI</code>, <code>MI</code>, <code>RM</code>,
+        <code>MR</code>, and <code>RMI</code>.</li>
+      <li>Added basic support for the VEX prefix and SSE/AVX encodings such as <code>MV</code>, <code>RVM</code> and <code>RVMI</code>.</li>
+      <li>Implemented lowerings for many fundamental
+        <a href="https://github.com/ziglang/zig/wiki/Glossary#air">AIR</a> instructions.</li>
+    </ul>
+    <p>All of the above culminates in the x86_64 self-hosted backend passing
+    <strong>875/1365 (64%)</strong> of the behavior tests compared to the LLVM backend.
+    It will need to get very close to 100% before being enabled by default for debug mode.</p>
+    {#header_close#}
+
+    {#header_open|arm Backend#}
+    <p>This backend remains <strong>experimental</strong>, however it now supports error unions,
+    structs, and switch statements and is thereby passing <strong>790/1365 (58%)</strong>
+    of the behavior tests. It will need to get very close to 100% before being enabled by default
+    for debug mode.</p>
+    {#header_close#}
+
+    {#header_open|aarch64 Backend#}
+    <p>This backend remains <strong>experimental</strong>, however it now supports error unions,
+    structs, and switch statements and is thereby passing <strong>560/1365 (41%)</strong>
+    of the behavior tests. It will need to get very close to 100% before being enabled by default
+    for debug mode.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Self-Hosted Linker#}
+    <p>The self-hosted linker is <em>tightly coupled</em> with the {#link|Self-Hosted Compiler#}.
+    There has been progress on {#link|ELF#} and {#link|COFF#} however they are not generally usable yet.
+    By default, LLD will be used for these object formats, however, one can opt in to
+    the self-hosted linker with <code>-fno-LLD</code>.</p>
+
+    {#header_open|MachO#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_2.svg" style="height: 16em; float: right">
+    <p>
+The incremental MachO linker, like its traditional linking counterpart, has seen
+a major rewrite where Zig now lays out the incrementally linked binary such that
+there is one section per segment. This might sound wasteful but it allows Zig to
+use the quick file space allocation algorithm used already in the {#link|ELF#} and
+{#link|COFF#} linkers.
+    </p><p>
+How does it work? By enclosing a single section within a single segment Zig is
+able to disassociate the file offsets from the allocated virtual memory
+addresses. This provides the uncanny ability to reorder and move the sections
+within the underlying binary file without affecting the ordering in
+the virtual memory space. This implies that if the section grows
+beyond what was originally allocated, Zig only needs to copy its contents in the
+file to a new location without any virtual address space recalculations unless
+the section has also exceeded its allocated virtual address space. But even
+then only some atoms are affected in subsequent sections in the virtual address
+space.
+    </p><p>
+Thanks to this trick, Zig is on the path of achieving truly incremental linking
+for MachO which should also make implementing hot-code swapping for MachO much
+simpler and more efficient.
+    </p>
+    <p>For a more in-depth look into the changes involved have a look at this pull request:
+    <a href="https://github.com/ziglang/zig/pull/12893">macho: rewrite incremental linker, and init splitting of linking contexts</a></p>
+    <p>In addition, the following improvements have been made:</p>
+    <ul>
+      <li>The linker no longer artificially limits the maximum jump size to ISA's
+        <code>b/bl</code>'s 28bits signed displacement which roughly equates to 128MB of compiled
+        machine code section. The linker now extends the jump range via thunks which
+        load the target address into the scratch register followed by a branch via
+        register <code>blr</code> (<a href="https://github.com/ziglang/zig/issues/13260">#13260</a>) (<a href="https://github.com/ziglang/zig/issues/13274">#13274</a>)</li>
+      <li>do not write out ZEROFILL physically to file</li>
+      <Li>extend <code>CodeSignature</code> to accept entitlements</li>
+      <li>set <code>CS_LINKER_SIGNED</code> flag in code signature generated by Zig</li>
+      <li>round down pagezero size to page size. If page aligned requested pagezero size is 0,
+        skip generating <code>__PAGEZERO</code> segment. Add misc improvements to the pipeline, and correctly
+        transfer the requested <code>__PAGEZERO</code> size to the linker.</li>
+      <li> <code>-pagezero_size</code> is always in hex. This matches the behavior of other linkers out
+        there including <code>ld64</code> and <code>lld</code>.</li>
+      <li>fix aligning linkedit sections</li>
+      <li>implement <code>-search_dylibs_first</code> linker option</li>
+      <li>verbose print all input linker args verbatim</li>
+      <li>implement -headerpad_size option</li>
+      <li>prefill any space between <code>__DATA</code> and <code>__LINKEDIT</code> with 0s if required. If there are zerofill
+      sections, the loader may copy the contents of the physical space in file directly into memory
+      and attach that to the zerofill section. This is a performance optimisation in the loader
+      but requires us, the linker, to properly zero-out any space between <code>__DATA</code> and
+      <code>__LINKEDIT</code>
+      segments in file. This is of course completely skipped if there are no zerofill sections present.</li>
+      <li>implement <code>-headerpad_size</code> and <code>-headerpad_max_install_names</code> options</li>
+      <li>implement <code>-dead_strip_dylibs</code> linker flag</li>
+      <li>implement and handle <code>-needed-*</code> and <code>-needed_*</code> family of flags</li>
+      <li>implement <code>-weak-lx</code> and <code>-weak_framework x</code> flags</li>
+      <li>implement <code>-dead_strip</code> flag. Dead-code stripping is on by default for release build modes, and
+        off for debug builds, but can be opted in/out via <code>--gc-sections</code> and <code>--no-gc-sections</code> flags.</li>
+      <li>mark <code>__mh_execute_header</code> as referenced dynamically</li>
+      <li>build.zig: handle weakly imported libs and frameworks</li>
+      <li>support <code>-force_load=archive_path</code> flag</li>
+    </ul>
+
+    {#header_close#}
+
+    {#header_open|COFF#}
+    <p>The COFF linker has been reimplemented from scratch giving our {#link|Windows#} users
+    a chance to finally be able to play with the incremental linking
+    (using the <code>--watch</code> flag and {#link|x86 Backend#} via <code>-fno-LLVM</code>).
+    In addition, the linker now matches the implementation progress of
+    both {#link|ELF#} and {#link|MachO#}, and hence, it is now possible to run the behavior tests on
+    <code>x86_64-windows</code> successfully:</p>
+    {#shell_samp#}
+> C:\Users\kubkon\dev\zig\stage3\bin\zig.exe test test\behavior.zig -Itest -fno-LLVM -fno-unwind-tables -fno-emit-implib
+817 passed; 571 skipped; 0 failed.
+    {#end_shell_samp#}
+    <p>For more detailed description of the implementation, have a look at this pull request:
+    <a href="https://github.com/ziglang/zig/pull/12772">coff: implement enough of the incremental linker to pass behavior and incremental tests on Windows</a></p>
+    {#header_close#}
+
+    {#header_open|ELF#}
+    <p>The self-hosted ELF linker remains <strong>experimental</strong>, capable
+    of incremental compilation of simple Zig programs but not capable of acting as a traditional
+    linker.</p>
+    {#header_close#}
+
+    {#header_open|Wasm Modules#}
+    <p>Major progress has been made on the in-house WebAssembly linker. Zig is nearing
+    feature-parity with wasm-ld, which is the linker the compiler uses today when
+    targeting WebAssembly. The linker is now capable of linking with most object
+    files, while also being able to link with archive files such as {#link|compiler-rt#}.
+    During linking, it now correctly relocates {#link|Debugging#} information.
+    The next milestone would be to make the in-house linker the default linker.
+    To accomplish this, the following features must be implemented:</p>
+    <ul>
+      <li><strong>Garbage collection</strong> - Remove unused code and sections
+        to ensure binaries remain small which is crucial for Wasm.</li>
+      <li><strong>TLS support</strong> (including shared memory) - While being a non-MVP feature,
+        it is a feature that we see being used more and more in the open. By
+        implementing these features, we ensure existing projects will remain to
+        link correctly.</li>
+      <li><strong>Execution model</strong> - To fully support {#link|WASI#}, it is
+        important to generate the correct symbols for both the reactor and
+        command models.</li>
+    </ul>
+    <p>Those features will bring the linker to near feature parity. By making
+    the switch before being fully feature complete, we can begin the debugging
+    process sooner, as well as focusing on optimizing the memory usage and
+    runtime performance of the linker.</p>
+
+    <p>The following changes highlight some of the features mentioned above:</p>
+    <ul>
+      <li>Object parsing and linking (<a href="https://github.com/ziglang/zig/issues/10911">#10911</a>)</li>
+      <li>Implement relocatable object files (<a href="https://github.com/ziglang/zig/issues/10962">#10962</a>)</li>
+      <li>Place decls in the correct segment and order segments (<a href="https://github.com/ziglang/zig/issues/11933">#11933</a>)</li>
+      <li>Implement linker tests (<a href="https://github.com/ziglang/zig/issues/12006">#12006</a>)</li>
+      <li>Improve symbol resolution (<a href="https://github.com/ziglang/zig/issues/12467">#12467</a>)</li>
+      <li>Improve archive linking (<a href="https://github.com/ziglang/zig/issues/12557">#12557</a>)</li>
+      <li>Implement linking debug-information (<a href="https://github.com/ziglang/zig/issues/12770">#12770</a>)</li>
+      <li>Implement non-function extern variables (<a href="https://github.com/ziglang/zig/issues/12687">#12687</a>)</li>
+      <li>Generate the "producers" section (<a href="https://github.com/ziglang/zig/issues/13054">#13054</a>)</li>
+      <li>Feature compatibility validation (<a href="https://github.com/ziglang/zig/issues/13287">#13287</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|DWARF Linking#}
+    <p>The incremental DWARF emitter/linker is now capable of emitting correctly
+    relocated debug info for <code>x86_64</code>, <code>arm</code> and
+    <code>aarch64</code> architectures on Linux and macOS. The state of
+    implementation varies slightly between architectures with <code>x86_64</code>
+    being the furthest ahead.</p>
+    <p>Example progress includes correctly generating DWARF debug info for
+    slices including {#syntax#}[]const u8{#endsyntax#} for passing as formal parameters.
+    Breaking on a function accepting a slice in <code>gdb</code> will now yield
+    the same behavior as the {#link|Bootstrap Compiler#} and LLVM backend:</p>
+    {#code_begin|syntax#}
+fn sumArrayLens(a: []const u32, b: []const u8) usize {
+    return a.len + b.len;
+}
+    {#code_end#}
+    <p>Both <code>a</code> and <code>b</code> can now be inspected in the debugger:</p>
+    <pre><code>Breakpoint 1, sumArrayLens (a=..., b=...) at arr.zig:59
+(gdb) p a
+$1 = {ptr = 0x7fffffff685c, len = 5}
+(gdb) p b
+$2 = {ptr = 0x7fffffff683d "\252\252\252\\h\377\377\377\177", len = 3}
+(gdb)</code></pre>
+    {#header_close#}
+
+    {#header_open|Linker Performance#}
+    <p>This release saw a general rewrite of the majority of the linker in the spirit of
+    <a href="https://media.handmade-seattle.com/practical-data-oriented-design/">data-oriented design</a> which led to:</p>
+    <ul>
+      <li>significantly reduced link times to the point where, dare I say, we start to become competitive with <code>lld</code> and <code>ld64</code></li>
+      <li>reduced memory usage by avoiding unnecessary allocs, and instead re-parsing data when actually needed.</li>
+    </ul>
+    <p>In the benchmarks below, <code>zld</code> refers to our linker as a standalone binary
+    (which you can find at <a href="https://github.com/kubkon/zld">kubkon/zld</a>),
+    <code>lld</code> to LLVM's linker, and <code>ld64</code> to Apple's linker.
+    I should also point out that we are still missing a number of optimisations in
+    the linker such as cstring deduplication, compression of dynamic linker's
+    relocations, and synthesising of the unwind info section, so this difference
+    between <code>zld</code> and other linkers will most likely shrink a little.</p>
+    <p>I've run the benchmarks on a MacBook Pro 16" with M1 Pro SoC and 32GB RAM. The
+    generated code for the linker was <strong>not</strong> using
+    {#link|hardware sha256 extensions|Exploit CPU Features for SHA-256#}.</p>
+    <p><strong>Linking <a href="https://github.com/redis/redis/">redis-server</a> binary</strong>:</p>
+    {#shell_samp#}
+❯ hyperfine ./zld ./lld ./ld64 --warmup 60
+Benchmark 1: ./zld
+  Time (mean ± σ):      35.6 ms ±   0.4 ms    [User: 35.9 ms, System: 10.4 ms]
+  Range (min … max):    34.8 ms …  36.4 ms    79 runs
+
+Benchmark 2: ./lld
+  Time (mean ± σ):      49.2 ms ±   0.8 ms    [User: 42.6 ms, System: 17.6 ms]
+  Range (min … max):    48.0 ms …  51.2 ms    59 runs
+
+Benchmark 3: ./ld64
+  Time (mean ± σ):      47.2 ms ±   0.5 ms    [User: 60.1 ms, System: 14.4 ms]
+  Range (min … max):    46.2 ms …  48.1 ms    61 runs
+
+Summary
+  './zld' ran
+    1.32 ± 0.02 times faster than './ld64'
+    1.38 ± 0.03 times faster than './lld'
+    {#end_shell_samp#}
+    <p><strong>Linking {#link|Self-Hosted Compiler#} binary</strong>:</p>
+    {#shell_samp#}
+❯ hyperfine ./zld ./lld ./ld64 --warmup 5
+Benchmark 1: ./zld
+  Time (mean ± σ):      1.934 s ±  0.012 s    [User: 2.870 s, System: 0.468 s]
+  Range (min … max):    1.923 s …  1.962 s    10 runs
+
+Benchmark 2: ./lld
+  Time (mean ± σ):      1.153 s ±  0.014 s    [User: 1.289 s, System: 0.230 s]
+  Range (min … max):    1.141 s …  1.179 s    10 runs
+
+Benchmark 3: ./ld64
+  Time (mean ± σ):      2.349 s ±  0.006 s    [User: 3.875 s, System: 0.218 s]
+  Range (min … max):    2.341 s …  2.357 s    10 runs
+
+Summary
+  './lld' ran
+    1.68 ± 0.02 times faster than './zld'
+    2.04 ± 0.02 times faster than './ld64'
+    {#end_shell_samp#}
+    {#header_close#}
+
+    {#header_open|Linker Test Harness#}
+    <p>The incremental compilation that utilises Zig's
+    {#link|self-hosted native backends|Code Generation#} has
+    seen the addition of a vastly improved and easily extensible test harness. In
+    order to add a new incremental test (emulating the <code>--watch</code> flag), it is now
+    only required to drop a Zig source file in the test harness directory with a
+    specially crafted comment instructing the harness of several test parameters
+    such as test target, and that's it. Thanks to this dynamic approach there is no
+    longer any need in recompiling the harness (<a href="https://github.com/ziglang/zig/issues/11530">#11530</a>) (<a href="https://github.com/ziglang/zig/issues/11572">#11572</a>).</p>
+
+    <p>Linkers also have received a new test harness, which is based on the
+    <code>StandaloneTestContext</code> and <code>CheckFileStep</code>, and as
+    such assumes each test case specifies a <code>build.zig</code> script where
+    we instruct the harness what the link flags/conditions are the expected
+    results such as a runtime result or a greppable contents of the generated
+    binary file (<a href="https://github.com/ziglang/zig/issues/11910">#11910</a>).</p>
+
+    <p>Notable features:</p>
+    <ul>
+      <li><code>CheckObjectStep</code> specialises <code>CheckFileStep</code>
+        into directed (surgical) MachO file fuzzy searches. This will be the
+        building block for comprehensive linker tests.</li>
+      <li>dump metadata to string and grep results. This approach is more
+        inline with what LLVM/LLD does for testing of their output, and seems
+        to be more generic and easier to extend than implementing a lot of
+        repetitive and nontrivial comparison logic when working directly on structures.</li>
+      <li>extract values from parsed binaries into variables. We can then
+        collect multiple variables (currently assumed always in global scope)
+        and run a comparison with some very basic arithmetic on the values.</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+
+    {#header_open|Standard Library#}
+    <p>The Zig standard library is still unstable and mainly serves as a
+    testbed for the language. After the {#link|Self-Hosted Compiler#} is completed,
+    the {#link|language|Language Changes#} stabilized, and
+    {#link|Package Manager#} completed, then it will be time
+    to start working on stabilizing the standard library.
+    Until then, experimentation and breakage without warning is allowed.</p>
+    <ul>
+      <li>process.ArgIterator.next return type is changed.</li>
+      <li>Fixed process.argsAlloc buffer size</li>
+      <li>process: add option to support single quotes to ArgIteratorGeneral</li>
+      <li>Make it easier to avoid depending on child process execution when not supported by the target OS.</li>
+      <li>Implement child processes with posix_spawn as an alternative to fork-exec where possible</li>
+      <li>ChildProcess.init no longer heap allocates</li>
+      <li>Fixed ChildProcess crash when PATH is empty</li>
+      <li>std.os.execvpe: fix buffer overflow</li>
+      <li>Break up some long lines. This makes packaging Zig for
+        <a href="https://www.debian.org/">Debian</a> slightly easier since
+        it will no longer trigger a
+        <a href="https://lintian.debian.org/manual/index.html">Lintian</a>
+        warning for long lines.</li>
+      <li>Skip {#syntax#}comptime{#endsyntax#} struct fields in
+        {#syntax#}mem.zeroes(){#endsyntax#} (<a href="https://github.com/ziglang/zig/issues/10406">#10406</a>)</li>
+      <li>Rename mem.bswapAllFields to byteSwapAllFields</li>
+      <li>mem: add indexOfMin and indexOfMax (<a href="https://github.com/ziglang/zig/issues/9915">#9915</a>)</li>
+      <li>Allow <code>mem.zeroes</code> to work at comptime with extern union (<a href="https://github.com/ziglang/zig/issues/10797">#10797</a>)</li>
+      <li>mem.zeroes: Zero sized structs with uninitialized members (<a href="https://github.com/ziglang/zig/issues/12246">#12246</a>)</li>
+      <li>mem.zeroInit: Fixed behavior with empty initialiser</li>
+      <li>mem: added concatWithSentinel</li>
+      <li>mem: add peek() to TokenIterator(T)</li>
+      <li>mem: add splitBackwards (<a href="https://github.com/ziglang/zig/issues/11908">#11908</a>)</li>
+      <li>mem: add <code>first</code> and <code>reset</code> method to <code>SplitIterator</code> and <code>SplitBackwardsIterator</code></li>
+      <li>Enhanced {#syntax#}ascii.indexOfIgnoreCase{#endsyntax#} with Boyer-Moore-Horspool algorithm.</li>
+      <li>Support parsing tz timezone data (<a href="https://github.com/ziglang/zig/issues/10456">#10456</a>)</li>
+      <li>Added json.stringifyAlloc</li>
+      <li>json: fix compile error for comptime fields (<a href="https://github.com/ziglang/zig/issues/10849">#10849</a>)</li>
+      <li>json: correctly handle sentinel terminated slices</li>
+      <li>JSON stringify string setting affects keys (<a href="https://github.com/ziglang/zig/issues/11618">#11618</a>)</li>
+      <li>json: Support disabling indent (<a href="https://github.com/ziglang/zig/issues/11823">#11823</a>)</li>
+      <li>json: Fixed parsing of large numbers</li>
+      <li>json: expose encodeJsonString and encodeJsonStringChars</li>
+      <li>Added meta.DeclEnum</li>
+      <li>Makes std.meta.Tuple and std.meta.ArgsTuple generate a unique type instead of generating one per invocation.</li>
+      <li>meta: made FieldEnum(T) == Tag(T) for tagged unions when values match field indices</li>
+      <li>Added isTag function to std.meta (<a href="https://github.com/ziglang/zig/issues/11895">#11895</a>)</li>
+      <li>Added some missing termios types to c/linux.zig and os.zig</li>
+      <li>readUntilDelimiter: read only if buffer not full (<a href="https://github.com/ziglang/zig/issues/9594">#9594</a>)</li>
+      <li>Avoid duplicate TLS startup symbols</li>
+      <li>Correct rounding in parse_hex_float.zig (<a href="https://github.com/ziglang/zig/issues/10743">#10743</a>)</li>
+      <li>Progress: make the API infallible by handling <code>error.TimerUnsupported</code>.
+        In this case, only explicit calls to refresh() will cause the progress
+        line to be printed.</li>
+      <li>Progress: fix suffix printing</li>
+      <li>Fixed data race in std.Progress.maybeRefresh()</li>
+      <li>Added elf.EM, coff.MachineType to Target.CPU.Arch conversions</li>
+      <li>Fixed sigaction double panic (<a href="https://github.com/ziglang/zig/issues/8357">#8357</a>)</li>
+      <li>Added sem_open and sem_close</li>
+      <li>Added SIMD utility functions</li>
+      <li>Added <code>unicode.replacement_character</code></li>
+      <li>unicode: add utf16 byte length and codepoints counting routines (<a href="https://github.com/ziglang/zig/issues/11663">#11663</a>)</li>
+      <li>os.getenvW: Fixed case-insensitivity for Unicode env var names (<a href="https://github.com/ziglang/zig/issues/10595">#10595</a>)</li>
+      <li>Added memfd_create for FreeBSD. This is minorly breaking as e.g.
+        std.os.linux.MFD_CLOEXEC is now std.os.linux.MFD.CLOEXEC.</li>
+      <li>Added FreeBSD support to std.os.getFdPath</li>
+      <li>Audit FreeBSD structs to match header files/ABI</li>
+      <li>Added functions from <code>dirent.h</code> to std.c (<a href="https://github.com/ziglang/zig/issues/11598">#11598</a>)</li>
+      <li>std.c: Fixed incorrect dirent structure (<a href="https://github.com/ziglang/zig/issues/11602">#11602</a>)</li>
+      <li>Added const to msghdr_const iov and control pointers</li>
+      <li>Mark fstype argument to mount as optional.</li>
+      <li>Renamed systemz to s390x</li>
+      <li>Fixed definition of SIG_IGN, SIG_DFL, etc. (<a href="https://github.com/ziglang/zig/issues/12410">#12410</a>)</li>
+      <li>Added bounded array functions to io.Reader</li>
+      <li>ascii: rename functions and other improvements (<a href="https://github.com/ziglang/zig/issues/12448">#12448</a>)</li>
+    </ul>
+
+    {#header_open|Math#}
+    <ul>
+      <li>Fixed overflow in isNormal when applied to -Inf or a negative NaN</li>
+      <li>Optimize division with divisors less than a half-limb</li>
+      <li>Simplify implementation of floorPowerOfTwo</li>
+      <li>Fixed big.int div, gcd and bitAnd edge-cases (<a href="https://github.com/ziglang/zig/issues/10932">#10932</a>)</li>
+      <li>lossyCast: Fixed integer overflow caused by cast from maxInt(u32) as an f32 to u32.</li>
+      <li>Fixed for big int divmod (<a href="https://github.com/ziglang/zig/issues/11271">#11271</a>)</li>
+      <li>Complex: add 'negation' and 'mulitply by i'</li>
+      <li>Added new float-parser based on eisel-lemire algorithm (<a href="https://github.com/ziglang/zig/issues/11566">#11566</a>)</li>
+      <li>Added math.sign</li>
+      <li><code>powi</code>: use standard definition of underflow/overflow, implement {#syntax#}u0{#endsyntax#}, {#syntax#}i0{#endsyntax#}, {#syntax#}i1{#endsyntax#}
+        edge case (<a href="https://github.com/ziglang/zig/issues/11499">#11499</a>)</li>
+      <li>Made <code>cast</code> return optional instead of an error.</li>
+      <li>Added O(log N) implementation of log2(x) for {#syntax#}comptime_int{#endsyntax#}</li>
+      <li>big int: update Managed.toString() to use provided allocator (<a href="https://github.com/ziglang/zig/issues/11839">#11839</a>)</li>
+      <li>big int: breaking API changes to prevent UAF (<a href="https://github.com/ziglang/zig/issues/11897">#11897</a>)</li>
+      <li>Added <code>degreesToRadians</code> and <code>radiansToDegrees</code></li>
+      <li>Fixed big.Rational order/orderAbs (<a href="https://github.com/ziglang/zig/issues/12440">#12440</a>)</li>
+      <li>Added "Greatest common divisor" (gcd)</li>
+      <li>Fixed memory leak on OutOfMemory error in math.big.int and math.big.rational</li>
+      <li>Fixed cast behavior relating to comptime_int arguments (<a href="https://github.com/ziglang/zig/issues/12918">#12918</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|File System#}
+    <ul>
+      <li>fs.getAppDataDir: recognize <code>XDG_DATA_HOME</code></li>
+      <li>fs: Use <code>OpenMode</code> enum instead of read/write flags.</li>
+      <li>Define static error set for fs.Dir.copyFile</li>
+      <li>Fixed using {#syntax#}fs.Dir.Iterator{#endsyntax#} twice (<a href="https://github.com/ziglang/zig/issues/10404">#10404</a>)</li>
+      <li>Implemented cross-platform metadata API (<a href="https://github.com/ziglang/zig/issues/10486">#10486</a>)</li>
+      <li>Added File.sync (<a href="https://github.com/ziglang/zig/issues/11410">#11410</a>)</li>
+      <li>Prevent possible integer overflow in Dir.makePath (<a href="https://github.com/ziglang/zig/issues/11397">#11397</a>)</li>
+      <li>Split <code>Dir</code> into <code>IterableDir</code> (<a href="https://github.com/ziglang/zig/issues/12060">#12060</a>)</li>
+      <li>End iteration on Linux/WASI during Iterator.next when hitting <code>ENOENT</code> (<a href="https://github.com/ziglang/zig/issues/12211">#12211</a>)</li>
+      <li>Split Iterator.next on {#link|Linux#} and {#link|WASI#} to allow for handling platform-specific errors</li>
+      <li>Fixed <code>WalkerEntry.dir</code> not always being the containing dir</li>
+    </ul>
+    {#header_open|Optimized Tree Deletion#}
+    <p>Ryan Liptak improved the performance of {#syntax#}std.fs.Dir.deleteTree{#endsyntax#}
+    (<a href="https://github.com/ziglang/zig/issues/13073">#13073</a>).
+    The new implementation has the same constraints:</p>
+    <ul>
+      <li>No heap-allocating any memory or requiring an Allocator parameter.</li>
+      <li>No possibility of stack overflow due to a deeply nested file system tree.</li>
+    </ul>
+    <p>The new implementation has better performance than <code>rm -rf</code> (at least
+    on {#link|Linux#} - see <a href="https://github.com/ziglang/zig/issues/13048#issuecomment-1265224210">benchmark details</a>):</p>
+
+    <pre><code>$ hyperfine "./rm-fast my-app-copy" "./rm-master my-app-copy" "rm -rf my-app-copy" --prepare="cp -r my-app my-app-copy" --warmup 1 --runs 20
+Benchmark #1: ./rm-fast my-app-copy
+  Time (mean ± σ):     382.7 ms ±   7.8 ms    [User: 13.6 ms, System: 358.9 ms]
+  Range (min … max):   372.2 ms … 395.9 ms    20 runs
+
+Benchmark #2: ./rm-master my-app-copy
+  Time (mean ± σ):     701.2 ms ±  28.3 ms    [User: 36.8 ms, System: 646.2 ms]
+  Range (min … max):   673.4 ms … 799.4 ms    20 runs
+
+Benchmark #3: rm -rf my-app-copy
+  Time (mean ± σ):     423.9 ms ±  35.4 ms    [User: 17.5 ms, System: 379.4 ms]
+  Range (min … max):   391.6 ms … 518.9 ms    20 runs
+
+Summary
+  './rm-fast my-app-copy' ran
+    1.11 ± 0.10 times faster than 'rm -rf my-app-copy'
+    1.83 ± 0.08 times faster than './rm-master my-app-copy'</code></pre>
+
+    <p>The new implementation accomplishes this by having a fixed-size buffer
+    on the stack, temporarily falling back to a slower algorithm when it
+    encounters deeply nested file system trees. The fallback implementation is
+    also optimized to reduce the number of syscalls emitted.</p>
+
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Data Structures#}
+    <ul>
+      <li>hash_map: optimize isFree/isTombstone (<a href="https://github.com/ziglang/zig/issues/10562">#10562</a>)</li>
+      <li>HashMap: add removeByPtr</li>
+      <li>Made ArrayHashMap eql function accept an additional param (<a href="https://github.com/ziglang/zig/issues/10742">#10742</a>)</li>
+      <li>Fixed memory leak in ArrayHashMap (<a href="https://github.com/ziglang/zig/issues/13001">#13001</a>)</li>
+      <li>Fixed getOrPutAdapted on Managed array hash map</li>
+      <li>HashMap: return explicit errors (<a href="https://github.com/ziglang/zig/issues/11000">#11000</a>)</li>
+      <li>Fixed auto_hash not hashing arrays of slices uniquely (<a href="https://github.com/ziglang/zig/issues/12423">#12423</a>)</li>
+      <li>Allow BoundedArray to be default initialized</li>
+      <li>Slice function of BoundedArray now returns slice based on self pointer. If
+        self pointer is const, the slice is const. Otherwise the slice is mutable.</li>
+      <li>BoundedArray: return explicit errors (<a href="https://github.com/ziglang/zig/issues/11044">#11044</a>)</li>
+      <li>BoundedArray: Add Writer interface</li>
+      <li>MultiArrayList: fixed insert compile error.</li>
+      <li>Added sort method to ArrayHashMap and MultiArrayList</li>
+      <li>MultiArrayList: add functions <code>addOne</code>, <code>pop</code>, and <code>popOrNull</code> (<a href="https://github.com/ziglang/zig/issues/11553">#11553</a>)</li>
+      <li>enums: make directEnumArrayLen public</li>
+      <li>bit_set: add setRangeValue(Range, bool)</li>
+      <li>Added ArrayList.clone</li>
+      <li>Use explicit error sets for ArrayList return types.</li>
+      <li>ArrayList.ensureTotalCapacity: optimize and fix integer overflow (<a href="https://github.com/ziglang/zig/issues/12099">#12099</a>)</li>
+      <li>BufSet: add clone and cloneWithAllocator</li>
+      <li>Fixed bug in PriorityQueue::removeIndex()</li>
+      <li>PriorityQueue: fix missing siftUp in remove</li>
+      <li>PriorityQueue: use compareFn in update() (<a href="https://github.com/ziglang/zig/issues/9918">#9918</a>)</li>
+      <li>PriorityDequeue: use compareFn in update() method</li>
+      <li>Added Treap data structure (<a href="https://github.com/ziglang/zig/issues/11444">#11444</a>)</li>
+      <li>SegmentedList: add constIterator</li>
+      <li>Made IntegerBitSet and ArrayBitSet have defined memory layout</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Crypto#}
+    <p>
+    We have <a href="https://www.prettysimpleimages.com/">Frank Denis</a> to thank for Zig's
+    state-of-the-art cryptography capabilities. In this release:</p>
+    <ul>
+      <li>Added bcrypt pbkdf (<a href="https://github.com/ziglang/zig/issues/10331">#10331</a>)</li>
+      <li>edwards25519: faster point decompression.
+        <a href="https://mailarchive.ietf.org/arch/msg/cfrg/qlKpMBqxXZYmDpXXIx6LO3Oznv4/">Make recovery of the x-coordinate slightly faster.</a></li>
+      <li>25519.scalar: implement edwards25519 scalar field inversion.
+        This operation is extremely useful for multiplicative blinding.</li>
+      <li>x25519: implement clearCofactor() (<a href="https://github.com/ziglang/zig/issues/11355">#11355</a>) <br>
+        This is the x25519 counterpart to {#syntax#}edwards25519.clearCofactor(){#endsyntax#}.
+        It is useful to check for low-order points in protocols where it
+        matters and where clamping cannot work, such as PAKEs.</li>
+      <li>edwards25519 fixes (<a href="https://github.com/ziglang/zig/issues/11568">#11568</a>)</li>
+      <li>Generate AES constants at compile time (<a href="https://github.com/ziglang/zig/issues/11612">#11612</a>)</li>
+      <li>25519: add scalar.random(), use CompressedScalar type. <br>
+        Add the ability to generate a random, canonical curve25519 scalar,
+        like we do for p256.
+        Also leverage the existing CompressedScalar type to represent these
+        scalars.</li>
+      <li>Added support for the NIST P-384 curve (<a href="https://github.com/ziglang/zig/issues/11735">#11735</a>) <br>
+        After P-256, here comes P-384, also known as secp384r1.
+        Like P-256, it is required for TLS, and is the current NIST recommendation for key exchange and signatures, for better or for worse.
+        Like P-256, all the finite field arithmetic has been computed and verified to be correct by fiat-crypto.</li>
+      <li>pcurves: compute constants for inversion at comptime (<a href="https://github.com/ziglang/zig/issues/11780">#11780</a>)</li>
+      <li>p256, p384: process the top nibble in mulDoubleBasePublic (<a href="https://github.com/ziglang/zig/issues/11956">#11956</a>)<br>
+          Unlike curve25519 where the scalar size is not large enough to fill
+          the top nibble, this can definitely be the case for p256 and p384.</li>
+      <li>25519, pcurves: make the scalar field order public (<a href="https://github.com/ziglang/zig/issues/11955">#11955</a>)</li>
+      <li>ecc: add support for the secp256k1 curve (<a href="https://github.com/ziglang/zig/issues/11880">#11880</a>)<br>
+        Usage of the secp256k1 elliptic curve recently grew exponentially,
+        since this is the curve used by Bitcoin and other popular blockchains
+        such as Ethereum.
+        <br>
+        With this, <strong>Zig has support for all the widely deployed elliptic curves
+          today</strong>.</li>
+      <li>hash: allow creating hash functions from compositions (<a href="https://github.com/ziglang/zig/issues/11965">#11965</a>)</li>
+      <li>sign.ed25519: add support for blind key signatures (<a href="https://github.com/ziglang/zig/issues/11868">#11868</a>)<br>
+        <a href="https://datatracker.ietf.org/doc/draft-dew-cfrg-signature-key-blinding/">Key blinding</a> allows public keys to be augmented with a secret
+        scalar, making multiple signatures from the same signer unlinkable.
+        This is required by privacy-preserving applications such as Tor
+        onion services and the PrivacyPass protocol.</li>
+      <li>sign.ed25519: include a context string in blind key signatures (<a href="https://github.com/ziglang/zig/issues/12316">#12316</a>)</li>
+      <li>Improved stdlib's random float generation (<a href="https://github.com/ziglang/zig/issues/10428">#10428</a>) (<a href="https://github.com/ziglang/zig/issues/11641">#11641</a>)</li>
+      <li>Added std.rand.RomuTrio</li>
+      <li>Random interface is no longer passed by reference.</li>
+      <li>random: add weightedIndex function</li>
+    </ul>
+
+    {#header_open|ECDSA Signatures#}
+    <p>Zig 0.10.0 adds support for ECDSA signatures (<a href="https://github.com/ziglang/zig/issues/11855">#11855</a>).</p>
+
+    <p>ECDSA is the most commonly used signature scheme today, mainly for
+    historical and conformance reasons. It is a necessary evil for
+    many standard protocols such as TLS and JWT.</p>
+
+    <p>It is tricky to implement securely and has been the root cause of
+    multiple security disasters, from the Playstation 3 hack to multiple
+    critical issues in OpenSSL and Java.</p>
+
+    <p>This implementation combines lessons learned from the past with
+    recent recommendations.</p>
+
+    <p>In Zig, the NIST curves that ECDSA is almost always instantied with
+    use formally verified field arithmetic, giving us peace of mind
+    even on edge cases. And the API rejects neutral elements where it
+    matters, and unconditionally checks for non-canonical encoding for
+    scalars and group elements. This automatically eliminates
+    <a href="https://sk.tl/2LpS695v">common vulnerabilities</a>.</p>
+
+    <p>ECDSA's security heavily relies on the security of the random number
+    generator, which is a concern in some environments.</p>
+
+    <p>This implementation mitigates this by computing deterministic
+    nonces using the conservative scheme from Pornin et al. with the
+    optional addition of randomness as proposed in Ericsson's
+    "Deterministic ECDSA and EdDSA Signatures with Additional Randomness"
+    document. This approach mitigates both the implications of a weak RNG
+    and the practical implications of fault attacks.</p>
+
+    <p>Project Wycheproof is a Google project to test crypto libraries against
+    known attacks by triggering edge cases. It discovered vulnerabilities
+    in virtually all major ECDSA implementations.</p>
+
+    <p>The entire set of ECDSA-P256-SHA256 test vectors from Project Wycheproof
+    is included here. Zero defects were found in this implementation.</p>
+
+    <p>Instead of raw byte strings for keys and signatures, we introduce the
+    <code>Signature</code>, <code>PublicKey</code> and <code>SecretKey</code>
+    structures.</p>
+
+    <p>The reason is that a raw byte representation would not be optimal.
+    There are multiple standard representations for keys and signatures,
+    and decoding/encoding them may not be cheap (field elements have to be
+    converted from/to the montgomery domain).</p>
+    {#header_close#}
+
+    {#header_open|Ed25519 API changes#}
+    <p>The <code>std.crypto.sign.ed25519</code> API has been changed to adopt the
+    same structure as the ECDSA API. This is a breaking change.</p>
+
+    <p>Instead of raw bytes, Ed25519 keys are now represented with the newly
+    introduced <code>Ed25519.PublicKey</code> and <code>Ed25519.SecretKey</code>
+    types.</p>
+
+    <p>Similarly, the <code>Ed25519.Signature</code> type is now used to store
+    signatures.</p>
+
+    <p>In Zig 0.9.x, key pair creation, signature computation and verification were
+    typically done this way:</p>
+
+    <pre>{#syntax#}const Ed25519 = std.crypto.sign.Ed25519;
+
+// Key pair creation
+const key_pair = try Ed25519.KeyPair.create(null);
+
+// Signature computation
+const sig = try Ed25519.sign("message", key_pair, null);
+
+// Signature verification
+try Ed25519.verify(sig, "message", key_pair.public_key);{#endsyntax#}</pre>
+
+    <p>In Zig 0.10.0, the code above becomes:</p>
+
+    <pre>{#syntax#}const Ed25519 = std.crypto.sign.Ed25519;
+
+// Key pair creation
+const key_pair = try Ed25519.KeyPair.create(null);
+
+// Signature computation
+const sig = try key_pair.sign("message", null);
+
+// Signature verification
+try sig.verify("message", key_pair.public_key);{#endsyntax#}</pre>
+
+    <p>In Zig 0.9.x, the entire message to be signed had to be loaded in memory
+    before signing. In Zig 0.10, the message can be streamed, which is
+    especially useful for large messages.</p>
+
+    <p>For example, the following code signs a message that is too large to fit
+    in memory:</p>
+
+    <pre>{#syntax#}var signer = try key_pair.signer(null);
+signer.update("message_part_1");
+signer.update("message_part_2");
+signer.update("message_part_3");
+const sig = signer.finalize();{#endsyntax#}</pre>
+
+    <p>Similarly, the following code verifies a multi-part message:</p>
+
+    <pre>{#syntax#}var verifier = try sig.verifier(key_pair.public_key);
+verifier.update("message_part_1");
+verifier.update("message_part_2");
+verifier.update("message_part_3");
+try verifier.verify();{#endsyntax#}</pre>
+
+    {#header_close#}
+
+    {#header_open|Add Xoodoo, Deprecate Gimli#}
+    <p>Zig 0.10.0 adds the Xoodoo permutation, preparing for Gimli deprecation (<a href="https://github.com/ziglang/zig/issues/11866">#11866</a>).</p>
+
+    <p>Gimli was a game changer. A permutation that is large enough to be
+    used in sponge-like constructions, yet small enough to be compact
+    to implement and fast on a wide range of platforms.</p>
+
+    <p>And Gimli being part of the Zig standard library was awesome.</p>
+
+    <p>But since then, Gimli entered the NIST Lightweight Cryptography
+    Competition, competing againt other candidates sharing a similar set
+    of properties.</p>
+
+    <p>Unfortunately, Gimli didn't pass the 3rd round.</p>
+
+    <p>There are no practical attacks against Gimli when used correctly, but
+    NIST's decision means that Gimli is unlikely to ever get any traction.</p>
+
+    <p>So, maybe the time has come to move Gimli from the standard library
+    to another repository.</p>
+
+    <p>We shouldn't do it without providing an alternative, though.
+    And the best candidate for this is probably Xoodoo.</p>
+
+    <p>Xoodoo is the core function of Xoodyak, one of the finalists of the
+    NIST LWC competition, and the most direct competitor to Gimli. It is
+    also a 384-bit permutation, so it can easily be used everywhere Gimli
+    was used with no parameter changes.</p>
+
+    <p>It is the building block of Xoodyak (for actual encryption and hashing)
+    as well as Charm, that some Zig applications are already using.</p>
+
+    <p>Like Gimli that it was heavily inspired from, it is compact and
+    suitable for constrained environments.</p>
+
+    <p>This change adds the Xoodoo permutation to std.crypto.core.</p>
+
+    <p>The set of public functions includes everything required to later
+    implement existing Xoodoo-based constructions.</p>
+
+    <p>In order to prepare for the Gimli deprecation, the default
+    CSPRNG was changed to a Xoodoo-based that works exactly the same way.</p>
+    {#header_close#}
+
+    {#header_open|Exploit CPU Features for SHA-256#}
+    <p>On x86_64 and AArch64, SHA-256 now takes advantage of specialized CPU features
+    when available.</p>
+    <p>This can affect {#link|MachO#} linking performance due to Apple's signature requirement.</p>
+    <p>On my Intel(R) Core(TM) i9-9980HK, for example, this CPU feature is not available,
+    and I therefore do not observe any improved performance. However, Apple's M1 laptops
+    do have this feature, and I observed SHA-256 increase from 199 MiB/s to 2.1 GiB/s in the
+    <a href="https://github.com/ziglang/zig/blob/0.10.0/lib/std/crypto/benchmark.zig">crypto benchmark</a>.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Concurrency#}
+    <ul>
+      <li>Fixed a bug in Thread.Condition and add a basic Condition test (<a href="https://github.com/ziglang/zig/issues/10538">#10538</a>)</li>
+      <li>Renamed <code>sched_yield</code> to <code>yield</code> and move it to <code>std.Thread</code></li>
+      <li>Thread: Mutex and Condition improvements (<a href="https://github.com/ziglang/zig/issues/11497">#11497</a>)</li>
+      <li>Added Thread.Condition.timedWait (<a href="https://github.com/ziglang/zig/issues/11352">#11352</a>)</li>
+      <li>Thread.Futex improvements (<a href="https://github.com/ziglang/zig/issues/11464">#11464</a>)</li>
+      <li>Thread: ResetEvent improvements (<a href="https://github.com/ziglang/zig/issues/11523">#11523</a>)</li>
+      <li>Single-threaded <code>panicImpl</code> sleep is unreachable (<a href="https://github.com/ziglang/zig/issues/11569">#11569</a>)</li>
+      <li>std.event: use .{} to initiate Lock to unlocked state</li>
+      <li>Thread: fix freeAndExit on x86_64 {#link|Linux#} (<a href="https://github.com/ziglang/zig/issues/12693">#12693</a>)</li>
+      <li>Update RwLock to use static initialization (<a href="https://github.com/ziglang/zig/issues/10838">#10838</a>)</li>
+      <li>time: introduce Instant (<a href="https://github.com/ziglang/zig/issues/10972">#10972</a>)</li>
+      <li>std.os: add timerfd_create, timerfd_settime and timerfd_gettime</li>
+      <li>Fixed Android definition of pthread_rwlock_t (<a href="https://github.com/ziglang/zig/issues/12830">#12830</a>)</li>
+      <li>Fixed DefaultRwLock accumulating write-waiters, eventually failing to write lock (<a href="https://github.com/ziglang/zig/issues/13180">#13180</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Networking#}
+    <ul>
+      <li>Added http definitions for <code>Method</code> and <code>Status</code> (<a href="https://github.com/ziglang/zig/issues/10661">#10661</a>)</li>
+      <li>Handle <code>HOSTUNREACH</code> for blocking and non-blocking connects</li>
+      <li><code>net.getAddressList</code>: fix segfault on bad hostname (<a href="https://github.com/ziglang/zig/issues/12065">#12065</a>)</li>
+      <li>Added <code>AFNOSUPPORT</code> error to bind (<a href="https://github.com/ziglang/zig/issues/12560">#12560</a>)</li>
+      <li>Added <code>tcdrain</code> on {#link|Linux#}</li>
+      <li><code>std.os</code> now handles <code>error.UnreachableAddress</code> in <code>send()</code></li>
+      <li>Fixed <code>setsockopt</code> returning <code>ENODEV</code></li>
+    </ul>
+    <p>Networking has mostly been quiet until now, but it is about to get lit
+    as we dive into the {#link|Package Manager#} in the {#link|next release cycle|Roadmap#}.</p>
+    {#header_close#}
+
+    {#header_open|Testing#}
+    <ul>
+      <li>Removed {#syntax#}std.testing.zig_exe_path{#endsyntax#} in favor of <code>ZIG_EXE</code>
+        environment variable (<a href="https://github.com/ziglang/zig/issues/11633">#11633</a>)</li>
+      <li>Fixed expectStringEndsWith error output. Before it started outputting the
+        actual starting, not ending characters.</li>
+      <li>Fixed progress indicator for <code>zig test</code> (<a href="https://github.com/ziglang/zig/issues/10859">#10859</a>)</li>
+      <li>Added <code>refAllDeclsRecursive</code> function</li>
+      <li>Made the caret indicator line more helpful</li>
+    </ul>
+
+    {#header_open|Check All Allocation Failures#}
+    <p>There is a new API that checks for memory leaks (and other
+    problems) caused by allocation failures by taking advantage of the
+    {#syntax#}FailingAllocator{#endsyntax#} and inducing failure at every
+    allocation point within the provided function (<a href="https://github.com/ziglang/zig/issues/10586">#10586</a>).</p>
+    <p>Below is the function's giant doc comment in a more readable form:</p>
+
+    <p>Exhaustively check that allocation failures within {#syntax#}test_fn{#endsyntax#} are handled
+    without introducing memory leaks. If used with the {#syntax#}testing.allocator{#endsyntax#} as the
+    {#syntax#}backing_allocator{#endsyntax#}, it will also perform memory sanitization when
+    runtime safety is enabled.</p>
+
+    <p>The provided {#syntax#}test_fn{#endsyntax#} must have a {#syntax#}std.mem.Allocator{#endsyntax#} as its first argument,
+    and must have a return type of {#syntax#}!void{#endsyntax#}. Any extra arguments of {#syntax#}test_fn{#endsyntax#} can
+    be provided via the {#syntax#}extra_args{#endsyntax#} tuple.</p>
+
+    <p>Any relevant state shared between runs of {#syntax#}test_fn{#endsyntax#}
+    <em>must</em> be reset within {#syntax#}test_fn{#endsyntax#}.</p>
+
+    <p>Expects that the {#syntax#}test_fn{#endsyntax#} has a deterministic number of memory allocations. An error will be returned if non-deterministic allocations are detected.</p>
+
+    <p>The strategy employed is to:</p>
+    <ul>
+      <li>Run the test function once to get the total number of allocations.</li>
+      <li>Then, iterate and run the function X more times, incrementing
+      the failing index each iteration (where X is the total number of
+      allocations determined previously)</li>
+    </ul>
+
+    <p>Here is an example of using a simple test case that will cause a leak when the
+    allocation of {#syntax#}bar{#endsyntax#} fails (but will pass normally):</p>
+
+    {#code_begin|test|cleanup_leak#}
+const std = @import("std");
+
+test {
+    const length: usize = 10;
+    const allocator = std.testing.allocator;
+    var foo = try allocator.alloc(u8, length);
+    var bar = try allocator.alloc(u8, length);
+
+    allocator.free(foo);
+    allocator.free(bar);
+}
+    {#code_end#}
+
+    <p>When the test case is converted to use the new
+    <code>checkAllAllocationFailures</code> API, the test fails:</p>
+
+    {#code_begin|test_err|leak#}
+const std = @import("std");
+
+fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
+    var foo = try allocator.alloc(u8, length);
+    var bar = try allocator.alloc(u8, length);
+
+    allocator.free(foo);
+    allocator.free(bar);
+}
+
+test {
+    const length: usize = 10;
+    const allocator = std.testing.allocator;
+    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});
+}
+    {#code_end#}
+
+    <p>Running this test will show that {#syntax#}foo{#endsyntax#} is leaked when the allocation of
+    {#syntax#}bar{#endsyntax#} fails. The simplest fix, in this case, would be to use
+    {#syntax#}defer{#endsyntax#}:</p>
+
+    {#code_begin|test|leak_fixed#}
+const std = @import("std");
+
+fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
+    var foo = try allocator.alloc(u8, length);
+    defer allocator.free(foo);
+    var bar = try allocator.alloc(u8, length);
+    defer allocator.free(bar);
+}
+
+test {
+    const length: usize = 10;
+    const allocator = std.testing.allocator;
+    try std.testing.checkAllAllocationFailures(allocator, testImpl, .{length});
+}
+    {#code_end#}
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Debugging#}
+    <ul>
+      <li>Added DWARFv5 support (<a href="https://github.com/ziglang/zig/issues/12120">#12120</a>)</li>
+      <li>Make stack traces more reliable by checking if pages are mapped before loading from them.</li>
+      <li><code>std.debug</code> now has better resource management (<a href="https://github.com/ziglang/zig/issues/11485">#11485</a>)<br>
+        This code used to assume that it would only be used for dumping stack traces right
+        before an application crashed, however, it is now sometimes used in non-catastrophic
+        cases, so now it behaves properly with regards to allocations and file descriptors.
+      </li>
+      <li>Fixed ConfigurableTrace.dump OOB</li>
+      <li>Fixed stack traces with non-null <code>first_address</code> on {#link|Windows#} (<a href="https://github.com/ziglang/zig/issues/6687">#6687</a>)</li>
+      <li>Added stack trace capturing to <code>FailingAllocator</code> and use it to improve
+        {#link|checkAllAllocationFailures|Check All Allocation Failures#} (<a href="https://github.com/ziglang/zig/issues/11919">#11919</a>)</li>
+      <li>Dwarf: Added stroffsetsptr support (<a href="https://github.com/ziglang/zig/issues/12270">#12270</a>)</li>
+      <li>Fixed incorrect output on {#link|Windows#} when .pdb file is not found during stack trace</li>
+      <li>Only check the file's length once in pdb.Msf.init</li>
+      <li>Validate frame-pointer address in stack walking (<a href="https://github.com/ziglang/zig/issues/10863">#10863</a>)</li>
+      <li>Fixed off-by-one error in def of ProcSym in pdb</li>
+      <li>Check for overflow in dumpStackTraceFromBase</li>
+    </ul>
+
+    {#header_open|std.debug.Trace#}
+    <p>This is a new API that you can use to efficiently save small stack traces for later,
+    along with relevant data, so that when a problematic behavior is observed, you can dump
+    the corresponding stack trace (<a href="https://github.com/ziglang/zig/issues/11819">#11819</a>):</p>
+    <figure><figcaption class="zig-cap"><cite class="file">test.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> s1 = make();</span>
+<span class="line">    <span class="tok-kw">var</span> s2 = make();</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">if</span> (std.crypto.random.uintLessThanBiased(<span class="tok-type">u8</span>, <span class="tok-number">100</span>) &lt; <span class="tok-number">100</span>) {</span>
+<span class="line">        s1.trace.add(<span class="tok-str">&quot;got lucky&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">if</span> (std.crypto.random.uintLessThanBiased(<span class="tok-type">u8</span>, <span class="tok-number">100</span>) &lt; <span class="tok-number">100</span>) {</span>
+<span class="line">        s2.trace.add(<span class="tok-str">&quot;got very lucky&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">if</span> (std.crypto.random.uintLessThanBiased(<span class="tok-type">u8</span>, <span class="tok-number">100</span>) &lt; <span class="tok-number">50</span>) {</span>
+<span class="line">        s1.trace.dump();</span>
+<span class="line">    } <span class="tok-kw">else</span> {</span>
+<span class="line">        s2.trace.dump();</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> {</span>
+<span class="line">    blah: <span class="tok-type">i32</span>,</span>
+<span class="line">    trace: std.debug.Trace = .{},</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">make</span>() S {</span>
+<span class="line">    <span class="tok-kw">var</span> result: S = .{</span>
+<span class="line">        .blah = <span class="tok-number">1234</span>,</span>
+<span class="line">    };</span>
+<span class="line">    result.trace.add(<span class="tok-str">&quot;initial creation&quot;</span>);</span>
+<span class="line">    <span class="tok-kw">return</span> result;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp><span class="line">$ <kbd>zig build-exe test.zig</kbd></span>
+<span class="line"></span>
+<span class="line">$ <kbd>./test</kbd></span>
+<span class="line">initial creation:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:30:21</span>: <span class="t2_0">0x210f86 in make (test)</span></span>
+<span class="line">    result.trace.add(&quot;initial creation&quot;);</span>
+<span class="line">                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:5:18</span>: <span class="t2_0">0x210e67 in main (test)</span></span>
+<span class="line">    var s2 = make();</span>
+<span class="line">                 <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:578:37</span>: <span class="t2_0">0x2109f9 in posixCallMainAndExit (test)</span></span>
+<span class="line">            const result = root.main() catch |err| {</span>
+<span class="line">                                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x210482 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+<span class="line">got very lucky:</span>
+<span class="line"><span class="t1_0">docgen_tmp/test.zig:11:21</span>: <span class="t2_0">0x210eee in main (test)</span></span>
+<span class="line">        s2.trace.add(&quot;got very lucky&quot;);</span>
+<span class="line">                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:578:37</span>: <span class="t2_0">0x2109f9 in posixCallMainAndExit (test)</span></span>
+<span class="line">            const result = root.main() catch |err| {</span>
+<span class="line">                                    <span class="t32_1">^</span></span>
+<span class="line"><span class="t1_0">/home/andy/Downloads/zig/lib/std/start.zig:340:5</span>: <span class="t2_0">0x210482 in _start (test)</span></span>
+<span class="line">    @call(.{ .modifier = .never_inline }, posixCallMainAndExit, .{});</span>
+<span class="line">    <span class="t32_1">^</span></span>
+</samp></pre></figure>
+
+    <p>This provides insight about the state of the program at a cross-section
+    according to specific objects, which can lead directly to identifying bugs
+    that otherwise would be completely opaque.</p>
+
+    <p>By default the {#syntax#}Trace{#endsyntax#} objects are empty in
+    release modes, so the cost is only paid when debugging. Even when debugging, however,
+    the size of the Trace objects are small - only one {#syntax#}usize{#endsyntax#} per stack
+    frame. It defaults to 2 events, 4 stack frames, but can be configured with
+    {#syntax#}std.debug.ConfigurableTrace{#endsyntax#}.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|New Deflate Compressor#}
+    <p>Hadrien Dorio provided a new deflate implementation (<a href="https://github.com/ziglang/zig/issues/10552">#10552</a>).</p>
+    <p>Old API:</p>
+    <pre>{#syntax#}inflateStream(reader: anytype, window_slice: []u8){#endsyntax#}</pre>
+    <p>New API:</p>
+    <pre>{#syntax#}decompressor(allocator: mem.Allocator, reader: anytype, dictionary: ?[]const u8)
+compressor(allocator: mem.Allocator, writer: anytype, options: CompressorOptions){#endsyntax#}</pre>
+    <p>The implementation is a port of the compress/flate package from
+    <a href="https://go.dev/">Go</a>, and appears to be about 2-3x faster.</p>
+    {#shell_samp#}
+$ zig run bench.zig -O ReleaseFast
+
+size: 100B
+deflate_old: 20.459ms
+deflate_new: 38.101us
+new is 536.98x faster
+
+size: 1KiB
+deflate_old: 30.71us
+deflate_new: 15.159us
+new is 2.03x faster
+
+size: 1MiB
+deflate_old: 2.824ms
+deflate_new: 916.366us
+new is 3.08x faster
+
+size: 10MiB
+deflate_old: 28.298ms
+deflate_new: 8.246ms
+new is 3.43x faster
+
+size: 22MiB
+deflate_old: 62.643ms
+deflate_new: 24.133ms
+new is 2.60x faster
+
+size: 100MiB
+deflate_old: 288.08ms
+deflate_new: 107.465ms
+new is 2.68x faster
+
+size: 220MiB
+deflate_old: 628.471ms
+deflate_new: 232.427ms
+new is 2.70x faster
+    {#end_shell_samp#}
+    <p><a href="https://github.com/ziglang/zig/pull/10552/#issuecomment-1009806592">Benchmark details</a></p>
+    <p>Big thanks to Ryan Liptak for fuzz testing.</p>
+    <p>There is still a lot of room for performance improvement beyond this.</p>
+    {#header_close#}
+
+    {#header_open|Formatted Printing#}
+    <ul>
+      <li>Refactor parsing of placeholders into its own function.
+        Makes compilation faster.</li>
+      <li>Handle FormatOptions in fmtDuration/fmtDurationSigned</li>
+      <li>Fixed out-of-bounds array write in float printing</li>
+      <li>Allow uppercase prefix to be parsed in std.fmt.parseInt()</li>
+      <li>Fixed false positive for <code>zig.isValidId</code> with empty string (<a href="https://github.com/ziglang/zig/issues/11104">#11104</a>)</li>
+      <li>Fixed incorrect behavior with large floating point integers (<a href="https://github.com/ziglang/zig/issues/11283">#11283</a>)</li>
+      <li>fmtIntSizeDec/fmtIntSizeBin support FormatOptions (<a href="https://github.com/ziglang/zig/issues/9184">#9184</a>)</li>
+      <li>Require specifier for unwrapping ?T and E!T</li>
+      <li>Added more invalid format string errors</li>
+      <li>Made <code>fmt.formatAsciiChar</code> respect <code>options</code> parameter</li>
+    </ul>
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Bug Fixes#}
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.10.0">Full list of the 452 bug reports closed during this release cycle</a>.</p>
+    <p>Many bugs were both introduced and resolved within this release cycle.</p>
+    {#header_open|This Release Contains Bugs#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
+    <p>
+    Zig has
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>
+    and even some
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Amiscompilation">miscompilations</a>.
+    </p>
+    <p>Zig is immature. Even with Zig 0.10.0, working on a non-trivial project using Zig will
+    likely require participating in the development process.</p>
+    <p>When Zig reaches 1.0.0, {#link|Tier 1 Support#} will gain a bug policy as an additional
+    requirement.</p>
+    <p>A <a href="https://github.com/ziglang/zig/milestone/18">0.10.1 release</a> is planned.
+    Waiting until 0.10.1 to upgrade is recommended for users who desire a more stable experience.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Build System#}
+    <ul>
+      <li><code>zig build</code> now respects the <code>ZIG_LIB_DIR</code> environment variable.</li>
+      <li>RunStep: allow <code>expected_exit_code</code> to be {#syntax#}null{#endsyntax#}</li>
+      <li>Normalize build function names such as "addIncludeDir" and
+        "addIncludePath". Also use "Library" instead of the "Lib"
+        abbreviation.</li>
+      <li>TranslateCStep: add C macro support</li>
+      <li>Allow tests to use cache and setOutputDir</li>
+      <li>Use response files for long command lines (<a href="https://github.com/ziglang/zig/issues/10950">#10950</a>)</li>
+      <li>OptionsStep: Always use <code>fmtId</code> for type names.</li>
+      <li>Renamed <code>std.build.Pkg.path</code> to <code>std.build.Pkg.source</code> (<a href="https://github.com/ziglang/zig/issues/11557">#11557</a>)</li>
+      <li>Added EmulatableRunStep (<a href="https://github.com/ziglang/zig/issues/12059">#12059</a>)</li>
+      <li>Allow {#syntax#}comptime_int{#endsyntax#} in {#syntax#}OptionsStep.addOption{#endsyntax#}</li>
+      <li>Fixed transitive linkSystemLibraryName() dependencies</li>
+      <li>Made no_dll_export_fns accessible in build step</li>
+      <li>Added flag for <code>-fstack-protector</code></li>
+      <li>Made <code>runPkgConfig</code> pub</li>
+      <li>Fixed <code>Step.cast</code> for <code>OptionsStep</code> and <code>CheckObjectStep</code></li>
+      <li>Added <code>unwind_tables</code> integration.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Toolchain#}
+    {#header_open|LLVM 15#}
+    <p>
+    This release of Zig upgrades to
+    <a href="http://releases.llvm.org/15.0.0/docs/ReleaseNotes.html">LLVM 15.0.3</a>.
+    </p>
+    <p>
+    Note that the
+    <a href="/download/0.9.0/release-notes.html#toc-LLVM-13">Zig 0.9.x series used LLVM 13</a> -
+    there is no Zig release that depends on
+    <a href="http://releases.llvm.org/14.0.0/docs/ReleaseNotes.html">LLVM 14</a>.
+    </p>
+    <ul>
+      <li>CMake: Improve usage of <code>llvm-config</code>, especially for consistent static/shared linking (<a href="https://github.com/ziglang/zig/issues/12136">#12136</a>)</li>
+      <li>CMake: Print all LLVM config errors instead of just the last one. Helps when there are multiple <code>llvm-config</code> executables in PATH.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|musl 1.2.3#}
+    <p>
+    Zig ships with the source code to <a href="http://musl.libc.org/">musl</a>.
+    When the musl C ABI is selected, Zig builds static musl from source for the selected target.
+    Zig also supports targeting dynamically linked musl which is useful for Linux distributions
+    that use it as their system libc, such as
+    <a href="https://www.alpinelinux.org/">Alpine Linux</a>.
+    </p>
+    <p>
+    This release upgrades from v1.2.2 to v1.2.3.
+    </p>
+    {#header_close#}
+
+    {#header_open|glibc 2.34#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
+    <p>The bad news is that although glibc 2.35 and 2.36 have already been released,
+       Zig is behind in adding cross-compilation support for them due to exploring
+       the <a href="https://github.com/ziglang/universal-headers/">Universal Headers</a> project.
+       The good news, however, is that Zig can now integrate with system glibc that is newer than
+       what Zig can provide (<a href="https://github.com/ziglang/zig/issues/12797">#12797</a>).</p>
+    <p>Additionally:</p>
+    <ul>
+      <li>Restored compatibility with glibc&lt;=2.33 for global initializers (<a href="https://github.com/ziglang/zig/issues/10587">#10587</a>)</li>
+      <li>Added <code>libresolv</code> stubs (<a href="https://github.com/ziglang/zig/issues/12629">#12629</a>)</li>
+      <li>Added support for targeting glibc for the native system target even when no system C compiler is installed (<a href="https://github.com/ziglang/zig/issues/12814">#12814</a>)</li>
+      <li>Version-gate <code>_DYNAMIC_STACK_SIZE_SOURCE</code> (<a href="https://github.com/ziglang/zig/issues/10713">#10713</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|mingw-w64 10.0.0#}
+    <p>
+    Zig ships with the source code to <a href="https://mingw-w64.org/">mingw-w64</a>.
+    When targeting *-windows-gnu and linking against libc, Zig builds mingw-w64 from source
+    for the selected target.
+    </p>
+    <p>This release updates the bundled mingw-w64 source code to
+    <a href="https://sourceforge.net/p/mingw-w64/mailman/message/37635065/">v10.0.0</a>.</p>
+    <p>Zig now passes <code>-D__USE_MINGW_ANSI_STDIO=0</code> for crt files. This was supposed
+    to be happening all along, and it was a bug that Zig did not do this before (<a href="https://github.com/ziglang/zig/issues/7356">#7356</a>). Thanks to
+    <a href="https://github.com/sponsors/mstorsjo">Martin Storsjö</a> for
+    helping us discover this on IRC. This fix means that Zig no longer carries
+    any patches on top of upstream mingw-w64 sources!</p>
+    <p>Speaking of Martin, he has just a couple days ago signed up for GitHub Sponsors.
+    He does brilliant work on mingw-w64, and he has patiently helped us when we go into
+    the IRC channel asking for troubleshooting tips from Zig's unusual way of building mingw-w64
+    from source. Most people would (understandably) say, "sorry, that's unsupported."
+    We are proud to be Martin's first sponsor and hope you will
+    <a href="https://github.com/sponsors/mstorsjo">join us in showing support</a>!</p>
+    {#header_close#}
+
+    {#header_open|zig cc#}
+    <p><code>zig cc</code> is Zig's drop-in C compiler tool. Enhancements in this release:</p>
+    <ul>
+      <li>Integration with <code>--sysroot</code> arg (<a href="https://github.com/ziglang/zig/issues/10568">#10568</a>).</li>
+      <li>Integration with more linker args:<ul>
+          <li><code>--whole-archive</code>, <code>-whole-archive</code></li>
+          <li><code>--no-whole-archive</code>, <code>-no-whole-archive</code></li>
+          <li><code>-s</code>, <code>--strip-all</code></li>
+          <li><code>-S</code>, <code>--strip-debug</code></li>
+      </ul></li>
+      <li>Add <code>--hash-style</code> linker parameter (applies to ELF).</li>
+      <li>Fixed a bug where passing a zig source file to <code>zig cc</code> would
+          incorrectly punt to clang because it thought there were no positional
+          arguments.</li>
+      <li>Emit to <code>a.out</code> if outpath is unspecified (<a href="https://github.com/ziglang/zig/issues/12858">#12858</a>)</li>
+      <li>Disable the cache for link operations (<a href="https://github.com/ziglang/zig/issues/12317">#12317</a>)
+        <br>
+        This makes <code>zig cc</code> match the equivalent behavior of
+        <code>zig build-exe</code> with regards to caching. That is - it will
+        cache individual .c to .o compilations (with the usual exceptions), but
+        will always repeat the linking process so that incremental linking has
+        a chance to happen.
+        <br>
+        Perhaps a future enhancement will provide a way to get the old
+        behavior, but I suspect this new behavior will be preferred by
+        everyone, because it is closer to what C compilers do. Note that the
+        old behavior can be obtained by switching to <code>zig build-exe</code>
+        instead of <code>zig cc</code> and using the
+        <code>--enable-cache</code> parameter, matching what the {#link|Build System#} does.
+      </li>
+      <li>Support for <code>-Wl,--export=&lt;symbol&gt;</code></li>
+      <li>Support <code>--subsystem</code> linker flag (<a href="https://github.com/ziglang/zig/issues/11396">#11396</a>)</li>
+      <li>Integrate with <code>-fstack-check</code>, <code>-fno-stack-check</code></li>
+      <li>Introduce special handling of <code>/dev/null</code>
+        <br>
+        Now Zig handles <code>-o /dev/null</code> equivalent to
+        <code>-fno-emit-bin</code> because otherwise the atomic rename into
+        place will fail. This also makes Zig do less work, avoiding pointless
+        file system operations.</li>
+      <li>Handle <code>-l :FILE</code> syntax (<a href="https://github.com/ziglang/zig/issues/10851">#10851</a>)</li>
+      <li>Full response file (*.rsp) support (<a href="https://github.com/ziglang/zig/issues/4833">#4833</a>)</li>
+      <li>Recognize CUDA source files (<a href="https://github.com/ziglang/zig/issues/10634">#10634</a>)</li>
+      <li>Recognize .stub as yet another C++ source file extension.</li>
+      <li>Support <code>-Wl,--soname</code></li>
+      <li>No longer strip by default, even when <code>-g</code> is not present.</li>
+      <li>Detect MinGW-flavored static libraries.
+        <br>
+        Ideally on Windows, static libraries look like "foo.lib". However,
+        CMake and other build systems will unfortunately produce static
+        libraries that instead look like "libfoo.a". This patch makes Zig's CLI
+        resolve "-lfoo" arguments into static libraries that match this other
+        pattern.</li>
+      <li>Support <code>-z nocopyreloc</code>.</li>
+      <li>Support <code>-no-pie</code>.</li>
+      <li>Pass <code>-O0</code> rather than <code>-Og</code> to Clang for Debug builds (<a href="https://github.com/ziglang/zig/issues/11949">#11949</a>)</li>
+      <li>Recognize <code>--verbose</code> as an alias for <code>-v</code></li>
+      <li>Support <code>--compress-debug-sections</code> (<a href="https://github.com/ziglang/zig/issues/11863">#11863</a>)</li>
+      <li>Add support for <code>-M</code> (<a href="https://github.com/ziglang/zig/issues/12369">#12369</a>)</li>
+      <li>Avoid pointless caching (<a href="https://github.com/ziglang/zig/issues/12317">#12317</a>)
+        <br>
+        When the entire purpose of this compilation is to perform a single zig
+        cc operation we could "tail call" clang by doing an execve, and any use
+        of the caching system would actually be problematic since the user is
+        presumably doing their own caching by using dep file flags.</li>
+      <li>Add <code>--print-gc-sections</code>, <code>--print-icf-sections</code>, and
+        <code>--print-map</code></li>
+      <li>Ensure that assembly source file command lines get the <code>-g</code> flag when appropriate.</li>
+      <li>When passing arguments to <code>zig clang</code> internally, Zig will now
+        use a response file (.rsp) if the CLI length would exceed what the system supports.
+        This fixes a CI test failure on Windows (<a href="https://github.com/ziglang/zig/issues/12540">#12540</a>)</li>
+    </ul>
+    <p>Please be aware that there are still
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3A%22zig+cc%22">open zig cc issues</a>.
+    However, these are use cases that never worked in the first place, making them
+    <em>bugs</em> and <em>enhancements</em> rather than <em>regressions</em>.
+    </p>
+    {#header_close#}
+
+    {#header_open|zig c++#}
+    <p><code>zig c++</code> is equivalent to {#link|zig cc#} with an added <code>-lc++</code>
+    parameter, but I made a separate heading here because I realized that some people are
+    not aware that Zig supports compiling C++ code and providing libc++ too!
+    </p>
+
+    {#syntax_block|c|hello.cpp#}
+    #include <iostream>
+int main() {
+    std::cout << "Hello World!" >> std::endl;
+    return 0;
+}
+    {#end_syntax_block#}
+    {#shell_samp#}
+$ zig c++ -o hello hello.cpp
+$ ./hello
+Hello World!
+    {#end_shell_samp#}
+    <p>Cross-compiling too, of course:</p>
+    {#shell_samp#}
+    $ zig c++ -o hello hello.cpp -target riscv64-linux
+$ qemu-riscv64 ./hello
+Hello World!
+    {#end_shell_samp#}
+    <p>
+    One thing that trips people up when they use this feature is that the
+    <strong>C++ ABI is not stable across compilers</strong>, so always remember the rule:
+    You must use the same C++ compiler to compile <em>all</em> your objects and static libraries.
+    This is an unfortunate limitation of C++ which Zig can never fix.
+    </p>
+    <p>Improvements to libc++ in this release:</p>
+    <ul>
+      <li>Normalized C++ compilation options for single-threaded targets (<a href="https://github.com/ziglang/zig/issues/10143">#10143</a>)</li>
+      <li>Improved {#link|Windows#} compatibility.</li>
+      <li>Only pass <code>-DHAVE___CXA_THREAD_ATEXIT_IMPL</code> for {#link|glibc|glibc 2.34#}
+          (<a href="https://github.com/ziglang/zig/issues/13314">#13314</a>)</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|zig fmt#}
+    <ul>
+      <li>Remove trailing whitespace on doc comments (<a href="https://github.com/ziglang/zig/issues/11353">#11353</a>)</li>
+      <li>Respect trailing commas in inline assembly, however, remove trailing comma
+        at the end of clobbers.</li>
+      <li>Keep {#syntax#}callconv(.Inline){#endsyntax#} on function pointer types.</li>
+      <li>Fixed formatting for single-line containers with comments (<a href="https://github.com/ziglang/zig/issues/8810">#8810</a>)</li>
+      <li>Fixed performance issue with nested arrays (<a href="https://github.com/ziglang/zig/issues/10224">#10224</a>)</li>
+      <li>Handle doc comments on struct members (<a href="https://github.com/ziglang/zig/issues/10443">#10443</a>)</li>
+      <li>Fixed switch cases dropping comments in certain situations (<a href="https://github.com/ziglang/zig/issues/11131">#11131</a>)</li>
+      <li>Fixed idempotency with newlines surrounding doc comment (<a href="https://github.com/ziglang/zig/issues/11802">#11802</a>)</li>
+      <li>Stop deleting container doc comments (<a href="https://github.com/ziglang/zig/issues/12617">#12617</a>)</li>
+      <li><code>--exclude</code> now ignores missing directories.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|compiler-rt#}
+    <p>
+    compiler-rt is the library that provides, for example, 64-bit integer multiplication for
+    32-bit architectures which do not have a machine code instruction for it.
+    In the <a href="https://gcc.gnu.org/">GNU</a> world, it is called libgcc.
+    </p>
+    <p>
+    Unlike most compilers, which depend on a binary build of compiler-rt being installed alongside
+    the compiler, Zig builds compiler-rt on-the-fly, from source, as needed for the
+    target platform. This release saw some improvements to Zig's compiler-rt implementation
+    (<a href="https://github.com/ziglang/zig/issues/1290">#1290</a>).
+    </p>
+    <ul>
+      <li>Added <code>__absvsi2</code>, <code>__absvdi2</code>, <code>__absvti2</code></li>
+      <li>Added <code>__negvsi2</code>, <code>__negvdi2</code>, <code>__negvti2</code></li>
+      <li>Added complex multiply/division (<a href="https://github.com/ziglang/zig/issues/13117">#13117</a>)</li>
+      <li>Added addo and subo routines (<a href="https://github.com/ziglang/zig/issues/10824">#10824</a>)</li>
+      <li>Added TAS lock support for {#link|SPARC#} (<a href="https://github.com/ziglang/zig/issues/11437">#11437</a>)</li>
+      <li>Fixed softfloat support for {#link|PowerPC#} (<a href="https://github.com/ziglang/zig/issues/13100">#13100</a>)</li>
+      <li>Optimized mulo</li>
+      <li>Added routines for {#link|f80#}</li>
+      <li>Avoid symbol collisions with Windows libc (<a href="https://github.com/ziglang/zig/issues/11609">#11609</a>)</li>
+      <li>Started consolidating libc functions that codegen depends on into compiler-rt (<a href="https://github.com/ziglang/zig/issues/7265">#7265</a>)
+        <br>
+        Compiler backends want to emit calls to e.g. <code>memcpy</code> or <code>sqrt</code>.
+        These are typically provided by libc, but they might not be in the case of freestanding,
+        or depending on which third party libc is linked against.
+        <br>
+        Therefore Zig has started to provide all possible symbols with <em>weak</em> linkage,
+        meaning that these symbols will be overridden by libc if provided. This means the only
+        necessary runtime library that Zig objects need to be linked against is compiler-rt,
+        no matter the target.
+      </li>
+      <li>The source code has been re-organized to support the use case of building compiler-rt
+        with a different compilation unit per file (<a href="https://github.com/ziglang/zig/issues/11847">#11847</a>)
+        <br>It was hypothesized that this could improve
+        {#link|Self-Hosted Linker#} performance, however <code>-ffunction-sections</code>
+        plus garbage collection ended up being faster.</li>
+      <li>Support compiling for the Android NDK (<a href="https://github.com/ziglang/zig/issues/13245">#13245</a>)</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Roadmap#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right; transform: scaleX(-1)">
+    <p>Now that the {#link|Self-Hosted Compiler#} is launched, we can move on with the roadmap!
+    </p>
+
+    <p>The major themes of the 0.11.0 release cycle will be
+    <strong>language changes</strong>,
+    <strong>compilation speed</strong>, and <strong>package management</strong>.
+    </p>
+
+    <p>Some <a href="https://www.youtube.com/watch?v=AqDdWEiSwMM">upcoming milestones</a> we will be working towards in the 0.11.0 release cycle:</p>
+    <ul>
+      <li>Finishing the tail end of test coverage - getting the {#link|Self-Hosted Compiler#}
+        to pass a strict superset of tests passed by the {#link|Bootstrap Compiler#}. This is
+        down to a few dozen compile error tests.</li>
+      <li>{#link|Self-Hosted Compiler#} can build itself with the {#link|C Backend#}.
+        Unlocks ability to replace the {#link|Bootstrap Compiler#} with generated C
+        code (<a href="https://github.com/ziglang/zig/issues/5246">#5246</a>).</li>
+      <li>Many {#link|Accepted Proposals#} implemented. Expect breakage!</li>
+      <li>Behavior tests passing for the {#link|x86 Backend#}, {#link|aarch64 Backend#}, or
+        {#link|WebAssembly Backend#}.
+        Unleashes our full compilation speed when targeting the respective architecture.</li>
+      <li>Experimental first implementation of the {#link|official package manager|Package Manager#}.</li>
+      <li>Fuzz test incremental compilation so that we can enable it and gain compilation
+        speed for all backends, including the {#link|LLVM|LLVM 15#} backend.</li>
+      <li>{#link|Self-Hosted Linker#} support for {#link|ELF#} and {#link|COFF#}.
+        Eliminate dependency on <a href="https://lld.llvm.org/">LLD</a>.</li>
+      <li>Hot code swapping for {#link|Windows#}, {#link|macOS#}, and {#link|Linux#}.</li>
+      <li>Introduce {#link|Concurrency#} to semantic analysis to further increase compilation speed.</li>
+    </ul>
+
+    <p>Here are the <strong>steps for Zig to reach 1.0</strong>:</p>
+    <ol>
+      <li>Stabilize the language. No more {#link|Language Changes#} after this.</li>
+      <li>Complete the language specification first draft.</li>
+      <li>Implement the {#link|official package manager|Package Manager#}.</li>
+      <li>Stabilize the {#link|Standard Library#}. That means to add any missing functionality,
+        audit the existing functionality, curate it, re-organize everything, and
+        fix all the {#link|bugs|Bug Fixes#}.</li>
+      <li>Go one full release cycle without any breaking changes.</li>
+      <li>Finally we can tag 1.0.</li>
+    </ol>
+
+    {#header_open|Package Manager#}
+    <p>
+    Having a package manager built into the Zig compiler is a
+    <a href="https://github.com/ziglang/zig/issues/943">long-anticipated feature</a>.
+    Zig 0.10.0 does not have this feature.
+    However, all the prerequisites are finally done, and work begins now!
+    </p>
+    <p>
+    We will do our best to
+    <a href="https://www.youtube.com/watch?v=stChOsejLEQ">keep in mind the needs of system package maintainers</a>
+    while working on this language package manager.
+    </p>
+    {#header_close#}
+
+    {#header_open|Accepted Proposals#}
+    <p>
+    If you want more of a sense of the direction Zig is heading, you can look at
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Aaccepted">the set of accepted proposals</a>.
+    </p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Thank You Contributors!#}
+    <p>Here are all the people who landed at least one contribution into this release:</p>
+    <ul style="columns: 3">
+<li>Andrew Kelley</li>
+<li>Jakub Konka</li>
+<li>Veikka Tuominen</li>
+<li>Luuk de Gram</li>
+<li>joachimschmidt557</li>
+<li>Koakuma</li>
+<li>Loris Cro</li>
+<li>Cody Tapscott</li>
+<li>Mitchell Hashimoto</li>
+<li>r00ster91</li>
+<li>Vallahor</li>
+<li>Robin Voetter</li>
+<li>John Schmidt</li>
+<li>Ryan Liptak</li>
+<li>William Sengir</li>
+<li>Jacob Young</li>
+<li>Jonathan Marler</li>
+<li>Daniele Cocca</li>
+<li>fifty-six</li>
+<li>Motiejus Jakštys</li>
+<li>ominitay</li>
+<li>Jimmi Holst Christensen</li>
+<li>Isaac Freund</li>
+<li>Evan Haas</li>
+<li>viri</li>
+<li>Frank Denis</li>
+<li>Meghan</li>
+<li>Joachim Schmidt</li>
+<li>Der Teufel</li>
+<li>Guillaume Wenzek</li>
+<li>Stephen Gutekanst</li>
+<li>Vincent Rischmann</li>
+<li>mparadinha</li>
+<li>Jacob G-W</li>
+<li>Jan Philipp Hafer</li>
+<li>Lee Cannon</li>
+<li>Marc Tiehuis</li>
+<li>riverbl</li>
+<li>zooster</li>
+<li>Ali Chraghi</li>
+<li>Stephen Gregoratto</li>
+<li>Jens Goldberg</li>
+<li>LordMZTE</li>
+<li>Yujiri</li>
+<li>Hadrien Dorio</li>
+<li>kkHAIKE</li>
+<li>r00ster</li>
+<li>Erik Arvstedt</li>
+<li>Evin Yulo</li>
+<li>Hiroaki Nakamura</li>
+<li>InKryption</li>
+<li>Rabin Gaire</li>
+<li>Tau</li>
+<li>iddev5</li>
+<li>jagt</li>
+<li>matu3ba</li>
+<li>protty</li>
+<li>r00ster</li>
+<li>Andreas Reischuck</li>
+<li>Bill Nagel</li>
+<li>Eric Joldasov</li>
+<li>Felix "xq" Queißner</li>
+<li>InKryption</li>
+<li>John Schmidt</li>
+<li>Kirk Scheibelhut</li>
+<li>LeRoyce Pearson</li>
+<li>Sage Hane</li>
+<li>VÖRÖSKŐI András</li>
+<li>Yusuf Bham</li>
+<li>aiotter</li>
+<li>alice</li>
+<li>antlilja</li>
+<li>frmdstryr</li>
+<li>kcbanner</li>
+<li>kprotty</li>
+<li>riChar</li>
+<li>vi</li>
+<li>xReveres</li>
+<li>Al Hoang</li>
+<li>Austin Rude</li>
+<li>Ben Fiedler</li>
+<li>BratishkaErik</li>
+<li>Dan Ellis Echavarria</li>
+<li>Daniel Saier</li>
+<li>Daniele Cocca</li>
+<li>Dante Catalfamo</li>
+<li>David Gonzalez Martin</li>
+<li>David John</li>
+<li>David Martschenko</li>
+<li>Erik Hugne</li>
+<li>Flandre Scarlet</li>
+<li>Francesco Alemanno</li>
+<li>GethDW</li>
+<li>Helio Machado</li>
+<li>Igor Stojkovic</li>
+<li>Ikko Ashimine</li>
+<li>Jarred Sumner</li>
+<li>Jonathan S</li>
+<li>Locria Cyber</li>
+<li>Mateusz Radomski</li>
+<li>Mikhail Popov</li>
+<li>Philipp Lühmann</li>
+<li>Reece Van Atta</li>
+<li>Sebsatian Keller</li>
+<li>Shane Kennedy</li>
+<li>Silver</li>
+<li>Sébastien Marie</li>
+<li>Techatrix</li>
+<li>Techcable</li>
+<li>Tom Read Cutting</li>
+<li>TwoClocks</li>
+<li>Vincenzo Palazzo</li>
+<li>Wojtek Mach</li>
+<li>Xavier Bouchoux</li>
+<li>alichraghi</li>
+<li>bfredl</li>
+<li>billzez</li>
+<li>cod1r</li>
+<li>fn ⌃ ⌥</li>
+<li>gwenzek</li>
+<li>leesongun</li>
+<li>m</li>
+<li>martinhath</li>
+<li>naeu</li>
+<li>paulsnar</li>
+<li>praschke</li>
+<li>r00ster91</li>
+<li>sin-ack</li>
+<li>xavier</li>
+<li>zseri</li>
+<li>ABuffSeagull</li>
+<li>Alexander Slesarev</li>
+<li>Allan Regush</li>
+<li>Andrew Lee</li>
+<li>Annika L</li>
+<li>Anthony Carrico</li>
+<li>Anton Lilja</li>
+<li>Arnavion</li>
+<li>Benjamin San Souci</li>
+<li>BlueAlmost</li>
+<li>Brian Gold</li>
+<li>C-BJ</li>
+<li>Carlos Zúñiga</li>
+<li>Chris Boesch</li>
+<li>Curtis Tate Wilkinson</li>
+<li>Curtis Wilkinson</li>
+<li>Damien Firmenich</li>
+<li>Daniel Hooper</li>
+<li>David John</li>
+<li>Dominic Tarr</li>
+<li>Duncan Holm</li>
+<li>Endel Dreyer</li>
+<li>Eric Milliken</li>
+<li>Eric Shrewsberry</li>
+<li>Ersikan</li>
+<li>Exonorid</li>
+<li>Felix "xq" Queißner</li>
+<li>FlandreScarlet</li>
+<li>Gaëtan</li>
+<li>GethDW</li>
+<li>GithubPrankster</li>
+<li>Gregory Anders</li>
+<li>Hanna</li>
+<li>Hannes Bredberg</li>
+<li>Hashi364</li>
+<li>Henrique Dante de Almeida</li>
+<li>Igor Anić</li>
+<li>Isaac Yonemoto</li>
+<li>J87</li>
+<li>James Mintram</li>
+<li>Jan200101</li>
+<li>Jason Ho</li>
+<li>Jay Petacat</li>
+<li>Jean Dao</li>
+<li>Johannes Löthberg</li>
+<li>John Simon</li>
+<li>Jonas Gollenz</li>
+<li>Josh Hannaford</li>
+<li>Julian</li>
+<li>Justas Zabulionis</li>
+<li>Justin Whear</li>
+<li>Kazuki Sakamoto</li>
+<li>Keith Chambers</li>
+<li>Ken Micklas</li>
+<li>Kenta Iwasaki</li>
+<li>Kim SHrier</li>
+<li>Kirk Scheibelhut</li>
+<li>Lewis Gaul</li>
+<li>Maciej 'vesim' Kuliński</li>
+<li>Mahdi Rakhshandehroo</li>
+<li>Manlio Perillo</li>
+<li>Marian Beermann</li>
+<li>Marijn Stollenga</li>
+<li>Martin Hafskjold Thoresen</li>
+<li>Martin Stuurwold</li>
+<li>Martin Wickham</li>
+<li>Mateusz Radomski</li>
+<li>Matthew Hall</li>
+<li>May B</li>
+<li>Meredith Oleander</li>
+<li>Michael Dusan</li>
+<li>Mikael Berthe</li>
+<li>Mikko Kaihlavirta</li>
+<li>Morritz</li>
+<li>N00byEdge</li>
+<li>Naoki MATSUMOTO</li>
+<li>Natalia Cholewa</li>
+<li>OfekShochat</li>
+<li>Omar Alhammadi</li>
+<li>Pablo Santiago Blum de Aguiar</li>
+<li>PhaseMage</li>
+<li>Philipp Lühmann</li>
+<li>Pierre Curto</li>
+<li>Rekai Musuka</li>
+<li>Rekai Nyangadzayi Musuka</li>
+<li>Riccardo Binetti</li>
+<li>Robin</li>
+<li>Ryotaro "Justin" Kimura</li>
+<li>Sebastian Keller</li>
+<li>Shupei Fan</li>
+<li>Sizhe Zhao</li>
+<li>Stephen Lumenta</li>
+<li>Steven Fackler</li>
+<li>Takeshi Yoneda</li>
+<li>Techcable</li>
+<li>The Depressed Milkman</li>
+<li>Thiago Teodoro Pereira Silva</li>
+<li>Thomas Cheng</li>
+<li>Tom Maenan Read Cutting</li>
+<li>Tom Manner</li>
+<li>Travis Staloch</li>
+<li>Tw</li>
+<li>Wei Fu</li>
+<li>Will Hawkins</li>
+<li>YeonJiKun</li>
+<li>Yorhel</li>
+<li>Yusuf Bham</li>
+<li>Yusuke Tanaka</li>
+<li>Yuto Oguchi</li>
+<li>Zhora Trush</li>
+<li>afranchuk</li>
+<li>alex</li>
+<li>biexelar</li>
+<li>boofexxx</li>
+<li>bryfry</li>
+<li>chip2n</li>
+<li>cryptocode</li>
+<li>dan</li>
+<li>daurnimator</li>
+<li>devins2518</li>
+<li>djg</li>
+<li>drew</li>
+<li>dxps</li>
+<li>emma</li>
+<li>erikarvstedt</li>
+<li>jcalabro</li>
+<li>johnLate</li>
+<li>jumpnbrownweasel</li>
+<li>max</li>
+<li>mllken</li>
+<li>noiryuh</li>
+<li>rohlem</li>
+<li>sharpobject</li>
+<li>sin-ack</li>
+<li>tecanec</li>
+<li>vnc5</li>
+<li>xEgoist</li>
+<li>yujiri8</li>
+<li>yyny</li>
+<li>zc</li>
+<li>Žiga Željko</li>
+<li>ノYuh</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Thank You Sponsors!#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 18em">
+    <p>
+    Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
+    Because of you, Zig is driven by the open source community, rather than the goal of making profit.
+    In particular, these fine folks sponsor Zig for $50/month or more:
+    </p>
+    <ul style="columns: 3">
+<li><a href="https://pex.com">Pex</a></li>
+<li><a href="https://scheibo.com">Kirk Scheibelhut</a></li>
+<li><a href="https://github.com/drfuchs">drfuchs</a></li>
+<li><a href="https://github.com/tarasbob">tarasbob</a></li>
+<li><a href="https://coil.com">CoilHQ</a></li>
+<li><a href="https://slimsag.com">Stephen Gutekanst</a></li>
+<li><a href="https://www.hryx.net/">Stevie Hryciw</a></li>
+<li><a href="https://mitchellh.com">Mitchell Hashimoto</a></li>
+<li><a href="https://github.com/phrrngtn">Paul Harrington</a></li>
+<li><a href="derekcollison.net">Derek Collison</a></li>
+<li><a href="https://github.com/karrick">Karrick McDermott</a></li>
+<li><a href="https://github.com/tigerbeetledb/tigerbeetle">Joran Dirk Greef</a></li>
+<li><a href="https://github.com/bfredl">bfredl</a></li>
+<li><a href="https://github.com/Vulfox">Dustin Taylor</a></li>
+<li><a href="https://github.com/tsmanner">Tom Manner</a></li>
+<li><a href="www.kapricornmedia.com">José M Rico</a></li>
+<li><a href="https://wasmer.io">Wasmer</a></li>
+<li><a href="https://github.com/tauoverpi">Simon A. Nielsen Knights</a></li>
+<li><a href="https://mikoverse.com">Mikoverse</a></li>
+<li><a href="https://github.com/thejoshwolfe">Josh Wolfe</a></li>
+<li><a href="https://github.com/ryanworl">ryanworl</a></li>
+<li><a href="https://github.com/rui314">Rui Ueyama</a></li>
+<li><a href="https://github.com/alunbestor">Alun Bestor</a></li>
+<li><a href="https://terinstock.com">Terin Stock</a></li>
+<li><a href="https://aras-p.info">Aras Pranckevičius</a></li>
+<li><a href="https://twitter.com/dcocca88">Daniele Cocca</a></li>
+<li><a href="https://github.com/lycus">The Lycus Foundation</a></li>
+<li><a href="https://github.com/danbanta">Dan Banta</a></li>
+<li><a href="https://jethron.id.au">Jethro Nederhof</a></li>
+<li><a href="https://github.com/briangold">Brian Gold</a></li>
+<li><a href="https://github.com/david-vanderson">David Vanderson</a></li>
+<li><a href="https://mattnite.github.io">Matt Knight</a></li>
+<li><a href="https://kalvad.com">Loïc Tosser</a></li>
+<li><a href="https://goofyfootlabs.com/">GoofyFoot Labs</a></li>
+<li>Martin Schwaighofer</li>
+<li>Santiago Andaluz</li>
+<li>Luke Champine</li>
+<li>Yurii Rashkovskii</li>
+<li>Rand Fitzpatrick</li>
+<li>Jesus Alvarez</li>
+<li>Benjamin Ebby</li>
+<li>Charlie Cheever</li>
+<li>Ralph Brorsen</li>
+<li>Brett Slatkin</li>
+<li>Wojtek Mach</li>
+<li>Max De Marzi</li>
+<li>Josh Ashby</li>
+<li>Christopher Dolan</li>
+<li>Alex Bubnov</li>
+<li>Anton Kochkov</li>
+<li>Damien Firmenich</li>
+<li>Jamie Brandon</li>
+<li>Jordan Orelli</li>
+<li>Max Bernstein</li>
+<li>Timothy Ham</li>
+<li>Jay Petacat</li>
+<li>Garett Bass</li>
+<li>Marco Munizaga</li>
+<li>Christian Wesselhoeft</li>
+<li>Tyler Gibbons</li>
+<li>Keith Devens</li>
+<li>Agam Dua</li>
+<li>Aaron Olson</li>
+<li>Ian Applegate</li>
+<li>Daniel Hensley</li>
+<li>Charles</li>
+<li>Erik Mållberg</li>
+<li>Luca Bolognese</li>
+<li>Sean Carey</li>
+<li>André Rodrigues</li>
+<li>Wesley Hill</li>
+<li>Peter Dinges</li>
+<li>Emily A. Bellows</li>
+<li>Lee Cannon</li>
+<li>sparrisable</li>
+<li>Chris Baldwin</li>
+<li>Martin Hochenwarter</li>
+<li>王爱国</li>
+<li>Ross Rheingans-Yoo</li>
+<li>Felix Queißner</li>
+<li>Baptiste Canton</li>
+<li>Mario Arias</li>
+<li>Luuk de Gram</li>
+<li>Mateusz Czarnecki</li>
+<li>James McGill</li>
+<li>Rafael Batiati</li>
+<li>Yaroslav Zhavoronkov</li>
+<li>Tom Read Cutting</li>
+<li>Mykhailo Tsiuptsiun (miktwon) [Flag of Ukraine]</li>
+<li>Curtis Tate Wilkinson</li>
+<li>Alex Sergeev</li>
+<li>Auguste Rame</li>
+<li>Mamadou S Diallo</li>
+<li>Dirk de Visser</li>
+<li>Joe Gordon</li>
+<li>OM PropTech GmbH</li>
+    </ul>
+    {#header_close#}
+    </div>
+  </body>
+</html>
