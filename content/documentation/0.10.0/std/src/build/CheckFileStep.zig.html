@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>build/CheckFileStep.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;../std.zig&quot;</span>);</span>
+<span class="line" id="L2"><span class="tok-kw">const</span> build = std.build;</span>
+<span class="line" id="L3"><span class="tok-kw">const</span> Step = build.Step;</span>
+<span class="line" id="L4"><span class="tok-kw">const</span> Builder = build.Builder;</span>
+<span class="line" id="L5"><span class="tok-kw">const</span> fs = std.fs;</span>
+<span class="line" id="L6"><span class="tok-kw">const</span> mem = std.mem;</span>
+<span class="line" id="L7"></span>
+<span class="line" id="L8"><span class="tok-kw">const</span> CheckFileStep = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L9"></span>
+<span class="line" id="L10"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> base_id = .check_file;</span>
+<span class="line" id="L11"></span>
+<span class="line" id="L12">step: Step,</span>
+<span class="line" id="L13">builder: *Builder,</span>
+<span class="line" id="L14">expected_matches: []<span class="tok-kw">const</span> []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L15">source: build.FileSource,</span>
+<span class="line" id="L16">max_bytes: <span class="tok-type">usize</span> = <span class="tok-number">20</span> * <span class="tok-number">1024</span> * <span class="tok-number">1024</span>,</span>
+<span class="line" id="L17"></span>
+<span class="line" id="L18"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">create</span>(</span>
+<span class="line" id="L19">    builder: *Builder,</span>
+<span class="line" id="L20">    source: build.FileSource,</span>
+<span class="line" id="L21">    expected_matches: []<span class="tok-kw">const</span> []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L22">) *CheckFileStep {</span>
+<span class="line" id="L23">    <span class="tok-kw">const</span> self = builder.allocator.create(CheckFileStep) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
+<span class="line" id="L24">    self.* = CheckFileStep{</span>
+<span class="line" id="L25">        .builder = builder,</span>
+<span class="line" id="L26">        .step = Step.init(.check_file, <span class="tok-str">&quot;CheckFile&quot;</span>, builder.allocator, make),</span>
+<span class="line" id="L27">        .source = source.dupe(builder),</span>
+<span class="line" id="L28">        .expected_matches = builder.dupeStrings(expected_matches),</span>
+<span class="line" id="L29">    };</span>
+<span class="line" id="L30">    self.source.addStepDependencies(&amp;self.step);</span>
+<span class="line" id="L31">    <span class="tok-kw">return</span> self;</span>
+<span class="line" id="L32">}</span>
+<span class="line" id="L33"></span>
+<span class="line" id="L34"><span class="tok-kw">fn</span> <span class="tok-fn">make</span>(step: *Step) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L35">    <span class="tok-kw">const</span> self = <span class="tok-builtin">@fieldParentPtr</span>(CheckFileStep, <span class="tok-str">&quot;step&quot;</span>, step);</span>
+<span class="line" id="L36"></span>
+<span class="line" id="L37">    <span class="tok-kw">const</span> src_path = self.source.getPath(self.builder);</span>
+<span class="line" id="L38">    <span class="tok-kw">const</span> contents = <span class="tok-kw">try</span> fs.cwd().readFileAlloc(self.builder.allocator, src_path, self.max_bytes);</span>
+<span class="line" id="L39"></span>
+<span class="line" id="L40">    <span class="tok-kw">for</span> (self.expected_matches) |expected_match| {</span>
+<span class="line" id="L41">        <span class="tok-kw">if</span> (mem.indexOf(<span class="tok-type">u8</span>, contents, expected_match) == <span class="tok-null">null</span>) {</span>
+<span class="line" id="L42">            std.debug.print(</span>
+<span class="line" id="L43">                <span class="tok-str">\\</span></span>
+
+<span class="line" id="L44">                <span class="tok-str">\\========= Expected to find: ===================</span></span>
+
+<span class="line" id="L45">                <span class="tok-str">\\{s}</span></span>
+
+<span class="line" id="L46">                <span class="tok-str">\\========= But file does not contain it: =======</span></span>
+
+<span class="line" id="L47">                <span class="tok-str">\\{s}</span></span>
+
+<span class="line" id="L48">                <span class="tok-str">\\</span></span>
+
+<span class="line" id="L49">            , .{ expected_match, contents });</span>
+<span class="line" id="L50">            <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TestFailed;</span>
+<span class="line" id="L51">        }</span>
+<span class="line" id="L52">    }</span>
+<span class="line" id="L53">}</span>
+<span class="line" id="L54"></span>
+</code></pre></body>
+</html>

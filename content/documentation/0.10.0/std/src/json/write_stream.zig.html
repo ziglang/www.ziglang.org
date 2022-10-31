@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>json/write_stream.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;../std.zig&quot;</span>);</span>
+<span class="line" id="L2"><span class="tok-kw">const</span> assert = std.debug.assert;</span>
+<span class="line" id="L3"><span class="tok-kw">const</span> maxInt = std.math.maxInt;</span>
+<span class="line" id="L4"></span>
+<span class="line" id="L5"><span class="tok-kw">const</span> State = <span class="tok-kw">enum</span> {</span>
+<span class="line" id="L6">    Complete,</span>
+<span class="line" id="L7">    Value,</span>
+<span class="line" id="L8">    ArrayStart,</span>
+<span class="line" id="L9">    Array,</span>
+<span class="line" id="L10">    ObjectStart,</span>
+<span class="line" id="L11">    Object,</span>
+<span class="line" id="L12">};</span>
+<span class="line" id="L13"></span>
+<span class="line" id="L14"><span class="tok-comment">/// Writes JSON ([RFC8259](https://tools.ietf.org/html/rfc8259)) formatted data</span></span>
+<span class="line" id="L15"><span class="tok-comment">/// to a stream. `max_depth` is a comptime-known upper bound on the nesting depth.</span></span>
+<span class="line" id="L16"><span class="tok-comment">/// TODO A future iteration of this API will allow passing `null` for this value,</span></span>
+<span class="line" id="L17"><span class="tok-comment">/// and disable safety checks in release builds.</span></span>
+<span class="line" id="L18"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">WriteStream</span>(<span class="tok-kw">comptime</span> OutStream: <span class="tok-type">type</span>, <span class="tok-kw">comptime</span> max_depth: <span class="tok-type">usize</span>) <span class="tok-type">type</span> {</span>
+<span class="line" id="L19">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L20">        <span class="tok-kw">const</span> Self = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L21"></span>
+<span class="line" id="L22">        <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Stream = OutStream;</span>
+<span class="line" id="L23"></span>
+<span class="line" id="L24">        whitespace: std.json.StringifyOptions.Whitespace = std.json.StringifyOptions.Whitespace{</span>
+<span class="line" id="L25">            .indent_level = <span class="tok-number">0</span>,</span>
+<span class="line" id="L26">            .indent = .{ .Space = <span class="tok-number">1</span> },</span>
+<span class="line" id="L27">        },</span>
+<span class="line" id="L28"></span>
+<span class="line" id="L29">        stream: OutStream,</span>
+<span class="line" id="L30">        state_index: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L31">        state: [max_depth]State,</span>
+<span class="line" id="L32"></span>
+<span class="line" id="L33">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">init</span>(stream: OutStream) Self {</span>
+<span class="line" id="L34">            <span class="tok-kw">var</span> self = Self{</span>
+<span class="line" id="L35">                .stream = stream,</span>
+<span class="line" id="L36">                .state_index = <span class="tok-number">1</span>,</span>
+<span class="line" id="L37">                .state = <span class="tok-null">undefined</span>,</span>
+<span class="line" id="L38">            };</span>
+<span class="line" id="L39">            self.state[<span class="tok-number">0</span>] = .Complete;</span>
+<span class="line" id="L40">            self.state[<span class="tok-number">1</span>] = .Value;</span>
+<span class="line" id="L41">            <span class="tok-kw">return</span> self;</span>
+<span class="line" id="L42">        }</span>
+<span class="line" id="L43"></span>
+<span class="line" id="L44">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">beginArray</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L45">            assert(self.state[self.state_index] == State.Value); <span class="tok-comment">// need to call arrayElem or objectField</span>
+</span>
+<span class="line" id="L46">            <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">'['</span>);</span>
+<span class="line" id="L47">            self.state[self.state_index] = State.ArrayStart;</span>
+<span class="line" id="L48">            self.whitespace.indent_level += <span class="tok-number">1</span>;</span>
+<span class="line" id="L49">        }</span>
+<span class="line" id="L50"></span>
+<span class="line" id="L51">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">beginObject</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L52">            assert(self.state[self.state_index] == State.Value); <span class="tok-comment">// need to call arrayElem or objectField</span>
+</span>
+<span class="line" id="L53">            <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">'{'</span>);</span>
+<span class="line" id="L54">            self.state[self.state_index] = State.ObjectStart;</span>
+<span class="line" id="L55">            self.whitespace.indent_level += <span class="tok-number">1</span>;</span>
+<span class="line" id="L56">        }</span>
+<span class="line" id="L57"></span>
+<span class="line" id="L58">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">arrayElem</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L59">            <span class="tok-kw">const</span> state = self.state[self.state_index];</span>
+<span class="line" id="L60">            <span class="tok-kw">switch</span> (state) {</span>
+<span class="line" id="L61">                .Complete =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L62">                .Value =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L63">                .ObjectStart =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L64">                .Object =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L65">                .Array, .ArrayStart =&gt; {</span>
+<span class="line" id="L66">                    <span class="tok-kw">if</span> (state == .Array) {</span>
+<span class="line" id="L67">                        <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">','</span>);</span>
+<span class="line" id="L68">                    }</span>
+<span class="line" id="L69">                    self.state[self.state_index] = .Array;</span>
+<span class="line" id="L70">                    self.pushState(.Value);</span>
+<span class="line" id="L71">                    <span class="tok-kw">try</span> self.indent();</span>
+<span class="line" id="L72">                },</span>
+<span class="line" id="L73">            }</span>
+<span class="line" id="L74">        }</span>
+<span class="line" id="L75"></span>
+<span class="line" id="L76">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">objectField</span>(self: *Self, name: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L77">            <span class="tok-kw">const</span> state = self.state[self.state_index];</span>
+<span class="line" id="L78">            <span class="tok-kw">switch</span> (state) {</span>
+<span class="line" id="L79">                .Complete =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L80">                .Value =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L81">                .ArrayStart =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L82">                .Array =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L83">                .Object, .ObjectStart =&gt; {</span>
+<span class="line" id="L84">                    <span class="tok-kw">if</span> (state == .Object) {</span>
+<span class="line" id="L85">                        <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">','</span>);</span>
+<span class="line" id="L86">                    }</span>
+<span class="line" id="L87">                    self.state[self.state_index] = .Object;</span>
+<span class="line" id="L88">                    self.pushState(.Value);</span>
+<span class="line" id="L89">                    <span class="tok-kw">try</span> self.indent();</span>
+<span class="line" id="L90">                    <span class="tok-kw">try</span> self.writeEscapedString(name);</span>
+<span class="line" id="L91">                    <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">':'</span>);</span>
+<span class="line" id="L92">                    <span class="tok-kw">if</span> (self.whitespace.separator) {</span>
+<span class="line" id="L93">                        <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">' '</span>);</span>
+<span class="line" id="L94">                    }</span>
+<span class="line" id="L95">                },</span>
+<span class="line" id="L96">            }</span>
+<span class="line" id="L97">        }</span>
+<span class="line" id="L98"></span>
+<span class="line" id="L99">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">endArray</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L100">            <span class="tok-kw">switch</span> (self.state[self.state_index]) {</span>
+<span class="line" id="L101">                .Complete =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L102">                .Value =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L103">                .ObjectStart =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L104">                .Object =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L105">                .ArrayStart =&gt; {</span>
+<span class="line" id="L106">                    self.whitespace.indent_level -= <span class="tok-number">1</span>;</span>
+<span class="line" id="L107">                    <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">']'</span>);</span>
+<span class="line" id="L108">                    self.popState();</span>
+<span class="line" id="L109">                },</span>
+<span class="line" id="L110">                .Array =&gt; {</span>
+<span class="line" id="L111">                    self.whitespace.indent_level -= <span class="tok-number">1</span>;</span>
+<span class="line" id="L112">                    <span class="tok-kw">try</span> self.indent();</span>
+<span class="line" id="L113">                    self.popState();</span>
+<span class="line" id="L114">                    <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">']'</span>);</span>
+<span class="line" id="L115">                },</span>
+<span class="line" id="L116">            }</span>
+<span class="line" id="L117">        }</span>
+<span class="line" id="L118"></span>
+<span class="line" id="L119">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">endObject</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L120">            <span class="tok-kw">switch</span> (self.state[self.state_index]) {</span>
+<span class="line" id="L121">                .Complete =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L122">                .Value =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L123">                .ArrayStart =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L124">                .Array =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L125">                .ObjectStart =&gt; {</span>
+<span class="line" id="L126">                    self.whitespace.indent_level -= <span class="tok-number">1</span>;</span>
+<span class="line" id="L127">                    <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">'}'</span>);</span>
+<span class="line" id="L128">                    self.popState();</span>
+<span class="line" id="L129">                },</span>
+<span class="line" id="L130">                .Object =&gt; {</span>
+<span class="line" id="L131">                    self.whitespace.indent_level -= <span class="tok-number">1</span>;</span>
+<span class="line" id="L132">                    <span class="tok-kw">try</span> self.indent();</span>
+<span class="line" id="L133">                    self.popState();</span>
+<span class="line" id="L134">                    <span class="tok-kw">try</span> self.stream.writeByte(<span class="tok-str">'}'</span>);</span>
+<span class="line" id="L135">                },</span>
+<span class="line" id="L136">            }</span>
+<span class="line" id="L137">        }</span>
+<span class="line" id="L138"></span>
+<span class="line" id="L139">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">emitNull</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L140">            assert(self.state[self.state_index] == State.Value);</span>
+<span class="line" id="L141">            <span class="tok-kw">try</span> self.stringify(<span class="tok-null">null</span>);</span>
+<span class="line" id="L142">            self.popState();</span>
+<span class="line" id="L143">        }</span>
+<span class="line" id="L144"></span>
+<span class="line" id="L145">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">emitBool</span>(self: *Self, value: <span class="tok-type">bool</span>) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L146">            assert(self.state[self.state_index] == State.Value);</span>
+<span class="line" id="L147">            <span class="tok-kw">try</span> self.stringify(value);</span>
+<span class="line" id="L148">            self.popState();</span>
+<span class="line" id="L149">        }</span>
+<span class="line" id="L150"></span>
+<span class="line" id="L151">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">emitNumber</span>(</span>
+<span class="line" id="L152">            self: *Self,</span>
+<span class="line" id="L153">            <span class="tok-comment">/// An integer, float, or `std.math.BigInt`. Emitted as a bare number if it fits losslessly</span></span>
+<span class="line" id="L154">            <span class="tok-comment">/// in a IEEE 754 double float, otherwise emitted as a string to the full precision.</span></span>
+<span class="line" id="L155">            value: <span class="tok-kw">anytype</span>,</span>
+<span class="line" id="L156">        ) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L157">            assert(self.state[self.state_index] == State.Value);</span>
+<span class="line" id="L158">            <span class="tok-kw">switch</span> (<span class="tok-builtin">@typeInfo</span>(<span class="tok-builtin">@TypeOf</span>(value))) {</span>
+<span class="line" id="L159">                .Int =&gt; |info| {</span>
+<span class="line" id="L160">                    <span class="tok-kw">if</span> (info.bits &lt; <span class="tok-number">53</span>) {</span>
+<span class="line" id="L161">                        <span class="tok-kw">try</span> self.stream.print(<span class="tok-str">&quot;{}&quot;</span>, .{value});</span>
+<span class="line" id="L162">                        self.popState();</span>
+<span class="line" id="L163">                        <span class="tok-kw">return</span>;</span>
+<span class="line" id="L164">                    }</span>
+<span class="line" id="L165">                    <span class="tok-kw">if</span> (value &lt; <span class="tok-number">4503599627370496</span> <span class="tok-kw">and</span> (info.signedness == .unsigned <span class="tok-kw">or</span> value &gt; -<span class="tok-number">4503599627370496</span>)) {</span>
+<span class="line" id="L166">                        <span class="tok-kw">try</span> self.stream.print(<span class="tok-str">&quot;{}&quot;</span>, .{value});</span>
+<span class="line" id="L167">                        self.popState();</span>
+<span class="line" id="L168">                        <span class="tok-kw">return</span>;</span>
+<span class="line" id="L169">                    }</span>
+<span class="line" id="L170">                },</span>
+<span class="line" id="L171">                .ComptimeInt =&gt; {</span>
+<span class="line" id="L172">                    <span class="tok-kw">return</span> self.emitNumber(<span class="tok-builtin">@as</span>(std.math.IntFittingRange(value, value), value));</span>
+<span class="line" id="L173">                },</span>
+<span class="line" id="L174">                .Float, .ComptimeFloat =&gt; <span class="tok-kw">if</span> (<span class="tok-builtin">@floatCast</span>(<span class="tok-type">f64</span>, value) == value) {</span>
+<span class="line" id="L175">                    <span class="tok-kw">try</span> self.stream.print(<span class="tok-str">&quot;{}&quot;</span>, .{<span class="tok-builtin">@floatCast</span>(<span class="tok-type">f64</span>, value)});</span>
+<span class="line" id="L176">                    self.popState();</span>
+<span class="line" id="L177">                    <span class="tok-kw">return</span>;</span>
+<span class="line" id="L178">                },</span>
+<span class="line" id="L179">                <span class="tok-kw">else</span> =&gt; {},</span>
+<span class="line" id="L180">            }</span>
+<span class="line" id="L181">            <span class="tok-kw">try</span> self.stream.print(<span class="tok-str">&quot;\&quot;{}\&quot;&quot;</span>, .{value});</span>
+<span class="line" id="L182">            self.popState();</span>
+<span class="line" id="L183">        }</span>
+<span class="line" id="L184"></span>
+<span class="line" id="L185">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">emitString</span>(self: *Self, string: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L186">            assert(self.state[self.state_index] == State.Value);</span>
+<span class="line" id="L187">            <span class="tok-kw">try</span> self.writeEscapedString(string);</span>
+<span class="line" id="L188">            self.popState();</span>
+<span class="line" id="L189">        }</span>
+<span class="line" id="L190"></span>
+<span class="line" id="L191">        <span class="tok-kw">fn</span> <span class="tok-fn">writeEscapedString</span>(self: *Self, string: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L192">            assert(std.unicode.utf8ValidateSlice(string));</span>
+<span class="line" id="L193">            <span class="tok-kw">try</span> self.stringify(string);</span>
+<span class="line" id="L194">        }</span>
+<span class="line" id="L195"></span>
+<span class="line" id="L196">        <span class="tok-comment">/// Writes the complete json into the output stream</span></span>
+<span class="line" id="L197">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">emitJson</span>(self: *Self, json: std.json.Value) Stream.Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L198">            assert(self.state[self.state_index] == State.Value);</span>
+<span class="line" id="L199">            <span class="tok-kw">try</span> self.stringify(json);</span>
+<span class="line" id="L200">            self.popState();</span>
+<span class="line" id="L201">        }</span>
+<span class="line" id="L202"></span>
+<span class="line" id="L203">        <span class="tok-kw">fn</span> <span class="tok-fn">indent</span>(self: *Self) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L204">            assert(self.state_index &gt;= <span class="tok-number">1</span>);</span>
+<span class="line" id="L205">            <span class="tok-kw">try</span> self.whitespace.outputIndent(self.stream);</span>
+<span class="line" id="L206">        }</span>
+<span class="line" id="L207"></span>
+<span class="line" id="L208">        <span class="tok-kw">fn</span> <span class="tok-fn">pushState</span>(self: *Self, state: State) <span class="tok-type">void</span> {</span>
+<span class="line" id="L209">            self.state_index += <span class="tok-number">1</span>;</span>
+<span class="line" id="L210">            self.state[self.state_index] = state;</span>
+<span class="line" id="L211">        }</span>
+<span class="line" id="L212"></span>
+<span class="line" id="L213">        <span class="tok-kw">fn</span> <span class="tok-fn">popState</span>(self: *Self) <span class="tok-type">void</span> {</span>
+<span class="line" id="L214">            self.state_index -= <span class="tok-number">1</span>;</span>
+<span class="line" id="L215">        }</span>
+<span class="line" id="L216"></span>
+<span class="line" id="L217">        <span class="tok-kw">fn</span> <span class="tok-fn">stringify</span>(self: *Self, value: <span class="tok-kw">anytype</span>) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L218">            <span class="tok-kw">try</span> std.json.stringify(value, std.json.StringifyOptions{</span>
+<span class="line" id="L219">                .whitespace = self.whitespace,</span>
+<span class="line" id="L220">            }, self.stream);</span>
+<span class="line" id="L221">        }</span>
+<span class="line" id="L222">    };</span>
+<span class="line" id="L223">}</span>
+<span class="line" id="L224"></span>
+<span class="line" id="L225"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">writeStream</span>(</span>
+<span class="line" id="L226">    out_stream: <span class="tok-kw">anytype</span>,</span>
+<span class="line" id="L227">    <span class="tok-kw">comptime</span> max_depth: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L228">) WriteStream(<span class="tok-builtin">@TypeOf</span>(out_stream), max_depth) {</span>
+<span class="line" id="L229">    <span class="tok-kw">return</span> WriteStream(<span class="tok-builtin">@TypeOf</span>(out_stream), max_depth).init(out_stream);</span>
+<span class="line" id="L230">}</span>
+<span class="line" id="L231"></span>
+<span class="line" id="L232"><span class="tok-kw">test</span> <span class="tok-str">&quot;json write stream&quot;</span> {</span>
+<span class="line" id="L233">    <span class="tok-kw">var</span> out_buf: [<span class="tok-number">1024</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L234">    <span class="tok-kw">var</span> slice_stream = std.io.fixedBufferStream(&amp;out_buf);</span>
+<span class="line" id="L235">    <span class="tok-kw">const</span> out = slice_stream.writer();</span>
+<span class="line" id="L236"></span>
+<span class="line" id="L237">    <span class="tok-kw">var</span> arena_allocator = std.heap.ArenaAllocator.init(std.testing.allocator);</span>
+<span class="line" id="L238">    <span class="tok-kw">defer</span> arena_allocator.deinit();</span>
+<span class="line" id="L239"></span>
+<span class="line" id="L240">    <span class="tok-kw">var</span> w = std.json.writeStream(out, <span class="tok-number">10</span>);</span>
+<span class="line" id="L241"></span>
+<span class="line" id="L242">    <span class="tok-kw">try</span> w.beginObject();</span>
+<span class="line" id="L243"></span>
+<span class="line" id="L244">    <span class="tok-kw">try</span> w.objectField(<span class="tok-str">&quot;object&quot;</span>);</span>
+<span class="line" id="L245">    <span class="tok-kw">try</span> w.emitJson(<span class="tok-kw">try</span> getJsonObject(arena_allocator.allocator()));</span>
+<span class="line" id="L246"></span>
+<span class="line" id="L247">    <span class="tok-kw">try</span> w.objectField(<span class="tok-str">&quot;string&quot;</span>);</span>
+<span class="line" id="L248">    <span class="tok-kw">try</span> w.emitString(<span class="tok-str">&quot;This is a string&quot;</span>);</span>
+<span class="line" id="L249"></span>
+<span class="line" id="L250">    <span class="tok-kw">try</span> w.objectField(<span class="tok-str">&quot;array&quot;</span>);</span>
+<span class="line" id="L251">    <span class="tok-kw">try</span> w.beginArray();</span>
+<span class="line" id="L252">    <span class="tok-kw">try</span> w.arrayElem();</span>
+<span class="line" id="L253">    <span class="tok-kw">try</span> w.emitString(<span class="tok-str">&quot;Another string&quot;</span>);</span>
+<span class="line" id="L254">    <span class="tok-kw">try</span> w.arrayElem();</span>
+<span class="line" id="L255">    <span class="tok-kw">try</span> w.emitNumber(<span class="tok-builtin">@as</span>(<span class="tok-type">i32</span>, <span class="tok-number">1</span>));</span>
+<span class="line" id="L256">    <span class="tok-kw">try</span> w.arrayElem();</span>
+<span class="line" id="L257">    <span class="tok-kw">try</span> w.emitNumber(<span class="tok-builtin">@as</span>(<span class="tok-type">f32</span>, <span class="tok-number">3.5</span>));</span>
+<span class="line" id="L258">    <span class="tok-kw">try</span> w.endArray();</span>
+<span class="line" id="L259"></span>
+<span class="line" id="L260">    <span class="tok-kw">try</span> w.objectField(<span class="tok-str">&quot;int&quot;</span>);</span>
+<span class="line" id="L261">    <span class="tok-kw">try</span> w.emitNumber(<span class="tok-builtin">@as</span>(<span class="tok-type">i32</span>, <span class="tok-number">10</span>));</span>
+<span class="line" id="L262"></span>
+<span class="line" id="L263">    <span class="tok-kw">try</span> w.objectField(<span class="tok-str">&quot;float&quot;</span>);</span>
+<span class="line" id="L264">    <span class="tok-kw">try</span> w.emitNumber(<span class="tok-builtin">@as</span>(<span class="tok-type">f32</span>, <span class="tok-number">3.5</span>));</span>
+<span class="line" id="L265"></span>
+<span class="line" id="L266">    <span class="tok-kw">try</span> w.endObject();</span>
+<span class="line" id="L267"></span>
+<span class="line" id="L268">    <span class="tok-kw">const</span> result = slice_stream.getWritten();</span>
+<span class="line" id="L269">    <span class="tok-kw">const</span> expected =</span>
+<span class="line" id="L270">        <span class="tok-str">\\{</span></span>
+
+<span class="line" id="L271">        <span class="tok-str">\\ &quot;object&quot;: {</span></span>
+
+<span class="line" id="L272">        <span class="tok-str">\\  &quot;one&quot;: 1,</span></span>
+
+<span class="line" id="L273">        <span class="tok-str">\\  &quot;two&quot;: 2.0e+00</span></span>
+
+<span class="line" id="L274">        <span class="tok-str">\\ },</span></span>
+
+<span class="line" id="L275">        <span class="tok-str">\\ &quot;string&quot;: &quot;This is a string&quot;,</span></span>
+
+<span class="line" id="L276">        <span class="tok-str">\\ &quot;array&quot;: [</span></span>
+
+<span class="line" id="L277">        <span class="tok-str">\\  &quot;Another string&quot;,</span></span>
+
+<span class="line" id="L278">        <span class="tok-str">\\  1,</span></span>
+
+<span class="line" id="L279">        <span class="tok-str">\\  3.5e+00</span></span>
+
+<span class="line" id="L280">        <span class="tok-str">\\ ],</span></span>
+
+<span class="line" id="L281">        <span class="tok-str">\\ &quot;int&quot;: 10,</span></span>
+
+<span class="line" id="L282">        <span class="tok-str">\\ &quot;float&quot;: 3.5e+00</span></span>
+
+<span class="line" id="L283">        <span class="tok-str">\\}</span></span>
+
+<span class="line" id="L284">    ;</span>
+<span class="line" id="L285">    <span class="tok-kw">try</span> std.testing.expect(std.mem.eql(<span class="tok-type">u8</span>, expected, result));</span>
+<span class="line" id="L286">}</span>
+<span class="line" id="L287"></span>
+<span class="line" id="L288"><span class="tok-kw">fn</span> <span class="tok-fn">getJsonObject</span>(allocator: std.mem.Allocator) !std.json.Value {</span>
+<span class="line" id="L289">    <span class="tok-kw">var</span> value = std.json.Value{ .Object = std.json.ObjectMap.init(allocator) };</span>
+<span class="line" id="L290">    <span class="tok-kw">try</span> value.Object.put(<span class="tok-str">&quot;one&quot;</span>, std.json.Value{ .Integer = <span class="tok-builtin">@intCast</span>(<span class="tok-type">i64</span>, <span class="tok-number">1</span>) });</span>
+<span class="line" id="L291">    <span class="tok-kw">try</span> value.Object.put(<span class="tok-str">&quot;two&quot;</span>, std.json.Value{ .Float = <span class="tok-number">2.0</span> });</span>
+<span class="line" id="L292">    <span class="tok-kw">return</span> value;</span>
+<span class="line" id="L293">}</span>
+<span class="line" id="L294"></span>
+</code></pre></body>
+</html>

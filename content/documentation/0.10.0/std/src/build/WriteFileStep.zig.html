@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>build/WriteFileStep.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;../std.zig&quot;</span>);</span>
+<span class="line" id="L2"><span class="tok-kw">const</span> build = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;../build.zig&quot;</span>);</span>
+<span class="line" id="L3"><span class="tok-kw">const</span> Step = build.Step;</span>
+<span class="line" id="L4"><span class="tok-kw">const</span> Builder = build.Builder;</span>
+<span class="line" id="L5"><span class="tok-kw">const</span> fs = std.fs;</span>
+<span class="line" id="L6"><span class="tok-kw">const</span> ArrayList = std.ArrayList;</span>
+<span class="line" id="L7"></span>
+<span class="line" id="L8"><span class="tok-kw">const</span> WriteFileStep = <span class="tok-builtin">@This</span>();</span>
+<span class="line" id="L9"></span>
+<span class="line" id="L10"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> base_id = .write_file;</span>
+<span class="line" id="L11"></span>
+<span class="line" id="L12">step: Step,</span>
+<span class="line" id="L13">builder: *Builder,</span>
+<span class="line" id="L14">output_dir: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L15">files: std.TailQueue(File),</span>
+<span class="line" id="L16"></span>
+<span class="line" id="L17"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> File = <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L18">    source: build.GeneratedFile,</span>
+<span class="line" id="L19">    basename: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L20">    bytes: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L21">};</span>
+<span class="line" id="L22"></span>
+<span class="line" id="L23"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">init</span>(builder: *Builder) WriteFileStep {</span>
+<span class="line" id="L24">    <span class="tok-kw">return</span> WriteFileStep{</span>
+<span class="line" id="L25">        .builder = builder,</span>
+<span class="line" id="L26">        .step = Step.init(.write_file, <span class="tok-str">&quot;writefile&quot;</span>, builder.allocator, make),</span>
+<span class="line" id="L27">        .files = .{},</span>
+<span class="line" id="L28">        .output_dir = <span class="tok-null">undefined</span>,</span>
+<span class="line" id="L29">    };</span>
+<span class="line" id="L30">}</span>
+<span class="line" id="L31"></span>
+<span class="line" id="L32"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">add</span>(self: *WriteFileStep, basename: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>, bytes: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) <span class="tok-type">void</span> {</span>
+<span class="line" id="L33">    <span class="tok-kw">const</span> node = self.builder.allocator.create(std.TailQueue(File).Node) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
+<span class="line" id="L34">    node.* = .{</span>
+<span class="line" id="L35">        .data = .{</span>
+<span class="line" id="L36">            .source = build.GeneratedFile{ .step = &amp;self.step },</span>
+<span class="line" id="L37">            .basename = self.builder.dupePath(basename),</span>
+<span class="line" id="L38">            .bytes = self.builder.dupe(bytes),</span>
+<span class="line" id="L39">        },</span>
+<span class="line" id="L40">    };</span>
+<span class="line" id="L41"></span>
+<span class="line" id="L42">    self.files.append(node);</span>
+<span class="line" id="L43">}</span>
+<span class="line" id="L44"></span>
+<span class="line" id="L45"><span class="tok-comment">/// Gets a file source for the given basename. If the file does not exist, returns `null`.</span></span>
+<span class="line" id="L46"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">getFileSource</span>(step: *WriteFileStep, basename: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) ?build.FileSource {</span>
+<span class="line" id="L47">    <span class="tok-kw">var</span> it = step.files.first;</span>
+<span class="line" id="L48">    <span class="tok-kw">while</span> (it) |node| : (it = node.next) {</span>
+<span class="line" id="L49">        <span class="tok-kw">if</span> (std.mem.eql(<span class="tok-type">u8</span>, node.data.basename, basename))</span>
+<span class="line" id="L50">            <span class="tok-kw">return</span> build.FileSource{ .generated = &amp;node.data.source };</span>
+<span class="line" id="L51">    }</span>
+<span class="line" id="L52">    <span class="tok-kw">return</span> <span class="tok-null">null</span>;</span>
+<span class="line" id="L53">}</span>
+<span class="line" id="L54"></span>
+<span class="line" id="L55"><span class="tok-kw">fn</span> <span class="tok-fn">make</span>(step: *Step) !<span class="tok-type">void</span> {</span>
+<span class="line" id="L56">    <span class="tok-kw">const</span> self = <span class="tok-builtin">@fieldParentPtr</span>(WriteFileStep, <span class="tok-str">&quot;step&quot;</span>, step);</span>
+<span class="line" id="L57"></span>
+<span class="line" id="L58">    <span class="tok-comment">// The cache is used here not really as a way to speed things up - because writing</span>
+</span>
+<span class="line" id="L59">    <span class="tok-comment">// the data to a file would probably be very fast - but as a way to find a canonical</span>
+</span>
+<span class="line" id="L60">    <span class="tok-comment">// location to put build artifacts.</span>
+</span>
+<span class="line" id="L61"></span>
+<span class="line" id="L62">    <span class="tok-comment">// If, for example, a hard-coded path was used as the location to put WriteFileStep</span>
+</span>
+<span class="line" id="L63">    <span class="tok-comment">// files, then two WriteFileSteps executing in parallel might clobber each other.</span>
+</span>
+<span class="line" id="L64"></span>
+<span class="line" id="L65">    <span class="tok-comment">// TODO port the cache system from stage1 to zig std lib. Until then we use blake2b</span>
+</span>
+<span class="line" id="L66">    <span class="tok-comment">// directly and construct the path, and no &quot;cache hit&quot; detection happens; the files</span>
+</span>
+<span class="line" id="L67">    <span class="tok-comment">// are always written.</span>
+</span>
+<span class="line" id="L68">    <span class="tok-kw">var</span> hash = std.crypto.hash.blake2.Blake2b384.init(.{});</span>
+<span class="line" id="L69"></span>
+<span class="line" id="L70">    <span class="tok-comment">// Random bytes to make WriteFileStep unique. Refresh this with</span>
+</span>
+<span class="line" id="L71">    <span class="tok-comment">// new random bytes when WriteFileStep implementation is modified</span>
+</span>
+<span class="line" id="L72">    <span class="tok-comment">// in a non-backwards-compatible way.</span>
+</span>
+<span class="line" id="L73">    hash.update(<span class="tok-str">&quot;eagVR1dYXoE7ARDP&quot;</span>);</span>
+<span class="line" id="L74">    {</span>
+<span class="line" id="L75">        <span class="tok-kw">var</span> it = self.files.first;</span>
+<span class="line" id="L76">        <span class="tok-kw">while</span> (it) |node| : (it = node.next) {</span>
+<span class="line" id="L77">            hash.update(node.data.basename);</span>
+<span class="line" id="L78">            hash.update(node.data.bytes);</span>
+<span class="line" id="L79">            hash.update(<span class="tok-str">&quot;|&quot;</span>);</span>
+<span class="line" id="L80">        }</span>
+<span class="line" id="L81">    }</span>
+<span class="line" id="L82">    <span class="tok-kw">var</span> digest: [<span class="tok-number">48</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L83">    hash.final(&amp;digest);</span>
+<span class="line" id="L84">    <span class="tok-kw">var</span> hash_basename: [<span class="tok-number">64</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L85">    _ = fs.base64_encoder.encode(&amp;hash_basename, &amp;digest);</span>
+<span class="line" id="L86">    self.output_dir = <span class="tok-kw">try</span> fs.path.join(self.builder.allocator, &amp;[_][]<span class="tok-kw">const</span> <span class="tok-type">u8</span>{</span>
+<span class="line" id="L87">        self.builder.cache_root,</span>
+<span class="line" id="L88">        <span class="tok-str">&quot;o&quot;</span>,</span>
+<span class="line" id="L89">        &amp;hash_basename,</span>
+<span class="line" id="L90">    });</span>
+<span class="line" id="L91">    <span class="tok-comment">// TODO replace with something like fs.makePathAndOpenDir</span>
+</span>
+<span class="line" id="L92">    fs.cwd().makePath(self.output_dir) <span class="tok-kw">catch</span> |err| {</span>
+<span class="line" id="L93">        std.debug.print(<span class="tok-str">&quot;unable to make path {s}: {s}\n&quot;</span>, .{ self.output_dir, <span class="tok-builtin">@errorName</span>(err) });</span>
+<span class="line" id="L94">        <span class="tok-kw">return</span> err;</span>
+<span class="line" id="L95">    };</span>
+<span class="line" id="L96">    <span class="tok-kw">var</span> dir = <span class="tok-kw">try</span> fs.cwd().openDir(self.output_dir, .{});</span>
+<span class="line" id="L97">    <span class="tok-kw">defer</span> dir.close();</span>
+<span class="line" id="L98">    {</span>
+<span class="line" id="L99">        <span class="tok-kw">var</span> it = self.files.first;</span>
+<span class="line" id="L100">        <span class="tok-kw">while</span> (it) |node| : (it = node.next) {</span>
+<span class="line" id="L101">            dir.writeFile(node.data.basename, node.data.bytes) <span class="tok-kw">catch</span> |err| {</span>
+<span class="line" id="L102">                std.debug.print(<span class="tok-str">&quot;unable to write {s} into {s}: {s}\n&quot;</span>, .{</span>
+<span class="line" id="L103">                    node.data.basename,</span>
+<span class="line" id="L104">                    self.output_dir,</span>
+<span class="line" id="L105">                    <span class="tok-builtin">@errorName</span>(err),</span>
+<span class="line" id="L106">                });</span>
+<span class="line" id="L107">                <span class="tok-kw">return</span> err;</span>
+<span class="line" id="L108">            };</span>
+<span class="line" id="L109">            node.data.source.path = fs.path.join(</span>
+<span class="line" id="L110">                self.builder.allocator,</span>
+<span class="line" id="L111">                &amp;[_][]<span class="tok-kw">const</span> <span class="tok-type">u8</span>{ self.output_dir, node.data.basename },</span>
+<span class="line" id="L112">            ) <span class="tok-kw">catch</span> <span class="tok-kw">unreachable</span>;</span>
+<span class="line" id="L113">        }</span>
+<span class="line" id="L114">    }</span>
+<span class="line" id="L115">}</span>
+<span class="line" id="L116"></span>
+</code></pre></body>
+</html>
