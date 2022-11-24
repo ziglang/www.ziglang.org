@@ -51,11 +51,11 @@ ZIG_VERSION="$(stage3-release/bin/zig version)"
 
 cd "$WORKDIR"
 # git clone --depth 1 https://github.com/ziglang/zig-bootstrap
-git pull
 BOOTSTRAP_SRC="$WORKDIR/zig-bootstrap"
 TARBALLS_DIR="$WORKDIR/tarballs"
 
-# cd "$BOOTSTRAP_SRC"
+cd "$BOOTSTRAP_SRC"
+git pull
 rm -rf zig
 cp -r "$ZIGDIR" ./
 sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
