@@ -6,11 +6,10 @@ set -e
 # Exit the website repository and clone ziglang/zig
 WEBSITEDIR="$(pwd)"
 cd ..
-git clone https://github.com/ziglang/zig.git
 cd zig
 
 # COMMIT=$($COMMIT||)
-
+git fetch
 git checkout $COMMIT
 
 
@@ -26,13 +25,6 @@ MCPU="baseline"
 CACHE_BASENAME="zig+llvm+lld+clang-$TARGET-0.11.0-dev.256+271cc52a1"
 PREFIX="$HOME/deps/$CACHE_BASENAME"
 ZIG="$PREFIX/bin/zig"
-
-# Make the `zig version` number consistent.
-# This will affect the cmake command below.
-cd "$ZIGDIR"
-git config core.abbrev 9
-git fetch --unshallow || true
-git fetch --tags
 
 export CC="$ZIG cc -target $TARGET -mcpu=$MCPU"
 export CXX="$ZIG c++ -target $TARGET -mcpu=$MCPU"
