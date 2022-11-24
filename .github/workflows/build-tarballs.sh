@@ -29,7 +29,7 @@ ZIG="$PREFIX/bin/zig"
 export CC="$ZIG cc -target $TARGET -mcpu=$MCPU"
 export CXX="$ZIG c++ -target $TARGET -mcpu=$MCPU"
 
-mkdir "$REL_SRC_BUILD"
+# mkdir "$REL_SRC_BUILD"
 cd "$REL_SRC_BUILD"
 cmake .. \
   -DCMAKE_INSTALL_PREFIX="stage3-release" \
@@ -74,6 +74,7 @@ CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14
 
 ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
 
+rm -rf "$TARBALLS_DIR"
 mkdir "$TARBALLS_DIR"
 cd "$TARBALLS_DIR"
 
