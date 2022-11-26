@@ -5,7 +5,6 @@ set -e
 
 export PATH="$HOME/local/bin:$PATH"
 
-# Exit the website repository and clone ziglang/zig
 WEBSITEDIR="$(pwd)"
 cd ../zig
 ZIGDIR="$(pwd)"
@@ -67,7 +66,6 @@ tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION"
 cd "$BOOTSTRAP_SRC/zig"
 "$ZIG" build docs
 LANGREF_HTML="$BOOTSTRAP_SRC/zig/zig-cache/langref.html"
-cd ..
 
 # Look for HTML errors.
 tidy --drop-empty-elements no -qe "$LANGREF_HTML"
@@ -110,7 +108,7 @@ mv zig-macos-aarch64-$ZIG_VERSION/{lib,lib2}
 #mv zig-linux-armv7a-$ZIG_VERSION/{lib,lib2}
 #mv zig-linux-riscv64-$ZIG_VERSION/{lib,lib2}
 
-mv zig-linux-x86_64-$ZIG_VERSIN/{lib2/zig,lib}
+mv zig-linux-x86_64-$ZIG_VERSION/{lib2/zig,lib}
 mv zig-macos-x86_64-$ZIG_VERSION/{lib2/zig,lib}
 mv zig-windows-x86_64-$ZIG_VERSION/{lib2/zig,lib}
 #mv zig-freebsd-x86_64-$ZIG_VERSION/{lib2/zig,lib}
@@ -194,19 +192,19 @@ tar cJf zig-macos-aarch64-$ZIG_VERSION.tar.xz zig-macos-aarch64-$ZIG_VERSION/
 #tar cJf zig-linux-armv7a-$ZIG_VERSION.tar.xz zig-linux-armv7a-$ZIG_VERSION/
 #tar cJf zig-linux-riscv64-$ZIG_VERSION.tar.xz zig-linux-riscv64-$ZIG_VERSION/
 
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 
 export SRC_TARBALL="zig-$ZIG_VERSION.tar.xz"
 export SRC_SHASUM=$(sha256sum "zig-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
@@ -244,9 +242,9 @@ export MASTER_DATE="$(date +%Y-%m-%d)"
 export MASTER_VERSION="$ZIG_VERSION"
 
 # Create index.json and update the website repo.
-cd "$ZIGDIR/ci"
+cd "$WEBSITEDIR/.github/workflows"
 "$ZIG" run update-download-page.zig
-mv out "$TARBALLS_DIR/out"
+mv out/index.json "$WEBSITEDIR/data/releases.json"
 
 cd "$WEBSITEDIR"
 
@@ -254,9 +252,8 @@ cd "$WEBSITEDIR"
 git config user.email "ziggy@ziglang.org"
 git config user.name "Ziggy"
 
-cp "$TARBALLS_DIR/out/index.json" data/releases.json
 git add data/releases.json
-git commit -m "CI: update releases"
+git commit -m "CI: update master branch builds"
 git push origin master
 
 # Update autodocs and langref directly to S3 in order to prevent the
@@ -272,7 +269,7 @@ git push origin master
 # * Figure out how to adjust the Cloudfront settings to increase the max size for
 #   auto-compressed objects.
 # * Migrate to fastly.
-DOCDIR="$TARBALLS_DIR/zig-linux-aarch64-$ZIG_VERSION/doc"
+DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$LANGREF_HTML" s3://ziglang.org/documentation/master/index.html
