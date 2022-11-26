@@ -3,65 +3,34 @@
 set -x
 set -e
 
+export PATH="$HOME/local/bin:$PATH"
+
 # Exit the website repository and clone ziglang/zig
 WEBSITEDIR="$(pwd)"
-cd ..
-cd zig
-
-# COMMIT=$($COMMIT||)
-git fetch
-git checkout $COMMIT
-
-
-# Start building Zig
+cd ../zig
 ZIGDIR="$(pwd)"
-REL_SRC_BUILD="$ZIGDIR/build-release"
+# Make the `zig version` number consistent.
+# This will affect the zig-ver command below.
+git config core.abbrev 9
+git fetch --unshallow || true
+git fetch --tags
+git checkout $COMMIT
+ZIG_VERSION="$(zig-ver)"
 cd ../..
 WORKDIR="$(pwd)"
-ARCH="$(uname -m)"
-TARGET="$ARCH-linux-musl"
-MCPU="baseline"
-
-CACHE_BASENAME="zig+llvm+lld+clang-$TARGET-0.11.0-dev.256+271cc52a1"
-PREFIX="$HOME/deps/$CACHE_BASENAME"
-ZIG="$PREFIX/bin/zig"
-
-export CC="$ZIG cc -target $TARGET -mcpu=$MCPU"
-export CXX="$ZIG c++ -target $TARGET -mcpu=$MCPU"
-
-# mkdir "$REL_SRC_BUILD"
-cd "$REL_SRC_BUILD"
-cmake .. \
-  -DCMAKE_INSTALL_PREFIX="stage3-release" \
-  -DCMAKE_PREFIX_PATH="$PREFIX" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DZIG_TARGET_TRIPLE="$TARGET" \
-  -DZIG_TARGET_MCPU="$MCPU" \
-  -DZIG_STATIC=ON \
-  -GNinja
-
-# Now cmake will use zig as the C/C++ compiler. We reset the environment variables
-# so that installation and testing do not get affected by them.
-unset CC
-unset CXX
-
-ninja install
-
-ZIG_VERSION="$(stage3-release/bin/zig version)"
-
-cd "$WORKDIR"
-# git clone --depth 1 https://github.com/ziglang/zig-bootstrap
 BOOTSTRAP_SRC="$WORKDIR/zig-bootstrap"
 TARBALLS_DIR="$WORKDIR/tarballs"
 
 cd "$BOOTSTRAP_SRC"
-git pull
+git clean -fd
+git reset --hard HEAD
+git fetch
+git checkout origin/master
 rm -rf zig
 cp -r "$ZIGDIR" ./
 sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
 
 # NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
-PATH="$HOME/deps/cmake-3.25.0-linux-x86_64/bin:$PATH"
 CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
@@ -95,8 +64,7 @@ rm -rf \
 mv zig "zig-$ZIG_VERSION"
 tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION"
 
-cd "$BOOTSTRAP_SRC"
-cd zig
+cd "$BOOTSTRAP_SRC/zig"
 "$ZIG" build docs
 LANGREF_HTML="$BOOTSTRAP_SRC/zig/zig-cache/langref.html"
 cd ..
@@ -166,17 +134,17 @@ rmdir zig-macos-aarch64-$ZIG_VERSION/{bin,lib2}
 #rmdir zig-linux-armv7a-$ZIG_VERSION/{bin,lib2}
 #rmdir zig-linux-riscv64-$ZIG_VERSION/{bin,lib2}
 
-cp $REL_SRC_BUILD/../LICENSE zig-linux-x86_64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-macos-x86_64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-windows-x86_64-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-linux-aarch64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-macos-aarch64-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-windows-aarch64-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-linux-x86-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-windows-x86-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-linux-armv7a-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-linux-riscv64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-linux-x86_64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-macos-x86_64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-windows-x86_64-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-linux-aarch64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-macos-aarch64-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-windows-aarch64-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-linux-x86-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-windows-x86-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-linux-armv7a-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-linux-riscv64-$ZIG_VERSION/
 
 mkdir zig-linux-x86_64-$ZIG_VERSION/doc/
 mkdir zig-macos-x86_64-$ZIG_VERSION/doc/
@@ -190,31 +158,17 @@ mkdir zig-macos-aarch64-$ZIG_VERSION/doc/
 #mkdir zig-linux-armv7a-$ZIG_VERSION/doc/
 #mkdir zig-linux-riscv64-$ZIG_VERSION/doc/
 
-cd $REL_SRC_BUILD
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-x86_64 -target x86_64-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-windows-x86_64 -target x86_64-windows-gnu -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-macos-x86_64 -target x86_64-macos -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-freebsd-x86_64 -target x86_64-freebsd -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-aarch64 -target aarch64-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-macos-aarch64 -target aarch64-macos -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-windows-aarch64 -target aarch64-windows-gnu -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-x86 -target x86-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-windows-x86 -target x86-windows-gnu -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-armv7a -target arm-linux-musl -mcpu=generic+v7a -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-riscv64 -target riscv64-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-
-cd "$TARBALLS_DIR"
-cp -r $REL_SRC_BUILD/doc-linux-x86_64 zig-linux-x86_64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-macos-x86_64 zig-macos-x86_64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-windows-x86_64 zig-windows-x86_64-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-freebsd-x86_64 zig-freebsd-x86_64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-linux-aarch64 zig-linux-aarch64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-macos-aarch64 zig-macos-aarch64-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-windows-aarch64 zig-windows-aarch64-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-linux-x86 zig-linux-x86-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-windows-x86 zig-windows-x86-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-linux-armv7a zig-linux-armv7a-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-linux-riscv64 zig-linux-riscv64-$ZIG_VERSION/doc/std
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-linux-musl   -femit-docs="zig-linux-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-macos        -femit-docs="zig-macos-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-windows-gnu  -femit-docs="zig-windows-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-freebsd     -femit-docs="zig-freebsd-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-linux-musl  -femit-docs="zig-linux-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-macos       -femit-docs="zig-macos-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-windows-gnu -femit-docs="zig-windows-aarch64-$ZIG_VERSION/doc/std" -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-linux-musl      -femit-docs="zig-linux-x86-$ZIG_VERSION/doc/std"       -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-windows-gnu     -femit-docs="zig-windows-x86-$ZIG_VERSION/doc/std"     -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target arm-linux-musl -mcpu=generic+v7a  -femit-docs="zig-linux-armv7a-$ZIG_VERSION/doc/std" -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target riscv64-linux-musl  -femit-docs="zig-linux-riscv64-$ZIG_VERSION/doc/std"   -fno-emit-bin
 
 cp $LANGREF_HTML zig-linux-x86_64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-macos-x86_64-$ZIG_VERSION/doc/
