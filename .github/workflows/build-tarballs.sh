@@ -254,7 +254,7 @@ git config user.name "Ziggy"
 
 git add data/releases.json
 git commit -m "CI: update master branch builds"
-git push origin master
+git push
 
 # Update autodocs and langref directly to S3 in order to prevent the
 # www.ziglang.org git repo from growing too big.
