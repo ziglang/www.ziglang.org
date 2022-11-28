@@ -3,72 +3,33 @@
 set -x
 set -e
 
-# Exit the website repository and clone ziglang/zig
+export PATH="$HOME/local/bin:$PATH"
+
 WEBSITEDIR="$(pwd)"
-cd ..
-git clone https://github.com/ziglang/zig.git
-cd zig
-
-# COMMIT=$($COMMIT||)
-
-git checkout $COMMIT
-
-
-# Start building Zig
+cd ../zig
 ZIGDIR="$(pwd)"
-REL_SRC_BUILD="$ZIGDIR/build-release"
-cd ../..
-WORKDIR="$(pwd)"
-ARCH="$(uname -m)"
-TARGET="$ARCH-linux-musl"
-MCPU="baseline"
-
-CACHE_BASENAME="zig+llvm+lld+clang-$TARGET-0.11.0-dev.256+271cc52a1"
-PREFIX="$HOME/deps/$CACHE_BASENAME"
-ZIG="$PREFIX/bin/zig"
-
 # Make the `zig version` number consistent.
-# This will affect the cmake command below.
-cd "$ZIGDIR"
+# This will affect the zig-ver command below.
 git config core.abbrev 9
 git fetch --unshallow || true
 git fetch --tags
-
-export CC="$ZIG cc -target $TARGET -mcpu=$MCPU"
-export CXX="$ZIG c++ -target $TARGET -mcpu=$MCPU"
-
-mkdir "$REL_SRC_BUILD"
-cd "$REL_SRC_BUILD"
-cmake .. \
-  -DCMAKE_INSTALL_PREFIX="stage3-release" \
-  -DCMAKE_PREFIX_PATH="$PREFIX" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DZIG_TARGET_TRIPLE="$TARGET" \
-  -DZIG_TARGET_MCPU="$MCPU" \
-  -DZIG_STATIC=ON \
-  -GNinja
-
-# Now cmake will use zig as the C/C++ compiler. We reset the environment variables
-# so that installation and testing do not get affected by them.
-unset CC
-unset CXX
-
-ninja install
-
-ZIG_VERSION="$(stage3-release/bin/zig version)"
-
-cd "$WORKDIR"
-git clone --depth 1 https://github.com/ziglang/zig-bootstrap
+git checkout $COMMIT
+ZIG_VERSION="$(zig-ver)"
+cd ../..
+WORKDIR="$(pwd)"
 BOOTSTRAP_SRC="$WORKDIR/zig-bootstrap"
 TARBALLS_DIR="$WORKDIR/tarballs"
 
 cd "$BOOTSTRAP_SRC"
+git clean -fd
+git reset --hard HEAD
+git fetch
+git checkout origin/master
 rm -rf zig
 cp -r "$ZIGDIR" ./
 sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
 
 # NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
-PATH="$HOME/deps/cmake-3.25.0-linux-x86_64/bin:$PATH"
 CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
@@ -82,6 +43,7 @@ CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14
 
 ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
 
+rm -rf "$TARBALLS_DIR"
 mkdir "$TARBALLS_DIR"
 cd "$TARBALLS_DIR"
 
@@ -101,11 +63,9 @@ rm -rf \
 mv zig "zig-$ZIG_VERSION"
 tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION"
 
-cd "$BOOTSTRAP_SRC"
-cd zig
+cd "$BOOTSTRAP_SRC/zig"
 "$ZIG" build docs
 LANGREF_HTML="$BOOTSTRAP_SRC/zig/zig-cache/langref.html"
-cd ..
 
 # Look for HTML errors.
 tidy --drop-empty-elements no -qe "$LANGREF_HTML"
@@ -148,7 +108,7 @@ mv zig-macos-aarch64-$ZIG_VERSION/{lib,lib2}
 #mv zig-linux-armv7a-$ZIG_VERSION/{lib,lib2}
 #mv zig-linux-riscv64-$ZIG_VERSION/{lib,lib2}
 
-mv zig-linux-x86_64-$ZIG_VERSIN/{lib2/zig,lib}
+mv zig-linux-x86_64-$ZIG_VERSION/{lib2/zig,lib}
 mv zig-macos-x86_64-$ZIG_VERSION/{lib2/zig,lib}
 mv zig-windows-x86_64-$ZIG_VERSION/{lib2/zig,lib}
 #mv zig-freebsd-x86_64-$ZIG_VERSION/{lib2/zig,lib}
@@ -172,17 +132,17 @@ rmdir zig-macos-aarch64-$ZIG_VERSION/{bin,lib2}
 #rmdir zig-linux-armv7a-$ZIG_VERSION/{bin,lib2}
 #rmdir zig-linux-riscv64-$ZIG_VERSION/{bin,lib2}
 
-cp $REL_SRC_BUILD/../LICENSE zig-linux-x86_64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-macos-x86_64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-windows-x86_64-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-linux-aarch64-$ZIG_VERSION/
-cp $REL_SRC_BUILD/../LICENSE zig-macos-aarch64-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-windows-aarch64-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-linux-x86-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-windows-x86-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-linux-armv7a-$ZIG_VERSION/
-#cp $REL_SRC_BUILD/../LICENSE zig-linux-riscv64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-linux-x86_64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-macos-x86_64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-windows-x86_64-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-linux-aarch64-$ZIG_VERSION/
+cp $ZIGDIR/LICENSE zig-macos-aarch64-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-windows-aarch64-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-linux-x86-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-windows-x86-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-linux-armv7a-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-linux-riscv64-$ZIG_VERSION/
 
 mkdir zig-linux-x86_64-$ZIG_VERSION/doc/
 mkdir zig-macos-x86_64-$ZIG_VERSION/doc/
@@ -196,31 +156,17 @@ mkdir zig-macos-aarch64-$ZIG_VERSION/doc/
 #mkdir zig-linux-armv7a-$ZIG_VERSION/doc/
 #mkdir zig-linux-riscv64-$ZIG_VERSION/doc/
 
-cd $REL_SRC_BUILD
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-x86_64 -target x86_64-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-windows-x86_64 -target x86_64-windows-gnu -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-macos-x86_64 -target x86_64-macos -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-freebsd-x86_64 -target x86_64-freebsd -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-aarch64 -target aarch64-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-macos-aarch64 -target aarch64-macos -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-windows-aarch64 -target aarch64-windows-gnu -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-x86 -target x86-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-windows-x86 -target x86-windows-gnu -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-armv7a -target arm-linux-musl -mcpu=generic+v7a -fno-emit-bin --zig-lib-dir ../lib
-#stage3-release/bin/zig test ../lib/std/std.zig -femit-docs=doc-linux-riscv64 -target riscv64-linux-musl -fno-emit-bin --zig-lib-dir ../lib
-
-cd "$TARBALLS_DIR"
-cp -r $REL_SRC_BUILD/doc-linux-x86_64 zig-linux-x86_64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-macos-x86_64 zig-macos-x86_64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-windows-x86_64 zig-windows-x86_64-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-freebsd-x86_64 zig-freebsd-x86_64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-linux-aarch64 zig-linux-aarch64-$ZIG_VERSION/doc/std
-cp -r $REL_SRC_BUILD/doc-macos-aarch64 zig-macos-aarch64-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-windows-aarch64 zig-windows-aarch64-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-linux-x86 zig-linux-x86-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-windows-x86 zig-windows-x86-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-linux-armv7a zig-linux-armv7a-$ZIG_VERSION/doc/std
-#cp -r $REL_SRC_BUILD/doc-linux-riscv64 zig-linux-riscv64-$ZIG_VERSION/doc/std
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-linux-musl   -femit-docs="zig-linux-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-macos        -femit-docs="zig-macos-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-windows-gnu  -femit-docs="zig-windows-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-freebsd     -femit-docs="zig-freebsd-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-linux-musl  -femit-docs="zig-linux-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
+"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-macos       -femit-docs="zig-macos-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-windows-gnu -femit-docs="zig-windows-aarch64-$ZIG_VERSION/doc/std" -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-linux-musl      -femit-docs="zig-linux-x86-$ZIG_VERSION/doc/std"       -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-windows-gnu     -femit-docs="zig-windows-x86-$ZIG_VERSION/doc/std"     -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target arm-linux-musl -mcpu=generic+v7a  -femit-docs="zig-linux-armv7a-$ZIG_VERSION/doc/std" -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target riscv64-linux-musl  -femit-docs="zig-linux-riscv64-$ZIG_VERSION/doc/std"   -fno-emit-bin
 
 cp $LANGREF_HTML zig-linux-x86_64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-macos-x86_64-$ZIG_VERSION/doc/
@@ -246,19 +192,19 @@ tar cJf zig-macos-aarch64-$ZIG_VERSION.tar.xz zig-macos-aarch64-$ZIG_VERSION/
 #tar cJf zig-linux-armv7a-$ZIG_VERSION.tar.xz zig-linux-armv7a-$ZIG_VERSION/
 #tar cJf zig-linux-riscv64-$ZIG_VERSION.tar.xz zig-linux-riscv64-$ZIG_VERSION/
 
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/$ZIG_VERSION/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 
 export SRC_TARBALL="zig-$ZIG_VERSION.tar.xz"
 export SRC_SHASUM=$(sha256sum "zig-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
@@ -296,9 +242,9 @@ export MASTER_DATE="$(date +%Y-%m-%d)"
 export MASTER_VERSION="$ZIG_VERSION"
 
 # Create index.json and update the website repo.
-cd "$ZIGDIR/ci"
+cd "$WEBSITEDIR/.github/workflows"
 "$ZIG" run update-download-page.zig
-mv out "$TARBALLS_DIR/out"
+mv out/index.json "$WEBSITEDIR/data/releases.json"
 
 cd "$WEBSITEDIR"
 
@@ -306,9 +252,8 @@ cd "$WEBSITEDIR"
 git config user.email "ziggy@ziglang.org"
 git config user.name "Ziggy"
 
-cp "$TARBALLS_DIR/out/index.json" data/releases.json
 git add data/releases.json
-git commit -m "CI: update releases"
+git commit -m "CI: update master branch builds"
 git push origin master
 
 # Update autodocs and langref directly to S3 in order to prevent the
@@ -324,7 +269,7 @@ git push origin master
 # * Figure out how to adjust the Cloudfront settings to increase the max size for
 #   auto-compressed objects.
 # * Migrate to fastly.
-DOCDIR="$TARBALLS_DIR/zig-linux-aarch64-$ZIG_VERSION/doc"
+DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$LANGREF_HTML" s3://ziglang.org/documentation/master/index.html
