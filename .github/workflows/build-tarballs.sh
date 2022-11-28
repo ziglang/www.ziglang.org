@@ -13,8 +13,24 @@ ZIGDIR="$(pwd)"
 git config core.abbrev 9
 git fetch --unshallow || true
 git fetch --tags
-git checkout $COMMIT
+
+LAST_SUCCESS=$(curl \
+  -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer $GH_TOKEN" \
+    "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&exclude_pull_requests=true" | jq ".workflow_runs[0].head_sha")
+git checkout "$LAST_SUCCESS"
+
 ZIG_VERSION="$(zig-ver)"
+echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
+
+LAST_TARBALL=$(curl "https://ziglang.org/download/index.json" | jq ".master.version")
+echo "Last deployed version: $LAST_TARBALL"
+
+if [ $ZIG_VERSION == $LAST_TARBALL ]; then
+  echo "Versions are equal, nothing to do here."
+  exit
+fi
+
 cd ../..
 WORKDIR="$(pwd)"
 BOOTSTRAP_SRC="$WORKDIR/zig-bootstrap"
