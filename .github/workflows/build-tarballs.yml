@@ -7,6 +7,8 @@ concurrency:
   group: tarball
 jobs:
   create_tarballs:
+    outputs:
+      outcome: ${{ steps.build.outcome }}
     runs-on: [self-hosted, tarballs, x86_64]
     env: 
       COMMIT: ${{ inputs.commit || 'HEAD' }}
@@ -15,11 +17,13 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
       - name: Build Tarballs
+        id: build
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: bash .github/workflows/build-tarballs.sh
   deploy_website:
+    if: ${{ needs.create_tarballs.outputs.outcome != "skipped" }}
     needs: create_tarballs
     uses: ./.github/workflows/deploy.yml
     with:
