@@ -27,10 +27,6 @@ LAST_TARBALL=$(curl "https://ziglang.org/download/index.json" | jq --raw-output 
 echo "Last deployed version: $LAST_TARBALL"
 
 if [ $ZIG_VERSION = $LAST_TARBALL ]; then
-  echo "$GITHUB_OUTPUT, PID=$$"
-  echo "skipped=yes" >> "$GITHUB_OUTPUT"
-  echo "foo=bar" >> "$GITHUB_OUTPUT"
-  cat "$GITHUB_OUTPUT"  
   echo "Versions are equal, nothing to do here."
   exit
 fi
