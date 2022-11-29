@@ -27,11 +27,11 @@ LAST_TARBALL=$(curl "https://ziglang.org/download/index.json" | jq --raw-output 
 echo "Last deployed version: $LAST_TARBALL"
 
 if [ $ZIG_VERSION == $LAST_TARBALL ]; then
-  export SKIPPED="yes"
+  echo "yes" > $WEBSITEDIR/skipped
   echo "Versions are equal, nothing to do here."
   exit
 fi
-export SKIPPED="no"
+echo "no" > $WEBSITEDIR/skipped
 
 cd ../..
 WORKDIR="$(pwd)"
