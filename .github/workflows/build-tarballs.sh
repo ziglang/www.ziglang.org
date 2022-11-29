@@ -47,11 +47,26 @@ cp -r "$ZIGDIR" ./
 sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
 
 # NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
+echo "::group:: CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline"
 CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
+echo "::endgroup::"
+
+echo "::group:: CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline"
 CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
+echo "::endgroup::"
+
+echo "::group:: CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline"
 CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
+echo "::endgroup::"
+
+echo "::group:: CMAKE_GENERATOR=Ninja ./build aarch64-linux-musl baseline"
 CMAKE_GENERATOR=Ninja ./build aarch64-linux-musl baseline
+echo "::endgroup::"
+
+echo "::group:: CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14"
 CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14
+echo "::endgroup::"
+
 # CMAKE_GENERATOR=Ninja ./build aarch64-windows-gnu baseline
 # CMAKE_GENERATOR=Ninja ./build x86-linux-musl baseline
 # CMAKE_GENERATOR=Ninja ./build x86-windows-gnu baseline
