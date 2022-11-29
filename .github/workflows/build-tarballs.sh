@@ -259,6 +259,10 @@ export MASTER_VERSION="$ZIG_VERSION"
 
 # Create index.json and update the website repo.
 cd "$WEBSITEDIR/.github/workflows"
+# Pull before modifying tracked files in case new updates 
+# have been pushed to the repository (very possible since
+# this is a long-running process).
+git pull
 "$ZIG" run update-download-page.zig
 mv out/index.json "$WEBSITEDIR/data/releases.json"
 
