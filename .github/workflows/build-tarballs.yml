@@ -8,34 +8,28 @@ concurrency:
 jobs:
   create_tarballs:
     outputs:
-      skipped: ${{ steps.build.skipped }}
+      did_build: ${{ steps.build.did_build }}
     runs-on: [self-hosted, tarballs, x86_64]
     env: 
-      COMMIT: ${{ inputs.commit || 'HEAD' }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check out code
         uses: actions/checkout@v2
       - name: Build Tarballs
+        id: build
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: bash .github/workflows/build-tarballs.sh
-      - name: Set Ouptut
-        id: build
-        run: |
-          echo $(pwd)
-          echo "skipped=$(cat skipped)" >> $GITHUB_OUTPUT
-          echo "skipped=$(cat skipped)"
-        
+        run: ./.github/workflows/build-tarballs.sh
+        shell: bash        
   show_result:
       needs: create_tarballs
       runs-on: ubuntu-latest
       steps:
         - name: Print outcome
-          run: echo ${{ needs.create_tarballs.outputs.skipped }}
+          run: echo ${{ needs.create_tarballs.outputs.did_build }}
   deploy_website:
-    if: ${{ needs.create_tarballs.outputs.skipped == 'yes' }}
+    if: ${{ needs.create_tarballs.outputs.did_build == 'yes' }}
     needs: create_tarballs
     uses: ./.github/workflows/deploy.yml
     with:
