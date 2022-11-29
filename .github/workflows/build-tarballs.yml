@@ -8,7 +8,7 @@ concurrency:
 jobs:
   create_tarballs:
     outputs:
-      outcome: ${{ steps.build.outcome }}
+      skipped: ${{ steps.build.skipped }}
     runs-on: [self-hosted, tarballs, x86_64]
     env: 
       COMMIT: ${{ inputs.commit || 'HEAD' }}
@@ -27,9 +27,9 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - name: Print outcome
-          run: echo ${{ needs.create_tarballs.outputs.outcome }}
+          run: echo ${{ needs.create_tarballs.outputs.skipped }}
   deploy_website:
-    if: ${{ needs.create_tarballs.outputs.outcome != 'skipped' }}
+    if: ${{ needs.create_tarballs.outputs.skipped == 'yes' }}
     needs: create_tarballs
     uses: ./.github/workflows/deploy.yml
     with:
