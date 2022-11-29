@@ -8,7 +8,8 @@ concurrency:
 jobs:
   create_tarballs:
     outputs:
-      did_build: ${{ steps.build.did_build }}
+      skipped: ${{ steps.build.skipped }}
+      foo: ${{steps.test.foo}}
     runs-on: [self-hosted, tarballs, x86_64]
     env: 
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -21,12 +22,14 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: ./.github/workflows/build-tarballs.sh
+      - id: test
+        run: echo "foo=bar" >> $GITHUB_OUTPUT
   show_result:
       needs: create_tarballs
       runs-on: ubuntu-latest
       steps:
         - name: Print outcome
-          run: echo ${{ needs.create_tarballs.outputs.did_build }}
+          run: echo ${{ needs.create_tarballs.outputs.skipped }} ${{ needs.create_tarballs.outputs.foo }}
   deploy_website:
     if: ${{ needs.create_tarballs.outputs.did_build == 'yes' }}
     needs: create_tarballs
