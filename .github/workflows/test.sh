@@ -1,1 +1,0 @@
-echo "test=helloz" >> $GITHUB_OUTPUT
