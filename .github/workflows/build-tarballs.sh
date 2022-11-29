@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -x
 set -e
@@ -26,8 +26,8 @@ echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
 LAST_TARBALL=$(curl "https://ziglang.org/download/index.json" | jq --raw-output ".master.version")
 echo "Last deployed version: $LAST_TARBALL"
 
-if [ $ZIG_VERSION == $LAST_TARBALL ]; then
-  echo "$GITHUB_OUTPUT"
+if [ $ZIG_VERSION = $LAST_TARBALL ]; then
+  echo "$GITHUB_OUTPUT, PID=$$"
   echo "skipped=yes" >> "$GITHUB_OUTPUT"
   echo "foo=bar" >> "$GITHUB_OUTPUT"
   cat "$GITHUB_OUTPUT"  
