@@ -116,53 +116,53 @@ cp -r $BOOTSTRAP_SRC/out/zig-aarch64-macos-none-apple_a14 zig-macos-aarch64-$ZIG
 #cp -r $BOOTSTRAP_SRC/out/zig-arm-linux-musleabihf-generic+v7a zig-linux-armv7a-$ZIG_VERSION/
 #cp -r $BOOTSTRAP_SRC/out/zig-riscv64-linux-musl-baseline zig-linux-riscv64-$ZIG_VERSION/
 
-mv zig-linux-x86_64-$ZIG_VERSION/{bin/,}zig
-mv zig-macos-x86_64-$ZIG_VERSION/{bin/,}zig
-mv zig-windows-x86_64-$ZIG_VERSION/{bin/,}zig.exe
-#mv zig-freebsd-x86_64-$ZIG_VERSION/{bin/,}zig
-mv zig-linux-aarch64-$ZIG_VERSION/{bin/,}zig
-mv zig-macos-aarch64-$ZIG_VERSION/{bin/,}zig
-#mv zig-windows-aarch64-$ZIG_VERSION/{bin/,}zig.exe
-#mv zig-linux-x86-$ZIG_VERSION/{bin/,}zig
-#mv zig-windows-x86-$ZIG_VERSION/{bin/,}zig.exe
-#mv zig-linux-armv7a-$ZIG_VERSION/{bin/,}zig
-#mv zig-linux-riscv64-$ZIG_VERSION/{bin/,}zig
+mv zig-linux-x86_64-$ZIG_VERSION/bin/zig         zig-linux-x86_64-$ZIG_VERSION/zig
+mv zig-macos-x86_64-$ZIG_VERSION/bin/zig         zig-macos-x86_64-$ZIG_VERSION/zig
+mv zig-windows-x86_64-$ZIG_VERSION/bin/zig.exe   zig-windows-x86_64-$ZIG_VERSION/zig.exe
+#mv zig-freebsd-x86_64-$ZIG_VERSION/bin/zig      zig-freebsd-x86_64-$ZIG_VERSION/zig
+mv zig-linux-aarch64-$ZIG_VERSION/bin/zig        zig-linux-aarch64-$ZIG_VERSION/zig
+mv zig-macos-aarch64-$ZIG_VERSION/bin/zig        zig-macos-aarch64-$ZIG_VERSION/zig
+#mv zig-windows-aarch64-$ZIG_VERSION/bin/zig.exe zig-windows-aarch64-$ZIG_VERSION/zig.exe
+#mv zig-linux-x86-$ZIG_VERSION/bin/zig           zig-linux-x86-$ZIG_VERSION/zig
+#mv zig-windows-x86-$ZIG_VERSION/bin/zig.exe     zig-windows-x86-$ZIG_VERSION/zig.exe
+#mv zig-linux-armv7a-$ZIG_VERSION/bin/zig        zig-linux-armv7a-$ZIG_VERSION/zig
+#mv zig-linux-riscv64-$ZIG_VERSION/bin/zig       zig-linux-riscv64-$ZIG_VERSION/zig
 
-mv zig-linux-x86_64-$ZIG_VERSION/{lib,lib2}
-mv zig-macos-x86_64-$ZIG_VERSION/{lib,lib2}
-mv zig-windows-x86_64-$ZIG_VERSION/{lib,lib2}
-#mv zig-freebsd-x86_64-$ZIG_VERSION/{lib,lib2}
-mv zig-linux-aarch64-$ZIG_VERSION/{lib,lib2}
-mv zig-macos-aarch64-$ZIG_VERSION/{lib,lib2}
-#mv zig-windows-aarch64-$ZIG_VERSION/{lib,lib2}
-#mv zig-linux-x86-$ZIG_VERSION/{lib,lib2}
-#mv zig-windows-x86-$ZIG_VERSION/{lib,lib2}
-#mv zig-linux-armv7a-$ZIG_VERSION/{lib,lib2}
-#mv zig-linux-riscv64-$ZIG_VERSION/{lib,lib2}
+mv zig-linux-x86_64-$ZIG_VERSION/lib zig-linux-x86_64-$ZIG_VERSION/lib2
+mv zig-macos-x86_64-$ZIG_VERSION/lib zig-macos-x86_64-$ZIG_VERSION/lib2
+mv zig-windows-x86_64-$ZIG_VERSION/lib zig-windows-x86_64-$ZIG_VERSION/lib2
+#mv zig-freebsd-x86_64-$ZIG_VERSION/lib zig-freebsd-x86_64-$ZIG_VERSION/lib2
+mv zig-linux-aarch64-$ZIG_VERSION/lib zig-linux-aarch64-$ZIG_VERSION/lib2
+mv zig-macos-aarch64-$ZIG_VERSION/lib zig-macos-aarch64-$ZIG_VERSION/lib2
+#mv zig-windows-aarch64-$ZIG_VERSION/lib zig-windows-aarch64-$ZIG_VERSION/lib2
+#mv zig-linux-x86-$ZIG_VERSION/lib zig-linux-x86-$ZIG_VERSION/lib2
+#mv zig-windows-x86-$ZIG_VERSION/lib zig-windows-x86-$ZIG_VERSION/lib2
+#mv zig-linux-armv7a-$ZIG_VERSION/lib zig-linux-armv7a-$ZIG_VERSION/lib2
+#mv zig-linux-riscv64-$ZIG_VERSION/lib zig-linux-riscv64-$ZIG_VERSION/lib2
 
-mv zig-linux-x86_64-$ZIG_VERSION/{lib2/zig,lib}
-mv zig-macos-x86_64-$ZIG_VERSION/{lib2/zig,lib}
-mv zig-windows-x86_64-$ZIG_VERSION/{lib2/zig,lib}
-#mv zig-freebsd-x86_64-$ZIG_VERSION/{lib2/zig,lib}
-mv zig-linux-aarch64-$ZIG_VERSION/{lib2/zig,lib}
-mv zig-macos-aarch64-$ZIG_VERSION/{lib2/zig,lib}
-#mv zig-windows-aarch64-$ZIG_VERSION/{lib2/zig,lib}
-#mv zig-linux-x86-$ZIG_VERSION/{lib2/zig,lib}
-#mv zig-windows-x86-$ZIG_VERSION/{lib2/zig,lib}
-#mv zig-linux-armv7a-$ZIG_VERSION/{lib2/zig,lib}
-#mv zig-linux-riscv64-$ZIG_VERSION/{lib2/zig,lib}
+mv zig-linux-x86_64-$ZIG_VERSION/lib2/zig zig-linux-x86_64-$ZIG_VERSION/lib
+mv zig-macos-x86_64-$ZIG_VERSION/lib2/zig zig-macos-x86_64-$ZIG_VERSION/lib
+mv zig-windows-x86_64-$ZIG_VERSION/lib2/zig zig-windows-x86_64-$ZIG_VERSION/lib
+#mv zig-freebsd-x86_64-$ZIG_VERSION/lib2/zig zig-freebsd-x86_64-$ZIG_VERSION/lib
+mv zig-linux-aarch64-$ZIG_VERSION/lib2/zig zig-linux-aarch64-$ZIG_VERSION/lib
+mv zig-macos-aarch64-$ZIG_VERSION/lib2/zig zig-macos-aarch64-$ZIG_VERSION/lib
+#mv zig-windows-aarch64-$ZIG_VERSION/lib2/zig zig-windows-aarch64-$ZIG_VERSION/lib
+#mv zig-linux-x86-$ZIG_VERSION/lib2/zig zig-linux-x86-$ZIG_VERSION/lib
+#mv zig-windows-x86-$ZIG_VERSION/lib2/zig zig-windows-x86-$ZIG_VERSION/lib
+#mv zig-linux-armv7a-$ZIG_VERSION/lib2/zig zig-linux-armv7a-$ZIG_VERSION/lib
+#mv zig-linux-riscv64-$ZIG_VERSION/lib2/zig zig-linux-riscv64-$ZIG_VERSION/lib
 
-rmdir zig-linux-x86_64-$ZIG_VERSION/{bin,lib2}
-rmdir zig-macos-x86_64-$ZIG_VERSION/{bin,lib2}
-rmdir zig-windows-x86_64-$ZIG_VERSION/{bin,lib2}
-#rmdir zig-freebsd-x86_64-$ZIG_VERSION/{bin,lib2}
-rmdir zig-linux-aarch64-$ZIG_VERSION/{bin,lib2}
-rmdir zig-macos-aarch64-$ZIG_VERSION/{bin,lib2}
-#rmdir zig-windows-aarch64-$ZIG_VERSION/{bin,lib2}
-#rmdir zig-linux-x86-$ZIG_VERSION/{bin,lib2}
-#rmdir zig-windows-x86-$ZIG_VERSION/{bin,lib2}
-#rmdir zig-linux-armv7a-$ZIG_VERSION/{bin,lib2}
-#rmdir zig-linux-riscv64-$ZIG_VERSION/{bin,lib2}
+rmdir zig-linux-x86_64-$ZIG_VERSION/bin zig-linux-x86_64-$ZIG_VERSION/lib2
+rmdir zig-macos-x86_64-$ZIG_VERSION/bin zig-macos-x86_64-$ZIG_VERSION/lib2
+rmdir zig-windows-x86_64-$ZIG_VERSION/bin zig-windows-x86_64-$ZIG_VERSION/lib2
+#rmdir zig-freebsd-x86_64-$ZIG_VERSION/bin zig-freebsd-x86_64-$ZIG_VERSION/lib2
+rmdir zig-linux-aarch64-$ZIG_VERSION/bin zig-linux-aarch64-$ZIG_VERSION/lib2
+rmdir zig-macos-aarch64-$ZIG_VERSION/bin zig-macos-aarch64-$ZIG_VERSION/lib2
+#rmdir zig-windows-aarch64-$ZIG_VERSION/bin zig-windows-aarch64-$ZIG_VERSION/lib2
+#rmdir zig-linux-x86-$ZIG_VERSION/bin zig-linux-x86-$ZIG_VERSION/lib2
+#rmdir zig-windows-x86-$ZIG_VERSION/bin zig-windows-x86-$ZIG_VERSION/lib2
+#rmdir zig-linux-armv7a-$ZIG_VERSION/bin zig-linux-armv7a-$ZIG_VERSION/lib2
+#rmdir zig-linux-riscv64-$ZIG_VERSION/bin zig-linux-riscv64-$ZIG_VERSION/lib2
 
 cp $ZIGDIR/LICENSE zig-linux-x86_64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-macos-x86_64-$ZIG_VERSION/
