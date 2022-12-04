@@ -17,7 +17,7 @@ git fetch --tags
 LAST_SUCCESS=$(curl \
   -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer $GH_TOKEN" \
-    "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&exclude_pull_requests=true" | jq --raw-output ".workflow_runs[0].head_sha")
+    "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&event=push" | jq --raw-output ".workflow_runs[0].head_sha")
 git checkout "$LAST_SUCCESS"
 
 ZIG_VERSION="$(zig-ver)"
