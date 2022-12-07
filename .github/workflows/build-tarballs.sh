@@ -46,6 +46,8 @@ rm -rf zig
 cp -r "$ZIGDIR" ./
 sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
 
+rm -rf out/
+
 # NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
 CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
