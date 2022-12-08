@@ -393,7 +393,7 @@ reproduce it for you here:
 
 ## Using C++ to bootstrap a new programming language
 
-<video autoplay loop style="width: 100%">
+<video autoplay loop muted style="width: 100%">
   <source src="mario-betrays-yoshi.webm" type="video/webm">
 </video>
 
