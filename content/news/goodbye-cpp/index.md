@@ -13,7 +13,7 @@ It's funny, I've told this story a handful of times to objectively qualified,
 competent software engineers, and each time the response was confusion about
 why this would be anything but a masturbatory exercise.
 
-After a few minutes of puzzled expressions, furrowed brows, and intense
+After ten minutes of puzzled expressions, furrowed brows, and intense
 questioning, something clicks, and everything makes sense - but it takes patient
 explanations and reasoning from first principles to follow along.
 
@@ -193,28 +193,30 @@ these are the only syscalls needed.
 WebAssembly/WASI interpreter over in
 [andrewrk/zig-wasi](https://github.com/andrewrk/zig-wasi). I created the first
 version in Zig, swiftly exploring the idea by taking advantage of Zig's rich
-standard library and safety mechanisms. This interpreter did no decoding of the
-wasm and used the file offset directly as the program counter. It worked fine,
-but it was too slow, taking several hours to interpret a run of the compiler
-that, in native machine code, takes about 5 seconds.
+standard library and safety mechanisms. This interpreter did not preemptively
+decode the wasm module; instead it used the file offset directly as the program
+counter. It worked fine, but was too slow, taking several hours to interpret
+a run of the compiler that, in native machine code, takes about 5 seconds.
 
 Jacob enhanced the project by introducing a different instruction set more
-optimized for interpretation, bringing the performance within acceptable limits.
-Meanwhile, I got to work on converting the codebase from Zig to pure C.
+optimized for interpretation, as well as a myriod of other techniques that
+brought the performance within acceptable limits. Meanwhile, I got to work on
+converting the codebase from Zig to pure C.
 
 We worked side by side on this project for two weeks, using IRC to communicate,
-each cherry-picking commits from each other's branches and sharing
-frustrations, celebrating victories, and generally having a wonderful time
-hacking with each other. I really can't give enough credit to how much work
-Jacob did on this project, especially considering he was responsible for
-[improving Zig's C
+cherry-picking commits from each other's branches and sharing frustrations,
+celebrating victories, and generally having a blast hacking with each other. I
+really can't give enough credit to how much work Jacob did on this project,
+especially considering he was responsible for [improving Zig's C
 backend](https://ziglang.org/download/0.10.0/release-notes.html#C-Backend)
 enough to make this a possibility.
 
 Once the concept was proved, Jacob realized it could be made even faster by
 converting the WebAssembly code to C code rather than interpreting it directly.
-This is effectively JIT (Just-In-Time) compilation, but taking advantage of the
-fact that our basic bootstrapping tool is the system C compiler.
+This is effectively [JIT
+compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation), but
+taking advantage of the fact that our basic bootstrapping tool is the system C
+compiler.
 
 There is already a general-purpose wasm2c tool out there as part of the
 [WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) project, but
@@ -270,7 +272,8 @@ To summarize:
 
  1. Use system C compiler to compile zig-wasm2.c
  2. Use zig-wasm2.c to convert zig1.wasm.zst to zig1.c
- 3. Use system C compiler to compile zig1.c. Note that zig1 only has the C backend enabled.
+ 3. Use system C compiler to compile zig1.c.
+    - Note that zig1 only has the C backend enabled.
  4. Use zig1 to build the Zig compiler into zig2.c
  5. Use system C compiler to compile zig2.c
     - This one has the correct final *logic* however its machine code has been
@@ -281,21 +284,22 @@ To summarize:
 
 If you take the output of this final step and build Zig again, it produces the same thing
 byte-for-byte. In other words, `zig3` and `zig4` are identical, and therefore
-we are finished and name this final binary `zig` without any number.
+we are finished and name this final binary `zig` without any suffix.
 
 The wasm binary only needs to be updated when a breaking change or new feature
 affects the compiler *when building itself*. For example, a bug fix that the
 compiler does not trigger when building itself can be ignored. However, if the
 bug fix is required for Zig to build itself, then the wasm binary needs to
 be updated. Similarly when the language is changed and the compiler wants to
-use the changes to build itself, the binary needs to be updated. There is a handy
-build step to automate updating the wasm binary:
+use the changes to build itself, the binary needs to be updated.
+
+Updating `stage1/zig1.wasm.zst` looks like this:
 
     zig build update-zig1
 
 ### Performance
 
-I collected a couple measurements of how this new build process performs:
+I collected two measurements:
 
 **Measurement #1**, compiling from source with `make -j8 install`, configured with
 `-DCMAKE_BUILD_TYPE=Debug`:
@@ -312,7 +316,7 @@ I collected a couple measurements of how this new build process performs:
 I took these measurements racing against each other, and one of them while
 [streaming on Twitch](https://twitch.tv/andrewrok/), so the times are a bit
 volatile, but you get the idea. The important thing to note here is the amount
-of memory required to build. It's the difference between a person with 8 GiB of
+of memory required to build. It's the difference between a person with 4-8 GiB of
 RAM being able to contribute to Zig or not. It's the difference between being
 able to [use a GitHub-provided Actions
 runner](https://github.com/ziglang/zig/pull/13802) or not.
@@ -322,7 +326,7 @@ runner](https://github.com/ziglang/zig/pull/13802) or not.
 I want to be clear that while this change landing in Zig is a net win, it does
 represent the [regression of a particular use
 case](https://github.com/ziglang/zig/issues/6378): the ability to bootstrap Zig
-from pure source code in a fixed number of steps. Until now, the building from
+from only source code in a fixed number of steps. Until now, the building from
 source process did not involve any binary blobs, except for a system C/C++
 compiler. Now, there is this WebAssembly binary, which is not source code, but
 is in fact a build artifact. Some people, rightly, take these things very seriously - see
@@ -350,17 +354,17 @@ compiler](https://github.com/ziglang/zig/issues/6025).
 
 I recommend users of `-fstage1` to stick with 0.10.0, and then upgrade to
 0.10.1 when it is released, and then finally upgrade to 0.11.0, which will
-again have async function support. Note that Zig follows [Semantic
+have async function support. Note that Zig follows [Semantic
 Versioning](https://semver.org/) and so everything described in this blog post
 will *not* be included in the 0.10.1 release, which will **only contain bug
-fixes**.
+fixes** cherry-picked from master branch.
 
 #### Language Mobility
 
-On a more positive note, one major thing this change means is swift progress on
-all those planned language changes that we have been sitting on. Without the
-legacy compiler codebase to hold us back, you can expect major progress towards
-completing the Zig language during the Zig 0.11.0 release cycle.
+On a more positive note, this change means swift progress on all those planned
+language changes that we have been sitting on. Without the legacy compiler
+codebase to hold us back, you can expect major progress towards completing the
+Zig language during the Zig 0.11.0 release cycle.
 
 This allows us to dogfood language changes immediately by using them in the
 compiler as well as the standard library. And before I am accused of designing
@@ -369,11 +373,11 @@ have started taking Fridays to work *with* Zig instead of *on* Zig. That is,
 Fridays for me are for side projects where I act as a regular user of the
 language rather than as a compiler developer.
 
-When this change landed in master branch, there were 650 [issues with the
+When this change landed in master branch, there were 650 [open issues with the
 "stage1"
 label](https://github.com/ziglang/zig/issues?q=is%3Aissue+is%3Aopen+label%3Astage1),
-indicating a problem with the compiler that is now deleted. So in theory, we
-could instantly close all of these issues, which would be ever so satisfying.
+indicating a problem with a now deleted codebase! So in theory, we could
+instantly close all of these issues, which would be ever so satisfying.
 However, I have instituted a policy that to close one of these issues, one must
 either add test coverage for it, or identify test coverage that already covers
 it. Perhaps this is more effort than it is worth, but for now this is what we
