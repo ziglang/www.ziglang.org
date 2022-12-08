@@ -129,8 +129,8 @@ strategy off the cuff:
     <andrewrk> ooooooh
 
 This got my creative juices flowing. A bespoke backend just for bootstrapping
-is a neat idea, but I think there is a sweet spot now that was not available in
-OCaml's heyday.
+is a neat idea, but I think the sweet spot for Zig looks different than what it
+does for OCaml.
 
 There is exactly one VM target available to Zig that is both OS-agnostic and
 subject to [LLVM](https://llvm.org/)'s state-of-the-art optimization passes,
