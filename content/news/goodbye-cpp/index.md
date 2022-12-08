@@ -9,15 +9,16 @@ mobile_menu_title: "Goodbye to the C++ Implementation of Zig"
 
 Author: Andrew Kelley
 
-It's funny, I've told this story a handful of times to objectively qualified,
-competent software engineers, and each time the response was confusion about
-why this would be anything but a masturbatory exercise.
+It's funny - I have shared this story a handful of times with friends of mine
+who are qualified, competent software engineers, and each time the response was
+confusion about why any of this would be necessary or even remotely helpful. *WebAssembly*?!
 
 After ten minutes of puzzled expressions, furrowed brows, and intense
 questioning, something clicks, and everything makes sense - but it takes patient
-explanations and reasoning from first principles to follow along.
+explanation and reasoning from first principles to follow along.
 
-![Screenshot of GitHub Pull Request depicting many lines deleted](github-pr-lines.png)
+<img alt="Screenshot of GitHub Pull Request depicting many lines deleted" style="opacity: 66%"
+src="github-pr-lines.png">
 
 ### The Problem Statement
 
@@ -26,7 +27,7 @@ Before this change, the Zig codebase consisted of two compilers:
  * The old one, written in 80,000 lines of C++, plus sharing Zig code with the new one.
  * The new one, written in 250,000 lines of Zig.
 
-The new one is faster, uses less memory, and is actively maintained and
+The new one was faster, used less memory, and was actively maintained and
 enhanced. Meanwhile, nobody wanted to touch the old one, but it was required to
 build the new one from source.
 
@@ -35,7 +36,7 @@ the new codebase, and then again in the old codebase. This was a huge pain,
 especially as the design of these two compilers diverged.
 
 Furthermore, the C++ implementation of Zig originally used the same strategy as
-the D compiler - never freeing any memory until process exit. This design
+the D compiler - not freeing memory until process exit. This design
 decision [stopped being practical](https://github.com/ziglang/zig/issues/6485)
 as compile-time code execution became one of the flagship features of the
 language, and projects grew larger combined with Zig using one compilation unit
@@ -83,13 +84,13 @@ being able to build any commit on any system.
 
 The upside compared to the previous strategy is that committing generated
 C source code to source control *feels* less yucky than committing machine code,
-but it's effectively the same if the C code is target-specific.
+but it is effectively the same if the C code is target-specific.
 
-I'm not sure how target independent [Nim's generated C
+I'm not sure how target-independent [Nim's generated C
 code](https://github.com/nim-lang/csources_v1) is, for example, but I see in
 the description it says "Supports more CPU/OS combinations than the older
-csources repository" which implies that while it has a few combinations in
-there, it's not truly portable C code. It's also in a separate repository than
+csources repository" which implies that, while it has many handy combinations in
+there, it is not truly portable C code. It is also in a separate repository than
 the main compiler, so it suffers from the same problems as the previous
 strategy.
 
@@ -112,7 +113,8 @@ Zig, and once in C.
 **Compile the compiler to a simple virtual machine** -
 Occasionally, I talk shop with [Drew DeVault](https://drewdevault.com/)
 since he's working on [Hare](https://harelang.org/). We started chatting
-about compiler bootstrapping and he mentioned OCaml's strategy off the cuff:
+about compiler bootstrapping and he mentioned [OCaml](https://ocaml.org/)'s
+strategy off the cuff:
 
     <andrewrk> do you care about the "stage 0" bootstrapping process?
     <ddevault> marginally
@@ -128,7 +130,7 @@ about compiler bootstrapping and he mentioned OCaml's strategy off the cuff:
 
 This got my creative juices flowing. A bespoke backend just for bootstrapping
 is a neat idea, but I think there is a sweet spot now that was not available in
-[OCaml](https://ocaml.org/)'s heyday.
+OCaml's heyday.
 
 There is exactly one VM target available to Zig that is both OS-agnostic and
 subject to [LLVM](https://llvm.org/)'s state-of-the-art optimization passes,
@@ -199,7 +201,7 @@ counter. It worked fine, but was too slow, taking several hours to interpret
 a run of the compiler that, in native machine code, takes about 5 seconds.
 
 Jacob enhanced the project by introducing a different instruction set more
-optimized for interpretation, as well as a myriod of other techniques that
+optimized for interpretation, as well as a myriad of other techniques that
 brought the performance within acceptable limits. Meanwhile, I got to work on
 converting the codebase from Zig to pure C.
 
