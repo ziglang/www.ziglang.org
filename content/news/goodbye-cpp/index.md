@@ -70,7 +70,7 @@ meta-complexity creeping in. For example, let's say that you are trying to do
 `git bisect`. At some point, git checks out an older commit, but the script
 fails to build from source because the binary that is being used to build the
 compiler is now the wrong version. Sure, this can be addressed, but this
-introduces involve unwanted complexity that contributors would rather not deal with.
+introduces unwanted complexity that contributors would rather not deal with.
 
 Additionally, building the compiler is limited by what targets prior binaries
 are available for. For example, if there is not a riscv64 build of the compiler available,
