@@ -1,7 +1,7 @@
 ---
 title: "Jakub Konka Hired Full Time"
 date: 2021-04-05T21:05:00+00:00
-mobile_menu_title: "2021-04-05"
+mobile_menu_title: "Jakub Konka Hired Full Time"
 ---
 # Jakub Konka Hired Full Time
 
