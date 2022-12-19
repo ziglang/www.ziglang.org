@@ -18,7 +18,7 @@ fn printInfoAboutStruct(comptime T: type) void {
             .{
                 @typeName(T),
                 field.name,
-                @typeName(field.field_type),
+                @typeName(field.type),
             },
         );
     }
