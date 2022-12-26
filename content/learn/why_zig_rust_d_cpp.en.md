@@ -88,7 +88,7 @@ One of the holy grails of programming is code reuse. Sadly, in practice, we find
 
 ## A Package Manager and Build System for Existing Projects
 
-Zig is a programming language, but it also ships with a build system and package manager that are intended to be useful even in the context of a traditional C/C++ project.
+Zig is a programming language, but it also will ship with a build system and package manager that are intended to be useful even in the context of a traditional C/C++ project.
 
 Not only can you write Zig code instead of C or C++ code, but you can use Zig as a replacement for autotools, cmake, make, scons, ninja, etc. And on top of this, it (will) provide a package manager for native dependencies. This build system is intended to be appropriate even if the entirety of a project's codebase is in C or C++.
 
