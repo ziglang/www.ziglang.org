@@ -14,6 +14,8 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check out code
+        with:
+          ssh-key: ${{ secrets.TARBALL_COMMIT_SSH_KEY }}
         uses: actions/checkout@v2
       - name: Build Tarballs
         id: build
@@ -21,10 +23,3 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: ./.github/workflows/build-tarballs.sh
-  deploy_website:
-    if: ${{ needs.create_tarballs.outputs.skipped != 'yes' }}
-    needs: create_tarballs
-    uses: ./.github/workflows/deploy.yml
-    with:
-      ref: "master"
-    secrets: inherit
