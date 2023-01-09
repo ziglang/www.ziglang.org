@@ -48,6 +48,12 @@ sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
 
 rm -rf out/
 
+# Override the cache directories because they won't actually help other CI runs
+# which will be testing alternate versions of zig, and ultimately would just
+# fill up space on the hard drive for no reason.
+export ZIG_GLOBAL_CACHE_DIR="$(pwd)/out/zig-global-cache"
+export ZIG_LOCAL_CACHE_DIR="$(pwd)/out/zig-local-cache"
+
 # NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
 CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
