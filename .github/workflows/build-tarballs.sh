@@ -23,7 +23,7 @@ git checkout "$LAST_SUCCESS"
 ZIG_VERSION="$(zig-ver)"
 echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
 
-LAST_TARBALL=$(curl "https://ziglang.org/download/index.json" | jq --raw-output ".master.version")
+LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/master/data/releases.json" | jq --raw-output ".master.version")
 echo "Last deployed version: $LAST_TARBALL"
 
 if [ $ZIG_VERSION = $LAST_TARBALL ]; then
