@@ -93,7 +93,7 @@ tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION"
 
 cd "$BOOTSTRAP_SRC/zig"
 "$ZIG" build docs
-LANGREF_HTML="$BOOTSTRAP_SRC/zig/zig-cache/langref.html"
+LANGREF_HTML="$ZIG_LOCAL_CACHE_DIR/langref.html"
 
 # Look for HTML errors.
 tidy --drop-empty-elements no -qe "$LANGREF_HTML"
