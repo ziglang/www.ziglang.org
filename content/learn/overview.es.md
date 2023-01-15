@@ -122,7 +122,7 @@ La misma sintaxis funciona con [while](https://ziglang.org/documentation/master/
 
 Una biblioteca escrita en Zig es elegible para ser usada en cualquier lugar:
 
-- [Aplicaciones de escritorio](https://github.com/TM35-Metronome/) y [juegos](https://github.com/dbandstra/oxid)
+- [Aplicaciones de escritorio](https://github.com/TM35-Metronome/)
 - Servidores de baja latencia
 - [Kernels de sistemas operativos](https://github.com/AndreaOrru/zen)
 - [Dispositivos embebidos](https://github.com/skyfex/zig-nrf-demo/)

@@ -122,7 +122,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 用Zig编写的库可以在任何地方使用：
 
-- [桌面程序](https://github.com/TM35-Metronome/)和[游戏](https://github.com/dbandstra/oxid)
+- [桌面程序](https://github.com/TM35-Metronome/)
 - 低延迟服务器
 - [操作系统内核](https://github.com/AndreaOrru/zen)
 - [嵌入式设备](https://github.com/skyfex/zig-nrf-demo/)

@@ -123,7 +123,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 کتابخانه ای که به زبان زیگ نوشته شده است، می تواند در هر مکانی مورد استفاده قرار گیرد:
 
-- [نرم افزار های دسکتاپ](https://github.com/TM35-Metronome/) & [games](https://github.com/dbandstra/oxid)
+- [نرم افزار های دسکتاپ](https://github.com/TM35-Metronome/)
 - سرورهای با تاخیر کم
 - [کرنل سیستم هامل ها](https://github.com/AndreaOrru/zen)
 - [دستگاه های Embedded](https://github.com/skyfex/zig-nrf-demo/)

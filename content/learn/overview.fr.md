@@ -133,7 +133,7 @@ Cette syntaxe fonctionne également avec [while (EN)](https://ziglang.org/docume
 
 Une bibliothèque écrite en Zig peut être utilisée n'importe où :
 
-- [Applications de bureau](https://github.com/TM35-Metronome/) & [jeux](https://github.com/dbandstra/oxid)
+- [Applications de bureau](https://github.com/TM35-Metronome/)
 - Serveur basse latence
 - [Noyaux de systèmes d'exploitation](https://github.com/AndreaOrru/zen)
 - [Embarqué](https://github.com/skyfex/zig-nrf-demo/)

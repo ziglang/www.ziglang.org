@@ -123,7 +123,7 @@ Outra opção é usar `if`:
 
 Uma biblioteca escrita em Zig é elegível para ser usada em qualquer lugar:
 
-- [Aplicações desktop](https://github.com/TM35-Metronome/) & [Jogos](https://github.com/dbandstra/oxid)
+- [Aplicações desktop](https://github.com/TM35-Metronome/)
 - Servidores de baixa latência
 - [Kernel do Sistema Operacional](https://github.com/AndreaOrru/zen)
 - [Dispositívos Embarcados](https://github.com/skyfex/zig-nrf-demo/)

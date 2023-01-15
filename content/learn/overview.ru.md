@@ -124,7 +124,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 Библиотека, написанная на Zig, может быть использована где угодно:
 
-- [Настольными приложениями](https://github.com/TM35-Metronome/) и [играми](https://github.com/dbandstra/oxid)
+- [Настольными приложениями](https://github.com/TM35-Metronome/)
 - Серверами с низкой задержкой
 - [Ядрами операционных систем](https://github.com/AndreaOrru/zen)
 - [Встраиваемыми устройствами](https://github.com/skyfex/zig-nrf-demo/)
