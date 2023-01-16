@@ -240,6 +240,20 @@ tar cJf zig-linux-powerpc-$ZIG_VERSION.tar.xz zig-linux-powerpc-$ZIG_VERSION/
 7z a zig-windows-aarch64-$ZIG_VERSION.zip zig-windows-aarch64-$ZIG_VERSION/
 7z a zig-windows-x86-$ZIG_VERSION.zip zig-windows-x86-$ZIG_VERSION/
 
+echo | minisign -Sm zig-linux-x86_64-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-macos-x86_64-$ZIG_VERSION.tar.xz
+#echo | minisign -Sm zig-freebsd-x86_64-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-linux-aarch64-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-macos-aarch64-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-linux-x86-$ZIG_VERSION.tar.xz
+#echo | minisign -Sm zig-linux-armv7a-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-linux-riscv64-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-linux-powerpc64le-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-linux-powerpc-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-windows-x86_64-$ZIG_VERSION.zip
+echo | minisign -Sm zig-windows-aarch64-$ZIG_VERSION.zip
+echo | minisign -Sm zig-windows-x86-$ZIG_VERSION.zip
+
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 #s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
@@ -256,61 +270,63 @@ s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" z
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/
 
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc64le-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
+
 export SRC_TARBALL="zig-$ZIG_VERSION.tar.xz"
-export SRC_SHASUM=$(sha256sum "zig-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
 export SRC_BYTESIZE=$(wc -c < "zig-$ZIG_VERSION.tar.xz")
 
 export X86_64_LINUX_TARBALL="zig-linux-x86_64-$ZIG_VERSION.tar.xz"
 export X86_64_LINUX_BYTESIZE=$(wc -c < "zig-linux-x86_64-$ZIG_VERSION.tar.xz")
-export X86_64_LINUX_SHASUM="$(sha256sum "zig-linux-x86_64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export X86_64_MACOS_TARBALL="zig-macos-x86_64-$ZIG_VERSION.tar.xz"
 export X86_64_MACOS_BYTESIZE=$(wc -c < "zig-macos-x86_64-$ZIG_VERSION.tar.xz")
-export X86_64_MACOS_SHASUM="$(sha256sum "zig-macos-x86_64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export AARCH64_LINUX_TARBALL="zig-linux-aarch64-$ZIG_VERSION.tar.xz"
 export AARCH64_LINUX_BYTESIZE=$(wc -c < "zig-linux-aarch64-$ZIG_VERSION.tar.xz")
-export AARCH64_LINUX_SHASUM="$(sha256sum "zig-linux-aarch64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export AARCH64_MACOS_TARBALL="zig-macos-aarch64-$ZIG_VERSION.tar.xz"
 export AARCH64_MACOS_BYTESIZE=$(wc -c < "zig-macos-aarch64-$ZIG_VERSION.tar.xz")
-export AARCH64_MACOS_SHASUM="$(sha256sum "zig-macos-aarch64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 #export X86_64_FREEBSD_TARBALL="zig-freebsd-x86_64-$ZIG_VERSION.tar.xz"
 #export X86_64_FREEBSD_BYTESIZE=$(wc -c < "zig-freebsd-x86_64-$ZIG_VERSION.tar.xz")
-#export X86_64_FREEBSD_SHASUM="$(sha256sum "zig-freebsd-x86_64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 #export X86_64_NETBSD_TARBALL="zig-netbsd-x86_64-$ZIG_VERSION.tar.xz"
 #export X86_64_NETBSD_BYTESIZE=$(wc -c < "zig-netbsd-x86_64-$ZIG_VERSION.tar.xz")
-#export X86_64_NETBSD_SHASUM="$(sha256sum "zig-netbsd-x86_64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export RISCV64_LINUX_TARBALL="zig-linux-riscv64-$ZIG_VERSION.tar.xz"
 export RISCV64_LINUX_BYTESIZE=$(wc -c < "zig-linux-riscv64-$ZIG_VERSION.tar.xz")
-export RISCV64_LINUX_SHASUM="$(sha256sum "zig-linux-riscv64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export POWERPC64LE_LINUX_TARBALL="zig-linux-powerpc64le-$ZIG_VERSION.tar.xz"
 export POWERPC64LE_LINUX_BYTESIZE=$(wc -c < "zig-linux-powerpc64le-$ZIG_VERSION.tar.xz")
-export POWERPC64LE_LINUX_SHASUM="$(sha256sum "zig-linux-powerpc64le-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export POWERPC_LINUX_TARBALL="zig-linux-powerpc-$ZIG_VERSION.tar.xz"
 export POWERPC_LINUX_BYTESIZE=$(wc -c < "zig-linux-powerpc-$ZIG_VERSION.tar.xz")
-export POWERPC_LINUX_SHASUM="$(sha256sum "zig-linux-powerpc-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export X86_LINUX_TARBALL="zig-linux-x86-$ZIG_VERSION.tar.xz"
 export X86_LINUX_BYTESIZE=$(wc -c < "zig-linux-x86-$ZIG_VERSION.tar.xz")
-export X86_LINUX_SHASUM="$(sha256sum "zig-linux-x86-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export X86_64_WINDOWS_TARBALL="zig-windows-x86_64-$ZIG_VERSION.zip"
 export X86_64_WINDOWS_BYTESIZE=$(wc -c < "zig-windows-x86_64-$ZIG_VERSION.zip")
-export X86_64_WINDOWS_SHASUM="$(sha256sum "zig-windows-x86_64-$ZIG_VERSION.zip" | cut '-d ' -f1)"
 
 export AARCH64_WINDOWS_TARBALL="zig-windows-aarch64-$ZIG_VERSION.zip"
 export AARCH64_WINDOWS_BYTESIZE=$(wc -c < "zig-windows-aarch64-$ZIG_VERSION.zip")
-export AARCH64_WINDOWS_SHASUM="$(sha256sum "zig-windows-aarch64-$ZIG_VERSION.zip" | cut '-d ' -f1)"
 
 export X86_WINDOWS_TARBALL="zig-windows-x86-$ZIG_VERSION.zip"
 export X86_WINDOWS_BYTESIZE=$(wc -c < "zig-windows-x86-$ZIG_VERSION.zip")
-export X86_WINDOWS_SHASUM="$(sha256sum "zig-windows-x86-$ZIG_VERSION.zip" | cut '-d ' -f1)"
 
 export MASTER_DATE="$(date +%Y-%m-%d)"
 export MASTER_VERSION="$ZIG_VERSION"
