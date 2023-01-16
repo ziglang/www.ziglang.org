@@ -240,6 +240,7 @@ tar cJf zig-linux-powerpc-$ZIG_VERSION.tar.xz zig-linux-powerpc-$ZIG_VERSION/
 7z a zig-windows-aarch64-$ZIG_VERSION.zip zig-windows-aarch64-$ZIG_VERSION/
 7z a zig-windows-x86-$ZIG_VERSION.zip zig-windows-x86-$ZIG_VERSION/
 
+echo | minisign -Sm zig-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-x86_64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-macos-x86_64-$ZIG_VERSION.tar.xz
 #echo | minisign -Sm zig-freebsd-x86_64-$ZIG_VERSION.tar.xz
