@@ -122,7 +122,7 @@ Dieselbe Syntax funktioniert mit [while](https://ziglang.org/documentation/maste
 
 Eine in Zig verfasste Bibliothek kann überall verwendet werden:
 
-- [Desktopanwendungen](https://github.com/TM35-Metronome/) & [Spiele](https://github.com/dbandstra/oxid)
+- [Desktopanwendungen](https://github.com/TM35-Metronome/)
 - Server mit geringer Latenz
 - [Betriebssystemkernel](https://github.com/AndreaOrru/zen)
 - [Embedded-Geräte](https://github.com/skyfex/zig-nrf-demo/)

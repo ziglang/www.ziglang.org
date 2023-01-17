@@ -123,7 +123,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 Zigで書かれたライブラリは、どこでも使用することができます：
 
-- [デスクトップアプリケーション](https://github.com/TM35-Metronome/) & [ゲーム](https://github.com/dbandstra/oxid)
+- [デスクトップアプリケーション](https://github.com/TM35-Metronome/)
 - 低レイテンシーサーバ
 - [OSカーネル](https://github.com/AndreaOrru/zen)
 - [組込み機器](https://github.com/skyfex/zig-nrf-demo/)

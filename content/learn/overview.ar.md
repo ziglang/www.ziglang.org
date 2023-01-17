@@ -122,7 +122,7 @@ hello.exe: PE32+ executable (console) x86-64, for MS Windows
 
 أي مكتبة مكتوبة بلغة Zig صالحة للاستخدام في أي مكان:
 
-- [برامج للأجهزة الشخصية](https://github.com/TM35-Metronome/) و[ألعاب](https://github.com/dbandstra/oxid)
+- [برامج للأجهزة الشخصية](https://github.com/TM35-Metronome/)
 - خوادم سريعة الاستجابة
 - [أنوية أنظمة التشغيل](https://github.com/AndreaOrru/zen)
 - [الأجهزة المدمجة](https://github.com/skyfex/zig-nrf-demo/)

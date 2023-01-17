@@ -123,7 +123,7 @@ Another option is to use if:
 
 A library written in Zig is eligible to be used anywhere:
 
-- [Desktop applications](https://github.com/TM35-Metronome/) & [games](https://github.com/dbandstra/oxid)
+- [Desktop applications](https://github.com/TM35-Metronome/)
 - Low latency servers
 - [Operating System kernels](https://github.com/AndreaOrru/zen)
 - [Embedded devices](https://github.com/skyfex/zig-nrf-demo/)
