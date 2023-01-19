@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>os/posix_spawn.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line" id="L2"><span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);</span>
+<span class="line" id="L3"></span>
+<span class="line" id="L4"><span class="tok-kw">const</span> os = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;../os.zig&quot;</span>);</span>
+<span class="line" id="L5"><span class="tok-kw">const</span> system = os.system;</span>
+<span class="line" id="L6"><span class="tok-kw">const</span> errno = system.getErrno;</span>
+<span class="line" id="L7"><span class="tok-kw">const</span> fd_t = system.fd_t;</span>
+<span class="line" id="L8"><span class="tok-kw">const</span> mode_t = system.mode_t;</span>
+<span class="line" id="L9"><span class="tok-kw">const</span> pid_t = system.pid_t;</span>
+<span class="line" id="L10"><span class="tok-kw">const</span> unexpectedErrno = os.unexpectedErrno;</span>
+<span class="line" id="L11"><span class="tok-kw">const</span> UnexpectedError = os.UnexpectedError;</span>
+<span class="line" id="L12"><span class="tok-kw">const</span> toPosixPath = os.toPosixPath;</span>
+<span class="line" id="L13"><span class="tok-kw">const</span> WaitPidResult = os.WaitPidResult;</span>
+<span class="line" id="L14"></span>
+<span class="line" id="L15"><span class="tok-kw">pub</span> <span class="tok-kw">usingnamespace</span> posix_spawn;</span>
+<span class="line" id="L16"></span>
+<span class="line" id="L17"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Error = <span class="tok-kw">error</span>{</span>
+<span class="line" id="L18">    SystemResources,</span>
+<span class="line" id="L19">    InvalidFileDescriptor,</span>
+<span class="line" id="L20">    NameTooLong,</span>
+<span class="line" id="L21">    TooBig,</span>
+<span class="line" id="L22">    PermissionDenied,</span>
+<span class="line" id="L23">    InputOutput,</span>
+<span class="line" id="L24">    FileSystem,</span>
+<span class="line" id="L25">    FileNotFound,</span>
+<span class="line" id="L26">    InvalidExe,</span>
+<span class="line" id="L27">    NotDir,</span>
+<span class="line" id="L28">    FileBusy,</span>
+<span class="line" id="L29"></span>
+<span class="line" id="L30">    <span class="tok-comment">/// Returned when the child fails to execute either in the pre-exec() initialization step, or</span></span>
+<span class="line" id="L31">    <span class="tok-comment">/// when exec(3) is invoked.</span></span>
+<span class="line" id="L32">    ChildExecFailed,</span>
+<span class="line" id="L33">} || UnexpectedError;</span>
+<span class="line" id="L34"></span>
+<span class="line" id="L35"><span class="tok-kw">const</span> posix_spawn = <span class="tok-kw">if</span> (builtin.target.isDarwin()) <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L36">    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Attr = <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L37">        attr: system.posix_spawnattr_t,</span>
+<span class="line" id="L38"></span>
+<span class="line" id="L39">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">init</span>() Error!Attr {</span>
+<span class="line" id="L40">            <span class="tok-kw">var</span> attr: system.posix_spawnattr_t = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L41">            <span class="tok-kw">switch</span> (errno(system.posix_spawnattr_init(&amp;attr))) {</span>
+<span class="line" id="L42">                .SUCCESS =&gt; <span class="tok-kw">return</span> Attr{ .attr = attr },</span>
+<span class="line" id="L43">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L44">                .INVAL =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L45">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L46">            }</span>
+<span class="line" id="L47">        }</span>
+<span class="line" id="L48"></span>
+<span class="line" id="L49">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">deinit</span>(self: *Attr) <span class="tok-type">void</span> {</span>
+<span class="line" id="L50">            <span class="tok-kw">defer</span> self.* = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L51">            <span class="tok-kw">switch</span> (errno(system.posix_spawnattr_destroy(&amp;self.attr))) {</span>
+<span class="line" id="L52">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L53">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// Invalid parameters.</span>
+</span>
+<span class="line" id="L54">                <span class="tok-kw">else</span> =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L55">            }</span>
+<span class="line" id="L56">        }</span>
+<span class="line" id="L57"></span>
+<span class="line" id="L58">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">get</span>(self: Attr) Error!<span class="tok-type">u16</span> {</span>
+<span class="line" id="L59">            <span class="tok-kw">var</span> flags: <span class="tok-type">c_short</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L60">            <span class="tok-kw">switch</span> (errno(system.posix_spawnattr_getflags(&amp;self.attr, &amp;flags))) {</span>
+<span class="line" id="L61">                .SUCCESS =&gt; <span class="tok-kw">return</span> <span class="tok-builtin">@bitCast</span>(<span class="tok-type">u16</span>, flags),</span>
+<span class="line" id="L62">                .INVAL =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L63">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L64">            }</span>
+<span class="line" id="L65">        }</span>
+<span class="line" id="L66"></span>
+<span class="line" id="L67">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">set</span>(self: *Attr, flags: <span class="tok-type">u16</span>) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L68">            <span class="tok-kw">switch</span> (errno(system.posix_spawnattr_setflags(&amp;self.attr, <span class="tok-builtin">@bitCast</span>(<span class="tok-type">c_short</span>, flags)))) {</span>
+<span class="line" id="L69">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L70">                .INVAL =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L71">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L72">            }</span>
+<span class="line" id="L73">        }</span>
+<span class="line" id="L74">    };</span>
+<span class="line" id="L75"></span>
+<span class="line" id="L76">    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> Actions = <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L77">        actions: system.posix_spawn_file_actions_t,</span>
+<span class="line" id="L78"></span>
+<span class="line" id="L79">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">init</span>() Error!Actions {</span>
+<span class="line" id="L80">            <span class="tok-kw">var</span> actions: system.posix_spawn_file_actions_t = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L81">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_init(&amp;actions))) {</span>
+<span class="line" id="L82">                .SUCCESS =&gt; <span class="tok-kw">return</span> Actions{ .actions = actions },</span>
+<span class="line" id="L83">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L84">                .INVAL =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L85">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L86">            }</span>
+<span class="line" id="L87">        }</span>
+<span class="line" id="L88"></span>
+<span class="line" id="L89">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">deinit</span>(self: *Actions) <span class="tok-type">void</span> {</span>
+<span class="line" id="L90">            <span class="tok-kw">defer</span> self.* = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L91">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_destroy(&amp;self.actions))) {</span>
+<span class="line" id="L92">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L93">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// Invalid parameters.</span>
+</span>
+<span class="line" id="L94">                <span class="tok-kw">else</span> =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L95">            }</span>
+<span class="line" id="L96">        }</span>
+<span class="line" id="L97"></span>
+<span class="line" id="L98">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">open</span>(self: *Actions, fd: fd_t, path: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>, flags: <span class="tok-type">u32</span>, mode: mode_t) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L99">            <span class="tok-kw">const</span> posix_path = <span class="tok-kw">try</span> toPosixPath(path);</span>
+<span class="line" id="L100">            <span class="tok-kw">return</span> self.openZ(fd, &amp;posix_path, flags, mode);</span>
+<span class="line" id="L101">        }</span>
+<span class="line" id="L102"></span>
+<span class="line" id="L103">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">openZ</span>(self: *Actions, fd: fd_t, path: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>, flags: <span class="tok-type">u32</span>, mode: mode_t) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L104">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_addopen(&amp;self.actions, fd, path, <span class="tok-builtin">@bitCast</span>(<span class="tok-type">c_int</span>, flags), mode))) {</span>
+<span class="line" id="L105">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L106">                .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L107">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L108">                .NAMETOOLONG =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.NameTooLong,</span>
+<span class="line" id="L109">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// the value of file actions is invalid</span>
+</span>
+<span class="line" id="L110">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L111">            }</span>
+<span class="line" id="L112">        }</span>
+<span class="line" id="L113"></span>
+<span class="line" id="L114">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">close</span>(self: *Actions, fd: fd_t) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L115">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_addclose(&amp;self.actions, fd))) {</span>
+<span class="line" id="L116">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L117">                .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L118">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L119">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// the value of file actions is invalid</span>
+</span>
+<span class="line" id="L120">                .NAMETOOLONG =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L121">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L122">            }</span>
+<span class="line" id="L123">        }</span>
+<span class="line" id="L124"></span>
+<span class="line" id="L125">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">dup2</span>(self: *Actions, fd: fd_t, newfd: fd_t) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L126">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_adddup2(&amp;self.actions, fd, newfd))) {</span>
+<span class="line" id="L127">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L128">                .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L129">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L130">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// the value of file actions is invalid</span>
+</span>
+<span class="line" id="L131">                .NAMETOOLONG =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L132">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L133">            }</span>
+<span class="line" id="L134">        }</span>
+<span class="line" id="L135"></span>
+<span class="line" id="L136">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">inherit</span>(self: *Actions, fd: fd_t) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L137">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_addinherit_np(&amp;self.actions, fd))) {</span>
+<span class="line" id="L138">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L139">                .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L140">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L141">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// the value of file actions is invalid</span>
+</span>
+<span class="line" id="L142">                .NAMETOOLONG =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L143">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L144">            }</span>
+<span class="line" id="L145">        }</span>
+<span class="line" id="L146"></span>
+<span class="line" id="L147">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">chdir</span>(self: *Actions, path: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L148">            <span class="tok-kw">const</span> posix_path = <span class="tok-kw">try</span> toPosixPath(path);</span>
+<span class="line" id="L149">            <span class="tok-kw">return</span> self.chdirZ(&amp;posix_path);</span>
+<span class="line" id="L150">        }</span>
+<span class="line" id="L151"></span>
+<span class="line" id="L152">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">chdirZ</span>(self: *Actions, path: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L153">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_addchdir_np(&amp;self.actions, path))) {</span>
+<span class="line" id="L154">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L155">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L156">                .NAMETOOLONG =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.NameTooLong,</span>
+<span class="line" id="L157">                .BADF =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L158">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// the value of file actions is invalid</span>
+</span>
+<span class="line" id="L159">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L160">            }</span>
+<span class="line" id="L161">        }</span>
+<span class="line" id="L162"></span>
+<span class="line" id="L163">        <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">fchdir</span>(self: *Actions, fd: fd_t) Error!<span class="tok-type">void</span> {</span>
+<span class="line" id="L164">            <span class="tok-kw">switch</span> (errno(system.posix_spawn_file_actions_addfchdir_np(&amp;self.actions, fd))) {</span>
+<span class="line" id="L165">                .SUCCESS =&gt; <span class="tok-kw">return</span>,</span>
+<span class="line" id="L166">                .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L167">                .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L168">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// the value of file actions is invalid</span>
+</span>
+<span class="line" id="L169">                .NAMETOOLONG =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L170">                <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L171">            }</span>
+<span class="line" id="L172">        }</span>
+<span class="line" id="L173">    };</span>
+<span class="line" id="L174"></span>
+<span class="line" id="L175">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">spawn</span>(</span>
+<span class="line" id="L176">        path: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L177">        actions: ?Actions,</span>
+<span class="line" id="L178">        attr: ?Attr,</span>
+<span class="line" id="L179">        argv: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L180">        envp: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L181">    ) Error!pid_t {</span>
+<span class="line" id="L182">        <span class="tok-kw">const</span> posix_path = <span class="tok-kw">try</span> toPosixPath(path);</span>
+<span class="line" id="L183">        <span class="tok-kw">return</span> spawnZ(&amp;posix_path, actions, attr, argv, envp);</span>
+<span class="line" id="L184">    }</span>
+<span class="line" id="L185"></span>
+<span class="line" id="L186">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">spawnZ</span>(</span>
+<span class="line" id="L187">        path: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L188">        actions: ?Actions,</span>
+<span class="line" id="L189">        attr: ?Attr,</span>
+<span class="line" id="L190">        argv: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L191">        envp: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L192">    ) Error!pid_t {</span>
+<span class="line" id="L193">        <span class="tok-kw">var</span> pid: pid_t = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L194">        <span class="tok-kw">switch</span> (errno(system.posix_spawn(</span>
+<span class="line" id="L195">            &amp;pid,</span>
+<span class="line" id="L196">            path,</span>
+<span class="line" id="L197">            <span class="tok-kw">if</span> (actions) |a| &amp;a.actions <span class="tok-kw">else</span> <span class="tok-null">null</span>,</span>
+<span class="line" id="L198">            <span class="tok-kw">if</span> (attr) |a| &amp;a.attr <span class="tok-kw">else</span> <span class="tok-null">null</span>,</span>
+<span class="line" id="L199">            argv,</span>
+<span class="line" id="L200">            envp,</span>
+<span class="line" id="L201">        ))) {</span>
+<span class="line" id="L202">            .SUCCESS =&gt; <span class="tok-kw">return</span> pid,</span>
+<span class="line" id="L203">            .@&quot;2BIG&quot; =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TooBig,</span>
+<span class="line" id="L204">            .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L205">            .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L206">            .ACCES =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.PermissionDenied,</span>
+<span class="line" id="L207">            .IO =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InputOutput,</span>
+<span class="line" id="L208">            .LOOP =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.FileSystem,</span>
+<span class="line" id="L209">            .NAMETOOLONG =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.NameTooLong,</span>
+<span class="line" id="L210">            .NOENT =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.FileNotFound,</span>
+<span class="line" id="L211">            .NOEXEC =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidExe,</span>
+<span class="line" id="L212">            .NOTDIR =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.NotDir,</span>
+<span class="line" id="L213">            .TXTBSY =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.FileBusy,</span>
+<span class="line" id="L214">            .BADARCH =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidExe,</span>
+<span class="line" id="L215">            .BADEXEC =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidExe,</span>
+<span class="line" id="L216">            .FAULT =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L217">            .INVAL =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L218">            <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L219">        }</span>
+<span class="line" id="L220">    }</span>
+<span class="line" id="L221"></span>
+<span class="line" id="L222">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">spawnp</span>(</span>
+<span class="line" id="L223">        file: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L224">        actions: ?Actions,</span>
+<span class="line" id="L225">        attr: ?Attr,</span>
+<span class="line" id="L226">        argv: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L227">        envp: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L228">    ) Error!pid_t {</span>
+<span class="line" id="L229">        <span class="tok-kw">const</span> posix_file = <span class="tok-kw">try</span> toPosixPath(file);</span>
+<span class="line" id="L230">        <span class="tok-kw">return</span> spawnpZ(&amp;posix_file, actions, attr, argv, envp);</span>
+<span class="line" id="L231">    }</span>
+<span class="line" id="L232"></span>
+<span class="line" id="L233">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">spawnpZ</span>(</span>
+<span class="line" id="L234">        file: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L235">        actions: ?Actions,</span>
+<span class="line" id="L236">        attr: ?Attr,</span>
+<span class="line" id="L237">        argv: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L238">        envp: [*:<span class="tok-null">null</span>]?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L239">    ) Error!pid_t {</span>
+<span class="line" id="L240">        <span class="tok-kw">var</span> pid: pid_t = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L241">        <span class="tok-kw">switch</span> (errno(system.posix_spawnp(</span>
+<span class="line" id="L242">            &amp;pid,</span>
+<span class="line" id="L243">            file,</span>
+<span class="line" id="L244">            <span class="tok-kw">if</span> (actions) |a| &amp;a.actions <span class="tok-kw">else</span> <span class="tok-null">null</span>,</span>
+<span class="line" id="L245">            <span class="tok-kw">if</span> (attr) |a| &amp;a.attr <span class="tok-kw">else</span> <span class="tok-null">null</span>,</span>
+<span class="line" id="L246">            argv,</span>
+<span class="line" id="L247">            envp,</span>
+<span class="line" id="L248">        ))) {</span>
+<span class="line" id="L249">            .SUCCESS =&gt; <span class="tok-kw">return</span> pid,</span>
+<span class="line" id="L250">            .@&quot;2BIG&quot; =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TooBig,</span>
+<span class="line" id="L251">            .NOMEM =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.SystemResources,</span>
+<span class="line" id="L252">            .BADF =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidFileDescriptor,</span>
+<span class="line" id="L253">            .ACCES =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.PermissionDenied,</span>
+<span class="line" id="L254">            .IO =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InputOutput,</span>
+<span class="line" id="L255">            .LOOP =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.FileSystem,</span>
+<span class="line" id="L256">            .NAMETOOLONG =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.NameTooLong,</span>
+<span class="line" id="L257">            .NOENT =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.FileNotFound,</span>
+<span class="line" id="L258">            .NOEXEC =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidExe,</span>
+<span class="line" id="L259">            .NOTDIR =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.NotDir,</span>
+<span class="line" id="L260">            .TXTBSY =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.FileBusy,</span>
+<span class="line" id="L261">            .BADARCH =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidExe,</span>
+<span class="line" id="L262">            .BADEXEC =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidExe,</span>
+<span class="line" id="L263">            .FAULT =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L264">            .INVAL =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L265">            <span class="tok-kw">else</span> =&gt; |err| <span class="tok-kw">return</span> unexpectedErrno(err),</span>
+<span class="line" id="L266">        }</span>
+<span class="line" id="L267">    }</span>
+<span class="line" id="L268"></span>
+<span class="line" id="L269">    <span class="tok-comment">/// Use this version of the `waitpid` wrapper if you spawned your child process using `posix_spawn`</span></span>
+<span class="line" id="L270">    <span class="tok-comment">/// or `posix_spawnp` syscalls.</span></span>
+<span class="line" id="L271">    <span class="tok-comment">/// See also `std.os.waitpid` for an alternative if your child process was spawned via `fork` and</span></span>
+<span class="line" id="L272">    <span class="tok-comment">/// `execve` method.</span></span>
+<span class="line" id="L273">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">waitpid</span>(pid: pid_t, flags: <span class="tok-type">u32</span>) Error!WaitPidResult {</span>
+<span class="line" id="L274">        <span class="tok-kw">const</span> Status = <span class="tok-kw">if</span> (builtin.link_libc) <span class="tok-type">c_int</span> <span class="tok-kw">else</span> <span class="tok-type">u32</span>;</span>
+<span class="line" id="L275">        <span class="tok-kw">var</span> status: Status = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L276">        <span class="tok-kw">while</span> (<span class="tok-null">true</span>) {</span>
+<span class="line" id="L277">            <span class="tok-kw">const</span> rc = system.waitpid(pid, &amp;status, <span class="tok-kw">if</span> (builtin.link_libc) <span class="tok-builtin">@intCast</span>(<span class="tok-type">c_int</span>, flags) <span class="tok-kw">else</span> flags);</span>
+<span class="line" id="L278">            <span class="tok-kw">switch</span> (errno(rc)) {</span>
+<span class="line" id="L279">                .SUCCESS =&gt; <span class="tok-kw">return</span> WaitPidResult{</span>
+<span class="line" id="L280">                    .pid = <span class="tok-builtin">@intCast</span>(pid_t, rc),</span>
+<span class="line" id="L281">                    .status = <span class="tok-builtin">@bitCast</span>(<span class="tok-type">u32</span>, status),</span>
+<span class="line" id="L282">                },</span>
+<span class="line" id="L283">                .INTR =&gt; <span class="tok-kw">continue</span>,</span>
+<span class="line" id="L284">                .CHILD =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.ChildExecFailed,</span>
+<span class="line" id="L285">                .INVAL =&gt; <span class="tok-kw">unreachable</span>, <span class="tok-comment">// Invalid flags.</span>
+</span>
+<span class="line" id="L286">                <span class="tok-kw">else</span> =&gt; <span class="tok-kw">unreachable</span>,</span>
+<span class="line" id="L287">            }</span>
+<span class="line" id="L288">        }</span>
+<span class="line" id="L289">    }</span>
+<span class="line" id="L290">} <span class="tok-kw">else</span> <span class="tok-kw">struct</span> {};</span>
+<span class="line" id="L291"></span>
+</code></pre></body>
+</html>

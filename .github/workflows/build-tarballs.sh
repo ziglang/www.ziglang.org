@@ -37,40 +37,6 @@ WORKDIR="$(pwd)"
 BOOTSTRAP_SRC="$WORKDIR/zig-bootstrap"
 TARBALLS_DIR="$WORKDIR/tarballs"
 
-cd "$BOOTSTRAP_SRC"
-git clean -fd
-git reset --hard HEAD
-git fetch
-git checkout origin/master
-rm -rf zig
-cp -r "$ZIGDIR" ./
-sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
-
-rm -rf out/
-
-# Override the cache directories because they won't actually help other CI runs
-# which will be testing alternate versions of zig, and ultimately would just
-# fill up space on the hard drive for no reason.
-export ZIG_GLOBAL_CACHE_DIR="$(pwd)/out/zig-global-cache"
-export ZIG_LOCAL_CACHE_DIR="$(pwd)/out/zig-local-cache"
-
-# NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
-CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
-CMAKE_GENERATOR=Ninja ./build aarch64-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14
-CMAKE_GENERATOR=Ninja ./build riscv64-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build powerpc64le-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build powerpc-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build x86-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
-CMAKE_GENERATOR=Ninja ./build aarch64-windows-gnu baseline
-CMAKE_GENERATOR=Ninja ./build x86-windows-gnu baseline
-
-# CMAKE_GENERATOR=Ninja ./build arm-linux-musleabihf generic+v7a
-
-ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
-
 rm -rf "$TARBALLS_DIR"
 mkdir "$TARBALLS_DIR"
 cd "$TARBALLS_DIR"
@@ -89,7 +55,52 @@ rm -rf \
   "zig/build-debug" \
   "zig/zig-cache"
 mv zig "zig-$ZIG_VERSION"
-tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION"
+XZ_OPT=-9 tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION" --sort=name
+
+cd "$BOOTSTRAP_SRC"
+git clean -fd
+git reset --hard HEAD
+git fetch
+git checkout origin/master
+rm -rf zig
+cp -r "$TARBALLS_DIR/zig-$ZIG_VERSION" zig
+sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
+sed -i "/^ \* zig /c\\ * zig $ZIG_VERSION" README.md
+rm -rf out/
+
+cd "$TARBALLS_DIR"
+cp -r "$BOOTSTRAP_SRC" "zig-bootstrap-$ZIG_VERSION"
+rm -rf \
+  "zig-bootstrap-$ZIG_VERSION/.git" \
+  "zig-bootstrap-$ZIG_VERSION/.gitattributes" \
+  "zig-bootstrap-$ZIG_VERSION/.github" \
+  "zig-bootstrap-$ZIG_VERSION/.gitignore"
+
+XZ_OPT=-9 tar cfJ "zig-bootstrap-$ZIG_VERSION.tar.xz" "zig-bootstrap-$ZIG_VERSION" --sort=name
+
+# Override the cache directories because they won't actually help other CI runs
+# which will be testing alternate versions of zig, and ultimately would just
+# fill up space on the hard drive for no reason.
+export ZIG_GLOBAL_CACHE_DIR="$BOOTSTRAP_SRC/out/zig-global-cache"
+export ZIG_LOCAL_CACHE_DIR="$BOOTSTRAP_SRC/out/zig-local-cache"
+
+cd "$BOOTSTRAP_SRC"
+# NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
+CMAKE_GENERATOR=Ninja ./build x86_64-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build x86_64-macos-none baseline
+CMAKE_GENERATOR=Ninja ./build aarch64-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14
+CMAKE_GENERATOR=Ninja ./build riscv64-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build powerpc64le-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build powerpc-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build x86-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
+CMAKE_GENERATOR=Ninja ./build aarch64-windows-gnu baseline
+CMAKE_GENERATOR=Ninja ./build x86-windows-gnu baseline
+
+# CMAKE_GENERATOR=Ninja ./build arm-linux-musleabihf generic+v7a
+
+ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
 
 cd "$BOOTSTRAP_SRC/zig"
 "$ZIG" build docs
@@ -102,7 +113,6 @@ cd "$TARBALLS_DIR"
 
 cp -r $BOOTSTRAP_SRC/out/zig-x86_64-linux-musl-baseline zig-linux-x86_64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-x86_64-macos-none-baseline zig-macos-x86_64-$ZIG_VERSION/
-#cp -r $BOOTSTRAP_SRC/out/zig-x86_64-freebsd-gnu-baseline zig-freebsd-x86_64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-aarch64-linux-musl-baseline zig-linux-aarch64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-aarch64-macos-none-apple_a14 zig-macos-aarch64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-x86-linux-musl-baseline zig-linux-x86-$ZIG_VERSION/
@@ -113,10 +123,10 @@ cp -r $BOOTSTRAP_SRC/out/zig-powerpc-linux-musl-baseline zig-linux-powerpc-$ZIG_
 cp -r $BOOTSTRAP_SRC/out/zig-x86_64-windows-gnu-baseline zig-windows-x86_64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-aarch64-windows-gnu-baseline zig-windows-aarch64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-x86-windows-gnu-baseline zig-windows-x86-$ZIG_VERSION/
+#cp -r $BOOTSTRAP_SRC/out/zig-x86_64-freebsd-gnu-baseline zig-freebsd-x86_64-$ZIG_VERSION/
 
 mv zig-linux-x86_64-$ZIG_VERSION/bin/zig         zig-linux-x86_64-$ZIG_VERSION/zig
 mv zig-macos-x86_64-$ZIG_VERSION/bin/zig         zig-macos-x86_64-$ZIG_VERSION/zig
-#mv zig-freebsd-x86_64-$ZIG_VERSION/bin/zig      zig-freebsd-x86_64-$ZIG_VERSION/zig
 mv zig-linux-aarch64-$ZIG_VERSION/bin/zig        zig-linux-aarch64-$ZIG_VERSION/zig
 mv zig-macos-aarch64-$ZIG_VERSION/bin/zig        zig-macos-aarch64-$ZIG_VERSION/zig
 mv zig-linux-x86-$ZIG_VERSION/bin/zig            zig-linux-x86-$ZIG_VERSION/zig
@@ -127,10 +137,10 @@ mv zig-linux-powerpc-$ZIG_VERSION/bin/zig        zig-linux-powerpc-$ZIG_VERSION/
 mv zig-windows-x86_64-$ZIG_VERSION/bin/zig.exe   zig-windows-x86_64-$ZIG_VERSION/zig.exe
 mv zig-windows-aarch64-$ZIG_VERSION/bin/zig.exe  zig-windows-aarch64-$ZIG_VERSION/zig.exe
 mv zig-windows-x86-$ZIG_VERSION/bin/zig.exe      zig-windows-x86-$ZIG_VERSION/zig.exe
+#mv zig-freebsd-x86_64-$ZIG_VERSION/bin/zig      zig-freebsd-x86_64-$ZIG_VERSION/zig
 
 mv zig-linux-x86_64-$ZIG_VERSION/lib zig-linux-x86_64-$ZIG_VERSION/lib2
 mv zig-macos-x86_64-$ZIG_VERSION/lib zig-macos-x86_64-$ZIG_VERSION/lib2
-#mv zig-freebsd-x86_64-$ZIG_VERSION/lib zig-freebsd-x86_64-$ZIG_VERSION/lib2
 mv zig-linux-aarch64-$ZIG_VERSION/lib zig-linux-aarch64-$ZIG_VERSION/lib2
 mv zig-macos-aarch64-$ZIG_VERSION/lib zig-macos-aarch64-$ZIG_VERSION/lib2
 mv zig-linux-x86-$ZIG_VERSION/lib zig-linux-x86-$ZIG_VERSION/lib2
@@ -141,10 +151,10 @@ mv zig-linux-powerpc-$ZIG_VERSION/lib zig-linux-powerpc-$ZIG_VERSION/lib2
 mv zig-windows-x86_64-$ZIG_VERSION/lib zig-windows-x86_64-$ZIG_VERSION/lib2
 mv zig-windows-aarch64-$ZIG_VERSION/lib zig-windows-aarch64-$ZIG_VERSION/lib2
 mv zig-windows-x86-$ZIG_VERSION/lib zig-windows-x86-$ZIG_VERSION/lib2
+#mv zig-freebsd-x86_64-$ZIG_VERSION/lib zig-freebsd-x86_64-$ZIG_VERSION/lib2
 
 mv zig-linux-x86_64-$ZIG_VERSION/lib2/zig zig-linux-x86_64-$ZIG_VERSION/lib
 mv zig-macos-x86_64-$ZIG_VERSION/lib2/zig zig-macos-x86_64-$ZIG_VERSION/lib
-#mv zig-freebsd-x86_64-$ZIG_VERSION/lib2/zig zig-freebsd-x86_64-$ZIG_VERSION/lib
 mv zig-linux-aarch64-$ZIG_VERSION/lib2/zig zig-linux-aarch64-$ZIG_VERSION/lib
 mv zig-macos-aarch64-$ZIG_VERSION/lib2/zig zig-macos-aarch64-$ZIG_VERSION/lib
 mv zig-linux-x86-$ZIG_VERSION/lib2/zig zig-linux-x86-$ZIG_VERSION/lib
@@ -155,10 +165,10 @@ mv zig-linux-powerpc-$ZIG_VERSION/lib2/zig zig-linux-powerpc-$ZIG_VERSION/lib
 mv zig-windows-x86_64-$ZIG_VERSION/lib2/zig zig-windows-x86_64-$ZIG_VERSION/lib
 mv zig-windows-aarch64-$ZIG_VERSION/lib2/zig zig-windows-aarch64-$ZIG_VERSION/lib
 mv zig-windows-x86-$ZIG_VERSION/lib2/zig zig-windows-x86-$ZIG_VERSION/lib
+#mv zig-freebsd-x86_64-$ZIG_VERSION/lib2/zig zig-freebsd-x86_64-$ZIG_VERSION/lib
 
 rmdir zig-linux-x86_64-$ZIG_VERSION/bin zig-linux-x86_64-$ZIG_VERSION/lib2
 rmdir zig-macos-x86_64-$ZIG_VERSION/bin zig-macos-x86_64-$ZIG_VERSION/lib2
-#rmdir zig-freebsd-x86_64-$ZIG_VERSION/bin zig-freebsd-x86_64-$ZIG_VERSION/lib2
 rmdir zig-linux-aarch64-$ZIG_VERSION/bin zig-linux-aarch64-$ZIG_VERSION/lib2
 rmdir zig-macos-aarch64-$ZIG_VERSION/bin zig-macos-aarch64-$ZIG_VERSION/lib2
 rmdir zig-linux-x86-$ZIG_VERSION/bin zig-linux-x86-$ZIG_VERSION/lib2
@@ -169,10 +179,10 @@ rmdir zig-linux-powerpc-$ZIG_VERSION/bin zig-linux-powerpc-$ZIG_VERSION/lib2
 rmdir zig-windows-x86_64-$ZIG_VERSION/bin zig-windows-x86_64-$ZIG_VERSION/lib2
 rmdir zig-windows-aarch64-$ZIG_VERSION/bin zig-windows-aarch64-$ZIG_VERSION/lib2
 rmdir zig-windows-x86-$ZIG_VERSION/bin zig-windows-x86-$ZIG_VERSION/lib2
+#rmdir zig-freebsd-x86_64-$ZIG_VERSION/bin zig-freebsd-x86_64-$ZIG_VERSION/lib2
 
 cp $ZIGDIR/LICENSE zig-linux-x86_64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-macos-x86_64-$ZIG_VERSION/
-#cp $ZIGDIR/LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-linux-aarch64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-macos-aarch64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-linux-x86-$ZIG_VERSION/
@@ -183,10 +193,10 @@ cp $ZIGDIR/LICENSE zig-linux-powerpc-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-windows-x86_64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-windows-aarch64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-windows-x86-$ZIG_VERSION/
+#cp $ZIGDIR/LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
 
 mkdir zig-linux-x86_64-$ZIG_VERSION/doc/
 mkdir zig-macos-x86_64-$ZIG_VERSION/doc/
-#mkdir zig-freebsd-x86_64-$ZIG_VERSION/doc/
 mkdir zig-linux-aarch64-$ZIG_VERSION/doc/
 mkdir zig-macos-aarch64-$ZIG_VERSION/doc/
 mkdir zig-linux-x86-$ZIG_VERSION/doc/
@@ -197,10 +207,10 @@ mkdir zig-linux-powerpc-$ZIG_VERSION/doc/
 mkdir zig-windows-x86_64-$ZIG_VERSION/doc/
 mkdir zig-windows-aarch64-$ZIG_VERSION/doc/
 mkdir zig-windows-x86-$ZIG_VERSION/doc/
+#mkdir zig-freebsd-x86_64-$ZIG_VERSION/doc/
 
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-linux-musl   -femit-docs="zig-linux-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-macos        -femit-docs="zig-macos-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
-#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-freebsd     -femit-docs="zig-freebsd-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-linux-musl  -femit-docs="zig-linux-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-macos       -femit-docs="zig-macos-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-linux-musl      -femit-docs="zig-linux-x86-$ZIG_VERSION/doc/std"       -fno-emit-bin
@@ -211,10 +221,10 @@ mkdir zig-windows-x86-$ZIG_VERSION/doc/
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-windows-gnu  -femit-docs="zig-windows-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-windows-gnu -femit-docs="zig-windows-aarch64-$ZIG_VERSION/doc/std" -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-windows-gnu     -femit-docs="zig-windows-x86-$ZIG_VERSION/doc/std"     -fno-emit-bin
+#"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-freebsd     -femit-docs="zig-freebsd-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
 
 cp $LANGREF_HTML zig-linux-x86_64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-macos-x86_64-$ZIG_VERSION/doc/
-#cp $LANGREF_HTML zig-freebsd-x86_64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-linux-aarch64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-macos-aarch64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-linux-x86-$ZIG_VERSION/doc/
@@ -225,25 +235,27 @@ cp $LANGREF_HTML zig-linux-powerpc-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-windows-x86_64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-windows-aarch64-$ZIG_VERSION/doc/
 cp $LANGREF_HTML zig-windows-x86-$ZIG_VERSION/doc/
+#cp $LANGREF_HTML zig-freebsd-x86_64-$ZIG_VERSION/doc/
 
-tar cJf zig-linux-x86_64-$ZIG_VERSION.tar.xz zig-linux-x86_64-$ZIG_VERSION/
-tar cJf zig-macos-x86_64-$ZIG_VERSION.tar.xz zig-macos-x86_64-$ZIG_VERSION/
-#tar cJf zig-freebsd-x86_64-$ZIG_VERSION.tar.xz zig-freebsd-x86_64-$ZIG_VERSION/
-tar cJf zig-linux-aarch64-$ZIG_VERSION.tar.xz zig-linux-aarch64-$ZIG_VERSION/
-tar cJf zig-macos-aarch64-$ZIG_VERSION.tar.xz zig-macos-aarch64-$ZIG_VERSION/
-tar cJf zig-linux-x86-$ZIG_VERSION.tar.xz zig-linux-x86-$ZIG_VERSION/
-#tar cJf zig-linux-armv7a-$ZIG_VERSION.tar.xz zig-linux-armv7a-$ZIG_VERSION/
-tar cJf zig-linux-riscv64-$ZIG_VERSION.tar.xz zig-linux-riscv64-$ZIG_VERSION/
-tar cJf zig-linux-powerpc64le-$ZIG_VERSION.tar.xz zig-linux-powerpc64le-$ZIG_VERSION/
-tar cJf zig-linux-powerpc-$ZIG_VERSION.tar.xz zig-linux-powerpc-$ZIG_VERSION/
+XZ_OPT=-9 tar cJf zig-linux-x86_64-$ZIG_VERSION.tar.xz zig-linux-x86_64-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-macos-x86_64-$ZIG_VERSION.tar.xz zig-macos-x86_64-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-linux-aarch64-$ZIG_VERSION.tar.xz zig-linux-aarch64-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-macos-aarch64-$ZIG_VERSION.tar.xz zig-macos-aarch64-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-linux-x86-$ZIG_VERSION.tar.xz zig-linux-x86-$ZIG_VERSION/ --sort=name
+#XZ_OPT=-9 tar cJf zig-linux-armv7a-$ZIG_VERSION.tar.xz zig-linux-armv7a-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-linux-riscv64-$ZIG_VERSION.tar.xz zig-linux-riscv64-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-linux-powerpc64le-$ZIG_VERSION.tar.xz zig-linux-powerpc64le-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-linux-powerpc-$ZIG_VERSION.tar.xz zig-linux-powerpc-$ZIG_VERSION/ --sort=name
 7z a zig-windows-x86_64-$ZIG_VERSION.zip zig-windows-x86_64-$ZIG_VERSION/
 7z a zig-windows-aarch64-$ZIG_VERSION.zip zig-windows-aarch64-$ZIG_VERSION/
 7z a zig-windows-x86-$ZIG_VERSION.zip zig-windows-x86-$ZIG_VERSION/
+#XZ_OPT=-9 tar cJf zig-freebsd-x86_64-$ZIG_VERSION.tar.xz zig-freebsd-x86_64-$ZIG_VERSION/ --sort=name
 
 echo | minisign -Sm zig-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-bootstrap-$ZIG_VERSION.tar.xz
+
 echo | minisign -Sm zig-linux-x86_64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-macos-x86_64-$ZIG_VERSION.tar.xz
-#echo | minisign -Sm zig-freebsd-x86_64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-aarch64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-macos-aarch64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-x86-$ZIG_VERSION.tar.xz
@@ -254,9 +266,11 @@ echo | minisign -Sm zig-linux-powerpc-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-windows-x86_64-$ZIG_VERSION.zip
 echo | minisign -Sm zig-windows-aarch64-$ZIG_VERSION.zip
 echo | minisign -Sm zig-windows-x86-$ZIG_VERSION.zip
+#echo | minisign -Sm zig-freebsd-x86_64-$ZIG_VERSION.tar.xz
 
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 #s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
@@ -290,6 +304,10 @@ s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" z
 export SRC_TARBALL="zig-$ZIG_VERSION.tar.xz"
 export SRC_SHASUM=$(sha256sum "zig-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
 export SRC_BYTESIZE=$(wc -c < "zig-$ZIG_VERSION.tar.xz")
+
+export BOOTSTRAP_TARBALL="zig-bootstrap-$ZIG_VERSION.tar.xz"
+export BOOTSTRAP_SHASUM=$(sha256sum "zig-bootstrap-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
+export BOOTSTRAP_BYTESIZE=$(wc -c < "zig-bootstrap-$ZIG_VERSION.tar.xz")
 
 export X86_64_LINUX_TARBALL="zig-linux-x86_64-$ZIG_VERSION.tar.xz"
 export X86_64_LINUX_BYTESIZE=$(wc -c < "zig-linux-x86_64-$ZIG_VERSION.tar.xz")
@@ -348,7 +366,7 @@ export MASTER_VERSION="$ZIG_VERSION"
 
 # Create index.json and update the website repo.
 cd "$WEBSITEDIR/.github/workflows"
-# Pull before modifying tracked files in case new updates 
+# Pull before modifying tracked files in case new updates
 # have been pushed to the repository (very possible since
 # this is a long-running process).
 git pull

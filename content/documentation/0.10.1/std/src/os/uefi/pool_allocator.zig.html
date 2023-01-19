@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>os/uefi/pool_allocator.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line" id="L2"></span>
+<span class="line" id="L3"><span class="tok-kw">const</span> mem = std.mem;</span>
+<span class="line" id="L4"><span class="tok-kw">const</span> uefi = std.os.uefi;</span>
+<span class="line" id="L5"></span>
+<span class="line" id="L6"><span class="tok-kw">const</span> assert = std.debug.assert;</span>
+<span class="line" id="L7"></span>
+<span class="line" id="L8"><span class="tok-kw">const</span> Allocator = mem.Allocator;</span>
+<span class="line" id="L9"></span>
+<span class="line" id="L10"><span class="tok-kw">const</span> UefiPoolAllocator = <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L11">    <span class="tok-kw">fn</span> <span class="tok-fn">getHeader</span>(ptr: [*]<span class="tok-type">u8</span>) *[*]<span class="tok-kw">align</span>(<span class="tok-number">8</span>) <span class="tok-type">u8</span> {</span>
+<span class="line" id="L12">        <span class="tok-kw">return</span> <span class="tok-builtin">@intToPtr</span>(*[*]<span class="tok-kw">align</span>(<span class="tok-number">8</span>) <span class="tok-type">u8</span>, <span class="tok-builtin">@ptrToInt</span>(ptr) - <span class="tok-builtin">@sizeOf</span>(<span class="tok-type">usize</span>));</span>
+<span class="line" id="L13">    }</span>
+<span class="line" id="L14"></span>
+<span class="line" id="L15">    <span class="tok-kw">fn</span> <span class="tok-fn">alignedAlloc</span>(len: <span class="tok-type">usize</span>, alignment: <span class="tok-type">usize</span>) ?[*]<span class="tok-type">u8</span> {</span>
+<span class="line" id="L16">        <span class="tok-kw">var</span> unaligned_ptr: [*]<span class="tok-kw">align</span>(<span class="tok-number">8</span>) <span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L17"></span>
+<span class="line" id="L18">        <span class="tok-kw">if</span> (uefi.system_table.boot_services.?.allocatePool(uefi.efi_pool_memory_type, len, &amp;unaligned_ptr) != .Success)</span>
+<span class="line" id="L19">            <span class="tok-kw">return</span> <span class="tok-null">null</span>;</span>
+<span class="line" id="L20"></span>
+<span class="line" id="L21">        <span class="tok-kw">const</span> unaligned_addr = <span class="tok-builtin">@ptrToInt</span>(unaligned_ptr);</span>
+<span class="line" id="L22">        <span class="tok-kw">const</span> aligned_addr = mem.alignForward(unaligned_addr + <span class="tok-builtin">@sizeOf</span>(<span class="tok-type">usize</span>), alignment);</span>
+<span class="line" id="L23"></span>
+<span class="line" id="L24">        <span class="tok-kw">var</span> aligned_ptr = unaligned_ptr + (aligned_addr - unaligned_addr);</span>
+<span class="line" id="L25">        getHeader(aligned_ptr).* = unaligned_ptr;</span>
+<span class="line" id="L26"></span>
+<span class="line" id="L27">        <span class="tok-kw">return</span> aligned_ptr;</span>
+<span class="line" id="L28">    }</span>
+<span class="line" id="L29"></span>
+<span class="line" id="L30">    <span class="tok-kw">fn</span> <span class="tok-fn">alignedFree</span>(ptr: [*]<span class="tok-type">u8</span>) <span class="tok-type">void</span> {</span>
+<span class="line" id="L31">        _ = uefi.system_table.boot_services.?.freePool(getHeader(ptr).*);</span>
+<span class="line" id="L32">    }</span>
+<span class="line" id="L33"></span>
+<span class="line" id="L34">    <span class="tok-kw">fn</span> <span class="tok-fn">alloc</span>(</span>
+<span class="line" id="L35">        _: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L36">        len: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L37">        ptr_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L38">        len_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L39">        ret_addr: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L40">    ) Allocator.Error![]<span class="tok-type">u8</span> {</span>
+<span class="line" id="L41">        _ = ret_addr;</span>
+<span class="line" id="L42"></span>
+<span class="line" id="L43">        assert(len &gt; <span class="tok-number">0</span>);</span>
+<span class="line" id="L44">        assert(std.math.isPowerOfTwo(ptr_align));</span>
+<span class="line" id="L45"></span>
+<span class="line" id="L46">        <span class="tok-kw">var</span> ptr = alignedAlloc(len, ptr_align) <span class="tok-kw">orelse</span> <span class="tok-kw">return</span> <span class="tok-kw">error</span>.OutOfMemory;</span>
+<span class="line" id="L47"></span>
+<span class="line" id="L48">        <span class="tok-kw">if</span> (len_align == <span class="tok-number">0</span>)</span>
+<span class="line" id="L49">            <span class="tok-kw">return</span> ptr[<span class="tok-number">0</span>..len];</span>
+<span class="line" id="L50"></span>
+<span class="line" id="L51">        <span class="tok-kw">return</span> ptr[<span class="tok-number">0</span>..mem.alignBackwardAnyAlign(len, len_align)];</span>
+<span class="line" id="L52">    }</span>
+<span class="line" id="L53"></span>
+<span class="line" id="L54">    <span class="tok-kw">fn</span> <span class="tok-fn">resize</span>(</span>
+<span class="line" id="L55">        _: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L56">        buf: []<span class="tok-type">u8</span>,</span>
+<span class="line" id="L57">        buf_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L58">        new_len: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L59">        len_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L60">        ret_addr: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L61">    ) ?<span class="tok-type">usize</span> {</span>
+<span class="line" id="L62">        _ = buf_align;</span>
+<span class="line" id="L63">        _ = ret_addr;</span>
+<span class="line" id="L64"></span>
+<span class="line" id="L65">        <span class="tok-kw">return</span> <span class="tok-kw">if</span> (new_len &lt;= buf.len) mem.alignAllocLen(buf.len, new_len, len_align) <span class="tok-kw">else</span> <span class="tok-null">null</span>;</span>
+<span class="line" id="L66">    }</span>
+<span class="line" id="L67"></span>
+<span class="line" id="L68">    <span class="tok-kw">fn</span> <span class="tok-fn">free</span>(</span>
+<span class="line" id="L69">        _: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L70">        buf: []<span class="tok-type">u8</span>,</span>
+<span class="line" id="L71">        buf_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L72">        ret_addr: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L73">    ) <span class="tok-type">void</span> {</span>
+<span class="line" id="L74">        _ = buf_align;</span>
+<span class="line" id="L75">        _ = ret_addr;</span>
+<span class="line" id="L76">        alignedFree(buf.ptr);</span>
+<span class="line" id="L77">    }</span>
+<span class="line" id="L78">};</span>
+<span class="line" id="L79"></span>
+<span class="line" id="L80"><span class="tok-comment">/// Supports the full Allocator interface, including alignment.</span></span>
+<span class="line" id="L81"><span class="tok-comment">/// For a direct call of `allocatePool`, see `raw_pool_allocator`.</span></span>
+<span class="line" id="L82"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> pool_allocator = Allocator{</span>
+<span class="line" id="L83">    .ptr = <span class="tok-null">undefined</span>,</span>
+<span class="line" id="L84">    .vtable = &amp;pool_allocator_vtable,</span>
+<span class="line" id="L85">};</span>
+<span class="line" id="L86"></span>
+<span class="line" id="L87"><span class="tok-kw">const</span> pool_allocator_vtable = Allocator.VTable{</span>
+<span class="line" id="L88">    .alloc = UefiPoolAllocator.alloc,</span>
+<span class="line" id="L89">    .resize = UefiPoolAllocator.resize,</span>
+<span class="line" id="L90">    .free = UefiPoolAllocator.free,</span>
+<span class="line" id="L91">};</span>
+<span class="line" id="L92"></span>
+<span class="line" id="L93"><span class="tok-comment">/// Asserts allocations are 8 byte aligned and calls `boot_services.allocatePool`.</span></span>
+<span class="line" id="L94"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> raw_pool_allocator = Allocator{</span>
+<span class="line" id="L95">    .ptr = <span class="tok-null">undefined</span>,</span>
+<span class="line" id="L96">    .vtable = &amp;raw_pool_allocator_table,</span>
+<span class="line" id="L97">};</span>
+<span class="line" id="L98"></span>
+<span class="line" id="L99"><span class="tok-kw">const</span> raw_pool_allocator_table = Allocator.VTable{</span>
+<span class="line" id="L100">    .alloc = uefi_alloc,</span>
+<span class="line" id="L101">    .resize = uefi_resize,</span>
+<span class="line" id="L102">    .free = uefi_free,</span>
+<span class="line" id="L103">};</span>
+<span class="line" id="L104"></span>
+<span class="line" id="L105"><span class="tok-kw">fn</span> <span class="tok-fn">uefi_alloc</span>(</span>
+<span class="line" id="L106">    _: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L107">    len: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L108">    ptr_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L109">    len_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L110">    ret_addr: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L111">) Allocator.Error![]<span class="tok-type">u8</span> {</span>
+<span class="line" id="L112">    _ = len_align;</span>
+<span class="line" id="L113">    _ = ret_addr;</span>
+<span class="line" id="L114"></span>
+<span class="line" id="L115">    std.debug.assert(ptr_align &lt;= <span class="tok-number">8</span>);</span>
+<span class="line" id="L116"></span>
+<span class="line" id="L117">    <span class="tok-kw">var</span> ptr: [*]<span class="tok-kw">align</span>(<span class="tok-number">8</span>) <span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L118"></span>
+<span class="line" id="L119">    <span class="tok-kw">if</span> (uefi.system_table.boot_services.?.allocatePool(uefi.efi_pool_memory_type, len, &amp;ptr) != .Success) {</span>
+<span class="line" id="L120">        <span class="tok-kw">return</span> <span class="tok-kw">error</span>.OutOfMemory;</span>
+<span class="line" id="L121">    }</span>
+<span class="line" id="L122"></span>
+<span class="line" id="L123">    <span class="tok-kw">return</span> ptr[<span class="tok-number">0</span>..len];</span>
+<span class="line" id="L124">}</span>
+<span class="line" id="L125"></span>
+<span class="line" id="L126"><span class="tok-kw">fn</span> <span class="tok-fn">uefi_resize</span>(</span>
+<span class="line" id="L127">    _: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L128">    buf: []<span class="tok-type">u8</span>,</span>
+<span class="line" id="L129">    old_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L130">    new_len: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L131">    len_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L132">    ret_addr: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L133">) ?<span class="tok-type">usize</span> {</span>
+<span class="line" id="L134">    _ = old_align;</span>
+<span class="line" id="L135">    _ = ret_addr;</span>
+<span class="line" id="L136"></span>
+<span class="line" id="L137">    <span class="tok-kw">if</span> (new_len &lt;= buf.len) {</span>
+<span class="line" id="L138">        <span class="tok-kw">return</span> mem.alignAllocLen(buf.len, new_len, len_align);</span>
+<span class="line" id="L139">    }</span>
+<span class="line" id="L140"></span>
+<span class="line" id="L141">    <span class="tok-kw">return</span> <span class="tok-null">null</span>;</span>
+<span class="line" id="L142">}</span>
+<span class="line" id="L143"></span>
+<span class="line" id="L144"><span class="tok-kw">fn</span> <span class="tok-fn">uefi_free</span>(</span>
+<span class="line" id="L145">    _: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L146">    buf: []<span class="tok-type">u8</span>,</span>
+<span class="line" id="L147">    buf_align: <span class="tok-type">u29</span>,</span>
+<span class="line" id="L148">    ret_addr: <span class="tok-type">usize</span>,</span>
+<span class="line" id="L149">) <span class="tok-type">void</span> {</span>
+<span class="line" id="L150">    _ = buf_align;</span>
+<span class="line" id="L151">    _ = ret_addr;</span>
+<span class="line" id="L152">    _ = uefi.system_table.boot_services.?.freePool(<span class="tok-builtin">@alignCast</span>(<span class="tok-number">8</span>, buf.ptr));</span>
+<span class="line" id="L153">}</span>
+<span class="line" id="L154"></span>
+</code></pre></body>
+</html>

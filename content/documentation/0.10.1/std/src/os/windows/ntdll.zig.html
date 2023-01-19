@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>os/windows/ntdll.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;../../std.zig&quot;</span>);</span>
+<span class="line" id="L2"><span class="tok-kw">const</span> windows = std.os.windows;</span>
+<span class="line" id="L3"></span>
+<span class="line" id="L4"><span class="tok-kw">const</span> BOOL = windows.BOOL;</span>
+<span class="line" id="L5"><span class="tok-kw">const</span> DWORD = windows.DWORD;</span>
+<span class="line" id="L6"><span class="tok-kw">const</span> ULONG = windows.ULONG;</span>
+<span class="line" id="L7"><span class="tok-kw">const</span> WINAPI = windows.WINAPI;</span>
+<span class="line" id="L8"><span class="tok-kw">const</span> NTSTATUS = windows.NTSTATUS;</span>
+<span class="line" id="L9"><span class="tok-kw">const</span> WORD = windows.WORD;</span>
+<span class="line" id="L10"><span class="tok-kw">const</span> HANDLE = windows.HANDLE;</span>
+<span class="line" id="L11"><span class="tok-kw">const</span> ACCESS_MASK = windows.ACCESS_MASK;</span>
+<span class="line" id="L12"><span class="tok-kw">const</span> IO_APC_ROUTINE = windows.IO_APC_ROUTINE;</span>
+<span class="line" id="L13"><span class="tok-kw">const</span> BOOLEAN = windows.BOOLEAN;</span>
+<span class="line" id="L14"><span class="tok-kw">const</span> OBJECT_ATTRIBUTES = windows.OBJECT_ATTRIBUTES;</span>
+<span class="line" id="L15"><span class="tok-kw">const</span> PVOID = windows.PVOID;</span>
+<span class="line" id="L16"><span class="tok-kw">const</span> IO_STATUS_BLOCK = windows.IO_STATUS_BLOCK;</span>
+<span class="line" id="L17"><span class="tok-kw">const</span> LARGE_INTEGER = windows.LARGE_INTEGER;</span>
+<span class="line" id="L18"><span class="tok-kw">const</span> OBJECT_INFORMATION_CLASS = windows.OBJECT_INFORMATION_CLASS;</span>
+<span class="line" id="L19"><span class="tok-kw">const</span> FILE_INFORMATION_CLASS = windows.FILE_INFORMATION_CLASS;</span>
+<span class="line" id="L20"><span class="tok-kw">const</span> UNICODE_STRING = windows.UNICODE_STRING;</span>
+<span class="line" id="L21"><span class="tok-kw">const</span> RTL_OSVERSIONINFOW = windows.RTL_OSVERSIONINFOW;</span>
+<span class="line" id="L22"><span class="tok-kw">const</span> FILE_BASIC_INFORMATION = windows.FILE_BASIC_INFORMATION;</span>
+<span class="line" id="L23"><span class="tok-kw">const</span> SIZE_T = windows.SIZE_T;</span>
+<span class="line" id="L24"><span class="tok-kw">const</span> CURDIR = windows.CURDIR;</span>
+<span class="line" id="L25"><span class="tok-kw">const</span> PCWSTR = windows.PCWSTR;</span>
+<span class="line" id="L26"><span class="tok-kw">const</span> RTL_QUERY_REGISTRY_TABLE = windows.RTL_QUERY_REGISTRY_TABLE;</span>
+<span class="line" id="L27"></span>
+<span class="line" id="L28"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> THREADINFOCLASS = <span class="tok-kw">enum</span>(<span class="tok-type">c_int</span>) {</span>
+<span class="line" id="L29">    ThreadBasicInformation,</span>
+<span class="line" id="L30">    ThreadTimes,</span>
+<span class="line" id="L31">    ThreadPriority,</span>
+<span class="line" id="L32">    ThreadBasePriority,</span>
+<span class="line" id="L33">    ThreadAffinityMask,</span>
+<span class="line" id="L34">    ThreadImpersonationToken,</span>
+<span class="line" id="L35">    ThreadDescriptorTableEntry,</span>
+<span class="line" id="L36">    ThreadEnableAlignmentFaultFixup,</span>
+<span class="line" id="L37">    ThreadEventPair_Reusable,</span>
+<span class="line" id="L38">    ThreadQuerySetWin32StartAddress,</span>
+<span class="line" id="L39">    ThreadZeroTlsCell,</span>
+<span class="line" id="L40">    ThreadPerformanceCount,</span>
+<span class="line" id="L41">    ThreadAmILastThread,</span>
+<span class="line" id="L42">    ThreadIdealProcessor,</span>
+<span class="line" id="L43">    ThreadPriorityBoost,</span>
+<span class="line" id="L44">    ThreadSetTlsArrayAddress,</span>
+<span class="line" id="L45">    ThreadIsIoPending,</span>
+<span class="line" id="L46">    <span class="tok-comment">// Windows 2000+ from here</span>
+</span>
+<span class="line" id="L47">    ThreadHideFromDebugger,</span>
+<span class="line" id="L48">    <span class="tok-comment">// Windows XP+ from here</span>
+</span>
+<span class="line" id="L49">    ThreadBreakOnTermination,</span>
+<span class="line" id="L50">    ThreadSwitchLegacyState,</span>
+<span class="line" id="L51">    ThreadIsTerminated,</span>
+<span class="line" id="L52">    <span class="tok-comment">// Windows Vista+ from here</span>
+</span>
+<span class="line" id="L53">    ThreadLastSystemCall,</span>
+<span class="line" id="L54">    ThreadIoPriority,</span>
+<span class="line" id="L55">    ThreadCycleTime,</span>
+<span class="line" id="L56">    ThreadPagePriority,</span>
+<span class="line" id="L57">    ThreadActualBasePriority,</span>
+<span class="line" id="L58">    ThreadTebInformation,</span>
+<span class="line" id="L59">    ThreadCSwitchMon,</span>
+<span class="line" id="L60">    <span class="tok-comment">// Windows 7+ from here</span>
+</span>
+<span class="line" id="L61">    ThreadCSwitchPmu,</span>
+<span class="line" id="L62">    ThreadWow64Context,</span>
+<span class="line" id="L63">    ThreadGroupInformation,</span>
+<span class="line" id="L64">    ThreadUmsInformation,</span>
+<span class="line" id="L65">    ThreadCounterProfiling,</span>
+<span class="line" id="L66">    ThreadIdealProcessorEx,</span>
+<span class="line" id="L67">    <span class="tok-comment">// Windows 8+ from here</span>
+</span>
+<span class="line" id="L68">    ThreadCpuAccountingInformation,</span>
+<span class="line" id="L69">    <span class="tok-comment">// Windows 8.1+ from here</span>
+</span>
+<span class="line" id="L70">    ThreadSuspendCount,</span>
+<span class="line" id="L71">    <span class="tok-comment">// Windows 10+ from here</span>
+</span>
+<span class="line" id="L72">    ThreadHeterogeneousCpuPolicy,</span>
+<span class="line" id="L73">    ThreadContainerId,</span>
+<span class="line" id="L74">    ThreadNameInformation,</span>
+<span class="line" id="L75">    ThreadSelectedCpuSets,</span>
+<span class="line" id="L76">    ThreadSystemThreadInformation,</span>
+<span class="line" id="L77">    ThreadActualGroupAffinity,</span>
+<span class="line" id="L78">};</span>
+<span class="line" id="L79"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtQueryInformationThread</span>(</span>
+<span class="line" id="L80">    ThreadHandle: HANDLE,</span>
+<span class="line" id="L81">    ThreadInformationClass: THREADINFOCLASS,</span>
+<span class="line" id="L82">    ThreadInformation: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L83">    ThreadInformationLength: ULONG,</span>
+<span class="line" id="L84">    ReturnLength: ?*ULONG,</span>
+<span class="line" id="L85">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L86"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtSetInformationThread</span>(</span>
+<span class="line" id="L87">    ThreadHandle: HANDLE,</span>
+<span class="line" id="L88">    ThreadInformationClass: THREADINFOCLASS,</span>
+<span class="line" id="L89">    ThreadInformation: *<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L90">    ThreadInformationLength: ULONG,</span>
+<span class="line" id="L91">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L92"></span>
+<span class="line" id="L93"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlGetVersion</span>(</span>
+<span class="line" id="L94">    lpVersionInformation: *RTL_OSVERSIONINFOW,</span>
+<span class="line" id="L95">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L96"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlCaptureStackBackTrace</span>(</span>
+<span class="line" id="L97">    FramesToSkip: DWORD,</span>
+<span class="line" id="L98">    FramesToCapture: DWORD,</span>
+<span class="line" id="L99">    BackTrace: **<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L100">    BackTraceHash: ?*DWORD,</span>
+<span class="line" id="L101">) <span class="tok-kw">callconv</span>(WINAPI) WORD;</span>
+<span class="line" id="L102"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtQueryInformationFile</span>(</span>
+<span class="line" id="L103">    FileHandle: HANDLE,</span>
+<span class="line" id="L104">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L105">    FileInformation: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L106">    Length: ULONG,</span>
+<span class="line" id="L107">    FileInformationClass: FILE_INFORMATION_CLASS,</span>
+<span class="line" id="L108">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L109"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtSetInformationFile</span>(</span>
+<span class="line" id="L110">    FileHandle: HANDLE,</span>
+<span class="line" id="L111">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L112">    FileInformation: PVOID,</span>
+<span class="line" id="L113">    Length: ULONG,</span>
+<span class="line" id="L114">    FileInformationClass: FILE_INFORMATION_CLASS,</span>
+<span class="line" id="L115">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L116"></span>
+<span class="line" id="L117"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtQueryAttributesFile</span>(</span>
+<span class="line" id="L118">    ObjectAttributes: *OBJECT_ATTRIBUTES,</span>
+<span class="line" id="L119">    FileAttributes: *FILE_BASIC_INFORMATION,</span>
+<span class="line" id="L120">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L121"></span>
+<span class="line" id="L122"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtCreateFile</span>(</span>
+<span class="line" id="L123">    FileHandle: *HANDLE,</span>
+<span class="line" id="L124">    DesiredAccess: ACCESS_MASK,</span>
+<span class="line" id="L125">    ObjectAttributes: *OBJECT_ATTRIBUTES,</span>
+<span class="line" id="L126">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L127">    AllocationSize: ?*LARGE_INTEGER,</span>
+<span class="line" id="L128">    FileAttributes: ULONG,</span>
+<span class="line" id="L129">    ShareAccess: ULONG,</span>
+<span class="line" id="L130">    CreateDisposition: ULONG,</span>
+<span class="line" id="L131">    CreateOptions: ULONG,</span>
+<span class="line" id="L132">    EaBuffer: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L133">    EaLength: ULONG,</span>
+<span class="line" id="L134">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L135"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtDeviceIoControlFile</span>(</span>
+<span class="line" id="L136">    FileHandle: HANDLE,</span>
+<span class="line" id="L137">    Event: ?HANDLE,</span>
+<span class="line" id="L138">    ApcRoutine: ?IO_APC_ROUTINE,</span>
+<span class="line" id="L139">    ApcContext: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L140">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L141">    IoControlCode: ULONG,</span>
+<span class="line" id="L142">    InputBuffer: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L143">    InputBufferLength: ULONG,</span>
+<span class="line" id="L144">    OutputBuffer: ?PVOID,</span>
+<span class="line" id="L145">    OutputBufferLength: ULONG,</span>
+<span class="line" id="L146">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L147"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtFsControlFile</span>(</span>
+<span class="line" id="L148">    FileHandle: HANDLE,</span>
+<span class="line" id="L149">    Event: ?HANDLE,</span>
+<span class="line" id="L150">    ApcRoutine: ?IO_APC_ROUTINE,</span>
+<span class="line" id="L151">    ApcContext: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L152">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L153">    FsControlCode: ULONG,</span>
+<span class="line" id="L154">    InputBuffer: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L155">    InputBufferLength: ULONG,</span>
+<span class="line" id="L156">    OutputBuffer: ?PVOID,</span>
+<span class="line" id="L157">    OutputBufferLength: ULONG,</span>
+<span class="line" id="L158">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L159"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtClose</span>(Handle: HANDLE) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L160"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlDosPathNameToNtPathName_U</span>(</span>
+<span class="line" id="L161">    DosPathName: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u16</span>,</span>
+<span class="line" id="L162">    NtPathName: *UNICODE_STRING,</span>
+<span class="line" id="L163">    NtFileNamePart: ?*?[*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">u16</span>,</span>
+<span class="line" id="L164">    DirectoryInfo: ?*CURDIR,</span>
+<span class="line" id="L165">) <span class="tok-kw">callconv</span>(WINAPI) BOOL;</span>
+<span class="line" id="L166"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlFreeUnicodeString</span>(UnicodeString: *UNICODE_STRING) <span class="tok-kw">callconv</span>(WINAPI) <span class="tok-type">void</span>;</span>
+<span class="line" id="L167"></span>
+<span class="line" id="L168"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtQueryDirectoryFile</span>(</span>
+<span class="line" id="L169">    FileHandle: HANDLE,</span>
+<span class="line" id="L170">    Event: ?HANDLE,</span>
+<span class="line" id="L171">    ApcRoutine: ?IO_APC_ROUTINE,</span>
+<span class="line" id="L172">    ApcContext: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L173">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L174">    FileInformation: *<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L175">    Length: ULONG,</span>
+<span class="line" id="L176">    FileInformationClass: FILE_INFORMATION_CLASS,</span>
+<span class="line" id="L177">    ReturnSingleEntry: BOOLEAN,</span>
+<span class="line" id="L178">    FileName: ?*UNICODE_STRING,</span>
+<span class="line" id="L179">    RestartScan: BOOLEAN,</span>
+<span class="line" id="L180">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L181"></span>
+<span class="line" id="L182"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtCreateKeyedEvent</span>(</span>
+<span class="line" id="L183">    KeyedEventHandle: *HANDLE,</span>
+<span class="line" id="L184">    DesiredAccess: ACCESS_MASK,</span>
+<span class="line" id="L185">    ObjectAttributes: ?PVOID,</span>
+<span class="line" id="L186">    Flags: ULONG,</span>
+<span class="line" id="L187">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L188"></span>
+<span class="line" id="L189"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtReleaseKeyedEvent</span>(</span>
+<span class="line" id="L190">    EventHandle: ?HANDLE,</span>
+<span class="line" id="L191">    Key: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L192">    Alertable: BOOLEAN,</span>
+<span class="line" id="L193">    Timeout: ?*<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L194">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L195"></span>
+<span class="line" id="L196"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtWaitForKeyedEvent</span>(</span>
+<span class="line" id="L197">    EventHandle: ?HANDLE,</span>
+<span class="line" id="L198">    Key: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L199">    Alertable: BOOLEAN,</span>
+<span class="line" id="L200">    Timeout: ?*<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L201">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L202"></span>
+<span class="line" id="L203"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlSetCurrentDirectory_U</span>(PathName: *UNICODE_STRING) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L204"></span>
+<span class="line" id="L205"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtQueryObject</span>(</span>
+<span class="line" id="L206">    Handle: HANDLE,</span>
+<span class="line" id="L207">    ObjectInformationClass: OBJECT_INFORMATION_CLASS,</span>
+<span class="line" id="L208">    ObjectInformation: PVOID,</span>
+<span class="line" id="L209">    ObjectInformationLength: ULONG,</span>
+<span class="line" id="L210">    ReturnLength: ?*ULONG,</span>
+<span class="line" id="L211">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L212"></span>
+<span class="line" id="L213"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlWakeAddressAll</span>(</span>
+<span class="line" id="L214">    Address: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L215">) <span class="tok-kw">callconv</span>(WINAPI) <span class="tok-type">void</span>;</span>
+<span class="line" id="L216"></span>
+<span class="line" id="L217"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlWakeAddressSingle</span>(</span>
+<span class="line" id="L218">    Address: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L219">) <span class="tok-kw">callconv</span>(WINAPI) <span class="tok-type">void</span>;</span>
+<span class="line" id="L220"></span>
+<span class="line" id="L221"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlWaitOnAddress</span>(</span>
+<span class="line" id="L222">    Address: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L223">    CompareAddress: ?*<span class="tok-kw">const</span> <span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L224">    AddressSize: SIZE_T,</span>
+<span class="line" id="L225">    Timeout: ?*<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L226">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L227"></span>
+<span class="line" id="L228"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlEqualUnicodeString</span>(</span>
+<span class="line" id="L229">    String1: *<span class="tok-kw">const</span> UNICODE_STRING,</span>
+<span class="line" id="L230">    String2: *<span class="tok-kw">const</span> UNICODE_STRING,</span>
+<span class="line" id="L231">    CaseInSensitive: BOOLEAN,</span>
+<span class="line" id="L232">) <span class="tok-kw">callconv</span>(WINAPI) BOOLEAN;</span>
+<span class="line" id="L233"></span>
+<span class="line" id="L234"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlUpcaseUnicodeChar</span>(</span>
+<span class="line" id="L235">    SourceCharacter: <span class="tok-type">u16</span>,</span>
+<span class="line" id="L236">) <span class="tok-kw">callconv</span>(WINAPI) <span class="tok-type">u16</span>;</span>
+<span class="line" id="L237"></span>
+<span class="line" id="L238"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtLockFile</span>(</span>
+<span class="line" id="L239">    FileHandle: HANDLE,</span>
+<span class="line" id="L240">    Event: ?HANDLE,</span>
+<span class="line" id="L241">    ApcRoutine: ?*IO_APC_ROUTINE,</span>
+<span class="line" id="L242">    ApcContext: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L243">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L244">    ByteOffset: *<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L245">    Length: *<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L246">    Key: ?*ULONG,</span>
+<span class="line" id="L247">    FailImmediately: BOOLEAN,</span>
+<span class="line" id="L248">    ExclusiveLock: BOOLEAN,</span>
+<span class="line" id="L249">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L250"></span>
+<span class="line" id="L251"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtUnlockFile</span>(</span>
+<span class="line" id="L252">    FileHandle: HANDLE,</span>
+<span class="line" id="L253">    IoStatusBlock: *IO_STATUS_BLOCK,</span>
+<span class="line" id="L254">    ByteOffset: *<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L255">    Length: *<span class="tok-kw">const</span> LARGE_INTEGER,</span>
+<span class="line" id="L256">    Key: ?*ULONG,</span>
+<span class="line" id="L257">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L258"></span>
+<span class="line" id="L259"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">NtOpenKey</span>(</span>
+<span class="line" id="L260">    KeyHandle: *HANDLE,</span>
+<span class="line" id="L261">    DesiredAccess: ACCESS_MASK,</span>
+<span class="line" id="L262">    ObjectAttributes: OBJECT_ATTRIBUTES,</span>
+<span class="line" id="L263">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L264"></span>
+<span class="line" id="L265"><span class="tok-kw">pub</span> <span class="tok-kw">extern</span> <span class="tok-str">&quot;ntdll&quot;</span> <span class="tok-kw">fn</span> <span class="tok-fn">RtlQueryRegistryValues</span>(</span>
+<span class="line" id="L266">    RelativeTo: ULONG,</span>
+<span class="line" id="L267">    Path: PCWSTR,</span>
+<span class="line" id="L268">    QueryTable: [*]RTL_QUERY_REGISTRY_TABLE,</span>
+<span class="line" id="L269">    Context: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L270">    Environment: ?*<span class="tok-type">anyopaque</span>,</span>
+<span class="line" id="L271">) <span class="tok-kw">callconv</span>(WINAPI) NTSTATUS;</span>
+<span class="line" id="L272"></span>
+</code></pre></body>
+</html>

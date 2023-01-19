@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>http/method.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AWMYWuD7EllJIM4G4g4g5oIJ/odhOJ8wToOxSTXgNxDHoeiBMfA4+wGShjyYOCkG/IGqWQziEzYAoUAeiF9D5U+DxEg14DRU7jWIT5IBIOdCxf+A+CQZAAoopEB7QJwBCBwHiip8UYmRdrAlDpIMgApwQZNnNii5Dq0MBgCxxycBnwEd+wAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-comment">//! HTTP Methods</span></span>
+<span class="line" id="L2"><span class="tok-comment">//! https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods</span></span>
+<span class="line" id="L3"></span>
+<span class="line" id="L4"><span class="tok-comment">// Style guide is violated here so that @tagName can be used effectively</span>
+</span>
+<span class="line" id="L5"><span class="tok-comment">/// https://datatracker.ietf.org/doc/html/rfc7231#section-4 Initial definiton</span></span>
+<span class="line" id="L6"><span class="tok-comment">/// https://datatracker.ietf.org/doc/html/rfc5789#section-2 PATCH</span></span>
+<span class="line" id="L7"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Method = <span class="tok-kw">enum</span> {</span>
+<span class="line" id="L8">    GET,</span>
+<span class="line" id="L9">    HEAD,</span>
+<span class="line" id="L10">    POST,</span>
+<span class="line" id="L11">    PUT,</span>
+<span class="line" id="L12">    DELETE,</span>
+<span class="line" id="L13">    CONNECT,</span>
+<span class="line" id="L14">    OPTIONS,</span>
+<span class="line" id="L15">    TRACE,</span>
+<span class="line" id="L16">    PATCH,</span>
+<span class="line" id="L17"></span>
+<span class="line" id="L18">    <span class="tok-comment">/// Returns true if a request of this method is allowed to have a body</span></span>
+<span class="line" id="L19">    <span class="tok-comment">/// Actual behavior from servers may vary and should still be checked</span></span>
+<span class="line" id="L20">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">requestHasBody</span>(self: Method) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L21">        <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (self) {</span>
+<span class="line" id="L22">            .POST, .PUT, .PATCH =&gt; <span class="tok-null">true</span>,</span>
+<span class="line" id="L23">            .GET, .HEAD, .DELETE, .CONNECT, .OPTIONS, .TRACE =&gt; <span class="tok-null">false</span>,</span>
+<span class="line" id="L24">        };</span>
+<span class="line" id="L25">    }</span>
+<span class="line" id="L26"></span>
+<span class="line" id="L27">    <span class="tok-comment">/// Returns true if a response to this method is allowed to have a body</span></span>
+<span class="line" id="L28">    <span class="tok-comment">/// Actual behavior from clients may vary and should still be checked</span></span>
+<span class="line" id="L29">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">responseHasBody</span>(self: Method) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L30">        <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (self) {</span>
+<span class="line" id="L31">            .GET, .POST, .DELETE, .CONNECT, .OPTIONS, .PATCH =&gt; <span class="tok-null">true</span>,</span>
+<span class="line" id="L32">            .HEAD, .PUT, .TRACE =&gt; <span class="tok-null">false</span>,</span>
+<span class="line" id="L33">        };</span>
+<span class="line" id="L34">    }</span>
+<span class="line" id="L35"></span>
+<span class="line" id="L36">    <span class="tok-comment">/// An HTTP method is safe if it doesn't alter the state of the server.</span></span>
+<span class="line" id="L37">    <span class="tok-comment">/// https://developer.mozilla.org/en-US/docs/Glossary/Safe/HTTP</span></span>
+<span class="line" id="L38">    <span class="tok-comment">/// https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.1</span></span>
+<span class="line" id="L39">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">safe</span>(self: Method) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L40">        <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (self) {</span>
+<span class="line" id="L41">            .GET, .HEAD, .OPTIONS, .TRACE =&gt; <span class="tok-null">true</span>,</span>
+<span class="line" id="L42">            .POST, .PUT, .DELETE, .CONNECT, .PATCH =&gt; <span class="tok-null">false</span>,</span>
+<span class="line" id="L43">        };</span>
+<span class="line" id="L44">    }</span>
+<span class="line" id="L45"></span>
+<span class="line" id="L46">    <span class="tok-comment">/// An HTTP method is idempotent if an identical request can be made once or several times in a row with the same effect while leaving the server in the same state.</span></span>
+<span class="line" id="L47">    <span class="tok-comment">/// https://developer.mozilla.org/en-US/docs/Glossary/Idempotent</span></span>
+<span class="line" id="L48">    <span class="tok-comment">/// https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.2</span></span>
+<span class="line" id="L49">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">idempotent</span>(self: Method) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L50">        <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (self) {</span>
+<span class="line" id="L51">            .GET, .HEAD, .PUT, .DELETE, .OPTIONS, .TRACE =&gt; <span class="tok-null">true</span>,</span>
+<span class="line" id="L52">            .CONNECT, .POST, .PATCH =&gt; <span class="tok-null">false</span>,</span>
+<span class="line" id="L53">        };</span>
+<span class="line" id="L54">    }</span>
+<span class="line" id="L55"></span>
+<span class="line" id="L56">    <span class="tok-comment">/// A cacheable response is an HTTP response that can be cached, that is stored to be retrieved and used later, saving a new request to the server.</span></span>
+<span class="line" id="L57">    <span class="tok-comment">/// https://developer.mozilla.org/en-US/docs/Glossary/cacheable</span></span>
+<span class="line" id="L58">    <span class="tok-comment">/// https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.3</span></span>
+<span class="line" id="L59">    <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">cacheable</span>(self: Method) <span class="tok-type">bool</span> {</span>
+<span class="line" id="L60">        <span class="tok-kw">return</span> <span class="tok-kw">switch</span> (self) {</span>
+<span class="line" id="L61">            .GET, .HEAD =&gt; <span class="tok-null">true</span>,</span>
+<span class="line" id="L62">            .POST, .PUT, .DELETE, .CONNECT, .OPTIONS, .TRACE, .PATCH =&gt; <span class="tok-null">false</span>,</span>
+<span class="line" id="L63">        };</span>
+<span class="line" id="L64">    }</span>
+<span class="line" id="L65">};</span>
+<span class="line" id="L66"></span>
+</code></pre></body>
+</html>
