@@ -43,7 +43,7 @@ fn render(
     var state = State.Start;
     var var_name_start: usize = undefined;
     var line: usize = 1;
-    for (in_contents) |byte, index| {
+    for (in_contents, 0..) |byte, index| {
         switch (state) {
             State.Start => switch (byte) {
                 '{' => {
