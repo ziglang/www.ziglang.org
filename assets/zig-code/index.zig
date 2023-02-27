@@ -27,3 +27,8 @@ pub fn main() !void {
     }
     std.log.info("up={d}", .{config.uptime});
 }
+
+// Make std.log.inf(...); works even with ReleaseFast or ReleaseSmall
+pub const log_level: std.log.Level = .info;
+
+
