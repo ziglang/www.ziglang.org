@@ -106,9 +106,6 @@ cd "$BOOTSTRAP_SRC/zig"
 "$ZIG" build docs
 LANGREF_HTML="$ZIG_LOCAL_CACHE_DIR/langref.html"
 
-# Look for HTML errors.
-tidy --drop-empty-elements no -qe "$LANGREF_HTML"
-
 cd "$TARBALLS_DIR"
 
 cp -r $BOOTSTRAP_SRC/out/zig-x86_64-linux-musl-baseline zig-linux-x86_64-$ZIG_VERSION/
@@ -195,20 +192,6 @@ cp $ZIGDIR/LICENSE zig-windows-aarch64-$ZIG_VERSION/
 cp $ZIGDIR/LICENSE zig-windows-x86-$ZIG_VERSION/
 #cp $ZIGDIR/LICENSE zig-freebsd-x86_64-$ZIG_VERSION/
 
-mkdir zig-linux-x86_64-$ZIG_VERSION/doc/
-mkdir zig-macos-x86_64-$ZIG_VERSION/doc/
-mkdir zig-linux-aarch64-$ZIG_VERSION/doc/
-mkdir zig-macos-aarch64-$ZIG_VERSION/doc/
-mkdir zig-linux-x86-$ZIG_VERSION/doc/
-#mkdir zig-linux-armv7a-$ZIG_VERSION/doc/
-mkdir zig-linux-riscv64-$ZIG_VERSION/doc/
-mkdir zig-linux-powerpc64le-$ZIG_VERSION/doc/
-mkdir zig-linux-powerpc-$ZIG_VERSION/doc/
-mkdir zig-windows-x86_64-$ZIG_VERSION/doc/
-mkdir zig-windows-aarch64-$ZIG_VERSION/doc/
-mkdir zig-windows-x86-$ZIG_VERSION/doc/
-#mkdir zig-freebsd-x86_64-$ZIG_VERSION/doc/
-
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-linux-musl   -femit-docs="zig-linux-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-macos        -femit-docs="zig-macos-x86_64-$ZIG_VERSION/doc/std"    -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-linux-musl  -femit-docs="zig-linux-aarch64-$ZIG_VERSION/doc/std"   -fno-emit-bin
@@ -222,20 +205,6 @@ mkdir zig-windows-x86-$ZIG_VERSION/doc/
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target aarch64-windows-gnu -femit-docs="zig-windows-aarch64-$ZIG_VERSION/doc/std" -fno-emit-bin
 "$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86-windows-gnu     -femit-docs="zig-windows-x86-$ZIG_VERSION/doc/std"     -fno-emit-bin
 #"$ZIG" test "$BOOTSTRAP_SRC/zig/lib/std/std.zig" --zig-lib-dir "$BOOTSTRAP_SRC/zig/lib" -target x86_64-freebsd     -femit-docs="zig-freebsd-x86_64-$ZIG_VERSION/doc/std"  -fno-emit-bin
-
-cp $LANGREF_HTML zig-linux-x86_64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-macos-x86_64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-linux-aarch64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-macos-aarch64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-linux-x86-$ZIG_VERSION/doc/
-#cp $LANGREF_HTML zig-linux-armv7a-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-linux-riscv64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-linux-powerpc64le-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-linux-powerpc-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-windows-x86_64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-windows-aarch64-$ZIG_VERSION/doc/
-cp $LANGREF_HTML zig-windows-x86-$ZIG_VERSION/doc/
-#cp $LANGREF_HTML zig-freebsd-x86_64-$ZIG_VERSION/doc/
 
 XZ_OPT=-9 tar cJf zig-linux-x86_64-$ZIG_VERSION.tar.xz zig-linux-x86_64-$ZIG_VERSION/ --sort=name
 XZ_OPT=-9 tar cJf zig-macos-x86_64-$ZIG_VERSION.tar.xz zig-macos-x86_64-$ZIG_VERSION/ --sort=name
