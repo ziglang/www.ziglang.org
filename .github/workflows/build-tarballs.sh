@@ -102,10 +102,6 @@ CMAKE_GENERATOR=Ninja ./build x86-windows-gnu baseline
 
 ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
 
-cd "$BOOTSTRAP_SRC/zig"
-"$ZIG" build docs
-LANGREF_HTML="$ZIG_LOCAL_CACHE_DIR/langref.html"
-
 cd "$TARBALLS_DIR"
 
 cp -r $BOOTSTRAP_SRC/out/zig-x86_64-linux-musl-baseline zig-linux-x86_64-$ZIG_VERSION/
@@ -374,7 +370,7 @@ git push
 DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$LANGREF_HTML" s3://ziglang.org/documentation/master/index.html
+  "$DOCDIR/langref.html" s3://ziglang.org/documentation/master/index.html
 
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
