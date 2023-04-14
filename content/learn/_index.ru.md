@@ -1,13 +1,13 @@
 ---
-title: "Изучить"
-menu_title: "Изучить"
-mobile_menu_title: "Изучить"
+title: "Обучение"
+menu_title: "Обучение"
+mobile_menu_title: "Обучение"
 toc: false
 layout: single
 ---
 
-# Изучить
-Этот раздел содержит список ресурсов, которые помогут вам изучить Zig и понять его философию. 
+# Обучение
+Этот раздел содержит список ресурсов, которые помогут вам изучить Zig и понять его философию.
 
 ## Документация
 {{% learn_docs %}}
@@ -21,7 +21,7 @@ layout: single
 Введение в Zig для программистов на C++, D и Rust.
 - [Примеры кода](samples/)  
 Список примеров кода для получения представления о том, как выглядит код на Zig.
-- [Утилиты](tools/)  
+- [Инструменты](tools/)  
 Список полезных инструментов, которые помогут вам писать код на Zig.
 
 
@@ -40,4 +40,4 @@ layout: single
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
 Видео от [Andrew Kelley](https://andrewkelley.me), представляет Zig и его философию.
 - [Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)  
-Запись в блоге о работе над самораскручивающимя компиляторе Zig, также отмеченная в [статье на lwn.net](https://lwn.net/Articles/833400/).
+Запись в блоге о работе над самораскручивающимся компиляторе Zig, также отмеченная в [статье на lwn.net](https://lwn.net/Articles/833400/).
