@@ -1,6 +1,6 @@
 ---
-title: "Загрузки"
-menu_title: "Загрузки"
-mobile_menu_title: "Загрузки"
+title: "Загрузка"
+menu_title: "Загрузка"
+mobile_menu_title: "Загрузка"
 layout: downloads
 ---
