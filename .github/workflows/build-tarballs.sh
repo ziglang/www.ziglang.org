@@ -382,7 +382,7 @@ s3cmd put -P --no-mime-magic \
   
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/main.js" s3://ziglang.org/documentation/master/std/commonmark.js
+  "$DOCDIR/std/commonmark.js" s3://ziglang.org/documentation/master/std/commonmark.js
 
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
