@@ -1,29 +1,25 @@
-// zig-doctest: run --skip_output
+// zig-doctest: test --name parse_integers --skip-name 
 const std = @import("std");
-const json = std.json;
-const payload =
-    \\{
-    \\    "vals": {
-    \\        "testing": 1,
-    \\        "production": 42
-    \\    },
-    \\    "uptime": 9999
-    \\}
-;
-const Config = struct {
-    vals: struct { testing: u8, production: u8 },
-    uptime: u64,
-};
-const config = x: {
-    var stream = json.TokenStream.init(payload);
-    const res = json.parse(Config, &stream, .{});
-    // Assert no error can occur since we are
-    // parsing this JSON at comptime!
-    break :x res catch unreachable;
-};
-pub fn main() !void {
-    if (config.vals.production > 50) {
-        @compileError("only up to 50 supported");
+const parseInt = std.fmt.parseInt;
+
+test "parse integers" {
+    const input = "123 67 89,99";
+    const ally = std.testing.allocator;
+
+    var list = std.ArrayList(u32).init(ally);
+    // Ensure the list is freed at scope exit.
+    // Try commenting out this line!
+    defer list.deinit();
+
+    var it = std.mem.tokenize(u8, input, " ,");
+    while (it.next()) |num| {
+        const n = try parseInt(u32, num, 10);
+        try list.append(n);
     }
-    std.debug.print("up={d}", .{config.uptime});
+
+    const expected = [_]u32{ 123, 67, 89, 99 };
+
+    for (expected, list.items) |exp, actual| {
+        try std.testing.expectEqual(exp, actual);
+    }
 }
