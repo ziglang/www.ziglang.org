@@ -60,9 +60,21 @@ After you're done, either `source` your startup file or restart your shell.
 
 ### Package managers
 #### Windows
+**Chocolatey**  
 Zig is available on [Chocolatey](https://chocolatey.org/packages/zig).
 ```
 choco install zig
+```
+
+**Scoop**  
+Zig is available on [Scoop](https://scoop.sh/#/apps?q=zig&id=7e124d6047c32d426e4143ab395d863fc9d6d491).
+```
+scoop install zig
+```
+Latest [dev build](https://scoop.sh/#/apps?q=zig&id=921df07e75042de645204262e784a17c2421944c):
+```
+scoop bucket add versions
+scoop install versions/zig-dev
 ```
 
 #### macOS
