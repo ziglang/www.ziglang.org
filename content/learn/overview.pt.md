@@ -234,20 +234,20 @@ int main(int argc, char **argv) {
 ```
 
 ```
-$ zig build-exe --c-source hello.c --library c
+$ zig build-exe hello.c --library c
 $ ./hello
 Hello world
 ```
 
 Você pode utilizar `--verbose-cc` para ver quais os comandos que o compilador C executará:
 ```
-$ zig build-exe --c-source hello.c --library c --verbose-cc
+$ zig build-exe hello.c --library c --verbose-cc
 zig cc -MD -MV -MF zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC
 ```
 
 Note que se eu executar o comando novamente, não há saída, e ele termina instantaneamente:
 ```
-$ time zig build-exe --c-source hello.c --library c --verbose-cc
+$ time zig build-exe hello.c --library c --verbose-cc
 
 real	0m0.027s
 user	0m0.018s
@@ -377,7 +377,7 @@ O que isto significa é que `--library c` para estas plataformas *não depende d
 
 Vejamos o [exemplo do hello world em C](https://ziglang.org/#Zig-is-also-a-C-compiler) novamente:
 ```
-$ zig build-exe --c-source hello.c --library c
+$ zig build-exe hello.c --library c
 $ ./hello
 Hello world
 $ ldd ./hello
@@ -392,7 +392,7 @@ $ ldd ./hello
 
 [glibc](https://www.gnu.org/software/libc/) não suporta a compilação estática, mas [musl](https://www.musl-libc.org/) suporta:
 ```
-$ zig build-exe --c-source hello.c --library c -target x86_64-linux-musl
+$ zig build-exe hello.c --library c -target x86_64-linux-musl
 $ ./hello
 Hello world
 $ ldd hello
@@ -403,7 +403,7 @@ Neste exemplo, Zig construiu musl libc a partir da fonte e depois ligou-se a ela
 
 Isto significa que esta funcionalidade está disponível em qualquer plataforma. Os usuários de Windows e macOS podem criar códigos Zig e C, e vincular-se a libc, para qualquer uma das plataformas listados acima. Da mesma forma, o código pode ser compilado de forma cruzada para outras arquiteturas:
 ```
-$ zig build-exe --c-source hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```

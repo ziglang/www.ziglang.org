@@ -233,20 +233,20 @@ int main(int argc, char **argv) {
 ```
 
 ```
-$ zig build-exe --c-source hello.c --library c
+$ zig build-exe hello.c --library c
 $ ./hello
 Hello world
 ```
 
 你可以使用`--verbose-cc`选项来查看编译时使用了哪些C编译器选项：
 ```
-$ zig build-exe --c-source hello.c --library c --verbose-cc
+$ zig build-exe hello.c --library c --verbose-cc
 zig cc -MD -MV -MF zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC
 ```
 
 注意当我再次运行这个命令时，没有看到输出，它立刻完成了：
 ```
-$ time zig build-exe --c-source hello.c --library c --verbose-cc
+$ time zig build-exe hello.c --library c --verbose-cc
 
 real	0m0.027s
 user	0m0.018s
@@ -376,7 +376,7 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically link
 
 让我们再看看[C语言Hello, World例子](#zig-也是-c-编译器)：
 ```
-$ zig build-exe --c-source hello.c --library c
+$ zig build-exe hello.c --library c
 $ ./hello
 Hello world
 $ ldd ./hello
@@ -391,7 +391,7 @@ $ ldd ./hello
 
 [glibc](https://www.gnu.org/software/libc/) 不支持静态链接，但是 [musl](https://www.musl-libc.org/) 支持：
 ```
-$ zig build-exe --c-source hello.c --library c -target x86_64-linux-musl
+$ zig build-exe hello.c --library c -target x86_64-linux-musl
 $ ./hello
 Hello world
 $ ldd hello
@@ -402,7 +402,7 @@ $ ldd hello
 
 这意味着这个功能可以在任何平台上使用。Windows和MacOS 用户可以为上面列出的任何目标构建Zig和C代码，并与libc链接。同样的代码也可以为其他架构交叉编译：
 ```
-$ zig build-exe --c-source hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```

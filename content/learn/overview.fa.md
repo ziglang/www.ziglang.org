@@ -235,20 +235,20 @@ int main(int argc, char **argv) {
 ```
 
 ```
-$ zig build-exe --c-source hello.c --library c
+$ zig build-exe hello.c --library c
 $ ./hello
 سلام دنیا
 ```
 
 شما می توانید از `--verbose-cc` برای دیدن دستور کامپایلر C که اجرا شده است استفاده کنید:
 ```
-$ zig build-exe --c-source hello.c --library c --verbose-cc
+$ zig build-exe hello.c --library c --verbose-cc
 zig cc -MD -MV -MF zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC
 ```
 
 توجه داشته باشید که اگر دوباره فرمان را اجرا کنم، خروجی وجود ندارد و فوراً به پایان می رسد:
 ```
-$ time zig build-exe --c-source hello.c --library c --verbose-cc
+$ time zig build-exe hello.c --library c --verbose-cc
 
 real	0m0.027s
 user	0m0.018s
@@ -378,7 +378,7 @@ hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically link
 
 حالا یه نگاهی به [نمونه سلام دنیا در C](#Zig-همچنین-یک-کامپایلر-c-است) بندازیم:
 ```
-$ zig build-exe --c-source hello.c --library c
+$ zig build-exe hello.c --library c
 $ ./hello
 Hello world
 $ ldd ./hello
@@ -393,7 +393,7 @@ $ ldd ./hello
 
 [glibc](https://www.gnu.org/software/libc/) از ساخت ایستا پشتیبانی نمیکند، ولی [musl](https://www.musl-libc.org/) میکند:
 ```
-$ zig build-exe --c-source hello.c --library c -target x86_64-linux-musl
+$ zig build-exe hello.c --library c -target x86_64-linux-musl
 $ ./hello
 Hello world
 $ ldd hello
@@ -404,7 +404,7 @@ $ ldd hello
 
 این بدان معناست که این قابلیت در هر پلتفرمی در دسترس است. کاربران ویندوز و macOS می توانند کد Zig و C را ایجاد کرده و در مقابل libc، برای هر یک از اهداف ذکر شده در بالا پیوند ایجاد کنند. به طور مشابه می توان کد را برای معماری های دیگر کامپایل کرد:
 ```
-$ zig build-exe --c-source hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
