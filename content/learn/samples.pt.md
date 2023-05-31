@@ -17,7 +17,7 @@ Exemplo de importação de um arquivo de cabeçalho C e vinculação tanto à li
 
 
 ## Zigg Zagg
-Zig é *optimizado* para entrevista de codificação (não exatamente!!).
+Zig é *optimizado* para entrevistas de codificação (não exatamente!!).
 
 {{< zigdoctest "assets/zig-code/samples/3-ziggzagg.zig" >}}
 
