@@ -3,7 +3,7 @@ const std = @import("std");
 
 pub fn main() !void {
     var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
-    defer std.debug.assert(general_purpose_allocator.deinit() == .ok);
+    defer std.debug.assert(!general_purpose_allocator.deinit());
 
     const gpa = general_purpose_allocator.allocator();
 
