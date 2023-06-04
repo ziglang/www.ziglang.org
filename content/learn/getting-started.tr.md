@@ -1,6 +1,6 @@
 ---
-title: Başlangıç
-mobile_menu_title: "Başlangıç"
+title: Başlarken
+mobile_menu_title: "Başlarken"
 toc: true
 ---
 
@@ -47,13 +47,13 @@ Kullanıcı düzeyinde (Powershell):
 )
 ```
 
-İşiniz bittiğinde, Powershell örneğinizi yeniden başlatın.
+İşiniz bittiğinde, Powershell'i yeniden başlatın.
 
 #### Linux, macOS, BSD'de PATH Ayarlama
 
 Zig ikilisinin bulunduğu konumu PATH çevresel değişkeninize ekleyin.
 
-Genellikle bunu, kabuk başlatma komut dosyanıza (`.profile`, `.zshrc`, ...) bir ihracat satırı ekleyerek yaparsınız.
+Genellikle bunu, kabuk başlatma komut dosyanıza (`.profile`, `.zshrc`, ...) bir satır ekleyerek yaparsınız:
 
 ```bash
 export PATH=$PATH:~/zigin/bulunduğu/yol
@@ -111,11 +111,11 @@ Bazıları bunu paket halinde sunar, bazıları ise bir eklenti yüklemeyi gerek
 Zig ve editörünüz arasında daha derin bir entegrasyonla ilgileniyorsanız,
 [zigtools/zls](https://github.com/zigtools/zls)'ye göz atın.
 
-Başka nelerin mevcut olduğunu öğrenmek isterseniz, [Tools](../tools/) bölümüne göz atın.
+Başka nelerin mevcut olduğunu öğrenmek isterseniz, [Araçlar](../tools/) bölümüne göz atın.
 
 ## Hello World Çalıştırma
 
-Kurulum sürecini doğru bir şekilde tamamladıysanız, artık Zig derleyicisini kabuğunuzdan çağırabilirsiniz.  
+Kurulum sürecini doğru bir şekilde tamamladıysanız, artık Zig derleyicisini terminal üzerinden çağırabilirsiniz.  
 İlk Zig programınızı oluşturarak bunu test edelim!
 
 Proje dizininize gidin ve şunları çalıştırın:

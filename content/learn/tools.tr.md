@@ -5,7 +5,7 @@ mobile_menu_title: "Araçlar"
 toc: true
 ---
 
-## Dil Sunucuları
+## Dil Sunucuları (Language Servers)
 
 Dil sunucuları, sözdizimi vurgulaması, otomatik tamamlama ve birçok diğer özellik için editör bağımsız araçlardır. Daha zengin bir geliştirme deneyimi için bir Dil sunucusu kullanmayı düşünebilirsiniz.
 

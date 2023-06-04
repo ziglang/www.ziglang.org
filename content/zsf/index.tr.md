@@ -5,7 +5,7 @@ mobile_menu_title: "ZSF'ye Sponsor Ol"
 date: 2020-10-20T16:29:51+02:00
 ---
 
-{{< sponsor-title-cta "Zig Yazılım Vakfı'na Sponsor Olmak" >}}
+{{< sponsor-title-cta "Zig Yazılım Vakfı'na Sponsor Ol" >}}
 
 ## Misyon beyanı
 
@@ -27,7 +27,7 @@ ZSF, küçük bir kuruluştur ve parasal kaynakları verimli bir şekilde kullan
 
 Bizi desteklemenin en kolay yolu, [GitHub Sponsors](https://github.com/sponsors/ziglang) üzerinden bağış yapmaktır.
 
-## Bağış Bilgileri
+## Bağış bilgileri
 
 GitHub Sponsors dışındaki yöntemlerle bağış yapmak için işinize yarayacak bilgiler aşağıda yer almaktadır.
 Bağışlarınızı vergilerinizden düşüp düşemeyeceğinizi görmek için yerel yasalarınızı kontrol etmeyi unutmayın.

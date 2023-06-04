@@ -12,7 +12,7 @@ Zig, **güçlü**, **optimal** ve **yeniden kullanılabilir** yazılımı sürd�
 
 # ⚡ Basit Bir Dil
 
-Uygulamanızı hata ayıklamak yerine, programlama dilinizin bilgisini hata ayıklama üzerinde odaklanın.
+Programlama dili bilginizde hata ayıklamak yerine uygulamanızda hata ayıklamaya odaklanın.
 
 - Gizli kontrol akışı yok.
 - Gizli bellek tahsisi yok.
@@ -82,7 +82,7 @@ Herkes topluluğun toplanması için kendi alanını başlatabilir ve sürdüreb
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
 
-# Ana Geliştirme
+# Ana geliştirme
 
 Zig deposuna [https://github.com/ziglang/zig](https://github.com/ziglang/zig) adresinden ulaşabilirsiniz. Aynı zamanda sorun takibini yapmak ve önerileri tartışmak için bu adreste yer alıyoruz.
 Katkıda bulunanların Zig'in [Davranış Kurallarına](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md) uymaları beklenmektedir.
@@ -96,19 +96,19 @@ Katkıda bulunanların Zig'in [Davranış Kurallarına](https://github.com/zigla
 
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
 
-## The ZSF is a 501(c)(3) kar amacı gütmeyen bir kuruluştur.
+## ZSF, 501(c)(3) kar amacı gütmeyen bir kuruluştur.
 
 Zig Yazılım Vakfı (ZSF), 2020 yılında Zig'in yaratıcısı Andrew Kelley tarafından kurulan, dilin geliştirilmesini desteklemeyi amaçlayan bir kar amacı gütmeyen kuruluştur. Şu anda, ZSF, sınırlı sayıda çekirdek katkıcıya rekabetçi ücretlerle çalışma imkanı sunabilmektedir. Gelecekte bu teklifi daha fazla çekirdek katkıcıya genişletmeyi umuyoruz.
 
 Zig Yazılım Vakfı, bağışlarla sürdürülmektedir.
 
 <h1>
-	<a href="zsf/" class="button" style="display:inline;">Daha Fazla Bilgi Edinin</a>
+	<a href="zsf/" class="button" style="display:inline;">Daha fazla bilgi edinin</a>
 </h1>
 {{% /div %}}
 
 {{< div class="alt-background" style="padding: 20px 0;">}}
-{{% div class="container" title="Sponsors" %}}
+{{% div class="container" title="Sponsorlar" %}}
 
 # Kurumsal Sponsorlar
 
@@ -118,7 +118,7 @@ Aşağıdaki şirketler, Zig Yazılım Vakfı'na doğrudan mali destek sağlamak
 
 # GitHub Sponsorları
 
-Zig'i [sponsor olan](zsf/) insanlara teşekkürlerimizi sunarız. Bu proje, şirket hissedarları yerine açık kaynak topluluğuna hesap verebilir hale gelmiştir. Özellikle, aşağıdaki kişiler Zig'e aylık $200 veya daha fazla sponsor olmaktadır:
+Zig'e [sponsor olan](zsf/) insanlara teşekkürlerimizi sunarız. Bu proje, şirket hissedarları yerine açık kaynak topluluğuna hesap verebilir hale gelmiştir. Özellikle, aşağıdaki kişiler Zig'e aylık $200 veya daha fazla sponsor olmaktadır:
 
 {{< ghsponsors >}}
 
