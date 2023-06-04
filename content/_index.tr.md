@@ -2,6 +2,7 @@
 title: Ana Sayfa
 mobile_menu_title: "Ana Sayfa"
 ---
+
 {{< slogan get_started="BAŞLAYIN" docs="Dökümantasyon" notes="Değişiklikler" lang="tr" >}}
 Zig, **güçlü**, **optimal** ve **yeniden kullanılabilir** yazılımı sürdürmek için genel amaçlı bir programlama dili ve araç zinciridir.
 {{< /slogan >}}
@@ -10,6 +11,7 @@ Zig, **güçlü**, **optimal** ve **yeniden kullanılabilir** yazılımı sürd�
 {{% div class="features" %}}
 
 # ⚡ Basit Bir Dil
+
 Uygulamanızı hata ayıklamak yerine, programlama dilinizin bilgisini hata ayıklama üzerinde odaklanın.
 
 - Gizli kontrol akışı yok.
@@ -17,6 +19,7 @@ Uygulamanızı hata ayıklamak yerine, programlama dilinizin bilgisini hata ayı
 - Önişlemci veya makrolar yok.
 
 # ⚡ Derleme Zamanı (Comptime)
+
 Derleme zamanında kod yürütme ve tembel değerlendirme prensibine dayanan, metaprogramlama için yeni bir yaklaşım.
 
 - Derleme zamanında herhangi bir işlevi çağırın.
@@ -24,6 +27,7 @@ Derleme zamanında kod yürütme ve tembel değerlendirme prensibine dayanan, me
 - Comptime hedef mimariyi taklit eder.
 
 # ⚡ Zig ile Sürdürülebilirliği Sağlayın
+
 C/C++/Zig kod tabanınızı aşamalı olarak iyileştirin.
 
 - Zig'i, kendisi ile gelen, çapraz derlemeyi destekleyen bir C/C++ derleyicisi olarak kullanın.
@@ -32,6 +36,7 @@ C/C++/Zig kod tabanınızı aşamalı olarak iyileştirin.
 
 {{% flexrow style="justify-content:center;" %}}
 {{% div %}}
+
 <h1>
     <a href="learn/overview/" class="button" style="display: inline;">Detaylı bakış</a>
 </h1>
@@ -50,7 +55,6 @@ C/C++/Zig kod tabanınızı aşamalı olarak iyileştirin.
 {{< /div >}}
 {{< /flexrow >}}
 
-
 {{% div class="alt-background" %}}
 {{% div class="container"  style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Topluluk" %}}
 
@@ -60,8 +64,10 @@ C/C++/Zig kod tabanınızı aşamalı olarak iyileştirin.
 {{% /div %}}
 
 {{% div class="community-message" %}}
+
 # Zig topluluğu merkeziyetsizdir
-Herkes topluluğun toplanması için kendi alanını başlatabilir ve sürdürebilir. 
+
+Herkes topluluğun toplanması için kendi alanını başlatabilir ve sürdürebilir.
 "Resmi" veya "resmi olmayan" kavramı yoktur, ancak her toplanma yeri kendi moderatörleri ve kuralları bulunmaktadır.
 
 <div style="">
@@ -75,7 +81,9 @@ Herkes topluluğun toplanması için kendi alanını başlatabilir ve sürdüreb
 
 {{< flexrow class="container" style="justify-content: center;" >}}
 {{% div class="main-development-message" %}}
+
 # Ana Geliştirme
+
 Zig deposuna [https://github.com/ziglang/zig](https://github.com/ziglang/zig) adresinden ulaşabilirsiniz. Aynı zamanda sorun takibini yapmak ve önerileri tartışmak için bu adreste yer alıyoruz.
 Katkıda bulunanların Zig'in [Davranış Kurallarına](https://github.com/ziglang/zig/blob/master/.github/CODE_OF_CONDUCT.md) uymaları beklenmektedir.
 {{% /div %}}
@@ -86,8 +94,8 @@ Katkıda bulunanların Zig'in [Davranış Kurallarına](https://github.com/zigla
 {{% /div %}}
 {{% /div %}}
 
-
 {{% div class="container" style="display:flex;flex-direction:column;justify-content:center;text-align:center; padding: 20px 0;" title="Zig Software Foundation" %}}
+
 ## The ZSF is a 501(c)(3) kar amacı gütmeyen bir kuruluştur.
 
 Zig Yazılım Vakfı (ZSF), 2020 yılında Zig'in yaratıcısı Andrew Kelley tarafından kurulan, dilin geliştirilmesini desteklemeyi amaçlayan bir kar amacı gütmeyen kuruluştur. Şu anda, ZSF, sınırlı sayıda çekirdek katkıcıya rekabetçi ücretlerle çalışma imkanı sunabilmektedir. Gelecekte bu teklifi daha fazla çekirdek katkıcıya genişletmeyi umuyoruz.
@@ -99,15 +107,17 @@ Zig Yazılım Vakfı, bağışlarla sürdürülmektedir.
 </h1>
 {{% /div %}}
 
-
 {{< div class="alt-background" style="padding: 20px 0;">}}
 {{% div class="container" title="Sponsors" %}}
+
 # Kurumsal Sponsorlar
+
 Aşağıdaki şirketler, Zig Yazılım Vakfı'na doğrudan mali destek sağlamaktadır.
 
 {{% monetary-sponsor-logos %}}
 
 # GitHub Sponsorları
+
 Zig'i [sponsor olan](zsf/) insanlara teşekkürlerimizi sunarız. Bu proje, şirket hissedarları yerine açık kaynak topluluğuna hesap verebilir hale gelmiştir. Özellikle, aşağıdaki kişiler Zig'e aylık $200 veya daha fazla sponsor olmaktadır:
 
 {{< ghsponsors >}}

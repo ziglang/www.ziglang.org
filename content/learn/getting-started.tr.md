@@ -5,6 +5,7 @@ toc: true
 ---
 
 ## Etiketli sürüm mü yoksa günlük derleme mi?
+
 Zig henüz v1.0'a ulaşmadı ve mevcut sürüm döngüsü, yaklaşık olarak 6 aylık bir periyoda sahip olan LLVM'in yeni sürümleriyle bağlantılıdır.
 Pratikte, **Zig sürümleri genellikle birbirinden uzak olma eğilimindedir ve geliştirme hızının mevcut durumu göz önüne alındığında zamanla eski hale gelir**.
 
@@ -12,19 +13,22 @@ Etiketli bir sürümü kullanarak Zig'i değerlendirmek sorun değildir, ancak Z
 
 İyi haber şu ki, bir Zig sürümünden diğerine geçmek veya hatta aynı anda sistemde birden fazla sürüm bulundurmak çok kolaydır: Zig sürümleri, herhangi bir konuma yerleştirilebilen kendine yeten arşivlerdir.
 
-
 ## Zig Kurulumu
+
 ### Doğrudan indirme
+
 Bu, Zig'i elde etmenin en basit yoludur: [İndirme](/download) sayfasından platformunuza uygun bir Zig paketi alın,
 onu bir dizine çıkarın ve `PATH`'inize ekleyerek herhangi bir konumdan `zig` komutunu çağırabilin.
 
 #### Windows'ta PATH Ayarlama
+
 Windows'ta PATH'inizi ayarlamak için bir Powershell örneğinde **yalnızca birini** çalıştırın.
 Bu değişikliği sistem genelinde uygulamak isteyip istemediğinizi seçin (yönetici ayrıcalıklarıyla Powershell'i çalıştırma gerektirir)
 veya yalnızca kullanıcınız için ve **Zig kopyanızın bulunduğu konumu göstermek için kod parçacığını değiştirmeyi unutmayın**.
 `C:` önündeki `;` yazım hatası değildir.
 
 Sistem genelinde (**yönetici** Powershell):
+
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -34,6 +38,7 @@ Sistem genelinde (**yönetici** Powershell):
 ```
 
 Kullanıcı düzeyinde (Powershell):
+
 ```
 [Environment]::SetEnvironmentVariable(
    "Path",
@@ -41,23 +46,27 @@ Kullanıcı düzeyinde (Powershell):
    "User"
 )
 ```
+
 İşiniz bittiğinde, Powershell örneğinizi yeniden başlatın.
 
 #### Linux, macOS, BSD'de PATH Ayarlama
+
 Zig ikilisinin bulunduğu konumu PATH çevresel değişkeninize ekleyin.
 
 Genellikle bunu, kabuk başlatma komut dosyanıza (`.profile`, `.zshrc`, ...) bir ihracat satırı ekleyerek yaparsınız.
+
 ```bash
 export PATH=$PATH:~/zigin/bulunduğu/yol
 ```
+
 İşiniz bittiğinde başlangıç dosyanıza `source` komutunu uygulayın veya kabuğunuzu yeniden başlatın.
 
-
-
-
 ### Paket yöneticileri
+
 #### Windows
+
 Zig, [Chocolatey](https://chocolatey.org/packages/zig) üzerinde mevcuttur.
+
 ```
 choco install zig
 ```
@@ -66,28 +75,36 @@ choco install zig
 
 **Homebrew**  
 En son etiketli sürüm:
+
 ```
 brew install zig
 ```
 
 Git ana dallından en son derleme:
+
 ```
 brew install zig --HEAD
 ```
 
 **MacPorts**
+
 ```
 port install zig
 ```
+
 #### Linux
+
 Zig ayrıca Linux için birçok paket yöneticisinde bulunmaktadır. [Burada](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
 güncellenmiş bir liste bulabilirsiniz, ancak bazı paketlerin eski sürümlerini içerebileceğini unutmayın.
 
 ### Kaynak kodundan derleme
+
 Daha fazla bilgi için [Burada](https://github.com/ziglang/zig/wiki/Building-Zig-From-Source) Linux, macOS ve Windows için Zig'in nasıl kaynak kodundan derleneceğini bulabilirsiniz.
 
 ## Tavsiye Edilen Araçlar
+
 ### Sözdizimi Vurgulayıcıları ve LSP
+
 Tüm büyük metin düzenleyicileri, Zig için sözdizimi vurgulama desteğine sahiptir.
 Bazıları bunu paket halinde sunar, bazıları ise bir eklenti yüklemeyi gerektirir.
 
@@ -97,10 +114,12 @@ Zig ve editörünüz arasında daha derin bir entegrasyonla ilgileniyorsanız,
 Başka nelerin mevcut olduğunu öğrenmek isterseniz, [Tools](../tools/) bölümüne göz atın.
 
 ## Hello World Çalıştırma
+
 Kurulum sürecini doğru bir şekilde tamamladıysanız, artık Zig derleyicisini kabuğunuzdan çağırabilirsiniz.  
 İlk Zig programınızı oluşturarak bunu test edelim!
 
 Proje dizininize gidin ve şunları çalıştırın:
+
 ```bash
 mkdir hello-world
 cd hello-world
@@ -108,6 +127,7 @@ zig init-exe
 ```
 
 Alttaki çıktıyı vermeli:
+
 ```
 info: Created build.zig
 info: Created src/main.zig
@@ -115,6 +135,7 @@ info: Next, try `zig build --help` or `zig build run`
 ```
 
 `zig build run` komutunu çalıştırarak yürütülebilir dosyayı derleyip çalıştırabilirsiniz, sonuç olarak aşağıdaki gibi bir çıktı almalısınız:
+
 ```
 info: All your codebase are belong to us.
 ```
@@ -122,6 +143,7 @@ info: All your codebase are belong to us.
 Tebrikler, çalışan bir Zig kurulumunuz var!
 
 ## Sonraki adımlar
+
 **[Öğren](../)** bölümünde bulunan diğer kaynaklara göz atın, Zig'in belirli bir sürümü için Belgelendirmeyi bulduğunuzdan emin olun
 (not: günlük derlemeler `master` belgelerini kullanmalıdır) ve [ziglearn.org](https://ziglearn.org)'u okumayı düşünün.
 

@@ -4,9 +4,11 @@ menu_title: "Zig Yazılım Vakfı'na Sponsor Ol"
 mobile_menu_title: "ZSF'ye Sponsor Ol"
 date: 2020-10-20T16:29:51+02:00
 ---
+
 {{< sponsor-title-cta "Zig Yazılım Vakfı'na Sponsor Olmak" >}}
 
 ## Misyon beyanı
+
 Zig Yazılım Vakfı'nın misyonu, Zig programlama dilini teşvik etmek, korumak ve ilerletmek; çeşitli ve uluslararası bir Zig programcı topluluğunun büyümesini desteklemek ve kolaylaştırmak; öğrencilere eğitim ve rehberlik sağlamak ve gelecek nesil programcıları yetiştirirken yetkin, etik ve birbirlerine yüksek standartlar sunmalarını sağlamaktır.
 
 **ZSF, 501(c)(3) kar amacı gütmeyen bir kuruluştur.** Finansal bilgiler, toplantı tutanakları ve diğer detaylar [halka açık bir şekilde](https://drive.google.com/drive/folders/1ucHARxVbhrBbuZDbhrGHYDTsYAs8_bMH?usp=sharing) sunulmaktadır.
@@ -26,19 +28,22 @@ ZSF, küçük bir kuruluştur ve parasal kaynakları verimli bir şekilde kullan
 Bizi desteklemenin en kolay yolu, [GitHub Sponsors](https://github.com/sponsors/ziglang) üzerinden bağış yapmaktır.
 
 ## Bağış Bilgileri
+
 GitHub Sponsors dışındaki yöntemlerle bağış yapmak için işinize yarayacak bilgiler aşağıda yer almaktadır.
 Bağışlarınızı vergilerinizden düşüp düşemeyeceğinizi görmek için yerel yasalarınızı kontrol etmeyi unutmayın.
 
-|   **EIN**   | **Adres** |
-|-------------|-------------|
-| 84-5105214  | Zig Software Foundation  <br> 1732 1st Ave #21385  <br> New York, NY 10128|
+| **EIN**    | **Adres**                                                                |
+| ---------- | ------------------------------------------------------------------------ |
+| 84-5105214 | Zig Software Foundation <br> 1732 1st Ave #21385 <br> New York, NY 10128 |
 
 ### Desteklenen Ek Bağış Yöntemleri
+
 - Fiziksel çekler (yukarıda belirtilen posta adresine bakınız)
 - Banka transferleri (ABD dışından da dahil olmak üzere, daha fazla bilgi için bizimle iletişime geçin)
 - [Benevity](https://benevity.com) (şirket
 
 iniz bağışları eşleştiriyorsa önerilir!)
+
 - [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/) (kripto para birimlerini destekler!)
 
@@ -47,11 +52,13 @@ iniz bağışları eşleştiriyorsa önerilir!)
 ## Kurumsal sponsorlar
 
 ### Para bağışları
+
 Aşağıdaki şirketler, Zig Yazılım Vakfı'na aylık $1000'den fazla bağış yaparak doğrudan finansal destek sağlamaktadır.
 
 {{% monetary-sponsor-logos %}}
 
 ### Altyapı
+
 Aşağıdaki şirketler, Zig Yazılım Vakfı'na bazı hizmetlerini ücretsiz olarak sunmaktadır.
 
 {{% services-sponsor-logos %}}
