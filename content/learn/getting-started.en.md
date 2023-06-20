@@ -60,6 +60,12 @@ After you're done, either `source` your startup file or restart your shell.
 
 ### Package managers
 #### Windows
+**WinGet**  
+Zig is available on [WinGet](https://github.com/microsoft/winget-pkgs/tree/master/manifests/z/zig/zig).
+```
+winget install -e --id zig.zig
+```
+
 **Chocolatey**  
 Zig is available on [Chocolatey](https://chocolatey.org/packages/zig).
 ```
