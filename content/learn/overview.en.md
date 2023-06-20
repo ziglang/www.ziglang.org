@@ -73,7 +73,7 @@ The Zig Standard Library integrates with libc, but does not depend on it. Here's
 
 When compiled with `-O ReleaseSmall`, debug symbols stripped, single-threaded mode, this produces a 9.8 KiB static executable for the x86_64-linux target:
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -82,7 +82,7 @@ $ ldd hello
 
 A Windows build is even smaller, coming out to 4096 bytes:
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe

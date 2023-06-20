@@ -74,7 +74,7 @@ Zig использует [неопределённое поведение](https
 При компиляции с параметром `-O ReleaseSmall` для однопоточного режиме с последующей очисткой от отладочных символов получается статический исполняемый файл размером 9.8 КиБ для целевой платформы x86_64-linux:
 
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -83,7 +83,7 @@ $ ldd hello
 
 Файл для Windows весит ещё меньше — 4096 байт:
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe

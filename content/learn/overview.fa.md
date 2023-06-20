@@ -73,7 +73,7 @@ Runtime در build های دارای ایمنی:
 
 هنگامی که با `-O ReleaseSmall` علامت های اشکال زدایی برداشته می شوند و حالت تک رشته ای ایجاد می شود، Zig فایل اجرایی 9.8 KiB برای هدف x86_64-linux تولید می کند:
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -82,7 +82,7 @@ $ ldd hello
 
 این build در ویندوز حتی کوچک تر است و به 4KB میرسد:
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe
