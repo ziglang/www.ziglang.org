@@ -73,7 +73,7 @@ Zig标准库里集成了libc，但是不依赖于它：
 
 当使用`-O ReleaseSmall`并移除调试符号，单线程模式构建，可以产生一个以x86_64-linux为目标的 9.8 KiB 的静态可执行文件：
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -82,7 +82,7 @@ $ ldd hello
 
 Windows的构建就更小了，仅仅 4096 字节：
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe

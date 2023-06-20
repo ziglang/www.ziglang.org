@@ -76,7 +76,7 @@ Zig Standart Kütüphanesi, libc ile entegre olur, ancak ona bağımlı değildi
 Bu, `-O ReleaseSmall` ile derlendiğinde, hata ayıklama sembolleri çıkarıldığında, tek iş parçacıklı modda, x86_64-linux hedefi için 9.8 KiB boyutunda bir statik çalıştırılabilir dosya üretir:
 
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -86,7 +86,7 @@ $ ldd hello
 Windows derlemesi daha da küçüktür ve 4096 bayt olur:
 
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe

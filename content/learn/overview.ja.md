@@ -73,7 +73,7 @@ Zig標準ライブラリはlibcと統合されていますが、libcに依存し
 
 `-O ReleaseSmall`、デバッグシンボル除去、シングルスレッドでコンパイルすると、x86_64-linuxターゲットで9.8 KiBの静的実行ファイルが作成されます：
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
 9944 hello
 $ ldd hello
@@ -82,7 +82,7 @@ $ ldd hello
 
 Windowsでのビルドはさらに小さく、4096バイトになります：
 ```
-$ zig build-exe hello.zig -O ReleaseSmall --strip --single-threaded -target x86_64-windows
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
 4096 hello.exe
 $ file hello.exe
