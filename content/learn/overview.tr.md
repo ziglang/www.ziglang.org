@@ -313,16 +313,16 @@ Zig, [Destek Tablosu'ndaki](#desteklenen-geniş-hedef-aralığı) [3. Kademe Des
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Şimdi x86_64-windows, x86_64-macosx ve aarch64v8-linux için derlemek için:
+Şimdi x86_64-windows, x86_64-macos ve aarch64-linux için derlemek için:
 
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -418,7 +418,7 @@ Bu örnekte Zig, musl libc'yi kaynaktan oluşturdu ve ardından ona karşı bağ
 Bu, bu işlevin herhangi bir platformda kullanılabilir olduğu anlamına gelir. Windows ve macOS kullanıcıları, yukarıda listelenen hedeflerden herhangi biri için Zig ve C kodunu derleyebilir ve libc'ye bağlayabilir. Benzer şekilde, kod diğer mimariler için çapraz derlenebilir:
 
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```

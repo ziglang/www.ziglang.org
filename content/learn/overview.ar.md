@@ -302,15 +302,15 @@ $ zig build test
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-وهذا مثال لإختيار منصات x86_64-windows وx86_64-macosx وaarch64v8-linux:
+وهذا مثال لإختيار منصات x86_64-windows وx86_64-macos وaarch64-linux:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -403,7 +403,7 @@ $ ldd hello
 
 مما يعني أن هذه الخاصية متاحة على كل المنصات. يستطيع مستخدمي Windows وmacOS بناء كود Zig وC، وربط برامجهم بlibc، لأي منصة مذكورة أعلاه. وبالمثل، يمكن ترجمة الكود بشكل مختلط لمعمارية أخرى:
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```

@@ -304,15 +304,15 @@ $ zig build test
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-اکنون آن را برای x86_64-windows، x86_64-macosx و aarch64v8-linux بسازید.:
+اکنون آن را برای x86_64-windows، x86_64-macos و aarch64-linux بسازید.:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -404,7 +404,7 @@ $ ldd hello
 
 این بدان معناست که این قابلیت در هر پلتفرمی در دسترس است. کاربران ویندوز و macOS می توانند کد Zig و C را ایجاد کرده و در مقابل libc، برای هر یک از اهداف ذکر شده در بالا پیوند ایجاد کنند. به طور مشابه می توان کد را برای معماری های دیگر کامپایل کرد:
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
