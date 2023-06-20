@@ -302,15 +302,15 @@ Zig puede compilar para cualquiera de los objetivos en [Support Table](#support-
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Para compilar este ejemplo específicamente para arquitecturas x86_64-windows, x86_64-macosx, y aarch64v8-linux:
+Para compilar este ejemplo específicamente para arquitecturas x86_64-windows, x86_64-macos, y aarch64-linux:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -401,7 +401,7 @@ En este ejemplo, Zig compiló musl libc desde los fuentes para luego proceder a 
 
 Esta funcionalidad está disponible en cualquier plataforma. Los usuarios de Windows y macOs pueden compilar código Zig y C y efectuar link con libc para cualquiera de los objetivos listados arriba. De igual forma, el código puede ser compilado entre otras arquitecturas:
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -564,7 +564,7 @@ Zig utilíza un sistema de "support tier" (nivel de soporte) para comunicar el n
 
 - El soporte para estas arquitecturas es completamente experimental
 - Es posible que LLVM tenga esta arquitectura etiquetada como experimental, lo que significa que necesitarás usar binarios ofrecidos por Zig para que esta arquitectura esté disponible, o bien, compilar LLVM desde fuentes con opciones de configuración especiales.
-- Estas arquitecturas pueden haber expirado, por ejemplo [macosx/i386](https://support.apple.com/en-us/HT208436), en cuyo caso quedará perpetuamente en nivel de soporte 4.
+- Estas arquitecturas pueden haber expirado, por ejemplo [macos/i386](https://support.apple.com/en-us/HT208436), en cuyo caso quedará perpetuamente en nivel de soporte 4.
 - Es posible que estas arquitecturas solo soporten `--emit` asm y no puedan emitir archivos.
 
 ## Amigable con los desarrolladores de paquetes

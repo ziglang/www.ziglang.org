@@ -303,15 +303,15 @@ Zig는 [지원 목록](#지원-목록)에 있는 타겟 중 [티어 3 지원](#�
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-이제 x86_64-windows, x86_64-macosx, aarch64v8-linux로 빌드하려면:
+이제 x86_64-windows, x86_64-macos, aarch64-linux로 빌드하려면:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -403,7 +403,7 @@ $ ldd hello
 
 이 기능은 어떤 플랫폼에서도 사용 가능합니다. Windows와 macOS 사용자는 위에 나열된 어떤 타겟으로도 C 코드를 빌드하고 libc에 링크할 수 있습니다. 비슷하게 다른 아키텍쳐로의 크로스 컴파일도 가능합니다:
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -571,7 +571,7 @@ Zig는 "지원 티어" 체계를 이용해 다른 타겟에 대한 지원 수준
 
 - 이 타겟들의 지원은 완전히 실험적입니다.
 - LLVM에서도 타겟이 실험적일 수 있는데, 그 경우에는 Zig에서 해당 타겟용 바이너리가 나왔을 때 사용하거나, 특별한 설정 플래그와 함께 LLVM을 소스로 빌드해야 합니다.
-- [macosx/i386](https://support.apple.com/en-us/HT208436)의 경우처럼 타겟에 대한 지원이 공식적으로 중단될 수 있는데, 이 경우 타겟은 영원히 티어 4로 남아있게 됩니다.
+- [macos/i386](https://support.apple.com/en-us/HT208436)의 경우처럼 타겟에 대한 지원이 공식적으로 중단될 수 있는데, 이 경우 타겟은 영원히 티어 4로 남아있게 됩니다.
 - 이 타겟은 `--emit` asm만 지원할 수도 있으며 이 경우 오브젝트 파일은 생성되지 않습니다.
 
 ## 패키지 관리자에게 친숙

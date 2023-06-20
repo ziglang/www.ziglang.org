@@ -302,15 +302,15 @@ Zig kann für jedes der Targets im [Support Table](#support-table) mit [Tier 3 S
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Und jetzt Builds für x86_64-windows, x86_64-macosx und aarch64v8-linux:
+Und jetzt Builds für x86_64-windows, x86_64-macos und aarch64-linux:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -402,7 +402,7 @@ In diesem Beispiel hat Zig musls Quellcode kompiliert und verlinkt. Dank dem [Ca
 
 Das bedeutet, dass die Funktionalität auf jeder Plattform verfügbar ist. Nutzer von Windows und macOS können Zig- und C-Code für jedes der obigen Targets kompilieren und gegen libc linken. Auf ähnliche Art und Weise kann Code für andere Prozessorarchitekturen crosskompiliert werden:
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -570,7 +570,7 @@ Zig kommuniziert die Unterstützung von verschiedenen Targets mit "Support Tiers
 
 - Unterstützung für diese Targets ist rein experimentell.
 - LLVM enthält dies möglicherweise als experimentelles Target; damit es verfügbar ist, sind Zig-seitige Dateien oder ein speziell konfiguriertes LLVM-Build notwendig. `zig targets` zeigt das Target an, wenn es verfügbar ist.
-- Dieses Target wird möglicherweise von einer offiziellen Seite als veraltet eingestuft, wie zum Beispiel [macosx/i386](https://support.apple.com/en-us/HT208436); in dem Fall wird es Tier 4 nie verlassen.
+- Dieses Target wird möglicherweise von einer offiziellen Seite als veraltet eingestuft, wie zum Beispiel [macos/i386](https://support.apple.com/en-us/HT208436); in dem Fall wird es Tier 4 nie verlassen.
 - Dieses Target unterstützt möglicherweise nur `--emit asm` und kann keine Objektdateien ausgeben.
 
 ## Einfache Unterstützung von Paketen

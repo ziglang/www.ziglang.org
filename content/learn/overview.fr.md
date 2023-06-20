@@ -331,15 +331,15 @@ Voici un simple Hello World :
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Maintenant voici comment le compiler pour `x86_64-windows`, `x86_64-macosx`, et `aarch64v8-linux` :
+Maintenant voici comment le compiler pour `x86_64-windows`, `x86_64-macos`, et `aarch64-linux` :
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -434,7 +434,7 @@ Cette fonctionnalité est disponible pour toutes les plateformes.
 Les utilisateurs de Windows et macOS peuvent compiler du code C et Zig, les lier à la libc, pour toutes les cibles listées au-dessus.
 De même, le code peut être compilé pour d'autres architectures :
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -618,7 +618,7 @@ Il est cependant possible de lier l'application à une libc pour compléter ce q
 - La prise en charge de ces cibles est entièrement expérimentale.
 - LLVM peut avoir ces cibles comme *expérimentales*, ce qui veut dire qu'il est nécessaire d'utiliser les binaires fournis par Zig pour avoir accès à ces cibles, ou compiler soi-même LLVM avec des options spécifiques.
 `zig targets` affichera ces cibles si elles sont disponibles.
-- Ces cibles sont considérées abandonnées par l'organisme officiellement en charge, comme [macosx/i386 (EN)](https://support.apple.com/en-us/HT208436), et dans ce cas ces cibles seront toujours bloquées au niveau 4 de prise en charge.
+- Ces cibles sont considérées abandonnées par l'organisme officiellement en charge, comme [macos/i386 (EN)](https://support.apple.com/en-us/HT208436), et dans ce cas ces cibles seront toujours bloquées au niveau 4 de prise en charge.
 - Zig (via LLVM) permet de générer du code assembleur via `--emit asm` mais pas de fichiers objet.
 
 ## Agréable pour les mainteneurs de paquets

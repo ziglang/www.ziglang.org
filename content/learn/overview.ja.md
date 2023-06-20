@@ -303,15 +303,15 @@ Zigは[サポート表](#support-table)にあるどのターゲットに対し�
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-あとは、x86_64-windows, x86_64-macosx, aarch64v8-linux用にビルドします：
+あとは、x86_64-windows, x86_64-macos, aarch64-linux用にビルドします：
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -403,7 +403,7 @@ $ ldd hello
 
 つまり、この機能はどのプラットフォームでも利用できるのです。WindowsとmacOSのユーザーは、上記のどのターゲットに対しても、ZigとCのコードをビルドし、libcに対してリンクすることができます。同様に、他のアーキテクチャ用にクロスコンパイルすることも可能です：
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```

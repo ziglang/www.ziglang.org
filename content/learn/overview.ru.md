@@ -307,16 +307,16 @@ Zig может собирать проекты для любой архитек�
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Теперь, чтобы собрать его для архитектур x86_64-windows, x86_64-macosx и aarch64v8-linux:
+Теперь, чтобы собрать его для архитектур x86_64-windows, x86_64-macos и aarch64-linux:
 
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -411,7 +411,7 @@ $ ldd hello
 Это означает, что данная функциональность доступна на любой платформе. Пользователи Windows и macOS могут собирать код на Zig и C и связывать с стандартной библиотекой C для любой из перечисленных выше архитектур. Аналогично, код может быть кросс–компилирован для других архитектур:
 
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```

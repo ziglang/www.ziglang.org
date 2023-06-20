@@ -303,15 +303,15 @@ Zig pode compilar para qualquer um dos dispositivos listados na [Tabela de Supor
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-Você pode compilar para: x86_64-windows, x86_64-macosx, e aarch64v8-linux:
+Você pode compilar para: x86_64-windows, x86_64-macos, e aarch64-linux:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -403,7 +403,7 @@ Neste exemplo, Zig construiu musl libc a partir da fonte e depois ligou-se a ela
 
 Isto significa que esta funcionalidade está disponível em qualquer plataforma. Os usuários de Windows e macOS podem criar códigos Zig e C, e vincular-se a libc, para qualquer uma das plataformas listados acima. Da mesma forma, o código pode ser compilado de forma cruzada para outras arquiteturas:
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -571,7 +571,7 @@ Zig utiliza um sistema de "tiers" para comunicar o nível de suporte para difere
 
 - O apoio a esses objetivos é inteiramente experimental.
 - LLVM pode ter a paltaforma como experimental, o que significa que você precisa usar binários fornecidos em Zig para que a paltaforma esteja disponível, ou construir LLVM a partir da fonte com bandeiras de configuração especiais.
-- Esta plataforma pode ser considerada depreciada por uma parte oficial, como por exemplo [macosx/i386](https://support.apple.com/en-us/HT208436), neste caso, esta meta permanecerá para sempre presa no Nível 4.
+- Esta plataforma pode ser considerada depreciada por uma parte oficial, como por exemplo [macos/i386](https://support.apple.com/en-us/HT208436), neste caso, esta meta permanecerá para sempre presa no Nível 4.
 - Esta plataforma só pode suportar `--emit` asm e não pode emitir arquivos objeto.
 
 ## Colaboradores de pacotes 

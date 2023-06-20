@@ -302,15 +302,15 @@ Zig可以为[支持表](#支持表)中的任何[三级支持](#三级支持)或�
 
 {{< zigdoctest "assets/zig-code/features/4-hello.zig" >}}
 
-现在为 x86_64-windows, x86_64-macosx 和 aarch64v8-linux 构建：
+现在为 x86_64-windows, x86_64-macos 和 aarch64-linux 构建：
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
-$ zig build-exe hello.zig -target x86_64-macosx
+$ zig build-exe hello.zig -target x86_64-macos
 $ file hello
 hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
-$ zig build-exe hello.zig -target aarch64v8-linux
+$ zig build-exe hello.zig -target aarch64-linux
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
@@ -402,7 +402,7 @@ $ ldd hello
 
 这意味着这个功能可以在任何平台上使用。Windows和MacOS 用户可以为上面列出的任何目标构建Zig和C代码，并与libc链接。同样的代码也可以为其他架构交叉编译：
 ```
-$ zig build-exe hello.c --library c -target aarch64v8-linux-gnu
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -570,7 +570,7 @@ Zig 使用“支持等级”系统来描述不同目标的支持程度。需要�
 
 - 对这些目标的支持完全是试验性的。
 - LLVM可能会将目标作为实验性目标，这意味着你需要使用 Zig 提供的二进制文件来使目标可用，或者使用特殊的配置标志从源码构建 LLVM ，如果目标可用，`zig targets` 将显示目标。
-- 这个目标可能会被官方认为是废弃的，比如 [macosx/i386](https://support.apple.com/en-us/HT208436)，在这种情况下，这个目标将永远停留在四级。
+- 这个目标可能会被官方认为是废弃的，比如 [macos/i386](https://support.apple.com/en-us/HT208436)，在这种情况下，这个目标将永远停留在四级。
 - 这个目标可能只支持输出汇编（`--emit asm`），而不支持输出对象文件。
 
 ## 对包维护者友好
