@@ -45,8 +45,8 @@ pub fn main() !void {
 }
 
 fn writeToArrayListCallback(data: *anyopaque, size: c_uint, nmemb: c_uint, user_data: *anyopaque) callconv(.C) c_uint {
-    var buffer = @intToPtr(*std.ArrayList(u8), @ptrToInt(user_data));
-    var typed_data = @intToPtr([*]u8, @ptrToInt(data));
+    var buffer = @ptrFromInt(*std.ArrayList(u8), @intFromPtr(user_data));
+    var typed_data = @ptrFromInt([*]u8, @intFromPtr(data));
     buffer.appendSlice(typed_data[0 .. nmemb * size]) catch return 0;
     return nmemb * size;
 }

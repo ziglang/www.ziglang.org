@@ -35,7 +35,7 @@ fn write_callback(
     const outstream = @ptrCast(*c.SoundIoOutStream, maybe_outstream);
     const layout = &outstream.layout;
     const float_sample_rate = outstream.sample_rate;
-    const seconds_per_frame = 1.0 / @intToFloat(f32, float_sample_rate);
+    const seconds_per_frame = 1.0 / @floatFromInt(f32, float_sample_rate);
     var frames_left = frame_count_max;
 
     while (frames_left > 0) {
@@ -54,7 +54,7 @@ fn write_callback(
         const radians_per_second = pitch * 2.0 * std.math.pi;
         var frame: c_int = 0;
         while (frame < frame_count) : (frame += 1) {
-            const sample = std.math.sin((seconds_offset + @intToFloat(f32, frame) *
+            const sample = std.math.sin((seconds_offset + @floatFromInt(f32, frame) *
                 seconds_per_frame) * radians_per_second);
             {
                 var channel: usize = 0;
@@ -65,7 +65,7 @@ fn write_callback(
                 }
             }
         }
-        seconds_offset += seconds_per_frame * @intToFloat(f32, frame_count);
+        seconds_offset += seconds_per_frame * @floatFromInt(f32, frame_count);
 
         sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {s}", .{@errorName(err)});
 

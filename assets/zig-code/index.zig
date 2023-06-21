@@ -1,4 +1,4 @@
-// zig-doctest: test --name parse_integers --skip-name 
+// zig-doctest: test --name parse_integers --skip-name
 const std = @import("std");
 const parseInt = std.fmt.parseInt;
 
