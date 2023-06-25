@@ -203,7 +203,7 @@ pub fn main() !void {
         };
 
         try out.print(
-            \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a><li>
+            \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a></li>
             \\
         ,
             .{ link, name },
