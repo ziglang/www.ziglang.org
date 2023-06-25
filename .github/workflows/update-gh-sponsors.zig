@@ -213,7 +213,7 @@ pub fn main() !void {
     for (name_only.items) |s| {
         const name = s.name orelse s.login;
         try out.print(
-            \\<li>{s}<li>
+            \\<li>{s}</li>
             \\
         ,
             .{name},
