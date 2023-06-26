@@ -84,12 +84,6 @@ choco install zig
 brew install zig
 ```
 
-آخرین انتشار از شاخه **master**:
-
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 
 ```

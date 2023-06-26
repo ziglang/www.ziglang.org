@@ -74,11 +74,6 @@ choco install zig
 brew install zig
 ```
 
-Git master 브랜치에서의 최신 빌드:
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig

@@ -73,11 +73,6 @@ choco install zig
 brew install zig
 ```
 
-Последняя ночная сборка с master—ветки:
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig

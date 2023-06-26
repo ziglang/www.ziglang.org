@@ -68,11 +68,6 @@ choco install zig
 brew install zig
 ```
 
-أحدث نسخة بناء من فرع Git الرئيسي:
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig

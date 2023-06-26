@@ -91,11 +91,6 @@ Latest tagged release:
 brew install zig
 ```
 
-Latest build from Git master branch:
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig
