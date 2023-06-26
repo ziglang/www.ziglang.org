@@ -32,10 +32,10 @@ fn write_callback(
     frame_count_max: c_int,
 ) callconv(.C) void {
     _ = frame_count_min;
-    const outstream = @ptrCast(*c.SoundIoOutStream, maybe_outstream);
+    const outstream: *c.SoundIoOutStream = &maybe_outstream.?[0];
     const layout = &outstream.layout;
-    const float_sample_rate = outstream.sample_rate;
-    const seconds_per_frame = 1.0 / @floatFromInt(f32, float_sample_rate);
+    const float_sample_rate: f32 = @floatFromInt(outstream.sample_rate);
+    const seconds_per_frame = 1.0 / float_sample_rate;
     var frames_left = frame_count_max;
 
     while (frames_left > 0) {
@@ -44,7 +44,7 @@ fn write_callback(
         var areas: [*]c.SoundIoChannelArea = undefined;
         sio_err(c.soundio_outstream_begin_write(
             maybe_outstream,
-            @ptrCast([*]?[*]c.SoundIoChannelArea, &areas),
+            @ptrCast(&areas),
             &frame_count,
         )) catch |err| std.debug.panic("write failed: {s}", .{@errorName(err)});
 
@@ -54,18 +54,20 @@ fn write_callback(
         const radians_per_second = pitch * 2.0 * std.math.pi;
         var frame: c_int = 0;
         while (frame < frame_count) : (frame += 1) {
-            const sample = std.math.sin((seconds_offset + @floatFromInt(f32, frame) *
+            const float_frame: f32 = @floatFromInt(frame);
+            const sample = std.math.sin((seconds_offset + float_frame *
                 seconds_per_frame) * radians_per_second);
             {
                 var channel: usize = 0;
-                while (channel < @intCast(usize, layout.channel_count)) : (channel += 1) {
+                while (channel < @as(usize, @intCast(layout.channel_count))) : (channel += 1) {
                     const channel_ptr = areas[channel].ptr;
-                    const sample_ptr = &channel_ptr[@intCast(usize, areas[channel].step * frame)];
-                    @ptrCast(*f32, @alignCast(@alignOf(f32), sample_ptr)).* = sample;
+                    const sample_ptr: *f32 = @alignCast(@ptrCast(&channel_ptr[@intCast(areas[channel].step * frame)]));
+                    sample_ptr.* = sample;
                 }
             }
         }
-        seconds_offset += seconds_per_frame * @floatFromInt(f32, frame_count);
+        const float_frame_count: f32 = @floatFromInt(frame_count);
+        seconds_offset += seconds_per_frame * float_frame_count;
 
         sio_err(c.soundio_outstream_end_write(maybe_outstream)) catch |err| std.debug.panic("end write failed: {s}", .{@errorName(err)});
 
