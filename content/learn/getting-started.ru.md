@@ -59,9 +59,27 @@ export PATH=$PATH:~/путь/к/zig
 
 ### Пакетные менеджеры
 #### Windows
+**WinGet**
+Zig доступен в [WinGet](https://github.com/microsoft/winget-pkgs/tree/master/manifests/z/zig/zig).
+```
+winget install -e --id zig.zig
+```
+
+**Chocolatey**
 Zig доступен в [Chocolatey](https://chocolatey.org/packages/zig).
 ```
 choco install zig
+```
+
+**Scoop**
+Zig доступен в [Scoop](https://scoop.sh/#/apps?q=zig&id=7e124d6047c32d426e4143ab395d863fc9d6d491).
+```
+scoop install zig
+```
+Последняя [ночная сборка](https://scoop.sh/#/apps?q=zig&id=921df07e75042de645204262e784a17c2421944c) с master—ветки:
+```
+scoop bucket add versions
+scoop install versions/zig-dev
 ```
 
 #### macOS
