@@ -80,12 +80,6 @@ En son etiketli sürüm:
 brew install zig
 ```
 
-Git ana dallından en son derleme:
-
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 
 ```

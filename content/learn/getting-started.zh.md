@@ -71,11 +71,6 @@ choco install zig
 brew install zig
 ```
 
-从 github master 分支获取的最新构建：
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig

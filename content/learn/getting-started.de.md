@@ -72,11 +72,6 @@ Neuestes Release:
 brew install zig
 ```
 
-Neuester Build des Master-Branch:
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig

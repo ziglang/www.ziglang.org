@@ -65,11 +65,6 @@ choco install zig
 brew install zig
 ```
 
-Última compilación de la rama master de Git:
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig

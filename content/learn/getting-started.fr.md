@@ -69,11 +69,6 @@ Dernière version numérotée :
 brew install zig
 ```
 
-Dernière version depuis le dépôt Git (branche master) :
-```
-brew install zig --HEAD
-```
-
 **MacPorts**
 ```
 port install zig
