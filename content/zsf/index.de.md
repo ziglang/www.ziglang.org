@@ -31,7 +31,7 @@ Nützliche Informationen, um auf anderem Wege als durch GitHub Sponsors zu spend
 
 |   **EIN**   | **Adresse** |
 |-------------|-------------|
-| 84-5105214  | Zig Software Foundation  <br> 1732 1st Ave #21385  <br> New York, NY 10128|
+| 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10128|
 
 ### Weitere unterstützte Spendenwege
 - Schecks (s. Postadresse oben)

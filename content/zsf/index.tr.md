@@ -34,7 +34,7 @@ Bağışlarınızı vergilerinizden düşüp düşemeyeceğinizi görmek için y
 
 | **EIN**    | **Adres**                                                                |
 | ---------- | ------------------------------------------------------------------------ |
-| 84-5105214 | Zig Software Foundation <br> 1732 1st Ave #21385 <br> New York, NY 10128 |
+| 84-5105214 | Zig Software Foundation <br> 1632 1st Ave #21385 <br> New York, NY 10128 |
 
 ### Desteklenen Ek Bağış Yöntemleri
 

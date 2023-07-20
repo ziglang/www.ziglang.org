@@ -35,7 +35,7 @@ Ecco alcune informazioni utili a donare tramite metodi diversi da GitHub Sponsor
 
 |  **EIN Statunitense** | **Indirizzo** |
 |-----------------------|---------------|
-| 84-5105214  | Zig Software Foundation  <br> 1732 1st Ave #21385  <br> New York, NY 10128|
+| 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10128|
 
 ### Tramite di donazione supportati
 - Invio di assegni cartacei per posta (metodo supportato solo negli Stati Uniti)
