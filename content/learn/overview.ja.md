@@ -509,7 +509,7 @@ Zigは、ターゲットごとにサポートレベルを伝える「サポー�
 
 Zigチームには、パッケージの保守を経験したメンバーが何人もいます。
 
-- [Daurnimator](https://github.com/daurnimator)は[Arch Linuxパッケージ](https://www.archlinux.org/packages/community/x86_64/zig/)を保守しています。
+- [Daurnimator](https://github.com/daurnimator)は[Arch Linuxパッケージ](https://archlinux.org/packages/extra/x86_64/zig/)を保守しています。
 - [Marc Tiehuis](https://tiehuis.github.io/)は、Visual Studio Codeパッケージを管理しています。
 - [Andrew Kelley](https://andrewkelley.me/)は、1年ほどかけて[DebianとUbuntuのパッケージング](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes)を行い、さりげなく[nixpkgs](https://github.com/NixOS/nixpkgs/)にコントリビュートしています。
 - [Jeff Fowler](https://blog.jfo.click/)はHomebrewパッケージを保守し、[Sublimeパッケージ](https://github.com/ziglang/sublime-zig-language)を開始しました(現在は[emekoi](https://github.com/emekoi)が保守しています)。

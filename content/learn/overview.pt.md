@@ -584,7 +584,7 @@ Há um [Versão JSON da página de download](/download/index.json).
 
 Vários membros da equipe Zig têm experiência na manutenção de pacotes.
 
-- [Daurnimator](https://github.com/daurnimator) mantém o [Arch Linux package](https://www.archlinux.org/packages/community/x86_64/zig/)
+- [Daurnimator](https://github.com/daurnimator) mantém o [Arch Linux package](https://archlinux.org/packages/extra/x86_64/zig/)
 - [Marc Tiehuis](https://tiehuis.github.io/) mantém o pacote Visual Studio Code.
 - [Andrew Kelley](https://andrewkelley.me/) passou cerca de um ano ou mais fazendo [pacotes do Debian e Ubuntu](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), e contribui casualmente para [nixpkgs](https://github.com/NixOS/nixpkgs/).
 - [Jeff Fowler](https://blog.jfo.click/) mantém o pacote Homebrew e iniciou o [Sublime package](https://github.com/ziglang/sublime-zig-language) (agora mantido por [emekoi](https://github.com/emekoi)).

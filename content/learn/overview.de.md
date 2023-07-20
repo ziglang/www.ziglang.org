@@ -583,7 +583,7 @@ Es gibt eine [JSON-Version der Downloadseite](/download/index.json).
 
 Einige Mitglieder des Teams haben Erfahrung im Verwalten von Paketen.
 
-- [Daurnimator](https://github.com/daurnimator) unterstützt ein [Paket für Arch Linux](https://www.archlinux.org/packages/community/x86_64/zig/)
+- [Daurnimator](https://github.com/daurnimator) unterstützt ein [Paket für Arch Linux](https://archlinux.org/packages/extra/x86_64/zig/)
 - [Marc Tiehuis](https://tiehuis.github.io/) unterstützt das Paket für Visual Studio Code.
 - [Andrew Kelley](https://andrewkelley.me/) hat etwa ein Jahr lang [Debian- und Ubuntupakete verwaltet](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes) und trägt gelegentlich zu [nixpkgs](https://github.com/NixOS/nixpkgs/) bei.
 - [Jeff Fowler](https://blog.jfo.click/) verwaltet das Homebrew-Paket und begann das [Paket für Sublime](https://github.com/ziglang/sublime-zig-language) (jetzt verwaltet von [emekoi](https://github.com/emekoi)).
