@@ -584,7 +584,7 @@ Zig는 "지원 티어" 체계를 이용해 다른 타겟에 대한 지원 수준
 
 Zig 팀의 몇몇 멤버는 패키지 관리 경험이 있습니다.
 
-- [Daurnimator](https://github.com/daurnimator)는 [Arch Linux 패키지](https://www.archlinux.org/packages/community/x86_64/zig/)를 관리합니다.
+- [Daurnimator](https://github.com/daurnimator)는 [Arch Linux 패키지](https://archlinux.org/packages/extra/x86_64/zig/)를 관리합니다.
 - [Marc Tiehuis](https://tiehuis.github.io/)는 Visual Studio Code 패키지를 관리하고 있습니다.
 - [Andrew Kelley](https://andrewkelley.me/)는 1년 이상 걸려 [Debian 및 Ubuntu 패키지](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes)를 만들었고, [nixpkgs](https://github.com/NixOS/nixpkgs/)에 기여 중입니다.
 - [Jeff Fowler](https://blog.jfo.click/)는 Homebrew 패키지를 관리하며 [Sublime 패키지](https://github.com/ziglang/sublime-zig-language)의 개발을 시작했습니다 (현재는 [emekoi](https://github.com/emekoi)가 관리합니다).

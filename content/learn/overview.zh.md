@@ -583,7 +583,7 @@ Zig 使用“支持等级”系统来描述不同目标的支持程度。需要�
 
 Zig 团队的几位成员都有维护软件包的经验。
 
-- [Daurnimator](https://github.com/daurnimator)维护[Arch Linux 包](https://www.archlinux.org/packages/community/x86_64/zig/)。
+- [Daurnimator](https://github.com/daurnimator)维护[Arch Linux 包](https://archlinux.org/packages/extra/x86_64/zig/)。
 - [Marc Tiehuis](https://tiehuis.github.io/)维护Visual Studio Code 扩展。
 - [Andrew Kelley](https://andrewkelley.me/)花了一年左右的时间来做[Debian 和 Ubuntu 的打包工作](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes)，并随手贡献给[nixpkgs](https://github.com/NixOS/nixpkgs/)。
 - [Jeff Fowler](https://blog.jfo.click/)维护者 Homebrew 包并发起了[Sublime 扩展](https://github.com/ziglang/sublime-zig-language)（现在由 [emekoi](https://github.com/emekoi) 维护）。

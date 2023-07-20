@@ -516,7 +516,7 @@ Zig использует систему "уровней поддержки", ч�
 
 Несколько членов команды Zig имеют опыт сопровождения пакетов.
 
-- [Daurnimator](https://github.com/daurnimator) сопровождает [пакет в Arch Linux](https://www.archlinux.org/packages/community/x86_64/zig/)
+- [Daurnimator](https://github.com/daurnimator) сопровождает [пакет в Arch Linux](https://archlinux.org/packages/extra/x86_64/zig/)
 - [Marc Tiehuis](https://tiehuis.github.io/) сопровождает пакет для Visual Studio Code.
 - [Andrew Kelley](https://andrewkelley.me/) занимался около года [созданием пакета для Debian и Ubuntu](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), а также иногда вносит вклад в [nixpkgs](https://github.com/NixOS/nixpkgs/).
 - [Jeff Fowler](https://blog.jfo.click/) сопровождает пакет для Homebrew и создал [пакет для Sublime](https://github.com/ziglang/sublime-zig-language) (теперь его сопровождает [emekoi](https://github.com/emekoi)).

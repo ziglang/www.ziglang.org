@@ -506,7 +506,7 @@ Zig 0.5.0 [قدمت الوظائف غير المتزامنة](https://ziglang.or
 
 لدى العديد من أعضاء فريق Zig خبرة في صيانة الحِزم.
 
-- [Daurnimator](https://github.com/daurnimator) يصون [حزمة Arch Linux](https://www.archlinux.org/packages/community/x86_64/zig/)
+- [Daurnimator](https://github.com/daurnimator) يصون [حزمة Arch Linux](https://archlinux.org/packages/extra/x86_64/zig/)
 - [Marc Tiehuis](https://tiehuis.github.io/) يصون حزمة Visual Studio Code.
 - أمضى [Andrew Kelley](https://andrewkelley.me/) عامًا أو أكثر في [صيانة حزم Debian وUbuntu](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), ويساهم بشكل غير دوري في [nixpkgs](https://github.com/NixOS/nixpkgs/).
 - [Jeff Fowler](https://blog.jfo.click/) يصون حزمة Homebrew وبدأ [حزمة Sublime](https://github.com/ziglang/sublime-zig-language) (يصونها حاليًا [emekoi](https://github.com/emekoi)).

@@ -523,7 +523,7 @@ Hata ayıklama olmayan [derleme modları](https://ziglang.org/documentation/mast
 
 Zig ekibinin birçok üyesi paket bakımı konusunda deneyime sahiptir.
 
-- [Daurnimator](https://github.com/daurnimator), [Arch Linux paketini](https://www.archlinux.org/packages/community/x86_64/zig/) yönetir.
+- [Daurnimator](https://github.com/daurnimator), [Arch Linux paketini](https://archlinux.org/packages/extra/x86_64/zig/) yönetir.
 - [Marc Tiehuis](https://tiehuis.github.io/), Visual Studio Code paketini yönetir.
 - [Andrew Kelley](https://andrewkelley.me/), yaklaşık bir yıl [Debian ve Ubuntu paketleme](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes) çalışmaları yapmış ve [nixpkgs](https://github.com/NixOS/nixpkgs/)'a katkıda bulunmaktadır.
 - [Jeff Fowler](https://blog.jfo.click/), Homebrew paketini yönetir ve [Sublime paketini](https://github.com/ziglang/sublime-zig-language) başlatmıştır (şu anda [emekoi](https://github.com/emekoi) tarafından yönetilmektedir).

@@ -512,7 +512,7 @@ Zig استنباط می کند که آیا یک تابع همگام است یا 
 
 چندین نفر از اعضای تیم زیگ تجربه نگهداری بسته ها را دارند.
 
-- [Daurnimator](https://github.com/daurnimator) [بسته لینوکس Arch](https://www.archlinux.org/packages/community/x86_64/zig/) را نگهداری می کند
+- [Daurnimator](https://github.com/daurnimator) [بسته لینوکس Arch](https://archlinux.org/packages/extra/x86_64/zig/) را نگهداری می کند
 - [Marc Tiehuis](https://tiehuis.github.io/) از پکیج Visual Studio Code نگهداری میکند.
 - [Andrew Kelley](https://andrewkelley.me/) یک سال یا بیشتر را صرف انجام [بسته بندی دبیان و اوبونتو](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes) کرد، و به گاها در [nixpkgs](https://github.com/NixOS/nixpkgs/) مشارکت میکند.
 - [Jeff Fowler](https://blog.jfo.click/) بسته Homebrew را نگه می دارد و شروع به کار با [Sublime package](https://github.com/ziglang/sublime-zig-language) کرده است. (هم اکنون توسط [emekoi](https://github.com/emekoi) انجام میشود).
