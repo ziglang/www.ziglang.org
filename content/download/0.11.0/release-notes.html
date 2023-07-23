@@ -441,6 +441,27 @@
                 <li><a id="toc-External-Debug-Info" href="#External-Debug-Info">External Debug Info</a></li>
             </ul></li>
             <li><a id="toc-Formatted-Printing" href="#Formatted-Printing">Formatted Printing</a></li>
+            <li><a id="toc-JSON" href="#JSON">JSON</a>
+            <ul>
+                <li><a id="toc-codeparsecode-replaced-by-codeparseFromSlicecode-or-other-codeparseFromcode" href="#codeparsecode-replaced-by-codeparseFromSlicecode-or-other-codeparseFromcode"><code>parse</code> replaced by <code>parseFromSlice</code> or other <code>parseFrom*</code></a>
+                <ul>
+                    <li><a id="toc-codeparseFreecode-replaced-by-codeParsedTdeinitcode" href="#codeparseFreecode-replaced-by-codeParsedTdeinitcode"><code>parseFree</code> replaced by <code>Parsed(T).deinit()</code></a></li>
+                </ul></li>
+                <li><a id="toc-codeParserparsecode-replaced-by-codeparseFromSlicecode-into-codeValuecode" href="#codeParserparsecode-replaced-by-codeparseFromSlicecode-into-codeValuecode"><code>Parser.parse</code> replaced by <code>parseFromSlice</code> into <code>Value</code></a>
+                <ul>
+                    <li><a id="toc-codeValueTreecode-replaced-by-codeParsedValuecode" href="#codeValueTreecode-replaced-by-codeParsedValuecode"><code>ValueTree</code> replaced by <code>Parsed(Value)</code></a></li>
+                </ul></li>
+                <li><a id="toc-codewriteStreamcode-API-simplification" href="#codewriteStreamcode-API-simplification"><code>writeStream</code> API simplification</a>
+                <ul>
+                    <li><a id="toc-Custom-codejsonStringifycode-signature-changed" href="#Custom-codejsonStringifycode-signature-changed">Custom <code>jsonStringify</code> signature changed</a></li>
+                    <li><a id="toc-codestringifycode-limits-nesting-to-256-by-default" href="#codestringifycode-limits-nesting-to-256-by-default"><code>stringify</code> limits nesting to 256 by default</a></li>
+                </ul></li>
+                <li><a id="toc-codeStringifyOptionscode-overhauled" href="#codeStringifyOptionscode-overhauled"><code>StringifyOptions</code> overhauled</a></li>
+                <li><a id="toc-codeTokenStreamcode-replaced-by-codeScannercode" href="#codeTokenStreamcode-replaced-by-codeScannercode"><code>TokenStream</code> replaced by <code>Scanner</code></a></li>
+                <li><a id="toc-codeStreamingParsercode-replaced-by-codeReadercode" href="#codeStreamingParsercode-replaced-by-codeReadercode"><code>StreamingParser</code> replaced by <code>Reader</code></a></li>
+                <li><a id="toc-parsestringify-for-codeunioncode-types" href="#parsestringify-for-codeunioncode-types">parse/stringify for <code>union</code> types</a></li>
+                <li><a id="toc-An-allocator-is-always-required-for-parsing-now" href="#An-allocator-is-always-required-for-parsing-now">An allocator is always required for parsing now</a></li>
+            </ul></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -1368,6 +1389,145 @@ Aborted</code></pre><p>The user is notified that unwind information is missing, 
     <ul>
     <li>Consistent use of "invalid format string" compile error response for badly formatted format strings (#13526)</li>
     </ul>
+    
+
+    <h3 id="JSON"><a href="#toc-JSON">JSON</a> <a class="hdr" href="#JSON">§</a></h3>
+
+    <p><a href="https://github.com/thejoshwolfe/">Josh Wolfe</a> writes:</p>
+
+    <p>New <code>std.json</code> features:</p>
+    <ul>
+    <li>Read a json document from a streaming source with <code>json.reader</code>. See <code>json.Token</code> for fine control over the interaction between large tokens, streaming input, and allocators.</li>
+    <li>Unlimited <code>{}</code> and <code>[]</code> nesting depth subject to allocator limitations.</li>
+    <li>After parsing into a dynamic <code>json.Value</code> tree/array union, you can now call <code>json.parseFromValue*</code> to parse that into a static type <code>T</code> following essentially the same semantics as parsing directly.</li>
+    <li>Parsing via <code>json.parseFrom*</code> is customizable by implementing <code>pub fn jsonParse</code> and/or <code>pub fn jsonParseFromValue</code> in your <code>struct</code>, <code>enum</code>, or <code>union(enum)</code>. This mirrors the customizable <code>pub fn jsonStringify</code> functionality.</li>
+    <li>Added a generic <code>json.HashMap(T)</code> container for serializing/deserializing objects with arbitrary string fields. It's a thin wrapper around <code>StringArrayHashMapUnmanaged</code> that implements <code>jsonParse</code>, <code>jsonParseFromValue</code>, and <code>jsonStringify</code>.</li>
+    <li><code>json.WriteStream</code> features now available to custom <code>pub fn jsonStringify</code> implementations due to the unification of <code>json.stringify</code> and <code>json.WriteStream</code>.</li>
+    <li>Writing JSON now supports saving memory by disabling assertions for correct syntax, e.g. disabling assertions that <code>endArray</code> matches a corresponding <code>beginArray</code>.</li>
+    </ul>
+
+    <p>Here is an upgrade guide:</p>
+    <p><em>These instructions include the breaking changes from
+      <a href="https://github.com/ziglang/zig/pull/15602">#15602</a>,
+    <a href="https://github.com/ziglang/zig/pull/15705">#15705</a>,
+    <a href="https://github.com/ziglang/zig/pull/15981">#15981</a>,
+    and <a href="https://github.com/ziglang/zig/pull/16405">#16405</a>.</em></p>
+
+    <h4 id="codeparsecode-replaced-by-codeparseFromSlicecode-or-other-codeparseFromcode"><a href="#toc-codeparsecode-replaced-by-codeparseFromSlicecode-or-other-codeparseFromcode"><code>parse</code> replaced by <code>parseFromSlice</code> or other <code>parseFrom*</code></a> <a class="hdr" href="#codeparsecode-replaced-by-codeparseFromSlicecode-or-other-codeparseFromcode">§</a></h4>
+
+<p>For code that used to look like this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">var</span> stream = json.TokenStream.init(slice);</span>
+<span class="line"><span class="tok-kw">const</span> options = json.ParseOptions{ .allocator = allocator };</span>
+<span class="line"><span class="tok-kw">const</span> result = <span class="tok-kw">try</span> json.parse(T, &amp;stream, options);</span>
+<span class="line"><span class="tok-kw">defer</span> json.parseFree(T, result, options);</span></code></pre></figure>
+<p>Now do this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> parsed = <span class="tok-kw">try</span> json.parseFromSlice(T, allocator, slice, .{});</span>
+<span class="line"><span class="tok-kw">defer</span> parsed.deinit();</span>
+<span class="line"><span class="tok-kw">const</span> result = parsed.value;</span></code></pre></figure>
+<h5 id="codeparseFreecode-replaced-by-codeParsedTdeinitcode"><a href="#toc-codeparseFreecode-replaced-by-codeParsedTdeinitcode"><code>parseFree</code> replaced by <code>Parsed(T).deinit()</code></a> <a class="hdr" href="#codeparseFreecode-replaced-by-codeParsedTdeinitcode">§</a></h5>
+
+<p>See above. Alternatively, use the <code>parseFrom*Leaky</code> variants and manage your own arena.</p>
+
+
+<h4 id="codeParserparsecode-replaced-by-codeparseFromSlicecode-into-codeValuecode"><a href="#toc-codeParserparsecode-replaced-by-codeparseFromSlicecode-into-codeValuecode"><code>Parser.parse</code> replaced by <code>parseFromSlice</code> into <code>Value</code></a> <a class="hdr" href="#codeParserparsecode-replaced-by-codeparseFromSlicecode-into-codeValuecode">§</a></h4>
+
+<p>For code that used to look like this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">var</span> parser = json.Parser.init(allocator, <span class="tok-null">false</span>);</span>
+<span class="line"><span class="tok-kw">defer</span> parser.deinit();</span>
+<span class="line"><span class="tok-kw">var</span> tree = <span class="tok-kw">try</span> parser.parse(slice);</span>
+<span class="line"><span class="tok-kw">defer</span> tree.deinit();</span>
+<span class="line"><span class="tok-kw">const</span> root = tree.root;</span></code></pre></figure>
+<p>Now do this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> parsed = <span class="tok-kw">try</span> json.parseFromSlice(json.Value, allocator, slice, .{});</span>
+<span class="line"><span class="tok-kw">defer</span> parsed.deinit();</span>
+<span class="line"><span class="tok-kw">const</span> root = parsed.value;</span></code></pre></figure>
+
+<h5 id="codeValueTreecode-replaced-by-codeParsedValuecode"><a href="#toc-codeValueTreecode-replaced-by-codeParsedValuecode"><code>ValueTree</code> replaced by <code>Parsed(Value)</code></a> <a class="hdr" href="#codeValueTreecode-replaced-by-codeParsedValuecode">§</a></h5>
+
+<p>The result of <code>json.parseFrom*(T, ...)</code> (except for <code>json.parseFrom*Leaky(T, ...)</code>) is <code>json.Parsed(T)</code>, which replaces the old <code>ValueTree</code>.</p>
+
+
+
+<h4 id="codewriteStreamcode-API-simplification"><a href="#toc-codewriteStreamcode-API-simplification"><code>writeStream</code> API simplification</a> <a class="hdr" href="#codewriteStreamcode-API-simplification">§</a></h4>
+
+<p>The default max depth for <code>writeStream</code> is now 256. To specify a deeper max depth, use <code>writeStreamMaxDepth</code>.</p>
+<p>You don't need to call <code>arrayElem()</code> anymore.</p>
+<p>All the <code>emit*()</code> methods (<code>emitNumber</code>, <code>emitString</code>, <code>emitBool</code>, <code>emitNull</code>, <code>emitJson</code>) replaced by the generic <code>write()</code> method, which takes <code>anytype</code>. The generic <code>json.stringify</code> functionality for structs, unions, etc. is also available in <code>WriteStream.write()</code> (the implementation of <code>stringify</code> now uses <code>WriteStream.write</code>.).</p>
+<h5 id="Custom-codejsonStringifycode-signature-changed"><a href="#toc-Custom-codejsonStringifycode-signature-changed">Custom <code>jsonStringify</code> signature changed</a> <a class="hdr" href="#Custom-codejsonStringifycode-signature-changed">§</a></h5>
+
+<p>Instead of <code>pub fn jsonStringify(self: *@This(), options: json.StringifyOptions, out_stream: anytype) !void</code>, use <code>pub fn jsonStringify(self: *@This(), jw: anytype) !void</code>, where <code>jw</code> is a mutable pointer to a <code>WriteStream</code>. Instead of writing bytes to the <code>out_stream</code>, you should call <code>write()</code> and <code>beginObject</code> and such on the <code>WriteStream</code>.</p>
+
+<h5 id="codestringifycode-limits-nesting-to-256-by-default"><a href="#toc-codestringifycode-limits-nesting-to-256-by-default"><code>stringify</code> limits nesting to 256 by default</a> <a class="hdr" href="#codestringifycode-limits-nesting-to-256-by-default">§</a></h5>
+
+<p>The depth of <code>{</code>/<code>[</code> nesting in the output of <code>json.stringify</code> is now 256. Now that the implementation of <code>stringify</code> uses a <code>WriteStream</code>, we have safety checks for matching <code>endArray</code> to <code>beginArray</code> and such, which requires memory: 1 bit per nesting level. To disable syntax checks and save that memory, use <code>stringifyMaxDepth(..., null)</code>. To make syntax checks available to custom <code>pub fn jsonStringify</code> implementations to arbitrary nesting depth, use <code>stringifyArbitraryDepth</code> and provide an allocator.</p>
+
+
+
+<h4 id="codeStringifyOptionscode-overhauled"><a href="#toc-codeStringifyOptionscode-overhauled"><code>StringifyOptions</code> overhauled</a> <a class="hdr" href="#codeStringifyOptionscode-overhauled">§</a></h4>
+
+<ul>
+<li><code>escape_unicode</code> moved to the top level.</li>
+<li><code>escape_solidus</code> removed.</li>
+<li><code>string = .Array</code> replaced by <code>.emit_strings_as_arrays = true</code>.</li>
+<li><code>whitespace.indent_level</code> removed.</li>
+<li><code>whitespace.separator</code> and <code>whitespace.indent</code> combined into <code>.whitespace = .minified</code> vs <code>.whitespace = .indent_2</code> etc.</li>
+</ul>
+<p><strong>The default whitespace in all contexts is now <code>.minified</code>.</strong> This is changed from the old <code>WriteStream</code> having effectively <code>.indent_1</code>, and the old <code>StringifyOptions{ .whitespace = .{} }</code> having effectively <code>.indent_4</code>.</p>
+
+
+<h4 id="codeTokenStreamcode-replaced-by-codeScannercode"><a href="#toc-codeTokenStreamcode-replaced-by-codeScannercode"><code>TokenStream</code> replaced by <code>Scanner</code></a> <a class="hdr" href="#codeTokenStreamcode-replaced-by-codeScannercode">§</a></h4>
+
+<p>For code that used to look like this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">var</span> stream = json.TokenStream.init(slice);</span>
+<span class="line"><span class="tok-kw">while</span> (<span class="tok-kw">try</span> stream.next()) |token| {</span>
+<span class="line">    handleToken(token);</span>
+<span class="line">}</span></code></pre></figure>
+<p>Now do this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">var</span> tokenizer = json.Scanner.initCompleteInput(allocator, slice);</span>
+<span class="line"><span class="tok-kw">defer</span> tokenizer.deinit();</span>
+<span class="line"><span class="tok-kw">while</span> (<span class="tok-null">true</span>) {</span>
+<span class="line">    <span class="tok-kw">const</span> token = <span class="tok-kw">try</span> tokenizer.next();</span>
+<span class="line">    <span class="tok-kw">if</span> (token == .end_of_document) <span class="tok-kw">break</span>;</span>
+<span class="line">    handleToken(token);</span>
+<span class="line">}</span></code></pre></figure>
+<p>See <code>json.Token</code> for more info.</p>
+
+
+<h4 id="codeStreamingParsercode-replaced-by-codeReadercode"><a href="#toc-codeStreamingParsercode-replaced-by-codeReadercode"><code>StreamingParser</code> replaced by <code>Reader</code></a> <a class="hdr" href="#codeStreamingParsercode-replaced-by-codeReadercode">§</a></h4>
+
+<p>For code that used to look like this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> slice = <span class="tok-kw">try</span> reader.readAllAlloc(allocator, max_size);</span>
+<span class="line"><span class="tok-kw">defer</span> allocator.free(slice);</span>
+<span class="line"><span class="tok-kw">var</span> tokenizer = json.StreamingParser.init();</span>
+<span class="line"><span class="tok-kw">for</span> (slice) |c| {</span>
+<span class="line">    <span class="tok-kw">var</span> token1: ?json.Token = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-kw">var</span> token2: ?json.Token = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-kw">try</span> tokenizer.feed(c, &amp;token1, &amp;token2);</span>
+<span class="line">    <span class="tok-kw">if</span> (token1) |t| {</span>
+<span class="line">        handleToken(t);</span>
+<span class="line">        <span class="tok-kw">if</span> (token2) |t2| handleToken(t2);</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure>
+<p>Now do this:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">var</span> stream = json.reader(allocator, reader);</span>
+<span class="line"><span class="tok-kw">defer</span> stream.deinit();</span>
+<span class="line"><span class="tok-kw">while</span> (<span class="tok-null">true</span>) {</span>
+<span class="line">    <span class="tok-kw">const</span> token = <span class="tok-kw">try</span> stream.next();</span>
+<span class="line">    <span class="tok-kw">if</span> (token == .end_of_document) <span class="tok-kw">break</span>;</span>
+<span class="line">    handleToken(token);</span>
+<span class="line">}</span></code></pre></figure>
+<p>See <code>json.Token</code> for more info.</p>
+
+<h4 id="parsestringify-for-codeunioncode-types"><a href="#toc-parsestringify-for-codeunioncode-types">parse/stringify for <code>union</code> types</a> <a class="hdr" href="#parsestringify-for-codeunioncode-types">§</a></h4>
+
+<p>Parsing and stringifying <code>union(enum)</code> types works differently now by default. For <code>const T = union(enum) { s: []const u8, i: i32};</code>, the old behavior used to accept documents in the form <code>&quot;abc&quot;</code> or <code>123</code> to parse into <code>.{.s=&quot;abc&quot;}</code> or <code>.{.i=123}</code> respectively; the new behavior accepts documents in the form <code>{&quot;s&quot;:&quot;abc&quot;}</code> or <code>{&quot;i&quot;:123}</code> instead. Stringifying is updated as well to maintain the bijection.</p>
+<p>The dynamic value <code>json.Value</code> can be used for simple int-or-string cases. For more complex cases, you can implement <code>jsonParse</code>, <code>jsonParseFromValue</code>, and <code>jsonStringify</code> as needed.</p>
+
+<h4 id="An-allocator-is-always-required-for-parsing-now"><a href="#toc-An-allocator-is-always-required-for-parsing-now">An allocator is always required for parsing now</a> <a class="hdr" href="#An-allocator-is-always-required-for-parsing-now">§</a></h4>
+
+<p>Sorry for the inconvenience. There are some ideas to restore support for allocatorless json parsing, but for now, you always must use an allocator. At a minimum it is used for tracking the <code>{}</code> vs <code>[]</code> nesting depth, and possibly other uses depending on what <code>std.json</code> API is being called.</p>
+<p>If you use a <code>std.FixedBufferAllocator</code>, you can make parsing json work at comptime.</p>
+
     
     
 
