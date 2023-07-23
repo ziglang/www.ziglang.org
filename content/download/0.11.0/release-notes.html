@@ -505,7 +505,7 @@
             <li><a id="toc-musl-124" href="#musl-124">musl 1.2.4</a></li>
             <li><a id="toc-glibc" href="#glibc">glibc</a></li>
             <li><a id="toc-mingw-w64-1101" href="#mingw-w64-1101">mingw-w64 11.0.1</a></li>
-            <li><a id="toc-wasi-libc" href="#wasi-libc">wasi-libc</a></li>
+            <li><a id="toc-WASI-libc" href="#WASI-libc">WASI-libc</a></li>
             <li><a id="toc-compiler-rt" href="#compiler-rt">compiler-rt</a></li>
             <li><a id="toc-zig-cc" href="#zig-cc">zig cc</a></li>
             <li><a id="toc-zig-c" href="#zig-c">zig c++</a></li>
@@ -1051,7 +1051,26 @@
 
     <h4 id="WebAssembly"><a href="#toc-WebAssembly">WebAssembly</a> <a class="hdr" href="#WebAssembly">§</a></h4>
 
-    TODO
+    <p><a href="https://github.com/Luukdegram">Luuk de Gram</a> writes:</p>
+<p>Starting from this release, Zig no longer unconditionally passes
+<code>--allow-undefined</code> to the <a href="#Linker">Linker</a>. By removing this flag, the user
+will now be faced with an error during the linking stage rather than a panic
+during runtime for undefined functions. If your project requires such
+behavior, the flag <code>import-symbols</code> can be used which will allow
+undefined symbols during linking.</p>
+<p>For this change we also had to update the
+strategy of exporting all symbols to the host. We no longer unconditionally
+export all symbols to the host. Previously this would result in unwanted
+symbols existing in the final binary. By default we now only export the symbol
+to the linker, meaning they will only be visible to other object files so they
+can be resolved correctly. If you wish to export a symbol to the host
+environment, the flag <code>--export=[name]</code> can be used. Alternatively,
+the flag <code>-rdynamic</code> can be used to export all visible symbols to
+the host environment. By setting the <code>visibilibity</code> field to
+<code>.hidden</code> on <code>std.builtin.ExportOptions</code> a symbol will
+remain only visible to the linker and not be exported to the host. With this
+breaking change, the linker will behave the same whether a user is using
+<a href="#zig-cc">zig cc</a> or Clang directly.</p>
     
 
     <h4 id="SPARC"><a href="#toc-SPARC">SPARC</a> <a class="hdr" href="#SPARC">§</a></h4>
@@ -1115,7 +1134,23 @@ Date:   Sat Dec 10 03:44:25 2022 -0500
 
     <h4 id="WASI"><a href="#toc-WASI">WASI</a> <a class="hdr" href="#WASI">§</a></h4>
 
-    TODO
+    <p><a href="https://github.com/Luukdegram">Luuk de Gram</a> writes:</p>
+<p>In this release-cycle the <a href="#Standard-Library">Standard Library</a> gained experimental
+support for WASI-threads. This means it will be possible to create a
+multi-threaded application when targeting WASI without having to change your
+codebase. Keep in mind that the feature is still in proposal phase 1 of the
+WASI specification, so support within the standard library is still
+experimental and bugs are to be expected. As the feature is still experimental,
+we still default to single-threaded builds when targeting WebAssembly. To
+disable this, one can pass <code>-fno-single-threaded</code> in combination
+with the <code>--shared-memory</code> flags. This also requires the cpu
+features <code>atomics</code> and <code>bulk-memory</code> to be enabled.</p>
+
+<p>The same flags will also work for freestanding <a href="#WebAssembly">WebAssembly</a> modules, allowing
+a user to build a multi-threaded WebAssembly module for other runtimes. Be
+aware that the threads in the standard library are only available for WASI. For
+freestanding, the user must implement their own such as Web Workers when
+building a WebAssembly module for the browser.</p>
     
 
     <h4 id="UEFI"><a href="#toc-UEFI">UEFI</a> <a class="hdr" href="#UEFI">§</a></h4>
@@ -1720,9 +1755,27 @@ Date:   Wed Jan 4 14:51:43 2023 -0500
 
     <h4 id="WebAssembly-Backend"><a href="#toc-WebAssembly-Backend">WebAssembly Backend</a> <a class="hdr" href="#WebAssembly-Backend">§</a></h4>
 
-    <p>Although the WebAssembly backend is still considered <strong>experimental</strong>, it
-    is now passing <strong>1428/1657 (86%)</strong> of the behavior tests,
-    compared to the <a href="#LLVM-Backend">LLVM Backend</a>.</p>
+    <p>This release did not see many user-facing features added to the
+    WebAssembly backend. A few notable features are:</p>
+    <ul>
+      <li>atomics</li>
+      <li>packed structs</li>
+      <li>initial SIMD support</li>
+      <li>Several safety-checks</li>
+    </ul>
+    <p>
+Besides those language features, the WebAssembly backend now also uses the
+regular <code>start.zig</code> logic as well as the standard test-runner. This is a big
+step as the default test-runner logic uses a client-server architecture,
+requiring a lot of the language to be implemented for it to work. This will
+also help us further with completing the WebAssembly backend as the test-runner
+provides us with more details about which test failed.
+    </p>
+    <p>
+    Lastly, a lot of bugs and miscompilations were fixed, passing more behavior tests.
+    Although the WebAssembly backend is still considered
+    <strong>experimental</strong>, it is now passing <strong>1428/1657
+    (86%)</strong> of the behavior tests, compared to the <a href="#LLVM-Backend">LLVM Backend</a>.</p>
     
 
     <h4 id="aarch64-Backend"><a href="#toc-aarch64-Backend">aarch64 Backend</a> <a class="hdr" href="#aarch64-Backend">§</a></h4>
@@ -1788,7 +1841,24 @@ Date:   Fri Dec 16 09:29:09 2022 +0200
 
     <h3 id="Wasm-Modules"><a href="#toc-Wasm-Modules">Wasm Modules</a> <a class="hdr" href="#Wasm-Modules">§</a></h3>
 
-    TODO
+    <p><a href="https://github.com/Luukdegram">Luuk de Gram</a> writes:</p>
+    <p>During this release, a lot of work has gone into the in-house WebAssembly
+    linker. The biggest feature it gained was the support of the <code>shared
+    memory</code> feature. This allows multiple WebAssembly modules to access the
+    same memory. This feature opens support for multi-threading in WebAssembly.
+    This also required us to implement support for Thread-Local Storage. The linker is now fully
+    capable of linking with <a href="#WASI-libc">WASI-libc</a>, also. Users can now make use of the in-house
+    linker by supplying the <code>-fno-LLD</code> flag to your <code>zig
+    build-{lib/exe}</code> CLI invocation.</p>
+
+    <p>We are closer than ever to replace LLVM's linker wasm-ld with our
+    in-house linker. The last feature to implement for statically built
+    WebAssembly modules is garbage collection. This ensures unreferenced
+    symbols get removed from the final binary keeping the binaries small in
+    disk size. Once implemented, we can make the in-house linker the default
+    linker when builing a WebAssembly module and gather feedback and fix any
+    bugs that haven't been found yet. We can then start working on other
+    features such as dynamic-linking support and any future proposals.</p>
     
 
     
@@ -1875,7 +1945,7 @@ Date:   Fri Dec 16 09:29:09 2022 +0200
     </ul>
     
 
-    <h3 id="wasi-libc"><a href="#toc-wasi-libc">wasi-libc</a> <a class="hdr" href="#wasi-libc">§</a></h3>
+    <h3 id="WASI-libc"><a href="#toc-WASI-libc">WASI-libc</a> <a class="hdr" href="#WASI-libc">§</a></h3>
 
     TODO
     
