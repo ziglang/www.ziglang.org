@@ -435,7 +435,11 @@
             <li><a id="toc-Concurrency" href="#Concurrency">Concurrency</a></li>
             <li><a id="toc-Networking" href="#Networking">Networking</a></li>
             <li><a id="toc-Testing" href="#Testing">Testing</a></li>
-            <li><a id="toc-Debugging" href="#Debugging">Debugging</a></li>
+            <li><a id="toc-Debugging" href="#Debugging">Debugging</a>
+            <ul>
+                <li><a id="toc-Stack-Unwinding" href="#Stack-Unwinding">Stack Unwinding</a></li>
+                <li><a id="toc-External-Debug-Info" href="#External-Debug-Info">External Debug Info</a></li>
+            </ul></li>
             <li><a id="toc-Formatted-Printing" href="#Formatted-Printing">Formatted Printing</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
@@ -478,7 +482,7 @@
         <ul>
             <li><a id="toc-LLVM-16" href="#LLVM-16">LLVM 16</a></li>
             <li><a id="toc-musl-124" href="#musl-124">musl 1.2.4</a></li>
-            <li><a id="toc-glibc-237" href="#glibc-237">glibc 2.37</a></li>
+            <li><a id="toc-glibc" href="#glibc">glibc</a></li>
             <li><a id="toc-mingw-w64-1101" href="#mingw-w64-1101">mingw-w64 11.0.1</a></li>
             <li><a id="toc-wasi-libc" href="#wasi-libc">wasi-libc</a></li>
             <li><a id="toc-compiler-rt" href="#compiler-rt">compiler-rt</a></li>
@@ -1253,7 +1257,110 @@ Date:   Sun Dec 18 01:57:49 2022 +0200
 
     <h3 id="Debugging"><a href="#toc-Debugging">Debugging</a> <a class="hdr" href="#Debugging">§</a></h3>
 
-    TODO
+    <ul>
+      <li>Added support for DWARF5 <code>DW_AT_ranges</code> in subprograms. Some DWARF5 subprograms have non-contiguous instruction ranges, which wasn't supported before. An example of such a function is <code>puts</code> in Ubuntu's libc. Stack traces now include the names of these functions.</li>
+      <li>Support for DWARF information embedded inside COFF binaries has been fixed. This is relatively uncommon combination, as typically this information is in a PDB file, but can be output using <code>-gdwarf</code> when compiling C/C++ code for Windows.</li>
+    </ul>
+
+    <h4 id="Stack-Unwinding"><a href="#toc-Stack-Unwinding">Stack Unwinding</a> <a class="hdr" href="#Stack-Unwinding">§</a></h4>
+
+    <p><a href="https://github.com/kcbanner">Casey Banner</a> writes:</p>
+<p>When something goes wrong in your program, at the very least you expect it to output a stack trace. In many cases, upon seeing the stack trace, the error is obvious and can be fixed without needing to attach a debugger. If you are a project maintainer, having correct stack trace output is a necessity for your users to be able to provide actionable bug reports when something goes wrong.</p>
+<p>In order to print a stack trace, the panic (or segfault) handler needs to unwind the stack, by traversing back through the stack frames starting at the crash site. Up until now, this was done strictly by utilizing the <a href="https://en.wikipedia.org/wiki/Call_stack#Stack_and_frame_pointers">frame pointer</a>. This method of stack unwinding works assuming that a frame pointer is available, which isn't the case if the code is compiled without one - ie. if <code>-fomit-frame-pointer</code>was used. </p>
+<p>It can be beneficial for performance reasons to not use a frame pointer, since this frees up an additional register, so some software maintainers may choose to ship libraries compiled without it. One of the motivating reasons for this change was solving a bug where unwinding a stack trace that started in Ubuntu's libc wasn't working - and indeed it is compiled with <code>-fomit-frame-pointer</code>.</p>
+<p>Since <a href="https://github.com/ziglang/zig/pull/15823">#15823</a> was merged, the <a href="#Standard-Library">Standard Library</a> stack unwinder (<code>std.debug.StackIterator</code>) now supports unwinding stacks using both DWARF unwind tables, and <a href="#MachO">MachO</a> compact unwind information. These unwind tables encode how to unwind all the register state and recover the return address for any location in the program. </p>
+<p>In order to save space, DWARF unwind tables aren't program-sized lookup tables, but instead sets of opcodes which run on a virtual machine inside the unwinder to build the lookup table dynmamically. Additionally, these tables can define register values in terms of DWARF expressions, which is a separate stack-machine based bytecode. This is all supported in the new unwinder.</p>
+<p>As an example of how this improves stack trace output, consider the following zig program and C library (which will be built with <code>-fomit-frame-pointer</code>):</p>
+<figure><figcaption class="zig-cap"><cite class="file">main.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">extern</span> <span class="tok-kw">fn</span> <span class="tok-fn">add_mult</span>(x: <span class="tok-type">i32</span>, y: <span class="tok-type">i32</span>, n: ?*<span class="tok-type">i32</span>) <span class="tok-type">i32</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    std.debug.print(<span class="tok-str">&quot;add: {}\n&quot;</span>, .{ add_mult(<span class="tok-number">5</span>, <span class="tok-number">3</span>, <span class="tok-null">null</span>) });</span>
+<span class="line">}</span></code></pre></figure>
+
+<figure><figcaption class="c-cap"><cite class="file">lib.c</cite></figcaption><pre><code><span class="line">#include &lt;stdio.h&gt;</span>
+<span class="line"></span>
+<span class="line">#ifndef LIB_API</span>
+<span class="line">#define LIB_API</span>
+<span class="line">#endif</span>
+<span class="line"></span>
+<span class="line">int add_mult3(int x, int y, int* n) {</span>
+<span class="line">    puts((const char*)0x1234);</span>
+<span class="line">    return (x + y) * (*n);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line">int add_mult2(int x, int y, int* n) {</span>
+<span class="line">    return add_mult3(x, y, n);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line">int add_mult1(int x, int y, int* n) {</span>
+<span class="line">    return add_mult2(x, y, n);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line">LIB_API int add_mult(int x, int y, int* n) {</span>
+<span class="line">    return add_mult1(x, y, n);</span>
+<span class="line">}</span></code></pre></figure>
+
+<p>Before the stack unwinding changes, the user would see the following output:</p>
+<pre><code>Segmentation fault at address 0x1234
+???:?:?: 0x7f71d9ec997d in ??? (???)
+/home/user/kit/zig/build-stage3-release-linux/lib/zig/std/start.zig:608:37: 0x20a505 in main (main)
+            const result = root.main() catch |err| {
+                                    ^
+Aborted</code></pre>
+<p>With the new unwinder:</p>
+<pre><code>Segmentation fault at address 0x1234
+../sysdeps/x86_64/multiarch/strlen-avx2.S:74:0: 0x7fefd03b297d in ??? (../sysdeps/x86_64/multiarch/strlen-avx2.S)
+./libio/ioputs.c:35:16: 0x7fefd0295ee7 in _IO_puts (ioputs.c)
+src/lib.c:8:5: 0x7fefd04484aa in add_mult3 (/home/user/temp/stack/src/lib.c)
+    puts((const char*)0x1234);
+    ^
+src/lib.c:13:12: 0x7fefd0448542 in add_mult2 (/home/user/temp/stack/src/lib.c)
+    return add_mult3(x, y, n);
+           ^
+src/lib.c:17:12: 0x7fefd0448572 in add_mult1 (/home/user/temp/stack/src/lib.c)
+    return add_mult2(x, y, n);
+           ^
+src/lib.c:21:12: 0x7fefd04485a2 in add_mult (/home/user/temp/stack/src/lib.c)
+    return add_mult1(x, y, n);
+           ^
+/home/user/temp/stack/src/main.zig:6:45: 0x2123b7 in main (main)
+    std.debug.print("add: {}\n", .{ add_mult(5, 3, null) });
+                                            ^
+/home/user/kit/zig/build-stage3-release-linux/lib/zig/std/start.zig:608:37: 0x2129b4 in main (main)
+            const result = root.main() catch |err| {
+                                    ^
+../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7fefd023ed8f in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+../csu/libc-start.c:392:3: 0x7fefd023ee3f in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+???:?:?: 0x212374 in ??? (???)
+???:?:?: 0x0 in ??? (???)
+Aborted</code></pre>
+<p>The unwind information for libc (which comes from a separate file, see below) was loaded and used to unwind the stack correctly, resulting in a much more useful stack trace. </p>
+<p>If there is no unwind information available for a given frame, the unwinder will fall back to frame pointer unwinding for the rest of the stack trace. For example, if the above program is built for x86-linux-gnu on the same system (which only has x86_64 libc debug information installed), it results in the following output:</p>
+<pre><code>Segmentation fault at address 0x1234
+???:?:?: 0xf7dc9555 in ??? (libc.so.6)
+Unwind information for `libc.so.6:0xf7dc9555` was not available (error.MissingDebugInfo), trace may be incomplete
+
+???:?:?: 0x0 in ??? (???)
+Aborted</code></pre><p>The user is notified that unwind information is missing, and they could choose to install it to enhance the stack trace output.</p>
+<p>This system works for both panic traces as well as segfaults. In the case of a segfault, the OS will pass a context (containing the state of all the registers at the time of the segfault) to the handler, which will be used by the unwinder. In the case of a panic, the unwinder still needs a register context, so one is captured by the panic handler. If the program is linking libc, then libc's <code>getcontext</code> is used, otherwise an implementation in <code>std</code> is used if available. On platforms where <code>getcontext</code> isn't available, the stack unwinder falls back to frame pointer based unwinding.</p>
+<p>Implementations of <code>getcontext</code> have been added for <code>x86_64-linux</code> and <code>x86-linux</code>.</p>
+    
+
+    <h4 id="External-Debug-Info"><a href="#toc-External-Debug-Info">External Debug Info</a> <a class="hdr" href="#External-Debug-Info">§</a></h4>
+
+<p>The ELF format allows for splitting debug information sections into separate files. If the user of the software does not typically need to debug it, then debug info can be shipped an as optional dependency to reduce the size of the installation. A primary use case for this feature is libc debug information, which can be quite large. Some distributions have a separate package that contains only the debug info for their libc, which can be installed separately.</p>
+<p>These extra files are simply additional ELF files that contain only the debug info sections. As an additional space-saving measure, these sections can also be compressed. For example, in the libc stack traces above the debug information came from <code>/usr/lib/debug/.build-id/69/389d485a9793dbe873f0ea2c93e02efaa9aa3d.debug</code>, not <code>libc.so.6</code>.</p>
+<p>Support for reading external debug information has been added, with this set of changes:</p>
+<ul>
+<li>Support reading the build-id from the elf headers in order to lookup external debug info</li>
+<li>Support reading the <code>.gnu_debuglink</code> section to look up external debug info</li>
+<li>Add support for reading compressed ELF sections</li>
+<li>Rework how sections are loaded from disk in order to support merging the list of sections that are present in the binary itself and the ones from the external debug info</li>
+<li>Fixed up some memory management issues with the existing debug information loader</li>
+</ul>
+    
     
 
     <h3 id="Formatted-Printing"><a href="#toc-Formatted-Printing">Formatted Printing</a> <a class="hdr" href="#Formatted-Printing">§</a></h3>
@@ -1588,10 +1695,10 @@ Date:   Fri Dec 16 09:29:09 2022 +0200
     </p>
     
 
-    <h3 id="glibc-237"><a href="#toc-glibc-237">glibc 2.37</a> <a class="hdr" href="#glibc-237">§</a></h3>
+    <h3 id="glibc"><a href="#toc-glibc">glibc</a> <a class="hdr" href="#glibc">§</a></h3>
 
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
-    TODO
+    TODO glibc is still stuck on the old version
     
 
     <h3 id="mingw-w64-1101"><a href="#toc-mingw-w64-1101">mingw-w64 11.0.1</a> <a class="hdr" href="#mingw-w64-1101">§</a></h3>
