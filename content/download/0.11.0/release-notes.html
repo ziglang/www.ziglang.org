@@ -396,7 +396,7 @@
                 <li><a id="toc-WebAssembly" href="#WebAssembly">WebAssembly</a></li>
                 <li><a id="toc-SPARC" href="#SPARC">SPARC</a></li>
                 <li><a id="toc-PowerPC" href="#PowerPC">PowerPC</a></li>
-                <li><a id="toc-GPU-Programming" href="#GPU-Programming">GPU Programming</a></li>
+                <li><a id="toc-GPGPU" href="#GPGPU">GPGPU</a></li>
             </ul></li>
             <li><a id="toc-Operating-Systems" href="#Operating-Systems">Operating Systems</a>
             <ul>
@@ -481,8 +481,8 @@
                 <li><a id="toc-C-Backend" href="#C-Backend">C Backend</a></li>
                 <li><a id="toc-x86-Backend" href="#x86-Backend">x86 Backend</a></li>
                 <li><a id="toc-WebAssembly-Backend" href="#WebAssembly-Backend">WebAssembly Backend</a></li>
+                <li><a id="toc-SPIR-V-Backend" href="#SPIR-V-Backend">SPIR-V Backend</a></li>
                 <li><a id="toc-aarch64-Backend" href="#aarch64-Backend">aarch64 Backend</a></li>
-                <li><a id="toc-arm-Backend" href="#arm-Backend">arm Backend</a></li>
             </ul></li>
             <li><a id="toc-Error-Return-Tracing" href="#Error-Return-Tracing">Error Return Tracing</a></li>
             <li><a id="toc-Safety-Checks" href="#Safety-Checks">Safety Checks</a></li>
@@ -1083,9 +1083,34 @@ breaking change, the linker will behave the same whether a user is using
     TODO
     
 
-    <h4 id="GPU-Programming"><a href="#toc-GPU-Programming">GPU Programming</a> <a class="hdr" href="#GPU-Programming">§</a></h4>
+    <h4 id="GPGPU"><a href="#toc-GPGPU">GPGPU</a> <a class="hdr" href="#GPGPU">§</a></h4>
 
-    TODO
+    <p><a href="https://pythons.space/">Robin "Snektron" Voetter</a> writes:</p>
+<p>Three new built-in functions are added to aid with writing GPGPU kernels in Zig: <code>@workGroupId</code>, <code>@workItemId</code>, and <code>@workGroupSize</code>. These are respectively used to query the index of the work group of the current thread in a kernel invocation, the size of a work group in threads, and the thread index in the current work group. For now, these are only wired up to work when compiling Zig to AMD GCN machine code via LLVM, that can be used with ROCm. In the future they will be added to the LLVM-based NVPTX and self-hosted SPIR-V backends as well.</p>
+<p>For example, the following Zig GPU kernel performs a simple reduction on its inputs:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> block_dim = <span class="tok-number">256</span>;</span>
+<span class="line"><span class="tok-kw">var</span> shared: [block_dim]<span class="tok-type">f32</span> <span class="tok-kw">addrspace</span>(.shared) = <span class="tok-null">undefined</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">reduce</span>(in: [*]<span class="tok-kw">addrspace</span>(.global) <span class="tok-type">f32</span>, out: [*]<span class="tok-kw">addrspace</span>(.global) <span class="tok-type">f32</span>) <span class="tok-kw">callconv</span>(.Kernel) <span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> tid = <span class="tok-builtin">@workItemId</span>(<span class="tok-number">0</span>);</span>
+<span class="line">    <span class="tok-kw">const</span> bid = <span class="tok-builtin">@workGroupId</span>(<span class="tok-number">0</span>);</span>
+<span class="line">    shared[tid] = in[bid * block_dim + tid];</span>
+<span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> i: <span class="tok-type">usize</span> = <span class="tok-number">1</span>;</span>
+<span class="line">    <span class="tok-kw">inline</span> <span class="tok-kw">while</span> (i &lt; block_dim) : (i *= <span class="tok-number">2</span>) {</span>
+<span class="line">        <span class="tok-kw">if</span> (tid % (i * <span class="tok-number">2</span>) == <span class="tok-number">0</span>) shared[tid] += shared[tid + i];</span>
+<span class="line">        <span class="tok-kw">asm</span> <span class="tok-kw">volatile</span> (<span class="tok-str">&quot;s_barrier&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">if</span> (tid == <span class="tok-number">0</span>) out[bid] = shared[<span class="tok-number">0</span>];</span>
+<span class="line">}</span></code></pre></figure>
+
+<p>This kernel can be compiled to a HIP module for use with ROCm using Zig and clang-offload-bundler:</p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-obj -target amdgcn-amdhsa-none -mcpu=gfx1100 ./test.zig</kbd>
+$ <kbd>clang-offload-bundler -type=o -bundle-align=4096 \
+    -targets=host-x86_64-unknown-linux,hipv4-amdgcn-amd-amdhsa--gfx1100</kbd>
+    -input=/dev/null -input=./test.o -output=module.co
+</samp></pre></figure>
+
+<p>The resulting module can be loaded directly using <code>hipModuleLoadData</code> and executed using <code>hipModuleLaunchKernel</code>.</p>
     
     
 
@@ -1778,16 +1803,22 @@ provides us with more details about which test failed.
     (86%)</strong> of the behavior tests, compared to the <a href="#LLVM-Backend">LLVM Backend</a>.</p>
     
 
-    <h4 id="aarch64-Backend"><a href="#toc-aarch64-Backend">aarch64 Backend</a> <a class="hdr" href="#aarch64-Backend">§</a></h4>
+    <h4 id="SPIR-V-Backend"><a href="#toc-SPIR-V-Backend">SPIR-V Backend</a> <a class="hdr" href="#SPIR-V-Backend">§</a></h4>
 
-    <p>This <strong>experimental</strong> backend has no active contributors!
-    Are you interested in helping out?</p>
+    <p><a href="https://pythons.space/">Robin "Snektron" Voetter</a> writes:</p>
+  <p>This release cycle saw significant improvement of the self-hosted SPIR-V backend. SPIR-V is a bytecode representation for shaders and kernels that run on GPUs. For now, the SPIR-V backend of Zig is focused on generating code for OpenCL kernels, though Vulkan compatible shaders may see support in the future too.</p>
+  <p>The main contributions in this release cycle feature a crude assembler for SPIR-V inline assembly, which is useful for supporting fringe types and operations, and other features from SPIR-V that do not expose itself well from within Zig.</p>
+  <p>The backend also saw improvements to codegen, and is now able to compile and execute about 37% of the compiler behavior test suite on select OpenCL implementations. Unfortunately this does not yet include Rusticl, which is currently missing a few features that the Zig SPIR-V backend requires.</p>
+  <p>Currently, executing SPIR-V tests requires third-party implementations of the test runner and test executor. In the future, these will be integrated further with Zig.</p>
     
 
-    <h4 id="arm-Backend"><a href="#toc-arm-Backend">arm Backend</a> <a class="hdr" href="#arm-Backend">§</a></h4>
+    <h4 id="aarch64-Backend"><a href="#toc-aarch64-Backend">aarch64 Backend</a> <a class="hdr" href="#aarch64-Backend">§</a></h4>
 
-    <p>This <strong>experimental</strong> backend has no active contributors!
-    Are you interested in helping out?</p>
+    <p>During this release cycle, some progress was made on this
+    <strong>experimental</strong> backend, but there is nothing user-facing to
+    report. It has not yet graduated beyond the <strong>simplified start
+    code</strong> routines, so we have no behavior test percentage to report
+    yet.</p>
     
     
 

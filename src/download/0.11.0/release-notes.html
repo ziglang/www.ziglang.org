@@ -924,8 +924,36 @@ breaking change, the linker will behave the same whether a user is using
     TODO
     {#header_close#}
 
-    {#header_open|GPU Programming#}
-    TODO
+    {#header_open|GPGPU#}
+    <p><a href="https://pythons.space/">Robin "Snektron" Voetter</a> writes:</p>
+<p>Three new built-in functions are added to aid with writing GPGPU kernels in Zig: <code>@workGroupId</code>, <code>@workItemId</code>, and <code>@workGroupSize</code>. These are respectively used to query the index of the work group of the current thread in a kernel invocation, the size of a work group in threads, and the thread index in the current work group. For now, these are only wired up to work when compiling Zig to AMD GCN machine code via LLVM, that can be used with ROCm. In the future they will be added to the LLVM-based NVPTX and self-hosted SPIR-V backends as well.</p>
+<p>For example, the following Zig GPU kernel performs a simple reduction on its inputs:</p>
+{#syntax_block|zig|example.zig#}
+const block_dim = 256;
+var shared: [block_dim]f32 addrspace(.shared) = undefined;
+
+export fn reduce(in: [*]addrspace(.global) f32, out: [*]addrspace(.global) f32) callconv(.Kernel) void {
+    const tid = @workItemId(0);
+    const bid = @workGroupId(0);
+    shared[tid] = in[bid * block_dim + tid];
+    comptime var i: usize = 1;
+    inline while (i < block_dim) : (i *= 2) {
+        if (tid % (i * 2) == 0) shared[tid] += shared[tid + i];
+        asm volatile ("s_barrier");
+    }
+    if (tid == 0) out[bid] = shared[0];
+}
+{#end_syntax_block#}
+
+<p>This kernel can be compiled to a HIP module for use with ROCm using Zig and clang-offload-bundler:</p>
+    {#shell_samp#}
+$ zig build-obj -target amdgcn-amdhsa-none -mcpu=gfx1100 ./test.zig
+$ clang-offload-bundler -type=o -bundle-align=4096 \
+    -targets=host-x86_64-unknown-linux,hipv4-amdgcn-amd-amdhsa--gfx1100
+    -input=/dev/null -input=./test.o -output=module.co
+    {#end_shell_samp#}
+
+<p>The resulting module can be loaded directly using <code>hipModuleLoadData</code> and executed using <code>hipModuleLaunchKernel</code>.</p>
     {#header_close#}
     {#header_close#}
 
@@ -1578,14 +1606,20 @@ provides us with more details about which test failed.
     (86%)</strong> of the behavior tests, compared to the {#link|LLVM Backend#}.</p>
     {#header_close#}
 
-    {#header_open|aarch64 Backend#}
-    <p>This <strong>experimental</strong> backend has no active contributors!
-    Are you interested in helping out?</p>
+    {#header_open|SPIR-V Backend#}
+    <p><a href="https://pythons.space/">Robin "Snektron" Voetter</a> writes:</p>
+  <p>This release cycle saw significant improvement of the self-hosted SPIR-V backend. SPIR-V is a bytecode representation for shaders and kernels that run on GPUs. For now, the SPIR-V backend of Zig is focused on generating code for OpenCL kernels, though Vulkan compatible shaders may see support in the future too.</p>
+  <p>The main contributions in this release cycle feature a crude assembler for SPIR-V inline assembly, which is useful for supporting fringe types and operations, and other features from SPIR-V that do not expose itself well from within Zig.</p>
+  <p>The backend also saw improvements to codegen, and is now able to compile and execute about 37% of the compiler behavior test suite on select OpenCL implementations. Unfortunately this does not yet include Rusticl, which is currently missing a few features that the Zig SPIR-V backend requires.</p>
+  <p>Currently, executing SPIR-V tests requires third-party implementations of the test runner and test executor. In the future, these will be integrated further with Zig.</p>
     {#header_close#}
 
-    {#header_open|arm Backend#}
-    <p>This <strong>experimental</strong> backend has no active contributors!
-    Are you interested in helping out?</p>
+    {#header_open|aarch64 Backend#}
+    <p>During this release cycle, some progress was made on this
+    <strong>experimental</strong> backend, but there is nothing user-facing to
+    report. It has not yet graduated beyond the <strong>simplified start
+    code</strong> routines, so we have no behavior test percentage to report
+    yet.</p>
     {#header_close#}
     {#header_close#}
 
