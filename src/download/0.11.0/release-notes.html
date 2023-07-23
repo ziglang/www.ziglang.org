@@ -1201,6 +1201,148 @@ Aborted</code></pre><p>The user is notified that unwind information is missing, 
     <li>Consistent use of "invalid format string" compile error response for badly formatted format strings (#13526)</li>
     </ul>
     {#header_close#}
+
+    {#header_open|JSON#}
+    <p><a href="https://github.com/thejoshwolfe/">Josh Wolfe</a> writes:</p>
+
+    <p>New <code>std.json</code> features:</p>
+    <ul>
+    <li>Read a json document from a streaming source with <code>json.reader</code>. See <code>json.Token</code> for fine control over the interaction between large tokens, streaming input, and allocators.</li>
+    <li>Unlimited <code>{}</code> and <code>[]</code> nesting depth subject to allocator limitations.</li>
+    <li>After parsing into a dynamic <code>json.Value</code> tree/array union, you can now call <code>json.parseFromValue*</code> to parse that into a static type <code>T</code> following essentially the same semantics as parsing directly.</li>
+    <li>Parsing via <code>json.parseFrom*</code> is customizable by implementing <code>pub fn jsonParse</code> and/or <code>pub fn jsonParseFromValue</code> in your <code>struct</code>, <code>enum</code>, or <code>union(enum)</code>. This mirrors the customizable <code>pub fn jsonStringify</code> functionality.</li>
+    <li>Added a generic <code>json.HashMap(T)</code> container for serializing/deserializing objects with arbitrary string fields. It's a thin wrapper around <code>StringArrayHashMapUnmanaged</code> that implements <code>jsonParse</code>, <code>jsonParseFromValue</code>, and <code>jsonStringify</code>.</li>
+    <li><code>json.WriteStream</code> features now available to custom <code>pub fn jsonStringify</code> implementations due to the unification of <code>json.stringify</code> and <code>json.WriteStream</code>.</li>
+    <li>Writing JSON now supports saving memory by disabling assertions for correct syntax, e.g. disabling assertions that <code>endArray</code> matches a corresponding <code>beginArray</code>.</li>
+    </ul>
+
+    <p>Here is an upgrade guide:</p>
+    <p><em>These instructions include the breaking changes from
+      <a href="https://github.com/ziglang/zig/pull/15602">#15602</a>,
+    <a href="https://github.com/ziglang/zig/pull/15705">#15705</a>,
+    <a href="https://github.com/ziglang/zig/pull/15981">#15981</a>,
+    and <a href="https://github.com/ziglang/zig/pull/16405">#16405</a>.</em></p>
+
+    {#header_open|<code>parse</code> replaced by <code>parseFromSlice</code> or other <code>parseFrom*</code>#}
+<p>For code that used to look like this:</p>
+{#syntax_block|zig|example.zig#}
+var stream = json.TokenStream.init(slice);
+const options = json.ParseOptions{ .allocator = allocator };
+const result = try json.parse(T, &stream, options);
+defer json.parseFree(T, result, options);
+{#end_syntax_block#}
+<p>Now do this:</p>
+{#syntax_block|zig|example.zig#}
+const parsed = try json.parseFromSlice(T, allocator, slice, .{});
+defer parsed.deinit();
+const result = parsed.value;
+{#end_syntax_block#}
+{#header_open|<code>parseFree</code> replaced by <code>Parsed(T).deinit()</code>#}
+<p>See above. Alternatively, use the <code>parseFrom*Leaky</code> variants and manage your own arena.</p>
+{#header_close#}
+{#header_close#}
+{#header_open|<code>Parser.parse</code> replaced by <code>parseFromSlice</code> into <code>Value</code>#}
+<p>For code that used to look like this:</p>
+{#syntax_block|zig|example.zig#}
+var parser = json.Parser.init(allocator, false);
+defer parser.deinit();
+var tree = try parser.parse(slice);
+defer tree.deinit();
+const root = tree.root;
+{#end_syntax_block#}
+<p>Now do this:</p>
+{#syntax_block|zig|example.zig#}
+const parsed = try json.parseFromSlice(json.Value, allocator, slice, .{});
+defer parsed.deinit();
+const root = parsed.value;
+{#end_syntax_block#}
+
+{#header_open|<code>ValueTree</code> replaced by <code>Parsed(Value)</code>#}
+<p>The result of <code>json.parseFrom*(T, ...)</code> (except for <code>json.parseFrom*Leaky(T, ...)</code>) is <code>json.Parsed(T)</code>, which replaces the old <code>ValueTree</code>.</p>
+{#header_close#}
+{#header_close#}
+
+{#header_open|<code>writeStream</code> API simplification#}
+<p>The default max depth for <code>writeStream</code> is now 256. To specify a deeper max depth, use <code>writeStreamMaxDepth</code>.</p>
+<p>You don't need to call <code>arrayElem()</code> anymore.</p>
+<p>All the <code>emit*()</code> methods (<code>emitNumber</code>, <code>emitString</code>, <code>emitBool</code>, <code>emitNull</code>, <code>emitJson</code>) replaced by the generic <code>write()</code> method, which takes <code>anytype</code>. The generic <code>json.stringify</code> functionality for structs, unions, etc. is also available in <code>WriteStream.write()</code> (the implementation of <code>stringify</code> now uses <code>WriteStream.write</code>.).</p>
+{#header_open|Custom <code>jsonStringify</code> signature changed#}
+<p>Instead of <code>pub fn jsonStringify(self: *@This(), options: json.StringifyOptions, out_stream: anytype) !void</code>, use <code>pub fn jsonStringify(self: *@This(), jw: anytype) !void</code>, where <code>jw</code> is a mutable pointer to a <code>WriteStream</code>. Instead of writing bytes to the <code>out_stream</code>, you should call <code>write()</code> and <code>beginObject</code> and such on the <code>WriteStream</code>.</p>
+{#header_close#}
+{#header_open|<code>stringify</code> limits nesting to 256 by default#}
+<p>The depth of <code>{</code>/<code>[</code> nesting in the output of <code>json.stringify</code> is now 256. Now that the implementation of <code>stringify</code> uses a <code>WriteStream</code>, we have safety checks for matching <code>endArray</code> to <code>beginArray</code> and such, which requires memory: 1 bit per nesting level. To disable syntax checks and save that memory, use <code>stringifyMaxDepth(..., null)</code>. To make syntax checks available to custom <code>pub fn jsonStringify</code> implementations to arbitrary nesting depth, use <code>stringifyArbitraryDepth</code> and provide an allocator.</p>
+{#header_close#}
+{#header_close#}
+
+{#header_open|<code>StringifyOptions</code> overhauled#}
+<ul>
+<li><code>escape_unicode</code> moved to the top level.</li>
+<li><code>escape_solidus</code> removed.</li>
+<li><code>string = .Array</code> replaced by <code>.emit_strings_as_arrays = true</code>.</li>
+<li><code>whitespace.indent_level</code> removed.</li>
+<li><code>whitespace.separator</code> and <code>whitespace.indent</code> combined into <code>.whitespace = .minified</code> vs <code>.whitespace = .indent_2</code> etc.</li>
+</ul>
+<p><strong>The default whitespace in all contexts is now <code>.minified</code>.</strong> This is changed from the old <code>WriteStream</code> having effectively <code>.indent_1</code>, and the old <code>StringifyOptions{ .whitespace = .{} }</code> having effectively <code>.indent_4</code>.</p>
+{#header_close#}
+
+{#header_open|<code>TokenStream</code> replaced by <code>Scanner</code>#}
+<p>For code that used to look like this:</p>
+{#syntax_block|zig|example.zig#}
+var stream = json.TokenStream.init(slice);
+while (try stream.next()) |token| {
+    handleToken(token);
+}
+{#end_syntax_block#}
+<p>Now do this:</p>
+{#syntax_block|zig|example.zig#}
+var tokenizer = json.Scanner.initCompleteInput(allocator, slice);
+defer tokenizer.deinit();
+while (true) {
+    const token = try tokenizer.next();
+    if (token == .end_of_document) break;
+    handleToken(token);
+}
+{#end_syntax_block#}
+<p>See <code>json.Token</code> for more info.</p>
+{#header_close#}
+
+{#header_open|<code>StreamingParser</code> replaced by <code>Reader</code>#}
+<p>For code that used to look like this:</p>
+{#syntax_block|zig|example.zig#}
+const slice = try reader.readAllAlloc(allocator, max_size);
+defer allocator.free(slice);
+var tokenizer = json.StreamingParser.init();
+for (slice) |c| {
+    var token1: ?json.Token = undefined;
+    var token2: ?json.Token = undefined;
+    try tokenizer.feed(c, &token1, &token2);
+    if (token1) |t| {
+        handleToken(t);
+        if (token2) |t2| handleToken(t2);
+    }
+}
+{#end_syntax_block#}
+<p>Now do this:</p>
+{#syntax_block|zig|example.zig#}
+var stream = json.reader(allocator, reader);
+defer stream.deinit();
+while (true) {
+    const token = try stream.next();
+    if (token == .end_of_document) break;
+    handleToken(token);
+}
+{#end_syntax_block#}
+<p>See <code>json.Token</code> for more info.</p>
+{#header_close#}
+{#header_open|parse/stringify for <code>union</code> types#}
+<p>Parsing and stringifying <code>union(enum)</code> types works differently now by default. For <code>const T = union(enum) { s: []const u8, i: i32};</code>, the old behavior used to accept documents in the form <code>&quot;abc&quot;</code> or <code>123</code> to parse into <code>.{.s=&quot;abc&quot;}</code> or <code>.{.i=123}</code> respectively; the new behavior accepts documents in the form <code>{&quot;s&quot;:&quot;abc&quot;}</code> or <code>{&quot;i&quot;:123}</code> instead. Stringifying is updated as well to maintain the bijection.</p>
+<p>The dynamic value <code>json.Value</code> can be used for simple int-or-string cases. For more complex cases, you can implement <code>jsonParse</code>, <code>jsonParseFromValue</code>, and <code>jsonStringify</code> as needed.</p>
+{#header_close#}
+{#header_open|An allocator is always required for parsing now#}
+<p>Sorry for the inconvenience. There are some ideas to restore support for allocatorless json parsing, but for now, you always must use an allocator. At a minimum it is used for tracking the <code>{}</code> vs <code>[]</code> nesting depth, and possibly other uses depending on what <code>std.json</code> API is being called.</p>
+<p>If you use a <code>std.FixedBufferAllocator</code>, you can make parsing json work at comptime.</p>
+{#header_close#}
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
