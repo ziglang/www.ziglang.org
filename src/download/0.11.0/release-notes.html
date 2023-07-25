@@ -919,7 +919,7 @@ breaking change, the linker will behave the same whether a user is using
     {#header_close#}
 
     {#header_open|GPGPU#}
-    <p><a href="https://pythons.space/">Robin "Snektron" Voetter</a> writes:</p>
+    <p><a href="https://github.com/Snektron/">Robin "Snektron" Voetter</a> writes:</p>
 <p>Three new built-in functions are added to aid with writing GPGPU kernels in Zig: <code>@workGroupId</code>, <code>@workItemId</code>, and <code>@workGroupSize</code>. These are respectively used to query the index of the work group of the current thread in a kernel invocation, the size of a work group in threads, and the thread index in the current work group. For now, these are only wired up to work when compiling Zig to AMD GCN machine code via LLVM, that can be used with ROCm. In the future they will be added to the LLVM-based NVPTX and self-hosted SPIR-V backends as well.</p>
 <p>For example, the following Zig GPU kernel performs a simple reduction on its inputs:</p>
 {#syntax_block|zig|example.zig#}
@@ -1061,6 +1061,10 @@ Date:   Fri Jun 16 21:57:33 2023 -0700
       <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a>
       for {#syntax#}[:s]const T{#endsyntax#} and {#syntax#}[]T{#endsyntax#} (#15709).</li>
     </ul>
+    {#header_open|Multi-Object For Loops#}
+    TODO https://github.com/ziglang/zig/pull/14671
+    {#header_close#}
+
     {#header_open|@memcpy and @memset#}
     TODO https://github.com/ziglang/zig/issues/15278
     {#header_close#}
@@ -1186,7 +1190,7 @@ Date:   Wed May 24 08:01:48 2023 +0800
  2 files changed, 4 insertions(+), 3 deletions(-)
     {#header_close#}
 
-    {#header_open|Eliminate Bound Functions from the Language#}
+    {#header_open|Eliminate Bound Functions#}
     <p>Did you know Zig had bound functions?</p>
     TODO example
     <p>I rest my case. Good riddance!</p>
@@ -1594,9 +1598,258 @@ while (true) {
     {#header_close#}
 
     {#header_open|Build System#}
+    <p>With this release, the Zig Build System is no longer <strong>experimental</strong>.
+    It is the debut of {#link|Package Management#}.</p>
+
     TODO
+    * b.installArtifact(exe) rather than exe.install()
+    * b.addRunArtifact(exe) rather than exe.run()
+    * Each *Build object corresponds to a package, and it's important to do
+      steps in the correct context.
+    * addTest no longer runs it
+    * talk about the build runner communicating with compiler over a protocol
+      - no more --enable-cache
+    * build summary
+    * addition of config step, cmake step
+    * the cache system moved to the build system
+      - https://github.com/ziglang/zig/pull/14571 (nasm example)
+    * allow run step to skip foreign binary execution if executor fails
+    * enhancements to CheckObjectStep
+
+commit f99b75360db55413f4accf43a6f4161b14a5de9f
+Merge: 3aa0a7ecd 145f93ba9
+Author: Jakub Konka <kubkon@jakubkonka.com>
+Date:   Fri Mar 24 07:22:05 2023 +0100
+
+    Merge pull request #15061 from ziglang/fix-15036
+    build: fix adding rpaths on darwin, improve CheckObjectStep to allow matching FileSource paths
+
+commit 7c2ba950a758b86893bfbe73521b29895f7ac4f0
+Author: kcbanner <kcbanner@gmail.com>
+Date:   Fri Jan 27 18:01:49 2023 -0500
+
+    build: .c ofmt does not produce a pdb
+
+
+
+ * combine `std.build` and `std.build.Builder` into `std.Build`
+ * eliminate `setTarget` and `setBuildMode`; use an options struct for `b.addExecutable` and friends
+ * implement passing options to dependency packages.
+   * closes #14285
+ * rename LibExeObjStep to CompileStep
+ * move src.type.CType to std lib, use it from std.Build, this will help with populating config.h files. [motivating change](https://github.com/andrewrk/libmp3lame/commit/a33ffeb1bd0942405af77b6022e1954fad48e09d)
+
+[example of the flexibility this system brings](https://github.com/andrewrk/groovebasin/blob/271bd7e4014e55a089b8d956228d90b57d8e3fa5/build.zig#L5-L31) (this is why we explicitly pass around optimization mode and target everywhere)
+
+
+commit 60935decd318498529a016eeb1379d943a7e830d
+Merge: 4c7f8286d 81c27c74b
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Feb 3 14:20:49 2023 -0500
+
+    Merge pull request #14523 from ziglang/zon
+    
+    introduce Zig Object Notation and use it for the build manifest file (build.zig.zon)
+
+
+commit 693b12f8e1c1d99d33c01961c1fdc972a5255eb6
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Feb 3 17:22:31 2023 -0700
+
+    std.Build: support exposing and depending on zig modules
+    
+    New API introduced: std.Build.addModule
+    
+    This function exposes a zig module with the given name, which can be
+    used by packages that depend on this one via std.Build.Dependency.module.
+    
+    std.Build.Pkg and related functionality is deleted. Every use case has a
+    straightforward upgrade path using the new Module struct.
+    
+    std.Build.OptionsStep.getPackage is replaced by
+    std.Build.OptionsStep.createModule.
+    
+    std.Build.CompileStep.addPackagePath is replaced by
+    std.Build.CompileStep.addAnonymousModule.
+    
+    This partially addresses #14307 by renaming some of the instances of
+    "package" to "module".
+    
+    Closes #14278
+
+commit a5b34a61ab61882bf55d87e4cbc8186215ecf320
+Merge: 11cc1c16f b29e3fa2c
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Feb 5 08:27:53 2023 -0500
+
+    Merge pull request #14562: std.Build: enhancements to ConfigHeaderStep
+
+commit c6344866f9f6a38acd41f4c0ed36dfe00896f825
+Author: Asherah Connor <asherah@hrzn.ee>
+Date:   Thu Feb 9 08:45:49 2023 +1100
+
+    std.Build.addAssembly: add missing .kind
+
+commit 5e7b09ce9fbc95ec9fb9e277d262b9b5a5aa1917
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sat Feb 18 11:31:31 2023 -0700
+
+    std.Build.RunStep: fix default caching logic
+    
+    RunStep is supposed to auto-detect whether the intend is for
+    side-effects or for producing an output file. The auto-detection logic
+    was incorrect, and this commit fixes it.
+    
+    I tested this manually locally. Automated testing will require a more
+    significant investment in the test harness, which I will work on in a
+    future enhancement.
+    
+    closes #14666
+
+commit d3c9bfada64230ad17badb739f15a492b4c2c065
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Feb 22 17:23:03 2023 -0700
+
+    std.Build.WriteFileStep: integrate with cache system
+    
+    And additionally support writing files to source files. This means a
+    custom build step in zig's own build.zig is no longer needed for copying
+    zig.h because it is handled by WriteFileStep.
+
+commit 26196be344e971c26ed044a39b68d0420cd94b90
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Feb 24 16:02:01 2023 -0700
+
+    rename std.Build.InstallRawStep to ObjCopyStep
+    
+    And make it not do any installation, only objcopying. We already have
+    install steps for doing installation.
+    
+    This commit also makes ObjCopyStep properly integrate with caching.
+
+commit 653814f76ba5d678ebad91f140417cd5829c6aad
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Mar 3 16:17:23 2023 -0700
+
+    std.Build.addModule: return the created module
+
+commit 8ae92fd17ee9a3d46e4f441864a8544b440c0b2d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Mon Jul 3 21:47:57 2023 -0700
+
+    std.Build.Step.Compile: fix clearing logic for empty cflags
+    
+    Commit c0b774fbc65e3e406a38d37b02fffda7c5d3df26 originally added this
+    logic but it did not properly clear the C command line flags to empty
+    when a previous positional argument had command line flags, because it
+    never set the "previous" flag to true.
+    
+    This fixes C compiler flags not being reset to empty when using the
+    build system and a second positional argument has no arguments after a
+    first positional argument has arguments.
+    
+    Thanks to @squeek502 for finding this.
+
+commit 6bc9c4f716afbb15465f79f84f61221f394fa5b6
+Author: Michael Buckley <mokchira@gmail.com>
+Date:   Sat Jul 8 21:38:27 2023 -0400
+
+    std.Build: Add methods for creating modules from a TranslateC object.
+
+commit f2d433a19375734d744656c1c231525aab6ee59f
+Merge: 2896266a0 cea864542
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Jul 13 09:48:39 2023 -0700
+
+    Merge pull request #15708 from xxxbxxx/build-link
+    
+    build: avoid repeating objects when linking a static library
+
+commit 546212ff7baee86d3408c465e906b52e2e585fe1
+Merge: 3ec337484 77026c67a
+Author: Jakub Konka <kubkon@jakubkonka.com>
+Date:   Fri Jul 14 06:38:33 2023 +0200
+
+    Merge pull request #16398 from ziglang/check-object-elf
+    
+    std: add ELF parse'n'dump functionality to std.Build.Step.CheckObject
+
+    {#header_open|Share the Compiler's Cache System#}
+    TODO
+    {#header_close#}
+
+    {#header_open|Steps Run In Parallel#}
+commit bd242ce1ce9ef6ffb1af4432d892bf582dcdba8a
+Merge: a2c6ecd6d 7177b3994
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Mar 16 04:11:41 2023 -0400
+
+    Merge pull request #14647 from ziglang/build-parallel
+    
+    zig build: run steps in parallel
+    {#header_close#}
+
+    {#header_open|Embrace LazyPath for Inputs and Outputs#}
+    TODO remove output_dir. explain the lazy file path thing
+    * Build: make `InstallDirStep` use a `FileSource` Closes #16187
+    {#header_close#}
+
+    {#header_open|Build Summary#}
+    TODO
+    {#header_close#}
+
+    {#header_open|System Resource Awareness#}
+    TODO
+    {#header_close#}
+
+    {#header_open|Foreign Target Execution and Testing#}
+    TODO
+commit 626a75bbc21453237f95c186d1fea790f233bc58
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Mar 19 16:26:19 2023 -0700
+
+    std.Build.RunStep: fix control flow with qemu+glibc logic
+
+    {#header_close#}
+
+    <ul>
+    <li>Detect and disallow top-level step name clashes.</li>
+    <li>Rename {#syntax#}std.Build.FooStep{#endsyntax#} to {#syntax#}std.Build.Step.Foo{#endsyntax#} (#14947).</li>
+    <li>Fixed <code>WriteFile.getFileSource</code> failure on {#link|Windows#} (#15730).</li>
+    <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
+    </ul>
     {#header_open|Package Management#}
     TODO
+    {#header_close#}
+
+    {#header_open|Configuration File Generation#}
+commit b129f1b0462e6c80b4a97851ea3aa8b3f0a4aa37
+Merge: ff0a88b13 f74285b3b
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Fri Jun 23 23:56:18 2023 -0700
+
+    Merge pull request #16037 from Jan200101/PR/cmakedefine-fix
+    
+    Correct cmakedefine implementation
+
+    {#header_close#}
+
+    {#header_open|Run Step Enhancements#}
+    TODO recommend to use this step for general purpose stuff rather than custom steps.
+    TODO show how to use input file, output file
+
+commit 44df3a148b4fa823979638dd8debb484a94a51af
+Author: Jakub Konka <kubkon@jakubkonka.com>
+Date:   Thu Jul 6 22:26:55 2023 +0200
+
+    std: add prefixed versions of addFileSource and addDirectorySource to Step.Run
+
+commit a7553107345bab99b0f5318e0fd3efae84f56b56
+Author: Krzysztof Wolicki <der.teufel.mail@gmail.com>
+Date:   Sun Jul 9 21:51:41 2023 +0200
+
+    Changed Step.Run's stdin to accept FileSource (#16358)
+
     {#header_close#}
     {#header_close#}
 
@@ -1708,7 +1961,16 @@ while (true) {
     {#header_close#}
 
     {#header_open|C Translation#}
-    TODO
+    <ul>
+      <li>Remainder macro fix (#13371).</li>
+      <li>Use .identifier tokens in .identifier AST nodes (#13343).</li>
+      <li>Cast unsuffixed floats to f64.</li>
+      <li>Handle more wrapper types in <code>isAnyopaque</code>.</li>
+      <li>Support brace-enclosed string initializers (c++20 9.4.2.1).</li>
+      <li>Fixed codegen when C source has variables named the same as mangling prefixes (#15420).</li>
+      <li>Deduplicate global declarations (#15456).</li>
+      <li>Use {#syntax#}@constCast{#endsyntax#} and {#syntax#}@volatileCast{#endsyntax#} to remove CV-qualifiers instead of converting a pointer to an int and then back to a pointer.</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Cache System#}
@@ -1814,7 +2076,7 @@ provides us with more details about which test failed.
     {#header_close#}
 
     {#header_open|SPIR-V Backend#}
-    <p><a href="https://pythons.space/">Robin "Snektron" Voetter</a> writes:</p>
+    <p><a href="https://github.com/Snektron/">Robin "Snektron" Voetter</a> writes:</p>
   <p>This release cycle saw significant improvement of the self-hosted SPIR-V backend. SPIR-V is a bytecode representation for shaders and kernels that run on GPUs. For now, the SPIR-V backend of Zig is focused on generating code for OpenCL kernels, though Vulkan compatible shaders may see support in the future too.</p>
   <p>The main contributions in this release cycle feature a crude assembler for SPIR-V inline assembly, which is useful for supporting fringe types and operations, and other features from SPIR-V that do not expose itself well from within Zig.</p>
   <p>The backend also saw improvements to codegen, and is now able to compile and execute about 37% of the compiler behavior test suite on select OpenCL implementations. Unfortunately this does not yet include Rusticl, which is currently missing a few features that the Zig SPIR-V backend requires.</p>
@@ -1921,6 +2183,17 @@ Date:   Sat Jun 24 15:22:56 2023 -0700
         exe.addObjectFile("resource.res");
     
     Closes #6488
+    {#header_close#}
+
+    {#header_open|New Module CLI#}
+commit 7f691b3fe26f623d108a6b2b2018bbc3aa999224
+Merge: 05da5b32a f94cbab3a
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Feb 21 11:43:31 2023 -0500
+
+    Merge pull request #14664 from mlugg/feat/new-module-cli
+    
+    New module CLI
     {#header_close#}
 
     {#header_close#}
