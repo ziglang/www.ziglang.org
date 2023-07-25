@@ -1181,6 +1181,7 @@ Date:   Sat Dec 10 03:44:25 2022 -0500
     <h4 id="OpenBSD"><a href="#toc-OpenBSD">OpenBSD</a> <a class="hdr" href="#OpenBSD">§</a></h4>
 
     TODO https://github.com/ziglang/zig/issues/13700
+    TODO https://github.com/ziglang/zig/issues/13699
     
 
     <h4 id="NetBSD"><a href="#toc-NetBSD">NetBSD</a> <a class="hdr" href="#NetBSD">§</a></h4>
@@ -1227,14 +1228,34 @@ building a WebAssembly module for the browser.</p>
 
     <h4 id="Plan9"><a href="#toc-Plan9">Plan9</a> <a class="hdr" href="#Plan9">§</a></h4>
 
-commit 78c8cb4225c3c3d429764151ad703a4bfa67d75a
-Merge: 0f5aff344 5343a2f56
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Jun 16 21:57:33 2023 -0700
-
-    Merge pull request #16003 from g-w1/plan9-lazy-syms
-    
-    Plan9: lots of fixes
+    <p><a href="https://github.com/g-w1">Jacob G-W</a> writes:</p>
+<p>
+  During this release cycle, the Plan 9 <a href="#Linker">Linker</a> backend has been updated so that
+  it can link most code from the <a href="#x86-Backend">x86 Backend</a>. The <a href="#Standard-Library">Standard Library</a> has
+  also been improved, broadening its support for Plan 9's features:
+</p>
+<ul>
+  <li>
+    Introduced a <code>page_allocator</code> implementation for Plan 9,
+    employing the <code>SbrkAllocator</code> available in the standard library.
+    This addition now permits memory allocation on Plan 9.
+  </li>
+  <li>
+    New functions have been added to facilitate interaction with the filesystem,
+    ensuring that <code>std.fs</code> works. This is a crucial improvement, as
+    Plan 9 heavily utilizes filesystem interfaces for system interactions.
+  </li>
+  <li>
+    Added the ability to read the top-of-stack struct, allowing access to
+    process PID and clock cycle information.
+  </li>
+  <li>
+    Support for <code>std.os.plan9.errstr</code> has been implemented, enabling
+    users to read error messages from system calls that return <code>-1</code>.
+    However, as error messages in Plan 9 are string-based, additional efforts
+    will be needed to make these errors interface with Zig errors.
+  </li>
+</ul>
     
     
     
@@ -1334,6 +1355,7 @@ Date:   Wed Jul 12 19:13:26 2023 -0700
     <h3 id="Tuple-Type-Declarations"><a href="#toc-Tuple-Type-Declarations">Tuple Type Declarations</a> <a class="hdr" href="#Tuple-Type-Declarations">§</a></h3>
 
     TODO https://github.com/ziglang/zig/issues/4335
+    TODO mention that packed and extern are forbidden
     
 
     <h3 id="Concatenation-of-Arrays-and-Tuples"><a href="#toc-Concatenation-of-Arrays-and-Tuples">Concatenation of Arrays and Tuples</a> <a class="hdr" href="#Concatenation-of-Arrays-and-Tuples">§</a></h3>
@@ -1537,16 +1559,62 @@ Date:   Wed Jul 19 09:36:57 2023 -0700
     <h3 id="Memory-Allocation"><a href="#toc-Memory-Allocation">Memory Allocation</a> <a class="hdr" href="#Memory-Allocation">§</a></h3>
 
     TODO
+commit e35f297aeb993ec956ae80379ddf7f86069e109b
+Merge: deda6b514 f46666788
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Wed Nov 30 01:44:34 2022 -0500
+
+    Merge pull request #13666 from ziglang/allocator-interface
+    
+    std.mem.Allocator: allow shrink to fail
+
+commit 49ac816e3683def5d14d6f8415d80413ecb43e4c
+Author: IntegratedQuantum <43880493+IntegratedQuantum@users.noreply.github.com>
+Date:   Thu Jul 6 20:41:49 2023 +0200
+
+    Optimize Allocator functions to create less duplicate code for similar types (#16332)
+    
+    * Move functionality from generic functions that doesn't depend on the type into a function that only depends on comptime alignment.
+    
+    This reduces comptime code duplication because e.g. `alloc(u32, )` and `alloc(i32, )` now use the same function `allocWithFoo(4, 4, )` under the hood.
     
 
     <h3 id="Math"><a href="#toc-Math">Math</a> <a class="hdr" href="#Math">§</a></h3>
 
     TODO
+
+    Implements std.math.sign for float vectors.
+    std.math.big.int: implement popCount() for Const
+    std.big.int.Mutable: fix set(@as(DoubleLimb, 0)). Previously, this would set len to 1 but fail to initialize any limbs.
+    math: implement absInt for integer vectors. This commit adds support to absInt for integer vectors.
+    std.math: port `int_log10` from Rust (#14827)
+    std.math: add lerp (#13002)
+    std.math.big.int: Initialize limbs in addWrap, preventing invalid results (#13571)
+    Normalize remainder in math.big.int.Managed.divTrunc (#15535).
+    std.math.atan: fix mistyped magic constant
+    std.math.big.int: Add Sqrt (with reference to Modern Computer Arithmetic, Algorithm 1.13)
+    std.math.big.int: rename "eq" to "eql" for consistency (#16303).
+    Change math.Order integer tag values, speeding up binary search (#16356).
+
     
 
     <h3 id="File-System"><a href="#toc-File-System">File System</a> <a class="hdr" href="#File-System">§</a></h3>
 
     TODO
+    
+    std.fs.path: add stem() (#13276)
+    os.windows.OpenFile: Add `USER_MAPPED_FILE` as a possible error
+    Dir.openDirAccessMaskW: Add ACCESS_DENIED as a possible error
+    wasi: fixes IterableDir.nextWasi for large directory (#13725)
+    Dir.statFile now uses fstatat (fewer syscalls) (#11594)
+    std: add fchmodat as well as `std.fs.has_executable_bit` for doing conditional compilation.
+    windows: use NtSetInformationFile in DeleteFile (#15316).
+    fs.Dir.deleteTree: Fix DirNotEmpty condition
+    fs.path: Fix Windows path component comparison being ASCII-only (#16100)
+    std.windows: use posix semantics to delete files, if available (#15501)
+    fixed windows resource leaks (#15450).
+    A few `IterableDir.Walker`/`Iterator` fixes (#15980)
+
     
 
     <h3 id="Data-Structures"><a href="#toc-Data-Structures">Data Structures</a> <a class="hdr" href="#Data-Structures">§</a></h3>
@@ -1566,10 +1634,28 @@ Date:   Wed Jul 19 09:36:57 2023 -0700
 
     TODO
     
+    stdlib: fix condition variable broadcast FutexImpl (#13577).
+    std.Thread.Futex.PosixImpl.Address.from: fix `alignment` type (#13673)
+    std.Thread: make Id smaller where possible
+    Add a debug implementation to Mutex that detects deadlocks caused by calling lock twice in a single thread.
+    openbsd: fix thread name buffer size
+
+    
 
     <h3 id="Networking"><a href="#toc-Networking">Networking</a> <a class="hdr" href="#Networking">§</a></h3>
 
-    TODO
+commit c9ef277fa7e43f119a7f2896635b4fdf9c97edbe
+Merge: 8bd734d60 7178451d6
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Tue Jan 3 02:43:50 2023 -0500
+
+    Merge pull request #13980 from ziglang/std.net
+    
+    networking: delete std.x; add std.crypto.tls and std.http.Client
+
+
+    for shigueredo allowing us to use their RSA implementation until frank implemented
+    a non-allocating version, honto ni arigatoo gozaimashta
     
 
     <h3 id="Testing"><a href="#toc-Testing">Testing</a> <a class="hdr" href="#Testing">§</a></h3>
@@ -2119,6 +2205,7 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Fixed taking the address of a field in a zero-bit struct (#14000).</li>
     <li>Handle vectors in packed structs (#14004).</li>
     <li>Fixed <code><span class="line"><span class="tok-builtin">@export</span></span></code> with <code><span class="line"><span class="tok-kw">linksection</span></span></code> option (#14035). </li>
+    <li>Fixed cache-dir specified on the command line (#14076).</li>
     <li>Fixed some spurious "depends on itself" errors (#14159).</li>
     <li>Added <code>-fopt-bisect-limit</code> for debugging <a href="#LLVM-Backend">LLVM Backend</a> miscompilations (#13826).</li>
     <li>Implement AVR address spaces.</li>
