@@ -372,7 +372,7 @@
     </p>
     <p>
     This release features <strong>8 months of work</strong>:
-    changes from <strong>TODO different contributors</strong>, spread among
+    changes from <strong>259 different contributors</strong>, spread among
     <strong>TODO commits</strong>.</p>
     {#header_open|Table of Contents#}
     {#nav#}
@@ -908,6 +908,23 @@ the host environment. By setting the <code>visibilibity</code> field to
 remain only visible to the linker and not be exported to the host. With this
 breaking change, the linker will behave the same whether a user is using
 {#link|zig cc#} or Clang directly.</p>
+    {#header_open|WasmAllocator#}
+    <p>The {#link|Standard Library#} gained <code>std.heap.wasm_allocator</code>, a WebAssembly-only simple, fast, and small allocator (#13513). It is able to simultaneously achieve all three
+    of these things thanks to the new {#link|Memory Allocation#} API of Zig 0.11.0 which
+    {#link|allows shrink to fail|Allow Shrink To Fail#}.</p>
+    {#syntax_block|zig|example.zig#}
+const std = @import("std");
+export fn alloc() ?*i32 {
+    return std.heap.wasm_allocator.create(i32) catch null;
+}
+export fn free(p: *i32) void {
+    std.heap.wasm_allocator.destroy(p);
+}
+    {#end_syntax_block#}
+    <p>Compiled with <code>-target wasm32-freestanding -OReleaseSmall</code>, this example
+    produces a 1 KB wasm object file. It is used as the memory allocator when
+    {#link|Bootstrapping#} Zig.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|SPARC#}
@@ -1026,6 +1043,12 @@ building a WebAssembly module for the browser.</p>
     <li>Delete unneeded alignment and use default 4K (#7484).</li>
     <li>Do not use -fPIC when compiling a UEFI application.</li>
     <li>Fixed wrong calling convention used sometimes (#16339).</li>
+    <li>Fixed bug where not enough memory was allocated for the header or to align the pointer.</li>
+    <li>Delete unnecessary padding and fix number_of_pages type</li>
+    <li>check for UEFI in io.StreamSource</li>
+    <li>implement std.time.sleep for uefi</li>
+    <li>fix alignment error in uefi FileInfo protocol</li>
+    <li>std.os.uefi: fix shift in pool allocator (#14497).</li>
     </ul>
     {#header_close#}
 
@@ -1323,11 +1346,112 @@ Date:   Wed Jul 19 09:36:57 2023 -0700
     it will be time to start working on stabilizing the standard library.
     Until then, experimentation and breakage without warning is allowed.</p>
     <ul>
-      <li>TODO</li>
+    TODO organize these
+    <li>DynLib.lookup: cast the pointer to the correct alignment (#15308)</li>
+    <li>windows: replace GetPhysicallyInstalledSystemMemory with ntdll (#15264).</li>
+    <li>std.MultiArrayList: add support for tagged unions.</li>
+    <li>std.os.sendto: use ws2_32 on Windows (#9971).</li>
+    <li>std.debug: fix segfault/panic race condition (#7859) (#12207).</li>
+    <li>std.http: add http server (#15123)</li>
+    <li>tls.Client: don't read if we don't need more data</li>
+    <li>std.Target: add xtensa to toCoffMachine</li>
+    <li>Add xz decoder (#14434)</li>
+    <li>std: remove meta.assumeSentinel (#14440)</li>
+    <li>std.os.windows: add possible error NETNAME_DELETED of ReadFile (#13631)</li>
+    <li>std.crypto.Certificate: support P256 in x509</li>
+    <li>std.hash.crc: implement algorithms listed in CRC RevEng catalog (#14396)</li>
+    <li>Implement gzip header CRC check.</li>
+    <li>FreeBSD: add mcontext_t for aarch64</li>
+    <li>std: implement os.mprotect on Windows</li>
+    <li>std.net: Make <code>res</code> nullable in <code>std.c.getaddrinfo</code></li>
+    <li>std.crypto.Certificate: Wildcard certs should only validate one level of sub domain</li>
+    <li>std.process: avoids allocating zero length buffers for args or env on {#link|WebAssembly#}</li>
+    <li>std.crypto.Certificate.Bundle: clear bundle before macOS rescan (#14350).</li>
+    <li>windows root certificate scanning (#14229)</li>
+    <li>std.http.Client: default to lazy root cert scanning</li>
+    <li>Find system-installed root SSL certificates on macOS (#14325).</li>
+    <li>std: Handle field struct defaults in std.mem.zeroInit (#14116).</li>
+    <li>Add fromOwnedSliceSentinel to ArrayList ArrayList and ArrayListUnmanaged, add fromOwnedSlice to ArrayListUnmanaged</li>
+    <li>support v1/v2 SSL certificates and search more Linux directories for certificates (#14329).</li>
+    <li>std.net: check for localhost names before asking DNS</li>
+    <li>std.debug: Windows debug info lookup improvements (#14247)</li>
+    <li>std.zig.Ast: add helper functions to std.zig.Ast for extracting data out of nodes</li>
+    <li>remove std.url and add std.uri which is more complete and RFC-compliant (#14176).</li>
+    <li>Implement some more environment functions for WASI.</li>
+    <li>std.http.Client: support transfer-encoding: chunked (#14224)</li>
+    <li>std.http.Client: support HTTP redirects (#14202)</li>
+    <li>std: collect all options under one namespace</li>
+    <li>start code: Don't initialize the static TLS area in single-threaded builds</li>
+    <li>debug: replace RtlCaptureStackBackTrace (which was spuriously failing) with a new implementation which uses RtlVirtualUnwind instead (#12740)</li>
+    <li>Add std.ArenaAllocator.reset() (#12590)</li>
+    <li>Adds std.heap.MemoryPool (#12586)</li>
+    <li>std.log: add functionality to check if a specific log level and scope are enabled</li>
+    <li>Add the two functions 'getLast' and 'getLastOrNull' to ArrayListAligned/ArrayListAlignedUnmanaged.</li>
+    <li>std: add meta.FieldType</li>
+    <li>Fix bug in WASI environment variable handling (#14121).</li>
+    <li>std.heap.raw_c_allocator: fix illegal alignment cast (#14090).</li>
+    <li>std: Expose Int parameter in std.PackedInt[Array,Slice]</li>
+    <li>std.debug: Replace tabs with spaces when printing a line for trace output.</li>
+    <li>std: stop using LinearFifo in BufferedReader (#14029)</li>
+    <li>std.Target.ObjectFormat: specify dxcontainer file ext</li>
+    <li>Fix missing pthread_key_t definition on linux (#13950).</li>
+    <li>std.zig.Ast.parse: fix integer overflows during parsing, found while fuzzing zls.</li>
+    <li>macho: add missing defs of compact unwind info records</li>
+    <li>`spawnWindows`: Improve worst-case performance considerably + tests (#13993)</li>
+    <li>fix potential integer underflow in std.zig.Ast.fullCall</li>
+    <li>Make std.tz namespace accessible (#13978)</li>
+    <li>`ChildProcess.spawnWindows`: `PATH` search fixes + optimizations (#13983)</li>
+    <li>std.IndexedSet.iterator: allow iteration on const EnumSet</li>
+    <li>std.meta: remove bitCount</li>
+    <li>std: make builtin.Type.{Int,Float}.bits a u16 instead of comptime_int</li>
+    <li>std.compress: Improve tests, remove reliance on openDirAbsolute (#13952)</li>
+    <li>std.debug.TTY: Fix colors not resetting on Windows</li>
+    <li>ArrayList.toOwnedSlice: Fix potential for leaks when using errdefer (#13946)</li>
+    <li>add std.mem.reverseIterator</li>
+    <li>std: add object format extension for dxcontainer</li>
+    <li>std: Fix update() method in PriorityQueue and PriorityDequeue (#13908)</li>
+    <li>std: Add Wasm SIMD opcodes and value type (#13910)</li>
+    <li>Add 0-length buffer checks to os.read and os.write, preventing errors related to undefined pointers being passed through to some OS APIs when slices have 0 length.</li>
+    <li>std: fix bug in Pcg32 fill function (#13894)</li>
+    <li>std: added std.mem.window</li>
+    <li>std: implement subsetOf and supersetOf for EnumMultiset</li>
+    <li>std: implement subsetOf and supersetOf for DynamicBitSet</li>
+    <li>std: add EnumMultiSet</li>
+    <li>wasi: fixes os.isatty on type mismatch (#13813)</li>
+    <li>std.ascii: remove Look-Up-Table (#13370).</li>
+    <li>Improve and remove duplicate doNotOptimizeAway() implementations (#13790)</li>
+    <li>std.testing: Fully absorb expectEqualBytes into expectEqualSlices</li>
+    <li>std: added eql to DynamicBitSet and DynamicBitSetUnmanaged</li>
+    <li>std.atomic.Queue: fix unget implementation and add docs</li>
+    <li>Allow const ArrayLists to be cloned</li>
+    <li>gzip: add missing header fields and bounds for header parsing (#13142)</li>
+    <li>std: fixed handling of empty structs in meta.FieldEnum.</li>
+    <li>std.testing: Improve expectEqualBytes for large inputs and make expectEqualSlices use it</li>
+    <li>std.testing: Add expectEqualBytes that outputs hexdumps with diffs highlighted in red. The coloring is controlled by `std.debug.detectTTYConfig` so it will be disabled when appropriate.</li>
+    <li>std.os.windows.ReadLink: add missing alignment of local data buffer</li>
+    <li>windows: add native CPU and features detection for Armv8 chips (#13659)</li>
+    <li>linux.bpf: expose map_get_next_key</li>
+    <li>std: valgrind client request support for aarch64 (#13292)</li>
+    <li>fix CPU model detection for neoverse_n1 on aarch64-linux (#10086)</li>
+    <li>os: windows: fix unhandled error</li>
+    <li>std: replace parseAppend with parseWrite in std.zig.string_literal</li>
+    <li>std.Random: add functions with explicit index type (#13417).</li>
+    <li>stdlib: make linux.PERF.TYPE non-exhaustive</li>
+    <li>process.zig: remove unused function getSelfExeSharedLibPaths</li>
+    <li>std.os.linux: Add setitimer and getitimer syscalls</li>
+    <li>add std.c.pthread_sigmask (#13525)</li>
+    <li>pdb: make SuperBlock def public</li>
+    <li>std.os: fix alignment of Sigaction.handler_fn (#13418)</li>
+    <li>Handle sentinel slices in `std.mem.zeroes` (#13256)</li>
+    <li>Fixes to linux/bpf/btf.zig</li>
+    <li>std.os.linux.T: translate more MIPS values</li>
+    <li>std.os: take advantage of the freebsd's copy_file_range</li>
+    <li>std.time: add microTimestamp() (#13327)</li>
     </ul>
 
     {#header_open|Memory Allocation#}
     TODO
+    {#header_open|Allow Shrink To Fail#}
 commit e35f297aeb993ec956ae80379ddf7f86069e109b
 Merge: deda6b514 f46666788
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -1336,6 +1460,7 @@ Date:   Wed Nov 30 01:44:34 2022 -0500
     Merge pull request #13666 from ziglang/allocator-interface
     
     std.mem.Allocator: allow shrink to fail
+    {#header_close#}
 
 commit 49ac816e3683def5d14d6f8415d80413ecb43e4c
 Author: IntegratedQuantum <43880493+IntegratedQuantum@users.noreply.github.com>
@@ -1386,6 +1511,17 @@ Date:   Thu Jul 6 20:41:49 2023 +0200
 
     {#header_open|Data Structures#}
     TODO
+    std: added pure functions to StaticBitSet
+    The following functions were added to both IntegerBitSet and ArrayBitSet:
+      fn eql(self: Self, other: Self) bool
+      fn subsetOf(self: Self, other: Self) bool
+      fn supersetOf(self: Self, other: Self) bool
+      fn complement(self: Self) Self
+      fn unionWith(self: Self, other: Self) Self
+      fn intersectWith(self: Self, other: Self) Self
+      fn xorWith(self: Self, other: Self) Self
+      fn differenceWith(self: Self, other: Self) Self
+    std: added pure fns to EnumSet
     {#header_close#}
 
     {#header_open|Crypto#}
@@ -1538,6 +1674,21 @@ Aborted</code></pre><p>The user is notified that unwind information is missing, 
     <ul>
     <li>Consistent use of "invalid format string" compile error response for badly formatted format strings (#13526)</li>
     </ul>
+TODO
+    Make invalidFmtError public and use in place of compileErrors for bad format strings (#13526)
+    std.fmt.formatInt: Use an optimized path for decimals, enabling faster decimal-to-string conversions for values in the range [0, 100).
+    Fix buffer overflow in fmt when DAZ is set (#14270).
+    parse_float: Error when a float is attempted to be parsed into an invalid type (#15593).
+    Add std.fmt.parseIntSizeSuffix and use for --maxrss (#14955)
+    std.fmt.parseIntSizeSuffix: add R and Q
+    std: expose fmt methods and structs for parsing
+    std: fix parseInt for single-digit signed minInt (#15966)
+    std.fmt: fix error set of formatDuration (#16093)
+    mark parse_float.convertSlow as cold, reducing stack usage (#16438).
+    fmt: Make default_max_depth configurable
+    std.fmt: add bytesToHex() to encode bytes as hex digits
+    Fixed parseFloat parsing of `0x` (#14901).
+    std: improve error for formatting a function body type (#14915)
     {#header_close#}
 
     {#header_open|JSON#}
@@ -1974,6 +2125,7 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Fixed {#syntax#}usize{#endsyntax#} type inference in {#syntax#}for{#endsyntax#} range start and end (#16311).</li>
     <li>Fixed wrong error location for {#syntax#}@unionInit{#endsyntax#} when first parameter is not a type (#16384).</li>
     <li>Include system headers path when compiling preprocessed assembly files (#16449).</li>
+    <li>Add framework path detection for NIX_CFLAGS_COMPILE.</li>
     </ul>
 
     {#header_open|Performance#}
@@ -2508,7 +2660,10 @@ Hello World!
 
     {#header_open|zig fmt#}
     <ul>
-      <li>TODO</li>
+      <li>Fixed extra whitespace with multiline strings (#13937).</li>
+      <li>Improved handling of comptime tuple fields.</li>
+      <li>Omit extra whitespace after last comment before EOF.</li>
+      <li>Avoid canonicalizing enum fields named `@"_"` to `_` (#15617).</li>
     </ul>
 commit 68d2f68ed823984a59724e256e78c5654d55b088
 Author: yujiri8 <yujiri@disroot.org>
@@ -2601,7 +2756,266 @@ Date:   Fri Dec 16 22:24:58 2022 +0000
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em; float: right">
     <p>Here are all the people who landed at least one contribution into this release:</p>
     <ul style="columns: 3">
-      TODO
+<li>Andrew Kelley</li>
+<li>Jacob Young</li>
+<li>Jakub Konka</li>
+<li>Veikka Tuominen</li>
+<li>Casey Banner</li>
+<li>Luuk de Gram</li>
+<li>mlugg</li>
+<li>Wooster</li>
+<li>Robin Voetter</li>
+<li>Dominic</li>
+<li>Loris Cro</li>
+<li>Frank Denis</li>
+<li>Ryan Liptak</li>
+<li>Krzysztof Wolicki</li>
+<li>Manlio Perillo</li>
+<li>Michael Dusan</li>
+<li>Nameless</li>
+<li>Eric Joldasov</li>
+<li>Motiejus Jakštys</li>
+<li>Koakuma</li>
+<li>Evin Yulo</li>
+<li>Linus Groh</li>
+<li>Ali Chraghi</li>
+<li>Xavier Bouchoux</li>
+<li>fn ⌃ ⌥</li>
+<li>Jan Philipp Hafer</li>
+<li>xEgoist</li>
+<li>Cody Tapscott</li>
+<li>Joachim Schmidt</li>
+<li>Stevie Hryciw</li>
+<li>Techatrix</li>
+<li>Jonathan Marler</li>
+<li>Josh Wolfe</li>
+<li>Meghan Denny</li>
+<li>John Schmidt</li>
+<li>antlilja</li>
+<li>Ian Johnson</li>
+<li>Isaac Freund</li>
+<li>Auguste Rame</li>
+<li>Niles Salter</li>
+<li>Ryo Ota</li>
+<li>xdBronch</li>
+<li>DraagrenKirneh</li>
+<li>Jacob G-W</li>
+<li>Jan200101</li>
+<li>Marc Tiehuis</li>
+<li>yujiri8</li>
+<li>Bogdan Romanyuk</li>
+<li>David Gonzalez Martin</li>
+<li>Erik Arvstedt</li>
+<li>Evan Haas</li>
+<li>Felix "xq" Queißner</li>
+<li>Ganesan Rajagopal</li>
+<li>IntegratedQuantum</li>
+<li>Tw</li>
+<li>Zachary Raineri</li>
+<li>Guillaume Wenzek</li>
+<li>InKryption</li>
+<li>Ronald Chen</li>
+<li>Takeshi Yoneda</li>
+<li>Travis Staloch</li>
+<li>jim price</li>
+<li>matu3ba</li>
+<li>mllken</li>
+<li>Bas Westerbaan</li>
+<li>Carl Åstholm</li>
+<li>Emile Badenhorst</li>
+<li>GethDW</li>
+<li>Igor Anić</li>
+<li>Jimmi Holst Christensen</li>
+<li>Lee Cannon</li>
+<li>Matt Knight</li>
+<li>Mizuochi Keita</li>
+<li>Nguyễn Gia Phong</li>
+<li>Nicolas Sterchele</li>
+<li>Pyrolistical</li>
+<li>Roman Frołow</li>
+<li>Ryan Schneider</li>
+<li>bfredl</li>
+<li>jcalabro</li>
+<li>notcancername</li>
+<li>praschke</li>
+<li>Adrian Delgado</li>
+<li>Alex Kladov</li>
+<li>Brendan Burns</li>
+<li>Chris Boesch</li>
+<li>Clement Espeute</li>
+<li>Coin</li>
+<li>Cortex</li>
+<li>Eckhart Köppen</li>
+<li>Edoardo Vacchi</li>
+<li>Emile Badenhorst</li>
+<li>Eric Milliken</li>
+<li>Ganesan Rajagopal</li>
+<li>Garrett</li>
+<li>Gaëtan S</li>
+<li>Gregory Mullen</li>
+<li>Jason Phan</li>
+<li>Jay Petacat</li>
+<li>Jeremy Volkman</li>
+<li>Lauri Tirkkonen</li>
+<li>Leo Constantinides</li>
+<li>Luis Cáceres</li>
+<li>Maciej 'vesim' Kuliński</li>
+<li>Martin Wickham</li>
+<li>Mason Remaley</li>
+<li>Mateusz Poliwczak</li>
+<li>Mathew R Gordon</li>
+<li>Michael Bartnett</li>
+<li>Philippe Pittoli</li>
+<li>Stephen Gregoratto</li>
+<li>Tom Read Cutting</li>
+<li>Tw</li>
+<li>cryptocode</li>
+<li>d18g</li>
+<li>hequn</li>
+<li>serg</li>
+<li>shwqf</li>
+<li>star-tek-mb</li>
+<li>travisstaloch</li>
+<li>-k</li>
+<li>0x5a4</li>
+<li>AdamGoertz</li>
+<li>Adrian Cole</li>
+<li>Alexis Brodeur</li>
+<li>Andrius Bentkus</li>
+<li>Arnau</li>
+<li>Arya-Elfren</li>
+<li>Asherah Connor</li>
+<li>Bertie Wheen</li>
+<li>Binary Craft</li>
+<li>Björn Linse</li>
+<li>Borja Clemente</li>
+<li>Brett Hill</li>
+<li>Chris Heyes</li>
+<li>Christofer Nolander</li>
+<li>David Carlier</li>
+<li>David Vanderson</li>
+<li>DerryAlex</li>
+<li>Devin Singh</li>
+<li>Dumitru Stavila</li>
+<li>Ed Yu</li>
+<li>Eric Rowley</li>
+<li>Evan Typanski</li>
+<li>Felix Queißner</li>
+<li>Frechdachs</li>
+<li>George  Zhao</li>
+<li>Gregory Oakes</li>
+<li>Halil</li>
+<li>Hao Li</li>
+<li>Hardy</li>
+<li>Hashi364</li>
+<li>Hayden Pope</li>
+<li>Hubert Jasudowicz</li>
+<li>Ivan Velickovic</li>
+<li>J.C. Moyer</li>
+<li>Janne Hellsten</li>
+<li>Jarred Sumner</li>
+<li>Jayden</li>
+<li>Jens Goldberg</li>
+<li>Jiacai Liu</li>
+<li>Jobat</li>
+<li>John Schmidt</li>
+<li>John Simon</li>
+<li>John Zhang</li>
+<li>Jon</li>
+<li>Jon-Eric Cook</li>
+<li>Jonathan</li>
+<li>Jonta</li>
+<li>Jordan Lewis</li>
+<li>Josh</li>
+<li>Josh Holland</li>
+<li>KOUNOIKE Yuusuke</li>
+<li>Ken Kochis</li>
+<li>Kim SHrier</li>
+<li>Kirk Scheibelhut</li>
+<li>Kotaro Inoue</li>
+<li>Kyle Coffey</li>
+<li>Lavt Niveau</li>
+<li>Luiz Berti</li>
+<li>Marco Munizaga</li>
+<li>Marcos O</li>
+<li>Marcus Ramse</li>
+<li>Mateusz Radomski</li>
+<li>Matt Chudleigh</li>
+<li>Matteo Briani</li>
+<li>Micah Switzer</li>
+<li>Michael Buckley</li>
+<li>Mikael Berthe</li>
+<li>Mikko Kaihlavirta</li>
+<li>Mitchell Hashimoto</li>
+<li>Naoki MATSUMOTO</li>
+<li>Nathan Bourgeois</li>
+<li>Nick Cernis</li>
+<li>Nicolas Goy</li>
+<li>Nikita Ronja</li>
+<li>Phil Eaton</li>
+<li>Philipp Lühmann</li>
+<li>Piotr Sarna</li>
+<li>Piotr Sikora</li>
+<li>Pyry Kovanen</li>
+<li>Reuben Dunnington</li>
+<li>Robert Burke</li>
+<li>Sebastian Bensusan</li>
+<li>Silver</li>
+<li>Simon A. Nielsen Knights</li>
+<li>Sizhe Zhao</li>
+<li>Steven Kabbes</li>
+<li>Suirad</li>
+<li>The Potato Chronicler</li>
+<li>Tristan Ross</li>
+<li>Walther Chen</li>
+<li>Yujiri</li>
+<li>Yusuf Bham</li>
+<li>Zach Cheung</li>
+<li>Zapolsky Anton</li>
+<li>alex</li>
+<li>alion02</li>
+<li>begly</li>
+<li>bing</li>
+<li>dantecatalfamo</li>
+<li>dec05eba</li>
+<li>delitako</li>
+<li>dweiller</li>
+<li>e4m2</li>
+<li>ee7</li>
+<li>flexicoding</li>
+<li>frmdstryr</li>
+<li>fsh</li>
+<li>gettsu</li>
+<li>h57624paen</li>
+<li>iacore</li>
+<li>jackji</li>
+<li>jagt</li>
+<li>jiacai2050</li>
+<li>kkHAIKE</li>
+<li>leap123</li>
+<li>lockbox</li>
+<li>mateusz</li>
+<li>mike</li>
+<li>mnordine</li>
+<li>mparadinha</li>
+<li>nc</li>
+<li>ominitay</li>
+<li>pluick</li>
+<li>protty</li>
+<li>pseudoc</li>
+<li>remeh</li>
+<li>sentientwaffle</li>
+<li>square</li>
+<li>sv99</li>
+<li>tison</li>
+<li>tjog</li>
+<li>tranquillity-codes</li>
+<li>wrongnull</li>
+<li>ypsvlq</li>
+<li>zenith391</li>
+<li>zigster64</li>
+<li>山下</li>
+<li>朕与将军解战袍</li>
     </ul>
     {#header_close#}
 
