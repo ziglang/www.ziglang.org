@@ -422,7 +422,7 @@
     <th>freestanding</th>
     <th>Linux 3.16+</th>
     <th>macOS 11+</th>
-    <th>Windows 8.1+</th>
+    <th>Windows 10+</th>
     <th>WASI</th>
     </tr>
     </thead>
@@ -970,6 +970,13 @@ $ clang-offload-bundler -type=o -bundle-align=4096 \
 
     {#header_open|Operating Systems#}
     {#header_open|Windows#}
+    <p>
+    The officially supported minimum version of Windows is now 10, because
+    <a href="https://support.microsoft.com/en-us/help/13853/windows-lifecycle-fact-sheet">Microsoft dropped LTS support for 8.1 in January</a>.
+    Patches to Zig supporting for older versions of Windows are still accepted into
+    the codebase, but they are not regularly tested, not part of the
+    part of {#link|Bug Stability Program#}, and not covered by the {#link|Tier System#}.
+    </p>
     <ul>
     <li>Fix _tls_index not being defined if libc wasn't linked, and fix x86 name mangling.</li>
     </ul>
@@ -1527,8 +1534,96 @@ Date:   Thu Jul 6 20:41:49 2023 +0200
     {#header_open|Crypto#}
     <p>
     We have <a href="https://www.prettysimpleimages.com/">Frank Denis</a> to thank for Zig's
-    state-of-the-art cryptography capabilities. In this release:</p>
-    TODO
+    state-of-the-art cryptography capabilities. Frank writes:</p>
+
+    {#header_open|New Features#}
+<ul>
+<li>Salsa20: round-reduced variants can now be used.</li>
+<li>The POLYVAL universal hash function was added.</li>
+<li>AEGIS: support for 256-bit tags was added.</li>
+<li>A MAC API was added to AEGIS (<code>std.crypto.auth.aegis</code>) - AEGIS can be used as a high-performance MAC on systems with hardware AES support. Note that this is not a hash function; a secret key is absolutely required in order to authenticate untrusted messages.</li>
+<li>Edwards25519: a <code>rejectLowOrder()</code> function was added to quickly reject low-order points.</li>
+<li>HKDF: with <code>extractInit()</code>, a PRK can now be initialized with only a salt, the keying material being added later, possibly as multiple chunks.</li>
+<li>Hash functions that returns a fixed-length digest now include a <code>finalResult()</code> function that returns the digest as an array, as well as a <code>peek()</code> function that returns it without changing the state.</li>
+<li>AES-CMAC has been implemented, and is availble in <code>crypto.auth.cmac</code>.</li>
+<li><code>std.crypto.ecc</code>: the <code>isOdd()</code> function was added to return the parity of a field element.</li>
+<li><code>bcrypt</code>: bcrypt has a slightly annoying limitation: passwords are limited to 72 bytes, and additional bytes are silently ignored. A new option, <code>silently_truncate_password</code>, can be set to <code>true</code> to transparently pre-hash the passwords and overcome this limitation.</li>
+</ul>
+{#header_close#}
+{#header_open|Breaking Changes#}
+<ul>
+<li>A HMAC key size can have any length, and <code>crypto.Hmac*.key_size</code> was previously set to 256 bits for general guidance. This has been changed to match the actual security level of each function.</li>
+<li><code>secp256k1</code>: the <code>mulPublic()</code> and <code>verify()</code> functions can now return a <code>NonCanonicalError</code> in addition to existing errors.</li>
+<li><code>Ed25519</code>: the top-level <code>Ed25519.sign()</code>, <code>Ed25519.verify()</code>, <code>key_blinding.sign()</code> and <code>key_blinding.unblindPublicKey()</code> functions, that were already deprecated in version 0.10.0, have been removed. For consistency with other signature schemes, these functions have been moved to the <code>KeyPair</code>, <code>PublicKey</code>, <code>BlindKeyPair</code> and <code>BlindPublicKey</code> structures.</li>
+</ul>
+{#header_close#}
+{#header_open|Keccak#}
+<p>The Keccak permutation was only used internally for <code>sha3</code>. It was completely revamped and has now its dedicated public interface in <code>crypto.core.keccak</code>.</p>
+<p><code>keccak.KeccakF</code> is the permutation itself, which now supports sizes between 200 and 1600 bits, as well as a configurable number of rounds. And <code>keccak.State</code> offers an API for standard sponge-based constructions.</p>
+<p>Taking advantage of this, the SHAKE extendable output function (XOF) has been added, and can be found in <code>std.crypto.hash.sha3.Shake128</code> and <code>std.crypto.hash.sha3.Sha256</code>. SHAKE is based on SHA-3, NIST-approved, and the output of can be of any length, which has many applications and is something we were missing in the standard library.</p>
+<p>The more recent TurboSHAKE variant is also available, as <code>crypto.hash.sha3.TurboShake128</code> and <code>crypto.hash.sha3.TurboShake256</code>. TurboSHAKE benefits from the extensive analysis of SHA-3, its output can also be of any length, and it has good performance across all platforms. In fact, on CPUs without SHA-256 acceleration, and when using WebAssembly, TurboSHAKE is the fastest function we have in the standard library. If you need a modern, portable, secure, overall fast hash function / XOF, that is not vulnerable to length-extension attacks (unlike SHA-256), TurboSHAKE should be your go-to choice.</p>
+{#header_close#}
+{#header_open|Kyber#}
+<p>Kyber is a post-quantum public key encryption and key exchange machanism. It was selected by NIST for the first post-quantum cryptography standard.</p>
+<p>It is available in the standard library, in the <code>std.crypto.kem</code> namespace, making Zig the first language with post-quantum cryptography available right in the standard library.</p>
+<p><code>Kyber512</code>, <code>Kyber768</code> and <code>Kyber1024</code>, as specified in the current draft, are supported.</p>
+<p>The TLS client (<code>std.crypto.tls.Client</code>) also supports the hybrid <code>X25519Kyber768</code> post-quantum key agreement mechanism by default.</p>
+<p>Thanks a lot to Bas Westerbaan for contributing this!</p>
+{#header_close#}
+{#header_open|Constant-Time, Allocation-Free Field Arithmetic#}
+<p>Cryptography frequently requires computations over arbitrary finite fields.</p>
+<p>This is why a new namespace made its appearance: <code>std.crypto.ff</code>.</p>
+<p>Functions from this namespace never require dynamic allocations, are designed to run in constant time, and transparently perform conversions from/to the Montgomery domain.</p>
+<p>This allowed us to implement RSA verification without using any allocators.</p>
+{#header_close#}
+{#header_open|Configurable Side Channels Mitigations#}
+<p>Side channels in cryptographic code can be exploited to leak secrets.</p>
+<p>And mitigations are useful but also come with a performance hit.</p>
+<p>For some applications, performance is critical, and side channels may not be part of the threat model. For other applications, hardware-based attacks is a concern, and mitigations should go beyond constant-time code.</p>
+<p>Zig 0.11 introduces the <code>std_options.side_channels_mitigations</code> global setting to accomodate the different use cases.</p>
+<p>It can have 4 different values:</p>
+<ul>
+<li><code>none</code>: which doesn't enable additional mitigations. "Additional", because it only disables mitigations that don't have a big performance cost. For example, checking authentication tags will still be done in constant time.</li>
+<li><code>basic</code>: which enables mitigations protecting against attacks in a common scenario, where an attacker doesn't have physical access to the device, cannot run arbitrary code on the same thread, and cannot conduct brute-force attacks without being throttled.
+</li>
+<li><code>medium</code>: which enables additional mitigations, targeting protection against practictal attacks even in a shared environement.
+</li>
+<li><code>full</code>: which enables all the available mitigations, going beyond ensuring that the code runs in constant time.
+</li>
+</ul>
+<p>The more mitigations are enabled, the bigger the performance hit will be. But this let applications choose what's best for their use case.</p>
+<p><code>medium</code> is the default.</p>
+{#header_close#}
+{#header_open|Hello Ascon; Farewell to Gimli and Xoodoo#}
+<p>Gimli and Xoodoo have been removed from the standard library, in favor of Ascon.</p>
+<p>These are great permutations, and there's nothing wrong with them from a practical security perspective.</p>
+<p>However, both were competing in the NIST lightweight crypto competition.</p>
+<p>Gimli didn't pass the 3rd selection round, and was not used much in the wild besides Zig and libhydrogen. It will never be standardized and is unlikely to get more traction in the future.</p>
+<p>The Xoodyak mode, that Xoodoo is the permutation of, brought some really nice ideas. There are discusisons to standardize a Xoodyak-like mode, but without Xoodoo.</p>
+<p>So, the Zig implementations of these permutations are better maintained outside the standard library.</p>
+<p>For lightweight crypto, Ascon is the one that we know NIST will standardize and that we can safely rely on from a usage perspective.</p>
+<p>So, Ascon was added instead (in <code>crypto.core.Ascon</code>). We support the <code>128</code> and <code>128a</code> variants, both with Little-Endian or Big-Endian encoding.</p>
+<p>Note that we currently only ship the permutation itself, as the actual constructions are very likely to change a lot during the ongoing standardization process.</p>
+<p>The default CSPRNG (<code>std.rand.DefaultCsprng</code>) used to be based on Xoodoo. It was replaced by a traditional ChaCha-based random number generator, that also improves performance on most platforms.</p>
+<p>For constrained environments, <code>std.rand.Ascon</code> is also available as an alternative. As the name suggest, it's based on Ascon, and has very low memory requirements.</p>
+{#header_close#}
+{#header_open|std.crypto Bug Fixes#}
+<ul>
+<li>HKDF: expansion to <code>&lt;hash size&gt; * 255</code> bytes not an error any more.</li>
+<li>Curve25519: when compiled to WebAssembly, scalar multiplication emitted too many local variables for some runtimes. This has been fixed. The code is also significantly smaller in <code>ReleaseSmall</code> mode.</li>
+<li>Prime-order curves: points whose X coordinate was <code>0</code> used to be rejected with an <code>IdentityElement</code> error. These points were also not properly serialized. That has been fixed.</li>
+<li>Argon2: outputs larger than 64 bytes are now correctly handled.</li>
+</ul>
+{#header_close#}
+{#header_open|Performance Improvements#}
+<ul>
+<li>GHASH was reimplemented and is now ~3x faster.</li>
+<li>AES encryption now takes advantage of the <code>EOR3</code> instruction on Apple Silicon for a slight performance boost.</li>
+<li>The ChaCha20 implementation can now take advantage of CPUs with 256 and 512 bit vector registers for a significant speedup.</li>
+<li>Poly1305 got a little bit faster, too.</li>
+<li>SHA256 can take advantage of hardware acceleration on x86_64 and aarch64.</li>
+</ul>
+{#header_close#}
     {#header_close#}
 
     {#header_open|Concurrency#}
@@ -1824,7 +1919,7 @@ while (true) {
 <p>See <code>json.Token</code> for more info.</p>
 {#header_close#}
 {#header_open|parse/stringify for <code>union</code> types#}
-<p>Parsing and stringifying <code>union(enum)</code> types works differently now by default. For <code>const T = union(enum) { s: []const u8, i: i32};</code>, the old behavior used to accept documents in the form <code>&quot;abc&quot;</code> or <code>123</code> to parse into <code>.{.s=&quot;abc&quot;}</code> or <code>.{.i=123}</code> respectively; the new behavior accepts documents in the form <code>{&quot;s&quot;:&quot;abc&quot;}</code> or <code>{&quot;i&quot;:123}</code> instead. Stringifying is updated as well to maintain the bijection.</p>
+<p>Parsing and stringifying <code>union(enum)</code> types works differently now by default. For <code>const T = union(enum) { s: []const u8, i: i32};</code>, the old behavior used to accept documents in the form <code>"abc"</code> or <code>123</code> to parse into <code>.{.s="abc"}</code> or <code>.{.i=123}</code> respectively; the new behavior accepts documents in the form <code>{"s":"abc"}</code> or <code>{"i":123}</code> instead. Stringifying is updated as well to maintain the bijection.</p>
 <p>The dynamic value <code>json.Value</code> can be used for simple int-or-string cases. For more complex cases, you can implement <code>jsonParse</code>, <code>jsonParseFromValue</code>, and <code>jsonStringify</code> as needed.</p>
 {#header_close#}
 {#header_open|An allocator is always required for parsing now#}
@@ -2674,12 +2769,12 @@ Date:   Fri Dec 16 22:24:58 2022 +0000
     Fixes #13937
 
     {#header_open|Canonicalization of Identifiers#}
-    <p>This adds new behavior to <code>zig fmt</code> which normalizes (renders a canonical form of) quoted identifiers like <code>@&quot;hi_mom&quot;</code> to some extent. This can make codebases more consistent and searchable.</p>
+    <p>This adds new behavior to <code>zig fmt</code> which normalizes (renders a canonical form of) quoted identifiers like <code>@"hi_mom"</code> to some extent. This can make codebases more consistent and searchable.</p>
     <p>To prevent making the details of Unicode and UTF-8 dependencies of the Zig language, only bytes in the ASCII range are interpreted and normalized. Besides avoiding complexity, this means invalid UTF-8 strings cannot break <code>zig fmt</code>.</p>
     <p>Both the tokenizer and the new formatting logic may overlook certain errors in quoted identifiers, such as nonsense escape sequences like <code>\m</code>. For now, those are ignored and we defer to existing later analysis to catch.</p>
     <p>This change is not expected to break any existing code.</p>
     <h2 id="behavior">Behavior</h2>
-    <p>Below, &quot;verbatim&quot; means &quot;as it was in the original source&quot;; in other words, not altered.</p>
+    <p>Below, "verbatim" means "as it was in the original source"; in other words, not altered.</p>
     <ul>
     <li>If an identifier is bare (not quoted) in the original source, no change is made. Everything below only applies to quoted identifiers.</li>
     <li>Quoted identifiers are processed byte-wise, not interpreted as a UTF-8 sequence.</li>
