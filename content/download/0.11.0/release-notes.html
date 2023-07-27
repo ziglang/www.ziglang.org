@@ -430,7 +430,11 @@
             <li><a id="toc-trap-is-now-noreturn" href="#trap-is-now-noreturn">@trap is now noreturn</a></li>
             <li><a id="toc-Add-inComptime-Builtin" href="#Add-inComptime-Builtin">Add @inComptime Builtin</a></li>
             <li><a id="toc-Rename-Casting-Builtins" href="#Rename-Casting-Builtins">Rename Casting Builtins</a></li>
-            <li><a id="toc-Cast-Inference" href="#Cast-Inference">Cast Inference</a></li>
+            <li><a id="toc-Cast-Inference" href="#Cast-Inference">Cast Inference</a>
+            <ul>
+                <li><a id="toc-Pointer-Casts" href="#Pointer-Casts">Pointer Casts</a></li>
+                <li><a id="toc-splat" href="#splat">@splat</a></li>
+            </ul></li>
             <li><a id="toc-Tuple-Type-Declarations" href="#Tuple-Type-Declarations">Tuple Type Declarations</a></li>
             <li><a id="toc-Concatenation-of-Arrays-and-Tuples" href="#Concatenation-of-Arrays-and-Tuples">Concatenation of Arrays and Tuples</a></li>
             <li><a id="toc-Allow-Indexing-Tuple-and-Vector-Pointers" href="#Allow-Indexing-Tuple-and-Vector-Pointers">Allow Indexing Tuple and Vector Pointers</a></li>
@@ -439,7 +443,7 @@
             <li><a id="toc-Inline-Function-Call-Comptime-Propagation" href="#Inline-Function-Call-Comptime-Propagation">Inline Function Call Comptime Propagation</a></li>
             <li><a id="toc-Exporting-C-Variadic-Functions" href="#Exporting-C-Variadic-Functions">Exporting C Variadic Functions</a></li>
             <li><a id="toc-Added-c_char-Type" href="#Added-c_char-Type">Added c_char Type</a></li>
-            <li><a id="toc-Forbid-Runtime-Control-Flow-in-comptime-Blocks-" href="#Forbid-Runtime-Control-Flow-in-comptime-Blocks-">Forbid Runtime Control Flow in comptime Blocks </a></li>
+            <li><a id="toc-Forbid-Runtime-Operations-in-comptime-Blocks-" href="#Forbid-Runtime-Operations-in-comptime-Blocks-">Forbid Runtime Operations in comptime Blocks </a></li>
             <li><a id="toc-boolToInt-always-returns-u1" href="#boolToInt-always-returns-u1">@boolToInt always returns u1</a></li>
             <li><a id="toc-Eliminate-Bound-Functions" href="#Eliminate-Bound-Functions">Eliminate Bound Functions</a></li>
             <li><a id="toc-call-Stack" href="#call-Stack">@call Stack</a></li>
@@ -1450,8 +1454,63 @@ building a WebAssembly module for the browser.</p>
 
     <h3 id="min-and-max"><a href="#toc-min-and-max">@min and @max</a> <a class="hdr" href="#min-and-max">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/14039
-    TODO mention the std lib stuff is deleted
+    <p>
+    The builtins <code><span class="line"><span class="tok-builtin">@min</span></span></code> and <code><span class="line"><span class="tok-builtin">@max</span></span></code> have undergone two key
+    changes. The first is that they now take arbitrarily many arguments, finding the minimum/maximum
+    value across <i>all</i> arguments: for instance, <code><span class="line"><span class="tok-builtin">@min</span>(<span class="tok-number">2</span>, <span class="tok-number">1</span>, <span class="tok-number">3</span>) == <span class="tok-number">1</span></span></code>. The
+    second change relates to the type returned by these operations. Previously,
+    <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a> was used to unify
+    the operand types. However, this sometimes led to redundant uses of
+    <code><span class="line"><span class="tok-builtin">@intCast</span></span></code>: for instance <code><span class="line"><span class="tok-builtin">@min</span>(some_u16, <span class="tok-number">255</span>)</span></code> can
+    always fit in a <code><span class="line"><span class="tok-type">u8</span></span></code>. To avoid this, when these operations are performed on
+    integers (or vectors thereof), the compiler will now notice comptime-known bounds of the result
+    (based on either comptime-known operands or on differing operand types) and refine the result
+    type as tightly as possible.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">min_max.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> assert = std.debug.assert;</span>
+<span class="line"><span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@min/@max takes arbitrarily many arguments&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">11</span>, <span class="tok-builtin">@min</span>(<span class="tok-number">19</span>, <span class="tok-number">11</span>, <span class="tok-number">35</span>, <span class="tok-number">18</span>));</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">35</span>, <span class="tok-builtin">@max</span>(<span class="tok-number">19</span>, <span class="tok-number">11</span>, <span class="tok-number">35</span>, <span class="tok-number">18</span>));</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@min/@max refines result type&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> x: <span class="tok-type">u8</span> = <span class="tok-number">20</span>; <span class="tok-comment">// comptime-known</span></span>
+<span class="line">    <span class="tok-kw">var</span> y: <span class="tok-type">u64</span> = <span class="tok-number">12345</span>;</span>
+<span class="line">    <span class="tok-comment">// Since an exact bound is comptime-known, the result must fit in a u5</span></span>
+<span class="line">    <span class="tok-kw">comptime</span> assert(<span class="tok-builtin">@TypeOf</span>(<span class="tok-builtin">@min</span>(x, y)) == <span class="tok-type">u5</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">var</span> x_rt: <span class="tok-type">u8</span> = x; <span class="tok-comment">// runtime-known</span></span>
+<span class="line">    <span class="tok-comment">// Since one argument to @min is a u8, the result must fit in a u8</span></span>
+<span class="line">    <span class="tok-kw">comptime</span> assert(<span class="tok-builtin">@TypeOf</span>(<span class="tok-builtin">@min</span>(x_rt, y)) == <span class="tok-type">u8</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test min_max.zig</kbd>
+1/2 test.@min/@max takes arbitrarily many arguments... OK
+2/2 test.@min/@max refines result type... OK
+All 2 tests passed.
+</samp></pre></figure>
+    <p>
+    This is a breaking change, as any usage of these values without an explicit type annotation may
+    now result in overflow: for instance, <code><span class="line"><span class="tok-builtin">@min</span>(my_u32, <span class="tok-number">255</span>) + <span class="tok-number">1</span></span></code> used to be
+    always valid but may now overflow. This is solved with explicit type annotations, either with
+    <code><span class="line"><span class="tok-builtin">@as</span></span></code> or using an intermediate <code><span class="line"><span class="tok-kw">const</span></span></code>.
+    </p>
+
+    <p>
+    Since these changes have been applied to the builtin functions, several standard library
+    functions are now redundant. Therefore, the following functions have been deprecated:
+    </p>
+    <ul>
+      <li><code><span class="line">std.math.min</span></code></li>
+      <li><code><span class="line">std.math.max</span></code></li>
+      <li><code><span class="line">std.math.min3</span></code></li>
+      <li><code><span class="line">std.math.max3</span></code></li>
+    </ul>
+
+    <p>
+    For more information on these changes, see <a href="https://github.com/ziglang/zig/issues/14039">the proposal</a> and <a href="https://github.com/ziglang/zig/pull/15522">the PR implementing it</a>.
+    </p>
     
 
     <h3 id="trap-is-now-noreturn"><a href="#toc-trap-is-now-noreturn">@trap is now noreturn</a> <a class="hdr" href="#trap-is-now-noreturn">§</a></h3>
@@ -1470,39 +1529,244 @@ Date:   Thu May 18 23:00:35 2023 +0200
 
     <h3 id="Add-inComptime-Builtin"><a href="#toc-Add-inComptime-Builtin">Add @inComptime Builtin</a> <a class="hdr" href="#Add-inComptime-Builtin">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/15290
+    <p>
+    A new builtin, <code><span class="line"><span class="tok-builtin">@inComptime</span>()</span></code>, has been introduced. This builtin returns a
+    <code><span class="line"><span class="tok-type">bool</span></span></code> indicating whether or not it was evaluated in a
+    <code><span class="line"><span class="tok-kw">comptime</span></span></code> scope.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">in_comptime.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> assert = std.debug.assert;</span>
+<span class="line"><span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> global_val = blk: {</span>
+<span class="line">    assert(<span class="tok-builtin">@inComptime</span>());</span>
+<span class="line">    <span class="tok-kw">break</span> :blk <span class="tok-number">123</span>;</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">comptime</span> {</span>
+<span class="line">    assert(<span class="tok-builtin">@inComptime</span>());</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">f</span>() <span class="tok-type">u32</span> {</span>
+<span class="line">    <span class="tok-kw">if</span> (<span class="tok-builtin">@inComptime</span>()) {</span>
+<span class="line">        <span class="tok-kw">return</span> <span class="tok-number">1</span>;</span>
+<span class="line">    } <span class="tok-kw">else</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> <span class="tok-number">2</span>;</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@inComptime&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-null">true</span>, <span class="tok-kw">comptime</span> <span class="tok-builtin">@inComptime</span>());</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-null">false</span>, <span class="tok-builtin">@inComptime</span>());</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">1</span>), <span class="tok-kw">comptime</span> f());</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">2</span>), f());</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test in_comptime.zig</kbd>
+1/1 test.@inComptime... OK
+All 1 tests passed.
+</samp></pre></figure>
     
 
     <h3 id="Rename-Casting-Builtins"><a href="#toc-Rename-Casting-Builtins">Rename Casting Builtins</a> <a class="hdr" href="#Rename-Casting-Builtins">§</a></h3>
 
-commit a72d634b731952ee227d026c27e83c5702dcea4a
-Merge: c6e2e1ae4 a4d1edac8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Jun 19 22:36:24 2023 -0700
-
-    Merge pull request #16046 from BratishkaErik/issue-6128
-    
-    Renaming `@xtoy` to `@YfromX`
+    <p>
+    An <a href="https://github.com/ziglang/zig/issues/6128">accepted proposal</a> has been
+    implemented to rename all casting builtins of the form <code><span class="line"><span class="tok-builtin">@xToY</span></span></code> to
+    <code><span class="line"><span class="tok-builtin">@yFromX</span></span></code>. The goal of this change is to make code more readable by
+    ensuring information flows in a consistent direction (right-to-left) through function-call-like
+    expressions.
+    </p>
+    <p>
+    The full list of affected builtins is as follows:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>old name</th>
+          <th>new name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@boolToInt</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@intFromBool</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@enumToInt</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@intFromEnum</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@errorToInt</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@intFromError</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@floatToInt</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@intFromFloat</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@intToEnum</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@enumFromInt</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@intToError</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@errorFromInt</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@intToFloat</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@floatFromInt</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@intToPtr</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@ptrFromInt</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line"><span class="tok-builtin">@ptrToInt</span></span></code></td>
+          <td><code><span class="line"><span class="tok-builtin">@intFromPtr</span></span></code></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+    <code>zig fmt</code> will automatically update usages of the old builtin names in your code.
+    </p>
     
 
     <h3 id="Cast-Inference"><a href="#toc-Cast-Inference">Cast Inference</a> <a class="hdr" href="#Cast-Inference">§</a></h3>
 
-commit 146b79af153bbd5dafda0ba12a040385c7fc58f8
-Merge: 13853bef0 21ac0beb4
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Jun 24 16:58:19 2023 -0700
+    <p>
+    Zig 0.11.0 implements <a href="https://github.com/ziglang/zig/issues/5909">an accepted proposal</a>
+    which changes how "casting" builtins (e.g. <code><span class="line"><span class="tok-builtin">@intCast</span></span></code>,
+    <code><span class="line"><span class="tok-builtin">@enumFromInt</span></span></code>) behave. The goal of this change is to improve readability
+    and safety.
+    </p>
+    <p><b>
+    For more information on the changes described here, please see
+    <a href="https://github.com/ziglang/zig/wiki/Using-Cast-Result-Type-Inference">this wiki page</a>
+    which explains in more detail what this change is and how to migrate your code.
+    </b></p>
+    <p>
+    In previous versions of Zig, casting builtins took as a parameter the <b>destination type</b> of
+    the cast, for instance <code><span class="line"><span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, x)</span></code>. This was easy to understand, but
+    can lead to code duplication where a type must be repeated at the usage site despite already
+    being specified as, for instance, a parameter type or field type.
+    </p>
+    <p>
+    This language change removes the destination type parameter from all cast builtins. Instead,
+    these builtins now use <a href="/documentation/0.11.0/#Reuslt-Location-Semantics">Result Location Semantics</a>
+    to infer the result type of the cast from the expression's "result type". In essence, this means
+    type inference is used. Most expressions which have a known concrete type for their operand will
+    provide a result type: for instance, <code><span class="line"><span class="tok-kw">const</span> x: T = e</span></code> and
+    <code><span class="line"><span class="tok-builtin">@as</span>(T, e)</span></code> both give <code>e</code> a result type of <code>T</code>, and
+    <code><span class="line">S{ .f = e }</span></code> gives <code>e</code> a result type of the type of the field <code>S.f</code>.
+    </p>
+    <p>
+    The full list of affected cast builtins is as follows:
+    </p>
+    <ul>
+      <li><code><span class="line"><span class="tok-builtin">@addrSpaceCast</span></span></code>, <code><span class="line"><span class="tok-builtin">@alignCast</span></span></code>, <code><span class="line"><span class="tok-builtin">@ptrCast</span></span></code></li>
+      <li><code><span class="line"><span class="tok-builtin">@errSetCast</span></span></code>, <code><span class="line"><span class="tok-builtin">@floatCast</span></span></code>, <code><span class="line"><span class="tok-builtin">@intCast</span></span></code></li>
+      <li><code><span class="line"><span class="tok-builtin">@intFromFloat</span></span></code>, <code><span class="line"><span class="tok-builtin">@enumFromInt</span></span></code>, <code><span class="line"><span class="tok-builtin">@floatFromInt</span></span></code>, <code><span class="line"><span class="tok-builtin">@ptrFromInt</span></span></code></li>
+      <li><code><span class="line"><span class="tok-builtin">@truncate</span></span></code>, <code><span class="line"><span class="tok-builtin">@bitCast</span></span></code></li>
+    </ul>
+    <p>
+    Using these builtins in an expression with no result type will give a compile error:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">no_cast_result_type.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;cast without result type&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> x: <span class="tok-type">u16</span> = <span class="tok-number">200</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> y = <span class="tok-builtin">@intCast</span>(x);</span>
+<span class="line">    _ = y;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test no_cast_result_type.zig</kbd>
+<span class="sgr-1m">docgen_tmp/no_cast_result_type.zig:3:15: </span><span class="sgr-31m">error: </span><span class="sgr-1m">@intCast must have a known result type
+</span>    const y = @intCast(x);
+              <span class="sgr-32m">^~~~~~~~~~~
+</span><span class="sgr-1m">docgen_tmp/no_cast_result_type.zig:3:15: </span><span class="sgr-36m">note: </span><span class="sgr-1m">use @as to provide explicit result type
+</span>
+</samp></pre></figure>
+    <p>
+    This error indicates one possible method of providing an explicit result type: using
+    <code><span class="line"><span class="tok-builtin">@as</span></span></code>. This will always work, however it is usually not necessary. Instead,
+    result types are normally inferred from type annotations, struct/array initialization expressions,
+    parameter types, and so on.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">cast_result_type_inference.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;infer cast result type from type annotation&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> x: <span class="tok-type">u16</span> = <span class="tok-number">200</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> y: <span class="tok-type">u8</span> = <span class="tok-builtin">@intCast</span>(x);</span>
+<span class="line">    _ = y;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;infer cast result type from field type&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> { x: <span class="tok-type">f32</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> val: <span class="tok-type">f64</span> = <span class="tok-number">123.456</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> s: S = .{ .x = <span class="tok-builtin">@floatCast</span>(val) };</span>
+<span class="line">    _ = s;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;infer cast result type from parameter type&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> val: <span class="tok-type">u64</span> = <span class="tok-number">123</span>;</span>
+<span class="line">    f(<span class="tok-builtin">@intCast</span>(val));</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">f</span>(x: <span class="tok-type">u32</span>) <span class="tok-type">void</span> {</span>
+<span class="line">    _ = x;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;explicitly annotate result type with @as&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> E = <span class="tok-kw">enum</span>(<span class="tok-type">u8</span>) { a, b };</span>
+<span class="line">    <span class="tok-kw">const</span> x: <span class="tok-type">u8</span> = <span class="tok-number">1</span>;</span>
+<span class="line">    _ = <span class="tok-builtin">@as</span>(E, <span class="tok-builtin">@enumFromInt</span>(x));</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test cast_result_type_inference.zig</kbd>
+1/4 test.infer cast result type from type annotation... OK
+2/4 test.infer cast result type from field type... OK
+3/4 test.infer cast result type from parameter type... OK
+4/4 test.explicitly annotate result type with @as... OK
+All 4 tests passed.
+</samp></pre></figure>
 
-    Merge pull request #16163 from mlugg/feat/builtins-infer-dest-ty
-    
-    Infer destination type of cast builtins using result type
-commit e05c242cd89d03ae67fa7b8d5fc33fb5dc42dbe3
-Merge: d78517f4f 47d5bf261
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jul 12 19:13:26 2023 -0700
+    <p>
+    Where possible, <code>zig fmt</code> has been made to automatically migrate uses of the old builtins,
+    using a naive translation based on <code>@as</code>. Most builtins are automatically updated, but there
+    are a few exceptions.
+    </p>
+    <ul>
+      <li><code><span class="line"><span class="tok-builtin">@addrSpaceCast</span></span></code> and <code><span class="line"><span class="tok-builtin">@alignCast</span></span></code> cannot be translated as
+      the old usage does not provide the full result type</li>
+      <li><code><span class="line"><span class="tok-builtin">@ptrCast</span></span></code> may sometimes decrease alignment where it previously did not</li>
+      <li><code><span class="line"><span class="tok-builtin">@truncate</span></span></code> will be translated incorrectly for vectors, causing a compile error</li>
+      <li><code><span class="line"><span class="tok-builtin">@splat</span></span></code> cannot be translated as the old usage does not provide the full result type</li>
+    </ul>
 
-    Merge pull request #16346 from antlilja/splat-rls
+    <h4 id="Pointer-Casts"><a href="#toc-Pointer-Casts">Pointer Casts</a> <a class="hdr" href="#Pointer-Casts">§</a></h4>
+
+    <p>
+    The builtins <code><span class="line"><span class="tok-builtin">@addrSpaceCast</span></span></code> and <code><span class="line"><span class="tok-builtin">@alignCast</span></span></code> would
+    become quite cumbersome to use under this system as described, since you would now have to specify
+    the full intermediate pointer types. Instead, pointer casts (those two builtins and <code><span class="line"><span class="tok-builtin">@ptrCast</span></span></code>)
+    are special. They combine into a single logical operation, with each builtin effectively "allowing"
+    a particular component of the pointer to be cast rather than "performing" it. This means any sequence of
+    nested pointer cast builtins requires only one result type, rather than one at every intermediate computation.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">pointer_cast.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;pointer casts&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> ptr1: *<span class="tok-kw">align</span>(<span class="tok-number">1</span>) <span class="tok-kw">const</span> <span class="tok-type">u32</span> = <span class="tok-builtin">@ptrFromInt</span>(<span class="tok-number">0x1000</span>);</span>
+<span class="line">    <span class="tok-kw">const</span> ptr2: *<span class="tok-type">u64</span> = <span class="tok-builtin">@constCast</span>(<span class="tok-builtin">@alignCast</span>(<span class="tok-builtin">@ptrCast</span>(ptr1)));</span>
+<span class="line">    _ = ptr2;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test pointer_cast.zig</kbd>
+1/1 test.pointer casts... OK
+All 1 tests passed.
+</samp></pre></figure>
     
-    Apply RLS to @splat builtin, eliminating its length parameter
+
+    <h4 id="splat"><a href="#toc-splat">@splat</a> <a class="hdr" href="#splat">§</a></h4>
+
+    <p>
+    The <code><span class="line"><span class="tok-builtin">@splat</span></span></code> builtin has undergone a similar change. It no longer has a
+    parameter to indicate the length of the resulting vector, instead using the expression's result
+    type to infer this and the type of its operand.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">splat_result_type.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@splat result type&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> vec: <span class="tok-builtin">@Vector</span>(<span class="tok-number">8</span>, <span class="tok-type">u8</span>) = <span class="tok-builtin">@splat</span>(<span class="tok-number">123</span>);</span>
+<span class="line">    _ = vec;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test splat_result_type.zig</kbd>
+1/1 test.@splat result type... OK
+All 1 tests passed.
+</samp></pre></figure>
+    
 
     
 
@@ -1565,9 +1829,80 @@ Date:   Tue Jun 20 16:41:58 2023 -0700
     Set `c_char` signedness based on the target
     
 
-    <h3 id="Forbid-Runtime-Control-Flow-in-comptime-Blocks-"><a href="#toc-Forbid-Runtime-Control-Flow-in-comptime-Blocks-">Forbid Runtime Control Flow in comptime Blocks </a> <a class="hdr" href="#Forbid-Runtime-Control-Flow-in-comptime-Blocks-">§</a></h3>
+    <h3 id="Forbid-Runtime-Operations-in-comptime-Blocks-"><a href="#toc-Forbid-Runtime-Operations-in-comptime-Blocks-">Forbid Runtime Operations in comptime Blocks </a> <a class="hdr" href="#Forbid-Runtime-Operations-in-comptime-Blocks-">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/7056
+    <p>
+    Previously, <code><span class="line"><span class="tok-kw">comptime</span></span></code> blocks in runtime code worked in a highly unintuitive
+    way: they <a href="https://github.com/ziglang/zig/issues/7056">did not actually enforce compile-time
+    evaluation of their bodies</a>. This has been resolved in 0.11.0. The entire body of a <code><span class="line"><span class="tok-kw">comptime</span></span></code>
+    block will now be evaluated at compile time, and a compile error is triggered if this is not possible.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">comptime_block.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;runtime operations in comptime block&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> x: <span class="tok-type">u32</span> = <span class="tok-number">1</span>;</span>
+<span class="line">    <span class="tok-kw">comptime</span> {</span>
+<span class="line">        x += <span class="tok-number">1</span>;</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test comptime_block.zig</kbd>
+<span class="sgr-1m">docgen_tmp/comptime_block.zig:4:11: </span><span class="sgr-31m">error: </span><span class="sgr-1m">unable to evaluate comptime expression
+</span>        x += 1;
+        <span class="sgr-32m">~~^~~~
+</span><span class="sgr-1m">docgen_tmp/comptime_block.zig:4:9: </span><span class="sgr-36m">note: </span><span class="sgr-1m">operation is runtime due to this operand
+</span>        x += 1;
+        <span class="sgr-32m">^
+</span>
+</samp></pre></figure>
+    <p>
+    This change has one particularly notable consequence. Previously, it was allowed to <code><span class="line"><span class="tok-kw">return</span></span></code>
+    from a runtime function within a <code><span class="line"><span class="tok-kw">comptime</span></span></code> block. However, this is illogical:
+    the return cannot actually happen at comptime, since this function is being called at runtime. Therefore, this is
+    now illegal.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">return_from_comptime_block.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> expectEqual = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expectEqual;</span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;return from runtime function in comptime block&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">123</span>), f());</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">f</span>() <span class="tok-type">u32</span> {</span>
+<span class="line">    <span class="tok-comment">// We want to call `foo` at comptime</span></span>
+<span class="line">    <span class="tok-kw">comptime</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> foo();</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">u32</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-number">123</span>;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test return_from_comptime_block.zig</kbd>
+<span class="sgr-1m">docgen_tmp/return_from_comptime_block.zig:9:9: </span><span class="sgr-31m">error: </span><span class="sgr-1m">function called at runtime cannot return value at comptime
+</span>        return foo();
+        <span class="sgr-32m">^~~~~~~~~~~~
+</span><span class="sgr-2m">referenced by:
+    test.return from runtime function in comptime block: docgen_tmp/return_from_comptime_block.zig:3:36
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+</span>
+</samp></pre></figure>
+    <p>
+    The workaround for this issue is to <i>compute</i> the return value at comptime, but <i>return</i>
+    it at runtime:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">compute_return_from_comptime_block.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> expectEqual = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expectEqual;</span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;compute return value of runtime function in comptime block&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">123</span>), f());</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">f</span>() <span class="tok-type">u32</span> {</span>
+<span class="line">    <span class="tok-comment">// We want to call `foo` at comptime</span></span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">comptime</span> foo();</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() <span class="tok-type">u32</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-number">123</span>;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test compute_return_from_comptime_block.zig</kbd>
+1/1 test.compute return value of runtime function in comptime block... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    This change similarly disallows <code><span class="line"><span class="tok-kw">comptime</span> <span class="tok-kw">try</span></span></code> from within a runtime function,
+    since on error this attempts to return a value at compile time. To retain the old behavior, this
+    sequence should be replaced with <code><span class="line"><span class="tok-kw">try</span> <span class="tok-kw">comptime</span></span></code>.
+    </p>
     
 
     <h3 id="boolToInt-always-returns-u1"><a href="#toc-boolToInt-always-returns-u1">@boolToInt always returns u1</a> <a class="hdr" href="#boolToInt-always-returns-u1">§</a></h3>
@@ -1653,19 +1988,93 @@ Date:   Sat Apr 22 20:44:57 2023 -0400
 
     <h3 id="comptime-Function-Calls-No-Longer-Cause-Runtime-Analysis"><a href="#toc-comptime-Function-Calls-No-Longer-Cause-Runtime-Analysis">comptime Function Calls No Longer Cause Runtime Analysis</a> <a class="hdr" href="#comptime-Function-Calls-No-Longer-Cause-Runtime-Analysis">§</a></h3>
 
-commit 22b0457dd4b73d3cce2e52b77b3b7c9f857c0409
-Merge: ac9f72d87 0f58d34ef
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon May 29 23:41:40 2023 -0700
-
-    Merge pull request #15891 from mlugg/fix/dont-emit-fn-called-at-comptime
-    
-    Prevent analysis of functions only referenced at comptime
+    <p>
+    There has been an <a href="https://github.com/ziglang/zig/issues/6256">open issue</a> for several
+    years about the fact that Zig will emit all referenced functions to a binary, even if the function
+    is only used at compile-time. This can cause
+    <a href="https://github.com/ziglang/zig/issues/15353">binary bloat</a>, as well as potentially triggering
+    false positive compile errors if a function is intended to only be used at compile-time.
+    </p>
+    <p>
+    This issue <a href="https://github.zom/ziglang/zig/pull/15891">has been resolved</a> in this release
+    cycle. Zig will now only emit a runtime version of a function to the binary if one of the following
+    conditions holds:
+    </p>
+    <ul>
+      <li>The function is called at runtime.</li>
+      <li>The function has a reference taken to it. In this case, a call may occur through a function pointer, so the function must be emitted.</li>
+    </ul>
+    <p>
+    As well as avoiding potential false positive compile errors, this change leads to a slight
+    decrease in binary sizes, and may slightly speed up compilation in some cases. Note that as a
+    consequence of this change, it is no longer sufficient to write
+    <code><span class="line"><span class="tok-kw">comptime</span> { _ = f; }</span></code> to force a function to be analyzed and emitted to the
+    binary. Instead, you must write <code><span class="line"><span class="tok-kw">comptime</span> { _ = &amp;f; }</span></code>.
+    </p>
     
 
     <h3 id="Multi-Item-Switch-Prong-Type-Coercion"><a href="#toc-Multi-Item-Switch-Prong-Type-Coercion">Multi-Item Switch Prong Type Coercion</a> <a class="hdr" href="#Multi-Item-Switch-Prong-Type-Coercion">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/2812
+    <p>
+    Prior to 0.11.0, when a <code><span class="line"><span class="tok-kw">switch</span></span></code> prong captured a union payload, all
+    payloads were required to have the exact same type. This has been changed so that
+    <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a> is used to
+    combine the payload types, allowing distinct but compatible types to be captured together.
+    </p>
+    <p>
+    Pointer captures also make use of peer type resolution, but are more limited: the payload types
+    must all have the same in-memory representation so that the payload pointer can be safely cast.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">switch_capture_ptr.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> assert = std.debug.assert;</span>
+<span class="line"><span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> U1 = <span class="tok-kw">union</span>(<span class="tok-kw">enum</span>) {</span>
+<span class="line">    x: <span class="tok-type">u8</span>,</span>
+<span class="line">    y: ?<span class="tok-type">u32</span>,</span>
+<span class="line">};</span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;switch capture resolves peer types&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> f(<span class="tok-number">1</span>, .{ .x = <span class="tok-number">1</span> });</span>
+<span class="line">    <span class="tok-kw">try</span> f(<span class="tok-number">2</span>, .{ .y = <span class="tok-number">2</span> });</span>
+<span class="line">    <span class="tok-kw">try</span> f(<span class="tok-number">0</span>, .{ .y = <span class="tok-null">null</span> });</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">f</span>(expected: <span class="tok-type">u32</span>, u: U1) !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">switch</span> (u) {</span>
+<span class="line">        .x, .y =&gt; |val| {</span>
+<span class="line">            <span class="tok-kw">comptime</span> assert(<span class="tok-builtin">@TypeOf</span>(val) == ?<span class="tok-type">u32</span>);</span>
+<span class="line">            <span class="tok-kw">try</span> expectEqual(expected, val <span class="tok-kw">orelse</span> <span class="tok-number">0</span>);</span>
+<span class="line">        },</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> U2 = <span class="tok-kw">union</span>(<span class="tok-kw">enum</span>) {</span>
+<span class="line">    x: <span class="tok-type">c_uint</span>,</span>
+<span class="line">    <span class="tok-comment">/// This type has the same number of bits as `c_uint`, but is distinct.</span></span>
+<span class="line">    y: <span class="tok-builtin">@Type</span>(.{ .Int = .{</span>
+<span class="line">        .signedness = .unsigned,</span>
+<span class="line">        .bits = <span class="tok-builtin">@bitSizeOf</span>(<span class="tok-type">c_uint</span>),</span>
+<span class="line">    } }),</span>
+<span class="line">};</span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;switch pointer capture resolves peer types&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> a: U2 = .{ .x = <span class="tok-number">10</span> };</span>
+<span class="line">    <span class="tok-kw">var</span> b: U2 = .{ .y = <span class="tok-number">20</span> };</span>
+<span class="line">    g(&amp;a);</span>
+<span class="line">    g(&amp;b);</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(U2{ .x = <span class="tok-number">11</span> }, a);</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqual(U2{ .y = <span class="tok-number">21</span> }, b);</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">g</span>(u: *U2) <span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">switch</span> (u.*) {</span>
+<span class="line">        .x, .y =&gt; |*ptr| {</span>
+<span class="line">            ptr.* += <span class="tok-number">1</span>;</span>
+<span class="line">        },</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test switch_capture_ptr.zig</kbd>
+1/2 test.switch capture resolves peer types... OK
+2/2 test.switch pointer capture resolves peer types... OK
+All 2 tests passed.
+</samp></pre></figure>
+    </p>
     
 
     <h3 id="Allow-Functions-to-Return-null-and-undefined"><a href="#toc-Allow-Functions-to-Return-null-and-undefined">Allow Functions to Return null and undefined</a> <a class="hdr" href="#Allow-Functions-to-Return-null-and-undefined">§</a></h3>
