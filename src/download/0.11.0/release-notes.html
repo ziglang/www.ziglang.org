@@ -1121,8 +1121,61 @@ building a WebAssembly module for the browser.</p>
     {#header_close#}
 
     {#header_open|@min and @max#}
-    TODO https://github.com/ziglang/zig/issues/14039
-    TODO mention the std lib stuff is deleted
+    <p>
+    The builtins {#syntax#}@min{#endsyntax#} and {#syntax#}@max{#endsyntax#} have undergone two key
+    changes. The first is that they now take arbitrarily many arguments, finding the minimum/maximum
+    value across <i>all</i> arguments: for instance, {#syntax#}@min(2, 1, 3) == 1{#endsyntax#}. The
+    second change relates to the type returned by these operations. Previously,
+    <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a> was used to unify
+    the operand types. However, this sometimes led to redundant uses of
+    {#syntax#}@intCast{#endsyntax#}: for instance {#syntax#}@min(some_u16, 255){#endsyntax#} can
+    always fit in a {#syntax#}u8{#endsyntax#}. To avoid this, when these operations are performed on
+    integers (or vectors thereof), the compiler will now notice comptime-known bounds of the result
+    (based on either comptime-known operands or on differing operand types) and refine the result
+    type as tightly as possible.
+    </p>
+    {#code_begin|test|min_max#}
+const std = @import("std");
+const assert = std.debug.assert;
+const expectEqual = std.testing.expectEqual;
+
+test "@min/@max takes arbitrarily many arguments" {
+    try expectEqual(11, @min(19, 11, 35, 18));
+    try expectEqual(35, @max(19, 11, 35, 18));
+}
+
+test "@min/@max refines result type" {
+    const x: u8 = 20; // comptime-known
+    var y: u64 = 12345;
+    // Since an exact bound is comptime-known, the result must fit in a u5
+    comptime assert(@TypeOf(@min(x, y)) == u5);
+
+    var x_rt: u8 = x; // runtime-known
+    // Since one argument to @min is a u8, the result must fit in a u8
+    comptime assert(@TypeOf(@min(x_rt, y)) == u8);
+}
+    {#code_end#}
+    <p>
+    This is a breaking change, as any usage of these values without an explicit type annotation may
+    now result in overflow: for instance, {#syntax#}@min(my_u32, 255) + 1{#endsyntax#} used to be
+    always valid but may now overflow. This is solved with explicit type annotations, either with
+    {#syntax#}@as{#endsyntax#} or using an intermediate {#syntax#}const{#endsyntax#}.
+    </p>
+
+    <p>
+    Since these changes have been applied to the builtin functions, several standard library
+    functions are now redundant. Therefore, the following functions have been deprecated:
+    </p>
+    <ul>
+      <li>{#syntax#}std.math.min{#endsyntax#}</li>
+      <li>{#syntax#}std.math.max{#endsyntax#}</li>
+      <li>{#syntax#}std.math.min3{#endsyntax#}</li>
+      <li>{#syntax#}std.math.max3{#endsyntax#}</li>
+    </ul>
+
+    <p>
+    For more information on these changes, see <a href="https://github.com/ziglang/zig/issues/14039">the proposal</a> and <a href="https://github.com/ziglang/zig/pull/15522">the PR implementing it</a>.
+    </p>
     {#header_close#}
 
     {#header_open|@trap is now noreturn#}
@@ -1139,37 +1192,229 @@ Date:   Thu May 18 23:00:35 2023 +0200
     {#header_close#}
 
     {#header_open|Add @inComptime Builtin#}
-    TODO https://github.com/ziglang/zig/issues/15290
+    <p>
+    A new builtin, {#syntax#}@inComptime(){#endsyntax#}, has been introduced. This builtin returns a
+    {#syntax#}bool{#endsyntax#} indicating whether or not it was evaluated in a
+    {#syntax#}comptime{#endsyntax#} scope.
+    </p>
+    {#code_begin|test|in_comptime#}
+const std = @import("std");
+const assert = std.debug.assert;
+const expectEqual = std.testing.expectEqual;
+
+const global_val = blk: {
+    assert(@inComptime());
+    break :blk 123;
+};
+
+comptime {
+    assert(@inComptime());
+}
+
+fn f() u32 {
+    if (@inComptime()) {
+        return 1;
+    } else {
+        return 2;
+    }
+}
+
+test "@inComptime" {
+    try expectEqual(true, comptime @inComptime());
+    try expectEqual(false, @inComptime());
+    try expectEqual(@as(u32, 1), comptime f());
+    try expectEqual(@as(u32, 2), f());
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Rename Casting Builtins#}
-commit a72d634b731952ee227d026c27e83c5702dcea4a
-Merge: c6e2e1ae4 a4d1edac8
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Jun 19 22:36:24 2023 -0700
-
-    Merge pull request #16046 from BratishkaErik/issue-6128
-    
-    Renaming `@xtoy` to `@YfromX`
+    <p>
+    An <a href="https://github.com/ziglang/zig/issues/6128">accepted proposal</a> has been
+    implemented to rename all casting builtins of the form {#syntax#}@xToY{#endsyntax#} to
+    {#syntax#}@yFromX{#endsyntax#}. The goal of this change is to make code more readable by
+    ensuring information flows in a consistent direction (right-to-left) through function-call-like
+    expressions.
+    </p>
+    <p>
+    The full list of affected builtins is as follows:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>old name</th>
+          <th>new name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{#syntax#}@boolToInt{#endsyntax#}</td>
+          <td>{#syntax#}@intFromBool{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@enumToInt{#endsyntax#}</td>
+          <td>{#syntax#}@intFromEnum{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@errorToInt{#endsyntax#}</td>
+          <td>{#syntax#}@intFromError{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@floatToInt{#endsyntax#}</td>
+          <td>{#syntax#}@intFromFloat{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@intToEnum{#endsyntax#}</td>
+          <td>{#syntax#}@enumFromInt{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@intToError{#endsyntax#}</td>
+          <td>{#syntax#}@errorFromInt{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@intToFloat{#endsyntax#}</td>
+          <td>{#syntax#}@floatFromInt{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@intToPtr{#endsyntax#}</td>
+          <td>{#syntax#}@ptrFromInt{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}@ptrToInt{#endsyntax#}</td>
+          <td>{#syntax#}@intFromPtr{#endsyntax#}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+    <code>zig fmt</code> will automatically update usages of the old builtin names in your code.
+    </p>
     {#header_close#}
 
     {#header_open|Cast Inference#}
-commit 146b79af153bbd5dafda0ba12a040385c7fc58f8
-Merge: 13853bef0 21ac0beb4
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Jun 24 16:58:19 2023 -0700
+    <p>
+    Zig 0.11.0 implements <a href="https://github.com/ziglang/zig/issues/5909">an accepted proposal</a>
+    which changes how "casting" builtins (e.g. {#syntax#}@intCast{#endsyntax#},
+    {#syntax#}@enumFromInt{#endsyntax#}) behave. The goal of this change is to improve readability
+    and safety.
+    </p>
+    <p><b>
+    For more information on the changes described here, please see
+    <a href="https://github.com/ziglang/zig/wiki/Using-Cast-Result-Type-Inference">this wiki page</a>
+    which explains in more detail what this change is and how to migrate your code.
+    </b></p>
+    <p>
+    In previous versions of Zig, casting builtins took as a parameter the <b>destination type</b> of
+    the cast, for instance {#syntax#}@intCast(u8, x){#endsyntax#}. This was easy to understand, but
+    can lead to code duplication where a type must be repeated at the usage site despite already
+    being specified as, for instance, a parameter type or field type.
+    </p>
+    <p>
+    This language change removes the destination type parameter from all cast builtins. Instead,
+    these builtins now use <a href="/documentation/0.11.0/#Reuslt-Location-Semantics">Result Location Semantics</a>
+    to infer the result type of the cast from the expression's "result type". In essence, this means
+    type inference is used. Most expressions which have a known concrete type for their operand will
+    provide a result type: for instance, {#syntax#}const x: T = e{#endsyntax#} and
+    {#syntax#}@as(T, e){#endsyntax#} both give <code>e</code> a result type of <code>T</code>, and
+    {#syntax#}S{ .f = e }{#endsyntax#} gives <code>e</code> a result type of the type of the field <code>S.f</code>.
+    </p>
+    <p>
+    The full list of affected cast builtins is as follows:
+    </p>
+    <ul>
+      <li>{#syntax#}@addrSpaceCast{#endsyntax#}, {#syntax#}@alignCast{#endsyntax#}, {#syntax#}@ptrCast{#endsyntax#}</li>
+      <li>{#syntax#}@errSetCast{#endsyntax#}, {#syntax#}@floatCast{#endsyntax#}, {#syntax#}@intCast{#endsyntax#}</li>
+      <li>{#syntax#}@intFromFloat{#endsyntax#}, {#syntax#}@enumFromInt{#endsyntax#}, {#syntax#}@floatFromInt{#endsyntax#}, {#syntax#}@ptrFromInt{#endsyntax#}</li>
+      <li>{#syntax#}@truncate{#endsyntax#}, {#syntax#}@bitCast{#endsyntax#}</li>
+    </ul>
+    <p>
+    Using these builtins in an expression with no result type will give a compile error:
+    </p>
+    {#code_begin|test_err|no_cast_result_type#}
+test "cast without result type" {
+    const x: u16 = 200;
+    const y = @intCast(x);
+    _ = y;
+}
+    {#code_end#}
+    <p>
+    This error indicates one possible method of providing an explicit result type: using
+    {#syntax#}@as{#endsyntax#}. This will always work, however it is usually not necessary. Instead,
+    result types are normally inferred from type annotations, struct/array initialization expressions,
+    parameter types, and so on.
+    </p>
+    {#code_begin|test|cast_result_type_inference#}
+test "infer cast result type from type annotation" {
+    const x: u16 = 200;
+    const y: u8 = @intCast(x);
+    _ = y;
+}
 
-    Merge pull request #16163 from mlugg/feat/builtins-infer-dest-ty
-    
-    Infer destination type of cast builtins using result type
-commit e05c242cd89d03ae67fa7b8d5fc33fb5dc42dbe3
-Merge: d78517f4f 47d5bf261
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jul 12 19:13:26 2023 -0700
+test "infer cast result type from field type" {
+    const S = struct { x: f32 };
+    const val: f64 = 123.456;
+    const s: S = .{ .x = @floatCast(val) };
+    _ = s;
+}
 
-    Merge pull request #16346 from antlilja/splat-rls
-    
-    Apply RLS to @splat builtin, eliminating its length parameter
+test "infer cast result type from parameter type" {
+    const val: u64 = 123;
+    f(@intCast(val));
+}
+fn f(x: u32) void {
+    _ = x;
+}
+
+test "explicitly annotate result type with @as" {
+    const E = enum(u8) { a, b };
+    const x: u8 = 1;
+    _ = @as(E, @enumFromInt(x));
+}
+    {#code_end#}
+
+    <p>
+    Where possible, <code>zig fmt</code> has been made to automatically migrate uses of the old builtins,
+    using a naive translation based on <code>@as</code>. Most builtins are automatically updated, but there
+    are a few exceptions.
+    </p>
+    <ul>
+      <li>{#syntax#}@addrSpaceCast{#endsyntax#} and {#syntax#}@alignCast{#endsyntax#} cannot be translated as
+      the old usage does not provide the full result type</li>
+      <li>{#syntax#}@ptrCast{#endsyntax#} may sometimes decrease alignment where it previously did not</li>
+      <li>{#syntax#}@truncate{#endsyntax#} will be translated incorrectly for vectors, causing a compile error</li>
+      <li>{#syntax#}@splat{#endsyntax#} cannot be translated as the old usage does not provide the full result type</li>
+    </ul>
+
+    {#header_open|Pointer Casts#}
+    <p>
+    The builtins {#syntax#}@addrSpaceCast{#endsyntax#} and {#syntax#}@alignCast{#endsyntax#} would
+    become quite cumbersome to use under this system as described, since you would now have to specify
+    the full intermediate pointer types. Instead, pointer casts (those two builtins and {#syntax#}@ptrCast{#endsyntax#})
+    are special. They combine into a single logical operation, with each builtin effectively "allowing"
+    a particular component of the pointer to be cast rather than "performing" it. This means any sequence of
+    nested pointer cast builtins requires only one result type, rather than one at every intermediate computation.
+    </p>
+    {#code_begin|test|pointer_cast#}
+test "pointer casts" {
+    const ptr1: *align(1) const u32 = @ptrFromInt(0x1000);
+    const ptr2: *u64 = @constCast(@alignCast(@ptrCast(ptr1)));
+    _ = ptr2;
+}
+    {#code_end#}
+    {#header_close#}
+
+    {#header_open|@splat#}
+    <p>
+    The {#syntax#}@splat{#endsyntax#} builtin has undergone a similar change. It no longer has a
+    parameter to indicate the length of the resulting vector, instead using the expression's result
+    type to infer this and the type of its operand.
+    </p>
+    {#code_begin|test|splat_result_type#}
+test "@splat result type" {
+    const vec: @Vector(8, u8) = @splat(123);
+    _ = vec;
+}
+    {#code_end#}
+    {#header_close#}
 
     {#header_close#}
 
@@ -1224,8 +1469,66 @@ Date:   Tue Jun 20 16:41:58 2023 -0700
     Set `c_char` signedness based on the target
     {#header_close#}
 
-    {#header_open|Forbid Runtime Control Flow in comptime Blocks #}
-    TODO https://github.com/ziglang/zig/issues/7056
+    {#header_open|Forbid Runtime Operations in comptime Blocks #}
+    <p>
+    Previously, {#syntax#}comptime{#endsyntax#} blocks in runtime code worked in a highly unintuitive
+    way: they <a href="https://github.com/ziglang/zig/issues/7056">did not actually enforce compile-time
+    evaluation of their bodies</a>. This has been resolved in 0.11.0. The entire body of a {#syntax#}comptime{#endsyntax#}
+    block will now be evaluated at compile time, and a compile error is triggered if this is not possible.
+    </p>
+    {#code_begin|test_err|comptime_block#}
+test "runtime operations in comptime block" {
+    var x: u32 = 1;
+    comptime {
+        x += 1;
+    }
+}
+    {#code_end#}
+    <p>
+    This change has one particularly notable consequence. Previously, it was allowed to {#syntax#}return{#endsyntax#}
+    from a runtime function within a {#syntax#}comptime{#endsyntax#} block. However, this is illogical:
+    the return cannot actually happen at comptime, since this function is being called at runtime. Therefore, this is
+    now illegal.
+    </p>
+    {#code_begin|test_err|return_from_comptime_block#}
+const expectEqual = @import("std").testing.expectEqual;
+test "return from runtime function in comptime block" {
+    try expectEqual(@as(u32, 123), f());
+}
+
+fn f() u32 {
+    // We want to call `foo` at comptime
+    comptime {
+        return foo();
+    }
+}
+fn foo() u32 {
+    return 123;
+}
+    {#code_end#}
+    <p>
+    The workaround for this issue is to <i>compute</i> the return value at comptime, but <i>return</i>
+    it at runtime:
+    </p>
+    {#code_begin|test|compute_return_from_comptime_block#}
+const expectEqual = @import("std").testing.expectEqual;
+test "compute return value of runtime function in comptime block" {
+    try expectEqual(@as(u32, 123), f());
+}
+
+fn f() u32 {
+    // We want to call `foo` at comptime
+    return comptime foo();
+}
+fn foo() u32 {
+    return 123;
+}
+    {#code_end#}
+    <p>
+    This change similarly disallows {#syntax#}comptime try{#endsyntax#} from within a runtime function,
+    since on error this attempts to return a value at compile time. To retain the old behavior, this
+    sequence should be replaced with {#syntax#}try comptime{#endsyntax#}.
+    </p>
     {#header_close#}
 
     {#header_open|@boolToInt always returns u1#}
@@ -1303,18 +1606,90 @@ Date:   Sat Apr 22 20:44:57 2023 -0400
     {#header_close#}
 
     {#header_open|comptime Function Calls No Longer Cause Runtime Analysis#}
-commit 22b0457dd4b73d3cce2e52b77b3b7c9f857c0409
-Merge: ac9f72d87 0f58d34ef
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon May 29 23:41:40 2023 -0700
-
-    Merge pull request #15891 from mlugg/fix/dont-emit-fn-called-at-comptime
-    
-    Prevent analysis of functions only referenced at comptime
+    <p>
+    There has been an <a href="https://github.com/ziglang/zig/issues/6256">open issue</a> for several
+    years about the fact that Zig will emit all referenced functions to a binary, even if the function
+    is only used at compile-time. This can cause
+    <a href="https://github.com/ziglang/zig/issues/15353">binary bloat</a>, as well as potentially triggering
+    false positive compile errors if a function is intended to only be used at compile-time.
+    </p>
+    <p>
+    This issue <a href="https://github.zom/ziglang/zig/pull/15891">has been resolved</a> in this release
+    cycle. Zig will now only emit a runtime version of a function to the binary if one of the following
+    conditions holds:
+    </p>
+    <ul>
+      <li>The function is called at runtime.</li>
+      <li>The function has a reference taken to it. In this case, a call may occur through a function pointer, so the function must be emitted.</li>
+    </ul>
+    <p>
+    As well as avoiding potential false positive compile errors, this change leads to a slight
+    decrease in binary sizes, and may slightly speed up compilation in some cases. Note that as a
+    consequence of this change, it is no longer sufficient to write
+    {#syntax#}comptime { _ = f; }{#endsyntax#} to force a function to be analyzed and emitted to the
+    binary. Instead, you must write {#syntax#}comptime { _ = &f; }{#endsyntax#}.
+    </p>
     {#header_close#}
 
     {#header_open|Multi-Item Switch Prong Type Coercion#}
-    TODO https://github.com/ziglang/zig/issues/2812
+    <p>
+    Prior to 0.11.0, when a {#syntax#}switch{#endsyntax#} prong captured a union payload, all
+    payloads were required to have the exact same type. This has been changed so that
+    <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a> is used to
+    combine the payload types, allowing distinct but compatible types to be captured together.
+    </p>
+    <p>
+    Pointer captures also make use of peer type resolution, but are more limited: the payload types
+    must all have the same in-memory representation so that the payload pointer can be safely cast.
+    </p>
+    {#code_begin|test|switch_capture_ptr#}
+const std = @import("std");
+const assert = std.debug.assert;
+const expectEqual = std.testing.expectEqual;
+
+const U1 = union(enum) {
+    x: u8,
+    y: ?u32,
+};
+test "switch capture resolves peer types" {
+    try f(1, .{ .x = 1 });
+    try f(2, .{ .y = 2 });
+    try f(0, .{ .y = null });
+}
+fn f(expected: u32, u: U1) !void {
+    switch (u) {
+        .x, .y => |val| {
+            comptime assert(@TypeOf(val) == ?u32);
+            try expectEqual(expected, val orelse 0);
+        },
+    }
+}
+
+const U2 = union(enum) {
+    x: c_uint,
+    /// This type has the same number of bits as `c_uint`, but is distinct.
+    y: @Type(.{ .Int = .{
+        .signedness = .unsigned,
+        .bits = @bitSizeOf(c_uint),
+    } }),
+};
+test "switch pointer capture resolves peer types" {
+    var a: U2 = .{ .x = 10 };
+    var b: U2 = .{ .y = 20 };
+    g(&a);
+    g(&b);
+    try expectEqual(U2{ .x = 11 }, a);
+    try expectEqual(U2{ .y = 21 }, b);
+}
+fn g(u: *U2) void {
+    switch (u.*) {
+        .x, .y => |*ptr| {
+            ptr.* += 1;
+        },
+    }
+}
+    {#code_end#}
+    </p>
     {#header_close#}
 
     {#header_open|Allow Functions to Return null and undefined#}
