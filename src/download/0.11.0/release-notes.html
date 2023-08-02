@@ -1236,17 +1236,269 @@ test "normal test" {
     {#header_close#}
 
     {#header_open|Language Changes#}
-    <ul>
-      <li>Add
-      <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a>
-      for {#syntax#}[:s]const T{#endsyntax#} and {#syntax#}[]T{#endsyntax#} (#15709).</li>
-    </ul>
+    {#header_open|Peer Type Resolution Improvements#}
+    <p>
+    The <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a> algorithm
+    has been improved to resolve more types and in a more consistent manner. Below are a few
+    examples which did not resolve correctly in 0.10 but do now.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Peer Types</th>
+          <th>Resolved Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{#syntax#}[:s]const T{#endsyntax#}, {#syntax#}[]T{#endsyntax#}</td>
+          <td>{#syntax#}[]const T{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}E!*T{#endsyntax#}, {#syntax#}?*T{#endsyntax#}</td>
+          <td>{#syntax#}E!?*T{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}[*c]T{#endsyntax#}, {#syntax#}@TypeOf(null){#endsyntax#}</td>
+          <td>{#syntax#}[*c]T{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}[*c]T{#endsyntax#}, {#syntax#}@TypeOf(null){#endsyntax#}</td>
+          <td>{#syntax#}[*c]T{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}?u32{#endsyntax#}, {#syntax#}u8{#endsyntax#}</td>
+          <td>{#syntax#}?u32{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}[2]u32{#endsyntax#}, {#syntax#}struct { u32, u32 }{#endsyntax#}</td>
+          <td>{#syntax#}[2]u32{#endsyntax#}</td>
+        </tr>
+        <tr>
+          <td>{#syntax#}*const @TypeOf(.{}){#endsyntax#}, {#syntax#}[]const u8{#endsyntax#}</td>
+          <td>{#syntax#}[]const u8{#endsyntax#}</td>
+        </tr>
+      </tbody>
+    </table>
+    {#header_close#}
     {#header_open|Multi-Object For Loops#}
-    TODO https://github.com/ziglang/zig/pull/14671
+    <p>
+    This release cycle introduces <a href="https://github.com/ziglang/zig/pull/14671">multi-object
+    {#syntax#}for{#endsyntax#} loops</a> into the Zig language. This is a new construct providing a
+    way to cleanly iterate over multiple sequences of the same length.
+    </p>
+    <p>
+    Consider the case of mapping a function over an array. Previously, your code may have looked
+    like this:
+    </p>
+    {#syntax_block|zig|map_func_old.zig#}
+const std = @import("std");
+
+test "double integer values in sequence" {
+    const input: []const u32 = &.{ 1, 2, 3 };
+    const output = try std.testing.allocator.alloc(u32, input.len);
+    defer std.testing.allocator.free(output);
+
+    for (input) |x, i| {
+        output[i] = x * 2;
+    }
+
+    try std.testing.expectEqualSlices(u32, &.{ 2, 4, 6 }, output);
+}
+    {#end_syntax_block#}
+    <p>
+    This code has an unfortunate property: in the loop, we had to make the arbitrary choice to
+    iterate over {#syntax#}input{#endsyntax#}, using the captured index {#syntax#}i{#endsyntax#}
+    to access the corresponding element in {#syntax#}output{#endsyntax#}. With multi-object for
+    loops, this code becomes much cleaner:
+    </p>
+    {#code_begin|test|map_func_new#}
+const std = @import("std");
+
+test "double integer values in sequence" {
+    const input: []const u32 = &.{ 1, 2, 3 };
+    const output = try std.testing.allocator.alloc(u32, input.len);
+    defer std.testing.allocator.free(output);
+
+    for (input, output) |x, *out| {
+        out.* = x * 2;
+    }
+
+    try std.testing.expectEqualSlices(u32, &.{ 2, 4, 6 }, output);
+}
+    {#code_end#}
+    <p>
+    In this new code, we use the new for loop syntax to iterate over both slices simultaneously,
+    capturing the output element by reference so we can write to it. The index capture is no longer
+    necessary in this case. Note that this is not limited to two operands: arbitrarily many slices
+    can be passed to the loop provided each has a corresponding capture. The language asserts that
+    all passed slices have the same length: if they do not, this is safety-checked
+    <a href="/documentation/0.11.0/#Undefined-Behavior">Undefined Behavior</a>.
+    </p>
+    <p>
+    Previously, index captures were implicitly provided if you added a second identifier to the
+    loop's captures. With the new multi-object loops, this has changed. As well as standard
+    expressions, the operand passed to a for loop can also be a <i>range</i>. These take the form 
+    {#syntax#}a..{#endsyntax#} or {#syntax#}a..b{#endsyntax#}, with the latter form being exclusive
+    on the upper bound. If an upper bound is provided, {#syntax#}b - a{#endsyntax#} must match the
+    length of any given slices (or other bounded ranges). If no upper bound is provided, the loop is
+    bounded based on other range or slice operands. All for loops must be bounded (i.e. you cannot
+    iterate over only an unbounded range). The old behavior is equivalent to adding a trailing
+    {#syntax#}0..{#endsyntax#} operand to the loop.
+    </p>
+    {#code_begin|test|for_index_capture#}
+const std = @import("std");
+
+test "index capture in for loop" {
+    const vals: []const u32 = &.{ 10, 11, 12, 13 };
+
+    // We can use an unbounded range, since vals provides a length
+    for (vals, 0..) |x, i| {
+        try std.testing.expectEqual(i + 10, x);
+    }
+
+    // We can also use a bounded range, provided its length matches
+    for (vals, 0..4) |x, i| {
+        try std.testing.expectEqual(i + 10, x);
+    }
+
+    // The lower bound does not need to be 0
+    for (vals, 10..) |x, i| {
+        try std.testing.expectEqual(i, x);
+    }
+
+    // The range does not need to come last
+    for (10..14, vals) |i, x| {
+        try std.testing.expectEqual(i, x);
+    }
+    
+    // You can have multiple captures of any kind
+    for (10..14, vals, vals, 0..) |i, val, *val_ptr, j| {
+        try std.testing.expectEqual(i, j + 10);
+        try std.testing.expectEqual(i, val);
+        try std.testing.expectEqual(i, val_ptr.*);
+    }
+}
+    {#code_end#}
+    <p>
+    The lower and upper bounds of ranges are of type {#syntax#}usize{#endsyntax#}, as is the
+    capture, since this feature is primarily intended for iterating over data in memory. Note that
+    it is valid to loop over only a range:
+    </p>
+    {#code_begin|test|for_range_only#}
+const std = @import("std");
+
+test "for loop over range" {
+    var val: usize = 0;
+    for (0..20) |i| {
+        try std.testing.expectEqual(val, i);
+        val += 1;
+    }
+}
+    {#code_end#}
+    <p>
+    To automatically migrate old code, {#syntax#}zig fmt{#endsyntax#} automatically adds
+    {#syntax#}0..{#endsyntax#} operands to loops with an index capture and no corresponding operand.
+    </p>
+    <p>
+    The behavior of pointer captures in for loops has changed slightly. Previously, the following
+    code was valid, but now it emits a compile error:
+    </p>
+    {#code_begin|test_err|pointer_capture_from_array#}
+const std = @import("std");
+
+test "pointer capture from array" {
+    var arr: [3]u8 = undefined;
+    for (arr) |*x| {
+        x.* = 123;
+    }
+    try std.testing.expectEqualSlices(u8, &arr, &.{ 123, 123, 123 });
+}
+    {#code_end#}
+    <p>
+    This code previously worked because the language implicitly took a reference to
+    {#syntax#}arr{#endsyntax#}. This no longer happens: if you use a pointer capture, the
+    corresponding iterable must be a pointer or slice. In this case, the fix - as suggested by the
+    error note - is simply to take a reference to the array.
+    </p>
+    {#code_begin|test|pointer_capture_from_array_pointer#}
+const std = @import("std");
+
+test "pointer capture from array" {
+    var arr: [3]u8 = undefined;
+    for (&arr) |*x| {
+        x.* = 123;
+    }
+    try std.testing.expectEqualSlices(u8, &arr, &.{ 123, 123, 123 });
+}
+    {#code_end#}
+
     {#header_close#}
 
     {#header_open|@memcpy and @memset#}
-    TODO https://github.com/ziglang/zig/issues/15278
+    <p>
+    0.11.0 changes the usage of the builtins {#syntax#}@memcpy{#endsyntax#} and
+    {#syntax#}@memset{#endsyntax#} to make them more useful.
+    </p>
+    <p>
+    {#syntax#}@memcpy{#endsyntax#} now takes two parameters. The first is the destination, and must
+    be a mutable slice of any any element type. The second parameter is the source value, which may
+    be either a slice of the element type (in which case it must have the same length) or a
+    many-pointer to it (in which case it is implicitly sliced to the same length). The builtin
+    copies values from the source address to the destination address.
+    </p>
+    <p>
+    The source and destination memory must not overlap (overlap is considered safety-checked
+    <a href="/documentation/0.11.0/#Undefined-Behavior">Undefined Behavior</a>). This is one of the
+    key motivators for using this builtin over the standard library.
+    </p>
+    {#code_begin|test|memcpy#}
+const std = @import("std");
+
+test "@memcpy usage" {
+    const a: [4]u32 = .{ 1, 2, 3, 4 };
+
+    var b: [4]u32 = undefined;
+    @memcpy(&b, &a);
+    try std.testing.expectEqualSlices(u32, &a, &b);
+
+    // If the second operand is a many-ptr, the length is taken from the first operand
+    var c: [4]u32 = undefined;
+    const a_manyptr: [*]const u32 = (&a).ptr;
+    @memcpy(&c, a_manyptr);
+    try std.testing.expectEqualSlices(u32, &a, &c);
+}
+    {#code_end#}
+    <p>
+    Since this builtin now encompasses the most common use case of
+    {#syntax#}std.mem.copy{#endsyntax#}, that function has been renamed to
+    {#syntax#}std.mem.copyForwards{#endsyntax#}. Like {#syntax#}copyBackwards{#endsyntax#}, the only
+    use case for that function is when the source and destination slices overlap, meaning elements
+    must be copied in a particular order. When migrating code, it is safe to replace all uses of
+    {#syntax#}copy{#endsyntax#} with {#syntax#}copyForwards{#endsyntax#}, but potentially more
+    optimal and clearer to instead use {#syntax#}@memcpy{#endsyntax#} provided the slices are
+    guaranteed not to overlap.
+    </p>
+    <p>
+    {#syntax#}@memset{#endsyntax#} has also changed signature. It takes two parameters: the first is
+    a mutable slice of any element type, and the second is a value which is coerced to that element
+    type. All values referenced by the destination slice are set the provided value.
+    </p>
+    {#code_begin|test|memset#}
+const std = @import("std");
+
+test "@memset usage" {
+    var a: [4]u32 = undefined;
+    @memset(&a, 10);
+
+    try std.testing.expectEqualSlices(u32, &.{ 10, 10, 10, 10 }, &a);
+}
+    {#code_end#}
+    <p>
+    This builtin now precisely encompasses the former use cases of
+    {#syntax#}std.mem.set{#endsyntax#}. Therefore, this standard library function has been removed
+    in favor of the builtin.
+    </p>
     {#header_close#}
 
     {#header_open|@min and @max#}
@@ -1308,16 +1560,17 @@ test "@min/@max refines result type" {
     {#header_close#}
 
     {#header_open|@trap is now noreturn#}
-commit 3d64ed0353ba7ec1ca46f4779fe5d32af8d17358
-Author: zooster <r00ster91@proton.me>
-Date:   Thu May 18 23:00:35 2023 +0200
-
-    make `@trap` return unreachable/noreturn (#15749)
-    
-    `@trap` is a special function that we know never returns so it should
-    behave just like `@panic` and `@compileError` do currently and cause the
-    "unreachable code" + "control flow is diverted here" compile error.
-    Currently, `@trap(); @trap();` does not cause this error. Now it does.
+    <p>
+    The {#syntax#}@trap{#endsyntax#} builtin is known at compile time to never return, much like
+    {#syntax#}@panic{#endsyntax#}. The compiler now knows this, so can emit "unreachable code"
+    errors when unreachable code is detected after usage of this builtin.
+    <p>
+    {#code_begin|test_err|trap_noreturn#}
+test "@trap is noreturn" {
+    @trap();
+    return error.Foo; // Control flow will never reach this line!
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Add @inComptime Builtin#}
@@ -1426,11 +1679,6 @@ test "@inComptime" {
     {#syntax#}@enumFromInt{#endsyntax#}) behave. The goal of this change is to improve readability
     and safety.
     </p>
-    <p><b>
-    For more information on the changes described here, please see
-    <a href="https://github.com/ziglang/zig/wiki/Using-Cast-Result-Type-Inference">this wiki page</a>
-    which explains in more detail what this change is and how to migrate your code.
-    </b></p>
     <p>
     In previous versions of Zig, casting builtins took as a parameter the <b>destination type</b> of
     the cast, for instance {#syntax#}@intCast(u8, x){#endsyntax#}. This was easy to understand, but
@@ -1438,14 +1686,35 @@ test "@inComptime" {
     being specified as, for instance, a parameter type or field type.
     </p>
     <p>
+    As a motivating example, consider a function parameter of type {#syntax#}u16{#endsyntax#} which
+    you are passing a {#syntax#}u64{#endsyntax#}. You need to use {#syntax#}@intCast{#endsyntax#} to
+    convert your value to the correct type. Now suppose that down the line, you find out the
+    parameter needs to be a {#syntax#}u32{#endsyntax#} so you can pass in larger values. There is now
+    a footgun here: if you don't change every {#syntax#}@intCast{#endsyntax#} to cast to the correct
+    type, you have a silent bug in your program which may not cause a problem for a while, making it
+    hard to spot.
+    </p>
+    <p>
+    This is the basic pattern motivating this change. The idea is that instead of writing
+    {#syntax#}f(@intCast(u16, x)){#endsyntax#}, you instead write
+    {#syntax#}f(@intCast(x)){#endsyntax#}, and the destination type of the cast is inferred based on
+    the type. This is not just about function parameters: it is also applicable to struct
+    initializations, return values, and more.
+    </p>
+    <p>
     This language change removes the destination type parameter from all cast builtins. Instead,
     these builtins now use <a href="/documentation/0.11.0/#Reuslt-Location-Semantics">Result Location Semantics</a>
     to infer the result type of the cast from the expression's "result type". In essence, this means
     type inference is used. Most expressions which have a known concrete type for their operand will
-    provide a result type: for instance, {#syntax#}const x: T = e{#endsyntax#} and
-    {#syntax#}@as(T, e){#endsyntax#} both give <code>e</code> a result type of <code>T</code>, and
-    {#syntax#}S{ .f = e }{#endsyntax#} gives <code>e</code> a result type of the type of the field <code>S.f</code>.
+    provide a result type. For instance:
     </p>
+    <ul>
+      <li>{#syntax#}const x: T = e{#endsyntax#} gives <code>e</code> a result type of <code>T</code></li>
+      <li>{#syntax#}@as(T, e){#endsyntax#} gives <code>e</code> a result type of <code>T</code></li>
+      <li>{#syntax#}return e{#endsyntax#} gives <code>e</code> a result type of the function's return type</li>
+      <li>{#syntax#}S{ .f = e }{#endsyntax#} gives <code>e</code> a result type of the type of the field <code>S.f</code></li>
+      <li>{#syntax#}f(e){#endsyntax#} gives <code>e</code> a result type of the first parameter type of <code>f</code></li>
+    </ul>
     <p>
     The full list of affected cast builtins is as follows:
     </p>
@@ -1493,6 +1762,13 @@ fn f(x: u32) void {
     _ = x;
 }
 
+test "infer cast result type from return type" {
+    _ = g(123);
+}
+fn g(x: u64) u32 {
+    return @intCast(x);
+}
+
 test "explicitly annotate result type with @as" {
     const E = enum(u8) { a, b };
     const x: u8 = 1;
@@ -1502,15 +1778,14 @@ test "explicitly annotate result type with @as" {
 
     <p>
     Where possible, <code>zig fmt</code> has been made to automatically migrate uses of the old builtins,
-    using a naive translation based on <code>@as</code>. Most builtins are automatically updated, but there
-    are a few exceptions.
+    using a naive translation based on <code>@as</code>. Most builtins can be automatically updated
+    correctly, but there are a few exceptions.
     </p>
     <ul>
-      <li>{#syntax#}@addrSpaceCast{#endsyntax#} and {#syntax#}@alignCast{#endsyntax#} cannot be translated as
-      the old usage does not provide the full result type</li>
-      <li>{#syntax#}@ptrCast{#endsyntax#} may sometimes decrease alignment where it previously did not</li>
-      <li>{#syntax#}@truncate{#endsyntax#} will be translated incorrectly for vectors, causing a compile error</li>
-      <li>{#syntax#}@splat{#endsyntax#} cannot be translated as the old usage does not provide the full result type</li>
+      <li>{#syntax#}@addrSpaceCast{#endsyntax#} and {#syntax#}@alignCast{#endsyntax#} cannot be translated as the old usage does not provide the full result type. <code>zig fmt</code> will not modify it.</li>
+      <li>{#syntax#}@ptrCast{#endsyntax#} may sometimes decrease alignment where it previously did not, potentially triggering compile errors. This can be fixed by modifying the type to have the correct alignment.</li>
+      <li>{#syntax#}@truncate{#endsyntax#} will be translated incorrectly for vectors, causing a compile error. This can be fixed by changing the scalar type <code>T</code> to the vector type {#syntax#}@Vector(n, T){#endsyntax#}.</li>
+      <li>{#syntax#}@splat{#endsyntax#} cannot be translated as the old usage does not provide the full result type. <code>zig fmt</code> will not modify it.</li>
     </ul>
 
     {#header_open|Pointer Casts#}
@@ -1518,9 +1793,11 @@ test "explicitly annotate result type with @as" {
     The builtins {#syntax#}@addrSpaceCast{#endsyntax#} and {#syntax#}@alignCast{#endsyntax#} would
     become quite cumbersome to use under this system as described, since you would now have to specify
     the full intermediate pointer types. Instead, pointer casts (those two builtins and {#syntax#}@ptrCast{#endsyntax#})
-    are special. They combine into a single logical operation, with each builtin effectively "allowing"
-    a particular component of the pointer to be cast rather than "performing" it. This means any sequence of
-    nested pointer cast builtins requires only one result type, rather than one at every intermediate computation.
+    are special. They combine into a single logical operation, with each builtin effectively
+    "allowing" a particular component of the pointer to be cast rather than "performing" it. (Indeed,
+    this may be a helpful mental model for the new cast builtins more generally.) This means any
+    sequence of nested pointer cast builtins requires only one result type, rather than one at every
+    intermediate computation.
     </p>
     {#code_begin|test|pointer_cast#}
 test "pointer casts" {
@@ -1557,14 +1834,42 @@ test "@splat result type" {
     {#header_close#}
 
     {#header_open|Allow Indexing Tuple and Vector Pointers#}
-commit ce88c43a4ee94d82a64e7580885dc6693cc6120c
-Author: mlugg <mlugg@mlugg.co.uk>
-Date:   Wed Jun 7 10:20:34 2023 +0100
+    <p>
+    Zig allows you to directly index pointers to arrays like plain arrays, which transparently
+    dereferences the pointer as required. For consistency, this is now additionally allowed for
+    pointers to tuples and vectors (the other non-pointer indexable types).
+    </p>
+    {#code_begin|test|index_tuple_vec_ptr#}
+const std = @import("std");
 
-    Sema: allow indexing tuple and vector pointers
-    
-    Resolves: #13852
-    Resolves: #14705
+test "index tuple pointer" {
+    var raw: struct { u32, u32 } = .{ 1, 2 };
+    const ptr = &raw;
+
+    try std.testing.expectEqual(@as(u32, 1), ptr[0]);
+    try std.testing.expectEqual(@as(u32, 2), ptr[1]);
+
+    ptr[0] = 3;
+    ptr[1] = 4;
+
+    try std.testing.expectEqual(@as(u32, 3), ptr[0]);
+    try std.testing.expectEqual(@as(u32, 4), ptr[1]);
+}
+
+test "index vector pointer" {
+    var raw: @Vector(2, u32) = .{ 1, 2 };
+    const ptr = &raw;
+
+    try std.testing.expectEqual(@as(u32, 1), ptr[0]);
+    try std.testing.expectEqual(@as(u32, 2), ptr[1]);
+
+    ptr[0] = 3;
+    ptr[1] = 4;
+
+    try std.testing.expectEqual(@as(u32, 3), ptr[0]);
+    try std.testing.expectEqual(@as(u32, 4), ptr[1]);
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Overflow Builtins Return Tuples#}
@@ -1660,24 +1965,62 @@ fn foo() u32 {
     </p>
     {#header_close#}
 
-    {#header_open|@boolToInt always returns u1#}
-commit bfe02ff61a8861c269524c60668a3969cb053720
-Author: tison <wander4096@gmail.com>
-Date:   Wed May 24 08:01:48 2023 +0800
+    {#header_open|@intFromBool always returns u1#}
+    <p>
+    The {#syntax#}@intFromBool{#endsyntax#} builtin (previously called
+    {#syntax#}@boolToInt{#endsyntax#}) previously returned either a {#syntax#}u1{#endsyntax#} or a
+    {#syntax#}comptime_int{#endsyntax#}, depending on whether or not it was evaluated at
+    {#syntax#}comptime{#endsyntax#}. It has since been changed to always return a
+    {#syntax#}u1{#endsyntax#} to improve consistency between code running at runtime and comptime.
+    </p>
+    {#code_begin|test|int_from_bool#}
+const std = @import("std");
 
-    make `@boolToInt` always return a u1
-    
-    Signed-off-by: tison <wander4096@gmail.com>
+test "@intFromBool returns u1" {
+    const x = @intFromBool(true); // implicitly evaluated at comptime
+    const y = comptime @intFromBool(true); // explicitly evaluated at comptime
 
- src/Sema.zig        | 6 +++---
- src/translate_c.zig | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
+    try std.testing.expect(@TypeOf(x) == u1);
+    try std.testing.expect(@TypeOf(y) == u1);
+
+    try std.testing.expect(x == 1);
+    try std.testing.expect(y == 1);
+}
+    {#code_end#}
+
     {#header_close#}
 
     {#header_open|Eliminate Bound Functions#}
-    <p>Did you know Zig had bound functions?</p>
-    TODO example
+    <p>Did you know Zig had bound functions? The following code was valid in 0.10, but is not any more:</p>
+{#code_begin|syntax|bound_functions#}
+const std = @import("std");
+
+test "bound functions" {
+    var runtime_true = true;
+
+    // This code was valid in 0.10, and gave 'x' a "bound function" type.
+    // Bound functions have been removed from the language, so this code is no longer valid.
+    const obj: Foo = .{};
+    const x = if (runtime_true) obj.a else obj.b;
+
+    try std.testing.expect(x() == 'a');
+}
+
+const Foo = struct {
+    fn a(_: Foo) u8 {
+        return 'a';
+    }
+    fn b(_: Foo) u8 {
+        return 'b';
+    }
+};
+{#code_end#}
     <p>I rest my case. Good riddance!</p>
+    <p>
+    Method calls are now restricted to the exact syntactic form {#syntax#}a.b(args){#endsyntax#}.
+    Any deviation from this syntax - for instance, extra parentheses as in
+    {#syntax#}(a.b)(args){#endsyntax#} - will be treated as a field access.
+    </p>
     {#header_close#}
 
     {#header_open|@call Stack#}
@@ -1692,46 +2035,144 @@ Date:   Tue Dec 13 18:15:18 2022 -0500
     {#header_close#}
 
     {#header_open|Allow Tautological Integer Comparisons#}
-commit 901c3e96368bd9fa9ee9858c0295ee05ef1d7146
-Merge: 9cc49548a 35750cd54
-Author: Veikka Tuominen <git@vexu.eu>
-Date:   Sun Dec 18 01:57:49 2022 +0200
-
-    Merge pull request #13552 from hryx/comparus-tautologicus
-    
-    Sema: elide integer comparisons with guaranteed outcomes
-
+    <p>
+    Previously, comparing an integer to a comptime-known value required that value to fit in the
+    integer type. For instance, comparing a {#syntax#}u8{#endsyntax#} to {#syntax#}500{#endsyntax#}
+    was a compile error. However, such comparisons can be useful when writing generic or future-proof
+    code.
+    </p>
+    <p>
+    As such, comparisons of this form are now allowed. However, since these comparisons are
+    tautological, they do not cause any runtime checks: instead, the result is comptime-known based
+    on the type. For instance, {#syntax#}my_u8 == 500{#endsyntax#} is comptime-known
+    {#syntax#}true{#endsyntax#}, even if {#syntax#}my_u8{#endsyntax#} is not itself comptime-known.
+    </p>
+    {#code_begin|test|tautological_compare_comptime#}
+test "tautological comparisons are comptime-known" {
+    var x: u8 = 123;
+    if (x > 500) @compileError("unreachable branch analyzed");
+    if (x == -20) @compileError("unreachable branch analyzed");
+    if (x < 0) @compileError("unreachable branch analyzed");
+    if (x != 500) {} else @compileError("unreachable branch analyzed");
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Forbid Source Files Being Part of Multiple Modules#}
-    <p>Previously, if a source file was referenced from multiple packages, it just
-    became owned by the first one the {#link|Compiler#} happened to reach; this was a problem,
-    because it could lead to inconsistent behaviour in the compiler based on a race
-    condition. This could be fixed by just analyzing such files multiple times -
-    however, it makes more sense to enforce files being part of at most a single
-    package. Having a file in multiple packages would not only impact compile
-    times (due to semantic analysis running multiple times on potentially a lot of
-    code) but is also a confusing anti-pattern which more often than not is a
-    mistake on the part of the user.</p>
-    <p>This release also changes how errors are formatted slightly. Previously, entire_file
-    module errors were turned into plain errors for output, which caused the
-    filename to be omitted (which was quite unhelpful). Now they are tweaked to be
-    reported like any other error, just with no outputted source line. This only
-    affects entire_file errors, which were only used for retryable errors.</p>
-    <p>TODO show example error and how to work around it</p>
-    <p>#13662, #13670</p>
+    <p>
+    A Zig module (previously known as "package") is a collection of source files, with a single root
+    source file, which can be imported in your code by name. For instance, {#syntax#}std{#endsyntax#}
+    is a module. An interesting case comes up when two modules attempt to
+    {#syntax#}@import{#endsyntax#} the same source file.
+    </p>
+    <p>
+    Previously, when this happened, the source file became "owned" by whichever import the compiler
+    happened to reach first. This was a problem, because it could lead to inconsistent behavior in
+    the compiler based on a race condition. This could be fixed by having the compiler analyzing the
+    files multiple times - once for each module they're imported from - however, this could lead to
+    slowdowns in compile times, and generally this kind of structure is indicative of a mistake
+    anyway.
+    </p>
+    <p>
+    Therefore, another solution was chosen: <b>having a single source file within multiple modules is
+    now illegal</b>. When a source file is encountered in two different modules, an error like the following
+    will be emitted:
+    </p>
+    {#shell_samp#}
+$ ls
+foo.zig  main.zig  common.zig
+
+$ cat common.zig
+// An empty file
+
+$ cat foo.zig
+// This is the root of the 'foo' module
+pub const common = @import("common.zig");
+
+$ cat main.zig
+// This file is the root of the main module
+comptime {
+    _ = @import("foo").common;
+    _ = @import("common.zig");
+}
+
+$ zig test main.zig --mod foo::foo.zig --deps foo
+common.zig:1:1: error: file exists in multiple modules
+main.zig:4:17: note: imported from module root
+    _ = @import("common.zig");
+                ^~~~~~~~~~~~
+foo.zig:2:28: note: imported from module root.foo
+pub const common = @import("common.zig");
+                           ^~~~~~~~~~~~
+    {#end_shell_samp#}
+    <p>
+    The correct way to resolve this error is usually to factor the shared file out into its own
+    module, which other modules can then import. This can be done in the build system using
+    {#syntax#}std.Build.addModule{#endsyntax#}.
+    </p>
     {#header_close#}
 
     {#header_open|Single-Item Array Pointers Gain .ptr Field#}
-    TODO https://github.com/ziglang/zig/issues/4765
+    <p>
+    In general, it is intended to single-item array pointers to act equivalently to a slice. That
+    is, {#syntax#}*const [5]u8{#endsyntax#} is essentially equivalent to
+    {#syntax#}[]const u8{#endsyntax#} but with a comptime-known length.
+    </p>
+    <p>
+    Previously, the {#syntax#}ptr{#endsyntax#} field on slices was an exception to this rule, as it
+    did not exist on single-item array pointers. This field
+    <a href="https://github.com/ziglang/zig/issues/4765">has been added</a>, and is equivalent to
+    simple coercion from {#syntax#}*[N]T{#endsyntax#} to {#syntax#}[*]T{#endsyntax#}.
+    </p>
+    {#code_begin|test|array_pointer_ptr_field#}
+const std = @import("std");
+
+test "array pointer has ptr field" {
+    const x: *const [4] u32 = &.{ 1, 2, 3, 4 };
+    const y: []const u32 = &.{ 1, 2, 3, 4 };
+
+    const xp: [*]const u32 = x.ptr;
+    const yp: [*]const u32 = y.ptr;
+
+    try std.testing.expectEqual(xp, @as([*]const u32, x));
+
+    for (0..4) |i| {
+        try std.testing.expectEqual(x[i], xp[i]);
+        try std.testing.expectEqual(y[i], yp[i]);
+    }
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Allow Method Call Syntax on Optional Pointers#}
-commit 2be347a2c88e435079333773fc30b8e967cc7068
-Author: Ian Johnson <ian@ianjohnson.dev>
-Date:   Sat Apr 22 20:44:57 2023 -0400
+    <p>
+    Method call syntax {#syntax#}object.method(args){#endsyntax#} only works when the first
+    parameter of {#syntax#}method{#endsyntax#} has a specific type: previously, this was either the
+    type containing the method, or a pointer to it. It is now additionally allowed for this type to
+    be an optional pointer. The value the method call is performed on must still be a non-optional
+    pointer, but it is coerced to an optional pointer for the method call.
+    </p>
+    {#code_begin|test|method_syntax_opt_ptr#}
+const std = @import("std");
 
-    Sema: allow method calls on optional pointers
+const Foo = struct {
+    x: u32,
+
+    fn xOrDefault(self: ?*const Foo) u32 {
+        const foo = self orelse return 0;
+        return foo.x;
+    }
+};
+
+test "method call with optional pointer parameter" {
+    const a: Foo = .{ .x = 7 };
+    const b: Foo = .{ .x = 9 };
+
+    try std.testing.expectEqual(@as(u32, 0), Foo.xOrDefault(null));
+    try std.testing.expectEqual(@as(u32, 7), a.xOrDefault());
+    try std.testing.expectEqual(@as(u32, 9), b.xOrDefault());
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|comptime Function Calls No Longer Cause Runtime Analysis#}
@@ -1822,17 +2263,26 @@ fn g(u: *U2) void {
     {#header_close#}
 
     {#header_open|Allow Functions to Return null and undefined#}
-commit a257e33fff8dd9efa7f43ea14e05eef65a7f3354
-Author: Jacob Young <jacobly0@users.noreply.github.com>
-Date:   Tue Jun 20 13:12:15 2023 -0400
+    <p>
+    0.10 had some arbitrary restrictions on the types of function parameters and their return types:
+    they were not permitted to be {#syntax#}@TypeOf(null){#endsyntax#} or
+    {#syntax#}@TypeOf(undefined){#endsyntax#}. While these are types are rarely useful in this
+    context, they are still completely normal comptime-only types, so this restriction on their
+    usage was needless. As such, they are now allowed as parameter and return types.
+    </p>
+    {#code_begin|test|null_undef_param_ret_ty#}
+const std = @import("std");
 
-    Type: remove arbitrary restrictions on param and return types
-    
-    Opaque and `noreturn` makes sense since they don't represent real
-    values, but `null` and `undefined` are perfectly normal
-    comptime-only values.
-    
-    Closes #16088
+fn foo(comptime x: @TypeOf(undefined)) @TypeOf(null) {
+    _ = x;
+    return null;
+}
+
+test "null and undefined as function parameter and return types" {
+    const my_null = foo(undefined);
+    try std.testing.expect(my_null == null);
+}
+    {#code_end#}
     {#header_close#}
 
     {#header_open|Generic Function Calls#}
