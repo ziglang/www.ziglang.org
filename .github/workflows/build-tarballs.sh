@@ -42,18 +42,14 @@ mkdir "$TARBALLS_DIR"
 cd "$TARBALLS_DIR"
 
 cp -r "$ZIGDIR" ./
+git -C "$ZIGDIR" archive --format=tar --prefix=zig/ HEAD | tar -x
 rm -rf \
   "zig/.github" \
   "zig/.gitignore" \
+  "zig/.gitattributes" \
   "zig/.git" \
-  "zig/ci" \
-  "zig/CODE_OF_CONDUCT.md" \
-  "zig/CONTRIBUTING.md" \
-  "zig/.builds" \
-  "zig/build" \
-  "zig/build-release" \
-  "zig/build-debug" \
-  "zig/zig-cache"
+  "zig/.mailmap" \
+  "zig/ci"
 mv zig "zig-$ZIG_VERSION"
 XZ_OPT=-9 tar cfJ "zig-$ZIG_VERSION.tar.xz" "zig-$ZIG_VERSION" --sort=name
 
