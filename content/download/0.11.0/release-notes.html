@@ -428,6 +428,7 @@
         </ul></li>
         <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
         <ul>
+            <li><a id="toc-Peer-Type-Resolution-Improvements" href="#Peer-Type-Resolution-Improvements">Peer Type Resolution Improvements</a></li>
             <li><a id="toc-Multi-Object-For-Loops" href="#Multi-Object-For-Loops">Multi-Object For Loops</a></li>
             <li><a id="toc-memcpy-and-memset" href="#memcpy-and-memset">@memcpy and @memset</a></li>
             <li><a id="toc-min-and-max" href="#min-and-max">@min and @max</a></li>
@@ -448,7 +449,7 @@
             <li><a id="toc-Exporting-C-Variadic-Functions" href="#Exporting-C-Variadic-Functions">Exporting C Variadic Functions</a></li>
             <li><a id="toc-Added-c_char-Type" href="#Added-c_char-Type">Added c_char Type</a></li>
             <li><a id="toc-Forbid-Runtime-Operations-in-comptime-Blocks-" href="#Forbid-Runtime-Operations-in-comptime-Blocks-">Forbid Runtime Operations in comptime Blocks </a></li>
-            <li><a id="toc-boolToInt-always-returns-u1" href="#boolToInt-always-returns-u1">@boolToInt always returns u1</a></li>
+            <li><a id="toc-intFromBool-always-returns-u1" href="#intFromBool-always-returns-u1">@intFromBool always returns u1</a></li>
             <li><a id="toc-Eliminate-Bound-Functions" href="#Eliminate-Bound-Functions">Eliminate Bound Functions</a></li>
             <li><a id="toc-call-Stack" href="#call-Stack">@call Stack</a></li>
             <li><a id="toc-Allow-Tautological-Integer-Comparisons" href="#Allow-Tautological-Integer-Comparisons">Allow Tautological Integer Comparisons</a></li>
@@ -1468,19 +1469,282 @@ building a WebAssembly module for the browser.</p>
 
     <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
 
-    <ul>
-      <li>Add
-      <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a>
-      for <code><span class="line">[:s]<span class="tok-kw">const</span> T</span></code> and <code><span class="line">[]T</span></code> (#15709).</li>
-    </ul>
+    <h3 id="Peer-Type-Resolution-Improvements"><a href="#toc-Peer-Type-Resolution-Improvements">Peer Type Resolution Improvements</a> <a class="hdr" href="#Peer-Type-Resolution-Improvements">§</a></h3>
+
+    <p>
+    The <a href="/documentation/0.11.0/#Peer-Type-Resolution">Peer Type Resolution</a> algorithm
+    has been improved to resolve more types and in a more consistent manner. Below are a few
+    examples which did not resolve correctly in 0.10 but do now.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Peer Types</th>
+          <th>Resolved Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code><span class="line">[:s]<span class="tok-kw">const</span> T</span></code>, <code><span class="line">[]T</span></code></td>
+          <td><code><span class="line">[]<span class="tok-kw">const</span> T</span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line">E!*T</span></code>, <code><span class="line">?*T</span></code></td>
+          <td><code><span class="line">E!?*T</span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line">[*c]T</span></code>, <code><span class="line"><span class="tok-builtin">@TypeOf</span>(<span class="tok-null">null</span>)</span></code></td>
+          <td><code><span class="line">[*c]T</span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line">[*c]T</span></code>, <code><span class="line"><span class="tok-builtin">@TypeOf</span>(<span class="tok-null">null</span>)</span></code></td>
+          <td><code><span class="line">[*c]T</span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line">?<span class="tok-type">u32</span></span></code>, <code><span class="line"><span class="tok-type">u8</span></span></code></td>
+          <td><code><span class="line">?<span class="tok-type">u32</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line">[<span class="tok-number">2</span>]<span class="tok-type">u32</span></span></code>, <code><span class="line"><span class="tok-kw">struct</span> { <span class="tok-type">u32</span>, <span class="tok-type">u32</span> }</span></code></td>
+          <td><code><span class="line">[<span class="tok-number">2</span>]<span class="tok-type">u32</span></span></code></td>
+        </tr>
+        <tr>
+          <td><code><span class="line">*<span class="tok-kw">const</span> <span class="tok-builtin">@TypeOf</span>(.{})</span></code>, <code><span class="line">[]<span class="tok-kw">const</span> <span class="tok-type">u8</span></span></code></td>
+          <td><code><span class="line">[]<span class="tok-kw">const</span> <span class="tok-type">u8</span></span></code></td>
+        </tr>
+      </tbody>
+    </table>
+    
     <h3 id="Multi-Object-For-Loops"><a href="#toc-Multi-Object-For-Loops">Multi-Object For Loops</a> <a class="hdr" href="#Multi-Object-For-Loops">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/14671
+    <p>
+    This release cycle introduces <a href="https://github.com/ziglang/zig/pull/14671">multi-object
+    <code><span class="line"><span class="tok-kw">for</span></span></code> loops</a> into the Zig language. This is a new construct providing a
+    way to cleanly iterate over multiple sequences of the same length.
+    </p>
+    <p>
+    Consider the case of mapping a function over an array. Previously, your code may have looked
+    like this:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">map_func_old.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;double integer values in sequence&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> input: []<span class="tok-kw">const</span> <span class="tok-type">u32</span> = &amp;.{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> output = <span class="tok-kw">try</span> std.testing.allocator.alloc(<span class="tok-type">u32</span>, input.len);</span>
+<span class="line">    <span class="tok-kw">defer</span> std.testing.allocator.free(output);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">for</span> (input) |x, i| {</span>
+<span class="line">        output[i] = x * <span class="tok-number">2</span>;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u32</span>, &amp;.{ <span class="tok-number">2</span>, <span class="tok-number">4</span>, <span class="tok-number">6</span> }, output);</span>
+<span class="line">}</span></code></pre></figure>
+    <p>
+    This code has an unfortunate property: in the loop, we had to make the arbitrary choice to
+    iterate over <code><span class="line">input</span></code>, using the captured index <code><span class="line">i</span></code>
+    to access the corresponding element in <code><span class="line">output</span></code>. With multi-object for
+    loops, this code becomes much cleaner:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">map_func_new.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;double integer values in sequence&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> input: []<span class="tok-kw">const</span> <span class="tok-type">u32</span> = &amp;.{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> output = <span class="tok-kw">try</span> std.testing.allocator.alloc(<span class="tok-type">u32</span>, input.len);</span>
+<span class="line">    <span class="tok-kw">defer</span> std.testing.allocator.free(output);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">for</span> (input, output) |x, *out| {</span>
+<span class="line">        out.* = x * <span class="tok-number">2</span>;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u32</span>, &amp;.{ <span class="tok-number">2</span>, <span class="tok-number">4</span>, <span class="tok-number">6</span> }, output);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test map_func_new.zig</kbd>
+1/1 test.double integer values in sequence... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    In this new code, we use the new for loop syntax to iterate over both slices simultaneously,
+    capturing the output element by reference so we can write to it. The index capture is no longer
+    necessary in this case. Note that this is not limited to two operands: arbitrarily many slices
+    can be passed to the loop provided each has a corresponding capture. The language asserts that
+    all passed slices have the same length: if they do not, this is safety-checked
+    <a href="/documentation/0.11.0/#Undefined-Behavior">Undefined Behavior</a>.
+    </p>
+    <p>
+    Previously, index captures were implicitly provided if you added a second identifier to the
+    loop's captures. With the new multi-object loops, this has changed. As well as standard
+    expressions, the operand passed to a for loop can also be a <i>range</i>. These take the form 
+    <code><span class="line">a..</span></code> or <code><span class="line">a..b</span></code>, with the latter form being exclusive
+    on the upper bound. If an upper bound is provided, <code><span class="line">b - a</span></code> must match the
+    length of any given slices (or other bounded ranges). If no upper bound is provided, the loop is
+    bounded based on other range or slice operands. All for loops must be bounded (i.e. you cannot
+    iterate over only an unbounded range). The old behavior is equivalent to adding a trailing
+    <code><span class="line"><span class="tok-number">0</span>..</span></code> operand to the loop.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">for_index_capture.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;index capture in for loop&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> vals: []<span class="tok-kw">const</span> <span class="tok-type">u32</span> = &amp;.{ <span class="tok-number">10</span>, <span class="tok-number">11</span>, <span class="tok-number">12</span>, <span class="tok-number">13</span> };</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// We can use an unbounded range, since vals provides a length</span></span>
+<span class="line">    <span class="tok-kw">for</span> (vals, <span class="tok-number">0</span>..) |x, i| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i + <span class="tok-number">10</span>, x);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// We can also use a bounded range, provided its length matches</span></span>
+<span class="line">    <span class="tok-kw">for</span> (vals, <span class="tok-number">0</span>..<span class="tok-number">4</span>) |x, i| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i + <span class="tok-number">10</span>, x);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// The lower bound does not need to be 0</span></span>
+<span class="line">    <span class="tok-kw">for</span> (vals, <span class="tok-number">10</span>..) |x, i| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i, x);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// The range does not need to come last</span></span>
+<span class="line">    <span class="tok-kw">for</span> (<span class="tok-number">10</span>..<span class="tok-number">14</span>, vals) |i, x| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i, x);</span>
+<span class="line">    }</span>
+<span class="line">    </span>
+<span class="line">    <span class="tok-comment">// You can have multiple captures of any kind</span></span>
+<span class="line">    <span class="tok-kw">for</span> (<span class="tok-number">10</span>..<span class="tok-number">14</span>, vals, vals, <span class="tok-number">0</span>..) |i, val, *val_ptr, j| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i, j + <span class="tok-number">10</span>);</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i, val);</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(i, val_ptr.*);</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test for_index_capture.zig</kbd>
+1/1 test.index capture in for loop... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    The lower and upper bounds of ranges are of type <code><span class="line"><span class="tok-type">usize</span></span></code>, as is the
+    capture, since this feature is primarily intended for iterating over data in memory. Note that
+    it is valid to loop over only a range:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">for_range_only.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;for loop over range&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> val: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line">    <span class="tok-kw">for</span> (<span class="tok-number">0</span>..<span class="tok-number">20</span>) |i| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(val, i);</span>
+<span class="line">        val += <span class="tok-number">1</span>;</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test for_range_only.zig</kbd>
+1/1 test.for loop over range... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    To automatically migrate old code, <code><span class="line">zig fmt</span></code> automatically adds
+    <code><span class="line"><span class="tok-number">0</span>..</span></code> operands to loops with an index capture and no corresponding operand.
+    </p>
+    <p>
+    The behavior of pointer captures in for loops has changed slightly. Previously, the following
+    code was valid, but now it emits a compile error:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">pointer_capture_from_array.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;pointer capture from array&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> arr: [<span class="tok-number">3</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-kw">for</span> (arr) |*x| {</span>
+<span class="line">        x.* = <span class="tok-number">123</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, &amp;arr, &amp;.{ <span class="tok-number">123</span>, <span class="tok-number">123</span>, <span class="tok-number">123</span> });</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test pointer_capture_from_array.zig</kbd>
+<span class="sgr-1m">docgen_tmp/pointer_capture_from_array.zig:5:16: </span><span class="sgr-31m">error: </span><span class="sgr-1m">pointer capture of non pointer type '[3]u8'
+</span>    for (arr) |*x| {
+               <span class="sgr-32m">^~~
+</span><span class="sgr-1m">docgen_tmp/pointer_capture_from_array.zig:5:10: </span><span class="sgr-36m">note: </span><span class="sgr-1m">consider using '&amp;' here
+</span>    for (arr) |*x| {
+         <span class="sgr-32m">^~~
+</span>
+</samp></pre></figure>
+    <p>
+    This code previously worked because the language implicitly took a reference to
+    <code><span class="line">arr</span></code>. This no longer happens: if you use a pointer capture, the
+    corresponding iterable must be a pointer or slice. In this case, the fix - as suggested by the
+    error note - is simply to take a reference to the array.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">pointer_capture_from_array_pointer.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;pointer capture from array&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> arr: [<span class="tok-number">3</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-kw">for</span> (&amp;arr) |*x| {</span>
+<span class="line">        x.* = <span class="tok-number">123</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, &amp;arr, &amp;.{ <span class="tok-number">123</span>, <span class="tok-number">123</span>, <span class="tok-number">123</span> });</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test pointer_capture_from_array_pointer.zig</kbd>
+1/1 test.pointer capture from array... OK
+All 1 tests passed.
+</samp></pre></figure>
+
     
 
     <h3 id="memcpy-and-memset"><a href="#toc-memcpy-and-memset">@memcpy and @memset</a> <a class="hdr" href="#memcpy-and-memset">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/15278
+    <p>
+    0.11.0 changes the usage of the builtins <code><span class="line"><span class="tok-builtin">@memcpy</span></span></code> and
+    <code><span class="line"><span class="tok-builtin">@memset</span></span></code> to make them more useful.
+    </p>
+    <p>
+    <code><span class="line"><span class="tok-builtin">@memcpy</span></span></code> now takes two parameters. The first is the destination, and must
+    be a mutable slice of any any element type. The second parameter is the source value, which may
+    be either a slice of the element type (in which case it must have the same length) or a
+    many-pointer to it (in which case it is implicitly sliced to the same length). The builtin
+    copies values from the source address to the destination address.
+    </p>
+    <p>
+    The source and destination memory must not overlap (overlap is considered safety-checked
+    <a href="/documentation/0.11.0/#Undefined-Behavior">Undefined Behavior</a>). This is one of the
+    key motivators for using this builtin over the standard library.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">memcpy.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@memcpy usage&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> a: [<span class="tok-number">4</span>]<span class="tok-type">u32</span> = .{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">var</span> b: [<span class="tok-number">4</span>]<span class="tok-type">u32</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-builtin">@memcpy</span>(&amp;b, &amp;a);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u32</span>, &amp;a, &amp;b);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// If the second operand is a many-ptr, the length is taken from the first operand</span></span>
+<span class="line">    <span class="tok-kw">var</span> c: [<span class="tok-number">4</span>]<span class="tok-type">u32</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> a_manyptr: [*]<span class="tok-kw">const</span> <span class="tok-type">u32</span> = (&amp;a).ptr;</span>
+<span class="line">    <span class="tok-builtin">@memcpy</span>(&amp;c, a_manyptr);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u32</span>, &amp;a, &amp;c);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test memcpy.zig</kbd>
+1/1 test.@memcpy usage... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    Since this builtin now encompasses the most common use case of
+    <code><span class="line">std.mem.copy</span></code>, that function has been renamed to
+    <code><span class="line">std.mem.copyForwards</span></code>. Like <code><span class="line">copyBackwards</span></code>, the only
+    use case for that function is when the source and destination slices overlap, meaning elements
+    must be copied in a particular order. When migrating code, it is safe to replace all uses of
+    <code><span class="line">copy</span></code> with <code><span class="line">copyForwards</span></code>, but potentially more
+    optimal and clearer to instead use <code><span class="line"><span class="tok-builtin">@memcpy</span></span></code> provided the slices are
+    guaranteed not to overlap.
+    </p>
+    <p>
+    <code><span class="line"><span class="tok-builtin">@memset</span></span></code> has also changed signature. It takes two parameters: the first is
+    a mutable slice of any element type, and the second is a value which is coerced to that element
+    type. All values referenced by the destination slice are set the provided value.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">memset.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@memset usage&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> a: [<span class="tok-number">4</span>]<span class="tok-type">u32</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line">    <span class="tok-builtin">@memset</span>(&amp;a, <span class="tok-number">10</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u32</span>, &amp;.{ <span class="tok-number">10</span>, <span class="tok-number">10</span>, <span class="tok-number">10</span>, <span class="tok-number">10</span> }, &amp;a);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test memset.zig</kbd>
+1/1 test.@memset usage... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    This builtin now precisely encompasses the former use cases of
+    <code><span class="line">std.mem.set</span></code>. Therefore, this standard library function has been removed
+    in favor of the builtin.
+    </p>
     
 
     <h3 id="min-and-max"><a href="#toc-min-and-max">@min and @max</a> <a class="hdr" href="#min-and-max">§</a></h3>
@@ -1546,16 +1810,23 @@ All 2 tests passed.
 
     <h3 id="trap-is-now-noreturn"><a href="#toc-trap-is-now-noreturn">@trap is now noreturn</a> <a class="hdr" href="#trap-is-now-noreturn">§</a></h3>
 
-commit 3d64ed0353ba7ec1ca46f4779fe5d32af8d17358
-Author: zooster <r00ster91@proton.me>
-Date:   Thu May 18 23:00:35 2023 +0200
-
-    make `@trap` return unreachable/noreturn (#15749)
-    
-    `@trap` is a special function that we know never returns so it should
-    behave just like `@panic` and `@compileError` do currently and cause the
-    "unreachable code" + "control flow is diverted here" compile error.
-    Currently, `@trap(); @trap();` does not cause this error. Now it does.
+    <p>
+    The <code><span class="line"><span class="tok-builtin">@trap</span></span></code> builtin is known at compile time to never return, much like
+    <code><span class="line"><span class="tok-builtin">@panic</span></span></code>. The compiler now knows this, so can emit "unreachable code"
+    errors when unreachable code is detected after usage of this builtin.
+    <p>
+    <figure><figcaption class="zig-cap"><cite class="file">trap_noreturn.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@trap is noreturn&quot;</span> {</span>
+<span class="line">    <span class="tok-builtin">@trap</span>();</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Foo; <span class="tok-comment">// Control flow will never reach this line!</span></span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test trap_noreturn.zig</kbd>
+<span class="sgr-1m">docgen_tmp/trap_noreturn.zig:3:5: </span><span class="sgr-31m">error: </span><span class="sgr-1m">unreachable code
+</span>    return error.Foo; // Control flow will never reach this line!
+    <span class="sgr-32m">^~~~~~~~~~~~~~~~
+</span><span class="sgr-1m">docgen_tmp/trap_noreturn.zig:2:5: </span><span class="sgr-36m">note: </span><span class="sgr-1m">control flow is diverted here
+</span>    @trap();
+    <span class="sgr-32m">^~~~~~~
+</span>
+</samp></pre></figure>
     
 
     <h3 id="Add-inComptime-Builtin"><a href="#toc-Add-inComptime-Builtin">Add @inComptime Builtin</a> <a class="hdr" href="#Add-inComptime-Builtin">§</a></h3>
@@ -1668,11 +1939,6 @@ All 1 tests passed.
     <code><span class="line"><span class="tok-builtin">@enumFromInt</span></span></code>) behave. The goal of this change is to improve readability
     and safety.
     </p>
-    <p><b>
-    For more information on the changes described here, please see
-    <a href="https://github.com/ziglang/zig/wiki/Using-Cast-Result-Type-Inference">this wiki page</a>
-    which explains in more detail what this change is and how to migrate your code.
-    </b></p>
     <p>
     In previous versions of Zig, casting builtins took as a parameter the <b>destination type</b> of
     the cast, for instance <code><span class="line"><span class="tok-builtin">@intCast</span>(<span class="tok-type">u8</span>, x)</span></code>. This was easy to understand, but
@@ -1680,14 +1946,35 @@ All 1 tests passed.
     being specified as, for instance, a parameter type or field type.
     </p>
     <p>
+    As a motivating example, consider a function parameter of type <code><span class="line"><span class="tok-type">u16</span></span></code> which
+    you are passing a <code><span class="line"><span class="tok-type">u64</span></span></code>. You need to use <code><span class="line"><span class="tok-builtin">@intCast</span></span></code> to
+    convert your value to the correct type. Now suppose that down the line, you find out the
+    parameter needs to be a <code><span class="line"><span class="tok-type">u32</span></span></code> so you can pass in larger values. There is now
+    a footgun here: if you don't change every <code><span class="line"><span class="tok-builtin">@intCast</span></span></code> to cast to the correct
+    type, you have a silent bug in your program which may not cause a problem for a while, making it
+    hard to spot.
+    </p>
+    <p>
+    This is the basic pattern motivating this change. The idea is that instead of writing
+    <code><span class="line">f(<span class="tok-builtin">@intCast</span>(<span class="tok-type">u16</span>, x))</span></code>, you instead write
+    <code><span class="line">f(<span class="tok-builtin">@intCast</span>(x))</span></code>, and the destination type of the cast is inferred based on
+    the type. This is not just about function parameters: it is also applicable to struct
+    initializations, return values, and more.
+    </p>
+    <p>
     This language change removes the destination type parameter from all cast builtins. Instead,
     these builtins now use <a href="/documentation/0.11.0/#Reuslt-Location-Semantics">Result Location Semantics</a>
     to infer the result type of the cast from the expression's "result type". In essence, this means
     type inference is used. Most expressions which have a known concrete type for their operand will
-    provide a result type: for instance, <code><span class="line"><span class="tok-kw">const</span> x: T = e</span></code> and
-    <code><span class="line"><span class="tok-builtin">@as</span>(T, e)</span></code> both give <code>e</code> a result type of <code>T</code>, and
-    <code><span class="line">S{ .f = e }</span></code> gives <code>e</code> a result type of the type of the field <code>S.f</code>.
+    provide a result type. For instance:
     </p>
+    <ul>
+      <li><code><span class="line"><span class="tok-kw">const</span> x: T = e</span></code> gives <code>e</code> a result type of <code>T</code></li>
+      <li><code><span class="line"><span class="tok-builtin">@as</span>(T, e)</span></code> gives <code>e</code> a result type of <code>T</code></li>
+      <li><code><span class="line"><span class="tok-kw">return</span> e</span></code> gives <code>e</code> a result type of the function's return type</li>
+      <li><code><span class="line">S{ .f = e }</span></code> gives <code>e</code> a result type of the type of the field <code>S.f</code></li>
+      <li><code><span class="line">f(e)</span></code> gives <code>e</code> a result type of the first parameter type of <code>f</code></li>
+    </ul>
     <p>
     The full list of affected cast builtins is as follows:
     </p>
@@ -1738,29 +2025,36 @@ All 1 tests passed.
 <span class="line">    _ = x;</span>
 <span class="line">}</span>
 <span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;infer cast result type from return type&quot;</span> {</span>
+<span class="line">    _ = g(<span class="tok-number">123</span>);</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">g</span>(x: <span class="tok-type">u64</span>) <span class="tok-type">u32</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-builtin">@intCast</span>(x);</span>
+<span class="line">}</span>
+<span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;explicitly annotate result type with @as&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">const</span> E = <span class="tok-kw">enum</span>(<span class="tok-type">u8</span>) { a, b };</span>
 <span class="line">    <span class="tok-kw">const</span> x: <span class="tok-type">u8</span> = <span class="tok-number">1</span>;</span>
 <span class="line">    _ = <span class="tok-builtin">@as</span>(E, <span class="tok-builtin">@enumFromInt</span>(x));</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test cast_result_type_inference.zig</kbd>
-1/4 test.infer cast result type from type annotation... OK
-2/4 test.infer cast result type from field type... OK
-3/4 test.infer cast result type from parameter type... OK
-4/4 test.explicitly annotate result type with @as... OK
-All 4 tests passed.
+1/5 test.infer cast result type from type annotation... OK
+2/5 test.infer cast result type from field type... OK
+3/5 test.infer cast result type from parameter type... OK
+4/5 test.infer cast result type from return type... OK
+5/5 test.explicitly annotate result type with @as... OK
+All 5 tests passed.
 </samp></pre></figure>
 
     <p>
     Where possible, <code>zig fmt</code> has been made to automatically migrate uses of the old builtins,
-    using a naive translation based on <code>@as</code>. Most builtins are automatically updated, but there
-    are a few exceptions.
+    using a naive translation based on <code>@as</code>. Most builtins can be automatically updated
+    correctly, but there are a few exceptions.
     </p>
     <ul>
-      <li><code><span class="line"><span class="tok-builtin">@addrSpaceCast</span></span></code> and <code><span class="line"><span class="tok-builtin">@alignCast</span></span></code> cannot be translated as
-      the old usage does not provide the full result type</li>
-      <li><code><span class="line"><span class="tok-builtin">@ptrCast</span></span></code> may sometimes decrease alignment where it previously did not</li>
-      <li><code><span class="line"><span class="tok-builtin">@truncate</span></span></code> will be translated incorrectly for vectors, causing a compile error</li>
-      <li><code><span class="line"><span class="tok-builtin">@splat</span></span></code> cannot be translated as the old usage does not provide the full result type</li>
+      <li><code><span class="line"><span class="tok-builtin">@addrSpaceCast</span></span></code> and <code><span class="line"><span class="tok-builtin">@alignCast</span></span></code> cannot be translated as the old usage does not provide the full result type. <code>zig fmt</code> will not modify it.</li>
+      <li><code><span class="line"><span class="tok-builtin">@ptrCast</span></span></code> may sometimes decrease alignment where it previously did not, potentially triggering compile errors. This can be fixed by modifying the type to have the correct alignment.</li>
+      <li><code><span class="line"><span class="tok-builtin">@truncate</span></span></code> will be translated incorrectly for vectors, causing a compile error. This can be fixed by changing the scalar type <code>T</code> to the vector type <code><span class="line"><span class="tok-builtin">@Vector</span>(n, T)</span></code>.</li>
+      <li><code><span class="line"><span class="tok-builtin">@splat</span></span></code> cannot be translated as the old usage does not provide the full result type. <code>zig fmt</code> will not modify it.</li>
     </ul>
 
     <h4 id="Pointer-Casts"><a href="#toc-Pointer-Casts">Pointer Casts</a> <a class="hdr" href="#Pointer-Casts">§</a></h4>
@@ -1769,9 +2063,11 @@ All 4 tests passed.
     The builtins <code><span class="line"><span class="tok-builtin">@addrSpaceCast</span></span></code> and <code><span class="line"><span class="tok-builtin">@alignCast</span></span></code> would
     become quite cumbersome to use under this system as described, since you would now have to specify
     the full intermediate pointer types. Instead, pointer casts (those two builtins and <code><span class="line"><span class="tok-builtin">@ptrCast</span></span></code>)
-    are special. They combine into a single logical operation, with each builtin effectively "allowing"
-    a particular component of the pointer to be cast rather than "performing" it. This means any sequence of
-    nested pointer cast builtins requires only one result type, rather than one at every intermediate computation.
+    are special. They combine into a single logical operation, with each builtin effectively
+    "allowing" a particular component of the pointer to be cast rather than "performing" it. (Indeed,
+    this may be a helpful mental model for the new cast builtins more generally.) This means any
+    sequence of nested pointer cast builtins requires only one result type, rather than one at every
+    intermediate computation.
     </p>
     <figure><figcaption class="zig-cap"><cite class="file">pointer_cast.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;pointer casts&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">const</span> ptr1: *<span class="tok-kw">align</span>(<span class="tok-number">1</span>) <span class="tok-kw">const</span> <span class="tok-type">u32</span> = <span class="tok-builtin">@ptrFromInt</span>(<span class="tok-number">0x1000</span>);</span>
@@ -1814,14 +2110,44 @@ All 1 tests passed.
 
     <h3 id="Allow-Indexing-Tuple-and-Vector-Pointers"><a href="#toc-Allow-Indexing-Tuple-and-Vector-Pointers">Allow Indexing Tuple and Vector Pointers</a> <a class="hdr" href="#Allow-Indexing-Tuple-and-Vector-Pointers">§</a></h3>
 
-commit ce88c43a4ee94d82a64e7580885dc6693cc6120c
-Author: mlugg <mlugg@mlugg.co.uk>
-Date:   Wed Jun 7 10:20:34 2023 +0100
-
-    Sema: allow indexing tuple and vector pointers
-    
-    Resolves: #13852
-    Resolves: #14705
+    <p>
+    Zig allows you to directly index pointers to arrays like plain arrays, which transparently
+    dereferences the pointer as required. For consistency, this is now additionally allowed for
+    pointers to tuples and vectors (the other non-pointer indexable types).
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">index_tuple_vec_ptr.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;index tuple pointer&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> raw: <span class="tok-kw">struct</span> { <span class="tok-type">u32</span>, <span class="tok-type">u32</span> } = .{ <span class="tok-number">1</span>, <span class="tok-number">2</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> ptr = &amp;raw;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">1</span>), ptr[<span class="tok-number">0</span>]);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">2</span>), ptr[<span class="tok-number">1</span>]);</span>
+<span class="line"></span>
+<span class="line">    ptr[<span class="tok-number">0</span>] = <span class="tok-number">3</span>;</span>
+<span class="line">    ptr[<span class="tok-number">1</span>] = <span class="tok-number">4</span>;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">3</span>), ptr[<span class="tok-number">0</span>]);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">4</span>), ptr[<span class="tok-number">1</span>]);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;index vector pointer&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> raw: <span class="tok-builtin">@Vector</span>(<span class="tok-number">2</span>, <span class="tok-type">u32</span>) = .{ <span class="tok-number">1</span>, <span class="tok-number">2</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> ptr = &amp;raw;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">1</span>), ptr[<span class="tok-number">0</span>]);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">2</span>), ptr[<span class="tok-number">1</span>]);</span>
+<span class="line"></span>
+<span class="line">    ptr[<span class="tok-number">0</span>] = <span class="tok-number">3</span>;</span>
+<span class="line">    ptr[<span class="tok-number">1</span>] = <span class="tok-number">4</span>;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">3</span>), ptr[<span class="tok-number">0</span>]);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">4</span>), ptr[<span class="tok-number">1</span>]);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test index_tuple_vec_ptr.zig</kbd>
+1/2 test.index tuple pointer... OK
+2/2 test.index vector pointer... OK
+All 2 tests passed.
+</samp></pre></figure>
     
 
     <h3 id="Overflow-Builtins-Return-Tuples"><a href="#toc-Overflow-Builtins-Return-Tuples">Overflow Builtins Return Tuples</a> <a class="hdr" href="#Overflow-Builtins-Return-Tuples">§</a></h3>
@@ -1936,26 +2262,63 @@ All 1 tests passed.
     </p>
     
 
-    <h3 id="boolToInt-always-returns-u1"><a href="#toc-boolToInt-always-returns-u1">@boolToInt always returns u1</a> <a class="hdr" href="#boolToInt-always-returns-u1">§</a></h3>
+    <h3 id="intFromBool-always-returns-u1"><a href="#toc-intFromBool-always-returns-u1">@intFromBool always returns u1</a> <a class="hdr" href="#intFromBool-always-returns-u1">§</a></h3>
 
-commit bfe02ff61a8861c269524c60668a3969cb053720
-Author: tison <wander4096@gmail.com>
-Date:   Wed May 24 08:01:48 2023 +0800
+    <p>
+    The <code><span class="line"><span class="tok-builtin">@intFromBool</span></span></code> builtin (previously called
+    <code><span class="line"><span class="tok-builtin">@boolToInt</span></span></code>) previously returned either a <code><span class="line"><span class="tok-type">u1</span></span></code> or a
+    <code><span class="line"><span class="tok-type">comptime_int</span></span></code>, depending on whether or not it was evaluated at
+    <code><span class="line"><span class="tok-kw">comptime</span></span></code>. It has since been changed to always return a
+    <code><span class="line"><span class="tok-type">u1</span></span></code> to improve consistency between code running at runtime and comptime.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">int_from_bool.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@intFromBool returns u1&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> x = <span class="tok-builtin">@intFromBool</span>(<span class="tok-null">true</span>); <span class="tok-comment">// implicitly evaluated at comptime</span></span>
+<span class="line">    <span class="tok-kw">const</span> y = <span class="tok-kw">comptime</span> <span class="tok-builtin">@intFromBool</span>(<span class="tok-null">true</span>); <span class="tok-comment">// explicitly evaluated at comptime</span></span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(<span class="tok-builtin">@TypeOf</span>(x) == <span class="tok-type">u1</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(<span class="tok-builtin">@TypeOf</span>(y) == <span class="tok-type">u1</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(x == <span class="tok-number">1</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(y == <span class="tok-number">1</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test int_from_bool.zig</kbd>
+1/1 test.@intFromBool returns u1... OK
+All 1 tests passed.
+</samp></pre></figure>
 
-    make `@boolToInt` always return a u1
-    
-    Signed-off-by: tison <wander4096@gmail.com>
-
- src/Sema.zig        | 6 +++---
- src/translate_c.zig | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
     
 
     <h3 id="Eliminate-Bound-Functions"><a href="#toc-Eliminate-Bound-Functions">Eliminate Bound Functions</a> <a class="hdr" href="#Eliminate-Bound-Functions">§</a></h3>
 
-    <p>Did you know Zig had bound functions?</p>
-    TODO example
+    <p>Did you know Zig had bound functions? The following code was valid in 0.10, but is not any more:</p>
+<figure><figcaption class="zig-cap"><cite class="file">bound_functions.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;bound functions&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> runtime_true = <span class="tok-null">true</span>;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// This code was valid in 0.10, and gave 'x' a &quot;bound function&quot; type.</span></span>
+<span class="line">    <span class="tok-comment">// Bound functions have been removed from the language, so this code is no longer valid.</span></span>
+<span class="line">    <span class="tok-kw">const</span> obj: Foo = .{};</span>
+<span class="line">    <span class="tok-kw">const</span> x = <span class="tok-kw">if</span> (runtime_true) obj.a <span class="tok-kw">else</span> obj.b;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(x() == <span class="tok-str">'a'</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {</span>
+<span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">a</span>(_: Foo) <span class="tok-type">u8</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> <span class="tok-str">'a'</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">b</span>(_: Foo) <span class="tok-type">u8</span> {</span>
+<span class="line">        <span class="tok-kw">return</span> <span class="tok-str">'b'</span>;</span>
+<span class="line">    }</span>
+<span class="line">};</span></code></pre></figure>
     <p>I rest my case. Good riddance!</p>
+    <p>
+    Method calls are now restricted to the exact syntactic form <code><span class="line">a.b(args)</span></code>.
+    Any deviation from this syntax - for instance, extra parentheses as in
+    <code><span class="line">(a.b)(args)</span></code> - will be treated as a field access.
+    </p>
     
 
     <h3 id="call-Stack"><a href="#toc-call-Stack">@call Stack</a> <a class="hdr" href="#call-Stack">§</a></h3>
@@ -1972,49 +2335,149 @@ Date:   Tue Dec 13 18:15:18 2022 -0500
 
     <h3 id="Allow-Tautological-Integer-Comparisons"><a href="#toc-Allow-Tautological-Integer-Comparisons">Allow Tautological Integer Comparisons</a> <a class="hdr" href="#Allow-Tautological-Integer-Comparisons">§</a></h3>
 
-commit 901c3e96368bd9fa9ee9858c0295ee05ef1d7146
-Merge: 9cc49548a 35750cd54
-Author: Veikka Tuominen <git@vexu.eu>
-Date:   Sun Dec 18 01:57:49 2022 +0200
-
-    Merge pull request #13552 from hryx/comparus-tautologicus
-    
-    Sema: elide integer comparisons with guaranteed outcomes
-
+    <p>
+    Previously, comparing an integer to a comptime-known value required that value to fit in the
+    integer type. For instance, comparing a <code><span class="line"><span class="tok-type">u8</span></span></code> to <code><span class="line"><span class="tok-number">500</span></span></code>
+    was a compile error. However, such comparisons can be useful when writing generic or future-proof
+    code.
+    </p>
+    <p>
+    As such, comparisons of this form are now allowed. However, since these comparisons are
+    tautological, they do not cause any runtime checks: instead, the result is comptime-known based
+    on the type. For instance, <code><span class="line">my_u8 == <span class="tok-number">500</span></span></code> is comptime-known
+    <code><span class="line"><span class="tok-null">true</span></span></code>, even if <code><span class="line">my_u8</span></code> is not itself comptime-known.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">tautological_compare_comptime.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;tautological comparisons are comptime-known&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> x: <span class="tok-type">u8</span> = <span class="tok-number">123</span>;</span>
+<span class="line">    <span class="tok-kw">if</span> (x &gt; <span class="tok-number">500</span>) <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;unreachable branch analyzed&quot;</span>);</span>
+<span class="line">    <span class="tok-kw">if</span> (x == -<span class="tok-number">20</span>) <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;unreachable branch analyzed&quot;</span>);</span>
+<span class="line">    <span class="tok-kw">if</span> (x &lt; <span class="tok-number">0</span>) <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;unreachable branch analyzed&quot;</span>);</span>
+<span class="line">    <span class="tok-kw">if</span> (x != <span class="tok-number">500</span>) {} <span class="tok-kw">else</span> <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;unreachable branch analyzed&quot;</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test tautological_compare_comptime.zig</kbd>
+1/1 test.tautological comparisons are comptime-known... OK
+All 1 tests passed.
+</samp></pre></figure>
     
 
     <h3 id="Forbid-Source-Files-Being-Part-of-Multiple-Modules"><a href="#toc-Forbid-Source-Files-Being-Part-of-Multiple-Modules">Forbid Source Files Being Part of Multiple Modules</a> <a class="hdr" href="#Forbid-Source-Files-Being-Part-of-Multiple-Modules">§</a></h3>
 
-    <p>Previously, if a source file was referenced from multiple packages, it just
-    became owned by the first one the <a href="#Compiler">Compiler</a> happened to reach; this was a problem,
-    because it could lead to inconsistent behaviour in the compiler based on a race
-    condition. This could be fixed by just analyzing such files multiple times -
-    however, it makes more sense to enforce files being part of at most a single
-    package. Having a file in multiple packages would not only impact compile
-    times (due to semantic analysis running multiple times on potentially a lot of
-    code) but is also a confusing anti-pattern which more often than not is a
-    mistake on the part of the user.</p>
-    <p>This release also changes how errors are formatted slightly. Previously, entire_file
-    module errors were turned into plain errors for output, which caused the
-    filename to be omitted (which was quite unhelpful). Now they are tweaked to be
-    reported like any other error, just with no outputted source line. This only
-    affects entire_file errors, which were only used for retryable errors.</p>
-    <p>TODO show example error and how to work around it</p>
-    <p>#13662, #13670</p>
+    <p>
+    A Zig module (previously known as "package") is a collection of source files, with a single root
+    source file, which can be imported in your code by name. For instance, <code><span class="line">std</span></code>
+    is a module. An interesting case comes up when two modules attempt to
+    <code><span class="line"><span class="tok-builtin">@import</span></span></code> the same source file.
+    </p>
+    <p>
+    Previously, when this happened, the source file became "owned" by whichever import the compiler
+    happened to reach first. This was a problem, because it could lead to inconsistent behavior in
+    the compiler based on a race condition. This could be fixed by having the compiler analyzing the
+    files multiple times - once for each module they're imported from - however, this could lead to
+    slowdowns in compile times, and generally this kind of structure is indicative of a mistake
+    anyway.
+    </p>
+    <p>
+    Therefore, another solution was chosen: <b>having a single source file within multiple modules is
+    now illegal</b>. When a source file is encountered in two different modules, an error like the following
+    will be emitted:
+    </p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>ls</kbd>
+foo.zig  main.zig  common.zig
+
+$ <kbd>cat common.zig</kbd>
+// An empty file
+
+$ <kbd>cat foo.zig</kbd>
+// This is the root of the 'foo' module
+pub const common = @import(&quot;common.zig&quot;);
+
+$ <kbd>cat main.zig</kbd>
+// This file is the root of the main module
+comptime {
+    _ = @import(&quot;foo&quot;).common;
+    _ = @import(&quot;common.zig&quot;);
+}
+
+$ <kbd>zig test main.zig --mod foo::foo.zig --deps foo</kbd>
+common.zig:1:1: error: file exists in multiple modules
+main.zig:4:17: note: imported from module root
+    _ = @import(&quot;common.zig&quot;);
+                ^~~~~~~~~~~~
+foo.zig:2:28: note: imported from module root.foo
+pub const common = @import(&quot;common.zig&quot;);
+                           ^~~~~~~~~~~~
+</samp></pre></figure>
+    <p>
+    The correct way to resolve this error is usually to factor the shared file out into its own
+    module, which other modules can then import. This can be done in the build system using
+    <code><span class="line">std.Build.addModule</span></code>.
+    </p>
     
 
     <h3 id="Single-Item-Array-Pointers-Gain-ptr-Field"><a href="#toc-Single-Item-Array-Pointers-Gain-ptr-Field">Single-Item Array Pointers Gain .ptr Field</a> <a class="hdr" href="#Single-Item-Array-Pointers-Gain-ptr-Field">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/4765
+    <p>
+    In general, it is intended to single-item array pointers to act equivalently to a slice. That
+    is, <code><span class="line">*<span class="tok-kw">const</span> [<span class="tok-number">5</span>]<span class="tok-type">u8</span></span></code> is essentially equivalent to
+    <code><span class="line">[]<span class="tok-kw">const</span> <span class="tok-type">u8</span></span></code> but with a comptime-known length.
+    </p>
+    <p>
+    Previously, the <code><span class="line">ptr</span></code> field on slices was an exception to this rule, as it
+    did not exist on single-item array pointers. This field
+    <a href="https://github.com/ziglang/zig/issues/4765">has been added</a>, and is equivalent to
+    simple coercion from <code><span class="line">*[N]T</span></code> to <code><span class="line">[*]T</span></code>.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">array_pointer_ptr_field.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;array pointer has ptr field&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> x: *<span class="tok-kw">const</span> [<span class="tok-number">4</span>] <span class="tok-type">u32</span> = &amp;.{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> y: []<span class="tok-kw">const</span> <span class="tok-type">u32</span> = &amp;.{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">const</span> xp: [*]<span class="tok-kw">const</span> <span class="tok-type">u32</span> = x.ptr;</span>
+<span class="line">    <span class="tok-kw">const</span> yp: [*]<span class="tok-kw">const</span> <span class="tok-type">u32</span> = y.ptr;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(xp, <span class="tok-builtin">@as</span>([*]<span class="tok-kw">const</span> <span class="tok-type">u32</span>, x));</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">for</span> (<span class="tok-number">0</span>..<span class="tok-number">4</span>) |i| {</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(x[i], xp[i]);</span>
+<span class="line">        <span class="tok-kw">try</span> std.testing.expectEqual(y[i], yp[i]);</span>
+<span class="line">    }</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test array_pointer_ptr_field.zig</kbd>
+1/1 test.array pointer has ptr field... OK
+All 1 tests passed.
+</samp></pre></figure>
     
 
     <h3 id="Allow-Method-Call-Syntax-on-Optional-Pointers"><a href="#toc-Allow-Method-Call-Syntax-on-Optional-Pointers">Allow Method Call Syntax on Optional Pointers</a> <a class="hdr" href="#Allow-Method-Call-Syntax-on-Optional-Pointers">§</a></h3>
 
-commit 2be347a2c88e435079333773fc30b8e967cc7068
-Author: Ian Johnson <ian@ianjohnson.dev>
-Date:   Sat Apr 22 20:44:57 2023 -0400
-
-    Sema: allow method calls on optional pointers
+    <p>
+    Method call syntax <code><span class="line">object.method(args)</span></code> only works when the first
+    parameter of <code><span class="line">method</span></code> has a specific type: previously, this was either the
+    type containing the method, or a pointer to it. It is now additionally allowed for this type to
+    be an optional pointer. The value the method call is performed on must still be a non-optional
+    pointer, but it is coerced to an optional pointer for the method call.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">method_syntax_opt_ptr.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> {</span>
+<span class="line">    x: <span class="tok-type">u32</span>,</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">xOrDefault</span>(self: ?*<span class="tok-kw">const</span> Foo) <span class="tok-type">u32</span> {</span>
+<span class="line">        <span class="tok-kw">const</span> foo = self <span class="tok-kw">orelse</span> <span class="tok-kw">return</span> <span class="tok-number">0</span>;</span>
+<span class="line">        <span class="tok-kw">return</span> foo.x;</span>
+<span class="line">    }</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;method call with optional pointer parameter&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> a: Foo = .{ .x = <span class="tok-number">7</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> b: Foo = .{ .x = <span class="tok-number">9</span> };</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">0</span>), Foo.xOrDefault(<span class="tok-null">null</span>));</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">7</span>), a.xOrDefault());</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expectEqual(<span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-number">9</span>), b.xOrDefault());</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test method_syntax_opt_ptr.zig</kbd>
+1/1 test.method call with optional pointer parameter... OK
+All 1 tests passed.
+</samp></pre></figure>
     
 
     <h3 id="comptime-Function-Calls-No-Longer-Cause-Runtime-Analysis"><a href="#toc-comptime-Function-Calls-No-Longer-Cause-Runtime-Analysis">comptime Function Calls No Longer Cause Runtime Analysis</a> <a class="hdr" href="#comptime-Function-Calls-No-Longer-Cause-Runtime-Analysis">§</a></h3>
@@ -2110,17 +2573,27 @@ All 2 tests passed.
 
     <h3 id="Allow-Functions-to-Return-null-and-undefined"><a href="#toc-Allow-Functions-to-Return-null-and-undefined">Allow Functions to Return null and undefined</a> <a class="hdr" href="#Allow-Functions-to-Return-null-and-undefined">§</a></h3>
 
-commit a257e33fff8dd9efa7f43ea14e05eef65a7f3354
-Author: Jacob Young <jacobly0@users.noreply.github.com>
-Date:   Tue Jun 20 13:12:15 2023 -0400
-
-    Type: remove arbitrary restrictions on param and return types
-    
-    Opaque and `noreturn` makes sense since they don't represent real
-    values, but `null` and `undefined` are perfectly normal
-    comptime-only values.
-    
-    Closes #16088
+    <p>
+    0.10 had some arbitrary restrictions on the types of function parameters and their return types:
+    they were not permitted to be <code><span class="line"><span class="tok-builtin">@TypeOf</span>(<span class="tok-null">null</span>)</span></code> or
+    <code><span class="line"><span class="tok-builtin">@TypeOf</span>(<span class="tok-null">undefined</span>)</span></code>. While these are types are rarely useful in this
+    context, they are still completely normal comptime-only types, so this restriction on their
+    usage was needless. As such, they are now allowed as parameter and return types.
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">null_undef_param_ret_ty.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(<span class="tok-kw">comptime</span> x: <span class="tok-builtin">@TypeOf</span>(<span class="tok-null">undefined</span>)) <span class="tok-builtin">@TypeOf</span>(<span class="tok-null">null</span>) {</span>
+<span class="line">    _ = x;</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-null">null</span>;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;null and undefined as function parameter and return types&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> my_null = foo(<span class="tok-null">undefined</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(my_null == <span class="tok-null">null</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test null_undef_param_ret_ty.zig</kbd>
+1/1 test.null and undefined as function parameter and return types... OK
+All 1 tests passed.
+</samp></pre></figure>
     
 
     <h3 id="Generic-Function-Calls"><a href="#toc-Generic-Function-Calls">Generic Function Calls</a> <a class="hdr" href="#Generic-Function-Calls">§</a></h3>
