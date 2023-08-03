@@ -14,22 +14,30 @@ git config core.abbrev 9
 git fetch --unshallow || true
 git fetch --tags
 
-LAST_SUCCESS=$(curl \
-  -H "Accept: application/vnd.github+json" \
-    -H "Authorization: Bearer $GH_TOKEN" \
-    "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&event=push" | jq --raw-output ".workflow_runs[0].head_sha")
-git checkout "$LAST_SUCCESS"
 
-ZIG_VERSION="$(zig-ver)"
-echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
-
-LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/master/data/releases.json" | jq --raw-output ".master.version")
-echo "Last deployed version: $LAST_TARBALL"
-
-if [ $ZIG_VERSION = $LAST_TARBALL ]; then
+if [ $ZIG_RELEASE_TAG ]; then
   echo "skipped=yes" >> $GITHUB_OUTPUT
-  echo "Versions are equal, nothing to do here."
-  exit
+  echo "Building a tagged release!"
+  git checkout "$ZIG_RELEASE_TAG"
+  ZIG_VERSION="$(zig-ver)"
+else
+  LAST_SUCCESS=$(curl \
+    -H "Accept: application/vnd.github+json" \
+      -H "Authorization: Bearer $GH_TOKEN" \
+      "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&event=push" | jq --raw-output ".workflow_runs[0].head_sha")
+  git checkout "$LAST_SUCCESS"
+
+  ZIG_VERSION="$(zig-ver)"
+  echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
+
+  LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/master/data/releases.json" | jq --raw-output ".master.version")
+  echo "Last deployed version: $LAST_TARBALL"
+
+  if [ $ZIG_VERSION = $LAST_TARBALL ]; then
+    echo "skipped=yes" >> $GITHUB_OUTPUT
+    echo "Versions are equal, nothing to do here."
+    exit
+  fi
 fi
 
 cd ../..
