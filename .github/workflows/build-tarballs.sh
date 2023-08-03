@@ -15,12 +15,7 @@ git fetch --unshallow || true
 git fetch --tags
 
 
-if [[ ! -z "${ZIG_RELEASE_TAG}" ]]; then
-  echo "skipped=yes" >> $GITHUB_OUTPUT
-  echo "Building a tagged release!"
-  git checkout "$ZIG_RELEASE_TAG"
-  ZIG_VERSION="$(zig-ver)"
-else
+if [ -z "$ZIG_RELEASE_TAG" ]; then
   LAST_SUCCESS=$(curl \
     -H "Accept: application/vnd.github+json" \
       -H "Authorization: Bearer $GH_TOKEN" \
@@ -38,6 +33,12 @@ else
     echo "Versions are equal, nothing to do here."
     exit
   fi
+else
+  # Prevent website deploy
+  echo "skipped=yes" >> $GITHUB_OUTPUT
+  git checkout "$ZIG_RELEASE_TAG"
+  ZIG_VERSION="$ZIG_RELEASE_TAG"
+  echo "Building version from tag: $ZIG_VERSION"
 fi
 
 cd ../..
