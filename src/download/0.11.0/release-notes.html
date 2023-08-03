@@ -953,6 +953,11 @@ export fn free(p: *i32) void {
     TODO
     {#header_close#}
 
+    {#header_open|AVR#}
+    <p>AVR remains an experimental target, however, in this release cycle, the {#link|Compiler#}
+    implements AVR address spaces, and places functions on AVR in the flash address space.</p>
+    {#header_close#}
+
     {#header_open|GPGPU#}
     <p><a href="https://github.com/Snektron/">Robin "Snektron" Voetter</a> writes:</p>
 <p>Three new built-in functions are added to aid with writing GPGPU kernels in Zig: <code>@workGroupId</code>, <code>@workItemId</code>, and <code>@workGroupSize</code>. These are respectively used to query the index of the work group of the current thread in a kernel invocation, the size of a work group in threads, and the thread index in the current work group. For now, these are only wired up to work when compiling Zig to AMD GCN machine code via LLVM, that can be used with ROCm. In the future they will be added to the LLVM-based NVPTX and self-hosted SPIR-V backends as well.</p>
@@ -1116,6 +1121,22 @@ a user to build a multi-threaded WebAssembly module for other runtimes. Be
 aware that the threads in the standard library are only available for WASI. For
 freestanding, the user must implement their own such as Web Workers when
 building a WebAssembly module for the browser.</p>
+
+
+commit 2834b937f143aa80e3730706dac5ff44cea3a67d
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Mar 2 19:04:55 2023 -0700
+
+    link: give executable bit to wasm executables sometimes
+    
+    Give +x to the .wasm file if it is an executable and the OS is WASI.
+    Some systems may be configured to execute such binaries directly. Even
+    if that is not the case, it means we will get "exec format error" when
+    trying to run it rather than "access denied", and then can react to that
+    in the same way as trying to run an ELF file from a foreign CPU
+    architecture.
+    
+    This is part of the strategy to unify RunStep and EmulatableRunStep.
     {#header_close#}
 
     {#header_open|UEFI#}
@@ -1143,7 +1164,7 @@ building a WebAssembly module for the browser.</p>
   <li>
     Introduced a <code>page_allocator</code> implementation for Plan 9,
     employing the <code>SbrkAllocator</code> available in the standard library.
-    This addition now permits memory allocation on Plan 9.
+    This addition now permits {#link|Memory Allocation#} on Plan 9.
   </li>
   <li>
     New functions have been added to facilitate interaction with the filesystem,
@@ -1607,7 +1628,8 @@ test "@min/@max refines result type" {
     </p>
     {#header_close#}
 
-    {#header_open|@trap is now noreturn#}
+    {#header_open|@trap#}
+    TODO This wasn't changed, it was introduced in this this release (#14782)
     <p>
     The {#syntax#}@trap{#endsyntax#} builtin is known at compile time to never return, much like
     {#syntax#}@panic{#endsyntax#}. The compiler now knows this, so can emit "unreachable code"
@@ -1621,7 +1643,7 @@ test "@trap is noreturn" {
     {#code_end#}
     {#header_close#}
 
-    {#header_open|Add @inComptime Builtin#}
+    {#header_open|@inComptime#}
     <p>
     A new builtin, {#syntax#}@inComptime(){#endsyntax#}, has been introduced. This builtin returns a
     {#syntax#}bool{#endsyntax#} indicating whether or not it was evaluated in a
@@ -1656,6 +1678,10 @@ test "@inComptime" {
     try expectEqual(@as(u32, 2), f());
 }
     {#code_end#}
+    {#header_close#}
+
+    {#header_open|Split @qualCast into @constCast and @volatileCast#}
+    TODO https://github.com/ziglang/zig/pull/14638
     {#header_close#}
 
     {#header_open|Rename Casting Builtins#}
@@ -2036,6 +2062,32 @@ test "@intFromBool returns u1" {
 }
     {#code_end#}
 
+    {#header_close#}
+
+    {#header_open|@fieldParentPtr Supports Unions#}
+    TODO https://github.com/ziglang/zig/issues/6611
+    {#header_close#}
+
+    {#header_open|@typeInfo No Longer Returns Private Declarations#}
+    <p>It was a {#link|bug|Bug Fixes#} that private declarations were included
+    in the result of {#syntax#}@typeInfo{#endsyntax#} (#10731).</p>
+    <p>The {#syntax#}is_pub{#endsyntax#} field has been removed from
+      {#syntax#}std.builtin.Type.Declaration{#endsyntax#}.</p>
+    {#header_close#}
+
+    {#header_open|Allow Zero-Sized Fields In Extern Structs#}
+commit 796927b900ad4b774c30d1cb545d606f23040d2f
+Author: AdamGoertz <36753247+AdamGoertz@users.noreply.github.com>
+Date:   Sat Jul 29 12:45:01 2023 -0400
+
+    Allow zero-sized fields in extern structs (#16404)
+    
+    This change allows the following types to appear in extern structs:
+    * Zero-bit integers
+    * void
+    * zero-sized structs and packed structs
+    * enums with zero-bit backing integers
+    * arrays of any length with zero-size elements
     {#header_close#}
 
     {#header_open|Eliminate Bound Functions#}
@@ -2552,6 +2604,59 @@ target-specific runtime calls and returns to be constructed.</p>
     <li>std: GPA deinit return an enum instead of a bool</li>
     <li>std.target.riscv: fix baseline_rv32 missing feature "32bit"</li>
     <li>debug: fix missing stack traces during crashes on windows</li>
+    <li>std: add LZMA decoder (#14518)</li>
+    <li>ArrayList: Allow const for getLast (#14522)</li>
+    <li>std: add expectEqualDeep (#13995)</li>
+    <li>netbsd: use versioned __msync13 from libc (#14422)</li>
+    <li>os.sendfile: On BrokenPipe error, return error rather than unreachable</li>
+    <li>wasi: remove unnecessary breakpoint() in abort</li>
+    <li>std.target: mark helper functions inline so that callsites don't need {#syntax#}comptime{#endsyntax#}</li>
+    <li>Add fs.path.ComponentIterator and use it in Dir.makePath, fixing some bugs</li>
+    <li>linux: do not set stack size hard limit</li>
+    <li>windows.OpenFile/DeleteFile: Add NetworkNotFound as a possible error. When calling NtCreateFile with a UNC path, if either `\\server` or `\\server\share` are not found, then the statuses `BAD_NETWORK_PATH` or `BAD_NETWORK_NAME` are returned (respectively).</li>
+    <li>std.hash: Improvements for xxHash performance, both on small keys as well as large slices (#15947)</li>
+    <li>GPA: Catch invalid frees (#14791).</li>
+    <li>Remove std.os.windows.QueryInformationFile (a wrapper of NtQueryInformationFile). This function was unused, and implementation contained a few footguns.</li>
+    <li>Fix GetFileInformationByHandle compile error (#14829)</li>
+    <li>std.simd: add wasm-simd support for suggestVectorSizeForCpu (#14992)</li>
+    <li>`os.isCygwinPty`: Fix a bug, replace kernel32 call, and optimize (#14841)</li>
+    <li>std.base64: don't overflow dest with padding</li>
+    <li>std.process.Child: implement maxrss on Darwin</li>
+    <li>std.enums.IndexedSet: Add initOne and initMany</li>
+    <li>io_uring: Change ordering of prep provide buffers args</li>
+    <li>std.mem.reverseIterator improvements (#15134)</li>
+    <li>Add NetBSD termios constants to std.c.netbsd</li>
+    <li>std.os: add mincore syscall which is available on some UNIX like operating systems and allows a user to determine if a page is resident in memory.</li>
+    <li>std.process: Fix crash on some Windows machines</li>
+    <li>std.os.windows.DeviceIoControl: Handle INVALID_DEVICE_REQUEST. This is possible when e.g. calling CreateSymbolicLink on a FAT32 filesystem</li>
+    <li>Fix type mismatch for Reader.readIntoBoundedBytes (#16416)</li>
+    <li>[priority_queue] Simplify sifting & fix edge case</li>
+    <li>std.mem.Allocator: add error when passing a non-single-item pointer to allocator.destroy</li>
+    <li>std.os.linux | Fix sendmmsg function (#16513)</li>
+    <li>darwin: drop underscore from SIG._{BLOCK,UNBLOCK,SETMASK}. this makes them match decls in other OSes</li>
+    <li>Fix counting in SingleThreadedRwLock's tryLockShared (#16560)</li>
+    <li>std.Uri: Don't double-escape escaped query parameters (#16043)</li>
+    <li>`std.coff`: check strtab lengths against `data` length. Fixes illegal behavior. Invalid-length sections are now skipped in `Coff.getSectionByName`.</li>
+    <li>std.process.totalSystemMemory: return correct error type on FreeBSD</li>
+    <li>Remove math.ln in favor of `@log`</li>
+    <li>os.renameatW: Handle OBJECT_NAME_COLLISION from NtSetInformationFile (#16374)</li>
+    <li>child_process: Fix regression on Windows for FAT filesystems (#16374).</li>
+    <li>windows.DeleteFile: Use FileDispositionInformationEx if possible, but fallback if not (#16499).</li>
+    <li>std.os: handle EPERM errno for bind</li>
+    <li>std: Add ArrayList.insertAssumeCapacity()</li>
+    <li>std.http: add connection pooling, handle keep-alive and compressed content (#14762)</li>
+    <li>std.os: add missing mmap errors</li>
+    <li>std.os.windows.advapi32: Add RegCloseKey</li>
+    <li>std.os: Allow write functions to return INVAL errors. In Linux when interacting with the virtual file system when writing in invalid value to a file the OS will return errno 22 (INVAL). Instead of triggering an unreachable, this change now returns a newly introduced error.InvalidArgument.</li>
+    <li>std.os: Add DeviceBusy as a possible write error. In Linux when writing to various files in the virtual file system, for example /sys/fs/cgroup, if you write an invalid value to a file you'll get errno 16.</li>
+    <li>std.process.Child: remove pid and handle, add id. Previously, this API had pid, to be used on POSIX systems, and handle, to be used on Windows. This change unifies the API, defining an Id type that is either the pid or the HANDLE depending on the target OS.</li>
+    <li>introduce std.io.poll (#14744)</li>
+    <li>add Zstandard decompressor (#14183)</li>
+    <li>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</li>
+    <li>networking: ignore SIGPIPE by default (#11982)</li>
+    <li>Introduce ChildProcess.collectOutput (#12295)</li>
+    <li>std.c: Add umask.</li>
+    <li>Update Linux syscall list for 6.1, support Mips64 (#14541)</li>
     </ul>
 
     {#header_open|Memory Allocation#}
@@ -2576,6 +2681,38 @@ Date:   Thu Jul 6 20:41:49 2023 +0200
     * Move functionality from generic functions that doesn't depend on the type into a function that only depends on comptime alignment.
     
     This reduces comptime code duplication because e.g. `alloc(u32, )` and `alloc(i32, )` now use the same function `allocWithFoo(4, 4, )` under the hood.
+    {#header_close#}
+
+    {#header_open|Strings#}
+    {#header_open|Restrict mem.span and mem.len to Sentinel-Terminated Pointers#}
+    <p><a href="https://isaacfreund.com/">Isaac Freund</a> writes:</p>
+    <p>These functions were footgunny when working with pointers to
+    arrays and slices. They just returned the stated length of the array/slice
+    without iterating and looking for the first sentinel, even if the
+    array/slice is a sentinel-terminated type.</p>
+    <p>
+    From looking at the quite small list of places in the
+    {#link|Standard Library#} and {#link|Compiler#} that this change breaks
+    existing code, the new code looks to be more readable in all cases.
+    </p><p>
+    The usage of std.mem.span/len was totally unneeded in most of the cases
+    affected by this breaking change.
+    </p><p>
+    We could remove these functions entirely in favor of other existing
+    functions in std.mem such as std.mem.sliceTo(), but that would be a
+    somewhat nasty breaking change as std.mem.span() is very widely used for
+    converting sentinel terminated pointers to slices. It is however not at
+    all widely used for anything else.
+    </p><p>
+    Therefore I think it is better to break these few non-standard and
+    potentially incorrect usages of these functions now and at some later
+    time, if deemed worthwhile, finally remove these functions.
+    </p><p>
+    If we wait for at least a full release cycle so that everyone adapts to
+    this change first, updating for the removal could be a simple find and
+    replace without needing to worry about the semantics.
+    </p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Math#}
@@ -3044,6 +3181,39 @@ while (true) {
 <p>If you use a <code>std.FixedBufferAllocator</code>, you can make parsing json work at comptime.</p>
 {#header_close#}
     {#header_close#}
+
+    {#header_open|posix_spawn Considered Harmful#}
+commit 3169f0529b22fca2a387a841a62fec29b3d2096a
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Thu Mar 9 19:51:58 2023 -0700
+
+    eliminate posix_spawn from the standard library
+    
+    Today I found out that posix_spawn is trash. It's actually implemented
+    on top of fork/exec inside of libc (or libSystem in the case of macOS).
+    
+    So, anything posix_spawn can do, we can do better. In particular, what
+    we can do better is handle spawning of child processes that are
+    potentially foreign binaries. If you try to spawn a wasm binary, for
+    example, posix spawn does the following:
+    
+     * Goes ahead and creates a child process.
+     * The child process writes "foo.wasm: foo.wasm: cannot execute binary file"
+       to stderr (yes, it prints the filename twice).
+     * The child process then exits with code 126.
+    
+    This behavior is indistinguishable from the binary being successfully
+    spawned, and then printing to stderr, and exiting with a failure -
+    something that is an extremely common occurrence.
+    
+    Meanwhile, using the lower level fork/exec will simply return ENOEXEC
+    code from the execve syscall (which is mapped to zig error.InvalidExe).
+    
+    The posix_spawn behavior means the zig build runner can't tell the
+    difference between a failure to run a foreign binary, and a binary that
+    did run, but failed in some other fashion. This is unacceptable, because
+    attempting to excecve is the proper way to support things like Rosetta.
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
@@ -3064,6 +3234,9 @@ while (true) {
       - https://github.com/ziglang/zig/pull/14571 (nasm example)
     * allow run step to skip foreign binary execution if executor fails
     * enhancements to CheckObjectStep
+    * build system: make `@embedFile` support module-mapped names the same way as `@import` (#14553)
+    * build system: Add ability to import dependencies from build.zig
+    * Add --build-runner `zig build` option (#14742)
 
 commit f99b75360db55413f4accf43a6f4161b14a5de9f
 Merge: 3aa0a7ecd 145f93ba9
@@ -3223,6 +3396,25 @@ Date:   Fri Jul 14 06:38:33 2023 +0200
     
     std: add ELF parse'n'dump functionality to std.Build.Step.CheckObject
 
+commit e8fa19960243a99cef5d9af94c3db52173787a4e
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Jul 23 21:13:58 2023 -0700
+
+    std.Build.Step.Compile: getEmittedDocs API enhancements
+    
+     * Allow calling it multiple times.
+     * Rename it. Sorry, this is to coincide with #16353.
+
+commit 43b830415368ac4fb08bf5e154a222a38baf4a24
+Merge: 235e6ac05 acbb6418c
+Author: Andrew Kelley <andrew@ziglang.org>
+Date:   Sun Jul 30 21:27:29 2023 -0700
+
+    Merge pull request #16446 from MasterQ32/buildsystem_rename_orgy
+    
+    Build.zig rename orgy. Renames FileSource to LazyPath and others
+
+
     {#header_open|Share the Compiler's Cache System#}
     TODO
     {#header_close#}
@@ -3310,6 +3502,7 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Ensure f128 alignment matches c_longdouble alignment.</li>
     <li><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3A%22error+message%22+milestone%3A0.11.0+">Many compile error messages were improved to be more helpful</a>.</li>
     <li>Implement packed unions (#13340).</li>
+    <li>Forbid packed and extern tuples (#16551).</li>
     <li>Support modifiers in inline asm. These are supported using
       <code>%[ident:mod]</code> syntax. This allows requesting, e.g., the "w" (32-bit) vs. "x"
       (64-bit) views of AArch64 registers.</li>
@@ -3326,7 +3519,6 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Fixed cache-dir specified on the command line (#14076).</li>
     <li>Fixed some spurious "depends on itself" errors (#14159).</li>
     <li>Added <code>-fopt-bisect-limit</code> for debugging {#link|LLVM Backend#} miscompilations (#13826).</li>
-    <li>Implement AVR address spaces.</li>
     <li>Expose an option for producing 64-bit DWARF info (#15193).</li>
     <li>Added missing compile error for coercing a slice to an anyopaque pointer.</li>
     <li>Added missing compile error for always_inline call of noinline function (#15503).</li>
@@ -3340,6 +3532,26 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Include system headers path when compiling preprocessed assembly files (#16449).</li>
     <li>Add framework path detection for NIX_CFLAGS_COMPILE.</li>
     <li>TODO: something about rpaths.</li>
+    <li>Implemented <code>writeToMemory</code>/<code>readFromMemory</code> for pointers, optionals, and packed unions.</li>
+    <li>Fixed {#syntax#}@embedFile(""){#endsyntax#} not giving a proper error (#16480).</li>
+    <li>Implemented {#syntax#}@export{#endsyntax#} for arbitrary values.</li>
+    <li>{#syntax#}@extern{#endsyntax#} fixes.</li>
+    <li>CLI: detect linker color diagnostics flags</li>
+    <li>CLI: stop special-casing LLVM, LLD, and Clang</li>
+    <li>CLI: Added --verbose-generic-instances to provide visibility on the number of generic function instantiations</li>
+    <li>Added error for bad cast from {#syntax#}*T{#endsyntax#} to {#syntax#}*[n]T{#endsyntax#}
+    <li>Added -ferror-tracing and -fno-error-tracing compile options</li>
+    <li>build: add -Dpie option</li>
+    <li>Implemented inline switch capture at comptime (#15157).</li>
+    <li>correctly detect use of undefined within slices in {#syntax#}@Type{#endsyntax#} (#14712)</li>
+    <li>Emit compile error for comptime or inline call of function pointer.</li>
+    <li>Improved error message when calling non-member function as method (#14880).</li>
+    <li>Fixed crash on callconv(.C) generic return type (#14854).</li>
+    <li>Allow comptime mutation of multiple array elements.</li>
+    <li>Fixed discarding of result location in {#syntax#}for{#endsyntax#}/{#syntax#}while{#endsyntax#} loops (#14684).</li>
+    <li>Added compile-error on primitive value export (#14778)</li>
+    <li>Fixed some builtin functions not returning {#syntax#}void{#endsyntax#} (#14779)</li>
+    <li>Fixed miscompilation: Error propagates with {#syntax#}return x(){#endsyntax#} but not with {#syntax#}return try x(){#endsyntax#} inside recursion (#15669).</li>
     </ul>
 
     {#header_open|Performance#}
@@ -3366,7 +3578,10 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     </p>
     <p>Thanks to improvements to the {#link|C Backend#}, it is now possible to bootstrap
       on {#link|Windows#} using MSVC.</p>
-    <p>Also fixed: bootstrapping the compiler on {#link|ARM#}.</p>
+    <p>Also fixed: bootstrapping the compiler on {#link|ARM#} and on mingw.</p>
+    <p>The logic for detecting MSVC installations on {#link|Windows#} has been ported
+    from C++ to Zig (#15657). That was the last C++ source file; the compiler
+    is now 100% Zig code, except for {#link|LLVM|LLVM 16#} libraries.</p>
     {#header_close#}
 
 
@@ -3405,6 +3620,7 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
           test coverage for them (#13376).</li>
       <li>Fixed x86_64 sysV ABI of big vectors on avx512 enabled CPUs in the {#link|LLVM Backend#} (#13629).</li>
       <li>Fixed some floating-point issues (#14271).</li>
+      <li>Various fixes (#16593).</li>
     </ul>
     <p>To get a sense of Zig's C ABI compatibility, have a look at the
     <a href="https://github.com/ziglang/zig/blob/0.11.0/test/tests.zig#L460-L517">target coverage</a>
@@ -3423,10 +3639,16 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
       <li>Fixed codegen when C source has variables named the same as mangling prefixes (#15420).</li>
       <li>Deduplicate global declarations (#15456).</li>
       <li>Use {#syntax#}@constCast{#endsyntax#} and {#syntax#}@volatileCast{#endsyntax#} to remove CV-qualifiers instead of converting a pointer to an int and then back to a pointer.</li>
+      <li>Fixed types on assign expression bool</li>
+      <li>fixed typedeffed pointer subtraction (#14560)</li>
+      <li>translate extern unknown-length arrays using @extern (#14743).</li>
     </ul>
     {#header_close#}
 
     {#header_open|Cache System#}
+
+    Module: fix zir caching race condition and deadlock (#14821)
+
 commit 81d2135ca6ebd71b8c121a19957c8fbf7f87125b
 Merge: 32ce2f91a 984acae12
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -3483,6 +3705,17 @@ Date:   Tue Apr 18 13:08:30 2023 -0700
     EINVAL panic later on. This commit remedies the situation by introducing
     a loop and simply retrying when the ENOENT occurs.
 
+commit 4ea2f441df36cec61e1017f4d795d4037326c98c
+Author: Andrius Bentkus <andrius.bentkus@gmail.com>
+Date:   Sat Jul 16 15:46:13 2022 +0300
+
+    Module: retry ZIR cache file creation
+    
+    There are no dir components, so you would think that this was
+    unreachable, however we have observed on macOS two processes racing to
+    do openat() with O_CREAT manifest in ENOENT.
+    
+    closes #12138
 
     {#header_close#}
 
@@ -3499,6 +3732,7 @@ Date:   Tue Apr 18 13:08:30 2023 -0700
       <li>Optimize access of array member in a structure.</li>
       <li>Stop generating FPU code if there is no FPU (#14465).</li>
       <li>Began work on eliminating dependency on LLVM's IRBuilder API (#13265).</li>
+      <li>Support read-write output constraints in assembly (#15227).</li>
     </ul>
     {#header_close#}
 
@@ -3650,7 +3884,6 @@ Date:   Tue Feb 21 11:43:31 2023 -0500
     
     New module CLI
     {#header_close#}
-
     {#header_close#}
 
     {#header_open|Linker#}
@@ -3756,6 +3989,20 @@ marked machine code section (<code>_runtime.etext</code>) and beginning of read-
     linker when builing a WebAssembly module and gather feedback and fix any
     bugs that haven't been found yet. We can then start working on other
     features such as dynamic-linking support and any future proposals.</p>
+
+commit fea14c78d1374af909a2f11e37fe057777f3985d
+Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
+Date:   Wed Mar 8 14:50:06 2023 +0100
+
+    wasm-linker: emit build_id section (#14820)
+    
+    The Build ID is a value that uniquely identifies a build.
+    
+    It is intended to capture the "meaning" or inputs of the build,
+    and is usually associated with debug info.
+    
+    Reference: https://github.com/WebAssembly/tool-conventions/blob/main/BuildId.md
+
     {#header_close#}
 
     {#header_open|DWARF#}
@@ -3766,6 +4013,9 @@ marked machine code section (<code>_runtime.etext</code>) and beginning of read-
     </ul>
     {#header_close#}
 
+    {#header_open|Move Library Path Resolution to the Frontend#}
+    TODO https://github.com/ziglang/zig/pull/16058
+    {#header_close#}
     {#header_close#}
 
 
@@ -3900,23 +4150,46 @@ $ nm example.o
     <p><code>zig cc</code> is Zig's drop-in C compiler tool. Enhancements in this release:</p>
     <ul>
       <li>Support <code>-z</code> stack-size arguments.</li>
-      <li>Support <code>-stack</code> in addition to <code>--stack</code> for linker arguments.</li>
       <li>Add missing clang opts: <code>-install_name</code> and <code>-undefined</code>.</li>
       <li>Add support for <code>-undefined error</code> (#14046).</li>
       <li>Avoid passing redzone args when targeting powerpc.</li>
       <li>Support <code>-x</code> to override the language.</li>
-      <li>Support <code>-wrap</code> {#link|Linker#} flag (#15097).</li>
       <li>Support <code>-r</code> (#11683).</li>
       <li>Properly pass soft-float option for MIPS assembly files.</li>
       <li>Fixed generating {#link|COFF#} debug info on GNU ABIs.</li>
-      <li>Support <code>--dynamicbase</code> {#link|Linker#} flag.</li>
       <li>Support reading from stdin (#14462).</li>
       <li>Implement <code>-###</code> (dry run) (#7170).</li>
       <li>Support <code>-l :path/to/lib.so</code> (#15743).</li>
-      <li>Support <code>--version</code> {#link|Linker#} argument (#15549).</li>
       <li>Support <code>-version-script</code>.</li>
+      <li>Support more {#link|Linker#} arguments:<ul>
+        <li><code>--version</code> (#15549)</li>
+        <li><code>--dynamicbase</code></li>
+        <li><code>-wrap</code> (#15097)</li>
+        <li><code>-stack</code> and <code>--stack</code></li>
+        <li><code>--sort-common</code> (ignore)</li>
+        <li><code>--sort-section</code></li>
+        <li><code>--no-undefined</code> and <code>-z undefs</code> (#11912)</li>
+        <li><code>-z&lt;arg&gt;</code> (equivalent to <code>-z &lt;arg&gt;</code>) (#14680)</li>
+      </ul></li>
     </ul>
     <p>This feature is covered by our {#link|Bug Stability Program#}.</p>
+    {#header_open|Fail Hard on Unsupported Linker Flags#}
+    <p>Before, <code>zig cc</code>, when confronted with a linker argument it did
+    not understand, would skip the flag and emit a warning.
+    </p><p>
+    This caused headaches for people that build third-party software. Zig
+    would seemingly build and link the final executable, only to have it segfault when
+    executed.
+    </p><p>
+    If there are linker warnings when compiling software, the first thing we
+    have to do is add support for ones linker is complaining, and only then
+    go file issues. If zig "successfully" (i.e. status code = 0) compiles a
+    binary, there is instead a tendency to blaim "zig doing something
+    weird". Adding the unsupported arguments is straightforward; see
+    #11679, #11875, #11874 for examples.
+    </p>
+    <p>With Zig 0.11.0, unrecognized linker arguments are hard errors.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|zig c++#}
@@ -3957,6 +4230,9 @@ Hello World!
       <li>Improved handling of comptime tuple fields.</li>
       <li>Omit extra whitespace after last comment before EOF.</li>
       <li>Avoid canonicalizing enum fields named `@"_"` to `_` (#15617).</li>
+      <li>additionally format .zon files</li>
+      <li>make `--exclude` work on files (#16178)</li>
+      <li>fix file ending in a multi line comment</li>
     </ul>
 commit 68d2f68ed823984a59724e256e78c5654d55b088
 Author: yujiri8 <yujiri@disroot.org>
@@ -3965,6 +4241,46 @@ Date:   Fri Dec 16 22:24:58 2022 +0000
     zig fmt: fix extra whitespace with multiline strings
     
     Fixes #13937
+
+commit 346ec15c5005e523c2a1d4b967ee7a4e5d1e9775
+Author: Tom Read Cutting <moosichu@users.noreply.github.com>
+Date:   Sun Feb 19 12:14:03 2023 +0000
+
+    Correctly handle carriage return characters according to the spec (#12661)
+    
+    * Scan from line start when finding tag in tokenizer
+    
+    This resolves a crash that can occur for invalid bytes like carriage
+    returns that are valid characters when not parsed from within literals.
+    
+    There are potentially other edge cases this could resolve as well, as
+    the calling code for this function didn't account for any potential
+    'pending_invalid_tokens' that could be queued up by the tokenizer from
+    within another state.
+    
+    * Fix carriage return crash in multiline string
+    
+    Follow the guidance of #38:
+    
+    > However CR directly before NL is interpreted as only a newline and not part of the multiline string. zig fmt will delete the CR.
+    
+    Zig fmt already had code for deleting carriage returns, but would still
+    crash - now it no longer does so. Carriage returns encountered before
+    line-feeds are now appropriately removed on program compilation as well.
+    
+    * Only accept carriage returns before line feeds
+    
+    Previous commit was much less strict about this, this more closely
+    matches the desired spec of only allow CR characters in a CRLF pair, but
+    not otherwise.
+    
+    * Fix CR being rejected when used as whitespace
+    
+    Missed this comment from ziglang/zig-spec#83:
+    
+    > CR used as whitespace, whether directly preceding NL or stray, is still unambiguously whitespace. It is accepted by the grammar and replaced by the canonical whitespace by zig fmt.
+    
+    * Add tests for carriage return handling
 
     {#header_open|Canonicalization of Identifiers#}
     <p>This adds new behavior to <code>zig fmt</code> which normalizes (renders a canonical form of) quoted identifiers like <code>@"hi_mom"</code> to some extent. This can make codebases more consistent and searchable.</p>
@@ -4325,11 +4641,93 @@ Date:   Fri Dec 16 22:24:58 2022 +0000
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 18em">
     <p>
     Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
-    Because of you, Zig is driven by the open source community, rather than the goal of making profit.
-    In particular, these fine folks sponsor Zig for $50/month or more:
+    Because of recurring donations, Zig is driven by the open source community, rather
+    than the goal of making profit. In particular, these fine folks sponsor Zig
+    for $50/month or more:
     </p>
     <ul style="columns: 3">
-      TODO
+<li><a href="https://github.com/thejoshwolfe" rel="nofollow noopener" target="_blank" class="external-link">Josh Wolfe</a></li>
+<li><a href="https://mattnite.blog" rel="nofollow noopener" target="_blank" class="external-link">Matt Knight</a></li>
+<li><a href="https://www.hryx.net/" rel="nofollow noopener" target="_blank" class="external-link">Stevie Hryciw</a></li>
+<li><a href="https://jethron.id.au" rel="nofollow noopener" target="_blank" class="external-link">Jethro Nederhof</a></li>
+<li><a href="https://hachyderm.io/@karrick" rel="nofollow noopener" target="_blank" class="external-link">Karrick McDermott</a></li>
+<li><a href="https://www.kapricornmedia.com" rel="nofollow noopener" target="_blank" class="external-link">José M Rico</a></li>
+<li><a href="https://github.com/drfuchs" rel="nofollow noopener" target="_blank" class="external-link">drfuchs</a></li>
+<li><a href="https://github.com/tigerbeetle/tigerbeetle" rel="nofollow noopener" target="_blank" class="external-link">Joran Dirk Greef</a></li>
+<li><a href="https://github.com/rui314" rel="nofollow noopener" target="_blank" class="external-link">Rui Ueyama</a></li>
+<li><a href="https://github.com/bfredl" rel="nofollow noopener" target="_blank" class="external-link">bfredl</a></li>
+<li><a href="https://slimsag.com" rel="nofollow noopener" target="_blank" class="external-link">Stephen Gutekanst</a></li>
+<li><a href="https://derekcollison.net" rel="nofollow noopener" target="_blank" class="external-link">Derek Collison</a></li>
+<li><a href="https://twitter.com/dcocca88" rel="nofollow noopener" target="_blank" class="external-link">Daniele Cocca</a></li>
+<li><a href="https://twitter.com/rbatiati" rel="nofollow noopener" target="_blank" class="external-link">Rafael Batiati</a></li>
+<li><a href="https://github.com/alunbestor" rel="nofollow noopener" target="_blank" class="external-link">Alun Bestor</a></li>
+<li><a href="https://aras-p.info" rel="nofollow noopener" target="_blank" class="external-link">Aras Pranckevičius</a></li>
+<li><a href="https://terinstock.com" rel="nofollow noopener" target="_blank" class="external-link">Terin Stock</a></li>
+<li><a href="https://kalvad.com" rel="nofollow noopener" target="_blank" class="external-link">Loïc Tosser</a></li>
+<li><a href="https://scheibo.com" rel="nofollow noopener" target="_blank" class="external-link">Kirk Scheibelhut</a></li>
+<li><a href="https://mitchellh.com" rel="nofollow noopener" target="_blank" class="external-link">Mitchell Hashimoto</a></li>
+<li><a href="https://github.com/briangold" rel="nofollow noopener" target="_blank" class="external-link">Brian Gold</a></li>
+<li><a href="https://github.com/phrrngtn" rel="nofollow noopener" target="_blank" class="external-link">Paul Harrington</a></li>
+<li><a href="https://mikoverse.com" rel="nofollow noopener" target="_blank" class="external-link">MikoVerse</a></li>
+<li><a href="https://github.com/cgaebel" rel="nofollow noopener" target="_blank" class="external-link">Clark Gaebel</a></li>
+<li><a href="https://oven.sh/" rel="nofollow noopener" target="_blank" class="external-link">Oven</a></li>
+<li><a href="https://www.marcus.art/" rel="nofollow noopener" target="_blank" class="external-link">Marcus</a></li>
+<li><a href="https://bhgomes.dev" rel="nofollow noopener" target="_blank" class="external-link">Brandon H. Gomes</a></li>
+<li><a href="https://www.kchilton.com" rel="nofollow noopener" target="_blank" class="external-link">Ken Chilton</a></li>
+<li><a href="https://twitter.com/soworston" rel="nofollow noopener" target="_blank" class="external-link">Sebastian</a></li>
+<li><a href="https://keybase.io/jakehemmerle" rel="nofollow noopener" target="_blank" class="external-link">jake hemmerle</a></li>
+<li>Luuk de Gram</li>
+<li>Jamie Brandon</li>
+<li>Auguste Rame</li>
+<li>Jay Petacat</li>
+<li>Dirk de Visser</li>
+<li>Santiago Andaluz</li>
+<li>Andrew Mangogna</li>
+<li>Yaroslav Zhavoronkov</li>
+<li>Charlie Cheever</li>
+<li>Anton Kochkov</li>
+<li>Max Bernstein</li>
+<li>Timothy Ham</li>
+<li>Jordan Orelli</li>
+<li>James McGill</li>
+<li>Luke Champine</li>
+<li>王爱国</li>
+<li>Wojtek Mach</li>
+<li>Daniel Hensley</li>
+<li>Erik Mållberg</li>
+<li>Christopher Dolan</li>
+<li>Fabio Arnold</li>
+<li>Mateusz Czarnecki</li>
+<li>Ross Rheingans-Yoo</li>
+<li>Emily A. Bellows</li>
+<li>Mykhailo Tsiuptsiun (miktwon)</li>
+<li>sparrisable</li>
+<li>Kiril Mihaylov</li>
+<li>Brett Slatkin</li>
+<li>Martin H</li>
+<li>Sean Carey</li>
+<li>Yurii Rashkovskii</li>
+<li>Benjamin Ebby</li>
+<li>Ralph Brorsen</li>
+<li>OM PropTech GmbH</li>
+<li>Alex Sergeev</li>
+<li>mlugg</li>
+<li>Aaron Olson</li>
+<li>Marco Munizaga</li>
+<li>Baptiste Canton</li>
+<li>Josh Ashby</li>
+<li>Chris Baldwin</li>
+<li>Malcolm Still</li>
+<li>Francis Bouvier</li>
+<li>Jacob Young</li>
+<li>Alve Larsson</li>
+<li>Nicolas Goy</li>
+<li>Ian Johnson</li>
+<li>Carlos Pizano Uribe</li>
+<li>Rene Schallner</li>
+<li>Alec Graves</li>
+<li>Lucas Myers</li>
+<li>Jinkyu Yi</li>
     </ul>
     {#header_close#}
     </div>
