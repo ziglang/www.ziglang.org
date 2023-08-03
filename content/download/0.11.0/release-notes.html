@@ -460,6 +460,7 @@
             <li><a id="toc-Multi-Item-Switch-Prong-Type-Coercion" href="#Multi-Item-Switch-Prong-Type-Coercion">Multi-Item Switch Prong Type Coercion</a></li>
             <li><a id="toc-Allow-Functions-to-Return-null-and-undefined" href="#Allow-Functions-to-Return-null-and-undefined">Allow Functions to Return null and undefined</a></li>
             <li><a id="toc-Generic-Function-Calls" href="#Generic-Function-Calls">Generic Function Calls</a></li>
+            <li><a id="toc-Naked-Functions" href="#Naked-Functions">Naked Functions</a></li>
         </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
         <ul>
@@ -2609,6 +2610,44 @@ Date:   Wed Jul 19 09:36:57 2023 -0700
 
     TODO: inferred error sets recursion
     TODO: recreating struct decls with each call
+    
+
+    <h3 id="Naked-Functions"><a href="#toc-Naked-Functions">Naked Functions</a> <a class="hdr" href="#Naked-Functions">§</a></h3>
+
+<p>Some things that used to be allowed in <code><span class="line"><span class="tok-kw">callconv</span>(.Naked)</span></code> functions are now compile errors:</p>
+<ul>
+<li>runtime calls</li>
+<li>explicit returns</li>
+<li>runtime safety checks (which produce runtime calls)</li>
+</ul>
+<p>Runtime calls are disallowed because it is not possible to know the current stack alignment in order to follow the proper ABI
+to automatically compile a call.  Explicit returns are disallowed because on some targets, it is not mandated for the return
+address to be stored in a consistent place.</p>
+<hr>
+<p>The most common kind of upgrade that needs to be performed is:</p>
+<figure><figcaption class="zig-cap"><cite class="file">example.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">export</span> <span class="tok-kw">fn</span> <span class="tok-fn">_start</span>() <span class="tok-kw">callconv</span>(.Naked) <span class="tok-type">noreturn</span> {</span>
+<span class="line">    <span class="tok-kw">asm</span> <span class="tok-kw">volatile</span> (</span>
+<span class="line">        <span class="tok-str">\\ push %rbp</span></span>
+<span class="line">        <span class="tok-str">\\ jmp %[start:P]</span></span>
+<span class="line">        :</span>
+<span class="line">        : [start] <span class="tok-str">&quot;X&quot;</span> (&amp;start),</span>
+<span class="line">    );</span>
+<span class="line">    <span class="tok-kw">unreachable</span>;</span>
+<span class="line">}</span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">start</span>() <span class="tok-type">void</span> {}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe example.zig</kbd>
+<span class="sgr-1m">example.zig:8:5: </span><span class="sgr-31m">error: </span><span class="sgr-1m">runtime safety check not allowed in naked function
+</span>    unreachable;
+    <span class="sgr-32m">^~~~~~~~~~~
+</span><span class="sgr-1m">example.zig:8:5: </span><span class="sgr-36m">note: </span><span class="sgr-1m">use @setRuntimeSafety to disable runtime safety
+</span><span class="sgr-1m">example.zig:8:5: </span><span class="sgr-36m">note: </span><span class="sgr-1m">the end of a naked function is implicitly unreachable
+</span>
+</samp></pre></figure>
+<p>As the note indicates, an explicit <code><span class="line"><span class="tok-kw">unreachable</span></span></code> is not needed at the end of a naked function anymore.  Since explicit returns
+are no longer allowed, it will just be assumed to be unreachable.  Therefore, all that needs to be done is to delete the
+<code><span class="line"><span class="tok-kw">unreachable</span></span></code> statement, which works even when the return type of the function is not <code><span class="line"><span class="tok-kw">unreachable</span></span></code>.</p>
+<hr>
+<p>In general, naked functions should only contain comptime logic and <code><span class="line"><span class="tok-kw">asm</span> <span class="tok-kw">volatile</span></span></code> statements, which allows any required
+target-specific runtime calls and returns to be constructed.</p>
     
 
     

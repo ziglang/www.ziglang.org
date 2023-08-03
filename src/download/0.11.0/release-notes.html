@@ -2299,6 +2299,38 @@ Date:   Wed Jul 19 09:36:57 2023 -0700
     TODO: recreating struct decls with each call
     {#header_close#}
 
+    {#header_open|Naked Functions#}
+<p>Some things that used to be allowed in {#syntax#}callconv(.Naked){#endsyntax#} functions are now compile errors:</p>
+<ul>
+<li>runtime calls</li>
+<li>explicit returns</li>
+<li>runtime safety checks (which produce runtime calls)</li>
+</ul>
+<p>Runtime calls are disallowed because it is not possible to know the current stack alignment in order to follow the proper ABI
+to automatically compile a call.  Explicit returns are disallowed because on some targets, it is not mandated for the return
+address to be stored in a consistent place.</p>
+<hr>
+<p>The most common kind of upgrade that needs to be performed is:</p>
+{#code_begin|exe_build_err|example#}
+pub export fn _start() callconv(.Naked) noreturn {
+    asm volatile (
+        \\ push %rbp
+        \\ jmp %[start:P]
+        :
+        : [start] "X" (&start),
+    );
+    unreachable;
+}
+fn start() void {}
+{#code_end#}
+<p>As the note indicates, an explicit {#syntax#}unreachable{#endsyntax#} is not needed at the end of a naked function anymore.  Since explicit returns
+are no longer allowed, it will just be assumed to be unreachable.  Therefore, all that needs to be done is to delete the
+{#syntax#}unreachable{#endsyntax#} statement, which works even when the return type of the function is not {#syntax#}unreachable{#endsyntax#}.</p>
+<hr>
+<p>In general, naked functions should only contain comptime logic and {#syntax#}asm volatile{#endsyntax#} statements, which allows any required
+target-specific runtime calls and returns to be constructed.</p>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Standard Library#}
