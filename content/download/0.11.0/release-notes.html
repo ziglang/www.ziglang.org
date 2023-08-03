@@ -495,7 +495,11 @@
                 <li><a id="toc-Performance-Improvements" href="#Performance-Improvements">Performance Improvements</a></li>
             </ul></li>
             <li><a id="toc-Concurrency" href="#Concurrency">Concurrency</a></li>
-            <li><a id="toc-Networking" href="#Networking">Networking</a></li>
+            <li><a id="toc-Networking" href="#Networking">Networking</a>
+            <ul>
+                <li><a id="toc-TLS-Client" href="#TLS-Client">TLS Client</a></li>
+                <li><a id="toc-Ignore-SIGPIPE-by-Default" href="#Ignore-SIGPIPE-by-Default">Ignore SIGPIPE by Default</a></li>
+            </ul></li>
             <li><a id="toc-Testing" href="#Testing">Testing</a></li>
             <li><a id="toc-Debugging" href="#Debugging">Debugging</a>
             <ul>
@@ -1901,12 +1905,15 @@ All 2 tests passed.
 
     <h3 id="trap"><a href="#toc-trap">@trap</a> <a class="hdr" href="#trap">§</a></h3>
 
-    TODO This wasn't changed, it was introduced in this this release (#14782)
+    <p>New builtin:</p>
+    <pre><code><span class="line"><span class="tok-builtin">@trap</span>() <span class="tok-type">noreturn</span></span></code></pre>
     <p>
-    The <code><span class="line"><span class="tok-builtin">@trap</span></span></code> builtin is known at compile time to never return, much like
-    <code><span class="line"><span class="tok-builtin">@panic</span></span></code>. The compiler now knows this, so can emit "unreachable code"
-    errors when unreachable code is detected after usage of this builtin.
-    <p>
+    This function inserts a platform-specific trap/jam instruction which can be
+    used to exit the program abnormally.
+    This may be implemented by explicitly emitting an invalid instruction which
+    may cause an illegal instruction exception of some sort.
+    Unlike <code><span class="line"><span class="tok-builtin">@breakpoint</span></span></code>, execution does not continue afterwards:
+    </p>
     <figure><figcaption class="zig-cap"><cite class="file">trap_noreturn.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@trap is noreturn&quot;</span> {</span>
 <span class="line">    <span class="tok-builtin">@trap</span>();</span>
 <span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Foo; <span class="tok-comment">// Control flow will never reach this line!</span></span>
@@ -1962,7 +1969,21 @@ All 1 tests passed.
 
     <h3 id="Split-qualCast-into-constCast-and-volatileCast"><a href="#toc-Split-qualCast-into-constCast-and-volatileCast">Split @qualCast into @constCast and @volatileCast</a> <a class="hdr" href="#Split-qualCast-into-constCast-and-volatileCast">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/14638
+    <figure><figcaption class="zig-cap"><cite class="file">qualcast.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;qualCast&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> x: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> y = <span class="tok-builtin">@qualCast</span>(&amp;x);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(y) == *<span class="tok-type">i32</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(y.* == <span class="tok-number">1234</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test qualcast.zig</kbd>
+<span class="sgr-1m">docgen_tmp/qualcast.zig:6:15: </span><span class="sgr-31m">error: </span><span class="sgr-1m">invalid builtin function: '@qualCast'
+</span>    const y = @qualCast(&amp;x);
+              <span class="sgr-32m">^~~~~~~~~~~~~
+</span>
+</samp></pre></figure>
+    <p>Use <code><span class="line"><span class="tok-builtin">@constCast</span></span></code> instead to fix the error.</p>
     
 
     <h3 id="Rename-Casting-Builtins"><a href="#toc-Rename-Casting-Builtins">Rename Casting Builtins</a> <a class="hdr" href="#Rename-Casting-Builtins">§</a></h3>
@@ -2196,13 +2217,53 @@ All 1 tests passed.
 
     <h3 id="Tuple-Type-Declarations"><a href="#toc-Tuple-Type-Declarations">Tuple Type Declarations</a> <a class="hdr" href="#Tuple-Type-Declarations">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/4335
-    TODO mention that packed and extern are forbidden
+    <p>Tuple types can now be declared using struct declaration syntax without the field types (#4335):</p>
+    <figure><figcaption class="zig-cap"><cite class="file">tuple_decl.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"><span class="tok-kw">const</span> expectEqualStrings = std.testing.expectEqualStrings;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;tuple declarations&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> T = <span class="tok-kw">struct</span> { <span class="tok-type">u32</span>, []<span class="tok-kw">const</span> <span class="tok-type">u8</span> };</span>
+<span class="line">    <span class="tok-kw">var</span> t: T = .{ <span class="tok-number">1</span>, <span class="tok-str">&quot;foo&quot;</span> };</span>
+<span class="line">    <span class="tok-kw">try</span> expect(t[<span class="tok-number">0</span>] == <span class="tok-number">1</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqualStrings(t[<span class="tok-number">1</span>], <span class="tok-str">&quot;foo&quot;</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">var</span> mul = t ** <span class="tok-number">3</span>;</span>
+<span class="line">    <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(mul) != T);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(mul.len == <span class="tok-number">6</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(mul[<span class="tok-number">2</span>] == <span class="tok-number">1</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqualStrings(mul[<span class="tok-number">3</span>], <span class="tok-str">&quot;foo&quot;</span>);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">var</span> t2: T = .{ <span class="tok-number">2</span>, <span class="tok-str">&quot;bar&quot;</span> };</span>
+<span class="line">    <span class="tok-kw">var</span> cat = t ++ t2;</span>
+<span class="line">    <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(cat) != T);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(cat.len == <span class="tok-number">4</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(cat[<span class="tok-number">2</span>] == <span class="tok-number">2</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expectEqualStrings(cat[<span class="tok-number">3</span>], <span class="tok-str">&quot;bar&quot;</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test tuple_decl.zig</kbd>
+1/1 test.tuple declarations... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>Packed and extern tuples are forbidden (#16551).</p>
     
 
     <h3 id="Concatenation-of-Arrays-and-Tuples"><a href="#toc-Concatenation-of-Arrays-and-Tuples">Concatenation of Arrays and Tuples</a> <a class="hdr" href="#Concatenation-of-Arrays-and-Tuples">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/14058
+    <figure><figcaption class="zig-cap"><cite class="file">tuple_array_cat.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;concatenate array with tuple&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> array: [<span class="tok-number">2</span>]<span class="tok-type">u8</span> = .{ <span class="tok-number">1</span>, <span class="tok-number">2</span> };</span>
+<span class="line">    <span class="tok-kw">const</span> seq = array ++ .{ <span class="tok-number">3</span>, <span class="tok-number">4</span> };</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(std.mem.eql(<span class="tok-type">u8</span>, &amp;seq, &amp;.{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span>, <span class="tok-number">4</span> }));</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test tuple_array_cat.zig</kbd>
+1/1 test.concatenate array with tuple... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>
+    This can be a nice tool when writing <a href="#Crypto">Crypto</a> code, and indeed
+    is used extensively by the <a href="#Standard-Library">Standard Library</a> to avoid heap
+    <a href="#Memory-Allocation">Memory Allocation</a> in the new <a href="#TLS-Client">TLS Client</a>.
+    </p>
     
 
     <h3 id="Allow-Indexing-Tuple-and-Vector-Pointers"><a href="#toc-Allow-Indexing-Tuple-and-Vector-Pointers">Allow Indexing Tuple and Vector Pointers</a> <a class="hdr" href="#Allow-Indexing-Tuple-and-Vector-Pointers">§</a></h3>
@@ -2249,38 +2310,152 @@ All 2 tests passed.
 
     <h3 id="Overflow-Builtins-Return-Tuples"><a href="#toc-Overflow-Builtins-Return-Tuples">Overflow Builtins Return Tuples</a> <a class="hdr" href="#Overflow-Builtins-Return-Tuples">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/14024
+    <p>Now that we have started to get into writing our own <a href="#Code-Generation">Code Generation</a> and not
+    relying exclusively on <a href="#LLVM-16">LLVM</a>, the flaw with the previous
+    API becomes clear: writing the result through a pointer parameter makes it
+    too hard to use a special value returned from the builtin and detect the
+    pattern that allows lowering to the efficient code.</p>
+    <p>Furthermore, the result pointer is incompatible with SIMD vectors
+    (related: <a href="#Cast-Inference">Cast Inference</a>).</p>
+    <p>Arithmetic overflow functions now return a tuple, like this:</p>
+    <pre><code><span class="line"><span class="tok-builtin">@addOverflow</span>(a: T, b: T) <span class="tok-kw">struct</span> {T, <span class="tok-type">u1</span>}</span>
+<span class="line"><span class="tok-builtin">@addOverflow</span>(a: <span class="tok-builtin">@Vector</span>(T, N), b: <span class="tok-builtin">@Vector</span>(T, N)) <span class="tok-kw">struct</span> {<span class="tok-builtin">@Vector</span>(T, N), <span class="tok-builtin">@Vector</span>(<span class="tok-type">u1</span>, N)}</span></code></pre>
+    <p>If #498 were implemented, <code><span class="line">parseInt</span></code> would look like this:</p>
+<pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">parseInt</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, buf: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>, radix: <span class="tok-type">u8</span>) !T {</span>
+<span class="line">    <span class="tok-kw">var</span> x: T = <span class="tok-number">0</span>;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">for</span> (buf) |c| {</span>
+<span class="line">        <span class="tok-kw">const</span> digit = <span class="tok-kw">switch</span> (c) {</span>
+<span class="line">            <span class="tok-str">'0'</span>...<span class="tok-str">'9'</span> =&gt; c - <span class="tok-str">'0'</span>,</span>
+<span class="line">            <span class="tok-str">'A'</span>...<span class="tok-str">'Z'</span> =&gt; c - <span class="tok-str">'A'</span> + <span class="tok-number">10</span>,</span>
+<span class="line">            <span class="tok-str">'a'</span>...<span class="tok-str">'z'</span> =&gt; c - <span class="tok-str">'a'</span> + <span class="tok-number">10</span>,</span>
+<span class="line">            <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidCharacter,</span>
+<span class="line">        };</span>
+<span class="line">        x, <span class="tok-kw">const</span> mul_overflow = <span class="tok-builtin">@mulWithOverflow</span>(x, radix);</span>
+<span class="line">        <span class="tok-kw">if</span> (mul_overflow != <span class="tok-number">0</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Overflow;</span>
+<span class="line"></span>
+<span class="line">        x, <span class="tok-kw">const</span> add_overflow = <span class="tok-builtin">@addWithOverflow</span>(x, digit);</span>
+<span class="line">        <span class="tok-kw">if</span> (add_overflow != <span class="tok-number">0</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Overflow;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">return</span> x;</span>
+<span class="line">}</span></code></pre>
+    <p>However #498 is neither implemented nor accepted yet, so actual usage must do this:</p>
+    <pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">parseInt</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, buf: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>, radix: <span class="tok-type">u8</span>) !T {</span>
+<span class="line">    <span class="tok-kw">var</span> x: T = <span class="tok-number">0</span>;</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">for</span> (buf) |c| {</span>
+<span class="line">        <span class="tok-kw">const</span> digit = <span class="tok-kw">switch</span> (c) {</span>
+<span class="line">            <span class="tok-str">'0'</span>...<span class="tok-str">'9'</span> =&gt; c - <span class="tok-str">'0'</span>,</span>
+<span class="line">            <span class="tok-str">'A'</span>...<span class="tok-str">'Z'</span> =&gt; c - <span class="tok-str">'A'</span> + <span class="tok-number">10</span>,</span>
+<span class="line">            <span class="tok-str">'a'</span>...<span class="tok-str">'z'</span> =&gt; c - <span class="tok-str">'a'</span> + <span class="tok-number">10</span>,</span>
+<span class="line">            <span class="tok-kw">else</span> =&gt; <span class="tok-kw">return</span> <span class="tok-kw">error</span>.InvalidCharacter,</span>
+<span class="line">        };</span>
+<span class="line">        <span class="tok-kw">const</span> mul_result = <span class="tok-builtin">@mulWithOverflow</span>(x, radix);</span>
+<span class="line">        x = mul_result[<span class="tok-number">0</span>];</span>
+<span class="line">        <span class="tok-kw">const</span> mul_overflow = mul_result[<span class="tok-number">1</span>];</span>
+<span class="line">        <span class="tok-kw">if</span> (mul_overflow != <span class="tok-number">0</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Overflow;</span>
+<span class="line"></span>
+<span class="line">        <span class="tok-kw">const</span> add_result = <span class="tok-builtin">@addWithOverflow</span>(x, digit);</span>
+<span class="line">        x = add_result[<span class="tok-number">0</span>];</span>
+<span class="line">        <span class="tok-kw">const</span> add_overflow = add_result[<span class="tok-number">1</span>];</span>
+<span class="line">        <span class="tok-kw">if</span> (add_overflow != <span class="tok-number">0</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.Overflow;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">return</span> x;</span>
+<span class="line">}</span></code></pre>
+    <p>More details: #10248</p>
     
 
     <h3 id="Slicing-By-Length"><a href="#toc-Slicing-By-Length">Slicing By Length</a> <a class="hdr" href="#Slicing-By-Length">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/15519
-    <code>s[start..][0..len]</code>
+    <p>This is technically not a <em>change</em> to the language, however,
+    it bears mentioning in the language changes section, because it makes a particular
+    idiom be even more idiomatic, by recognizing the pattern directly in the <a href="#Compiler">Compiler</a>.</p>
+    <p>This pattern is extremely common:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">slice_by_len.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(s: []<span class="tok-kw">const</span> <span class="tok-type">i32</span>, start: <span class="tok-type">usize</span>, len: <span class="tok-type">usize</span>) []<span class="tok-kw">const</span> <span class="tok-type">i32</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> s[start..][<span class="tok-number">0</span>..len];</span>
+<span class="line">}</span></code></pre></figure>
+    <p>The pattern is useful because it is effectively a slice-by-length rather than
+    slice by end index. With this pattern, when <code>len</code> is compile-time known,
+    the expression will be a pointer to an array rather than a slice type, which is generally
+    a preferrable type.</p>
+    <p>Zig 0.11.0 now detects this pattern and generates more efficient code.</p>
+    <p>You can think of Zig as having both slice-by-end and slice-by-len syntax, it's just
+    that one of them is expressed in terms of the other.</p>
+    <p>More details: #15482</p>
     
 
     <h3 id="Inline-Function-Call-Comptime-Propagation"><a href="#toc-Inline-Function-Call-Comptime-Propagation">Inline Function Call Comptime Propagation</a> <a class="hdr" href="#Inline-Function-Call-Comptime-Propagation">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/14015
-    TODO mention that zig inlines during semantic analysis and show the consequences of it
+    <figure><figcaption class="zig-cap"><cite class="file">inline_call.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">var</span> call_count: <span class="tok-type">u32</span> = <span class="tok-number">0</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">inline</span> <span class="tok-kw">fn</span> <span class="tok-fn">isGreaterThan</span>(x: <span class="tok-type">i32</span>, y: <span class="tok-type">i32</span>) <span class="tok-type">bool</span> {</span>
+<span class="line">    call_count += <span class="tok-number">1</span>;</span>
+<span class="line">    <span class="tok-kw">return</span> x &gt; y;</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;inline call comptime propagation&quot;</span> {</span>
+<span class="line">    <span class="tok-comment">// Runtime-known parameters to inline function, nothing new here.</span></span>
+<span class="line">    <span class="tok-kw">var</span> a: <span class="tok-type">i32</span> = <span class="tok-number">1234</span>;</span>
+<span class="line">    <span class="tok-kw">var</span> b: <span class="tok-type">i32</span> = <span class="tok-number">5678</span>;</span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(!isGreaterThan(a, b));</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-comment">// Now it gets interesting...</span></span>
+<span class="line">    <span class="tok-kw">const</span> c = <span class="tok-number">1234</span>;</span>
+<span class="line">    <span class="tok-kw">const</span> d = <span class="tok-number">5678</span>;</span>
+<span class="line">    <span class="tok-kw">if</span> (isGreaterThan(c, d)) {</span>
+<span class="line">        <span class="tok-builtin">@compileError</span>(<span class="tok-str">&quot;that wasn't supposed to happen&quot;</span>);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">try</span> std.testing.expect(call_count == <span class="tok-number">2</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test inline_call.zig</kbd>
+1/1 test.inline call comptime propagation... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>In this example, there is no compile error because the comptime-ness of the
+    arguments is propagated to the return value of the inlined function. However,
+    as demonstrated by the <code>call_count</code> global variable, runtime side-effects of
+    the inlined function still occur.</p>
+    <p>The <code><span class="line"><span class="tok-kw">inline</span></span></code> keyword in Zig is an extremely powerful tool that
+    should not be used lightly. It's best to let the compiler decide when to
+    inline a function, except for these scenarios:</p>
+    <ul>
+      <li>You want to change how many stack frames are in the call stack, for debugging purposes.</li>
+      <li>You want the comptime-ness of the arguments to propagate to the return value of the function, as demonstrated above.</li>
+      <li>Performance measurements <em>demand</em> it. Don’t guess!</li>
+    </ul>
     
 
     <h3 id="Exporting-C-Variadic-Functions"><a href="#toc-Exporting-C-Variadic-Functions">Exporting C Variadic Functions</a> <a class="hdr" href="#Exporting-C-Variadic-Functions">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/515
+    <p>Generally we don't want zig programmers to use C-style variadic
+    functions. But sometimes you have to interface with C code.</p>
+    <p>Here are two use cases for it:</p>
+    <ul>
+    <li>Implementing libc in Zig</li>
+    <li><a href="#C-Translation">C Translation</a>, for example an inline static function in MSVC's stdio.h</li>
+    </ul>
+
+    <p>Only some targets support this new feature:</p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/14096">exporting a C var args function triggers LLVM assertion when targeting non-Darwin aarch64</a>
+      <li>It's also not working on <a href="#Windows">Windows</a>.</li>
+    </ul>
+    <p>That makes this feature <strong>experimental</strong> because it does not disqualify
+    a target from <a href="#Tier-1-Support">Tier 1 Support</a> if it does not support C-style var args.</p>
+    <p>More information: #515</p>
     
 
     <h3 id="Added-c_char-Type"><a href="#toc-Added-c_char-Type">Added c_char Type</a> <a class="hdr" href="#Added-c_char-Type">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/875
-    This is for <a href="#C-ABI-Compatibility">C ABI Compatibility</a>
-commit b77679039fd40aa1693781f99ac89f2dc705e5c2
-Merge: 0f2339f55 c205521ae
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Jun 20 16:41:58 2023 -0700
-
-    Merge pull request #15415 from ehaas/c-char-signedness
-    
-    Set `c_char` signedness based on the target
+    <p>This is strictly for <a href="#C-ABI-Compatibility">C ABI Compatibility</a> and should only be used
+    when it is required by the ABI.</p>
+    <p>See #875 for more details.</p>
     
 
     <h3 id="Forbid-Runtime-Operations-in-comptime-Blocks-"><a href="#toc-Forbid-Runtime-Operations-in-comptime-Blocks-">Forbid Runtime Operations in comptime Blocks </a> <a class="hdr" href="#Forbid-Runtime-Operations-in-comptime-Blocks-">§</a></h3>
@@ -2388,7 +2563,38 @@ All 1 tests passed.
 
     <h3 id="fieldParentPtr-Supports-Unions"><a href="#toc-fieldParentPtr-Supports-Unions">@fieldParentPtr Supports Unions</a> <a class="hdr" href="#fieldParentPtr-Supports-Unions">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/issues/6611
+    <p>It already worked on structs; there was no reason for it to not work on unions (#6611).</p>
+    <figure><figcaption class="zig-cap"><cite class="file">field_parent_ptr_union.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;@fieldParentPtr on a union&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> quux(&amp;bar.c);</span>
+<span class="line">    <span class="tok-kw">comptime</span> <span class="tok-kw">try</span> quux(&amp;bar.c);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> bar = Bar{ .c = <span class="tok-number">42</span> };</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> Bar = <span class="tok-kw">union</span>(<span class="tok-kw">enum</span>) {</span>
+<span class="line">    a: <span class="tok-type">bool</span>,</span>
+<span class="line">    b: <span class="tok-type">f32</span>,</span>
+<span class="line">    c: <span class="tok-type">i32</span>,</span>
+<span class="line">    d: <span class="tok-type">i32</span>,</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">quux</span>(c: *<span class="tok-kw">const</span> <span class="tok-type">i32</span>) !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> expect(c == &amp;bar.c);</span>
+<span class="line"></span>
+<span class="line">    <span class="tok-kw">const</span> base = <span class="tok-builtin">@fieldParentPtr</span>(Bar, <span class="tok-str">&quot;c&quot;</span>, c);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(base == &amp;bar);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(&amp;base.c == c);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test field_parent_ptr_union.zig</kbd>
+1/1 test.@fieldParentPtr on a union... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>Calling <code><span class="line"><span class="tok-builtin">@fieldParentPtr</span></span></code> on a pointer that is not actually
+    a field of the parent type is currently <strong>unchecked illegal behavior</strong>,
+    however there is an accepted proposal to add it:
+    <a href="https://github.com/ziglang/zig/issues/2414">add safety checks for pointer casting</a></p>
     
 
     <h3 id="typeInfo-No-Longer-Returns-Private-Declarations"><a href="#toc-typeInfo-No-Longer-Returns-Private-Declarations">@typeInfo No Longer Returns Private Declarations</a> <a class="hdr" href="#typeInfo-No-Longer-Returns-Private-Declarations">§</a></h3>
@@ -2998,7 +3204,6 @@ target-specific runtime calls and returns to be constructed.</p>
     <li>introduce std.io.poll (#14744)</li>
     <li>add Zstandard decompressor (#14183)</li>
     <li>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</li>
-    <li>networking: ignore SIGPIPE by default (#11982)</li>
     <li>Introduce ChildProcess.collectOutput (#12295)</li>
     <li>std.c: Add umask.</li>
     <li>Update Linux syscall list for 6.1, support Mips64 (#14541)</li>
@@ -3269,6 +3474,16 @@ Date:   Tue Jan 3 02:43:50 2023 -0500
 
     for shigueredo allowing us to use their RSA implementation until frank implemented
     a non-allocating version, honto ni arigatoo gozaimashta
+
+    <h4 id="TLS-Client"><a href="#toc-TLS-Client">TLS Client</a> <a class="hdr" href="#TLS-Client">§</a></h4>
+
+    TODO
+    
+
+    <h4 id="Ignore-SIGPIPE-by-Default"><a href="#toc-Ignore-SIGPIPE-by-Default">Ignore SIGPIPE by Default</a> <a class="hdr" href="#Ignore-SIGPIPE-by-Default">§</a></h4>
+
+    TODO #11982
+    
     
 
     <h3 id="Testing"><a href="#toc-Testing">Testing</a> <a class="hdr" href="#Testing">§</a></h3>
@@ -3877,7 +4092,6 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Ensure f128 alignment matches c_longdouble alignment.</li>
     <li><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3A%22error+message%22+milestone%3A0.11.0+">Many compile error messages were improved to be more helpful</a>.</li>
     <li>Implement packed unions (#13340).</li>
-    <li>Forbid packed and extern tuples (#16551).</li>
     <li>Support modifiers in inline asm. These are supported using
       <code>%[ident:mod]</code> syntax. This allows requesting, e.g., the "w" (32-bit) vs. "x"
       (64-bit) views of AArch64 registers.</li>
@@ -5056,8 +5270,9 @@ Date:   Sun Feb 19 12:14:03 2023 +0000
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 18em">
     <p>
     Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
-    Because of you, Zig is driven by the open source community, rather than the goal of making profit.
-    In particular, these fine folks sponsor Zig for $50/month or more:
+    Because of recurring donations, Zig is driven by the open source community, rather
+    than the goal of making profit. In particular, these fine folks sponsor Zig
+    for $50/month or more:
     </p>
     <ul style="columns: 3">
 <li><a href="https://github.com/thejoshwolfe" rel="nofollow noopener" target="_blank" class="external-link">Josh Wolfe</a></li>
@@ -5114,7 +5329,7 @@ Date:   Sun Feb 19 12:14:03 2023 +0000
 <li>Mateusz Czarnecki</li>
 <li>Ross Rheingans-Yoo</li>
 <li>Emily A. Bellows</li>
-<li>Mykhailo Tsiuptsiun (miktwon) [Flag of Ukraine]</li>
+<li>Mykhailo Tsiuptsiun (miktwon)</li>
 <li>sparrisable</li>
 <li>Kiril Mihaylov</li>
 <li>Brett Slatkin</li>

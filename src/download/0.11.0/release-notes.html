@@ -1629,12 +1629,15 @@ test "@min/@max refines result type" {
     {#header_close#}
 
     {#header_open|@trap#}
-    TODO This wasn't changed, it was introduced in this this release (#14782)
+    <p>New builtin:</p>
+    <pre>{#syntax#}@trap() noreturn{#endsyntax#}</pre>
     <p>
-    The {#syntax#}@trap{#endsyntax#} builtin is known at compile time to never return, much like
-    {#syntax#}@panic{#endsyntax#}. The compiler now knows this, so can emit "unreachable code"
-    errors when unreachable code is detected after usage of this builtin.
-    <p>
+    This function inserts a platform-specific trap/jam instruction which can be
+    used to exit the program abnormally.
+    This may be implemented by explicitly emitting an invalid instruction which
+    may cause an illegal instruction exception of some sort.
+    Unlike {#syntax#}@breakpoint{#endsyntax#}, execution does not continue afterwards:
+    </p>
     {#code_begin|test_err|trap_noreturn#}
 test "@trap is noreturn" {
     @trap();
@@ -1681,7 +1684,18 @@ test "@inComptime" {
     {#header_close#}
 
     {#header_open|Split @qualCast into @constCast and @volatileCast#}
-    TODO https://github.com/ziglang/zig/pull/14638
+    {#code_begin|test_err|qualcast#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "qualCast" {
+    const x: i32 = 1234;
+    const y = @qualCast(&x);
+    try expect(@TypeOf(y) == *i32);
+    try expect(y.* == 1234);
+}
+    {#code_end#}
+    <p>Use {#syntax#}@constCast{#endsyntax#} instead to fix the error.</p>
     {#header_close#}
 
     {#header_open|Rename Casting Builtins#}
@@ -1899,12 +1913,50 @@ test "@splat result type" {
     {#header_close#}
 
     {#header_open|Tuple Type Declarations#}
-    TODO https://github.com/ziglang/zig/issues/4335
-    TODO mention that packed and extern are forbidden
+    <p>Tuple types can now be declared using struct declaration syntax without the field types (#4335):</p>
+    {#code_begin|test|tuple_decl#}
+const std = @import("std");
+const expect = std.testing.expect;
+const expectEqualStrings = std.testing.expectEqualStrings;
+
+test "tuple declarations" {
+    const T = struct { u32, []const u8 };
+    var t: T = .{ 1, "foo" };
+    try expect(t[0] == 1);
+    try expectEqualStrings(t[1], "foo");
+
+    var mul = t ** 3;
+    try expect(@TypeOf(mul) != T);
+    try expect(mul.len == 6);
+    try expect(mul[2] == 1);
+    try expectEqualStrings(mul[3], "foo");
+
+    var t2: T = .{ 2, "bar" };
+    var cat = t ++ t2;
+    try expect(@TypeOf(cat) != T);
+    try expect(cat.len == 4);
+    try expect(cat[2] == 2);
+    try expectEqualStrings(cat[3], "bar");
+}
+    {#code_end#}
+    <p>Packed and extern tuples are forbidden (#16551).</p>
     {#header_close#}
 
     {#header_open|Concatenation of Arrays and Tuples#}
-    TODO https://github.com/ziglang/zig/pull/14058
+    {#code_begin|test|tuple_array_cat#}
+const std = @import("std");
+
+test "concatenate array with tuple" {
+    const array: [2]u8 = .{ 1, 2 };
+    const seq = array ++ .{ 3, 4 };
+    try std.testing.expect(std.mem.eql(u8, &seq, &.{ 1, 2, 3, 4 }));
+}
+    {#code_end#}
+    <p>
+    This can be a nice tool when writing {#link|Crypto#} code, and indeed
+    is used extensively by the {#link|Standard Library#} to avoid heap
+    {#link|Memory Allocation#} in the new {#link|TLS Client#}.
+    </p>
     {#header_close#}
 
     {#header_open|Allow Indexing Tuple and Vector Pointers#}
@@ -1947,34 +1999,149 @@ test "index vector pointer" {
     {#header_close#}
 
     {#header_open|Overflow Builtins Return Tuples#}
-    TODO https://github.com/ziglang/zig/pull/14024
+    <p>Now that we have started to get into writing our own {#link|Code Generation#} and not
+    relying exclusively on {#link|LLVM|LLVM 16#}, the flaw with the previous
+    API becomes clear: writing the result through a pointer parameter makes it
+    too hard to use a special value returned from the builtin and detect the
+    pattern that allows lowering to the efficient code.</p>
+    <p>Furthermore, the result pointer is incompatible with SIMD vectors
+    (related: {#link|Cast Inference#}).</p>
+    <p>Arithmetic overflow functions now return a tuple, like this:</p>
+    <pre>{#syntax#}@addOverflow(a: T, b: T) struct {T, u1}
+@addOverflow(a: @Vector(T, N), b: @Vector(T, N)) struct {@Vector(T, N), @Vector(u1, N)}{#endsyntax#}</pre>
+    <p>If #498 were implemented, {#syntax#}parseInt{#endsyntax#} would look like this:</p>
+<pre>{#syntax#}fn parseInt(comptime T: type, buf: []const u8, radix: u8) !T {
+    var x: T = 0;
+
+    for (buf) |c| {
+        const digit = switch (c) {
+            '0'...'9' => c - '0',
+            'A'...'Z' => c - 'A' + 10,
+            'a'...'z' => c - 'a' + 10,
+            else => return error.InvalidCharacter,
+        };
+        x, const mul_overflow = @mulWithOverflow(x, radix);
+        if (mul_overflow != 0) return error.Overflow;
+
+        x, const add_overflow = @addWithOverflow(x, digit);
+        if (add_overflow != 0) return error.Overflow;
+    }
+
+    return x;
+}{#endsyntax#}</pre>
+    <p>However #498 is neither implemented nor accepted yet, so actual usage must do this:</p>
+    <pre>{#syntax#}const std = @import("std");
+
+fn parseInt(comptime T: type, buf: []const u8, radix: u8) !T {
+    var x: T = 0;
+
+    for (buf) |c| {
+        const digit = switch (c) {
+            '0'...'9' => c - '0',
+            'A'...'Z' => c - 'A' + 10,
+            'a'...'z' => c - 'a' + 10,
+            else => return error.InvalidCharacter,
+        };
+        const mul_result = @mulWithOverflow(x, radix);
+        x = mul_result[0];
+        const mul_overflow = mul_result[1];
+        if (mul_overflow != 0) return error.Overflow;
+
+        const add_result = @addWithOverflow(x, digit);
+        x = add_result[0];
+        const add_overflow = add_result[1];
+        if (add_overflow != 0) return error.Overflow;
+    }
+
+    return x;
+}{#endsyntax#}</pre>
+    <p>More details: #10248</p>
     {#header_close#}
 
     {#header_open|Slicing By Length#}
-    TODO https://github.com/ziglang/zig/pull/15519
-    <code>s[start..][0..len]</code>
+    <p>This is technically not a <em>change</em> to the language, however,
+    it bears mentioning in the language changes section, because it makes a particular
+    idiom be even more idiomatic, by recognizing the pattern directly in the {#link|Compiler#}.</p>
+    <p>This pattern is extremely common:</p>
+    {#syntax_block|zig|slice_by_len.zig#}
+fn foo(s: []const i32, start: usize, len: usize) []const i32 {
+    return s[start..][0..len];
+}
+    {#end_syntax_block#}
+    <p>The pattern is useful because it is effectively a slice-by-length rather than
+    slice by end index. With this pattern, when <code>len</code> is compile-time known,
+    the expression will be a pointer to an array rather than a slice type, which is generally
+    a preferrable type.</p>
+    <p>Zig 0.11.0 now detects this pattern and generates more efficient code.</p>
+    <p>You can think of Zig as having both slice-by-end and slice-by-len syntax, it's just
+    that one of them is expressed in terms of the other.</p>
+    <p>More details: #15482</p>
     {#header_close#}
 
     {#header_open|Inline Function Call Comptime Propagation#}
-    TODO https://github.com/ziglang/zig/pull/14015
-    TODO mention that zig inlines during semantic analysis and show the consequences of it
+    {#code_begin|test|inline_call#}
+const std = @import("std");
+
+var call_count: u32 = 0;
+
+inline fn isGreaterThan(x: i32, y: i32) bool {
+    call_count += 1;
+    return x > y;
+}
+
+test "inline call comptime propagation" {
+    // Runtime-known parameters to inline function, nothing new here.
+    var a: i32 = 1234;
+    var b: i32 = 5678;
+    try std.testing.expect(!isGreaterThan(a, b));
+
+    // Now it gets interesting...
+    const c = 1234;
+    const d = 5678;
+    if (isGreaterThan(c, d)) {
+        @compileError("that wasn't supposed to happen");
+    }
+
+    try std.testing.expect(call_count == 2);
+}
+    {#code_end#}
+    <p>In this example, there is no compile error because the comptime-ness of the
+    arguments is propagated to the return value of the inlined function. However,
+    as demonstrated by the <code>call_count</code> global variable, runtime side-effects of
+    the inlined function still occur.</p>
+    <p>The {#syntax#}inline{#endsyntax#} keyword in Zig is an extremely powerful tool that
+    should not be used lightly. It's best to let the compiler decide when to
+    inline a function, except for these scenarios:</p>
+    <ul>
+      <li>You want to change how many stack frames are in the call stack, for debugging purposes.</li>
+      <li>You want the comptime-ness of the arguments to propagate to the return value of the function, as demonstrated above.</li>
+      <li>Performance measurements <em>demand</em> it. Don’t guess!</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Exporting C Variadic Functions#}
-    TODO https://github.com/ziglang/zig/issues/515
+    <p>Generally we don't want zig programmers to use C-style variadic
+    functions. But sometimes you have to interface with C code.</p>
+    <p>Here are two use cases for it:</p>
+    <ul>
+    <li>Implementing libc in Zig</li>
+    <li>{#link|C Translation#}, for example an inline static function in MSVC's stdio.h</li>
+    </ul>
+
+    <p>Only some targets support this new feature:</p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/14096">exporting a C var args function triggers LLVM assertion when targeting non-Darwin aarch64</a>
+      <li>It's also not working on {#link|Windows#}.</li>
+    </ul>
+    <p>That makes this feature <strong>experimental</strong> because it does not disqualify
+    a target from {#link|Tier 1 Support#} if it does not support C-style var args.</p>
+    <p>More information: #515</p>
     {#header_close#}
 
     {#header_open|Added c_char Type#}
-    TODO https://github.com/ziglang/zig/issues/875
-    This is for {#link|C ABI Compatibility#}
-commit b77679039fd40aa1693781f99ac89f2dc705e5c2
-Merge: 0f2339f55 c205521ae
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Jun 20 16:41:58 2023 -0700
-
-    Merge pull request #15415 from ehaas/c-char-signedness
-    
-    Set `c_char` signedness based on the target
+    <p>This is strictly for {#link|C ABI Compatibility#} and should only be used
+    when it is required by the ABI.</p>
+    <p>See #875 for more details.</p>
     {#header_close#}
 
     {#header_open|Forbid Runtime Operations in comptime Blocks #}
@@ -2065,7 +2232,37 @@ test "@intFromBool returns u1" {
     {#header_close#}
 
     {#header_open|@fieldParentPtr Supports Unions#}
-    TODO https://github.com/ziglang/zig/issues/6611
+    <p>It already worked on structs; there was no reason for it to not work on unions (#6611).</p>
+    {#code_begin|test|field_parent_ptr_union#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "@fieldParentPtr on a union" {
+    try quux(&bar.c);
+    comptime try quux(&bar.c);
+}
+
+const bar = Bar{ .c = 42 };
+
+const Bar = union(enum) {
+    a: bool,
+    b: f32,
+    c: i32,
+    d: i32,
+};
+
+fn quux(c: *const i32) !void {
+    try expect(c == &bar.c);
+
+    const base = @fieldParentPtr(Bar, "c", c);
+    try expect(base == &bar);
+    try expect(&base.c == c);
+}
+    {#code_end#}
+    <p>Calling {#syntax#}@fieldParentPtr{#endsyntax#} on a pointer that is not actually
+    a field of the parent type is currently <strong>unchecked illegal behavior</strong>,
+    however there is an accepted proposal to add it:
+    <a href="https://github.com/ziglang/zig/issues/2414">add safety checks for pointer casting</a></p>
     {#header_close#}
 
     {#header_open|@typeInfo No Longer Returns Private Declarations#}
@@ -2653,7 +2850,6 @@ target-specific runtime calls and returns to be constructed.</p>
     <li>introduce std.io.poll (#14744)</li>
     <li>add Zstandard decompressor (#14183)</li>
     <li>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</li>
-    <li>networking: ignore SIGPIPE by default (#11982)</li>
     <li>Introduce ChildProcess.collectOutput (#12295)</li>
     <li>std.c: Add umask.</li>
     <li>Update Linux syscall list for 6.1, support Mips64 (#14541)</li>
@@ -2904,6 +3100,14 @@ Date:   Tue Jan 3 02:43:50 2023 -0500
 
     for shigueredo allowing us to use their RSA implementation until frank implemented
     a non-allocating version, honto ni arigatoo gozaimashta
+
+    {#header_open|TLS Client#}
+    TODO
+    {#header_close#}
+
+    {#header_open|Ignore SIGPIPE by Default#}
+    TODO #11982
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Testing#}
@@ -3502,7 +3706,6 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Ensure f128 alignment matches c_longdouble alignment.</li>
     <li><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3A%22error+message%22+milestone%3A0.11.0+">Many compile error messages were improved to be more helpful</a>.</li>
     <li>Implement packed unions (#13340).</li>
-    <li>Forbid packed and extern tuples (#16551).</li>
     <li>Support modifiers in inline asm. These are supported using
       <code>%[ident:mod]</code> syntax. This allows requesting, e.g., the "w" (32-bit) vs. "x"
       (64-bit) views of AArch64 registers.</li>
