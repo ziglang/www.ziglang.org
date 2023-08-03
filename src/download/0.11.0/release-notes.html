@@ -2082,6 +2082,26 @@ Date:   Tue Dec 13 18:15:18 2022 -0500
     Remove `stack` option from `@call`
     {#header_close#}
 
+    {#header_open|@typeInfo#}
+    <p>
+    The {#syntax#}@typeInfo{#endsyntax#} builtin's output has a slight modification. It will only return public
+    decls when called on a container type. The {#syntax#}is_pub{#endsyntax#} field has been removed and now the 
+    user should assume that all decls accessed through {#syntax#}@typeInfo{#endsyntax#} are public.
+    </p>
+    {#code_begin|test|typeinfo_only_pub_decls#}
+const std = @import("std");
+const Ns = struct {
+  pub const A = 1;
+  const B = 2;
+};
+test "@typeInfo only public decls" {
+  const decls = @typeInfo(Ns).Struct.decls;
+  try std.testing.expectEqual(1, decls.len);
+  try std.testing.expectEqualStrings("A", decls[0].name);
+}
+    {#code_end#}
+    {#header_close#}
+
     {#header_open|Allow Tautological Integer Comparisons#}
     <p>
     Previously, comparing an integer to a comptime-known value required that value to fit in the
