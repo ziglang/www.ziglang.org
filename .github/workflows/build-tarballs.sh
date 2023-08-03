@@ -15,7 +15,7 @@ git fetch --unshallow || true
 git fetch --tags
 
 
-if [ $ZIG_RELEASE_TAG ]; then
+if [[ ! -z "${ZIG_RELEASE_TAG}" ]]; then
   echo "skipped=yes" >> $GITHUB_OUTPUT
   echo "Building a tagged release!"
   git checkout "$ZIG_RELEASE_TAG"
