@@ -598,7 +598,7 @@
             <li><a id="toc-LLVM-16" href="#LLVM-16">LLVM 16</a></li>
             <li><a id="toc-musl-124" href="#musl-124">musl 1.2.4</a></li>
             <li><a id="toc-glibc-234" href="#glibc-234">glibc 2.34</a></li>
-            <li><a id="toc-mingw-w64-1101" href="#mingw-w64-1101">mingw-w64 11.0.1</a></li>
+            <li><a id="toc-mingw-w64-1000" href="#mingw-w64-1000">mingw-w64 10.0.0</a></li>
             <li><a id="toc-WASI-libc" href="#WASI-libc">WASI-libc</a></li>
             <li><a id="toc-compiler-rt" href="#compiler-rt">compiler-rt</a>
             <ul>
@@ -3970,6 +3970,13 @@ TODO
     <p>With this release, the Zig Build System is no longer <strong>experimental</strong>.
     It is the début of <a href="#Package-Management">Package Management</a>.</p>
 
+    <ul>
+    <li>Detect and disallow top-level step name clashes.</li>
+    <li>Rename <code><span class="line">std.Build.FooStep</span></code> to <code><span class="line">std.Build.Step.Foo</span></code> (#14947).</li>
+    <li>Fixed <code>WriteFile.getFileSource</code> failure on <a href="#Windows">Windows</a> (#15730).</li>
+    <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
+    </ul>
+
     <h3 id="Terminology-Changes"><a href="#toc-Terminology-Changes">Terminology Changes</a> <a class="hdr" href="#Terminology-Changes">§</a></h3>
 
     <p>
@@ -4381,21 +4388,33 @@ Date:   Sun Jul 30 21:27:29 2023 -0700
 
     <h3 id="Foreign-Target-Execution-and-Testing"><a href="#toc-Foreign-Target-Execution-and-Testing">Foreign Target Execution and Testing</a> <a class="hdr" href="#Foreign-Target-Execution-and-Testing">§</a></h3>
 
-    TODO
-commit 626a75bbc21453237f95c186d1fea790f233bc58
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Mar 19 16:26:19 2023 -0700
+    <p>The build system has these switches to enable cross-target testing:</p>
+    <pre><code>-fdarling,  -fno-darling     Integration with system-installed Darling to
+                               execute macOS programs on Linux hosts
+                               (default: no)
+  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
+                               foreign-architecture programs on Linux hosts
+                               (default: no)
+  --glibc-runtimes [path]      Enhances QEMU integration by providing glibc built
+                               for multiple foreign architectures, allowing
+                               execution of non-native programs that link with glibc.
+  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
+                               ARM64 macOS hosts. (default: no)
+  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
+                               execute WASI binaries. (default: no)
+  -fwine,     -fno-wine        Integration with system-installed Wine to execute
+                               Windows programs on Linux hosts. (default: no)</code></pre>
 
-    std.Build.RunStep: fix control flow with qemu+glibc logic
+    <p>However, there is even tighter integration with the system, if the system is configured
+    for it. First, zig will try executing a given binary, without guessing whether the system
+    will be able to run it. This takes advantage of binfmt_misc, for example.</p>
 
+    <p>Use <code>skip_foreign_checks</code> if you want to prevent a cross-target failure
+    from failing the build.</p.
+
+    <p>This even integrates with the <a href="#Compiler-Protocol">Compiler Protocol</a>, allowing foreign executables
+    to communicate metadata back to the build runner.</p>
     
-
-    <ul>
-    <li>Detect and disallow top-level step name clashes.</li>
-    <li>Rename <code><span class="line">std.Build.FooStep</span></code> to <code><span class="line">std.Build.Step.Foo</span></code> (#14947).</li>
-    <li>Fixed <code>WriteFile.getFileSource</code> failure on <a href="#Windows">Windows</a> (#15730).</li>
-    <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
-    </ul>
 
     <h3 id="Configuration-File-Generation"><a href="#toc-Configuration-File-Generation">Configuration File Generation</a> <a class="hdr" href="#Configuration-File-Generation">§</a></h3>
 
@@ -4598,82 +4617,18 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
 
     <h3 id="Cache-System"><a href="#toc-Cache-System">Cache System</a> <a class="hdr" href="#Cache-System">§</a></h3>
 
-
-    Module: fix zir caching race condition and deadlock (#14821)
-
-commit 81d2135ca6ebd71b8c121a19957c8fbf7f87125b
-Merge: 32ce2f91a 984acae12
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Nov 23 14:51:22 2022 -0500
-
-    Merge pull request #13596 from ziglang/cache-path-prefixes
-    
-    Cache: introduce prefixes to manifests
-
-commit 8ccb9a6ad327a4d7fbc321b33d4aa66a27a1f5ee
-Author: Casey Banner <kcbanner@gmail.com>
-Date:   Tue Dec 6 23:15:54 2022 -0500
-
-    cache: Fix LockViolation during C compilation paths (#13591)
-    
-    - C compilation flows didn't hold an exclusive lock on the cache manifest file when writing to it in all cases
-    - On windows, explicitly unlock the file lock before closing it
-
-commit 8ff9284c469226faa2be0c73ab27672e1e8a55d1
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Dec 14 17:19:43 2022 -0700
-
-    glibc: avoid poisoning the cache namespace with zig lib dir
-    
-    In glibc.zig, there were a few instances where the zig lib dir path name
-    incorrectly made its way into the cache namespace for various build
-    artifacts, resulting in unnecessary rebuilds of glibc.
-    
-    Closes #13619
-
-commit a3e2ee091139740d076da1176ac8c487ca20a9a6
-Author: Casey Banner <kcbanner@gmail.com>
-Date:   Wed Jan 4 14:51:43 2023 -0500
-
-    Fix another LockViolation case on Windows (#14162)
-    
-    - Add an assert that an exclusive lock is help to writeManifest
-    - Only call writeManifest in updateCObject if an exclusive lock is held
-    - cache: fixup test to verify hits don't take an exclusive lock, instead of writing the manifest
-commit 34286530b7c8beb070368b54abd8ec67a7344119
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Apr 18 13:08:30 2023 -0700
-
-    Cache: fix multi-process race condition on macOS
-    
-    This fixes `.INVAL => unreachable` being triggered by the cache system
-    on macOS when multiple processes race to create the same compilation.
-    The problem is that when two processes race to create a file, it
-    sometimes returns ENOENT even though that error code is nonsensical for
-    this situation.
-    
-    Commit 2b0929929d67e222ca6a9523a3a594ed456c4a51 purportedly solved this,
-    but it did not open the file with write permissions, leading to the
-    EINVAL panic later on. This commit remedies the situation by introducing
-    a loop and simply retrying when the ENOENT occurs.
-
-commit 4ea2f441df36cec61e1017f4d795d4037326c98c
-Author: Andrius Bentkus <andrius.bentkus@gmail.com>
-Date:   Sat Jul 16 15:46:13 2022 +0300
-
-    Module: retry ZIR cache file creation
-    
-    There are no dir components, so you would think that this was
-    unreachable, however we have observed on macOS two processes racing to
-    do openat() with O_CREAT manifest in ENOENT.
-    
-    closes #12138
-
+    <ul>
+      <li>Fixed zir caching race condition and deadlock (#14821).</li>
+      <li>Introduced prefixes to manifests (#13596).</li>
+      <li>Fixed LockViolation during C compilation paths (#13591).</li>
+      <li>glibc: avoid poisoning the cache namespace with zig lib dir (#13619).</li>
+      <li>Fixed another LockViolation case on <a href="#Windows">Windows</a> (#14162).</li>
+      <li>Fixed multi-process race condition on <a href="#macOS">macOS</a>.</li>
+      <li>Retry ZIR cache file creation. There are no dir components, so you would think that ENOENT was unreachable, however we have observed on macOS two processes racing to do openat() with O_CREAT manifest in ENOENT (#12138).</li>
+    </ul>
     
 
     <h3 id="Code-Generation"><a href="#toc-Code-Generation">Code Generation</a> <a class="hdr" href="#Code-Generation">§</a></h3>
-
-    TODO
 
     <h4 id="LLVM-Backend"><a href="#toc-LLVM-Backend">LLVM Backend</a> <a class="hdr" href="#LLVM-Backend">§</a></h4>
 
@@ -5016,7 +4971,7 @@ Date:   Wed Mar 8 14:50:06 2023 +0100
 
     <h3 id="Bug-Stability-Program"><a href="#toc-Bug-Stability-Program">Bug Stability Program</a> <a class="hdr" href="#Bug-Stability-Program">§</a></h3>
 
-    TODO
+    <p>To be announced next week...</p>
     
     
 
@@ -5053,22 +5008,19 @@ Date:   Wed Mar 8 14:50:06 2023 +0100
 
     <h3 id="glibc-234"><a href="#toc-glibc-234">glibc 2.34</a> <a class="hdr" href="#glibc-234">§</a></h3>
 
-    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
-    TODO glibc is still stuck on the old version
+    <p>Unfortunately, glibc is still stuck on 2.34. Users will need to wait until
+    0.12.0 for a glibc upgrade.</p>
+    <p>The only change:</p>
     <ul>
     <li>Allow linking against external libcrypt (#5990).</li>
     </ul>
     
 
-    <h3 id="mingw-w64-1101"><a href="#toc-mingw-w64-1101">mingw-w64 11.0.1</a> <a class="hdr" href="#mingw-w64-1101">§</a></h3>
+    <h3 id="mingw-w64-1000"><a href="#toc-mingw-w64-1000">mingw-w64 10.0.0</a> <a class="hdr" href="#mingw-w64-1000">§</a></h3>
 
-    <p>
-    Zig ships with the source code to <a href="https://mingw-w64.org/">mingw-w64</a>.
-    When targeting *-windows-gnu and linking against libc, Zig builds mingw-w64 from source
-    for the selected target.
-    </p>
-    <p>This release updates the bundled mingw-w64 source code to
-    <a href="https://sourceforge.net/p/mingw-w64/mailman/message/37837156/">v11.0.1</a>.</p>
+    <p>Unfortunately, mingw-w64 is still stuck on 10.0.0. Users will need to wait until
+    0.12.0 for a mingw-w64 upgrade.</p>
+    <p>The only change:</p>
     <ul>
       <li>Added missing vscprintf.c file (#13733).</li>
     </ul>
@@ -5076,11 +5028,12 @@ Date:   Wed Mar 8 14:50:06 2023 +0100
 
     <h3 id="WASI-libc"><a href="#toc-WASI-libc">WASI-libc</a> <a class="hdr" href="#WASI-libc">§</a></h3>
 
-    TODO
+    <p>Zig's wasi-libc is updated to 3189cd1ceec8771e8f27faab58ad05d4d6c369ef (#15817)</p>
     
 
     <h3 id="compiler-rt"><a href="#toc-compiler-rt">compiler-rt</a> <a class="hdr" href="#compiler-rt">§</a></h3>
 
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
     <p>
     compiler-rt is the library that provides, for example, 64-bit integer multiplication for
     32-bit architectures which do not have a machine code instruction for it.

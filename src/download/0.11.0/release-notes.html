@@ -3551,6 +3551,13 @@ while (true) {
     <p>With this release, the Zig Build System is no longer <strong>experimental</strong>.
     It is the début of {#link|Package Management#}.</p>
 
+    <ul>
+    <li>Detect and disallow top-level step name clashes.</li>
+    <li>Rename {#syntax#}std.Build.FooStep{#endsyntax#} to {#syntax#}std.Build.Step.Foo{#endsyntax#} (#14947).</li>
+    <li>Fixed <code>WriteFile.getFileSource</code> failure on {#link|Windows#} (#15730).</li>
+    <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
+    </ul>
+
     {#header_open|Terminology Changes#}
     <p>
     The introduction of {#link|Package Management#} required some terminology in the Zig Build
@@ -3954,21 +3961,33 @@ Date:   Sun Jul 30 21:27:29 2023 -0700
     {#header_close#}
 
     {#header_open|Foreign Target Execution and Testing#}
-    TODO
-commit 626a75bbc21453237f95c186d1fea790f233bc58
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Mar 19 16:26:19 2023 -0700
+    <p>The build system has these switches to enable cross-target testing:</p>
+    <pre><code>-fdarling,  -fno-darling     Integration with system-installed Darling to
+                               execute macOS programs on Linux hosts
+                               (default: no)
+  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
+                               foreign-architecture programs on Linux hosts
+                               (default: no)
+  --glibc-runtimes [path]      Enhances QEMU integration by providing glibc built
+                               for multiple foreign architectures, allowing
+                               execution of non-native programs that link with glibc.
+  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
+                               ARM64 macOS hosts. (default: no)
+  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
+                               execute WASI binaries. (default: no)
+  -fwine,     -fno-wine        Integration with system-installed Wine to execute
+                               Windows programs on Linux hosts. (default: no)</code></pre>
 
-    std.Build.RunStep: fix control flow with qemu+glibc logic
+    <p>However, there is even tighter integration with the system, if the system is configured
+    for it. First, zig will try executing a given binary, without guessing whether the system
+    will be able to run it. This takes advantage of binfmt_misc, for example.</p>
 
+    <p>Use <code>skip_foreign_checks</code> if you want to prevent a cross-target failure
+    from failing the build.</p.
+
+    <p>This even integrates with the {#link|Compiler Protocol#}, allowing foreign executables
+    to communicate metadata back to the build runner.</p>
     {#header_close#}
-
-    <ul>
-    <li>Detect and disallow top-level step name clashes.</li>
-    <li>Rename {#syntax#}std.Build.FooStep{#endsyntax#} to {#syntax#}std.Build.Step.Foo{#endsyntax#} (#14947).</li>
-    <li>Fixed <code>WriteFile.getFileSource</code> failure on {#link|Windows#} (#15730).</li>
-    <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
-    </ul>
 
     {#header_open|Configuration File Generation#}
 commit b129f1b0462e6c80b4a97851ea3aa8b3f0a4aa37
@@ -4162,82 +4181,18 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     {#header_close#}
 
     {#header_open|Cache System#}
-
-    Module: fix zir caching race condition and deadlock (#14821)
-
-commit 81d2135ca6ebd71b8c121a19957c8fbf7f87125b
-Merge: 32ce2f91a 984acae12
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Nov 23 14:51:22 2022 -0500
-
-    Merge pull request #13596 from ziglang/cache-path-prefixes
-    
-    Cache: introduce prefixes to manifests
-
-commit 8ccb9a6ad327a4d7fbc321b33d4aa66a27a1f5ee
-Author: Casey Banner <kcbanner@gmail.com>
-Date:   Tue Dec 6 23:15:54 2022 -0500
-
-    cache: Fix LockViolation during C compilation paths (#13591)
-    
-    - C compilation flows didn't hold an exclusive lock on the cache manifest file when writing to it in all cases
-    - On windows, explicitly unlock the file lock before closing it
-
-commit 8ff9284c469226faa2be0c73ab27672e1e8a55d1
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Dec 14 17:19:43 2022 -0700
-
-    glibc: avoid poisoning the cache namespace with zig lib dir
-    
-    In glibc.zig, there were a few instances where the zig lib dir path name
-    incorrectly made its way into the cache namespace for various build
-    artifacts, resulting in unnecessary rebuilds of glibc.
-    
-    Closes #13619
-
-commit a3e2ee091139740d076da1176ac8c487ca20a9a6
-Author: Casey Banner <kcbanner@gmail.com>
-Date:   Wed Jan 4 14:51:43 2023 -0500
-
-    Fix another LockViolation case on Windows (#14162)
-    
-    - Add an assert that an exclusive lock is help to writeManifest
-    - Only call writeManifest in updateCObject if an exclusive lock is held
-    - cache: fixup test to verify hits don't take an exclusive lock, instead of writing the manifest
-commit 34286530b7c8beb070368b54abd8ec67a7344119
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Apr 18 13:08:30 2023 -0700
-
-    Cache: fix multi-process race condition on macOS
-    
-    This fixes `.INVAL => unreachable` being triggered by the cache system
-    on macOS when multiple processes race to create the same compilation.
-    The problem is that when two processes race to create a file, it
-    sometimes returns ENOENT even though that error code is nonsensical for
-    this situation.
-    
-    Commit 2b0929929d67e222ca6a9523a3a594ed456c4a51 purportedly solved this,
-    but it did not open the file with write permissions, leading to the
-    EINVAL panic later on. This commit remedies the situation by introducing
-    a loop and simply retrying when the ENOENT occurs.
-
-commit 4ea2f441df36cec61e1017f4d795d4037326c98c
-Author: Andrius Bentkus <andrius.bentkus@gmail.com>
-Date:   Sat Jul 16 15:46:13 2022 +0300
-
-    Module: retry ZIR cache file creation
-    
-    There are no dir components, so you would think that this was
-    unreachable, however we have observed on macOS two processes racing to
-    do openat() with O_CREAT manifest in ENOENT.
-    
-    closes #12138
-
+    <ul>
+      <li>Fixed zir caching race condition and deadlock (#14821).</li>
+      <li>Introduced prefixes to manifests (#13596).</li>
+      <li>Fixed LockViolation during C compilation paths (#13591).</li>
+      <li>glibc: avoid poisoning the cache namespace with zig lib dir (#13619).</li>
+      <li>Fixed another LockViolation case on {#link|Windows#} (#14162).</li>
+      <li>Fixed multi-process race condition on {#link|macOS#}.</li>
+      <li>Retry ZIR cache file creation. There are no dir components, so you would think that ENOENT was unreachable, however we have observed on macOS two processes racing to do openat() with O_CREAT manifest in ENOENT (#12138).</li>
+    </ul>
     {#header_close#}
 
     {#header_open|Code Generation#}
-    TODO
-
     {#header_open|LLVM Backend#}
     <ul>
       <li>Mangle extern function names for Wasm target (#13396).</li>
@@ -4558,7 +4513,7 @@ Date:   Wed Mar 8 14:50:06 2023 +0100
     {#header_close#}
 
     {#header_open|Bug Stability Program#}
-    TODO
+    <p>To be announced next week...</p>
     {#header_close#}
     {#header_close#}
 
@@ -4591,31 +4546,29 @@ Date:   Wed Mar 8 14:50:06 2023 +0100
     {#header_close#}
 
     {#header_open|glibc 2.34#}
-    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
-    TODO glibc is still stuck on the old version
+    <p>Unfortunately, glibc is still stuck on 2.34. Users will need to wait until
+    0.12.0 for a glibc upgrade.</p>
+    <p>The only change:</p>
     <ul>
     <li>Allow linking against external libcrypt (#5990).</li>
     </ul>
     {#header_close#}
 
-    {#header_open|mingw-w64 11.0.1#}
-    <p>
-    Zig ships with the source code to <a href="https://mingw-w64.org/">mingw-w64</a>.
-    When targeting *-windows-gnu and linking against libc, Zig builds mingw-w64 from source
-    for the selected target.
-    </p>
-    <p>This release updates the bundled mingw-w64 source code to
-    <a href="https://sourceforge.net/p/mingw-w64/mailman/message/37837156/">v11.0.1</a>.</p>
+    {#header_open|mingw-w64 10.0.0#}
+    <p>Unfortunately, mingw-w64 is still stuck on 10.0.0. Users will need to wait until
+    0.12.0 for a mingw-w64 upgrade.</p>
+    <p>The only change:</p>
     <ul>
       <li>Added missing vscprintf.c file (#13733).</li>
     </ul>
     {#header_close#}
 
     {#header_open|WASI-libc#}
-    TODO
+    <p>Zig's wasi-libc is updated to 3189cd1ceec8771e8f27faab58ad05d4d6c369ef (#15817)</p>
     {#header_close#}
 
     {#header_open|compiler-rt#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_3.svg" style="height: 17em; float: right">
     <p>
     compiler-rt is the library that provides, for example, 64-bit integer multiplication for
     32-bit architectures which do not have a machine code instruction for it.
