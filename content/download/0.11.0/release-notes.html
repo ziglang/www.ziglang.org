@@ -412,6 +412,7 @@
                 </ul></li>
                 <li><a id="toc-Linux" href="#Linux">Linux</a></li>
                 <li><a id="toc-macOS" href="#macOS">macOS</a></li>
+                <li><a id="toc-FreeBSD" href="#FreeBSD">FreeBSD</a></li>
                 <li><a id="toc-OpenBSD" href="#OpenBSD">OpenBSD</a></li>
                 <li><a id="toc-NetBSD" href="#NetBSD">NetBSD</a></li>
                 <li><a id="toc-WASI" href="#WASI">WASI</a></li>
@@ -470,6 +471,7 @@
         </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
         <ul>
+            <li><a id="toc-Compile-Time-Configuration-Consolidated" href="#Compile-Time-Configuration-Consolidated">Compile-Time Configuration Consolidated</a></li>
             <li><a id="toc-Memory-Allocation" href="#Memory-Allocation">Memory Allocation</a>
             <ul>
                 <li><a id="toc-Allow-Shrink-To-Fail" href="#Allow-Shrink-To-Fail">Allow Shrink To Fail</a></li>
@@ -482,6 +484,7 @@
             <li><a id="toc-File-System" href="#File-System">File System</a></li>
             <li><a id="toc-Data-Structures" href="#Data-Structures">Data Structures</a></li>
             <li><a id="toc-Sorting" href="#Sorting">Sorting</a></li>
+            <li><a id="toc-Compression" href="#Compression">Compression</a></li>
             <li><a id="toc-Crypto" href="#Crypto">Crypto</a>
             <ul>
                 <li><a id="toc-New-Features" href="#New-Features">New Features</a></li>
@@ -498,6 +501,7 @@
             <li><a id="toc-Networking" href="#Networking">Networking</a>
             <ul>
                 <li><a id="toc-TLS-Client" href="#TLS-Client">TLS Client</a></li>
+                <li><a id="toc-HTTP-Client" href="#HTTP-Client">HTTP Client</a></li>
                 <li><a id="toc-Ignore-SIGPIPE-by-Default" href="#Ignore-SIGPIPE-by-Default">Ignore SIGPIPE by Default</a></li>
             </ul></li>
             <li><a id="toc-Testing" href="#Testing">Testing</a></li>
@@ -1268,6 +1272,34 @@ Date:   Sat Dec 10 03:44:25 2022 -0500
     os/windows.zig.  Intentionally not updating zig1.wasm yet because of
     upcoming changes and since aarch64-windows is not tested on master yet.
 
+  <ul>
+    <li>replace GetPhysicallyInstalledSystemMemory with ntdll (#15264).</li>
+    <li>std.os.sendto: use ws2_32 on Windows (#9971).</li>
+    <li>std.os.windows: add possible error NETNAME_DELETED of ReadFile (#13631)</li>
+    <li>std: implement os.mprotect on Windows</li>
+    <li>Implement root certificate scanning for the <a href="#TLS-Client">TLS Client</a> (#14229)</li>
+    <li>debug info lookup improvements (#14247)</li>
+    <li>std.debug.TTY: Fix colors not resetting on Windows</li>
+    <li>std.os.windows.ReadLink: add missing alignment of local data buffer</li>
+    <li>os: windows: fix unhandled error</li>
+    <li>Detect ANSI support in more terminals (#16080).</li>
+    <li>windows.sendto fix (#15831)</li>
+    <li>std.c: fix return type of recv/recvfrom on windows</li>
+    <li>debug: fix missing stack traces during crashes on windows</li>
+    <li>debug: replace RtlCaptureStackBackTrace (which was spuriously failing) with a new implementation which uses RtlVirtualUnwind instead (#12740)</li>
+    <li>windows.OpenFile/DeleteFile: Add NetworkNotFound as a possible error. When calling NtCreateFile with a UNC path, if either `\\server` or `\\server\share` are not found, then the statuses `BAD_NETWORK_PATH` or `BAD_NETWORK_NAME` are returned (respectively).</li>
+    <li>Remove std.os.windows.QueryInformationFile (a wrapper of NtQueryInformationFile). This function was unused, and implementation contained a few footguns.</li>
+    <li>std.process: Fix crash on some Windows machines</li>
+    <li>std.os.windows.DeviceIoControl: Handle INVALID_DEVICE_REQUEST. This is possible when e.g. calling CreateSymbolicLink on a FAT32 filesystem</li>
+    <li>child_process: Fix regression on Windows for FAT filesystems (#16374).</li>
+    <li>DeleteFile: Use FileDispositionInformationEx if possible, but fallback if not (#16499).</li>
+    <li>advapi32: Add RegCloseKey</li>
+    <li><code>spawnWindows</code>: Improve worst-case performance considerably + tests (#13993)</li>
+    <li><code>ChildProcess.spawnWindows</code>: <code>PATH</code> search fixes + optimizations (#13983)</li>
+    <li>Fix GetFileInformationByHandle compile error (#14829)</li>
+    <li>`std.coff`: check strtab lengths against `data` length. Fixes illegal behavior. Invalid-length sections are now skipped in `Coff.getSectionByName`.</li>
+  </ul>
+
     <h5 id="Resource-Files-res"><a href="#toc-Resource-Files-res">Resource Files (.res)</a> <a class="hdr" href="#Resource-Files-res">§</a></h5>
 
 commit b11170294052585ae81b9946d770f860d163da8f
@@ -1314,7 +1346,27 @@ Date:   Sat Jun 24 15:22:56 2023 -0700
 
     <h4 id="Linux"><a href="#toc-Linux">Linux</a> <a class="hdr" href="#Linux">§</a></h4>
 
-    TODO
+    <ul>
+    <li>Fix missing pthread_key_t definition on linux (#13950).</li>
+    <li>linux.bpf: expose map_get_next_key</li>
+    <li>fix CPU model detection for neoverse_n1 on aarch64-linux (#10086)</li>
+    <li>stdlib: make linux.PERF.TYPE non-exhaustive</li>
+    <li>std.os.linux: Add setitimer and getitimer syscalls</li>
+    <li>Fixes to linux/bpf/btf.zig</li>
+    <li>std.os.linux.T: translate more MIPS values</li>
+    <li>fix type errors in os.linux (#15801)</li>
+    <li>Add tcsetpgrp and tcgetpgrp to std.os.linux</li>
+    <li>std.os.linux: fix incorrect struct definition</li>
+    <li>std.os.linux: Add new CAP constants</li>
+    <li>linux: do not set stack size hard limit</li>
+    <li>std.os.linux | Fix sendmmsg function (#16513)</li>
+    <li>std.os: Allow write functions to return INVAL errors. In Linux when interacting with the virtual file system when writing in invalid value to a file the OS will return errno 22 (INVAL). Instead of triggering an unreachable, this change now returns a newly introduced error.InvalidArgument.</li>
+    <li>std.os: Add DeviceBusy as a possible write error. In Linux when writing to various files in the virtual file system, for example /sys/fs/cgroup, if you write an invalid value to a file you'll get errno 16.</li>
+    <li>Update Linux syscall list for 6.1, support Mips64 (#14541)</li>
+    <li>bpf: expose "syscall" program type and F_SLEEPABLE flag</li>
+    <li>bpf: correct return type of ringbuf_output helper</li>
+    <li>io_uring: Change ordering of prep provide buffers args</li>
+    </ul>
     
 
     <h4 id="macOS"><a href="#toc-macOS">macOS</a> <a class="hdr" href="#macOS">§</a></h4>
@@ -1334,6 +1386,18 @@ Date:   Sat Jun 24 15:22:56 2023 -0700
       <li>update macOS libc headers and <code>libSystem.tbd</code> to macOS 13</li>
       <li>bump max macOS version to 13.3</li>
       <li>fix parsing of SDK version string into <code>std.SemanticVersion</code></li>
+      <li>std.os.darwin: drop underscore from SIG._{BLOCK,UNBLOCK,SETMASK}. this makes them match decls in other OSes</li>
+      <li>std.macho: add missing defs of compact unwind info records</li>
+    </ul>
+    
+
+    <h4 id="FreeBSD"><a href="#toc-FreeBSD">FreeBSD</a> <a class="hdr" href="#FreeBSD">§</a></h4>
+
+    <ul>
+      <li>FreeBSD: add mcontext_t for aarch64, enabling <a href="#Debugging">stack traces</a> when
+          a segmentation fault occurs.</li>
+      <li>std.os: take advantage of <code>copy_file_range</code></li>
+      <li>std.process.totalSystemMemory: return correct error type on FreeBSD</li>
     </ul>
     
 
@@ -1341,6 +1405,11 @@ Date:   Sat Jun 24 15:22:56 2023 -0700
 
     TODO https://github.com/ziglang/zig/issues/13700
     TODO https://github.com/ziglang/zig/issues/13699
+    <ul>
+    <li>openbsd: fix NativeTargetInfo semver</li>
+    <li>fix bad return types for BSDs getdents and debitrot openbsd (#16052).</li>
+    <li>std.c: openbsd sigcontext/ucontext fix enum</li>
+    </ul>
     
 
     <h4 id="NetBSD"><a href="#toc-NetBSD">NetBSD</a> <a class="hdr" href="#NetBSD">§</a></h4>
@@ -1353,6 +1422,11 @@ Date:   Sat Jun 17 14:22:43 2023 -0700
     Merge pull request #15511 from mikdusan/netbsd-pkgsrc
     
     netbsd: pkgsrc
+
+    <ul>
+    <li>netbsd: use versioned __msync13 from libc (#14422)</li>
+    <li>Add NetBSD termios constants to std.c.netbsd</li>
+    </ul>
     
 
     <h4 id="WASI"><a href="#toc-WASI">WASI</a> <a class="hdr" href="#WASI">§</a></h4>
@@ -1390,6 +1464,17 @@ Date:   Thu Mar 2 19:04:55 2023 -0700
     architecture.
     
     This is part of the strategy to unify RunStep and EmulatableRunStep.
+
+
+    <ul>
+    <li>wasi: fixes IterableDir.nextWasi for large directory (#13725)</li>
+    <li>Implement some more environment functions for WASI.</li>
+    <li>Fix bug in WASI environment variable handling (#14121).</li>
+    <li>wasi: fixes os.isatty on type mismatch (#13813)</li>
+    <li>wasi: remove unnecessary breakpoint() in abort</li>
+    </ul>
+
+
     
 
     <h4 id="UEFI"><a href="#toc-UEFI">UEFI</a> <a class="hdr" href="#UEFI">§</a></h4>
@@ -1564,6 +1649,11 @@ Date:   Thu Mar 2 19:04:55 2023 -0700
 
     <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
 
+    <ul>
+    <li>Changed bits field of <code>builtin.Type.Int</code> and <code>builtin.Type.Float</code> a
+    <code><span class="line"><span class="tok-type">u16</span></span></code> instead of <code><span class="line"><span class="tok-type">comptime_int</span></span></code>.</li>
+    <li>Replaced <code>builtin.Version</code> with <code>SemanticVersion</code>.</li>
+    </ul>
     <h3 id="Peer-Type-Resolution-Improvements"><a href="#toc-Peer-Type-Resolution-Improvements">Peer Type Resolution Improvements</a> <a class="hdr" href="#Peer-Type-Resolution-Improvements">§</a></h3>
 
     <p>
@@ -3112,228 +3202,96 @@ target-specific runtime calls and returns to be constructed.</p>
     it will be time to start working on stabilizing the standard library.
     Until then, experimentation and breakage without warning is allowed.</p>
     <ul>
-    TODO organize these
-    <li>DynLib.lookup: cast the pointer to the correct alignment (#15308)</li>
-    <li>windows: replace GetPhysicallyInstalledSystemMemory with ntdll (#15264).</li>
-    <li>std.MultiArrayList: add support for tagged unions.</li>
-    <li>std.os.sendto: use ws2_32 on Windows (#9971).</li>
-    <li>std.debug: fix segfault/panic race condition (#7859) (#12207).</li>
-    <li>std.http: add http server (#15123)</li>
-    <li>tls.Client: don't read if we don't need more data</li>
-    <li>std.Target: add xtensa to toCoffMachine</li>
-    <li>Add xz decoder (#14434)</li>
-    <li>std: remove meta.assumeSentinel (#14440)</li>
-    <li>std.os.windows: add possible error NETNAME_DELETED of ReadFile (#13631)</li>
-    <li>std.crypto.Certificate: support P256 in x509</li>
-    <li>std.hash.crc: implement algorithms listed in CRC RevEng catalog (#14396)</li>
-    <li>Implement gzip header CRC check.</li>
-    <li>FreeBSD: add mcontext_t for aarch64</li>
-    <li>std: implement os.mprotect on Windows</li>
-    <li>std.net: Make <code>res</code> nullable in <code>std.c.getaddrinfo</code></li>
-    <li>std.crypto.Certificate: Wildcard certs should only validate one level of sub domain</li>
+      <li>DynLib.lookup: cast the pointer to the correct alignment (#15308)</li>
+
     <li>std.process: avoids allocating zero length buffers for args or env on <a href="#WebAssembly">WebAssembly</a></li>
-    <li>std.crypto.Certificate.Bundle: clear bundle before macOS rescan (#14350).</li>
-    <li>windows root certificate scanning (#14229)</li>
-    <li>std.http.Client: default to lazy root cert scanning</li>
-    <li>Find system-installed root SSL certificates on macOS (#14325).</li>
-    <li>std: Handle field struct defaults in std.mem.zeroInit (#14116).</li>
-    <li>Add fromOwnedSliceSentinel to ArrayList ArrayList and ArrayListUnmanaged, add fromOwnedSlice to ArrayListUnmanaged</li>
-    <li>support v1/v2 SSL certificates and search more Linux directories for certificates (#14329).</li>
-    <li>std.net: check for localhost names before asking DNS</li>
-    <li>std.debug: Windows debug info lookup improvements (#14247)</li>
-    <li>std.zig.Ast: add helper functions to std.zig.Ast for extracting data out of nodes</li>
-    <li>remove std.url and add std.uri which is more complete and RFC-compliant (#14176).</li>
-    <li>Implement some more environment functions for WASI.</li>
-    <li>std.http.Client: support transfer-encoding: chunked (#14224)</li>
-    <li>std.http.Client: support HTTP redirects (#14202)</li>
-    <li>std: collect all options under one namespace</li>
-    <li>start code: Don't initialize the static TLS area in single-threaded builds</li>
-    <li>debug: replace RtlCaptureStackBackTrace (which was spuriously failing) with a new implementation which uses RtlVirtualUnwind instead (#12740)</li>
-    <li>Add std.ArenaAllocator.reset() (#12590)</li>
-    <li>Adds std.heap.MemoryPool (#12586)</li>
-    <li>std.log: add functionality to check if a specific log level and scope are enabled</li>
-    <li>Add the two functions 'getLast' and 'getLastOrNull' to ArrayListAligned/ArrayListAlignedUnmanaged.</li>
-    <li>std: add meta.FieldType</li>
-    <li>Fix bug in WASI environment variable handling (#14121).</li>
-    <li>std.heap.raw_c_allocator: fix illegal alignment cast (#14090).</li>
-    <li>std: Expose Int parameter in std.PackedInt[Array,Slice]</li>
-    <li>std.debug: Replace tabs with spaces when printing a line for trace output.</li>
-    <li>std: stop using LinearFifo in BufferedReader (#14029)</li>
+    <li>std.process: remove unused function getSelfExeSharedLibPaths</li>
+    <li>std.process.Child: implement maxrss on Darwin</li>
+    <li>std.process.Child: remove pid and handle, add id. Previously, this API had pid, to be used on POSIX systems, and handle, to be used on Windows. This change unifies the API, defining an Id type that is either the pid or the HANDLE depending on the target OS.</li>
+    <li>Introduce std.process.Child.collectOutput (#12295)</li>
+
+
+    <li>std.Target: add xtensa to toCoffMachine</li>
     <li>std.Target.ObjectFormat: specify dxcontainer file ext</li>
-    <li>Fix missing pthread_key_t definition on linux (#13950).</li>
-    <li>std.zig.Ast.parse: fix integer overflows during parsing, found while fuzzing zls.</li>
-    <li>macho: add missing defs of compact unwind info records</li>
-    <li>`spawnWindows`: Improve worst-case performance considerably + tests (#13993)</li>
-    <li>fix potential integer underflow in std.zig.Ast.fullCall</li>
-    <li>Make std.tz namespace accessible (#13978)</li>
-    <li>`ChildProcess.spawnWindows`: `PATH` search fixes + optimizations (#13983)</li>
-    <li>std.IndexedSet.iterator: allow iteration on const EnumSet</li>
+    <li>std.target: adds ps4 and ps5 type sizes.</li>
+    <li>std.Target: fixes to `ptrBitWidth`, `c_type_byte_size`, and `c_type_alignment`.</li>
+    <li>std.target.riscv: fix baseline_rv32 missing feature "32bit"</li>
+    <li>std.target: mark helper functions inline so that callsites don't need <code><span class="line"><span class="tok-kw">comptime</span></span></code></li>
+
+
+
+    <li>std: remove meta.assumeSentinel (#14440)</li>
+    <li>std: add meta.FieldType</li>
     <li>std.meta: remove bitCount</li>
-    <li>std: make builtin.Type.{Int,Float}.bits a u16 instead of comptime_int</li>
-    <li>std.compress: Improve tests, remove reliance on openDirAbsolute (#13952)</li>
-    <li>std.debug.TTY: Fix colors not resetting on Windows</li>
-    <li>ArrayList.toOwnedSlice: Fix potential for leaks when using errdefer (#13946)</li>
-    <li>add std.mem.reverseIterator</li>
-    <li>std: add object format extension for dxcontainer</li>
-    <li>std: Fix update() method in PriorityQueue and PriorityDequeue (#13908)</li>
-    <li>std: Add Wasm SIMD opcodes and value type (#13910)</li>
+    <li>std: fixed handling of empty structs in meta.FieldEnum.</li>
+    <li>std.meta: remove isTag (#15584).</li>
+    <li>std.meta: allow ArgsTuple to be used on functions with comptime parameters</li>
+    <li>std.meta: remove tagName</li>
+    <li>Update std.meta.intToEnum to support non-exhaustive enums, which was preventing `std.json` from deserializing non-exhaustive enums (#15491).</li>
+
+
+
+
+    <li>std: stop using LinearFifo in BufferedReader (#14029)</li>
+    <li>std.io.reader.Reader: add `streamUntilDelimiter`</li>
+    <li>std.io.Writer: add support for non-power-of-two int sizes</li>
+    <li>Fix type mismatch for Reader.readIntoBoundedBytes (#16416)</li>
+    <li>std.io.multi-writer: support non-comptime streams (#15770).</li>
+
+
     <li>Add 0-length buffer checks to os.read and os.write, preventing errors related to undefined pointers being passed through to some OS APIs when slices have 0 length.</li>
+    <li>std.os: fix alignment of Sigaction.handler_fn (#13418)</li>
+    <li>std.os.sigprocmask: @bitCast flags parameter</li>
+    <li>`os.isCygwinPty`: Fix a bug, replace kernel32 call, and optimize (#14841)</li>
+    <li>std.os: add mincore syscall which is available on some UNIX like operating systems and allows a user to determine if a page is resident in memory.</li>
+    <li>std.os: add missing mmap errors</li>
+
+
+    <li>start code: Don't initialize the static TLS area in single-threaded builds</li>
+    <li>Make std.tz namespace accessible (#13978)</li>
+    <li>std: add object format extension for dxcontainer</li>
+    <li>std: Add Wasm SIMD opcodes and value type (#13910)</li>
     <li>std: fix bug in Pcg32 fill function (#13894)</li>
-    <li>std: added std.mem.window</li>
-    <li>std: implement subsetOf and supersetOf for EnumMultiset</li>
-    <li>std: implement subsetOf and supersetOf for DynamicBitSet</li>
-    <li>std: add EnumMultiSet</li>
-    <li>wasi: fixes os.isatty on type mismatch (#13813)</li>
     <li>std.ascii: remove Look-Up-Table (#13370).</li>
     <li>Improve and remove duplicate doNotOptimizeAway() implementations (#13790)</li>
-    <li>std.testing: Fully absorb expectEqualBytes into expectEqualSlices</li>
-    <li>std: added eql to DynamicBitSet and DynamicBitSetUnmanaged</li>
-    <li>std.atomic.Queue: fix unget implementation and add docs</li>
-    <li>Allow const ArrayLists to be cloned</li>
-    <li>gzip: add missing header fields and bounds for header parsing (#13142)</li>
-    <li>std: fixed handling of empty structs in meta.FieldEnum.</li>
-    <li>std.testing: Improve expectEqualBytes for large inputs and make expectEqualSlices use it</li>
-    <li>std.testing: Add expectEqualBytes that outputs hexdumps with diffs highlighted in red. The coloring is controlled by `std.debug.detectTTYConfig` so it will be disabled when appropriate.</li>
-    <li>std.os.windows.ReadLink: add missing alignment of local data buffer</li>
-    <li>windows: add native CPU and features detection for Armv8 chips (#13659)</li>
-    <li>linux.bpf: expose map_get_next_key</li>
-    <li>std: valgrind client request support for aarch64 (#13292)</li>
-    <li>fix CPU model detection for neoverse_n1 on aarch64-linux (#10086)</li>
-    <li>os: windows: fix unhandled error</li>
-    <li>std: replace parseAppend with parseWrite in std.zig.string_literal</li>
     <li>std.Random: add functions with explicit index type (#13417).</li>
-    <li>stdlib: make linux.PERF.TYPE non-exhaustive</li>
-    <li>process.zig: remove unused function getSelfExeSharedLibPaths</li>
-    <li>std.os.linux: Add setitimer and getitimer syscalls</li>
     <li>add std.c.pthread_sigmask (#13525)</li>
-    <li>pdb: make SuperBlock def public</li>
-    <li>std.os: fix alignment of Sigaction.handler_fn (#13418)</li>
-    <li>Handle sentinel slices in `std.mem.zeroes` (#13256)</li>
-    <li>Fixes to linux/bpf/btf.zig</li>
-    <li>std.os.linux.T: translate more MIPS values</li>
-    <li>std.os: take advantage of the freebsd's copy_file_range</li>
     <li>std.time: add microTimestamp() (#13327)</li>
     <li>std: Make getenv return 0-terminated slice</li>
-    <li>std.os.sigprocmask: @bitCast flags parameter</li>
-    <li>Add more sorting functions to MultiArrayList (#16377)</li>
-    <li>std.meta: remove isTag (#15584).</li>
-    <li>std: add mem.SplitIterator.peek() (#15670)</li>
-    <li>std.mem.zeroes now works with allowzero pointers</li>
-    <li>json: give enums a default stringify implementation</li>
-    <li>Smaller memory footprint for BoundedArray (#16299)</li>
-    <li>std.ArrayHashMap: capacity function now accepts const instance</li>
-    <li>std.cstr: deprecate namespace</li>
-    <li>openbsd: fix NativeTargetInfo semver</li>
-    <li>[heapsort] Protect against integer overflow (#16131).</li>
-    <li>[priority_dequeue] Fix out-of-bounds access</li>
-    <li>[priority_deque] simplify and optimize isMinLayer (#16124).</li>
-    <li>windows: detect ANSI support in more terminals (#16080).</li>
-    <li>Add zlib stream writer (#15010).</li>
-    <li>std: replace builtin.Version with SemanticVersion</li>
-    <li>fix bad return types for BSDs getdents and debitrot openbsd (#16052).</li>
-    <li>mem: rename alignForwardGeneric to mem.alignForward</li>
-    <li>std.crypto: wyhash: support comptime usage (#16070).</li>
-    <li>privatize std.mem.writePackedIntBig and writePackedIntLittle. These are unnecessary since writePackedInt accepts an endian parameter.</li>
-    <li>std.target: adds ps4 and ps5 type sizes.</li>
-    <li>std.atomic.Atomic: update tests to new for-loop syntax, re-enable test with isel</li>
-    <li>windows.sendto fix (#15831)</li>
     <li>publicize std.rand.ziggurat</li>
-    <li>os.connect: mark ECONNABORTED as unreachable (#13677).</li>
-    <li>bpf: expose "syscall" program type and F_SLEEPABLE flag</li>
-    <li>std.mem.ValidationAllocator: forward free() calls (#15978)</li>
-    <li>arena_allocator/reset: fix use after free, fix buffer overrun (#15985).</li>
-    <li>std.hash_map: fetchRemove increment available to avoid leaking slots (#15989).</li>
-    <li>std.crypto: reimplement wyhash v4.1 (#15969)</li>
-    <li>Split `std.mem.split` and `tokenize` into `sequence`, `any`, and `scalar` versions (#15579).</li>
-    <li>std.c: fix return type of recv/recvfrom on windows</li>
-    <li>std.io.reader.Reader: add `streamUntilDelimiter`</li>
-    <li>std.dwarf: handle DWARF 5 compile unit DW_AT_ranges correctly</li>
-    <li>std.io.Writer: add support for non-power-of-two int sizes</li>
-    <li>std.Target: fixes to `ptrBitWidth`, `c_type_byte_size`, and `c_type_alignment`.</li>
     <li>std: Snake-case some public facing enums (#15803).</li>
     <li>std: Move TTY from std.debug to std.io and add missing colors (#15806).</li>
-    <li>fix type errors in os.linux (#15801)</li>
-    <li>std.c: openbsd sigcontext/ucontext fix enum</li>
-    <li>std.meta: allow ArgsTuple to be used on functions with comptime parameters</li>
-    <li>std.io.multi-writer: support non-comptime streams (#15770).</li>
-    <li>std.mem.byteSwapAllFields: add suppport for nested structs (#15696)</li>
-    <li>std.mem.zeroInit: zero hidden padding for extern struct</li>
-    <li>Add tcsetpgrp and tcgetpgrp to std.os.linux</li>
-    <li>Add std.mem.indexOfNone</li>
     <li>std.enums: make Ext parameter optional</li>
     <li>std.enums: add tagName(), an alternative to `@tagName()` for non-exhaustive enums that doesn't panic when given an enum value that has no tag.</li>
-    <li>std.meta: remove tagName</li>
-    <li>std.zig.number_literal; Fix parsing of hexadecimal literals</li>
     <li>elf: add more missing defs for SHT_* and SHF_*</li>
-    <li>std.log.defaultLog: remove freestanding compile error</li>
-    <li>bpf: correct return type of ringbuf_output helper</li>
-    <li>Update std.meta.intToEnum to support non-exhaustive enums, which was preventing `std.json` from deserializing non-exhaustive enums (#15491).</li>
-    <li>std.os.linux: fix incorrect struct definition</li>
-    <li>std: @Vector support for std.json.parse</li>
-    <li>std.net.StreamServer.Options: add reuse_port</li>
-    <li>std.os.linux: Add new CAP constants</li>
-    <li>std.tar: make sub dirs + trim spaces (#15222)</li>
     <li>elf: add helpers for extracting type and bind from symbol def</li>
-    <li>std: GPA deinit return an enum instead of a bool</li>
-    <li>std.target.riscv: fix baseline_rv32 missing feature "32bit"</li>
-    <li>debug: fix missing stack traces during crashes on windows</li>
-    <li>std: add LZMA decoder (#14518)</li>
-    <li>ArrayList: Allow const for getLast (#14522)</li>
-    <li>std: add expectEqualDeep (#13995)</li>
-    <li>netbsd: use versioned __msync13 from libc (#14422)</li>
-    <li>os.sendfile: On BrokenPipe error, return error rather than unreachable</li>
-    <li>wasi: remove unnecessary breakpoint() in abort</li>
-    <li>std.target: mark helper functions inline so that callsites don't need <code><span class="line"><span class="tok-kw">comptime</span></span></code></li>
-    <li>Add fs.path.ComponentIterator and use it in Dir.makePath, fixing some bugs</li>
-    <li>linux: do not set stack size hard limit</li>
-    <li>windows.OpenFile/DeleteFile: Add NetworkNotFound as a possible error. When calling NtCreateFile with a UNC path, if either `\\server` or `\\server\share` are not found, then the statuses `BAD_NETWORK_PATH` or `BAD_NETWORK_NAME` are returned (respectively).</li>
-    <li>std.hash: Improvements for xxHash performance, both on small keys as well as large slices (#15947)</li>
-    <li>GPA: Catch invalid frees (#14791).</li>
-    <li>Remove std.os.windows.QueryInformationFile (a wrapper of NtQueryInformationFile). This function was unused, and implementation contained a few footguns.</li>
-    <li>Fix GetFileInformationByHandle compile error (#14829)</li>
     <li>std.simd: add wasm-simd support for suggestVectorSizeForCpu (#14992)</li>
-    <li>`os.isCygwinPty`: Fix a bug, replace kernel32 call, and optimize (#14841)</li>
     <li>std.base64: don't overflow dest with padding</li>
-    <li>std.process.Child: implement maxrss on Darwin</li>
-    <li>std.enums.IndexedSet: Add initOne and initMany</li>
-    <li>io_uring: Change ordering of prep provide buffers args</li>
-    <li>std.mem.reverseIterator improvements (#15134)</li>
-    <li>Add NetBSD termios constants to std.c.netbsd</li>
-    <li>std.os: add mincore syscall which is available on some UNIX like operating systems and allows a user to determine if a page is resident in memory.</li>
-    <li>std.process: Fix crash on some Windows machines</li>
-    <li>std.os.windows.DeviceIoControl: Handle INVALID_DEVICE_REQUEST. This is possible when e.g. calling CreateSymbolicLink on a FAT32 filesystem</li>
-    <li>Fix type mismatch for Reader.readIntoBoundedBytes (#16416)</li>
-    <li>[priority_queue] Simplify sifting & fix edge case</li>
-    <li>std.mem.Allocator: add error when passing a non-single-item pointer to allocator.destroy</li>
-    <li>std.os.linux | Fix sendmmsg function (#16513)</li>
-    <li>darwin: drop underscore from SIG._{BLOCK,UNBLOCK,SETMASK}. this makes them match decls in other OSes</li>
     <li>Fix counting in SingleThreadedRwLock's tryLockShared (#16560)</li>
-    <li>std.Uri: Don't double-escape escaped query parameters (#16043)</li>
-    <li>`std.coff`: check strtab lengths against `data` length. Fixes illegal behavior. Invalid-length sections are now skipped in `Coff.getSectionByName`.</li>
-    <li>std.process.totalSystemMemory: return correct error type on FreeBSD</li>
-    <li>Remove math.ln in favor of `@log`</li>
-    <li>os.renameatW: Handle OBJECT_NAME_COLLISION from NtSetInformationFile (#16374)</li>
-    <li>child_process: Fix regression on Windows for FAT filesystems (#16374).</li>
-    <li>windows.DeleteFile: Use FileDispositionInformationEx if possible, but fallback if not (#16499).</li>
-    <li>std.os: handle EPERM errno for bind</li>
-    <li>std: Add ArrayList.insertAssumeCapacity()</li>
-    <li>std.http: add connection pooling, handle keep-alive and compressed content (#14762)</li>
-    <li>std.os: add missing mmap errors</li>
-    <li>std.os.windows.advapi32: Add RegCloseKey</li>
-    <li>std.os: Allow write functions to return INVAL errors. In Linux when interacting with the virtual file system when writing in invalid value to a file the OS will return errno 22 (INVAL). Instead of triggering an unreachable, this change now returns a newly introduced error.InvalidArgument.</li>
-    <li>std.os: Add DeviceBusy as a possible write error. In Linux when writing to various files in the virtual file system, for example /sys/fs/cgroup, if you write an invalid value to a file you'll get errno 16.</li>
-    <li>std.process.Child: remove pid and handle, add id. Previously, this API had pid, to be used on POSIX systems, and handle, to be used on Windows. This change unifies the API, defining an Id type that is either the pid or the HANDLE depending on the target OS.</li>
     <li>introduce std.io.poll (#14744)</li>
-    <li>add Zstandard decompressor (#14183)</li>
-    <li>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</li>
-    <li>Introduce ChildProcess.collectOutput (#12295)</li>
     <li>std.c: Add umask.</li>
-    <li>Update Linux syscall list for 6.1, support Mips64 (#14541)</li>
     </ul>
+
+    <h3 id="Compile-Time-Configuration-Consolidated"><a href="#toc-Compile-Time-Configuration-Consolidated">Compile-Time Configuration Consolidated</a> <a class="hdr" href="#Compile-Time-Configuration-Consolidated">§</a></h3>
+
+    TODO https://github.com/ziglang/zig/pull/14181
+    
 
     <h3 id="Memory-Allocation"><a href="#toc-Memory-Allocation">Memory Allocation</a> <a class="hdr" href="#Memory-Allocation">§</a></h3>
 
     TODO
+    <ul>
+    <li>Add std.ArenaAllocator.reset() (#12590)</li>
+    <li>Adds std.heap.MemoryPool (#12586)</li>
+    <li>std.heap.raw_c_allocator: fix illegal alignment cast (#14090).</li>
+    <li>std.mem.ValidationAllocator: forward free() calls (#15978)</li>
+    <li>arena_allocator/reset: fix use after free, fix buffer overrun (#15985).</li>
+    <li>std.mem.Allocator: add error when passing a non-single-item pointer to allocator.destroy</li>
+    <li>std: GPA deinit return an enum instead of a bool</li>
+    <li>GPA: Catch invalid frees (#14791).</li>
+    </ul>
+
+
     <h4 id="Allow-Shrink-To-Fail"><a href="#toc-Allow-Shrink-To-Fail">Allow Shrink To Fail</a> <a class="hdr" href="#Allow-Shrink-To-Fail">§</a></h4>
 
 commit e35f297aeb993ec956ae80379ddf7f86069e109b
@@ -3358,6 +3316,23 @@ Date:   Thu Jul 6 20:41:49 2023 +0200
     
 
     <h3 id="Strings"><a href="#toc-Strings">Strings</a> <a class="hdr" href="#Strings">§</a></h3>
+
+    <ul>
+    <li>Removed std.cstr (#16032) </li>
+    <li>std: Handle field struct defaults in std.mem.zeroInit (#14116).</li>
+    <li>add std.mem.reverseIterator</li>
+    <li>std: added std.mem.window</li>
+    <li>Handle sentinel slices in `std.mem.zeroes` (#13256)</li>
+    <li>std: add mem.SplitIterator.peek() (#15670)</li>
+    <li>std.mem.zeroes now works with allowzero pointers</li>
+    <li>mem: rename alignForwardGeneric to mem.alignForward</li>
+    <li>privatize std.mem.writePackedIntBig and writePackedIntLittle. These are unnecessary since writePackedInt accepts an endian parameter.</li>
+    <li>Split `std.mem.split` and `tokenize` into `sequence`, `any`, and `scalar` versions (#15579).</li>
+    <li>std.mem.byteSwapAllFields: add suppport for nested structs (#15696)</li>
+    <li>std.mem.zeroInit: zero hidden padding for extern struct</li>
+    <li>Add std.mem.indexOfNone</li>
+    <li>std.mem.reverseIterator improvements (#15134)</li>
+    </ul>
 
     <h4 id="Restrict-memspan-and-memlen-to-Sentinel-Terminated-Pointers"><a href="#toc-Restrict-memspan-and-memlen-to-Sentinel-Terminated-Pointers">Restrict mem.span and mem.len to Sentinel-Terminated Pointers</a> <a class="hdr" href="#Restrict-memspan-and-memlen-to-Sentinel-Terminated-Pointers">§</a></h4>
 
@@ -3393,40 +3368,41 @@ Date:   Thu Jul 6 20:41:49 2023 +0200
 
     <h3 id="Math"><a href="#toc-Math">Math</a> <a class="hdr" href="#Math">§</a></h3>
 
-    TODO
-
-    Implements std.math.sign for float vectors.
-    std.math.big.int: implement popCount() for Const
-    std.big.int.Mutable: fix set(@as(DoubleLimb, 0)). Previously, this would set len to 1 but fail to initialize any limbs.
-    math: implement absInt for integer vectors. This commit adds support to absInt for integer vectors.
-    std.math: port `int_log10` from Rust (#14827)
-    std.math: add lerp (#13002)
-    std.math.big.int: Initialize limbs in addWrap, preventing invalid results (#13571)
-    Normalize remainder in math.big.int.Managed.divTrunc (#15535).
-    std.math.atan: fix mistyped magic constant
-    std.math.big.int: Add Sqrt (with reference to Modern Computer Arithmetic, Algorithm 1.13)
-    std.math.big.int: rename "eq" to "eql" for consistency (#16303).
-    Change math.Order integer tag values, speeding up binary search (#16356).
+    <ul>
+      <li>Remove math.ln in favor of <code><span class="line"><span class="tok-builtin">@log</span></span></code></li>
+      <li>Implements math.sign for float vectors.</li>
+      <li>math.big.int: implement popCount() for Const</li>
+      <li>big.int.Mutable: fix set(@as(DoubleLimb, 0)). Previously, this would set len to 1 but fail to initialize any limbs.</li>
+      <li>math: implement absInt for integer vectors. This commit adds support to absInt for integer vectors.</li>
+      <li>math: port `int_log10` from Rust (#14827)</li>
+      <li>math: add lerp (#13002)</li>
+      <li>math.big.int: Initialize limbs in addWrap, preventing invalid results (#13571)</li>
+      <li>Normalize remainder in math.big.int.Managed.divTrunc (#15535).</li>
+      <li>math.atan: fix mistyped magic constant</li>
+      <li>math.big.int: Add Sqrt (with reference to Modern Computer Arithmetic, Algorithm 1.13)</li>
+      <li>math.big.int: rename "eq" to "eql" for consistency (#16303).</li>
+      <li>Change math.Order integer tag values, speeding up binary search (#16356).</li>
+    </ul>
 
     
 
     <h3 id="File-System"><a href="#toc-File-System">File System</a> <a class="hdr" href="#File-System">§</a></h3>
 
-    TODO
-    
-    std.fs.path: add stem() (#13276)
-    os.windows.OpenFile: Add `USER_MAPPED_FILE` as a possible error
-    Dir.openDirAccessMaskW: Add ACCESS_DENIED as a possible error
-    wasi: fixes IterableDir.nextWasi for large directory (#13725)
-    Dir.statFile now uses fstatat (fewer syscalls) (#11594)
-    std: add fchmodat as well as `std.fs.has_executable_bit` for doing conditional compilation.
-    windows: use NtSetInformationFile in DeleteFile (#15316).
-    fs.Dir.deleteTree: Fix DirNotEmpty condition
-    fs.path: Fix Windows path component comparison being ASCII-only (#16100)
-    std.windows: use posix semantics to delete files, if available (#15501)
-    fixed windows resource leaks (#15450).
-    A few `IterableDir.Walker`/`Iterator` fixes (#15980)
-
+    <ul>
+      <li>std.fs.path: add stem() (#13276)</li>
+      <li>os.windows.OpenFile: Add `USER_MAPPED_FILE` as a possible error</li>
+      <li>Dir.openDirAccessMaskW: Add ACCESS_DENIED as a possible error</li>
+      <li>Dir.statFile now uses fstatat (fewer syscalls) (#11594)</li>
+      <li>std: add fchmodat as well as `std.fs.has_executable_bit` for doing conditional compilation.</li>
+      <li>windows: use NtSetInformationFile in DeleteFile (#15316).</li>
+      <li>fs.Dir.deleteTree: Fix DirNotEmpty condition</li>
+      <li>fs.path: Fix Windows path component comparison being ASCII-only (#16100)</li>
+      <li>std.windows: use posix semantics to delete files, if available (#15501)</li>
+      <li>fixed windows resource leaks (#15450).</li>
+      <li>A few `IterableDir.Walker`/`Iterator` fixes (#15980)</li>
+      <li>Add fs.path.ComponentIterator and use it in Dir.makePath, fixing some bugs</li>
+      <li>os.renameatW: Handle OBJECT_NAME_COLLISION from NtSetInformationFile (#16374)</li>
+    </ul>
     
 
     <h3 id="Data-Structures"><a href="#toc-Data-Structures">Data Structures</a> <a class="hdr" href="#Data-Structures">§</a></h3>
@@ -3450,6 +3426,31 @@ Author: Erik Arvstedt <erik.arvstedt@gmail.com>
 Date:   Sat Jul 15 11:29:09 2023 +0200
 
     SinglyLinkedList: rename `invert` -> `reverse`
+
+    <ul>
+    <li>std.MultiArrayList: add support for tagged unions.</li>
+    <li>std.ArrayHashMap: capacity function now accepts const instance</li>
+    <li>std.atomic.Queue: fix unget implementation and add docs</li>
+    <li>Add fromOwnedSliceSentinel to ArrayList ArrayList and ArrayListUnmanaged, add fromOwnedSlice to ArrayListUnmanaged</li>
+    <li>Add the two functions 'getLast' and 'getLastOrNull' to ArrayListAligned/ArrayListAlignedUnmanaged.</li>
+    <li>std: Expose Int parameter in std.PackedInt[Array,Slice]</li>
+    <li>ArrayList.toOwnedSlice: Fix potential for leaks when using errdefer (#13946)</li>
+    <li>Allow const ArrayLists to be cloned</li>
+    <li>Smaller memory footprint for BoundedArray (#16299)</li>
+    <li>[priority_dequeue] Fix out-of-bounds access</li>
+    <li>[priority_deque] simplify and optimize isMinLayer (#16124).</li>
+    <li>std: Fix update() method in PriorityQueue and PriorityDequeue (#13908)</li>
+    <li>[priority_queue] Simplify sifting and fix edge case</li>
+    <li>std.IndexedSet.iterator: allow iteration on const EnumSet</li>
+    <li>std: implement subsetOf and supersetOf for EnumMultiset</li>
+    <li>std: implement subsetOf and supersetOf for DynamicBitSet</li>
+    <li>std: add EnumMultiSet</li>
+    <li>std: Add ArrayList.insertAssumeCapacity()</li>
+    <li>ArrayList: Allow const for getLast (#14522)</li>
+    <li>std.enums.IndexedSet: Add initOne and initMany</li>
+    <li>std: added eql to DynamicBitSet and DynamicBitSetUnmanaged</li>
+    </ul>
+
     
 
     <h3 id="Sorting"><a href="#toc-Sorting">Sorting</a> <a class="hdr" href="#Sorting">§</a></h3>
@@ -3465,6 +3466,26 @@ Author: Ali Chraghi <alichraghi@proton.me>
 Date:   Sat Jun 24 17:31:50 2023 +0330
 
     std.sort.block: add safety check for lessThan return value
+
+    <ul>
+    <li>[heapsort] Protect against integer overflow (#16131).</li>
+    <li>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</li>
+    <li>Add more sorting functions to MultiArrayList (#16377)</li>
+    </ul>
+    
+
+    <h3 id="Compression"><a href="#toc-Compression">Compression</a> <a class="hdr" href="#Compression">§</a></h3>
+
+    <ul>
+      <li>Added xz decoder (#14434)</li>
+      <li>Implement gzip header CRC check.</li>
+      <li>std.compress: Improve tests, remove reliance on openDirAbsolute (#13952)</li>
+      <li>std.tar: make sub dirs + trim spaces (#15222)</li>
+      <li>gzip: add missing header fields and bounds for header parsing (#13142)</li>
+      <li>Added Zstandard decompressor (#14183)</li>
+      <li>Added zlib stream writer (#15010).</li>
+      <li>Added LZMA decoder (#14518)</li>
+    </ul>
     
 
     <h3 id="Crypto"><a href="#toc-Crypto">Crypto</a> <a class="hdr" href="#Crypto">§</a></h3>
@@ -3484,6 +3505,8 @@ Date:   Sat Jun 24 17:31:50 2023 +0330
 <li>AES-CMAC has been implemented, and is availble in <code>crypto.auth.cmac</code>.</li>
 <li><code>std.crypto.ecc</code>: the <code>isOdd()</code> function was added to return the parity of a field element.</li>
 <li><code>bcrypt</code>: bcrypt has a slightly annoying limitation: passwords are limited to 72 bytes, and additional bytes are silently ignored. A new option, <code>silently_truncate_password</code>, can be set to <code>true</code> to transparently pre-hash the passwords and overcome this limitation.</li>
+<li>wyhash: support comptime usage (#16070).</li>
+<li>std.hash.crc: implement algorithms listed in CRC RevEng catalog (#14396)</li>
 </ul>
 
 <h4 id="Breaking-Changes"><a href="#toc-Breaking-Changes">Breaking Changes</a> <a class="hdr" href="#Breaking-Changes">§</a></h4>
@@ -3506,7 +3529,7 @@ Date:   Sat Jun 24 17:31:50 2023 +0330
 <p>Kyber is a post-quantum public key encryption and key exchange machanism. It was selected by NIST for the first post-quantum cryptography standard.</p>
 <p>It is available in the standard library, in the <code>std.crypto.kem</code> namespace, making Zig the first language with post-quantum cryptography available right in the standard library.</p>
 <p><code>Kyber512</code>, <code>Kyber768</code> and <code>Kyber1024</code>, as specified in the current draft, are supported.</p>
-<p>The TLS client (<code>std.crypto.tls.Client</code>) also supports the hybrid <code>X25519Kyber768</code> post-quantum key agreement mechanism by default.</p>
+<p>The <a href="#TLS-Client">TLS Client</a> also supports the hybrid <code>X25519Kyber768</code> post-quantum key agreement mechanism by default.</p>
 <p>Thanks a lot to Bas Westerbaan for contributing this!</p>
 
 <h4 id="Constant-Time-Allocation-Free-Field-Arithmetic"><a href="#toc-Constant-Time-Allocation-Free-Field-Arithmetic">Constant-Time, Allocation-Free Field Arithmetic</a> <a class="hdr" href="#Constant-Time-Allocation-Free-Field-Arithmetic">§</a></h4>
@@ -3556,6 +3579,7 @@ Date:   Sat Jun 24 17:31:50 2023 +0330
 <li>Curve25519: when compiled to WebAssembly, scalar multiplication emitted too many local variables for some runtimes. This has been fixed. The code is also significantly smaller in <code>ReleaseSmall</code> mode.</li>
 <li>Prime-order curves: points whose X coordinate was <code>0</code> used to be rejected with an <code>IdentityElement</code> error. These points were also not properly serialized. That has been fixed.</li>
 <li>Argon2: outputs larger than 64 bytes are now correctly handled.</li>
+<li>std.hash_map: fetchRemove increment available to avoid leaking slots (#15989).</li>
 </ul>
 
 <h4 id="Performance-Improvements"><a href="#toc-Performance-Improvements">Performance Improvements</a> <a class="hdr" href="#Performance-Improvements">§</a></h4>
@@ -3566,6 +3590,8 @@ Date:   Sat Jun 24 17:31:50 2023 +0330
 <li>The ChaCha20 implementation can now take advantage of CPUs with 256 and 512 bit vector registers for a significant speedup.</li>
 <li>Poly1305 got a little bit faster, too.</li>
 <li>SHA256 can take advantage of hardware acceleration on x86_64 and aarch64.</li>
+<li>Reimplement wyhash v4.1 (#15969)</li>
+<li>Improvements for xxHash performance, both on small keys as well as large slices (#15947).</li>
 </ul>
 
     
@@ -3584,22 +3610,69 @@ Date:   Sat Jun 24 17:31:50 2023 +0330
 
     <h3 id="Networking"><a href="#toc-Networking">Networking</a> <a class="hdr" href="#Networking">§</a></h3>
 
-commit c9ef277fa7e43f119a7f2896635b4fdf9c97edbe
-Merge: 8bd734d60 7178451d6
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Jan 3 02:43:50 2023 -0500
+    <p>For a few releases, there was a <code>std.x</code> namespace which was a playground
+    for some contributors to experiment with networking. In Zig 0.11, networking is no longer
+    experimental; it is part of the <a href="#Package-Management">Package Management</a> strategy. However, networking
+    is still immature and <a href="#Bug-Fixes">buggy</a>, so use it at your own risk.</p>
 
-    Merge pull request #13980 from ziglang/std.net
-    
-    networking: delete std.x; add std.crypto.tls and std.http.Client
+    <ul>
+      <li>net: Make <code>res</code> nullable in <code>std.c.getaddrinfo</code></li>
+      <li>net: check for localhost names before asking DNS</li>
+      <li>remove std.url and add std.uri which is more complete and RFC-compliant (#14176).</li>
+      <li>net.StreamServer.Options: add reuse_port</li>
+      <li>Uri: Don't double-escape escaped query parameters (#16043)</li>
+      <li>os.connect: mark ECONNABORTED as unreachable (#13677).</li>
+      <li>os.sendfile: On BrokenPipe error, return error rather than unreachable</li>
+      <li>os.bind: handle EPERM errno</li>
+    </ul>
 
-
-    for shigueredo allowing us to use their RSA implementation until frank implemented
-    a non-allocating version, honto ni arigatoo gozaimashta
 
     <h4 id="TLS-Client"><a href="#toc-TLS-Client">TLS Client</a> <a class="hdr" href="#TLS-Client">§</a></h4>
 
-    TODO
+    <p>Zig 0.11.0 now provides a client implementation of
+    <a href="https://datatracker.ietf.org/doc/html/rfc8446">Transport Layer Security v1.3</a></p>
+
+    <p>Thanks to Zig's excellent <a href="#Crypto">Crypto</a>, the
+    <a href="https://github.com/ziglang/zig/blob/0.11.0/lib/std/crypto/tls/Client.zig">implementation</a>
+    came out lovely. Search for <code><span class="line">++</span></code> if you want to see a nice
+    demonstration of <a href="#Concatenation-of-Arrays-and-Tuples">Concatenation of Arrays and Tuples</a>. This is also a nice showcase
+    of <a href="https://ziglang.org/documentation/0.11.0/#Inline-switch">inline switch cases</a>.</p>
+    <p>As lovely as it may be, there is not yet a TLS server implementation and so this code
+    has not been fuzz-tested. In fact there is not yet <em>any</em> automated testing for this
+    API, so use it at your own risk.</p>
+
+    <p>I want to recognize <a href="https://shiguredo.jp/">Shigueredo</a> whose TLSv1.3
+    implementation I took inspiration from. For <a href="#Thank-You-Sponsors">sponsoring</a> us
+    and for allowing us to copy their RSA implementation until Frank Denis
+    implemented <a href="#Constant-Time-Allocation-Free-Field-Arithmetic">Constant-Time, Allocation-Free Field Arithmetic</a>,
+    本当にありがとうございました!</p>
+
+    <p>The TLS client is a dependency of the <a href="#HTTP-Client">HTTP Client</a> which is a dependency
+    of <a href="#Package-Management">Package Management</a>.</p>
+
+    <p>Open follow-up issues:</p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/14167">send an alert message to the server when an error occurs</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/14178">audit the implementation with respect to RFC 8446</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/14172">test the implementation against many real world servers</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/14173">look into TCP fastopen and TCP_QUICKACK</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/14174">increase test coverage</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/14175">std.crypto.Certificate.verify: additionally verify "key usage</a></li>
+    </ul>
+    
+
+    <h4 id="HTTP-Client"><a href="#toc-HTTP-Client">HTTP Client</a> <a class="hdr" href="#HTTP-Client">§</a></h4>
+
+    <p>There is now an HTTP client (#15123). It is used by the <a href="#Compiler">Compiler</a> to fetch
+    URLs as part of <a href="#Package-Management">Package Management</a>.</p>
+    <p>It supports some basic features such as:
+    <ul>
+      <li>transfer-encoding: chunked (#14224)</li>
+      <li>HTTP redirects (#14202)</li>
+      <li>connection pooling, keep-alive, and compressed content (#14762)</li>
+    </ul>
+    <p>It is still very immature and not yet tested in a robust manner. Please use it
+    at your own risk.</p>
     
 
     <h4 id="Ignore-SIGPIPE-by-Default"><a href="#toc-Ignore-SIGPIPE-by-Default">Ignore SIGPIPE by Default</a> <a class="hdr" href="#Ignore-SIGPIPE-by-Default">§</a></h4>
@@ -3611,6 +3684,12 @@ Date:   Tue Jan 3 02:43:50 2023 -0500
     <h3 id="Testing"><a href="#toc-Testing">Testing</a> <a class="hdr" href="#Testing">§</a></h3>
 
     TODO
+    <ul>
+      <li>std.testing: Fully absorb expectEqualBytes into expectEqualSlices</li>
+      <li>std.testing: Improve expectEqualBytes for large inputs and make expectEqualSlices use it</li>
+      <li>std.testing: Add expectEqualBytes that outputs hexdumps with diffs highlighted in red. The coloring is controlled by `std.debug.detectTTYConfig` so it will be disabled when appropriate.</li>
+      <li>std: add expectEqualDeep (#13995)</li>
+    </ul>
     
 
     <h3 id="Debugging"><a href="#toc-Debugging">Debugging</a> <a class="hdr" href="#Debugging">§</a></h3>
@@ -3618,6 +3697,13 @@ Date:   Tue Jan 3 02:43:50 2023 -0500
     <ul>
       <li>Added support for DWARF5 <code>DW_AT_ranges</code> in subprograms. Some DWARF5 subprograms have non-contiguous instruction ranges, which wasn't supported before. An example of such a function is <code>puts</code> in Ubuntu's libc. Stack traces now include the names of these functions.</li>
       <li>Support for DWARF information embedded inside COFF binaries has been fixed. This is relatively uncommon combination, as typically this information is in a PDB file, but can be output using <code>-gdwarf</code> when compiling C/C++ code for Windows.</li>
+      <li>std.debug: fix segfault/panic race condition (#7859) (#12207).</li>
+      <li>std.debug: Replace tabs with spaces when printing a line for trace output.</li>
+      <li>std.log: add functionality to check if a specific log level and scope are enabled</li>
+      <li>std.log.defaultLog: remove freestanding compile error</li>
+      <li>Added valgrind client request support for aarch64 (#13292).</li>
+      <li>std.dwarf: handle DWARF 5 compile unit DW_AT_ranges correctly</li>
+      <li>pdb: make SuperBlock def public</li>
     </ul>
 
     <h4 id="Stack-Unwinding"><a href="#toc-Stack-Unwinding">Stack Unwinding</a> <a class="hdr" href="#Stack-Unwinding">§</a></h4>
@@ -3756,6 +3842,8 @@ TODO
     <li>Added a generic <code>json.HashMap(T)</code> container for serializing/deserializing objects with arbitrary string fields. It's a thin wrapper around <code>StringArrayHashMapUnmanaged</code> that implements <code>jsonParse</code>, <code>jsonParseFromValue</code>, and <code>jsonStringify</code>.</li>
     <li><code>json.WriteStream</code> features now available to custom <code>pub fn jsonStringify</code> implementations due to the unification of <code>json.stringify</code> and <code>json.WriteStream</code>.</li>
     <li>Writing JSON now supports saving memory by disabling assertions for correct syntax, e.g. disabling assertions that <code>endArray</code> matches a corresponding <code>beginArray</code>.</li>
+
+    <li><code><span class="line"><span class="tok-builtin">@Vector</span></span></code> support for std.json.parse</li>
     </ul>
 
     <p>Here is an upgrade guide:</p>
@@ -4263,6 +4351,11 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <li>Added compile-error on primitive value export (#14778)</li>
     <li>Fixed some builtin functions not returning <code><span class="line"><span class="tok-type">void</span></span></code> (#14779)</li>
     <li>Fixed miscompilation: Error propagates with <code><span class="line"><span class="tok-kw">return</span> x()</span></code> but not with <code><span class="line"><span class="tok-kw">return</span> <span class="tok-kw">try</span> x()</span></code> inside recursion (#15669).</li>
+    <li>fix potential integer underflow in std.zig.Ast.fullCall</li>
+    <li>std.zig.Ast: add helper functions to std.zig.Ast for extracting data out of nodes</li>
+    <li>std.zig.Ast.parse: fix integer overflows during parsing, found while fuzzing zls.</li>
+    <li>std: replace parseAppend with parseWrite in std.zig.string_literal</li>
+    <li>std.zig.number_literal; Fix parsing of hexadecimal literals</li>
     </ul>
 
     <h3 id="Performance"><a href="#toc-Performance">Performance</a> <a class="hdr" href="#Performance">§</a></h3>
@@ -4278,7 +4371,12 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
     <ul>
       <li><code>zig build-exe</code> on
         <a href="https://github.com/andrewrk/tetris">this Tetris demo</a>: 14.5% ±  2.7% faster wall clock time, 7.6% ±  0.2% fewer bytes of peak memory usage (x86_64-linux, baseline).</li>
+      <li><code>zig build-exe</code> on
+        <a href="https://ziggit.dev/t/can-anyone-provide-compilation-speed-comparisons-for-their-project-0-10-1-to-0-11-x-dev-version/1241/4?u=andrewrk">someone's Advent-of-Code project</a>: 6.3% slower wall clock time, 8.7% more bytes of peak memory usage</li>
     </ul>
+    <p>Note that the compiler is doing more work in 0.11.0 for most builds
+    (including "Hello, World!") due to the <a href="#Standard-Library">Standard Library</a> having more advanced
+    <a href="#Debugging">Debugging</a> capabilities, such as <a href="#Stack-Unwinding">Stack Unwinding</a>.</p>
     
 
     <h3 id="Bootstrapping"><a href="#toc-Bootstrapping">Bootstrapping</a> <a class="hdr" href="#Bootstrapping">§</a></h3>
