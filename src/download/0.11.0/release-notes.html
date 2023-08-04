@@ -994,7 +994,7 @@ $ clang-offload-bundler -type=o -bundle-align=4096 \
     <a href="https://support.microsoft.com/en-us/help/13853/windows-lifecycle-fact-sheet">Microsoft dropped LTS support for 8.1 in January</a>.
     Patches to Zig supporting for older versions of Windows are still accepted into
     the codebase, but they are not regularly tested, not part of the
-    part of {#link|Bug Stability Program#}, and not covered by the {#link|Tier System#}.
+    {#link|Bug Stability Program#}, and not covered by the {#link|Tier System#}.
     </p>
   <ul>
     <li>Fix _tls_index not being defined if libc wasn't linked, and fix x86 name mangling.</li>
@@ -1544,11 +1544,11 @@ test "pointer capture from array" {
     {#syntax#}@memset{#endsyntax#} to make them more useful.
     </p>
     <p>
-    {#syntax#}@memcpy{#endsyntax#} now takes two parameters. The first is the destination, and must
-    be a mutable slice of any any element type. The second parameter is the source value, which may
-    be either a slice of the element type (in which case it must have the same length) or a
-    many-pointer to it (in which case it is implicitly sliced to the same length). The builtin
-    copies values from the source address to the destination address.
+    {#syntax#}@memcpy{#endsyntax#} now takes two parameters. The first is the destination, and the
+    second is the source. The builtin copies values from the source address to the destination
+    address. Both parameters may be a slice or many-pointer of any element type; the destination
+    parameter must be mutable in either case. At least one of the parameters must be a slice; if
+    both parameters are a slice, then the two slices must be of equal length.
     </p>
     <p>
     The source and destination memory must not overlap (overlap is considered safety-checked
@@ -2397,7 +2397,7 @@ const Foo = struct {
     As such, comparisons of this form are now allowed. However, since these comparisons are
     tautological, they do not cause any runtime checks: instead, the result is comptime-known based
     on the type. For instance, {#syntax#}my_u8 == 500{#endsyntax#} is comptime-known
-    {#syntax#}true{#endsyntax#}, even if {#syntax#}my_u8{#endsyntax#} is not itself comptime-known.
+    {#syntax#}false{#endsyntax#}, even if {#syntax#}my_u8{#endsyntax#} is not itself comptime-known.
     </p>
     {#code_begin|test|tautological_compare_comptime#}
 test "tautological comparisons are comptime-known" {
@@ -2617,7 +2617,7 @@ fn g(u: *U2) void {
     <p>
     0.10 had some arbitrary restrictions on the types of function parameters and their return types:
     they were not permitted to be {#syntax#}@TypeOf(null){#endsyntax#} or
-    {#syntax#}@TypeOf(undefined){#endsyntax#}. While these are types are rarely useful in this
+    {#syntax#}@TypeOf(undefined){#endsyntax#}. While these types are rarely useful in this
     context, they are still completely normal comptime-only types, so this restriction on their
     usage was needless. As such, they are now allowed as parameter and return types.
     </p>
@@ -3256,7 +3256,7 @@ if (allocator.resize(old_memory, new_capacity)) {
 <p>In order to print a stack trace, the panic (or segfault) handler needs to unwind the stack, by traversing back through the stack frames starting at the crash site. Up until now, this was done strictly by utilizing the <a href="https://en.wikipedia.org/wiki/Call_stack#Stack_and_frame_pointers">frame pointer</a>. This method of stack unwinding works assuming that a frame pointer is available, which isn't the case if the code is compiled without one - ie. if <code>-fomit-frame-pointer</code>was used. </p>
 <p>It can be beneficial for performance reasons to not use a frame pointer, since this frees up an additional register, so some software maintainers may choose to ship libraries compiled without it. One of the motivating reasons for this change was solving a bug where unwinding a stack trace that started in Ubuntu's libc wasn't working - and indeed it is compiled with <code>-fomit-frame-pointer</code>.</p>
 <p>Since <a href="https://github.com/ziglang/zig/pull/15823">#15823</a> was merged, the {#link|Standard Library#} stack unwinder (<code>std.debug.StackIterator</code>) now supports unwinding stacks using both DWARF unwind tables, and {#link|MachO#} compact unwind information. These unwind tables encode how to unwind all the register state and recover the return address for any location in the program. </p>
-<p>In order to save space, DWARF unwind tables aren't program-sized lookup tables, but instead sets of opcodes which run on a virtual machine inside the unwinder to build the lookup table dynmamically. Additionally, these tables can define register values in terms of DWARF expressions, which is a separate stack-machine based bytecode. This is all supported in the new unwinder.</p>
+<p>In order to save space, DWARF unwind tables aren't program-sized lookup tables, but instead sets of opcodes which run on a virtual machine inside the unwinder to build the lookup table dynamically. Additionally, these tables can define register values in terms of DWARF expressions, which is a separate stack-machine based bytecode. This is all supported in the new unwinder.</p>
 <p>As an example of how this improves stack trace output, consider the following zig program and C library (which will be built with <code>-fomit-frame-pointer</code>):</p>
 {#code_begin|syntax|main#}
 const std = @import("std");
@@ -4905,7 +4905,6 @@ Hello World!
 <li>Bas Westerbaan</li>
 <li>Carl Åstholm</li>
 <li>Emile Badenhorst</li>
-<li>Felix "xq" Queißner</li>
 <li>Igor Anić</li>
 <li>Lee Cannon</li>
 <li>Matt Knight</li>
@@ -4932,7 +4931,6 @@ Hello World!
 <li>Edoardo Vacchi</li>
 <li>Emile Badenhorst</li>
 <li>Eric Milliken</li>
-<li>Felix (xq) Queißner</li>
 <li>Ganesan Rajagopal</li>
 <li>Garrett</li>
 <li>Gaëtan S</li>
@@ -4986,7 +4984,6 @@ Hello World!
 <li>Eric Rowley</li>
 <li>Evan Typanski</li>
 <li>Fabio Arnold</li>
-<li>Felix Queißner</li>
 <li>Frechdachs</li>
 <li>George  Zhao</li>
 <li>Gregory Oakes</li>
