@@ -1000,30 +1000,8 @@ $ clang-offload-bundler -type=o -bundle-align=4096 \
     the codebase, but they are not regularly tested, not part of the
     part of {#link|Bug Stability Program#}, and not covered by the {#link|Tier System#}.
     </p>
-    <ul>
-    <li>Fix _tls_index not being defined if libc wasn't linked, and fix x86 name mangling.</li>
-    </ul>
-commit 02b221051a180a252bb3a092b1cc054469c6fa15
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Dec 9 14:58:16 2022 -0700
-
-    fix aarch64-windows-gnu libc
-    
-    We were missing some math functions. After this enhancement I verified
-    that I was able to cross-compile ninja.exe for aarch64-windows and
-    produce a viable binary.
-
-commit fc6d7d2799fa297a65e8bb0052e9e2c7bca5c645
-Author: Jacob Young <jacobly0@users.noreply.github.com>
-Date:   Sat Dec 10 03:44:25 2022 -0500
-
-    CBE: fix compiling for aarch64-windows
-    
-    These bugs were triggered in the C backend by aarch64-specific code in
-    os/windows.zig.  Intentionally not updating zig1.wasm yet because of
-    upcoming changes and since aarch64-windows is not tested on master yet.
-
   <ul>
+    <li>Fix _tls_index not being defined if libc wasn't linked, and fix x86 name mangling.</li>
     <li>replace GetPhysicallyInstalledSystemMemory with ntdll (#15264).</li>
     <li>std.os.sendto: use ws2_32 on Windows (#9971).</li>
     <li>std.os.windows: add possible error NETNAME_DELETED of ReadFile (#13631)</li>
@@ -1052,23 +1030,12 @@ Date:   Sat Dec 10 03:44:25 2022 -0500
   </ul>
 
     {#header_open|Resource Files (.res)#}
-commit b11170294052585ae81b9946d770f860d163da8f
-Author: Ryan Liptak <squeek502@hotmail.com>
-Date:   Sat Jun 24 15:22:56 2023 -0700
-
-    Recognize the .res extension and link it as if it were an object file
-    
-    .res files are compiled Windows resource files that get linked into executables/libraries. The linker knows what to do with them, but previously you had to trick Zig into thinking it was an object file (by renaming it to have the .obj extension, for example).
-    
-    After this commit, the following works:
-    
-        zig build-exe main.zig resource.res
-    
-    or, in build.zig:
-    
-        exe.addObjectFile("resource.res");
-    
-    Closes #6488
+    <p>Zig now recognizes the .res extension and links it as if it were an object file (#6488).</p>
+    <p>.res files are compiled Windows resource files that get linked into executables/libraries. The linker knows what to do with them, but previously you had to trick Zig into thinking it was an object file (by renaming it to have the .obj extension, for example).</p>
+    <p>Now, the following works:</p>
+    <pre><code>zig build-exe main.zig resource.res</code></pre>
+    <p>or, in build.zig:</p>
+    <pre>{#syntax#}exe.addObjectFile("resource.res");{#endsyntax#}</pre>
     {#header_close#}
 
     {#header_open|Support UNC, Rooted, Drive-Relative, and Namespaced/Device Paths#}
@@ -1087,6 +1054,8 @@ Date:   Sat Jun 24 15:22:56 2023 -0700
     as <code>CP 40xx</code> registry keys which we now pull and parse for CPU feature information.</li>
     <li>introduce <code>system/arm.zig</code> containing CPU model table. Now we can reuse the table between CPU model parsers on 
     {#link|Linux#} and Windows. </li>
+    <li>Fixed aarch64-windows-gnu libc. We were missing some math functions. After this enhancement I verified that I was able to cross-compile ninja.exe for aarch64-windows and produce a viable binary.</li>
+    <li>{#link|C Backend#}: fixed compiling for aarch64-windows. These bugs were triggered in the C backend by aarch64-specific code in os/windows.zig.</li>
     </ul>
     {#header_close#}
 
@@ -1157,18 +1126,10 @@ Date:   Sat Jun 24 15:22:56 2023 -0700
     {#header_close#}
 
     {#header_open|NetBSD#}
-commit e23d48e61a594cabb735accf4c0a18dab6ae18a2
-Merge: e3736badd 8eaf2ff20
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Jun 17 14:22:43 2023 -0700
-
-    Merge pull request #15511 from mikdusan/netbsd-pkgsrc
-    
-    netbsd: pkgsrc
-
     <ul>
-    <li>netbsd: use versioned __msync13 from libc (#14422)</li>
-    <li>Add NetBSD termios constants to std.c.netbsd</li>
+    <li>use versioned __msync13 from libc (#14422)</li>
+    <li>Add termios constants to std.c.netbsd</li>
+    <li>pkgsrc (#1551)</li>
     </ul>
     {#header_close#}
 
@@ -1192,22 +1153,6 @@ freestanding, the user must implement their own such as Web Workers when
 building a WebAssembly module for the browser.</p>
 
 
-commit 2834b937f143aa80e3730706dac5ff44cea3a67d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Mar 2 19:04:55 2023 -0700
-
-    link: give executable bit to wasm executables sometimes
-    
-    Give +x to the .wasm file if it is an executable and the OS is WASI.
-    Some systems may be configured to execute such binaries directly. Even
-    if that is not the case, it means we will get "exec format error" when
-    trying to run it rather than "access denied", and then can react to that
-    in the same way as trying to run an ELF file from a foreign CPU
-    architecture.
-    
-    This is part of the strategy to unify RunStep and EmulatableRunStep.
-
-
     <ul>
     <li>wasi: fixes IterableDir.nextWasi for large directory (#13725)</li>
     <li>Implement some more environment functions for WASI.</li>
@@ -1216,7 +1161,15 @@ Date:   Thu Mar 2 19:04:55 2023 -0700
     <li>wasi: remove unnecessary breakpoint() in abort</li>
     </ul>
 
-
+    {#header_open|Give Executable Bit to wasm Executables#}
+    <p>Zig now gives +x to the .wasm file if it is an executable and the OS is WASI.
+    Some systems may be configured to execute such binaries directly. Even
+    if that is not the case, it means we will get "exec format error" when
+    trying to run it rather than "access denied", and then can react to that
+    in the same way as trying to run an ELF file from a foreign CPU
+    architecture.</p>
+    <p>This is part of the strategy for {#link|Foreign Target Execution and Testing#}.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|UEFI#}
@@ -2917,29 +2870,30 @@ const data = @embedFile("foo");
     <li>std.mem.Allocator: add error when passing a non-single-item pointer to allocator.destroy</li>
     <li>std: GPA deinit return an enum instead of a bool</li>
     <li>GPA: Catch invalid frees (#14791).</li>
+    <li>Optimize Allocator functions to create less duplicate code for similar types (#16332).</li>
     </ul>
 
-
     {#header_open|Allow Shrink To Fail#}
-commit e35f297aeb993ec956ae80379ddf7f86069e109b
-Merge: deda6b514 f46666788
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Nov 30 01:44:34 2022 -0500
-
-    Merge pull request #13666 from ziglang/allocator-interface
-    
-    std.mem.Allocator: allow shrink to fail
+    <p>The Allocator interface now allows implementations to refuse to shrink (#13666).
+    This makes ArrayList more efficient because it avoids copying allocated but
+    unused bytes by attempting a resize in place, and falling back to
+    allocating a new buffer and doing its own copy. With a realloc() call, the
+    allocator implementation would pointlessly copy the extra capacity:</p>
+    {#syntax_block|zig|array_list.zig#}
+const old_memory = self.allocatedSlice();
+if (allocator.resize(old_memory, new_capacity)) {
+    self.capacity = new_capacity;
+} else {
+    const new_memory = try allocator.alignedAlloc(T, alignment, new_capacity);
+    @memcpy(new_memory[0..self.items.len], self.items);
+    allocator.free(old_memory);
+    self.items.ptr = new_memory.ptr;
+    self.capacity = new_memory.len;
+}
+    {#end_syntax_block#}
+    <p>It also enabled implementing {#link|WasmAllocator#} which was not possible
+    with the previous interface requirements.</p>
     {#header_close#}
-
-commit 49ac816e3683def5d14d6f8415d80413ecb43e4c
-Author: IntegratedQuantum <43880493+IntegratedQuantum@users.noreply.github.com>
-Date:   Thu Jul 6 20:41:49 2023 +0200
-
-    Optimize Allocator functions to create less duplicate code for similar types (#16332)
-    
-    * Move functionality from generic functions that doesn't depend on the type into a function that only depends on comptime alignment.
-    
-    This reduces comptime code duplication because e.g. `alloc(u32, )` and `alloc(i32, )` now use the same function `allocWithFoo(4, 4, )` under the hood.
     {#header_close#}
 
     {#header_open|Strings#}
@@ -3029,28 +2983,21 @@ Date:   Thu Jul 6 20:41:49 2023 +0200
     {#header_close#}
 
     {#header_open|Data Structures#}
-    TODO
-    std: added pure functions to StaticBitSet
-    The following functions were added to both IntegerBitSet and ArrayBitSet:
-      fn eql(self: Self, other: Self) bool
-      fn subsetOf(self: Self, other: Self) bool
-      fn supersetOf(self: Self, other: Self) bool
-      fn complement(self: Self) Self
-      fn unionWith(self: Self, other: Self) Self
-      fn intersectWith(self: Self, other: Self) Self
-      fn xorWith(self: Self, other: Self) Self
-      fn differenceWith(self: Self, other: Self) Self
-    std: added pure fns to EnumSet
-
-
-commit c6aa29b6fdba1606bfd218b17de89f64179c0ed8
-Author: Erik Arvstedt <erik.arvstedt@gmail.com>
-Date:   Sat Jul 15 11:29:09 2023 +0200
-
-    SinglyLinkedList: rename `invert` -> `reverse`
-
+    <ul>
+      <li>std: added pure functions to StaticBitSet and EnumSet</li>
+      <li>The following functions were added to both IntegerBitSet and ArrayBitSet:<ul>
+        <li>{#syntax#}fn eql(self: Self, other: Self) bool{#endsyntax#}</li>
+        <li>{#syntax#}fn subsetOf(self: Self, other: Self) bool{#endsyntax#}</li>
+        <li>{#syntax#}fn supersetOf(self: Self, other: Self) bool{#endsyntax#}</li>
+        <li>{#syntax#}fn complement(self: Self) Self{#endsyntax#}</li>
+        <li>{#syntax#}fn unionWith(self: Self, other: Self) Self{#endsyntax#}</li>
+        <li>{#syntax#}fn intersectWith(self: Self, other: Self) Self{#endsyntax#}</li>
+        <li>{#syntax#}fn xorWith(self: Self, other: Self) Self{#endsyntax#}</li>
+        <li>{#syntax#}fn differenceWith(self: Self, other: Self) Self{#endsyntax#}</li>
+      </ul></li>
     <ul>
     <li>std.MultiArrayList: add support for tagged unions.</li>
+    <li>Add more {#link|Sorting#} functions to MultiArrayList (#16377)</li>
     <li>std.ArrayHashMap: capacity function now accepts const instance</li>
     <li>std.atomic.Queue: fix unget implementation and add docs</li>
     <li>Add fromOwnedSliceSentinel to ArrayList ArrayList and ArrayListUnmanaged, add fromOwnedSlice to ArrayListUnmanaged</li>
@@ -3076,23 +3023,14 @@ Date:   Sat Jul 15 11:29:09 2023 +0200
     {#header_close#}
 
     {#header_open|Sorting#}
-commit 3db3cf77904e664d589287602c14168a7a63f125
-Author: Ali Chraghi <alichraghi@proton.me>
-Date:   Tue May 23 15:33:12 2023 +0330
-
-    std.sort: add pdqsort and heapsort
-
-commit 6bd54793060191ffce2c7492a90a40a30f9e2a1d
-Author: Ali Chraghi <alichraghi@proton.me>
-Date:   Sat Jun 24 17:31:50 2023 +0330
-
-    std.sort.block: add safety check for lessThan return value
-
-    <ul>
-    <li>[heapsort] Protect against integer overflow (#16131).</li>
-    <li>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</li>
-    <li>Add more sorting functions to MultiArrayList (#16377)</li>
-    </ul>
+    <p>Sorting is now split into two categorize: stable and unstable.
+    Generally, it's best to use unstable if you can, but stable is a more conservative
+    choice. Zig's stable sort remains a blocksort implementation, while unstable sort
+    is a new pdqsort implementation. heapsort is also available in the standard
+    library (#15412).</p>
+    <p>Now, debug builds have assertions to ensure that the comparator function
+    (<code>lessThan</code>) does not return conflicting results (#16183).</p>
+    <p>std.sort.binarySearch: relax requirements to support both homogeneous and heterogeneous keys ( #12727).</p>
     {#header_close#}
 
     {#header_open|Compression#}
@@ -3279,6 +3217,8 @@ Date:   Sat Jun 24 17:31:50 2023 +0330
     </ul>
     <p>It is still very immature and not yet tested in a robust manner. Please use it
     at your own risk.</p>
+    <p>For more information, please refer to this article written by the maintainer
+    of std.http: <a href="https://zig.news/nameless/coming-soon-to-a-zig-near-you-http-client-5b81">Coming Soon to a Zig Near You: HTTP CLient</a></p>
     {#header_close#}
 
     {#header_open|Ignore SIGPIPE by Default#}
@@ -3578,36 +3518,32 @@ while (true) {
     {#header_close#}
 
     {#header_open|posix_spawn Considered Harmful#}
-commit 3169f0529b22fca2a387a841a62fec29b3d2096a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Mar 9 19:51:58 2023 -0700
-
-    eliminate posix_spawn from the standard library
-    
-    Today I found out that posix_spawn is trash. It's actually implemented
-    on top of fork/exec inside of libc (or libSystem in the case of macOS).
-    
-    So, anything posix_spawn can do, we can do better. In particular, what
+    <p>posix_spawn is trash. It's actually implemented
+    on top of fork/exec inside of libc (or libSystem in the case of macOS).</p>
+    <p>So, anything posix_spawn can do, we can do better. In particular, what
     we can do better is handle spawning of child processes that are
     potentially foreign binaries. If you try to spawn a wasm binary, for
-    example, posix spawn does the following:
-    
-     * Goes ahead and creates a child process.
-     * The child process writes "foo.wasm: foo.wasm: cannot execute binary file"
-       to stderr (yes, it prints the filename twice).
-     * The child process then exits with code 126.
-    
-    This behavior is indistinguishable from the binary being successfully
+    example, posix spawn does the following:</p>
+    <ul>
+     <li>Goes ahead and creates a child process.</li>
+     <li>The child process writes "foo.wasm: foo.wasm: cannot execute binary file"
+       to stderr (yes, it prints the filename twice).</li>
+     <li>The child process then exits with code 126.</li>
+    </ul>
+    <p>This behavior is indistinguishable from the binary being successfully
     spawned, and then printing to stderr, and exiting with a failure -
     something that is an extremely common occurrence.
-    
+    </p><p>
     Meanwhile, using the lower level fork/exec will simply return ENOEXEC
     code from the execve syscall (which is mapped to zig error.InvalidExe).
-    
+    </p><p>
     The posix_spawn behavior means the zig build runner can't tell the
     difference between a failure to run a foreign binary, and a binary that
     did run, but failed in some other fashion. This is unacceptable, because
     attempting to excecve is the proper way to support things like Rosetta.
+    </p>
+    <p>Therefore, use of posix_spawn is eliminated from the standard library,
+    in order to facilitate {#link|Foreign Target Execution and Testing#}.</p>
     {#header_close#}
     {#header_close#}
 
@@ -3798,6 +3734,7 @@ pub fn build(b: *std.Build) void {
       <li>{#syntax#}b.addRunArtifact(exe){#endsyntax#} creates and returns a run artifact for
         {#syntax#}exe{#endsyntax#}</li>
     </ul>
+    <p>Example use case unlocked by this change: <a href="https://github.com/andrewrk/ffmpeg/blob/73ac2d6ce909854436a23a26a9f712861eec2b4e/build.zig#L873">depending on nasm and using it to produce object files</a></p>
     {#header_close#}
 
     {#header_open|Compiler Protocol#}
@@ -5312,4 +5249,5 @@ Date:   Sun Feb 19 12:14:03 2023 +0000
     </div>
   </body>
 </html>
+TODO replace issue number links 
 TODO check with tidy
