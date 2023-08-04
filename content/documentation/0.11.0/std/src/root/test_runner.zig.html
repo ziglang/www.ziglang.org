@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>test_runner.zig - source view</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAPNJREFUeNpi/P//PwMlgOXHUjly9E0G4hwgZmQiQZMqEK8H4v9QzUEgQSaoADK+zhH9iAGL+C0gDoAaNg9mGLoLfgA1awK9hS9gzgJxA9RQBmQDrgMxJzRMGKE4HYj/Ial5A8QmQLwCJoBsgBYW2+TR1ChDaWt4LOBxKsi/VUh8XiD+gq4IVyzwQAMJBoKwacZlAB8Qf0bi96IZhtOAe1D6LpqaEiz6rmEzQAeIzwGxCJpieFqApo/vQKyJboAaEBsAsSEupwI1MwKjGBTVHOhegMX5UajYRqiBjMgYmj400cVh0XgTiKdC0zhJgJHS7AwQYABm9EAdCKrEfAAAAABJRU5ErkJggg=="/>
+    <style>
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      pre > code {
+        display: block;
+        overflow: auto;
+        line-height: normal;
+        margin: 0em;
+      }
+      .tok-kw {
+          color: #333;
+          font-weight: bold;
+      }
+      .tok-str {
+          color: #d14;
+      }
+      .tok-builtin {
+          color: #005C7A;
+      }
+      .tok-comment {
+          color: #545454;
+          font-style: italic;
+      }
+      .tok-fn {
+          color: #900;
+          font-weight: bold;
+      }
+      .tok-null {
+          color: #005C5C;
+      }
+      .tok-number {
+          color: #005C5C;
+      }
+      .tok-type {
+          color: #458;
+          font-weight: bold;
+      }
+      pre {
+        counter-reset: line;
+      }
+      pre .line:before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        padding-right: 1em;
+        width: 2em;
+        text-align: right;
+        color: #999;
+      }
+      
+      .line {
+        width: 100%;
+        display: inline-block;
+      }
+      .line:target {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #fafafa;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body{
+            background:#222;
+            color: #ccc;
+        }
+        pre > code {
+            color: #ccc;
+            background: #222;
+            border: unset;
+        }
+        .line:target {
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            background: #333;
+        }
+        .tok-kw {
+            color: #eee;
+        }
+        .tok-str {
+            color: #2e5;
+        }
+        .tok-builtin {
+            color: #ff894c;
+        }
+        .tok-comment {
+            color: #aa7;
+        }
+        .tok-fn {
+            color: #B1A0F8;
+        }
+        .tok-null {
+            color: #ff8080;
+        }
+        .tok-number {
+            color: #ff8080;
+        }
+        .tok-type {
+            color: #68f;
+        }
+      }
+    </style>
+</head>
+<body>
+<pre><code><span class="line" id="L1"><span class="tok-comment">//! Default test runner for unit tests.</span></span>
+<span class="line" id="L2"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line" id="L3"><span class="tok-kw">const</span> io = std.io;</span>
+<span class="line" id="L4"><span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);</span>
+<span class="line" id="L5"></span>
+<span class="line" id="L6"><span class="tok-kw">pub</span> <span class="tok-kw">const</span> std_options = <span class="tok-kw">struct</span> {</span>
+<span class="line" id="L7">    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> io_mode: io.Mode = builtin.test_io_mode;</span>
+<span class="line" id="L8">    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> logFn = log;</span>
+<span class="line" id="L9">};</span>
+<span class="line" id="L10"></span>
+<span class="line" id="L11"><span class="tok-kw">var</span> log_err_count: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L12"><span class="tok-kw">var</span> cmdline_buffer: [<span class="tok-number">4096</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L13"><span class="tok-kw">var</span> fba = std.heap.FixedBufferAllocator.init(&amp;cmdline_buffer);</span>
+<span class="line" id="L14"></span>
+<span class="line" id="L15"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() <span class="tok-type">void</span> {</span>
+<span class="line" id="L16">    <span class="tok-kw">if</span> (builtin.zig_backend == .stage2_aarch64) {</span>
+<span class="line" id="L17">        <span class="tok-kw">return</span> mainSimple() <span class="tok-kw">catch</span> <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;test failure&quot;</span>);</span>
+<span class="line" id="L18">    }</span>
+<span class="line" id="L19"></span>
+<span class="line" id="L20">    <span class="tok-kw">const</span> args = std.process.argsAlloc(fba.allocator()) <span class="tok-kw">catch</span></span>
+<span class="line" id="L21">        <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;unable to parse command line args&quot;</span>);</span>
+<span class="line" id="L22"></span>
+<span class="line" id="L23">    <span class="tok-kw">var</span> listen = <span class="tok-null">false</span>;</span>
+<span class="line" id="L24"></span>
+<span class="line" id="L25">    <span class="tok-kw">for</span> (args[<span class="tok-number">1</span>..]) |arg| {</span>
+<span class="line" id="L26">        <span class="tok-kw">if</span> (std.mem.eql(<span class="tok-type">u8</span>, arg, <span class="tok-str">&quot;--listen=-&quot;</span>)) {</span>
+<span class="line" id="L27">            listen = <span class="tok-null">true</span>;</span>
+<span class="line" id="L28">        } <span class="tok-kw">else</span> {</span>
+<span class="line" id="L29">            <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;unrecognized command line argument&quot;</span>);</span>
+<span class="line" id="L30">        }</span>
+<span class="line" id="L31">    }</span>
+<span class="line" id="L32"></span>
+<span class="line" id="L33">    <span class="tok-kw">if</span> (listen) {</span>
+<span class="line" id="L34">        <span class="tok-kw">return</span> mainServer() <span class="tok-kw">catch</span> <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;internal test runner failure&quot;</span>);</span>
+<span class="line" id="L35">    } <span class="tok-kw">else</span> {</span>
+<span class="line" id="L36">        <span class="tok-kw">return</span> mainTerminal();</span>
+<span class="line" id="L37">    }</span>
+<span class="line" id="L38">}</span>
+<span class="line" id="L39"></span>
+<span class="line" id="L40"><span class="tok-kw">fn</span> <span class="tok-fn">mainServer</span>() !<span class="tok-type">void</span> {</span>
+<span class="line" id="L41">    <span class="tok-kw">var</span> server = <span class="tok-kw">try</span> std.zig.Server.init(.{</span>
+<span class="line" id="L42">        .gpa = fba.allocator(),</span>
+<span class="line" id="L43">        .in = std.io.getStdIn(),</span>
+<span class="line" id="L44">        .out = std.io.getStdOut(),</span>
+<span class="line" id="L45">        .zig_version = builtin.zig_version_string,</span>
+<span class="line" id="L46">    });</span>
+<span class="line" id="L47">    <span class="tok-kw">defer</span> server.deinit();</span>
+<span class="line" id="L48"></span>
+<span class="line" id="L49">    <span class="tok-kw">while</span> (<span class="tok-null">true</span>) {</span>
+<span class="line" id="L50">        <span class="tok-kw">const</span> hdr = <span class="tok-kw">try</span> server.receiveMessage();</span>
+<span class="line" id="L51">        <span class="tok-kw">switch</span> (hdr.tag) {</span>
+<span class="line" id="L52">            .exit =&gt; {</span>
+<span class="line" id="L53">                <span class="tok-kw">return</span> std.process.exit(<span class="tok-number">0</span>);</span>
+<span class="line" id="L54">            },</span>
+<span class="line" id="L55">            .query_test_metadata =&gt; {</span>
+<span class="line" id="L56">                std.testing.allocator_instance = .{};</span>
+<span class="line" id="L57">                <span class="tok-kw">defer</span> <span class="tok-kw">if</span> (std.testing.allocator_instance.deinit() == .leak) {</span>
+<span class="line" id="L58">                    <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;internal test runner memory leak&quot;</span>);</span>
+<span class="line" id="L59">                };</span>
+<span class="line" id="L60"></span>
+<span class="line" id="L61">                <span class="tok-kw">var</span> string_bytes: std.ArrayListUnmanaged(<span class="tok-type">u8</span>) = .{};</span>
+<span class="line" id="L62">                <span class="tok-kw">defer</span> string_bytes.deinit(std.testing.allocator);</span>
+<span class="line" id="L63">                <span class="tok-kw">try</span> string_bytes.append(std.testing.allocator, <span class="tok-number">0</span>); <span class="tok-comment">// Reserve 0 for null.</span>
+</span>
+<span class="line" id="L64"></span>
+<span class="line" id="L65">                <span class="tok-kw">const</span> test_fns = builtin.test_functions;</span>
+<span class="line" id="L66">                <span class="tok-kw">const</span> names = <span class="tok-kw">try</span> std.testing.allocator.alloc(<span class="tok-type">u32</span>, test_fns.len);</span>
+<span class="line" id="L67">                <span class="tok-kw">defer</span> std.testing.allocator.free(names);</span>
+<span class="line" id="L68">                <span class="tok-kw">const</span> async_frame_sizes = <span class="tok-kw">try</span> std.testing.allocator.alloc(<span class="tok-type">u32</span>, test_fns.len);</span>
+<span class="line" id="L69">                <span class="tok-kw">defer</span> std.testing.allocator.free(async_frame_sizes);</span>
+<span class="line" id="L70">                <span class="tok-kw">const</span> expected_panic_msgs = <span class="tok-kw">try</span> std.testing.allocator.alloc(<span class="tok-type">u32</span>, test_fns.len);</span>
+<span class="line" id="L71">                <span class="tok-kw">defer</span> std.testing.allocator.free(expected_panic_msgs);</span>
+<span class="line" id="L72"></span>
+<span class="line" id="L73">                <span class="tok-kw">for</span> (test_fns, names, async_frame_sizes, expected_panic_msgs) |test_fn, *name, *async_frame_size, *expected_panic_msg| {</span>
+<span class="line" id="L74">                    name.* = <span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-builtin">@intCast</span>(string_bytes.items.len));</span>
+<span class="line" id="L75">                    <span class="tok-kw">try</span> string_bytes.ensureUnusedCapacity(std.testing.allocator, test_fn.name.len + <span class="tok-number">1</span>);</span>
+<span class="line" id="L76">                    string_bytes.appendSliceAssumeCapacity(test_fn.name);</span>
+<span class="line" id="L77">                    string_bytes.appendAssumeCapacity(<span class="tok-number">0</span>);</span>
+<span class="line" id="L78"></span>
+<span class="line" id="L79">                    async_frame_size.* = <span class="tok-builtin">@as</span>(<span class="tok-type">u32</span>, <span class="tok-builtin">@intCast</span>(test_fn.async_frame_size <span class="tok-kw">orelse</span> <span class="tok-number">0</span>));</span>
+<span class="line" id="L80">                    expected_panic_msg.* = <span class="tok-number">0</span>;</span>
+<span class="line" id="L81">                }</span>
+<span class="line" id="L82"></span>
+<span class="line" id="L83">                <span class="tok-kw">try</span> server.serveTestMetadata(.{</span>
+<span class="line" id="L84">                    .names = names,</span>
+<span class="line" id="L85">                    .async_frame_sizes = async_frame_sizes,</span>
+<span class="line" id="L86">                    .expected_panic_msgs = expected_panic_msgs,</span>
+<span class="line" id="L87">                    .string_bytes = string_bytes.items,</span>
+<span class="line" id="L88">                });</span>
+<span class="line" id="L89">            },</span>
+<span class="line" id="L90"></span>
+<span class="line" id="L91">            .run_test =&gt; {</span>
+<span class="line" id="L92">                std.testing.allocator_instance = .{};</span>
+<span class="line" id="L93">                <span class="tok-kw">const</span> index = <span class="tok-kw">try</span> server.receiveBody_u32();</span>
+<span class="line" id="L94">                <span class="tok-kw">const</span> test_fn = builtin.test_functions[index];</span>
+<span class="line" id="L95">                <span class="tok-kw">if</span> (test_fn.async_frame_size != <span class="tok-null">null</span>)</span>
+<span class="line" id="L96">                    <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;TODO test runner implement async tests&quot;</span>);</span>
+<span class="line" id="L97">                <span class="tok-kw">var</span> fail = <span class="tok-null">false</span>;</span>
+<span class="line" id="L98">                <span class="tok-kw">var</span> skip = <span class="tok-null">false</span>;</span>
+<span class="line" id="L99">                <span class="tok-kw">var</span> leak = <span class="tok-null">false</span>;</span>
+<span class="line" id="L100">                test_fn.func() <span class="tok-kw">catch</span> |err| <span class="tok-kw">switch</span> (err) {</span>
+<span class="line" id="L101">                    <span class="tok-kw">error</span>.SkipZigTest =&gt; skip = <span class="tok-null">true</span>,</span>
+<span class="line" id="L102">                    <span class="tok-kw">else</span> =&gt; {</span>
+<span class="line" id="L103">                        fail = <span class="tok-null">true</span>;</span>
+<span class="line" id="L104">                        <span class="tok-kw">if</span> (<span class="tok-builtin">@errorReturnTrace</span>()) |trace| {</span>
+<span class="line" id="L105">                            std.debug.dumpStackTrace(trace.*);</span>
+<span class="line" id="L106">                        }</span>
+<span class="line" id="L107">                    },</span>
+<span class="line" id="L108">                };</span>
+<span class="line" id="L109">                leak = std.testing.allocator_instance.deinit() == .leak;</span>
+<span class="line" id="L110">                <span class="tok-kw">try</span> server.serveTestResults(.{</span>
+<span class="line" id="L111">                    .index = index,</span>
+<span class="line" id="L112">                    .flags = .{</span>
+<span class="line" id="L113">                        .fail = fail,</span>
+<span class="line" id="L114">                        .skip = skip,</span>
+<span class="line" id="L115">                        .leak = leak,</span>
+<span class="line" id="L116">                    },</span>
+<span class="line" id="L117">                });</span>
+<span class="line" id="L118">            },</span>
+<span class="line" id="L119"></span>
+<span class="line" id="L120">            <span class="tok-kw">else</span> =&gt; {</span>
+<span class="line" id="L121">                std.debug.print(<span class="tok-str">&quot;unsupported message: {x}&quot;</span>, .{<span class="tok-builtin">@intFromEnum</span>(hdr.tag)});</span>
+<span class="line" id="L122">                std.process.exit(<span class="tok-number">1</span>);</span>
+<span class="line" id="L123">            },</span>
+<span class="line" id="L124">        }</span>
+<span class="line" id="L125">    }</span>
+<span class="line" id="L126">}</span>
+<span class="line" id="L127"></span>
+<span class="line" id="L128"><span class="tok-kw">fn</span> <span class="tok-fn">mainTerminal</span>() <span class="tok-type">void</span> {</span>
+<span class="line" id="L129">    <span class="tok-kw">const</span> test_fn_list = builtin.test_functions;</span>
+<span class="line" id="L130">    <span class="tok-kw">var</span> ok_count: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L131">    <span class="tok-kw">var</span> skip_count: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L132">    <span class="tok-kw">var</span> fail_count: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L133">    <span class="tok-kw">var</span> progress = std.Progress{</span>
+<span class="line" id="L134">        .dont_print_on_dumb = <span class="tok-null">true</span>,</span>
+<span class="line" id="L135">    };</span>
+<span class="line" id="L136">    <span class="tok-kw">const</span> root_node = progress.start(<span class="tok-str">&quot;Test&quot;</span>, test_fn_list.len);</span>
+<span class="line" id="L137">    <span class="tok-kw">const</span> have_tty = progress.terminal != <span class="tok-null">null</span> <span class="tok-kw">and</span></span>
+<span class="line" id="L138">        (progress.supports_ansi_escape_codes <span class="tok-kw">or</span> progress.is_windows_terminal);</span>
+<span class="line" id="L139"></span>
+<span class="line" id="L140">    <span class="tok-kw">var</span> async_frame_buffer: []<span class="tok-kw">align</span>(builtin.target.stackAlignment()) <span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;</span>
+<span class="line" id="L141">    <span class="tok-comment">// TODO this is on the next line (using `undefined` above) because otherwise zig incorrectly</span>
+</span>
+<span class="line" id="L142">    <span class="tok-comment">// ignores the alignment of the slice.</span>
+</span>
+<span class="line" id="L143">    async_frame_buffer = &amp;[_]<span class="tok-type">u8</span>{};</span>
+<span class="line" id="L144"></span>
+<span class="line" id="L145">    <span class="tok-kw">var</span> leaks: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L146">    <span class="tok-kw">for</span> (test_fn_list, <span class="tok-number">0</span>..) |test_fn, i| {</span>
+<span class="line" id="L147">        std.testing.allocator_instance = .{};</span>
+<span class="line" id="L148">        <span class="tok-kw">defer</span> {</span>
+<span class="line" id="L149">            <span class="tok-kw">if</span> (std.testing.allocator_instance.deinit() == .leak) {</span>
+<span class="line" id="L150">                leaks += <span class="tok-number">1</span>;</span>
+<span class="line" id="L151">            }</span>
+<span class="line" id="L152">        }</span>
+<span class="line" id="L153">        std.testing.log_level = .warn;</span>
+<span class="line" id="L154"></span>
+<span class="line" id="L155">        <span class="tok-kw">var</span> test_node = root_node.start(test_fn.name, <span class="tok-number">0</span>);</span>
+<span class="line" id="L156">        test_node.activate();</span>
+<span class="line" id="L157">        progress.refresh();</span>
+<span class="line" id="L158">        <span class="tok-kw">if</span> (!have_tty) {</span>
+<span class="line" id="L159">            std.debug.print(<span class="tok-str">&quot;{d}/{d} {s}... &quot;</span>, .{ i + <span class="tok-number">1</span>, test_fn_list.len, test_fn.name });</span>
+<span class="line" id="L160">        }</span>
+<span class="line" id="L161">        <span class="tok-kw">const</span> result = <span class="tok-kw">if</span> (test_fn.async_frame_size) |size| <span class="tok-kw">switch</span> (std.options.io_mode) {</span>
+<span class="line" id="L162">            .evented =&gt; blk: {</span>
+<span class="line" id="L163">                <span class="tok-kw">if</span> (async_frame_buffer.len &lt; size) {</span>
+<span class="line" id="L164">                    std.heap.page_allocator.free(async_frame_buffer);</span>
+<span class="line" id="L165">                    async_frame_buffer = std.heap.page_allocator.alignedAlloc(<span class="tok-type">u8</span>, std.Target.stack_align, size) <span class="tok-kw">catch</span> <span class="tok-builtin">@panic</span>(<span class="tok-str">&quot;out of memory&quot;</span>);</span>
+<span class="line" id="L166">                }</span>
+<span class="line" id="L167">                <span class="tok-kw">const</span> casted_fn = <span class="tok-builtin">@as</span>(<span class="tok-kw">fn</span> () <span class="tok-kw">callconv</span>(.Async) <span class="tok-type">anyerror</span>!<span class="tok-type">void</span>, <span class="tok-builtin">@ptrCast</span>(test_fn.func));</span>
+<span class="line" id="L168">                <span class="tok-kw">break</span> :blk <span class="tok-kw">await</span> <span class="tok-builtin">@asyncCall</span>(async_frame_buffer, {}, casted_fn, .{});</span>
+<span class="line" id="L169">            },</span>
+<span class="line" id="L170">            .blocking =&gt; {</span>
+<span class="line" id="L171">                skip_count += <span class="tok-number">1</span>;</span>
+<span class="line" id="L172">                test_node.end();</span>
+<span class="line" id="L173">                progress.log(<span class="tok-str">&quot;SKIP (async test)\n&quot;</span>, .{});</span>
+<span class="line" id="L174">                <span class="tok-kw">continue</span>;</span>
+<span class="line" id="L175">            },</span>
+<span class="line" id="L176">        } <span class="tok-kw">else</span> test_fn.func();</span>
+<span class="line" id="L177">        <span class="tok-kw">if</span> (result) |_| {</span>
+<span class="line" id="L178">            ok_count += <span class="tok-number">1</span>;</span>
+<span class="line" id="L179">            test_node.end();</span>
+<span class="line" id="L180">            <span class="tok-kw">if</span> (!have_tty) std.debug.print(<span class="tok-str">&quot;OK\n&quot;</span>, .{});</span>
+<span class="line" id="L181">        } <span class="tok-kw">else</span> |err| <span class="tok-kw">switch</span> (err) {</span>
+<span class="line" id="L182">            <span class="tok-kw">error</span>.SkipZigTest =&gt; {</span>
+<span class="line" id="L183">                skip_count += <span class="tok-number">1</span>;</span>
+<span class="line" id="L184">                progress.log(<span class="tok-str">&quot;SKIP\n&quot;</span>, .{});</span>
+<span class="line" id="L185">                test_node.end();</span>
+<span class="line" id="L186">            },</span>
+<span class="line" id="L187">            <span class="tok-kw">else</span> =&gt; {</span>
+<span class="line" id="L188">                fail_count += <span class="tok-number">1</span>;</span>
+<span class="line" id="L189">                progress.log(<span class="tok-str">&quot;FAIL ({s})\n&quot;</span>, .{<span class="tok-builtin">@errorName</span>(err)});</span>
+<span class="line" id="L190">                <span class="tok-kw">if</span> (<span class="tok-builtin">@errorReturnTrace</span>()) |trace| {</span>
+<span class="line" id="L191">                    std.debug.dumpStackTrace(trace.*);</span>
+<span class="line" id="L192">                }</span>
+<span class="line" id="L193">                test_node.end();</span>
+<span class="line" id="L194">            },</span>
+<span class="line" id="L195">        }</span>
+<span class="line" id="L196">    }</span>
+<span class="line" id="L197">    root_node.end();</span>
+<span class="line" id="L198">    <span class="tok-kw">if</span> (ok_count == test_fn_list.len) {</span>
+<span class="line" id="L199">        std.debug.print(<span class="tok-str">&quot;All {d} tests passed.\n&quot;</span>, .{ok_count});</span>
+<span class="line" id="L200">    } <span class="tok-kw">else</span> {</span>
+<span class="line" id="L201">        std.debug.print(<span class="tok-str">&quot;{d} passed; {d} skipped; {d} failed.\n&quot;</span>, .{ ok_count, skip_count, fail_count });</span>
+<span class="line" id="L202">    }</span>
+<span class="line" id="L203">    <span class="tok-kw">if</span> (log_err_count != <span class="tok-number">0</span>) {</span>
+<span class="line" id="L204">        std.debug.print(<span class="tok-str">&quot;{d} errors were logged.\n&quot;</span>, .{log_err_count});</span>
+<span class="line" id="L205">    }</span>
+<span class="line" id="L206">    <span class="tok-kw">if</span> (leaks != <span class="tok-number">0</span>) {</span>
+<span class="line" id="L207">        std.debug.print(<span class="tok-str">&quot;{d} tests leaked memory.\n&quot;</span>, .{leaks});</span>
+<span class="line" id="L208">    }</span>
+<span class="line" id="L209">    <span class="tok-kw">if</span> (leaks != <span class="tok-number">0</span> <span class="tok-kw">or</span> log_err_count != <span class="tok-number">0</span> <span class="tok-kw">or</span> fail_count != <span class="tok-number">0</span>) {</span>
+<span class="line" id="L210">        std.process.exit(<span class="tok-number">1</span>);</span>
+<span class="line" id="L211">    }</span>
+<span class="line" id="L212">}</span>
+<span class="line" id="L213"></span>
+<span class="line" id="L214"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">log</span>(</span>
+<span class="line" id="L215">    <span class="tok-kw">comptime</span> message_level: std.log.Level,</span>
+<span class="line" id="L216">    <span class="tok-kw">comptime</span> scope: <span class="tok-builtin">@Type</span>(.EnumLiteral),</span>
+<span class="line" id="L217">    <span class="tok-kw">comptime</span> format: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,</span>
+<span class="line" id="L218">    args: <span class="tok-kw">anytype</span>,</span>
+<span class="line" id="L219">) <span class="tok-type">void</span> {</span>
+<span class="line" id="L220">    <span class="tok-kw">if</span> (<span class="tok-builtin">@intFromEnum</span>(message_level) &lt;= <span class="tok-builtin">@intFromEnum</span>(std.log.Level.err)) {</span>
+<span class="line" id="L221">        log_err_count += <span class="tok-number">1</span>;</span>
+<span class="line" id="L222">    }</span>
+<span class="line" id="L223">    <span class="tok-kw">if</span> (<span class="tok-builtin">@intFromEnum</span>(message_level) &lt;= <span class="tok-builtin">@intFromEnum</span>(std.testing.log_level)) {</span>
+<span class="line" id="L224">        std.debug.print(</span>
+<span class="line" id="L225">            <span class="tok-str">&quot;[&quot;</span> ++ <span class="tok-builtin">@tagName</span>(scope) ++ <span class="tok-str">&quot;] (&quot;</span> ++ <span class="tok-builtin">@tagName</span>(message_level) ++ <span class="tok-str">&quot;): &quot;</span> ++ format ++ <span class="tok-str">&quot;\n&quot;</span>,</span>
+<span class="line" id="L226">            args,</span>
+<span class="line" id="L227">        );</span>
+<span class="line" id="L228">    }</span>
+<span class="line" id="L229">}</span>
+<span class="line" id="L230"></span>
+<span class="line" id="L231"><span class="tok-comment">/// Simpler main(), exercising fewer language features, so that</span></span>
+<span class="line" id="L232"><span class="tok-comment">/// work-in-progress backends can handle it.</span></span>
+<span class="line" id="L233"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">mainSimple</span>() <span class="tok-type">anyerror</span>!<span class="tok-type">void</span> {</span>
+<span class="line" id="L234">    <span class="tok-kw">const</span> enable_print = <span class="tok-null">false</span>;</span>
+<span class="line" id="L235">    <span class="tok-kw">const</span> print_all = <span class="tok-null">false</span>;</span>
+<span class="line" id="L236"></span>
+<span class="line" id="L237">    <span class="tok-kw">var</span> passed: <span class="tok-type">u64</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L238">    <span class="tok-kw">var</span> skipped: <span class="tok-type">u64</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L239">    <span class="tok-kw">var</span> failed: <span class="tok-type">u64</span> = <span class="tok-number">0</span>;</span>
+<span class="line" id="L240">    <span class="tok-kw">const</span> stderr = <span class="tok-kw">if</span> (enable_print) std.io.getStdErr() <span class="tok-kw">else</span> {};</span>
+<span class="line" id="L241">    <span class="tok-kw">for</span> (builtin.test_functions) |test_fn| {</span>
+<span class="line" id="L242">        <span class="tok-kw">if</span> (enable_print <span class="tok-kw">and</span> print_all) {</span>
+<span class="line" id="L243">            stderr.writeAll(test_fn.name) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L244">            stderr.writeAll(<span class="tok-str">&quot;... &quot;</span>) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L245">        }</span>
+<span class="line" id="L246">        test_fn.func() <span class="tok-kw">catch</span> |err| {</span>
+<span class="line" id="L247">            <span class="tok-kw">if</span> (enable_print <span class="tok-kw">and</span> !print_all) {</span>
+<span class="line" id="L248">                stderr.writeAll(test_fn.name) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L249">                stderr.writeAll(<span class="tok-str">&quot;... &quot;</span>) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L250">            }</span>
+<span class="line" id="L251">            <span class="tok-kw">if</span> (err != <span class="tok-kw">error</span>.SkipZigTest) {</span>
+<span class="line" id="L252">                <span class="tok-kw">if</span> (enable_print) stderr.writeAll(<span class="tok-str">&quot;FAIL\n&quot;</span>) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L253">                failed += <span class="tok-number">1</span>;</span>
+<span class="line" id="L254">                <span class="tok-kw">if</span> (!enable_print) <span class="tok-kw">return</span> err;</span>
+<span class="line" id="L255">                <span class="tok-kw">continue</span>;</span>
+<span class="line" id="L256">            }</span>
+<span class="line" id="L257">            <span class="tok-kw">if</span> (enable_print) stderr.writeAll(<span class="tok-str">&quot;SKIP\n&quot;</span>) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L258">            skipped += <span class="tok-number">1</span>;</span>
+<span class="line" id="L259">            <span class="tok-kw">continue</span>;</span>
+<span class="line" id="L260">        };</span>
+<span class="line" id="L261">        <span class="tok-kw">if</span> (enable_print <span class="tok-kw">and</span> print_all) stderr.writeAll(<span class="tok-str">&quot;PASS\n&quot;</span>) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L262">        passed += <span class="tok-number">1</span>;</span>
+<span class="line" id="L263">    }</span>
+<span class="line" id="L264">    <span class="tok-kw">if</span> (enable_print) {</span>
+<span class="line" id="L265">        stderr.writer().print(<span class="tok-str">&quot;{} passed, {} skipped, {} failed\n&quot;</span>, .{ passed, skipped, failed }) <span class="tok-kw">catch</span> {};</span>
+<span class="line" id="L266">        <span class="tok-kw">if</span> (failed != <span class="tok-number">0</span>) std.process.exit(<span class="tok-number">1</span>);</span>
+<span class="line" id="L267">    }</span>
+<span class="line" id="L268">}</span>
+<span class="line" id="L269"></span>
+</code></pre></body>
+</html>
