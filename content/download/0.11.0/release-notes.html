@@ -1829,11 +1829,11 @@ All 1 tests passed.
     <code><span class="line"><span class="tok-builtin">@memset</span></span></code> to make them more useful.
     </p>
     <p>
-    <code><span class="line"><span class="tok-builtin">@memcpy</span></span></code> now takes two parameters. The first is the destination, and must
-    be a mutable slice of any any element type. The second parameter is the source value, which may
-    be either a slice of the element type (in which case it must have the same length) or a
-    many-pointer to it (in which case it is implicitly sliced to the same length). The builtin
-    copies values from the source address to the destination address.
+    <code><span class="line"><span class="tok-builtin">@memcpy</span></span></code> now takes two parameters. The first is the destination, and the
+    second is the source. The builtin copies values from the source address to the destination
+    address. Both parameters may be a slice or many-pointer of any element type; the destination
+    parameter must be mutable in either case. At least one of the parameters must be a slice; if
+    both parameters are a slice, then the two slices must be of equal length.
     </p>
     <p>
     The source and destination memory must not overlap (overlap is considered safety-checked
@@ -2756,7 +2756,7 @@ All 1 tests passed.
     As such, comparisons of this form are now allowed. However, since these comparisons are
     tautological, they do not cause any runtime checks: instead, the result is comptime-known based
     on the type. For instance, <code><span class="line">my_u8 == <span class="tok-number">500</span></span></code> is comptime-known
-    <code><span class="line"><span class="tok-null">true</span></span></code>, even if <code><span class="line">my_u8</span></code> is not itself comptime-known.
+    <code><span class="line"><span class="tok-null">false</span></span></code>, even if <code><span class="line">my_u8</span></code> is not itself comptime-known.
     </p>
     <figure><figcaption class="zig-cap"><cite class="file">tautological_compare_comptime.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;tautological comparisons are comptime-known&quot;</span> {</span>
 <span class="line">    <span class="tok-kw">var</span> x: <span class="tok-type">u8</span> = <span class="tok-number">123</span>;</span>
@@ -3677,7 +3677,7 @@ target-specific runtime calls and returns to be constructed.</p>
 <p>In order to print a stack trace, the panic (or segfault) handler needs to unwind the stack, by traversing back through the stack frames starting at the crash site. Up until now, this was done strictly by utilizing the <a href="https://en.wikipedia.org/wiki/Call_stack#Stack_and_frame_pointers">frame pointer</a>. This method of stack unwinding works assuming that a frame pointer is available, which isn't the case if the code is compiled without one - ie. if <code>-fomit-frame-pointer</code>was used. </p>
 <p>It can be beneficial for performance reasons to not use a frame pointer, since this frees up an additional register, so some software maintainers may choose to ship libraries compiled without it. One of the motivating reasons for this change was solving a bug where unwinding a stack trace that started in Ubuntu's libc wasn't working - and indeed it is compiled with <code>-fomit-frame-pointer</code>.</p>
 <p>Since <a href="https://github.com/ziglang/zig/pull/15823">#15823</a> was merged, the <a href="#Standard-Library">Standard Library</a> stack unwinder (<code>std.debug.StackIterator</code>) now supports unwinding stacks using both DWARF unwind tables, and <a href="#MachO">MachO</a> compact unwind information. These unwind tables encode how to unwind all the register state and recover the return address for any location in the program. </p>
-<p>In order to save space, DWARF unwind tables aren't program-sized lookup tables, but instead sets of opcodes which run on a virtual machine inside the unwinder to build the lookup table dynmamically. Additionally, these tables can define register values in terms of DWARF expressions, which is a separate stack-machine based bytecode. This is all supported in the new unwinder.</p>
+<p>In order to save space, DWARF unwind tables aren't program-sized lookup tables, but instead sets of opcodes which run on a virtual machine inside the unwinder to build the lookup table dynamically. Additionally, these tables can define register values in terms of DWARF expressions, which is a separate stack-machine based bytecode. This is all supported in the new unwinder.</p>
 <p>As an example of how this improves stack trace output, consider the following zig program and C library (which will be built with <code>-fomit-frame-pointer</code>):</p>
 <figure><figcaption class="zig-cap"><cite class="file">main.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"></span>
