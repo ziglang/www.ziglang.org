@@ -2272,24 +2272,44 @@ fn quux(c: *const i32) !void {
       {#syntax#}std.builtin.Type.Declaration{#endsyntax#}.</p>
     {#header_close#}
 
-    {#header_open|Allow Zero-Sized Fields In Extern Structs#}
-commit 796927b900ad4b774c30d1cb545d606f23040d2f
-Author: AdamGoertz <36753247+AdamGoertz@users.noreply.github.com>
-Date:   Sat Jul 29 12:45:01 2023 -0400
+    {#header_open|Zero-Sized Fields Allowed in Extern Structs#}
+    <p>Zero-sized fields are now allowed in {#syntax#}extern struct{#endsyntax#} types, because
+    they do not compromise the well-defined memory layout (#16404).</p>
+    {#code_begin|test|ice_cream#}
+const builtin = @import("builtin");
+const std = @import("std");
+const expect = std.testing.expect;
 
-    Allow zero-sized fields in extern structs (#16404)
-    
-    This change allows the following types to appear in extern structs:
-    * Zero-bit integers
-    * void
-    * zero-sized structs and packed structs
-    * enums with zero-bit backing integers
-    * arrays of any length with zero-size elements
+const T = extern struct {
+    blah: i32,
+    ice_cream: if (builtin.is_test) void else i32,
+};
+
+test "no ice cream" {
+    var t: T = .{
+        .blah = 1234,
+        .ice_cream = {},
+    };
+    try expect(t.blah == 1234);
+}
+    {#code_end#}
+    <p>This change allows the following types to appear in extern structs:</p>
+    <ul>
+      <li>Zero-bit integers</li>
+      <li>{#syntax#}void{#endsyntax#}</li>
+      <li>zero-sized structs and packed structs</li>
+      <li>enums with zero-bit backing integers</li>
+      <li>arrays of any length with zero-size elements</li>
+    </ul>
+    <p>Note that packed structs are already allowed in extern structs, provided that their
+    backing integer is allowed.</p>
     {#header_close#}
 
     {#header_open|Eliminate Bound Functions#}
-    <p>Did you know Zig had bound functions? The following code was valid in 0.10, but is not any more:</p>
-{#code_begin|syntax|bound_functions#}
+    <p>Did you know Zig had bound functions?</p>
+    <p>No? I rest my case. Good riddance!</p>
+    <p>The following code was valid in 0.10, but is not any more:</p>
+{#code_begin|test_err|bound_functions#}
 const std = @import("std");
 
 test "bound functions" {
@@ -2312,7 +2332,6 @@ const Foo = struct {
     }
 };
 {#code_end#}
-    <p>I rest my case. Good riddance!</p>
     <p>
     Method calls are now restricted to the exact syntactic form {#syntax#}a.b(args){#endsyntax#}.
     Any deviation from this syntax - for instance, extra parentheses as in
@@ -2321,14 +2340,11 @@ const Foo = struct {
     {#header_close#}
 
     {#header_open|@call Stack#}
-commit 6378644d4ea561a79edf44056609681e6d1438d1
-Merge: 65270cdc3 51ed5416a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Dec 13 18:15:18 2022 -0500
-
-    Merge pull request #13907 from Vexu/call-merge
-    
-    Remove `stack` option from `@call`
+    <p>The <code>stack</code> option has been removed from {#syntax#}@call{#endsyntax#} (#13907).</p>
+    <p>There is no upgrade path for this one, I'm afraid. This feature has proven difficult
+    to implement in the {#link|LLVM Backend#}.</p>
+    <p>More investigation will be needed to see if something that solves the use case
+    of switching call stacks can be brought back to the language before Zig reaches 1.0.</p>
     {#header_close#}
 
     {#header_open|Allow Tautological Integer Comparisons#}
@@ -2583,17 +2599,96 @@ test "null and undefined as function parameter and return types" {
     {#header_close#}
 
     {#header_open|Generic Function Calls#}
-commit 0aacb6369fdf3762b7ab6069955684abb63f1459
-Merge: 70c71935c d5d067211
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jul 19 09:36:57 2023 -0700
+    <p>Sometimes the language design drives the {#link|Compiler#} development, but
+    sometimes it's the other way around, as we discover through trial and error
+    what <em>fundamental simplicity</em> looks like.</p>
+    <p>In this case, generic functions and inferred error sets have been reworked for
+    a few reasons:</p>
+    <ul>
+      <li>To make the language simpler to specify.</li>
+      <li>To make the compiler implementation simpler.</li>
+      <li>Progress towards {#link|Incremental Compilation#}.</li>
+    </ul>
+    <p>Things are mostly the same, except there may be two kinds of breakages caused by it.
+    Firstly, type declarations are evaluated for every generic function call:</p>
+    {#code_begin|test_err|generic_call_demo#}
+const std = @import("std");
+const expect = std.testing.expect;
 
-    Merge pull request #16318 from ziglang/rework-generics
-    
-    rework generic function calls
+test "generic call demo" {
+    const a = foo(i32, 1234);
+    const b = foo(i32, 5678);
+    try expect(@TypeOf(a) == @TypeOf(b));
+}
 
-    TODO: inferred error sets recursion
-    TODO: recreating struct decls with each call
+fn foo(comptime T: type, init: T) struct { x: T } {
+    return .{ .x = init };
+}
+    {#code_end#}
+    <p>With Zig 0.10.x, this test passed. With 0.11.0, it fails. Which behavior Zig will have
+    at 1.0 is yet to be determined. In the meantime, it is best not to rely on type equality
+    in this case.</p>
+    <p>Suggested workaround is to make a function that returns the type:</p>
+    {#code_begin|test|generic_call_workaround#}
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "generic call demo" {
+    const a = foo(i32, 1234);
+    const b = foo(i32, 5678);
+    try expect(@TypeOf(a) == @TypeOf(b));
+}
+
+fn foo(comptime T: type, init: T) Make(T) {
+    return .{ .x = init };
+}
+
+fn Make(comptime T: type) type {
+    return struct { x: T };
+}
+    {#code_end#}
+    <p>The second fallout from this change is mutually recursive functions with inferred
+    error sets:</p>
+    {#code_begin|test_err|inferred_mutual_recursion#}
+const std = @import("std");
+
+test "generic call demo" {
+    try foo(49);
+}
+
+fn foo(x: i32) !void {
+    if (x == 1000) return error.BadNumber;
+    return bar(x - 1);
+}
+
+fn bar(x: i32) !void {
+    if (x > 100000) return error.TooBig;
+    if (x == 0) return;
+    return foo(x - 1);
+}
+    {#code_end#}
+    <p>Suggested workaround is to introduce an explicit error set:</p>
+    {#code_begin|test|error_set_workaround#}
+const std = @import("std");
+
+test "mutual recursion inferred error set demo" {
+    try foo(49);
+}
+
+const Error = error{ BadNumber, TooBig };
+
+fn foo(x: i32) Error!void {
+    if (x == 1000) return error.BadNumber;
+    return bar(x - 1);
+}
+
+fn bar(x: i32) Error!void {
+    if (x > 100000) return error.TooBig;
+    if (x == 0) return;
+    return foo(x - 1);
+}
+    {#code_end#}
+    <p>More information: #16318</p>
     {#header_close#}
 
     {#header_open|Naked Functions#}

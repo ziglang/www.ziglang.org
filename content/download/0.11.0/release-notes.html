@@ -455,7 +455,7 @@
             <li><a id="toc-intFromBool-always-returns-u1" href="#intFromBool-always-returns-u1">@intFromBool always returns u1</a></li>
             <li><a id="toc-fieldParentPtr-Supports-Unions" href="#fieldParentPtr-Supports-Unions">@fieldParentPtr Supports Unions</a></li>
             <li><a id="toc-typeInfo-No-Longer-Returns-Private-Declarations" href="#typeInfo-No-Longer-Returns-Private-Declarations">@typeInfo No Longer Returns Private Declarations</a></li>
-            <li><a id="toc-Allow-Zero-Sized-Fields-In-Extern-Structs" href="#Allow-Zero-Sized-Fields-In-Extern-Structs">Allow Zero-Sized Fields In Extern Structs</a></li>
+            <li><a id="toc-Zero-Sized-Fields-Allowed-in-Extern-Structs" href="#Zero-Sized-Fields-Allowed-in-Extern-Structs">Zero-Sized Fields Allowed in Extern Structs</a></li>
             <li><a id="toc-Eliminate-Bound-Functions" href="#Eliminate-Bound-Functions">Eliminate Bound Functions</a></li>
             <li><a id="toc-call-Stack" href="#call-Stack">@call Stack</a></li>
             <li><a id="toc-Allow-Tautological-Integer-Comparisons" href="#Allow-Tautological-Integer-Comparisons">Allow Tautological Integer Comparisons</a></li>
@@ -2605,25 +2605,46 @@ All 1 tests passed.
       <code><span class="line">std.builtin.Type.Declaration</span></code>.</p>
     
 
-    <h3 id="Allow-Zero-Sized-Fields-In-Extern-Structs"><a href="#toc-Allow-Zero-Sized-Fields-In-Extern-Structs">Allow Zero-Sized Fields In Extern Structs</a> <a class="hdr" href="#Allow-Zero-Sized-Fields-In-Extern-Structs">§</a></h3>
+    <h3 id="Zero-Sized-Fields-Allowed-in-Extern-Structs"><a href="#toc-Zero-Sized-Fields-Allowed-in-Extern-Structs">Zero-Sized Fields Allowed in Extern Structs</a> <a class="hdr" href="#Zero-Sized-Fields-Allowed-in-Extern-Structs">§</a></h3>
 
-commit 796927b900ad4b774c30d1cb545d606f23040d2f
-Author: AdamGoertz <36753247+AdamGoertz@users.noreply.github.com>
-Date:   Sat Jul 29 12:45:01 2023 -0400
-
-    Allow zero-sized fields in extern structs (#16404)
-    
-    This change allows the following types to appear in extern structs:
-    * Zero-bit integers
-    * void
-    * zero-sized structs and packed structs
-    * enums with zero-bit backing integers
-    * arrays of any length with zero-size elements
+    <p>Zero-sized fields are now allowed in <code><span class="line"><span class="tok-kw">extern</span> <span class="tok-kw">struct</span></span></code> types, because
+    they do not compromise the well-defined memory layout (#16404).</p>
+    <figure><figcaption class="zig-cap"><cite class="file">ice_cream.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> builtin = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;builtin&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> T = <span class="tok-kw">extern</span> <span class="tok-kw">struct</span> {</span>
+<span class="line">    blah: <span class="tok-type">i32</span>,</span>
+<span class="line">    ice_cream: <span class="tok-kw">if</span> (builtin.is_test) <span class="tok-type">void</span> <span class="tok-kw">else</span> <span class="tok-type">i32</span>,</span>
+<span class="line">};</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;no ice cream&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> t: T = .{</span>
+<span class="line">        .blah = <span class="tok-number">1234</span>,</span>
+<span class="line">        .ice_cream = {},</span>
+<span class="line">    };</span>
+<span class="line">    <span class="tok-kw">try</span> expect(t.blah == <span class="tok-number">1234</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test ice_cream.zig</kbd>
+1/1 test.no ice cream... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>This change allows the following types to appear in extern structs:</p>
+    <ul>
+      <li>Zero-bit integers</li>
+      <li><code><span class="line"><span class="tok-type">void</span></span></code></li>
+      <li>zero-sized structs and packed structs</li>
+      <li>enums with zero-bit backing integers</li>
+      <li>arrays of any length with zero-size elements</li>
+    </ul>
+    <p>Note that packed structs are already allowed in extern structs, provided that their
+    backing integer is allowed.</p>
     
 
     <h3 id="Eliminate-Bound-Functions"><a href="#toc-Eliminate-Bound-Functions">Eliminate Bound Functions</a> <a class="hdr" href="#Eliminate-Bound-Functions">§</a></h3>
 
-    <p>Did you know Zig had bound functions? The following code was valid in 0.10, but is not any more:</p>
+    <p>Did you know Zig had bound functions?</p>
+    <p>No? I rest my case. Good riddance!</p>
+    <p>The following code was valid in 0.10, but is not any more:</p>
 <figure><figcaption class="zig-cap"><cite class="file">bound_functions.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
 <span class="line"></span>
 <span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;bound functions&quot;</span> {</span>
@@ -2644,8 +2665,15 @@ Date:   Sat Jul 29 12:45:01 2023 -0400
 <span class="line">    <span class="tok-kw">fn</span> <span class="tok-fn">b</span>(_: Foo) <span class="tok-type">u8</span> {</span>
 <span class="line">        <span class="tok-kw">return</span> <span class="tok-str">'b'</span>;</span>
 <span class="line">    }</span>
-<span class="line">};</span></code></pre></figure>
-    <p>I rest my case. Good riddance!</p>
+<span class="line">};</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test bound_functions.zig</kbd>
+<span class="sgr-1m">docgen_tmp/bound_functions.zig:9:37: </span><span class="sgr-31m">error: </span><span class="sgr-1m">no field named 'a' in struct 'bound_functions.Foo'
+</span>    const x = if (runtime_true) obj.a else obj.b;
+                                    <span class="sgr-32m">^
+</span><span class="sgr-1m">docgen_tmp/bound_functions.zig:14:13: </span><span class="sgr-36m">note: </span><span class="sgr-1m">struct declared here
+</span>const Foo = struct {
+            <span class="sgr-32m">^~~~~~
+</span>
+</samp></pre></figure>
     <p>
     Method calls are now restricted to the exact syntactic form <code><span class="line">a.b(args)</span></code>.
     Any deviation from this syntax - for instance, extra parentheses as in
@@ -2655,14 +2683,11 @@ Date:   Sat Jul 29 12:45:01 2023 -0400
 
     <h3 id="call-Stack"><a href="#toc-call-Stack">@call Stack</a> <a class="hdr" href="#call-Stack">§</a></h3>
 
-commit 6378644d4ea561a79edf44056609681e6d1438d1
-Merge: 65270cdc3 51ed5416a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Dec 13 18:15:18 2022 -0500
-
-    Merge pull request #13907 from Vexu/call-merge
-    
-    Remove `stack` option from `@call`
+    <p>The <code>stack</code> option has been removed from <code><span class="line"><span class="tok-builtin">@call</span></span></code> (#13907).</p>
+    <p>There is no upgrade path for this one, I'm afraid. This feature has proven difficult
+    to implement in the <a href="#LLVM-Backend">LLVM Backend</a>.</p>
+    <p>More investigation will be needed to see if something that solves the use case
+    of switching call stacks can be brought back to the language before Zig reaches 1.0.</p>
     
 
     <h3 id="Allow-Tautological-Integer-Comparisons"><a href="#toc-Allow-Tautological-Integer-Comparisons">Allow Tautological Integer Comparisons</a> <a class="hdr" href="#Allow-Tautological-Integer-Comparisons">§</a></h3>
@@ -2930,17 +2955,114 @@ All 1 tests passed.
 
     <h3 id="Generic-Function-Calls"><a href="#toc-Generic-Function-Calls">Generic Function Calls</a> <a class="hdr" href="#Generic-Function-Calls">§</a></h3>
 
-commit 0aacb6369fdf3762b7ab6069955684abb63f1459
-Merge: 70c71935c d5d067211
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Jul 19 09:36:57 2023 -0700
-
-    Merge pull request #16318 from ziglang/rework-generics
-    
-    rework generic function calls
-
-    TODO: inferred error sets recursion
-    TODO: recreating struct decls with each call
+    <p>Sometimes the language design drives the <a href="#Compiler">Compiler</a> development, but
+    sometimes it's the other way around, as we discover through trial and error
+    what <em>fundamental simplicity</em> looks like.</p>
+    <p>In this case, generic functions and inferred error sets have been reworked for
+    a few reasons:</p>
+    <ul>
+      <li>To make the language simpler to specify.</li>
+      <li>To make the compiler implementation simpler.</li>
+      <li>Progress towards <a href="#Incremental-Compilation">Incremental Compilation</a>.</li>
+    </ul>
+    <p>Things are mostly the same, except there may be two kinds of breakages caused by it.
+    Firstly, type declarations are evaluated for every generic function call:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">generic_call_demo.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;generic call demo&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> a = foo(<span class="tok-type">i32</span>, <span class="tok-number">1234</span>);</span>
+<span class="line">    <span class="tok-kw">const</span> b = foo(<span class="tok-type">i32</span>, <span class="tok-number">5678</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(a) == <span class="tok-builtin">@TypeOf</span>(b));</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, init: T) <span class="tok-kw">struct</span> { x: T } {</span>
+<span class="line">    <span class="tok-kw">return</span> .{ .x = init };</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test generic_call_demo.zig</kbd>
+1/1 test.generic call demo... FAIL (TestUnexpectedResult)
+<span class="sgr-1m">/home/andy/Downloads/zig/lib/std/testing.zig:515:14</span>: <span class="sgr-2m">0x22423f in expect (test)</span>
+    if (!ok) return error.TestUnexpectedResult;
+             <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/dev/zig-release-cutter/docgen_tmp/generic_call_demo.zig:7:5</span>: <span class="sgr-2m">0x224375 in test.generic call demo (test)</span>
+    try expect(@TypeOf(a) == @TypeOf(b));
+    <span class="sgr-32m">^</span>
+0 passed; 0 skipped; 1 failed.
+error: the following test command failed with exit code 1:
+/home/andy/.cache/zig/o/1badee6b5c51bdd719adb838ec138cd4/test
+</samp></pre></figure>
+    <p>With Zig 0.10.x, this test passed. With 0.11.0, it fails. Which behavior Zig will have
+    at 1.0 is yet to be determined. In the meantime, it is best not to rely on type equality
+    in this case.</p>
+    <p>Suggested workaround is to make a function that returns the type:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">generic_call_workaround.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"><span class="tok-kw">const</span> expect = std.testing.expect;</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;generic call demo&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">const</span> a = foo(<span class="tok-type">i32</span>, <span class="tok-number">1234</span>);</span>
+<span class="line">    <span class="tok-kw">const</span> b = foo(<span class="tok-type">i32</span>, <span class="tok-number">5678</span>);</span>
+<span class="line">    <span class="tok-kw">try</span> expect(<span class="tok-builtin">@TypeOf</span>(a) == <span class="tok-builtin">@TypeOf</span>(b));</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>, init: T) Make(T) {</span>
+<span class="line">    <span class="tok-kw">return</span> .{ .x = init };</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">Make</span>(<span class="tok-kw">comptime</span> T: <span class="tok-type">type</span>) <span class="tok-type">type</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">struct</span> { x: T };</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test generic_call_workaround.zig</kbd>
+1/1 test.generic call demo... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>The second fallout from this change is mutually recursive functions with inferred
+    error sets:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">inferred_mutual_recursion.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;generic call demo&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> foo(<span class="tok-number">49</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(x: <span class="tok-type">i32</span>) !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">if</span> (x == <span class="tok-number">1000</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.BadNumber;</span>
+<span class="line">    <span class="tok-kw">return</span> bar(x - <span class="tok-number">1</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">bar</span>(x: <span class="tok-type">i32</span>) !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">if</span> (x &gt; <span class="tok-number">100000</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TooBig;</span>
+<span class="line">    <span class="tok-kw">if</span> (x == <span class="tok-number">0</span>) <span class="tok-kw">return</span>;</span>
+<span class="line">    <span class="tok-kw">return</span> foo(x - <span class="tok-number">1</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test inferred_mutual_recursion.zig</kbd>
+<span class="sgr-1m">docgen_tmp/inferred_mutual_recursion.zig:12:1: </span><span class="sgr-31m">error: </span><span class="sgr-1m">unable to resolve inferred error set
+</span>fn bar(x: i32) !void {
+<span class="sgr-32m">^~~~~~~~~~~~~~~~~~~~
+</span><span class="sgr-2m">referenced by:
+    foo: docgen_tmp/inferred_mutual_recursion.zig:9:12
+    bar: docgen_tmp/inferred_mutual_recursion.zig:15:12
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+</span>
+</samp></pre></figure>
+    <p>Suggested workaround is to introduce an explicit error set:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">error_set_workaround.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">test</span> <span class="tok-str">&quot;mutual recursion inferred error set demo&quot;</span> {</span>
+<span class="line">    <span class="tok-kw">try</span> foo(<span class="tok-number">49</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">const</span> Error = <span class="tok-kw">error</span>{ BadNumber, TooBig };</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>(x: <span class="tok-type">i32</span>) Error!<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">if</span> (x == <span class="tok-number">1000</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.BadNumber;</span>
+<span class="line">    <span class="tok-kw">return</span> bar(x - <span class="tok-number">1</span>);</span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">bar</span>(x: <span class="tok-type">i32</span>) Error!<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">if</span> (x &gt; <span class="tok-number">100000</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TooBig;</span>
+<span class="line">    <span class="tok-kw">if</span> (x == <span class="tok-number">0</span>) <span class="tok-kw">return</span>;</span>
+<span class="line">    <span class="tok-kw">return</span> foo(x - <span class="tok-number">1</span>);</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test error_set_workaround.zig</kbd>
+1/1 test.mutual recursion inferred error set demo... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>More information: #16318</p>
     
 
     <h3 id="Naked-Functions"><a href="#toc-Naked-Functions">Naked Functions</a> <a class="hdr" href="#Naked-Functions">§</a></h3>
