@@ -2157,6 +2157,11 @@ fn foo(s: []const i32, start: usize, len: usize) []const i32 {
     slice by end index. With this pattern, when <code>len</code> is compile-time known,
     the expression will be a pointer to an array rather than a slice type, which is generally
     a preferrable type.</p>
+    <p>The actual language change here is that this is now supported for many-ptrs. Where previously
+    you had to write {#syntax#}(ptr + off)[0..len]{#endsyntax#}, you can now instead write
+    {#syntax#}ptr[off..][0..len]{#endsyntax#}. Note that in general, unbounded slicing of
+    many-pointers is still not permitted, requiring pointer arithmetic: only this "slicing by
+    length" pattern is allowed.</p>
     <p>Zig 0.11.0 now detects this pattern and generates more efficient code.</p>
     <p>You can think of Zig as having both slice-by-end and slice-by-len syntax, it's just
     that one of them is expressed in terms of the other.</p>
@@ -2346,7 +2351,7 @@ fn quux(c: *const i32) !void {
     {#code_end#}
     <p>Calling {#syntax#}@fieldParentPtr{#endsyntax#} on a pointer that is not actually
     a field of the parent type is currently <strong>unchecked illegal behavior</strong>,
-    however there is an accepted proposal to add it:
+    however there is an accepted proposal to add a safety check:
     <a href="https://github.com/ziglang/zig/issues/2414">add safety checks for pointer casting</a></p>
     {#header_close#}
 
@@ -2505,7 +2510,7 @@ pub const common = @import("common.zig");
     {#end_shell_samp#}
     <p>
     The correct way to resolve this error is usually to factor the shared file out into its own
-    module, which other modules can then import. This can be done in the build system using
+    module, which other modules can then import. This can be done in the {#link|Build System#} using
     {#syntax#}std.Build.addModule{#endsyntax#}.
     </p>
     {#header_close#}
@@ -2582,7 +2587,7 @@ test "method call with optional pointer parameter" {
     false positive compile errors if a function is intended to only be used at compile-time.
     </p>
     <p>
-    This issue <a href="https://github.zom/ziglang/zig/pull/15891">has been resolved</a> in this release
+    This issue <a href="https://github.com/ziglang/zig/pull/15891">has been resolved</a> in this release
     cycle. Zig will now only emit a runtime version of a function to the binary if one of the following
     conditions holds:
     </p>
@@ -2806,6 +2811,17 @@ are no longer allowed, it will just be assumed to be unreachable.  Therefore, al
 <hr>
 <p>In general, naked functions should only contain comptime logic and {#syntax#}asm volatile{#endsyntax#} statements, which allows any required
 target-specific runtime calls and returns to be constructed.</p>
+    {#header_close#}
+    
+    {#header_open|@embedFile Supports Module-Mapped Names#}
+    <p>
+    The {#syntax#}@embedFile{#endsyntax#} builtin, as well as literal file paths, now supports
+    module-mapped names, like {#syntax#}@import{#endsyntax#}.
+    </p>
+    {#code_begin|syntax|embed_module#}
+// This embeds the contents of the root file of the module 'foo'.
+const data = @embedFile("foo");
+    {#code_end#}
     {#header_close#}
 
     {#header_close#}
@@ -3599,15 +3615,246 @@ Date:   Thu Mar 9 19:51:58 2023 -0700
     <p>With this release, the Zig Build System is no longer <strong>experimental</strong>.
     It is the début of {#link|Package Management#}.</p>
 
+    {#header_open|Terminology Changes#}
+    <p>
+    The introduction of {#link|Package Management#} required some terminology in the Zig Build
+    System to be changed.
+    </p>
+    <p>
+    Previously, a directory of Zig source files with one root source file which could be imported by
+    name was known as a <b>package</b>. It is now instead called a <b>module</b>.
+    </p>
+    <p>
+    This frees up the term <b>package</b> to be used in the context of package management. A package
+    is a directory of files, uniquely identified by a hash of all files, which can export any number
+    of compilation artifacts and modules.
+    </p>
+    {#header_close#}
+
+    {#header_open|Rename Types and Functions#}
+    <p>A large amount of types and functions in the build system have been renamed in this release cycle.</p>
+    <ul>
+      <li>{#syntax#}std.build{#endsyntax#} and {#syntax#}std.build.Builder{#endsyntax#} combined into {#syntax#}std.Build{#endsyntax#}</li>
+      <li>{#syntax#}LibExeObjStep{#endsyntax#} to {#syntax#}CompileStep{#endsyntax#}</li>
+      <li>{#syntax#}InstallRawStep{#endsyntax#} to {#syntax#}ObjCopyStep{#endsyntax#}</li>
+      <li>{#syntax#}std.Build.FooStep{#endsyntax#} to {#syntax#}std.Build.Step.Foo{#endsyntax#} (e.g. {#syntax#}std.Build.Step.Compile{#endsyntax#})</li>
+      <li>{#syntax#}std.Build.FileSource{#endsyntax#} to {#syntax#}std.Build.LazyPath{#endsyntax#}</li>
+      <li>Any type or function with {#syntax#}FileSource{#endsyntax#} in the name has been renamed, generally replacing it with either {#syntax#}File{#endsyntax#} or {#syntax#}Path{#endsyntax#}</li>
+      <li>{#syntax#}std.builtin.Mode{#endsyntax#} to {#syntax#}std.builtin.OptimizeMode{#endsyntax#}, and all references to "build mode" changed to "optimize mode"</li>
+      <li>{#syntax#}std.Build.Pkg{#endsyntax#} to {#syntax#}std.Build.Module{#endsyntax#}
+    </ul>
+    {#header_close#}
+
+    {#header_open|Target and Optimization#}
+    <p>
+    The target and optimization level for <code>std.Build.Step.Compile</code> is no longer set
+    separately using setter methods (previously <code>setTarget</code> and
+    <code>setBuildMode</code>). Instead, they are provided at the time of step creation, for
+    instance to <code>std.Build.addExecutable</code>.
+    </p>
+    {#header_close#}
+
+    {#header_open|Package Management#}
+    <p>
+    Zig 0.11 is the début of the official package manager. The package manager is still in its early
+    stages, but is mature enough to use in many cases. There is no "official" package repository:
+    packages are simply arbitrary directory trees which can be local directories or archives from
+    the Internet.
+    </p>
+    <p>
+    Package information is declared in a file named <code>build.zig.zon</code>. ZON (Zig Object
+    Notation) is a simple data interchange format introduced in this release cycle, which uses Zig's
+    anonymous struct and array initialization syntax to declare objects in a manner similar to other
+    formats such as JSON. The <code>build.zig.zon</code> file for a package should look like this:
+    </p>
+    {#syntax_block|zig|build.zig.zon#}
+.{
+    .name = "my_package_name",
+    .version = "0.1.0",
+    .dependencies = .{
+        .dep_name = .{
+            .url = "https://link.to/dependency.tar.gz",
+            .hash = "12200f41f9804eb9abff259c5d0d84f27caa0a25e0f72451a0243a806c8f94fdc433",
+        },
+    },
+}
+    {#end_syntax_block#}
+    <p>
+    The information provided is the package name and version, and a list of dependencies, each of
+    which has a name, a URL to an archive, and a hash. The hash is not of the archive itself, but of
+    its contents. In order to find it, it can be omitted from the file, and <code>zig build</code>
+    will emit an error containing the expected hash. There will be tooling in future to make this
+    file easier to modify.
+    </p>
+    TODO std.tar added. mention all the compressions available
+    <p>
+    This information is provided in a separate file (rather than declared in the
+    <code>build.zig</code> script) to speed up the package manager by allowing package fetching to
+    happen without the need to build and run the build script. This also allows tooling to observe
+    dependency graphs without having to execute potentially dangerous code.
+    </p>
+    <p>
+    Every dependency can expose a collection of <b>binary artifacts</b> and <b>Zig modules</b> from
+    itself. The <code>std.Build.addModule</code> function creates a new Zig module which is publicly
+    exposed from your package; i.e. one which dependant packages can use. (To create a private
+    module, instead use <code>std.Build.createModule</code>.) Regarding binary artifacts, any
+    artifact which is <b>installed</b> (for instance, via <code>std.Build.installArtifact</code>) is
+    exposed to dependant packages.
+    </p>
+    <p>
+    In the build script, dependencies can be referenced using the <code>std.Build.dependency</code>
+    function. This takes the name of a dependency (as given in <code>build.zig.zon</code>) and
+    returns a {#syntax#}*std.Build.Dependency{#endsyntax#}. You can then use the
+    <code>artifact</code> and <code>module</code> methods on this object to get binary artifacts and
+    Zig modules exposed by the dependency.
+    </p>
+    <p>
+    If you wish to vendor a dependency rather than fetch it from the Internet, you can use the
+    <code>std.Build.anonymousDependency</code> function, which takes as arguments a path to the
+    package's build root, and an <code>@import</code> of its build script.
+    </p>
+    <p>
+    Both <code>dependency</code> and <code>anonymousDependency</code> take a parameter
+    <code>args</code>. This is an anonymous struct containing arbitrary arguments to pass to the
+    build script, which it can access as if they were passed to the script through <code>-D</code>
+    flags (through <code>std.Build.option</code>. Options from the current package are not
+    implicitly provided to dependencies, and must be explicitly forwarded where required.
+    </p>
+    <p>
+    It is standard for packages to use <code>std.Build.standardOptimizeOption</code> and
+    <code>std.Build.standardTargetOptions</code> when they need an optimization level and/or target
+    from their dependant. This allows the dependant to simply forward these values with the names
+    <code>optimize</code> and <code>target</code>.
+    </p>
+    {#syntax_block|zig|build.zig#}
+const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const my_remote_dep = b.dependency("my_remote_dep", .{
+        // These are the arguments to the dependency. It expects a target and optimization level.
+        .target = target,
+        .optimize = optimize,
+    });
+    const my_local_dep = b.anonymousDependency("deps/bar/", @import("deps/bar/build.zig"), .{
+        // This dependency also expects those options, as well as a boolean indicating whether to
+        // build against another library.
+        .target = target,
+        .optimize = optimize,
+        .use_libfoo = false,
+    });
+
+    const exe = try b.addExecutable(.{
+        .name = "my_binary",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    
+    // my_remote_dep exposes a Zig module we wish to depend on.
+    exe.addModule(my_remote_dep.module("some_mod"));
+
+    // my_local_dep exposes a static library we wish to link to.
+    exe.linkLibrary(my_local_dep.artifact("some_lib"));
+
+    b.addInstallArtifact(exe);
+}
+    {#end_syntax_block#}
+    <p>
+    Explicitly passing the target and optimization level like this allows a build script to build
+    some binaries for different targets or at different optimization levels, which can, for
+    instance, be useful when
+    <a href="https://github.com/andrewrk/groovebasin/blob/271bd7e4014e55a089b8d956228d90b57d8e3fa5/build.zig#L5-L31">
+    interfacing with WebAssembly
+    </a>.
+    <p>
+    Every package uses a separate instance of <code>std.Build</code>, managed by the build system.
+    It is important to perform operations on the correct instance. This will always be the one
+    passed as a parameter to the <code>build</code> function in your build script.
+    </p>
+    <p>
+    <b>The package manager is in its early stages, and will likely undergo significant changes
+    before 1.0.</b> Some planned features include optional dependencies, better support for binary
+    dependencies, the ability to construct a <code>LazyPath</code> from an arbitrary file from a
+    dependency, improved tooling, and more. However, the package manager is in a state where it is
+    usable for some projects, particularly simple pure-Zig projects.
+    </p>
+    {#header_close#}
+    
+    {#header_open|Install and Run Executables#}
+    <p>
+    The build system supports adding steps to install and run compiled executables. This was
+    previously done using the {#syntax#}install{#endsyntax#} and {#syntax#}run{#endsyntax#} methods
+    on {#syntax#}std.Build.Step.Compile{#endsyntax#}. However, this leads to ambiguities about the
+    owner package in the presence of package management. Therefore, these operations must now be
+    done with these functions:
+    </p>
+    <ul>
+      <li>{#syntax#}b.installArtifact(exe){#endsyntax#} creates an install step for
+        {#syntax#}exe{#endsyntax#} and adds it as a dependency of {#syntax#}b{#endsyntax#}'s
+        top-level install step</li>
+      <li>{#syntax#}b.addRunArtifact(exe){#endsyntax#} creates and returns a run artifact for
+        {#syntax#}exe{#endsyntax#}</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Compiler Protocol#}
+    <p>
+    Previously, when the build system invoked the Zig compiler, it simply forwarded stderr to the
+    terminal, so the user could see any errors. This solution limits the possibility of integration
+    between the build system and the compiler. Therefore, the build system now communicates
+    information to the compiler using a binary protocol.
+    </p>
+    <p>
+    This protocol will likely not be used by end users, but it is enabled using the
+    <code>--listen</code> argument to the compiler, and communicates over TCP (with default port
+    14735) or stdio. The types in <code>std.zig.Server</code> are used by the protocol, and a usage
+    example can be found in <code>std.Build.Step.evalZigProcess</code>.
+    </p>
+    <p>
+    The usage of this compiler protocol does mean there can be a small time delay between something
+    like a compilation error occuring and it being reported by <code>zig build</code>, however it
+    has the advantage of allowing the build system to receive much more detailed information about
+    the build, allowing for functionality like the {#link|Build Summary#}.
+    </p>
+
+    TODO no more --enable-cache
+    {#header_close#}
+
+    {#header_open|Build Summary#}
+    <p>
+    <code>zig build</code> will now print a summary of all build steps after completing. This
+    summary includes information on which steps succeeded, which failed, and why. The
+    <code>--summary</code> option controls what information is printed:
+    </p>
+    {#shell_samp#}
+  --summary [mode]              Control the printing of the build summary
+    all                         Print the build summary in its entirety
+    failures                    (Default) Only print failed steps
+    none                        Do not print the build summary
+    {#end_shell_samp#}
+    <p>
+    Please note that the output from this option is currently
+    <a href="https://github.com/ziglang/zig/issues/14937">not color-blind friendly</a>. This will be
+    improved in the future.
+    </p>
+    TODO add example output from build summary
+    {#header_close#}
+
+    {#header_open|Custom Build Runners#}
+    <p>
+    Zig build scripts are, by default, run by <code>build_runner.zig</code>, a program distributed
+    with Zig. In some cases, such as for custom tooling which wishes to observe the step graph, it
+    may be useful to override the build runner to a different Zig file. This is now possible using
+    the option <code>--build-runner path/to/runner.zig</code>.
+    </p>
+    {#header_close#}
+    
+
     TODO
-    * b.installArtifact(exe) rather than exe.install()
-    * b.addRunArtifact(exe) rather than exe.run()
-    * Each *Build object corresponds to a package, and it's important to do
-      steps in the correct context.
     * addTest no longer runs it
-    * talk about the build runner communicating with compiler over a protocol
-      - no more --enable-cache
-    * build summary
     * addition of config step, cmake step
     * the cache system moved to the build system
       - https://github.com/ziglang/zig/pull/14571 (nasm example)
@@ -3615,7 +3862,6 @@ Date:   Thu Mar 9 19:51:58 2023 -0700
     * enhancements to CheckObjectStep
     * build system: make `@embedFile` support module-mapped names the same way as `@import` (#14553)
     * build system: Add ability to import dependencies from build.zig
-    * Add --build-runner `zig build` option (#14742)
 
 commit f99b75360db55413f4accf43a6f4161b14a5de9f
 Merge: 3aa0a7ecd 145f93ba9
@@ -3633,50 +3879,7 @@ Date:   Fri Jan 27 18:01:49 2023 -0500
 
 
 
- * combine `std.build` and `std.build.Builder` into `std.Build`
- * eliminate `setTarget` and `setBuildMode`; use an options struct for `b.addExecutable` and friends
- * implement passing options to dependency packages.
-   * closes #14285
- * rename LibExeObjStep to CompileStep
  * move src.type.CType to std lib, use it from std.Build, this will help with populating config.h files. [motivating change](https://github.com/andrewrk/libmp3lame/commit/a33ffeb1bd0942405af77b6022e1954fad48e09d)
-
-[example of the flexibility this system brings](https://github.com/andrewrk/groovebasin/blob/271bd7e4014e55a089b8d956228d90b57d8e3fa5/build.zig#L5-L31) (this is why we explicitly pass around optimization mode and target everywhere)
-
-
-commit 60935decd318498529a016eeb1379d943a7e830d
-Merge: 4c7f8286d 81c27c74b
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Feb 3 14:20:49 2023 -0500
-
-    Merge pull request #14523 from ziglang/zon
-    
-    introduce Zig Object Notation and use it for the build manifest file (build.zig.zon)
-
-
-commit 693b12f8e1c1d99d33c01961c1fdc972a5255eb6
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Feb 3 17:22:31 2023 -0700
-
-    std.Build: support exposing and depending on zig modules
-    
-    New API introduced: std.Build.addModule
-    
-    This function exposes a zig module with the given name, which can be
-    used by packages that depend on this one via std.Build.Dependency.module.
-    
-    std.Build.Pkg and related functionality is deleted. Every use case has a
-    straightforward upgrade path using the new Module struct.
-    
-    std.Build.OptionsStep.getPackage is replaced by
-    std.Build.OptionsStep.createModule.
-    
-    std.Build.CompileStep.addPackagePath is replaced by
-    std.Build.CompileStep.addAnonymousModule.
-    
-    This partially addresses #14307 by renaming some of the instances of
-    "package" to "module".
-    
-    Closes #14278
 
 commit a5b34a61ab61882bf55d87e4cbc8186215ecf320
 Merge: 11cc1c16f b29e3fa2c
@@ -3727,12 +3930,6 @@ Date:   Fri Feb 24 16:02:01 2023 -0700
     install steps for doing installation.
     
     This commit also makes ObjCopyStep properly integrate with caching.
-
-commit 653814f76ba5d678ebad91f140417cd5829c6aad
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Mar 3 16:17:23 2023 -0700
-
-    std.Build.addModule: return the created module
 
 commit 8ae92fd17ee9a3d46e4f441864a8544b440c0b2d
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -3799,23 +3996,20 @@ Date:   Sun Jul 30 21:27:29 2023 -0700
     {#header_close#}
 
     {#header_open|Steps Run In Parallel#}
-commit bd242ce1ce9ef6ffb1af4432d892bf582dcdba8a
-Merge: a2c6ecd6d 7177b3994
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Mar 16 04:11:41 2023 -0400
-
-    Merge pull request #14647 from ziglang/build-parallel
-    
-    zig build: run steps in parallel
+    <p>
+    The Zig build system is now capable of running multiple build steps in parallel. The build
+    runner analyzes the build step graph, and runs steps in a thread pool, with a default thread
+    count corresponding to the number of CPU cores available for optimal CPU utilization. The number
+    of threads used can be changed with the <code>-j</code> option.
+    </p>
+    <p>
+    This change can allow projects with many build steps to build significantly faster.
+    </p>
     {#header_close#}
 
     {#header_open|Embrace LazyPath for Inputs and Outputs#}
     TODO remove output_dir. explain the lazy file path thing
     * Build: make `InstallDirStep` use a `FileSource` Closes #16187
-    {#header_close#}
-
-    {#header_open|Build Summary#}
-    TODO
     {#header_close#}
 
     {#header_open|System Resource Awareness#}
@@ -3838,10 +4032,6 @@ Date:   Sun Mar 19 16:26:19 2023 -0700
     <li>Fixed <code>WriteFile.getFileSource</code> failure on {#link|Windows#} (#15730).</li>
     <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
     </ul>
-    {#header_open|Package Management#}
-    TODO
-    TODO std.tar added. mention all the compressions available
-    {#header_close#}
 
     {#header_open|Configuration File Generation#}
 commit b129f1b0462e6c80b4a97851ea3aa8b3f0a4aa37
