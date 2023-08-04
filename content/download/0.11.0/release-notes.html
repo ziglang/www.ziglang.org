@@ -3040,15 +3040,15 @@ All 1 tests passed.
 <span class="line">    <span class="tok-kw">return</span> .{ .x = init };</span>
 <span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test generic_call_demo.zig</kbd>
 1/1 test.generic call demo... FAIL (TestUnexpectedResult)
-<span class="sgr-1m">/home/andy/Downloads/zig/lib/std/testing.zig:515:14</span>: <span class="sgr-2m">0x22423f in expect (test)</span>
+<span class="sgr-1m">/home/mlugg/.opt/zig/lib/std/testing.zig:515:14</span>: <span class="sgr-2m">0x22426f in expect (test)</span>
     if (!ok) return error.TestUnexpectedResult;
              <span class="sgr-32m">^</span>
-<span class="sgr-1m">/home/andy/dev/zig-release-cutter/docgen_tmp/generic_call_demo.zig:7:5</span>: <span class="sgr-2m">0x224375 in test.generic call demo (test)</span>
+<span class="sgr-1m">/home/mlugg/www.ziglang.org/docgen_tmp/generic_call_demo.zig:7:5</span>: <span class="sgr-2m">0x2243a5 in test.generic call demo (test)</span>
     try expect(@TypeOf(a) == @TypeOf(b));
     <span class="sgr-32m">^</span>
 0 passed; 0 skipped; 1 failed.
 error: the following test command failed with exit code 1:
-/home/andy/.cache/zig/o/1badee6b5c51bdd719adb838ec138cd4/test
+/home/mlugg/.cache/zig/o/53a836a41107670ee50d6e4667c3b944/test
 </samp></pre></figure>
     <p>With Zig 0.10.x, this test passed. With 0.11.0, it fails. Which behavior Zig will have
     at 1.0 is yet to be determined. In the meantime, it is best not to rely on type equality
@@ -4267,8 +4267,46 @@ Date:   Sun Jul 30 21:27:29 2023 -0700
 
     <h3 id="Embrace-LazyPath-for-Inputs-and-Outputs"><a href="#toc-Embrace-LazyPath-for-Inputs-and-Outputs">Embrace LazyPath for Inputs and Outputs</a> <a class="hdr" href="#Embrace-LazyPath-for-Inputs-and-Outputs">§</a></h3>
 
-    TODO remove output_dir. explain the lazy file path thing
-    * Build: make `InstallDirStep` use a `FileSource` Closes #16187
+    <p>
+    The build system contains a type called <code><span class="line">LazyPath</span></code> (formerly
+    <code><span class="line">FileSource</span></code>) which allows depending on a file or directory which
+    originates from one of many sources: an absolute path, a path relative to the build runner's
+    working directory, or a build artifact. The build system now makes extensive use of
+    <code><span class="line">LazyPath</span></code> anywhere we reference an arbitrary path.
+    </p>
+    <p>
+    This makes the build system more versatile by making it easier to use generated files in a
+    variety of contexts, since a <code><span class="line">LazyPath</span></code> may be created to reference the
+    result of any step emitting a file, such as a <code><span class="line">std.Build.Step.Compile</span></code> or
+    <code><span class="line">std.Build.Step.Run</span></code>.
+    </p>
+    <p>
+    The most notable change here is that <code><span class="line">Step.Compile</span></code> no longer has an
+    <code><span class="line">output_dir</span></code> field. Rather than depending on the location a binary is
+    emitted to, the <code><span class="line">LazyPath</span></code> abstraction must be used, for instance through
+    <code><span class="line">getEmittedBin</span></code> (formerly <code><span class="line">getOutputSource</span></code>). There
+    are also methods to get the paths corresponding to other compilation artifacts:
+    </p>
+    <ul>
+      <li><code><span class="line">Step.Compile.getEmittedBin</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedImplib</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedH</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedPdb</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedDocs</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedAsm</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedLlvmIr</span></code></li>
+      <li><code><span class="line">Step.Compile.getEmittedLlvmBc</span></code></li>
+    </ul>
+    <p>
+    Getting these files will cause the build system to automatically set the appropriate compiler
+    flags to generate them. As such, the old <code><span class="line">emit_X</span></code> fields have been removed.
+    </p>
+    <p>
+    <code><span class="line">Step.InstallDir</span></code> now uses a <code><span class="line">LazyPath</span></code> for its
+    <code><span class="line">source_dir</span></code> field, allowing installing a generated directory without a
+    known path. As a general rule, hardcoded paths outside of the installation directory should be
+    avoided where possible.
+    </p>
     
 
     <h3 id="System-Resource-Awareness"><a href="#toc-System-Resource-Awareness">System Resource Awareness</a> <a class="hdr" href="#System-Resource-Awareness">§</a></h3>
@@ -4525,6 +4563,15 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
 
     <h3 id="Code-Generation"><a href="#toc-Code-Generation">Code Generation</a> <a class="hdr" href="#Code-Generation">§</a></h3>
 
+
+    <p>
+    The Zig compiler has several code backends. The primary one in usage today is the LLVM backend,
+    which emits LLVM IR in order to emit highly optimized binaries. However, this release cycle also
+    saw major improvements to many of our "self-hosted" backends, most notably the
+    <a href="#x86-Backend">x86 Backend</a> which is now passing the vast majority of behavior tests. Improvements to
+    these backends is key to reaching the goal of <a href="#Incremental-Compilation">Incremental Compilation</a>.
+    </p>
+
     <h4 id="LLVM-Backend"><a href="#toc-LLVM-Backend">LLVM Backend</a> <a class="hdr" href="#LLVM-Backend">§</a></h4>
 
     <ul>
@@ -4611,7 +4658,34 @@ provides us with more details about which test failed.
 
     <h3 id="Error-Return-Tracing"><a href="#toc-Error-Return-Tracing">Error Return Tracing</a> <a class="hdr" href="#Error-Return-Tracing">§</a></h3>
 
-    TODO turn https://github.com/ziglang/zig/issues/13618 into release notes
+    <p>
+    This release cycle sees minor improvements to error return traces. These traces are created by
+    Zig for binaries built in safe release modes, and report the source of an error which was not
+    correctly handled where a simple stack trace would be less useful.
+    </p>
+    <p>
+    A bug involving
+    <a href="https://github.com/ziglang/zig/issues/13618">incorrect frames from loop bodies
+    appearing in traces</a> has been fixed. The following test case now gives a correct error return
+    trace:
+    </p>
+    <figure><figcaption class="zig-cap"><cite class="file">loop_continue_error_trace.zig</cite></figcaption><pre><code><span class="line"><span class="tok-kw">fn</span> <span class="tok-fn">foo</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.UhOh; <span class="tok-comment">// this should not appear in the trace</span></span>
+<span class="line">}</span>
+<span class="line"></span>
+<span class="line"><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {</span>
+<span class="line">    <span class="tok-kw">var</span> i: <span class="tok-type">usize</span> = <span class="tok-number">0</span>;</span>
+<span class="line">    <span class="tok-kw">while</span> (i &lt; <span class="tok-number">3</span>) : (i += <span class="tok-number">1</span>) {</span>
+<span class="line">        foo() <span class="tok-kw">catch</span> <span class="tok-kw">continue</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="tok-kw">return</span> <span class="tok-kw">error</span>.UnrelatedError;</span>
+<span class="line">}</span></code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe loop_continue_error_trace.zig</kbd>
+$ <kbd>./loop_continue_error_trace</kbd>
+error: UnrelatedError
+<span class="sgr-1m">/home/mlugg/www.ziglang.org/docgen_tmp/loop_continue_error_trace.zig:10:5</span>: <span class="sgr-2m">0x21e395 in main (loop_continue_error_trace)</span>
+    return error.UnrelatedError;
+    <span class="sgr-32m">^</span>
+</samp></pre></figure>
     
 
     <h3 id="Safety-Checks"><a href="#toc-Safety-Checks">Safety Checks</a> <a class="hdr" href="#Safety-Checks">§</a></h3>
@@ -4682,21 +4756,75 @@ Date:   Mon Jan 16 21:19:48 2023 -0500
 
     <h3 id="Incremental-Compilation"><a href="#toc-Incremental-Compilation">Incremental Compilation</a> <a class="hdr" href="#Incremental-Compilation">§</a></h3>
 
-    TODO
-    TODO mention InternPool
-    TODO outline the roadmap to get there
+    <p>
+    While still a highly WIP feature, this release cycle saw many improvements paving the way to
+    incremental compilation capabilities in the compiler. One of the most significant was the
+    <a href="https://github.com/ziglang/zig/pull/15569">InternPool changeset</a>. This change is
+    mostly invisible to Zig users, but brings many benefits to the compiler, amongst them being that
+    we are now much closer to incremental compilation. This is because this changeset brings new
+    in-memory representations to many internal compiler datastructures (most notably types and
+    values) which are trivially serializable to disk, a requirement for incremental compilation.
+    </p>
+    <p>
+    This release additionally saw big improvements to Zig's native code generation and linkers, as
+    well as beginning to move to emitting LLVM bitcode manually. The former will unlock extremely
+    fast incremental compilations, and the latter is necessary for incremental compilation to work
+    on the LLVM backend.
+    </p>
+    <p>
+    Incremental compilation will be a key focus of the 0.12.0 release cycle. The path to incremental
+    compilation will roughly consist of the following steps:
+    </p>
+    <ul>
+      <li>Improve the representation of some internal compiler datastructures (comptime-mutable memory and declarations)</li>
+      <li>Implement improved dependency graph analysis, to avoid incorrect compile errors whilst keeping incremental updates as small as possible</li>
+      <li>Get the self-hosted <a href="#Code-Generation">Code Generation</a> backends and linkers into a usable state (the x86 backend is already passing most behavior tests!)</li>
+      <li>Implement serialization to cache for key compiler datastructures</li>
+      <li>Enable and fuzz-test incremental compilation to catch bugs</li>
+    </ul>
+    <p>While no guarantees can be made, it is possible that a basic form of incremental compilation
+    will be usable in 0.12.0.</p>
     
 
     <h3 id="New-Module-CLI"><a href="#toc-New-Module-CLI">New Module CLI</a> <a class="hdr" href="#New-Module-CLI">§</a></h3>
 
-commit 7f691b3fe26f623d108a6b2b2018bbc3aa999224
-Merge: 05da5b32a f94cbab3a
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Tue Feb 21 11:43:31 2023 -0500
-
-    Merge pull request #14664 from mlugg/feat/new-module-cli
-    
-    New module CLI
+    <p>
+    The method for specifying modules on the CLI has been changed to support recursive module
+    dependencies and shared dependencies. Previously, the <code>--pkg-begin</code> and
+    <code>--pkg-end</code> options were used to define modules in a "hierarchical" manner, nesting
+    dependencies inside their parent. This system was not compatible with shared dependencies or
+    recursive dependencies.
+    </p>
+    <p>
+    Modules are now specified using the <code>--mod</code> and <code>--deps</code> options, which
+    have the following syntax:
+    </p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>--mod [name]:[deps]:[src] Make a module available for dependency under the given name
+      deps: [dep],[dep],...
+      dep:  [[import=]name]
+  --deps [dep],[dep],...    Set dependency names for the root package
+      dep:  [[import=]name]
+</samp></pre></figure>
+    <p>
+    <code>--mod</code> defines a module with a given name, dependency list, and root source file.
+    <code>--deps</code> specifies the list of dependencies of the main module. These options are not
+    order-dependant. This defines modules in a "flat" manner, and specifies dependencies indirectly,
+    allowing dependency loops and shared dependencies. The name of a dependency can optionally be
+    overriden from the "default" name in the dependency string.
+    </p>
+    <p>
+    For instance, the following <code>zig build-exe</code> invocation defines two modules,
+    <code>foo</code> and <code>bar</code>. <code>foo</code> depends on <code>bar</code> under the
+    name <code>bar1</code>, <code>bar</code> depends on itself (under the default name
+    <code>bar</code>), and the main module depends on both <code>foo</code> and <code>bar</code>.
+    </p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe main.zig --mod foo:bar1=bar:foo.zig --mod bar:bar:bar.zig --deps foo,bar</kbd>
+</samp></pre></figure>
+    <p>
+    The <a href="#Build-System">Build System</a> supports creating module dependency loops by manually modifying the
+    <code>dependencies</code> of a <code>std.Build.Module</code>. Note that this API (and the CLI
+    invocation) is likely to undergo further changes in the future.</p>
+    </p>
     
     
 
@@ -4826,7 +4954,49 @@ marked machine code section (<code>_runtime.etext</code>) and beginning of read-
 
     <h3 id="Move-Library-Path-Resolution-to-the-Frontend"><a href="#toc-Move-Library-Path-Resolution-to-the-Frontend">Move Library Path Resolution to the Frontend</a> <a class="hdr" href="#Move-Library-Path-Resolution-to-the-Frontend">§</a></h3>
 
-    TODO https://github.com/ziglang/zig/pull/16058
+    <p>
+    Library path resolution is now handled by the Zig frontend rather than the linker (LLD). Some
+    compiler flags are introduced to control this behavior.
+    </p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>-search_paths_first            For each library search path, check for dynamic
+                               lib then static lib before proceeding to next path.
+-search_paths_first_static     For each library search path, check for static
+                               lib then dynamic lib before proceeding to next path.
+-search_dylibs_first           Search for dynamic libs in all library search
+                               paths, then static libs.
+-search_static_first           Search for static libs in all library search
+                               paths, then dynamic libs.
+-search_dylibs_only            Only search for dynamic libs.
+-search_static_only            Only search for static libs.
+</samp></pre></figure>
+    <p>
+    These arguments are stateful: they affect all subsequent libraries linked by name, such as by
+    the flags <code>-l</code>, <code>-weak-l</code>, and <code>-needed-l</code>.
+    </p>
+    <p>
+    Error reporting for failure to find a system library is improved:
+    </p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe test.zig -lfoo -L. -L/a -target x86_64-macos --sysroot /home/andy/local</kbd>
+error: unable to find Dynamic system library 'foo' using strategy 'paths_first'. searched paths:
+  ./libfoo.tbd
+  ./libfoo.dylib
+  ./libfoo.so
+  ./libfoo.a
+  /home/andy/local/a/libfoo.tbd
+  /home/andy/local/a/libfoo.dylib
+  /home/andy/local/a/libfoo.so
+  /home/andy/local/a/libfoo.a
+  /a/libfoo.tbd
+  /a/libfoo.dylib
+  /a/libfoo.so
+  /a/libfoo.a
+</samp></pre></figure>
+    <p>
+    Previously, the <a href="#Build-System">Build System</a> exposed <code>-search_paths_first</code> and
+    <code>-search_dylibs_first</code> from the <code>zig build</code> command, which had the ability
+    to affect all libraries. Now, the build script instead explicitly chooses the search strategy
+    and preferred link mode for each library independently.
+    </p>
     
     
 
