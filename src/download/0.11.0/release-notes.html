@@ -3556,6 +3556,24 @@ while (true) {
     <li>Rename {#syntax#}std.Build.FooStep{#endsyntax#} to {#syntax#}std.Build.Step.Foo{#endsyntax#} (#14947).</li>
     <li>Fixed <code>WriteFile.getFileSource</code> failure on {#link|Windows#} (#15730).</li>
     <li>Allow dynamicbase to be disabled by Step.Compile (#14771).</li>
+    TODO
+    * addition of config step, cmake step
+    * the cache system moved to the build system
+      - https://github.com/ziglang/zig/pull/14571 (nasm example)
+    * allow run step to skip foreign binary execution if executor fails
+    * enhancements to CheckObjectStep
+    * build system: make `@embedFile` support module-mapped names the same way as `@import` (#14553)
+    * build system: Add ability to import dependencies from build.zig
+    * build: fix adding rpaths on darwin, improve CheckObjectStep to allow matching FileSource paths ( #15061)
+    * move src.type.CType to std lib, use it from std.Build, this will help with populating config.h files. [motivating change](https://github.com/andrewrk/libmp3lame/commit/a33ffeb1bd0942405af77b6022e1954fad48e09d)
+    * std.Build.addAssembly: add missing .kind
+    * std.Build.RunStep: fix default caching logic (#14666)
+    * std.Build.WriteFileStep: integrate with cache system and additionally support writing files to source files. This means a custom build step in zig's own build.zig is no longer needed for copying zig.h because it is handled by WriteFileStep.
+    * std.Build.Step.Compile: fix clearing logic for empty cflags
+    * std.Build: Add methods for creating modules from a TranslateC object.
+    * avoid repeating objects when linking a static library (#15708)
+    * std: add ELF parse'n'dump functionality to std.Build.Step.CheckObject (#16398)
+    * std.Build.Step.Compile: getEmittedDocs API enhancements
     </ul>
 
     {#header_open|Terminology Changes#}
@@ -3796,135 +3814,6 @@ pub fn build(b: *std.Build) void {
     </p>
     {#header_close#}
     
-
-    TODO
-    * addTest no longer runs it
-    * addition of config step, cmake step
-    * the cache system moved to the build system
-      - https://github.com/ziglang/zig/pull/14571 (nasm example)
-    * allow run step to skip foreign binary execution if executor fails
-    * enhancements to CheckObjectStep
-    * build system: make `@embedFile` support module-mapped names the same way as `@import` (#14553)
-    * build system: Add ability to import dependencies from build.zig
-
-commit f99b75360db55413f4accf43a6f4161b14a5de9f
-Merge: 3aa0a7ecd 145f93ba9
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Mar 24 07:22:05 2023 +0100
-
-    Merge pull request #15061 from ziglang/fix-15036
-    build: fix adding rpaths on darwin, improve CheckObjectStep to allow matching FileSource paths
-
-commit 7c2ba950a758b86893bfbe73521b29895f7ac4f0
-Author: kcbanner <kcbanner@gmail.com>
-Date:   Fri Jan 27 18:01:49 2023 -0500
-
-    build: .c ofmt does not produce a pdb
-
-
-
- * move src.type.CType to std lib, use it from std.Build, this will help with populating config.h files. [motivating change](https://github.com/andrewrk/libmp3lame/commit/a33ffeb1bd0942405af77b6022e1954fad48e09d)
-
-commit a5b34a61ab61882bf55d87e4cbc8186215ecf320
-Merge: 11cc1c16f b29e3fa2c
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Feb 5 08:27:53 2023 -0500
-
-    Merge pull request #14562: std.Build: enhancements to ConfigHeaderStep
-
-commit c6344866f9f6a38acd41f4c0ed36dfe00896f825
-Author: Asherah Connor <asherah@hrzn.ee>
-Date:   Thu Feb 9 08:45:49 2023 +1100
-
-    std.Build.addAssembly: add missing .kind
-
-commit 5e7b09ce9fbc95ec9fb9e277d262b9b5a5aa1917
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sat Feb 18 11:31:31 2023 -0700
-
-    std.Build.RunStep: fix default caching logic
-    
-    RunStep is supposed to auto-detect whether the intend is for
-    side-effects or for producing an output file. The auto-detection logic
-    was incorrect, and this commit fixes it.
-    
-    I tested this manually locally. Automated testing will require a more
-    significant investment in the test harness, which I will work on in a
-    future enhancement.
-    
-    closes #14666
-
-commit d3c9bfada64230ad17badb739f15a492b4c2c065
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Wed Feb 22 17:23:03 2023 -0700
-
-    std.Build.WriteFileStep: integrate with cache system
-    
-    And additionally support writing files to source files. This means a
-    custom build step in zig's own build.zig is no longer needed for copying
-    zig.h because it is handled by WriteFileStep.
-
-commit 26196be344e971c26ed044a39b68d0420cd94b90
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Fri Feb 24 16:02:01 2023 -0700
-
-    rename std.Build.InstallRawStep to ObjCopyStep
-    
-    And make it not do any installation, only objcopying. We already have
-    install steps for doing installation.
-    
-    This commit also makes ObjCopyStep properly integrate with caching.
-
-commit 8ae92fd17ee9a3d46e4f441864a8544b440c0b2d
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Mon Jul 3 21:47:57 2023 -0700
-
-    std.Build.Step.Compile: fix clearing logic for empty cflags
-    
-    Commit c0b774fbc65e3e406a38d37b02fffda7c5d3df26 originally added this
-    logic but it did not properly clear the C command line flags to empty
-    when a previous positional argument had command line flags, because it
-    never set the "previous" flag to true.
-    
-    This fixes C compiler flags not being reset to empty when using the
-    build system and a second positional argument has no arguments after a
-    first positional argument has arguments.
-    
-    Thanks to @squeek502 for finding this.
-
-commit 6bc9c4f716afbb15465f79f84f61221f394fa5b6
-Author: Michael Buckley <mokchira@gmail.com>
-Date:   Sat Jul 8 21:38:27 2023 -0400
-
-    std.Build: Add methods for creating modules from a TranslateC object.
-
-commit f2d433a19375734d744656c1c231525aab6ee59f
-Merge: 2896266a0 cea864542
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Thu Jul 13 09:48:39 2023 -0700
-
-    Merge pull request #15708 from xxxbxxx/build-link
-    
-    build: avoid repeating objects when linking a static library
-
-commit 546212ff7baee86d3408c465e906b52e2e585fe1
-Merge: 3ec337484 77026c67a
-Author: Jakub Konka <kubkon@jakubkonka.com>
-Date:   Fri Jul 14 06:38:33 2023 +0200
-
-    Merge pull request #16398 from ziglang/check-object-elf
-    
-    std: add ELF parse'n'dump functionality to std.Build.Step.CheckObject
-
-commit e8fa19960243a99cef5d9af94c3db52173787a4e
-Author: Andrew Kelley <andrew@ziglang.org>
-Date:   Sun Jul 23 21:13:58 2023 -0700
-
-    std.Build.Step.Compile: getEmittedDocs API enhancements
-    
-     * Allow calling it multiple times.
-     * Rename it. Sorry, this is to coincide with #16353.
-
 commit 43b830415368ac4fb08bf5e154a222a38baf4a24
 Merge: 235e6ac05 acbb6418c
 Author: Andrew Kelley <andrew@ziglang.org>
@@ -4017,6 +3906,10 @@ Date:   Sun Jul 9 21:51:41 2023 +0200
 
     Changed Step.Run's stdin to accept FileSource (#16358)
 
+    {#header_close#}
+
+    {#header_open|addTest No Longer Runs It#}
+    TODO
     {#header_close#}
     {#header_close#}
 
@@ -4461,19 +4354,10 @@ marked machine code section (<code>_runtime.etext</code>) and beginning of read-
     bugs that haven't been found yet. We can then start working on other
     features such as dynamic-linking support and any future proposals.</p>
 
-commit fea14c78d1374af909a2f11e37fe057777f3985d
-Author: Frank Denis <124872+jedisct1@users.noreply.github.com>
-Date:   Wed Mar 8 14:50:06 2023 +0100
-
-    wasm-linker: emit build_id section (#14820)
-    
-    The Build ID is a value that uniquely identifies a build.
-    
-    It is intended to capture the "meaning" or inputs of the build,
-    and is usually associated with debug info.
-    
-    Reference: https://github.com/WebAssembly/tool-conventions/blob/main/BuildId.md
-
+    <p>Additionally:</p>
+    <ul>
+      <li>emit build_id section (#14820)</li>
+    </ul>
     {#header_close#}
 
     {#header_open|DWARF#}
@@ -4702,54 +4586,9 @@ Hello World!
       <li>additionally format .zon files</li>
       <li>make `--exclude` work on files (#16178)</li>
       <li>fix file ending in a multi line comment</li>
+      <li>zig fmt: fix extra whitespace with multiline strings (#13937)</li>
+      <li>Correctly handle carriage return characters according to the spec (#12661).</li>
     </ul>
-commit 68d2f68ed823984a59724e256e78c5654d55b088
-Author: yujiri8 <yujiri@disroot.org>
-Date:   Fri Dec 16 22:24:58 2022 +0000
-
-    zig fmt: fix extra whitespace with multiline strings
-    
-    Fixes #13937
-
-commit 346ec15c5005e523c2a1d4b967ee7a4e5d1e9775
-Author: Tom Read Cutting <moosichu@users.noreply.github.com>
-Date:   Sun Feb 19 12:14:03 2023 +0000
-
-    Correctly handle carriage return characters according to the spec (#12661)
-    
-    * Scan from line start when finding tag in tokenizer
-    
-    This resolves a crash that can occur for invalid bytes like carriage
-    returns that are valid characters when not parsed from within literals.
-    
-    There are potentially other edge cases this could resolve as well, as
-    the calling code for this function didn't account for any potential
-    'pending_invalid_tokens' that could be queued up by the tokenizer from
-    within another state.
-    
-    * Fix carriage return crash in multiline string
-    
-    Follow the guidance of #38:
-    
-    > However CR directly before NL is interpreted as only a newline and not part of the multiline string. zig fmt will delete the CR.
-    
-    Zig fmt already had code for deleting carriage returns, but would still
-    crash - now it no longer does so. Carriage returns encountered before
-    line-feeds are now appropriately removed on program compilation as well.
-    
-    * Only accept carriage returns before line feeds
-    
-    Previous commit was much less strict about this, this more closely
-    matches the desired spec of only allow CR characters in a CRLF pair, but
-    not otherwise.
-    
-    * Fix CR being rejected when used as whitespace
-    
-    Missed this comment from ziglang/zig-spec#83:
-    
-    > CR used as whitespace, whether directly preceding NL or stray, is still unambiguously whitespace. It is accepted by the grammar and replaced by the canonical whitespace by zig fmt.
-    
-    * Add tests for carriage return handling
 
     {#header_open|Canonicalization of Identifiers#}
     <p>This adds new behavior to <code>zig fmt</code> which normalizes (renders a canonical form of) quoted identifiers like <code>@"hi_mom"</code> to some extent. This can make codebases more consistent and searchable.</p>
