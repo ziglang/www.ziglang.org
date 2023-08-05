@@ -111,7 +111,7 @@ Avoir des bibliothèques facilement réutilisables permet en définitive de prod
 C++, Rust, et D ont énormément de fonctionnalités et peuvent rendre le code plus complexe que nécessaire.
 Il est possible de passer du temps à se remémorer des détails du langage plutôt qu'à coder le cœur de son application, c'est une distraction.
 
-Zig n'a pas de macros ni de métaprogrammation, et pourtant le langage exprime des programme complexes d'une manière claire, non répétitive.
+Zig n'a pas de macros ni de métaprogrammation, et pourtant le langage exprime des programmes complexes d'une manière claire, non répétitive.
 Même Rust implémente en dur certaines macros, comme `format!`.
 L'équivalent en Zig est implémenté dans la bibliothèque standard sans code en dur dans le compilateur.
 
