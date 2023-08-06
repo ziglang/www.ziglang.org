@@ -31,7 +31,7 @@ ZSF 是一个小组织，并且有效地利用了货币资源。我们的计划�
 
 |   **EIN**   | **地址** |
 |-------------|-------------|
-| 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10128|
+| 84-5105214 | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### 其他支持的捐赠方式
 - 实物支票（见上述传统邮件地址）

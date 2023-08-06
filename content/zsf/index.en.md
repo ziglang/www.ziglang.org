@@ -31,7 +31,7 @@ Make sure to check your local law to see if you can deduct donations from your t
 
 |   **EIN**   | **Address** |
 |-------------|-------------|
-| 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10128|
+| 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### Additional donation methods supported
 - Physical checks (see the snail mail address listed above)

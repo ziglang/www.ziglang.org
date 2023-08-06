@@ -31,7 +31,7 @@ Certifique-se de verificar sua legislação local para ver se você pode deduzir
 
 |   **EIN**   | **Endereço** |
 |-------------|-------------|
-| 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10128|
+| 84-5105214 | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### Métodos de doação adicionais apoiados
 - Verificações físicas (ver o endereço de correio do caracol listado acima)
