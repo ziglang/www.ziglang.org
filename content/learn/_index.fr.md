@@ -34,6 +34,8 @@ Si vous êtes déjà prêt à développer en Zig, ce guide vous aidera à config
 - [Zig Learn (EN)](https://ziglearn.org)
 - Une introduction structurée à Zig par [Sobeston (EN)](https://github.com/sobeston).  
 - Apprenez à corriger les petits programmes avec Zig [ziglings](https://github.com/ratfactor/ziglings).
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 
 ## Vidéos et articles de blog
 - [Road to Zig 1.0 (EN)](https://www.youtube.com/watch?v=Gv2I7qTux7g) [vidéo]

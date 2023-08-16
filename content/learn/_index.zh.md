@@ -35,6 +35,8 @@ layout: single
 Zig 的结构化介绍，由 [Sobeston](https://github.com/sobeston) 编写
 - [Zig 小练习](https://github.com/ratfactor/ziglings)
 通过修补与调试一系列带有故障的小程序来学习 Zig
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 
 ## 相关视频和博客文章
 - [Zig 1.0 之路（英文）](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]

@@ -35,6 +35,8 @@ Zigでプログラミングを始める準備ができたら、このガイド�
 [Sobeston](https://github.com/sobeston)によるZigの構造的な紹介。
 - [Ziglings](https://github.com/ratfactor/ziglings)
 小さな壊れたプログラムを修正することでZigを学ぶ。
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Zigで演習を解いて、メンターの批評を受けて学ぶ。
 
 ## 関連する動画やブログ記事
 - [Zig 1.0への道のり](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]

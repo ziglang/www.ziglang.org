@@ -35,6 +35,8 @@ If you're ready to start programming in Zig, this guide will help you setup your
 A structured introduction to Zig by [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://github.com/ratfactor/ziglings)  
 Learn Zig by fixing tiny broken programs.
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 
 ## Relevant videos and blog posts
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
