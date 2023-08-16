@@ -35,6 +35,8 @@ layout: single
 مقدمة منظمة لـZig بواسطة [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://github.com/ratfactor/ziglings)
 تعلم Zig عن طريق تصحيح برامج تالفة بسيطة.
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 
 ## فيديوهات وتدوينات متعلقة
 - [الطريق إلى Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [فيديو]  

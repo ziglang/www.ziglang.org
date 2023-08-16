@@ -39,6 +39,8 @@ layout: single
     مقدمه‌ای ساختارمند برای زیگ توسط [Sobeston](https://github.com/sobeston).
 -   [Ziglings](https://github.com/ratfactor/ziglings)  
     با تعمیر برنامه های کوچک خراب، زیگ را بیاموزید.
+-   [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 
 ## فیلم ها و پست های وبلاگ مربوطه
 

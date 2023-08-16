@@ -35,6 +35,8 @@ Zig로 프로그래밍을 할 준비가 되셨다면, 아래 가이드는 여러
 [Sobeston](https://github.com/sobeston)님이 직접 작성한, 체계적인 Zig 프로그래밍 언어 강좌입니다.
 - [Ziglings](https://github.com/ratfactor/ziglings)  
 제대로 작동하지 않는 프로그램들을 고치면서 Zig를 배워보세요.
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 
 ## 관련 영상과 블로그 글
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [동영상]  

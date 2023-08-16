@@ -34,6 +34,8 @@ layout: single
 - [Zig Learn](https://ziglearn.org)  
 Структурированное введение в Zig от [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://github.com/ratfactor/ziglings)  
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Solve coding exercises and get mentored to develop fluency in Zig.
 Изучайте Zig, исправляя маленькие сломанные программы.
 
 ## Связанные видео и блоги
