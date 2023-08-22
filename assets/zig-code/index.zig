@@ -11,7 +11,7 @@ test "parse integers" {
     // Try commenting out this line!
     defer list.deinit();
 
-    var it = std.mem.tokenize(u8, input, " ,");
+    var it = std.mem.tokenizeAny(u8, input, " ,");
     while (it.next()) |num| {
         const n = try parseInt(u32, num, 10);
         try list.append(n);
