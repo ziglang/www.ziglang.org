@@ -34,12 +34,12 @@ layout: single
 - [Zig Learn](https://ziglearn.org)  
 Структурированное введение в Zig от [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://github.com/ratfactor/ziglings)  
-- [Zig on Exercism](https://exercism.org/tracks/zig)
-Solve coding exercises and get mentored to develop fluency in Zig.
 Изучайте Zig, исправляя маленькие сломанные программы.
+- [Zig on Exercism](https://exercism.org/tracks/zig)
+Решайте задачи по программированию и учитесь под руководством наставников, чтобы свободно владеть языком Zig.
 
 ## Связанные видео и блоги
-- [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
+- [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video] 
 Видео от [Andrew Kelley](https://andrewkelley.me), представляет Zig и его философию.
 - [Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)  
 Запись в блоге о работе над самораскручивающимся компиляторе Zig, также отмеченная в [статье на lwn.net](https://lwn.net/Articles/833400/).
