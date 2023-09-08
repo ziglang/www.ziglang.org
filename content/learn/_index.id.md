@@ -34,6 +34,8 @@ Jika anda siap untuk memulai pemrograman dengan Zig, panduan ini akan membantu a
 Pengenalan terstruktur mengenai Zig oleh [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://github.com/ratfactor/ziglings)  
 Mempelajari Zig dengan memperbaiki program-program kecil yang rusak.
+- [Zig di Exercism](https://exercism.org/tracks/zig)
+Selesaikan latihan pemrograman dan dapatkan bimbingan untuk mengembangkan keahlian dalam menggunakan Zig.
 
 ## Video dan tulisan blog yang relevan
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  
