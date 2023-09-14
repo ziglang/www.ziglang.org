@@ -15,7 +15,7 @@ Here are some reasons why we believe bounties are a poor form of sponsorship whe
 
 * Bounties foster competition at the expense of cooperation.
 * Bounties are an utterly simplistic way of dealing with the business management side of creating software:
-    * Instead of scouting for a suitable candidate, you're letting battle royale dynamics pick a winner for you, at the cost of everybody who's going to lose the competition.
+    * Instead of scouting for a suitable candidate, you're letting battle royale dynamics pick a winner for you, at the expense of everybody who's going to lose the competition.
     * Instead of creating a clear contract where you take on some of the risk, you implicitly put the entirety of the risk on the contestants (eg partial solutions don't get any payout).
     * Instead of allocating time and resources to proper due diligence, you instead penalize any form of thoughtfulness in favor of reckless action (eg a solution just needs to pass a test suite).
     * Instead of planning for the full lifecycle of software, which also includes maintenance, you end up with a quickly bitrotting artifact that is of no practical use to anybody.
