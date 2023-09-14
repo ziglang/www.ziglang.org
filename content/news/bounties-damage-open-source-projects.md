@@ -26,7 +26,7 @@ While we do understand that continued exposure to venture capital might have cau
 
 We're not only building free and open source software but, most importantly, we're building [software you can love](https://kristoff.it/blog/the-open-source-game/) and this can only be done by employing well-designed business management processes.
 
-## A Word about Bug Bounties
+## A Word About Bug Bounties
 
 We do believe that bug bounties, like the one
 [offered by TigerBeetle](https://github.com/tigerbeetle/viewstamped-replication-made-famous),
