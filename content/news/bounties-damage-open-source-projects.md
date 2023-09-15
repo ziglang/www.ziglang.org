@@ -9,7 +9,7 @@ Authors: Andrew Kelley and Loris Cro
 
 Please don't use bounties to incentivize Zig development.
 
-This blog post is inspired by this GitHub issue from three days ago: [Support WASIX](https://github.com/ziglang/zig/issues/17115)
+This blog post is inspired by this GitHub issue from three days ago: [Support WASIX](https://github.com/ziglang/zig/issues/17115) ([see also](https://twitter.com/wasmerio/status/1701168305103331701?s=20))
 
 Here are some reasons why we believe bounties are a poor form of sponsorship when it comes to software development:
 
