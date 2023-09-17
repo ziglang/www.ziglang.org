@@ -317,7 +317,48 @@ s3cmd put -P --no-mime-magic \
 
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data.js" s3://ziglang.org/documentation/master/std/data.js
+  "$DOCDIR/std/data-typeKinds.js" s3://ziglang.org/documentation/master/std/data-typeKinds.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-rootMod.js" s3://ziglang.org/documentation/master/std/data-rootMod.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-modules.js" s3://ziglang.org/documentation/master/std/data-modules.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-astNodes.js" s3://ziglang.org/documentation/master/std/data-astNodes.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-calls.js" s3://ziglang.org/documentation/master/std/data-calls.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-files.js" s3://ziglang.org/documentation/master/std/data-files.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-decls.js" s3://ziglang.org/documentation/master/std/data-decls.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-exprs.js" s3://ziglang.org/documentation/master/std/data-exprs.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-types.js" s3://ziglang.org/documentation/master/std/data-types.js
+  
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-comptimeExprs.js" s3://ziglang.org/documentation/master/std/data-comptimeExprs.js
+
+s3cmd put -P --no-mime-magic \
+  --add-header="Cache-Control: max-age=0, must-revalidate" \
+  "$DOCDIR/std/data-guideSections.js" s3://ziglang.org/documentation/master/std/data-guideSections.js
+
 
 s3cmd put -P --no-mime-magic --recursive \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
