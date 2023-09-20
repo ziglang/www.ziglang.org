@@ -44,17 +44,25 @@
           <tbody>
             {{ range $section_name := $.Site.Params.download_section_order }}
             {{ $section := index $.Site.Params.download_section $section_name }}
+              {{ $rows := slice }}
               {{ range $row_index, $row_name := $section.rows }}
+                {{ $target_name := printf "%s%s" $row_name $section.release_suffix }}
+                {{ with index $release $target_name }}
+                  {{ $rows = $rows | append $row_name }}
+                {{ end }}
+              {{ end }}
+
+              {{ range $row_index, $row_name := $rows }}
               <tr>
                 {{ if eq $row_index 0 }}
                   {{ $title := $section.title }}
                   {{ if eq $section_name "src" }}
                     {{ $title = i18n $title }}
                   {{ end }}
-                  <th rowspan="{{ len $section.rows }}">{{ $title }}</th>
+                  <th rowspan="{{ len $rows }}">{{ $title }}</th>
                 {{ end }}
                 {{ $td_class := "" }}
-                {{ if eq $row_index (sub (len $section.rows) 1) }}
+                {{ if eq $row_index (sub (len $rows) 1) }}
                   {{ $td_class = "last-row-in-section" }}
                 {{ end }}
                 {{ $arch := $row_name }}
