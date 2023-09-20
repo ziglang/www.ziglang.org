@@ -33,7 +33,7 @@ layout: single
 ## مصادر للتعلم عن بُعد
 - [Zig Learn](https://ziglearn.org)
 مقدمة منظمة لـZig بواسطة [Sobeston](https://github.com/sobeston).
-- [Ziglings](https://github.com/ratfactor/ziglings)
+- [Ziglings](https://ziglings.org)
 تعلم Zig عن طريق تصحيح برامج تالفة بسيطة.
 - [Zig on Exercism](https://exercism.org/tracks/zig)
 Solve coding exercises and get mentored to develop fluency in Zig.

@@ -37,7 +37,7 @@ layout: single
 
 -   [Zig Learn](https://ziglearn.org)  
     مقدمه‌ای ساختارمند برای زیگ توسط [Sobeston](https://github.com/sobeston).
--   [Ziglings](https://github.com/ratfactor/ziglings)  
+-   [Ziglings](https://ziglings.org)  
     با تعمیر برنامه های کوچک خراب، زیگ را بیاموزید.
 -   [Zig on Exercism](https://exercism.org/tracks/zig)
 Solve coding exercises and get mentored to develop fluency in Zig.

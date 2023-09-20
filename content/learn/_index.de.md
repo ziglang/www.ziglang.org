@@ -33,7 +33,7 @@ Wenn du bereit bist, in Zig zu programmieren, hilft diese Anleitung bei der Einr
 ## Online-Lernressourcen
 - [Zig Learn](https://ziglearn.org)  
 - Eine strukturierte Einführung in Zig von [Sobeston](https://github.com/sobeston).  
-- Lerne Zig beim Reparieren kleiner Programme mit [ziglings](https://github.com/ratfactor/ziglings).
+- Lerne Zig beim Reparieren kleiner Programme mit [ziglings](https://ziglings.org).
 - [Zig on Exercism](https://exercism.org/tracks/zig)
 Solve coding exercises and get mentored to develop fluency in Zig.
 
