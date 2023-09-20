@@ -27,36 +27,51 @@
 
         <table>
           <colgroup>
-            <col width="40%">
             <col width="10%">
+            <col width="10%">
+            <col width="40%">
             <col width="10%">
           </colgroup>
           <thead>
             <tr>
+              <th>{{ i18n "download-os" }}</th>
+              <th>{{ i18n "download-arch" }}</th>
               <th>{{ i18n "download-filename" }}</th>
               <th>{{ i18n "download-sig" }}</th>
-              <th>{{ i18n "download-kind" }}</th>
               <th>{{ i18n "download-size" }}</th>
             </tr>
           </thead>
           <tbody>
-            {{ range $target_name := $.Site.Params.downloads_arch_order}}
-              {{ with index $release $target_name}}
-                <tr>
-                  <td><a href="{{ index . "tarball"}}">{{ path.Base (index . "tarball")}}</a></td>
-                  <td><a href="{{ index . "tarball"}}.minisig">minisig</a></td>
-                  <td>
-                  {{ if eq $target_name "src"}}
-                    {{ i18n "download-source" }}
-                  {{ else if eq $target_name "bootstrap" }}
-                    {{ i18n "download-source" }}
-                  {{ else }}
-                    {{ i18n "download-binary" }}
+            {{ range $section_name := $.Site.Params.download_section_order }}
+            {{ $section := index $.Site.Params.download_section $section_name }}
+              {{ range $row_index, $row_name := $section.rows }}
+              <tr>
+                {{ if eq $row_index 0 }}
+                  {{ $title := $section.title }}
+                  {{ if eq $section_name "src" }}
+                    {{ $title = i18n $title }}
                   {{ end }}
-                  </td>
-                  <td>{{ lang.NumFmt 1 (div (int (index . "size")) 1048576.0)}}MiB</td>
-                </tr>
-              {{end}}
+                  <th rowspan="{{ len $section.rows }}">{{ $title }}</th>
+                {{ end }}
+                {{ $td_class := "" }}
+                {{ if eq $row_index (sub (len $section.rows) 1) }}
+                  {{ $td_class = "last-row-in-section" }}
+                {{ end }}
+                {{ $arch := $row_name }}
+                {{ if eq $section_name "src" }}
+                  {{ $arch = "" }}
+                {{ end }}
+
+                {{ $target_name := printf "%s%s" $row_name $section.release_suffix }}
+                {{ with index $release $target_name}}
+                  <td class="{{$td_class}}">{{ $arch }}</td>
+                  <td class="{{$td_class}}"><a href="{{ index . "tarball"}}">{{ path.Base (index . "tarball")}}</a></td>
+                  <td class="{{$td_class}}"><a href="{{ index . "tarball"}}.minisig">minisig</a></td>
+                  <td class="{{$td_class}}">{{ lang.NumFmt 1 (div (int (index . "size")) 1048576.0)}}MiB</td>
+                {{ end }}
+              </tr>
+              {{ end }}
+            <tr>
             {{ end }}
           </tbody>
         </table>
