@@ -37,7 +37,7 @@ Eğer Zig'de programlamaya hazırsanız, bu rehber size ortamınızı kurmanızd
 
 - [Zig Learn](https://ziglearn.org)  
   [Sobeston](https://github.com/sobeston) tarafından yapılandırılmış Zig'e yönelik bir giriş.
-- [Ziglings](https://github.com/ratfactor/ziglings)  
+- [Ziglings](https://ziglings.org)  
   Programların küçük hatalarını düzelterek Zig öğrenin.
 - [Zig on Exercism](https://exercism.org/tracks/zig)
 Solve coding exercises and get mentored to develop fluency in Zig.

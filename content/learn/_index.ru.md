@@ -33,7 +33,7 @@ layout: single
 ## Обучающие ресурсы в сети
 - [Zig Learn](https://ziglearn.org)  
 Структурированное введение в Zig от [Sobeston](https://github.com/sobeston).
-- [Ziglings](https://github.com/ratfactor/ziglings)  
+- [Ziglings](https://ziglings.org)  
 Изучайте Zig, исправляя маленькие сломанные программы.
 - [Zig on Exercism](https://exercism.org/tracks/zig)
 Решайте задачи по программированию и учитесь под руководством наставников, чтобы свободно владеть языком Zig.
