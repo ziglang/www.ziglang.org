@@ -128,7 +128,7 @@ pub fn main() !void {
         var buf = std.io.bufferedWriter(request.writer());
         const w = buf.writer();
 
-        try request.start();
+        try request.start(.{});
         try w.writeAll(
             \\{"query":"
         );
