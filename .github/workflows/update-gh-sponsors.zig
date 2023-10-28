@@ -121,14 +121,14 @@ pub fn main() !void {
 
         try headers.append("Authorization", bearer);
 
-        var request = try gh.request(.POST, github_endpoint, headers, .{});
+        var request = try gh.open(.POST, github_endpoint, headers, .{});
         defer request.deinit();
         request.transfer_encoding = .chunked;
 
         var buf = std.io.bufferedWriter(request.writer());
         const w = buf.writer();
 
-        try request.start(.{});
+        try request.send(.{});
         try w.writeAll(
             \\{"query":"
         );
