@@ -24,11 +24,9 @@ The mission of the Zig Software Foundation is to promote, protect, and advance t
 
 ## Sponsorship
 
-By donating to ZSF, you are funding development of the Zig Programming Language and its ecosystem, which in turn benefits the greater open source community in general. Zig community members have landed bug fixes in [LLVM](https://llvm.org/), [Wine](https://winehq.org/), [QEMU](https://qemu.org/), [musl libc](https://musl.libc.org/), [GDB](https://www.gnu.org/software/gdb/) and others.
+By donating to ZSF, you are funding development of the Zig Programming Language and its ecosystem, which in turn benefits the greater open source community. Zig community members have landed bug fixes in [LLVM](https://llvm.org/), [Wine](https://winehq.org/), [QEMU](https://qemu.org/), [musl libc](https://musl.libc.org/), [GDB](https://www.gnu.org/software/gdb/) and others.
 
 ZSF is a small organization and makes efficient use of monetary resources. The plan is to keep it that way, but we do want to turn our unpaid volunteers into paid maintainers to help merge pull requests and make swifter progress towards 1.0. The whole point of ZSF being non-profit is to benefit people. We're trying to get open source maintainers paid for their time.
-
-The easiest way to support us is to donate via [GitHub Sponsors](https://github.com/sponsors/ziglang).
 
 ## Donation information
 Here's useful information to donate through means other than GitHub Sponsors.

@@ -26,8 +26,6 @@ Donando alla ZSF, puoi supportare lo sviluppo del linguaggio di programmazione Z
 
 La Zig Software Foundation e' una piccola organizzation che fa uso efficiente delle proprie risorse monetarie. Il piano e' di rimanere piccoli ed agili, ma abbiamo comunque intenzione di convertire i nostri volontari in maintainer stipendiati per aiutare a fare merge di pull request e per velocizzare il progresso verso una versione 1.0. ZSF e' una non-profit per assicurarsi di potare benefici alle persone coinvolte nel progetto e per questo vogliamo fare in modo che i maintaner open-source vengano pagati per il proprio tempo.
 
-Il modo piu' semplice per supportarci e' donare tramite [GitHub Sponsors](https://github.com/sponsors/ziglang).
-
 Per donazioni singole e altre domande, perfavore conttatateci all'indirizzo: donations@ziglang.org.
 Email in italiano vanno bene.
 

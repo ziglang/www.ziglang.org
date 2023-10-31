@@ -26,8 +26,6 @@ Indem du der ZSF spendest, finanzierst du die Entwicklung der Programmiersprache
 
 Die ZSF ist eine kleine Organisation, die ihre Mittel effizient nutzt. Der Plan ist es, das zu erhalten, aber wir möchten unbezahlte Freiwillige zu bezahlten Unterstützern machen, um Pullrequests zu mergen und das 1.0-Release schneller zu erreichen. Der ganze Sinn der Non-Profit-Organisation ist es, Leuten zugute zu kommen. Wir versuchen, Open-Source-Unterstützer für ihre Zeit zu bezahlen.
 
-Der einfachste Weg, uns zu unterstützen, ist ein Spende über [GitHub Sponsors](https://github.com/sponsors/ziglang).
-
 ## Spendeninformationen
 Nützliche Informationen, um auf anderem Wege als durch GitHub Sponsors zu spenden.
 Überprüfe, ob du deine Spende von der Steuer absetzen kannst.

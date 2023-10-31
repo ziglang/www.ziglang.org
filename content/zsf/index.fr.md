@@ -32,8 +32,6 @@ Cela continuera dans ce sens, mais nous souhaitons payer nos contributeurs actue
 ZSF n'a pas de but lucratif afin de bénéficier surtout aux utilisateurs finaux.
 Nous essayons de rémunérer les mainteneurs open source pour leur temps.
 
-La manière la plus simple de nous parrainer est de donner via [GitHub Sponsors](https://github.com/sponsors/ziglang).
-
 ## Informations sur les donations
 Voici quelques informations utiles pour donner via d'autres moyens que le parrainage GitHub.
 Vérifiez vos lois locales pour savoir s'il est possible de déduire une partie de vos dons des impôts.

@@ -25,8 +25,6 @@ Al donar a la ZSF, estas financiando el desarrollo del lenguaje de programación
 
 La ZSF es una organización pequeña que hace un uso eficiente de los recursos monetarios. El plan es continuar de esa forma, pero al mismo tiempo queremos convertir a nuestros voluntarios en colaboradores pagados que ayuden a integrar pull requests y logren progresos hacia a la versión 1.0. La intención de la ZSF como organización sin fines de lucro es beneficiar al público. Intentamos conseguir remuneración para el trabajo de los colaboradores open source que administran nuestros proyectos.
 
-La manera mas simple de ofrecernos tu apoyo es donando a través de [GitHub Sponsors](https://github.com/sponsors/ziglang).
-
 ## Información de Donativos
 Incluimos información útil para donar a través de medios distintos a GitHub Sponsors.
 Asegúrate de revisar la ley vigente en tu lugar de origen para saber si tus donativos son deducibles de impuestos.

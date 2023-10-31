@@ -25,8 +25,6 @@ Dengan mendonasikan kepada ZSF, anda turut mendukung pengembangan bahasa pemrogr
 
 ZSF adalah organisasi kecil yang menggunakan sumber daya keuangan dengan efisien. Rencananya adalah tetap demikian, namun kami ingin mengubah para relawan yang belum dibayar menjadi pengelola yang mendapat bayaran agar dapat membantu permintaan pull requests dan mempercepat kemajuan menuju versi 1.0. Tujuan utama ZSF sebagai organisasi nirlaba adalah untuk memberikan manfaat kepada banyak orang. Kami berusaha untuk membayar para pengelola open source atas waktu mereka.
 
-Cara paling mudah untuk mendukung kami adalah dengan mendonasikan melalui [GitHub Sponsors](https://github.com/sponsors/ziglang).
-
 ## Informasi Donasi
 Berikut informasi penting untuk melakukan donasi selain melalui GitHub Sponsors.
 Pastikan untuk memeriksa hukum lokal anda untuk melihat apakah anda dapat mengurangkan sumbangan dari pajak anda.

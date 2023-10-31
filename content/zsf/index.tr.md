@@ -26,8 +26,6 @@ ZSF'ye bağış yaparak Zig Programlama Dilinin ve ekosisteminin geliştirilmesi
 
 ZSF, küçük bir kuruluştur ve parasal kaynakları verimli bir şekilde kullanır. Planımız bu şekilde devam etmektir, ancak gönüllülerimizi ücretli bakımcılara dönüştürerek çekme isteklerini birleştirmeye ve 1.0 sürümüne daha hızlı ilerlemeye yardımcı olmak istiyoruz. ZSF'nin kar amacı gütmeyen olmasının nedeni, insanlara fayda sağlamaktır. Açık kaynak bakımcılarının zamanlarının karşılığını almasını sağlamaya çalışıyoruz.
 
-Bizi desteklemenin en kolay yolu, [GitHub Sponsors](https://github.com/sponsors/ziglang) üzerinden bağış yapmaktır.
-
 ## Bağış bilgileri
 
 GitHub Sponsors dışındaki yöntemlerle bağış yapmak için işinize yarayacak bilgiler aşağıda yer almaktadır.
