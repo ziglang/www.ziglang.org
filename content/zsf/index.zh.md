@@ -4,7 +4,8 @@ menu_title: "赞助Zig软件基金会"
 mobile_menu_title: "赞助 ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "赞助 Zig 软件基金会" >}}
+## 赞助 Zig 软件基金会
+{{< sponsor-title-cta >}}
 
 ## 目标说明
 Zig软件基金会的使命是促进、保护和发展Zig编程语言。支持和促进Zig程序员的多元化和国际化社区的发展，并为学生提供教育和指导，教育下一代程序员具备能力，有道德，并相互保持高标准。
@@ -34,11 +35,12 @@ ZSF 是一个小组织，并且有效地利用了货币资源。我们的计划�
 | 84-5105214 | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### 其他支持的捐赠方式
-- 实物支票（见上述传统邮件地址）
-- 银行转账（包括美国以外的银行，请联系我们了解更多信息）。
-- [Benevity](https://benevity.com) （如果你的雇主想要捐款，建议使用这个方法！）
-- [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
+- [Benevity](https://benevity.com) （如果你的雇主想要捐款，建议使用这个方法！）
+- 银行转账（包括美国以外的银行，请联系我们了解更多信息）。
+- 实物支票（见上述传统邮件地址）
+- [Wise](https://wise.com)
 
 **如果您有任何问题或特殊需求，请毫不犹豫地与我们联系：donations@ziglang.org 。**
 

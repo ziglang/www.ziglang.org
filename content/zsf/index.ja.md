@@ -4,7 +4,9 @@ menu_title: "Zigソフトウェア財団のスポンサーになる"
 mobile_menu_title: "ZSFのスポンサーになる"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "Zigソフトウェア財団のスポンサーになる" >}}
+## Zigソフトウェア財団のスポンサーになる
+
+{{< sponsor-title-cta >}}
 
 ## ミッションステートメント
 Zigソフトウェア財団の使命は、プログラミング言語Zigの普及、保護、発展、多様で国際的なZigプログラマー・コミュニティの支援と促進、学生への教育と指導を行い、次世代のプログラマーが有能で倫理的であり、互いに高い基準を持つように指導することです。
@@ -34,11 +36,12 @@ GitHub Sponsors 以外の手段で寄付をする際に役立つ情報をご紹�
 | 84-5105214 | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### その他の寄付方法にも対応
-- 物理的な小切手（上記の郵送先住所参照）
-- 銀行振込（米国外からの振込も含む。）
-- [Benevity](https://benevity.com) (勤務先が寄付と同額を負担してくれるならおすすめ！)
-- [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/) (暗号通貨に対応しています！)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
+- [Benevity](https://benevity.com) (勤務先が寄付と同額を負担してくれるならおすすめ！)
+- 銀行振込（米国外からの振込も含む。）
+- 物理的な小切手（上記の郵送先住所参照）
+- [Wise](https://wise.com)
 
 **ご質問や特定のニーズがある場合は、遠慮なく donations@ziglang.org までご連絡ください。**
 

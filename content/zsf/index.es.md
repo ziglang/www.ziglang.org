@@ -4,7 +4,9 @@ menu_title: "Patrocina Zig Software Foundation"
 mobile_menu_title: "Patrocina ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "Patrocina a la Zig Software Foundation" >}}
+## Patrocina a la Zig Software Foundation
+
+{{< sponsor-title-cta >}}
 
 ## Misión
 La misión de la Zig Software Foundation es promover, proteger y desarrollar el lenguaje de programación Zig para contribuir al crecimiento de una comunidad diversa e internacional de programadores y proveer educación y guía para estudiantes. Queremos lograr que las nuevas generaciones de programadores sean competentes y éticos manteniendo un alto estándar de calidad.
@@ -34,11 +36,12 @@ Asegúrate de revisar la ley vigente en tu lugar de origen para saber si tus don
 | 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### Métodos adicionales de donación
-- Cheques físicos (véase el domicilio de correos arriba)
-- Transferencias bancarias (contáctanos si vives fuera de Estados Unidos para mas información)
-- [Benevity](https://benevity.com) (recomendado en caso de que tu empleador iguale donativos!)
-- [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
+- [Benevity](https://benevity.com) (recomendado en caso de que tu empleador iguale donativos!)
+- Transferencias bancarias (contáctanos si vives fuera de Estados Unidos para mas información)
+- Cheques físicos (véase el domicilio de correos arriba)
+- [Wise](https://wise.com)
 
 **No dudes en contactarnos en donations@ziglang.org si tienes preguntas.**
 

@@ -4,7 +4,9 @@ menu_title: "Supporta la Zig Software Foundation"
 mobile_menu_title: "Supporta la ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "Supporta la Zig Software Foundation" >}}
+## Supporta la Zig Software Foundation
+
+{{< sponsor-title-cta >}}
 
 ## La missione
 La missione della Zig Software Foundation e' di promuovere, progettere, e far progredire il linguaggio di programmazione Zig, di supportare e facilitare la crescita di una comunita' diversa e internazionale di programmatori Zig, e di offrire formazione e direzione ad eventuali studenti, al fine di insegnare ad una nuova generazione di programmatori ad essere competenti, etici, e a ritenersi reciprocamente a standar elevati.
@@ -38,11 +40,12 @@ Ecco alcune informazioni utili a donare tramite metodi diversi da GitHub Sponsor
 | 84-5105214 | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### Tramite di donazione supportati
-- Invio di assegni cartacei per posta (metodo supportato solo negli Stati Uniti)
-- Trasferimento bancario (disponibile da ogni paese che supporta SWIFT, contattateci per ulteriori informazioni)
-- [Benevity](https://benevity.com)
-- [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/) (supporta criptovalute!)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
+- [Benevity](https://benevity.com)
+- Trasferimento bancario (disponibile da ogni paese che supporta SWIFT, contattateci per ulteriori informazioni)
+- Invio di assegni cartacei per posta (metodo supportato solo negli Stati Uniti)
+- [Wise](https://wise.com)
 
 **Perfavore non esistate a contattarci a donations@ziglang.org se avete domande o esigenze particolari.**
 

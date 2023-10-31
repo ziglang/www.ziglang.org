@@ -4,8 +4,9 @@ menu_title: "Zig Yazılım Vakfı'na Sponsor Ol"
 mobile_menu_title: "ZSF'ye Sponsor Ol"
 date: 2020-10-20T16:29:51+02:00
 ---
+## Zig Yazılım Vakfı'na Sponsor Ol
 
-{{< sponsor-title-cta "Zig Yazılım Vakfı'na Sponsor Ol" >}}
+{{< sponsor-title-cta >}}
 
 ## Misyon beyanı
 
@@ -38,14 +39,12 @@ Bağışlarınızı vergilerinizden düşüp düşemeyeceğinizi görmek için y
 
 ### Desteklenen Ek Bağış Yöntemleri
 
-- Fiziksel çekler (yukarıda belirtilen posta adresine bakınız)
-- Banka transferleri (ABD dışından da dahil olmak üzere, daha fazla bilgi için bizimle iletişime geçin)
-- [Benevity](https://benevity.com) (şirket
-
-iniz bağışları eşleştiriyorsa önerilir!)
-
-- [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/) (kripto para birimlerini destekler!)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
+- [Benevity](https://benevity.com) (şirket iniz bağışları eşleştiriyorsa önerilir!)
+- Banka transferleri (ABD dışından da dahil olmak üzere, daha fazla bilgi için bizimle iletişime geçin)
+- Fiziksel çekler (yukarıda belirtilen posta adresine bakınız)
+- [Wise](https://wise.com)
 
 **Sorularınız veya özel ihtiyaçlarınız varsa lütfen donations@ziglang.org adresinden bizimle iletişime geçmekten çekinmeyin.**
 

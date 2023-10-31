@@ -4,7 +4,10 @@ menu_title: "Die Zig Software Foundation unterstützen"
 mobile_menu_title: "Die ZSF unterstützen"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "Die Zig Software Foundation unterstützen" >}}
+
+## Die Zig Software Foundation unterstützen
+
+{{< sponsor-title-cta >}}
 
 ## Auftrag
 Der Auftrag der Zig Software Foundation ist es, die Programmiersprache Zig zu fördern, zu schützen und zu entwickeln, um das Wachstum einer diversen und internationalen Gemeinschaft von Zig-Programmierern zu ermöglichen und zu unterstützen und Schülern Bildung und Hilfe zu bieten, um die nächste Generation von Programmierern auszubilden, kompetent und ethisch zu handeln und sich an hohen Standards zu messen.
@@ -34,11 +37,12 @@ Nützliche Informationen, um auf anderem Wege als durch GitHub Sponsors zu spend
 | 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### Weitere unterstützte Spendenwege
-- Schecks (s. Postadresse oben)
-- Banküberweisungen (auch von außerhalb der US, kontaktiere uns für weitere Informationen)
-- [Benevity](https://benevity.com) (empfohlen, wenn dein Arbeitgeber Spenden ausgleicht!)
-- [Wise](https://wise.com)
 - [Every](https://www.every.org/zig-software-foundation-inc/)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
+- [Benevity](https://benevity.com) (empfohlen, wenn dein Arbeitgeber Spenden ausgleicht!)
+- Banküberweisungen (auch von außerhalb der US, kontaktiere uns für weitere Informationen)
+- Schecks (s. Postadresse oben)
+- [Wise](https://wise.com)
 
 **Wende dich mit weiteren Nachfragen gerne an donations@ziglang.org.**
 

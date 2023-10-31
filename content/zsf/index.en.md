@@ -4,7 +4,12 @@ menu_title: "Sponsor the Zig Software Foundation"
 mobile_menu_title: "Sponsor the ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
-{{< sponsor-title-cta "Sponsoring the Zig Software Foundation" >}}
+## Sponsoring the Zig Software Foundation
+
+Please consider a recurring donation. It takes ongoing labor to maintain
+and support high-quality software!
+
+{{< sponsor-title-cta >}}
 
 ## Mission statement
 The mission of the Zig Software Foundation is to promote, protect, and advance the Zig programming language, to support and facilitate the growth of a diverse and international community of Zig programmers, and to provide education and guidance to students, teaching the next generation of programmers to be competent, ethical, and to hold each other to high standards.
@@ -34,11 +39,12 @@ Make sure to check your local law to see if you can deduct donations from your t
 | 84-5105214  | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### Additional donation methods supported
-- Physical checks (see the snail mail address listed above)
-- Bank transfers (including from outside of the US, contact us for more info)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
+- [GitHub Sponsors](https://github.com/sponsors/ziglang)
 - [Benevity](https://benevity.com) (recommended if your employer matches donations!)
+- Bank transfers (including from outside of the US, contact us for more info)
+- Physical checks (see the snail mail address listed above)
 - [Wise](https://wise.com)
-- [Every](https://www.every.org/zig-software-foundation-inc/) (supports cryptocurrencies!)
 
 **Please don't hesitate to contact us at donations@ziglang.org if you have questions or specific needs.**
 
