@@ -13,4 +13,7 @@ pub fn main() void {
 
     arr[6..].* = ("jewel").*;
     print("{s}\n", .{arr}); // prints "crown jewel"
+
+    arr[6..].* = ( ("royal family")[0..5] ++ [0:0]u8{} ).*;
+    print("{s}\n", .{arr}); // prints "crown royal"
 }
