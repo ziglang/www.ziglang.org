@@ -42,6 +42,15 @@ The second one, `zig-out`, is an "installation prefix". This maps to the standar
 
 You, as the project maintainer, get to pick what gets put in this directory, but the user chooses where to install it in their system. The build script cannot hardcode output paths because this would break caching, concurrency, and composability, as well as annoy the final user.
 
-# 
 
+
+
+### 10. Build for multiple targets to make a release
+
+In this exampe we're going to change some defaults when creating an `installArtifacts` step in order to put the build for each traget into a separate subdirectory inside the install path. 
+
+{{< zigdoctest "assets/zig-code/build-system/10-release/build.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/10-release/hello.zig" >}}
+
+** $ tree zig-out **
 
