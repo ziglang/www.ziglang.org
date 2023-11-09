@@ -27,7 +27,7 @@ For example, perhaps one of these situations applies:
 
 If any of these apply, your project will benefit from using the Zig Build System.
 
-## Examples
+## Getting Started
 ### Simple Executable
 This build script creates an executable from a Zig file that contains a public main function definition.
 
@@ -145,3 +145,36 @@ zig-out
     ├── hello.exe
     └── hello.pdb
 ```
+
+### Simple Static Library
+
+This build script creates a static library from Zig code, and then also an
+executable from other Zig code that consumes it.
+
+{{< zigdoctest "assets/zig-code/build-system/simple-static-library/fizzbuzz.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/simple-static-library/demo.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/simple-static-library/build.zig" >}}
+
+In this case, only the static library ends up being installed:
+
+```
+zig-out/
+└── lib
+    └── libfizzbuzz.a
+```
+
+However, if you look closely, the build script contains an option to also install the demo.
+If we additionally pass `-Denable-demo`, then we see this in the installation prefix:
+
+```
+zig-out/
+├── bin
+│   └── demo
+└── lib
+    └── libfizzbuzz.a
+```
+
+Note that despite the unconditional call to `addExecutable`, the build system in fact
+does not waste any time building the `demo` executable unless it is requested
+with `-Denable-demo`, because the build system is based on a Directed Acyclic
+Graph with dependency edges.
