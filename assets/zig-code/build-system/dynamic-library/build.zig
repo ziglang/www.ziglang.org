@@ -10,16 +10,8 @@ pub fn build(b: *std.Build) void {
         .root_source_file = .{ .path = "fizzbuzz.zig" },
         .target = target,
         .optimize = optimize,
+        .version = .{ .major = 1, .minor = 2, .patch = 3 },
     });
-
-    //const exe = b.addExecutable(.{
-    //    .name = "demo",
-    //    .root_source_file = .{ .path = "demo.zig" },
-    //    .target = target,
-    //    .optimize = optimize,
-    //});
-
-    //exe.linkLibrary(libfizzbuzz);
 
     b.installArtifact(libfizzbuzz);
 }

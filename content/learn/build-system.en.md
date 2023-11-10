@@ -172,6 +172,21 @@ the `build.zig` file is changed.
 
 {{< zigdoctest "assets/zig-code/build-system/dynamic-library/build.zig" >}}
 
+**Output**
+```
+zig-out
+└── lib
+    ├── libfizzbuzz.so -> libfizzbuzz.so.1
+    ├── libfizzbuzz.so.1 -> libfizzbuzz.so.1.2.3
+    └── libfizzbuzz.so.1.2.3
+```
+
+As in the static library example, to make an executable link against it, use code like this:
+
+```zig
+exe.linkLibrary(libfizzbuzz);
+```
+
 ### Running System Tools
 
 ### Running the Project's Tools
