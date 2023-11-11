@@ -277,31 +277,6 @@ Users of `zig build` may use `--search-prefix` to provide additional
 directories that are considered "system directories" for the purposes of finding
 static and dynamic libraries.
 
-### Dealing With One or More Generated Files
-
-- WriteFile
-- supports string -> file
-- supports file -> file
-- puts them in a directory next to each other
-- each file is independently available as a LazyPath
-- the parent directory itself is available as a LazyPath
-
-### Mutating Source Files in Place
-
-It is uncommon, but sometimes the case that a project commits generated files
-into version control. This can be useful when the generated files are seldomly updated
-and have burdensome system dependencies for the update process, but *only* during the
-update process.
-
-For this, **WriteFile** provides a way to accomplish this task. This is a feature that
-[will be extracted from WriteFile into its own Build Step](https://github.com/ziglang/zig/issues/14944)
-in a future Zig version.
-
-Be careful with this functionality; it should not be used during the normal
-build process, but as a utility run by a developer with intention to update
-source files, which will then be committed to version control. If it is done
-during the normal build process, it will cause caching and concurrency bugs.
-
 ## Generating Files
 
 ### Running System Tools
@@ -430,6 +405,38 @@ zig-out/
 └── bin
     └── hello
 ```
+
+### Dealing With One or More Generated Files
+
+- WriteFiles
+- supports string -> file
+- supports file -> file
+- puts them in a directory next to each other
+- each file is independently available as a LazyPath
+- the parent directory itself is available as a LazyPath
+
+### Mutating Source Files in Place
+
+It is uncommon, but sometimes the case that a project commits generated files
+into version control. This can be useful when the generated files are seldomly updated
+and have burdensome system dependencies for the update process, but *only* during the
+update process.
+
+For this, **WriteFiles** provides a way to accomplish this task. This is a feature that
+[will be extracted from WriteFiles into its own Build Step](https://github.com/ziglang/zig/issues/14944)
+in a future Zig version.
+
+Be careful with this functionality; it should not be used during the normal
+build process, but as a utility run by a developer with intention to update
+source files, which will then be committed to version control. If it is done
+during the normal build process, it will cause caching and concurrency bugs.
+
+{{< zigdoctest "assets/zig-code/build-system/mutate-source-files/tools/proto_gen.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/mutate-source-files/src/main.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/mutate-source-files/src/protocol.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/mutate-source-files/build.zig" >}}
+
+After running this command, `src/protocol.zig` is updated in place.
 
 ## Handy Examples
 
