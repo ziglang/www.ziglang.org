@@ -344,7 +344,7 @@ to the main program as a module dependency.
 zig-out/
 └── bin
     └── hello
-
+```
 
 ## Handy Examples
 
