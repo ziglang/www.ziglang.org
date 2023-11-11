@@ -38,7 +38,11 @@ This build script creates an executable from a Zig file that contains a public m
 
 The Zig build system, like most build systems, it is based on modeling the project as a directed acyclic graph (DAG) of steps, which are independently and concurrently run.
 
-By default, the main step in the graph is to install the final build artifacts. However, the system is powerful and flexible, which means it does not assume all build artifacts are necessarily the final product, and one must explicitly add them to the install set.
+By default, the main step in the graph is the **Install** step, whose purpose
+is to copy build artifacts into their final resting place. The Install step
+starts with no dependencies, and therefore nothing will happen when `zig build`
+is run. A project's build script must add to the set of things to install, which
+is what the `installArtifact` function call does above.
 
 **Output**
 ```
@@ -189,10 +193,46 @@ exe.linkLibrary(libfizzbuzz);
 
 ### Testing
 
-- multiple unit tests running at once
-- build summary showing stats
-- upcoming: test panics
-- don't write to stdout!
+Individual files can be tested simply with `zig test foo.zig`, however, more fancy options
+are available by orchestrating testing via the build script.
+
+When using the build script, unit tests are broken into two different steps in the build graph,
+the **Compile** step and the **Run** step.
+
+The Compile step can be configured the same as any executable, library, or object file, such as
+by linking against system libraries, setting target options, or adding additional compilation
+units.
+
+The Run step can be configured the same as any run step, such as by skipping execution when
+the host is not capable of executing the binary.
+
+When using the build system to run unit tests, the build runner and the test
+runner communicate via stdin and stdout in order to run multiple unit test
+suites concurrently, and report test failures in a meaningful way without
+having their output jumbled together. This is one reason why
+[writing to standard out in unit tests is problematic](https://github.com/ziglang/zig/issues/15091) -
+it will interfere with this communication channel. On the flip side, this
+mechanism will enable an upcoming feature, which is is the
+[ability for a unit test to expect a panic](https://github.com/ziglang/zig/issues/1356).
+
+{{< zigdoctest "assets/zig-code/build-system/unit-testing/main.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/unit-testing/build.zig" >}}
+
+In this case it might be a nice adjustment to enable `skip_foreign_checks` for
+the unit tests:
+
+```diff
+@@ -23,6 +23,7 @@
+         });
+ 
+         const run_unit_tests = b.addRunArtifact(unit_tests);
++        run_unit_tests.skip_foreign_checks = true;
+         test_step.dependOn(&run_unit_tests.step);
+     }
+ }
+```
+
+{{< zigdoctest "assets/zig-code/build-system/unit-testing-skip-foreign/build.zig" >}}
 
 ### Linking to System Libraries
 
