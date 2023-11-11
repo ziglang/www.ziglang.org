@@ -1,4 +1,4 @@
-// zig-doctest: build-system --collapseable -- test
+// zig-doctest: build-system --collapseable -- test --summary all
 const std = @import("std");
 
 const test_targets = [_]std.zig.CrossTarget{

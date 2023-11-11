@@ -1,4 +1,4 @@
-// zig-doctest: build-system -- -Dlanguage=ja
+// zig-doctest: build-system -- -Dlanguage=ja --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {

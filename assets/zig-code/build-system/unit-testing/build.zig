@@ -1,4 +1,4 @@
-// zig-doctest: build-system --fail "unable to execute binary" -- test
+// zig-doctest: build-system --fail "unable to execute binary" -- test --summary all
 const std = @import("std");
 
 const test_targets = [_]std.zig.CrossTarget{

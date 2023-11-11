@@ -1,4 +1,4 @@
-// zig-doctest: build-system -- -Dtarget=x86_64-windows -Doptimize=ReleaseSmall
+// zig-doctest: build-system -- -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
