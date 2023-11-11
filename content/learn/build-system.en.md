@@ -207,13 +207,13 @@ and we want to produce it at build-time by invoking a Zig program on a JSON file
 {{< zigdoctest "assets/zig-code/build-system/11-zig-tool/src/main.zig" >}}
 
 <details>
-<summary class="file">
-tools/word_select.zig
+<summary>
+<span class="file">tools/word_select.zig</span> (click to expand/collapse)
 </summary>
 
 {{< zigdoctest "assets/zig-code/build-system/11-zig-tool/tools/word_select.zig" >}}
 
-</details>
+Y</details>
 
 
 
@@ -226,6 +226,9 @@ zig-out
 ├── hello
 └── word.txt
 ```
+#### To produce an asset meant to be consumed by `@embedFile`
+
+#### To produce Zig source code
 
 
 ### Testing
