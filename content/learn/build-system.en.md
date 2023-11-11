@@ -193,18 +193,20 @@ exe.linkLibrary(libfizzbuzz);
 
 ### Testing
 
-Individual files can be tested simply with `zig test foo.zig`, however, more fancy options
-are available by orchestrating testing via the build script.
+Individual files can be tested directly with `zig test foo.zig`, however, more
+complex use cases can be solved by orchestrating testing via the build script.
 
-When using the build script, unit tests are broken into two different steps in the build graph,
-the **Compile** step and the **Run** step.
+When using the build script, unit tests are broken into two different steps in
+the build graph, the **Compile** step and the **Run** step. Without a call to
+`addRunArtifact`, which establishes a dependency edge between these two steps,
+the unit tests will not be executed.
 
-The Compile step can be configured the same as any executable, library, or object file, such as
-by linking against system libraries, setting target options, or adding additional compilation
-units.
+The Compile step can be configured the same as any executable, library, or
+object file, for example by linking against system libraries, setting target
+options, or adding additional compilation units.
 
-The Run step can be configured the same as any run step, such as by skipping execution when
-the host is not capable of executing the binary.
+The Run step can be configured the same as any Run step, for example by
+skipping execution when the host is not capable of executing the binary.
 
 When using the build system to run unit tests, the build runner and the test
 runner communicate via stdin and stdout in order to run multiple unit test
