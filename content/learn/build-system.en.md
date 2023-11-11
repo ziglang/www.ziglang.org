@@ -236,7 +236,7 @@ and we want to produce it at build-time by invoking a Zig program on a JSON file
 
 {{< zigdoctest "assets/zig-code/build-system/11-zig-tool/tools/word_select.zig" >}}
 
-Y</details>
+</details>
 
 
 
@@ -250,6 +250,43 @@ zig-out
 └── word.txt
 ```
 ### Producing Assets for `@embedFile`
+
+This version of hello world wants to `@embedFile` an asset generated at build time,
+which we're going to produce using a tool written in Zig.
+
+
+<p class="file">tools/words.json</p>
+
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+{{< zigdoctest "assets/zig-code/build-system/12-embedfile/src/main.zig" >}}
+
+<details>
+<summary>
+<span class="file">tools/word_select.zig</span> (click to expand/collapse)
+</summary>
+
+{{< zigdoctest "assets/zig-code/build-system/12-embedfile/tools/word_select.zig" >}}
+
+</details>
+
+
+
+{{< zigdoctest "assets/zig-code/build-system/12-embedfile/build.zig" >}}
+
+**Output**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
 
 ### Generating Zig Source Code
 
