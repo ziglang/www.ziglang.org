@@ -253,6 +253,31 @@ the unit tests:
 ## Generating Files
 
 ### Running System Tools
+This version of hello world expects to find a `word.txt` file in the same path,
+and we want to use a system tool to generate it starting from a JSON file.
+
+Be aware that system dependencies will make your project harder to build for your
+users. This build script depends on `jq`, for example, which is not present by
+default in most Linux distributions and which might be an unfamiliar tool for 
+Windows users.
+
+The next section will replace `jq` with a Zig tool included in the source tree,
+which is the preferred approach.
+
+<p class="file">words.json</p>
+
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+{{< zigdoctest "assets/zig-code/build-system/10.5-system-tool/src/main.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/10.5-system-tool/build.zig" >}}
+
+Note how `captureStdOut` creates a temporary file with the output of the `jq` invocation.
 
 ### Running the Project's Tools
 
