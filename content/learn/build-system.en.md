@@ -136,6 +136,19 @@ zig-out/
     └── hello.exe
 ```
 
+### Options for Conditional Compilation
+
+To pass options from the build script and into the project's Zig code, use
+the `Options` step.
+
+{{< zigdoctest "assets/zig-code/build-system/conditional-compilation/app.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/conditional-compilation/build.zig" >}}
+
+In this example, the data provided by `@import("config")` is comptime-known,
+preventing the `@compileError` from triggering. If we had passed `-Dversion=0.2.3`
+or omitted the option, then we would have seen the compilation of app.zig fail with
+the "too old" error.
+
 ### Static Library
 
 This build script creates a static library from Zig code, and then also an
@@ -264,14 +277,30 @@ Users of `zig build` may use `--search-prefix` to provide additional
 directories that are considered "system directories" for the purposes of finding
 static and dynamic libraries.
 
-### Dealing with Entire Directories of Generated Files
+### Dealing With One or More Generated Files
 
-- WriteFiles
+- WriteFile
+- supports string -> file
+- supports file -> file
+- puts them in a directory next to each other
+- each file is independently available as a LazyPath
+- the parent directory itself is available as a LazyPath
 
 ### Mutating Source Files in Place
 
-- generally, don't do it, but there are use cases
-- https://github.com/ziglang/zig/issues/14944
+It is uncommon, but sometimes the case that a project commits generated files
+into version control. This can be useful when the generated files are seldomly updated
+and have burdensome system dependencies for the update process, but *only* during the
+update process.
+
+For this, **WriteFile** provides a way to accomplish this task. This is a feature that
+[will be extracted from WriteFile into its own Build Step](https://github.com/ziglang/zig/issues/14944)
+in a future Zig version.
+
+Be careful with this functionality; it should not be used during the normal
+build process, but as a utility run by a developer with intention to update
+source files, which will then be committed to version control. If it is done
+during the normal build process, it will cause caching and concurrency bugs.
 
 ## Generating Files
 
