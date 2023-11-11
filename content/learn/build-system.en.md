@@ -187,6 +187,29 @@ As in the static library example, to make an executable link against it, use cod
 exe.linkLibrary(libfizzbuzz);
 ```
 
+### Testing
+
+- multiple unit tests running at once
+- build summary showing stats
+- upcoming: test panics
+- don't write to stdout!
+
+### Linking to System Libraries
+
+- --search-prefix
+- https://github.com/ziglang/zig/issues/14281
+
+### Dealing with Entire Directories of Generated Files
+
+- WriteFiles
+
+### Mutating Source Files in Place
+
+- generally, don't do it, but there are use cases
+- https://github.com/ziglang/zig/issues/14944
+
+## Generating Files
+
 ### Running System Tools
 
 ### Running the Project's Tools
@@ -226,31 +249,11 @@ zig-out
 ├── hello
 └── word.txt
 ```
-#### To produce an asset meant to be consumed by `@embedFile`
+### Producing Assets for `@embedFile`
 
-#### To produce Zig source code
+### Generating Zig Source Code
 
 
-### Testing
-
-- multiple unit tests running at once
-- build summary showing stats
-- upcoming: test panics
-- don't write to stdout!
-
-### Linking to System Libraries
-
-- --search-prefix
-- https://github.com/ziglang/zig/issues/14281
-
-### Dealing with Entire Directories of Generated Files
-
-- WriteFiles
-
-### Mutating Source Files in Place
-
-- generally, don't do it, but there are use cases
-- https://github.com/ziglang/zig/issues/14944
 
 ## Handy Examples
 
