@@ -408,12 +408,23 @@ zig-out/
 
 ### Dealing With One or More Generated Files
 
-- WriteFiles
-- supports string -> file
-- supports file -> file
-- puts them in a directory next to each other
-- each file is independently available as a LazyPath
-- the parent directory itself is available as a LazyPath
+The **WriteFiles** step provides a way to generate one or more files which
+share a parent directory. The generated directory lives inside the local zig-cache,
+and each generated file is independently available as a `std.Build.LazyPath`.
+The parent directory itself is also available as a LazyPath.
+
+This API supports writing arbitrary strings to the generated directory as well
+as copying files into it.
+
+{{< zigdoctest "assets/zig-code/build-system/write-files/src/main.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/write-files/build.zig" >}}
+
+**Output**
+
+```
+zig-out/
+└── project.tar.gz
+```
 
 ### Mutating Source Files in Place
 
