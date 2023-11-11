@@ -202,8 +202,8 @@ the build graph, the **Compile** step and the **Run** step. Without a call to
 the unit tests will not be executed.
 
 The Compile step can be configured the same as any executable, library, or
-object file, for example by linking against system libraries, setting target
-options, or adding additional compilation units.
+object file, for example by [linking against system libraries](#linking-to-system-libraries),
+setting target options, or adding additional compilation units.
 
 The Run step can be configured the same as any Run step, for example by
 skipping execution when the host is not capable of executing the binary.
@@ -238,8 +238,31 @@ the unit tests:
 
 ### Linking to System Libraries
 
-- --search-prefix
-- https://github.com/ziglang/zig/issues/14281
+For satisfying library dependencies, there are two choices:
+
+1. Provide these libraries via the Zig Build System
+   (see [Package Management](#package-management) and [Static Library](#static-library)).
+2. Use the files provided by the host system.
+
+For the use case of upstream project maintainers, obtaining these libraries via
+the Zig Build System provides the least friction and puts the configuration
+power in the hands of those maintainers. Everyone who builds this way will have
+reproducible, consistent results as each other, and it will work on every
+operating system and even support cross-compilation. Furthermore, it allows the
+project to decide with perfect precision the exact versions of its entire
+dependency tree it wishes to build against. This is expected to be the
+generally preferred way to depend on external libraries.
+
+However, for the use case of packaging software into repositories such as
+Debian, Homebrew, or Nix, it is mandatory to link against system libraries. So,
+build scripts must
+[detect the mode](https://github.com/ziglang/zig/issues/14281) and configure accordingly.
+
+{{< zigdoctest "assets/zig-code/build-system/system-libraries/build.zig" >}}
+
+Users of `zig build` may use `--search-prefix` to provide additional
+directories that are considered "system directories" for the purposes of finding
+static and dynamic libraries.
 
 ### Dealing with Entire Directories of Generated Files
 
@@ -276,6 +299,14 @@ which is the preferred approach.
 
 {{< zigdoctest "assets/zig-code/build-system/10.5-system-tool/src/main.zig" >}}
 {{< zigdoctest "assets/zig-code/build-system/10.5-system-tool/build.zig" >}}
+
+**Output**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
 
 Note how `captureStdOut` creates a temporary file with the output of the `jq` invocation.
 
