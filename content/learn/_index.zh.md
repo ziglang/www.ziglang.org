@@ -12,6 +12,13 @@ layout: single
 ## 开发文档
 {{% learn_docs %}}
 
+## Guides
+This section is eventually going to be bundled with Zig's standard library documentation, but
+in the meantime you can browse it from here.
+
+- [Zig Build System](build-system/)
+Introduction to the Zig build system.
+
 ## 介绍
 这些都是针对不同背景的程序员对 Zig 的介绍
 

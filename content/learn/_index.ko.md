@@ -12,6 +12,13 @@ layout: single
 ## 개발 문서
 {{% learn_docs %}}
 
+## Guides
+This section is eventually going to be bundled with Zig's standard library documentation, but
+in the meantime you can browse it from here.
+
+- [Zig Build System](build-system/)
+Introduction to the Zig build system.
+
 ## 소개 자료
 아래 내용은 각자 다른 배경 지식을 가진 프로그래머 여러분을 위한 Zig의 프로그래밍 언어 소개 자료입니다.
 

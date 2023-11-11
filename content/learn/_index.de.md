@@ -12,6 +12,13 @@ Dieser Abschnitt enthält Ressourcen, die hoffentlich helfen, Zigs Philosophie z
 ## Dokumentation
 {{% learn_docs %}}
 
+## Guides
+This section is eventually going to be bundled with Zig's standard library documentation, but
+in the meantime you can browse it from here.
+
+- [Zig Build System](build-system/)
+Introduction to the Zig build system.
+
 ## Einführung
 Einige Seiten zum Einstieg in Zig für Programmierer mit verschiedenen Vorkenntnissen:
 

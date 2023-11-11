@@ -14,6 +14,13 @@ Bu bölüm, Zig hakkında hiçbir şey bilmeyen birinden başlayarak felsefesini
 
 {{% learn_docs %}}
 
+## Guides
+This section is eventually going to be bundled with Zig's standard library documentation, but
+in the meantime you can browse it from here.
+
+- [Zig Build System](build-system/)
+Introduction to the Zig build system.
+
 ## Giriş
 
 Bu, farklı geçmişlere sahip programcılara yönelik Zig tanıtımlardır.

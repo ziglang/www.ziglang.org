@@ -12,6 +12,13 @@ Cette section liste les ressources utiles pour bien débuter avec Zig et compren
 ## Documentation
 {{% learn_docs %}}
 
+## Guides
+This section is eventually going to be bundled with Zig's standard library documentation, but
+in the meantime you can browse it from here.
+
+- [Zig Build System](build-system/)
+Introduction to the Zig build system.
+
 ## Introduction
 Il existe des introductions à Zig de différents niveaux.
 
