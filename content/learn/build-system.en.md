@@ -329,7 +329,19 @@ zig-out/
 ```
 
 ### Generating Zig Source Code
+This build file uses a Zig program to generate a Zig file and then exposes it
+to the main program as a module dependency.
 
+{{< zigdoctest "assets/zig-code/build-system/13-import/src/main.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/13-import/tools/generate_struct.zig" >}}
+{{< zigdoctest "assets/zig-code/build-system/13-import/build.zig" >}}
+
+**Output**
+
+```
+zig-out/
+└── bin
+    └── hello
 
 
 ## Handy Examples
