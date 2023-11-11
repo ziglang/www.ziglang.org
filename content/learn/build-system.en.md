@@ -447,6 +447,14 @@ during the normal build process, it will cause caching and concurrency bugs.
 {{< zigdoctest "assets/zig-code/build-system/mutate-source-files/src/protocol.zig" >}}
 {{< zigdoctest "assets/zig-code/build-system/mutate-source-files/build.zig" >}}
 
+<pre><code class="shell">$ zig build update-protocol --summary all
+<span class="sgr-36m">Build Summary:</span> 4/4 steps succeeded
+update-protocol<span class="sgr-32m"> success</span>
+└─ WriteFile<span class="sgr-32m"> success</span>
+   └─ run proto_gen (protocol.zig)<span class="sgr-32m"> success</span><span class="sgr-2m"> 401us</span><span class="sgr-2m"> MaxRSS:1M</span>
+      └─ zig build-exe proto_gen Debug native<span class="sgr-32m"> success</span><span class="sgr-2m"> 1s</span><span class="sgr-2m"> MaxRSS:183M</span>
+</code></pre>
+
 After running this command, `src/protocol.zig` is updated in place.
 
 ## Handy Examples

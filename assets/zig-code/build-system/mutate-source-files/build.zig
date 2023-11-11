@@ -1,4 +1,4 @@
-// zig-doctest: build-system -- update-protocol --summary all
+// zig-doctest: syntax --name build
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
