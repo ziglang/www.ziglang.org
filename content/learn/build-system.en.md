@@ -36,7 +36,7 @@ This build script creates an executable from a Zig file that contains a public m
 
 ### Installing Build Artifacts
 
-The Zig build system, like most build systems, it is based on modeling the project as a directed acyclic graph (DAG) of steps, which are independently and concurrently run.
+The Zig build system, like most build systems, is based on modeling the project as a directed acyclic graph (DAG) of steps, which are independently and concurrently run.
 
 By default, the main step in the graph is the **Install** step, whose purpose
 is to copy build artifacts into their final resting place. The Install step
