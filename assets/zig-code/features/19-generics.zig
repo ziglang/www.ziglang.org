@@ -14,6 +14,8 @@ pub fn main() void {
         .items = &buffer,
         .len = 0,
     };
+    list.items[0] = 1234;
+    list.len += 1;
 
     std.debug.print("{d}\n", .{list.items.len});
 }

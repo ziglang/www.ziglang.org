@@ -10,6 +10,8 @@ fn fibonacci(x: u32) u32 {
 test "compile-time evaluation" {
     var array: [fibonacci(6)]i32 = undefined;
 
+    @memset(&array, 42);
+
     comptime {
         assert(array.len == 12345);
     }
