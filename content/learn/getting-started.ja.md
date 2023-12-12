@@ -102,14 +102,16 @@ Linux、macOS、Windows用のZigをソースからビルドする方法につい
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 これが出力されるはずです：
 ```
-info: Created build.zig
-info: Created src/main.zig
-info: Next, try `zig build --help` or `zig build run`
+info: created build.zig
+info: created build.zig.zon
+info: created src/main.zig
+info: created src/root.zig
+info: see `zig build --help` for a menu of options
 ```
 
 `zig build run`を実行すると、実行ファイルがコンパイルされて実行され、最終的に以下のような結果になります：

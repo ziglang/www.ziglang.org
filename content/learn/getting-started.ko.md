@@ -104,14 +104,16 @@ Zig와 텍스트 편집기의 깊은 연동에 관심이 있으시다면,
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 그러면 다음과 같이 출력됩니다:
 ```
-info: Created build.zig
-info: Created src/main.zig
-info: Next, try `zig build --help` or `zig build run`
+info: created build.zig
+info: created build.zig.zon
+info: created src/main.zig
+info: created src/root.zig
+info: see `zig build --help` for a menu of options
 ```
 
 `zig build run`을 실행하면 실행파일을 컴파일하고 실행하여, 다음과 같은 결과를 출력합니다:

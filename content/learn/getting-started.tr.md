@@ -117,15 +117,17 @@ Proje dizininize gidin ve şunları çalıştırın:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Alttaki çıktıyı vermeli:
 
 ```
-info: Created build.zig
-info: Created src/main.zig
-info: Next, try `zig build --help` or `zig build run`
+info: created build.zig
+info: created build.zig.zon
+info: created src/main.zig
+info: created src/root.zig
+info: see `zig build --help` for a menu of options
 ```
 
 `zig build run` komutunu çalıştırarak yürütülebilir dosyayı derleyip çalıştırabilirsiniz, sonuç olarak aşağıdaki gibi bir çıktı almalısınız:
