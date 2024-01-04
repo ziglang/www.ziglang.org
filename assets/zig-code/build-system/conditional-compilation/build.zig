@@ -5,6 +5,7 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "app",
         .root_source_file = .{ .path = "app.zig" },
+        .target = b.host,
     });
 
     const version = b.option([]const u8, "version", "application version string") orelse "0.0.0";
@@ -14,7 +15,7 @@ pub fn build(b: *std.Build) void {
     options.addOption([]const u8, "version", version);
     options.addOption(bool, "have_libfoo", enable_foo);
 
-    exe.addOptions("config", options);
+    exe.root_module.addOptions("config", options);
 
     b.installArtifact(exe);
 }

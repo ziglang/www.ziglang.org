@@ -6,6 +6,7 @@ pub fn build(b: *std.Build) void {
     const tool = b.addExecutable(.{
         .name = "word_select",
         .root_source_file = .{ .path = "tools/word_select.zig" },
+        .target = b.host,
     });
 
     const tool_step = b.addRunArtifact(tool);
@@ -24,7 +25,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.addAnonymousModule("word", .{ .source_file = output });
+    exe.root_module.addAnonymousImport("word", .{
+        .root_source_file = output,
+    });
 
     b.installArtifact(exe);
 }

@@ -1,7 +1,7 @@
 // zig-doctest: build-system -- --summary all
 const std = @import("std");
 
-const targets: []const std.zig.CrossTarget = &.{
+const targets: []const std.Target.Query = &.{
     .{ .cpu_arch = .aarch64, .os_tag = .macos },
     .{ .cpu_arch = .aarch64, .os_tag = .linux },
     .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .gnu },
@@ -14,7 +14,7 @@ pub fn build(b: *std.Build) !void {
         const exe = b.addExecutable(.{
             .name = "hello",
             .root_source_file = .{ .path = "hello.zig" },
-            .target = t,
+            .target = b.resolveTargetQuery(t),
             .optimize = .ReleaseSafe,
         });
 
