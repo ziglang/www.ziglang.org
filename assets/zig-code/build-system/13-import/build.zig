@@ -5,6 +5,7 @@ pub fn build(b: *std.Build) void {
     const tool = b.addExecutable(.{
         .name = "generate_struct",
         .root_source_file = .{ .path = "tools/generate_struct.zig" },
+        .target = b.host,
     });
 
     const tool_step = b.addRunArtifact(tool);
@@ -19,7 +20,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.addAnonymousModule("person", .{ .source_file = output });
+    exe.root_module.addAnonymousImport("person", .{
+        .root_source_file = output,
+    });
 
     b.installArtifact(exe);
 }

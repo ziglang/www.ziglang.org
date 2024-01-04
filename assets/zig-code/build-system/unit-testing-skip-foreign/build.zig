@@ -1,7 +1,7 @@
 // zig-doctest: build-system --collapseable -- test --summary all
 const std = @import("std");
 
-const test_targets = [_]std.zig.CrossTarget{
+const test_targets = [_]std.Target.Query{
     .{}, // native
     .{
         .cpu_arch = .x86_64,
@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     for (test_targets) |target| {
         const unit_tests = b.addTest(.{
             .root_source_file = .{ .path = "main.zig" },
-            .target = target,
+            .target = b.resolveTargetQuery(target),
         });
 
         const run_unit_tests = b.addRunArtifact(unit_tests);
