@@ -42,7 +42,7 @@ Introduction to the Zig build system.
 
 ## منابع یادگیری آنلاین
 
--   [Zig Learn](https://ziglearn.org)  
+-   [zig.guide](https://zig.guide)  
     مقدمه‌ای ساختارمند برای زیگ توسط [Sobeston](https://github.com/sobeston).
 -   [Ziglings](https://ziglings.org)  
     با تعمیر برنامه های کوچک خراب، زیگ را بیاموزید.

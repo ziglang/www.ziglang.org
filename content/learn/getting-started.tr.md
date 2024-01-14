@@ -9,7 +9,7 @@ toc: true
 Zig henüz v1.0'a ulaşmadı ve mevcut sürüm döngüsü, yaklaşık olarak 6 aylık bir periyoda sahip olan LLVM'in yeni sürümleriyle bağlantılıdır.
 Pratikte, **Zig sürümleri genellikle birbirinden uzak olma eğilimindedir ve geliştirme hızının mevcut durumu göz önüne alındığında zamanla eski hale gelir**.
 
-Etiketli bir sürümü kullanarak Zig'i değerlendirmek sorun değildir, ancak Zig'i beğenirseniz ve daha derine inmek isterseniz, **günlük bir derlemeye geçmenizi öneririz**. Bunun nedeni, yardım almanızın daha kolay olmasıdır: topluluğun çoğu ve [ziglearn.org](https://ziglearn.org) gibi siteler, yukarıda belirtilen nedenlerle genellikle ana dalları takip eder.
+Etiketli bir sürümü kullanarak Zig'i değerlendirmek sorun değildir, ancak Zig'i beğenirseniz ve daha derine inmek isterseniz, **günlük bir derlemeye geçmenizi öneririz**. Bunun nedeni, yardım almanızın daha kolay olmasıdır: topluluğun çoğu ve [zig.guide](https://zig.guide) gibi siteler, yukarıda belirtilen nedenlerle genellikle ana dalları takip eder.
 
 İyi haber şu ki, bir Zig sürümünden diğerine geçmek veya hatta aynı anda sistemde birden fazla sürüm bulundurmak çok kolaydır: Zig sürümleri, herhangi bir konuma yerleştirilebilen kendine yeten arşivlerdir.
 
@@ -139,7 +139,7 @@ Tebrikler, çalışan bir Zig kurulumunuz var!
 ## Sonraki adımlar
 
 **[Öğren](../)** bölümünde bulunan diğer kaynaklara göz atın, Zig'in belirli bir sürümü için Belgelendirmeyi bulduğunuzdan emin olun
-(not: günlük derlemeler `master` belgelerini kullanmalıdır) ve [ziglearn.org](https://ziglearn.org)'u okumayı düşünün.
+(not: günlük derlemeler `master` belgelerini kullanmalıdır) ve [zig.guide](https://zig.guide)'u okumayı düşünün.
 
 Zig, genç bir proje ve maalesef her şey için kapsamlı belgelendirme ve öğrenme materyalleri oluşturma kapasitemiz henüz yok,
 bu yüzden takıldığınızda yardım almak için [mevcut Zig topluluklarından birine katılmayı](https://github.com/ziglang/zig/wiki/Community)

@@ -38,7 +38,7 @@ Introduction to the Zig build system.
 - [Начало работы]({{< ref "getting-started.md" >}})  
 
 ## Обучающие ресурсы в сети
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
 Структурированное введение в Zig от [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://ziglings.org)  
 Изучайте Zig, исправляя маленькие сломанные программы.

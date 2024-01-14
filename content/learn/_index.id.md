@@ -37,7 +37,7 @@ Jika anda siap untuk memulai pemrograman dengan Zig, panduan ini akan membantu a
 - [Memulai]({{< ref "getting-started.md" >}})  
 
 ## Sumber pembelajaran online
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
 Pengenalan terstruktur mengenai Zig oleh [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://ziglings.org)  
 Mempelajari Zig dengan memperbaiki program-program kecil yang rusak.

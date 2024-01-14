@@ -38,7 +38,7 @@ Si vous êtes déjà prêt à développer en Zig, ce guide vous aidera à config
 - [Débuter]({{< ref "getting-started.md" >}})
 
 ## Ressources en ligne
-- [Zig Learn (EN)](https://ziglearn.org)
+- [zig.guide (EN)](https://zig.guide)
 - Une introduction structurée à Zig par [Sobeston (EN)](https://github.com/sobeston).  
 - Apprenez à corriger les petits programmes avec Zig [ziglings](https://ziglings.org).
 - [Zig on Exercism](https://exercism.org/tracks/zig)
