@@ -11,7 +11,7 @@ Zig는 아직 v1.0에 도달하지 못했으며, 현재 릴리즈는 LLVM의 새
 
 tag된 버전의 Zig로 테스트 해보는 것은 좋으나, Zig가 맘에 들어서 더 깊게 써보고 싶으시다면,
 **nightly build로 업그레이드 하시길 권유** 드리는데, 왜냐하면
-도움을 구하기 쉬울 것이기 때문입니다: [ziglearn.org](https://ziglearn.org) 같은 대부분의
+도움을 구하기 쉬울 것이기 때문입니다: [zig.guide](https://zig.guide) 같은 대부분의
 커뮤니티와 사이트들은 상기의 이유로 master 브랜치를 사용합니다.
 
 좋은 소식은, Zig 릴리즈는 시스템의 어디에 놓아도 되는 자체 포함 파일이기 때문에, 버전간 전환은 매우 쉬우며 심지어 여러 버전의 Zig를 한 시스템에 설치하는 것도 가능하다는 겁니다.
@@ -123,7 +123,7 @@ info: All your codebase are belong to us.
 
 ## 다음 단계
 **[배우기](../) 섹션에 있는 다른 자료를 확인** 하고, Zig 버전에 맞는 문서를 찾고
-(주의: nightly build는 `master` 문서를 사용해야 합니다), [ziglearn.org](https://ziglearn.org)를 읽어보십시오.
+(주의: nightly build는 `master` 문서를 사용해야 합니다), [zig.guide](https://zig.guide)를 읽어보십시오.
 
 Zig는 젊은 프로젝트이며 안타깝게도 아직 모든 것에 대한 충분한 문서와 학습 자료를 만들 역량이 되지 않습니다.
 그러므로 [Zig 커뮤니티에 가입하여](https://github.com/ziglang/zig/wiki/Community)

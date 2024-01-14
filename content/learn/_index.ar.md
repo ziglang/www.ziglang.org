@@ -39,7 +39,7 @@ Introduction to the Zig build system.
 - [ابدأ هنا]({{< ref "getting-started.md" >}})
 
 ## مصادر للتعلم عن بُعد
-- [Zig Learn](https://ziglearn.org)
+- [zig.guide](https://zig.guide)
 مقدمة منظمة لـZig بواسطة [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://ziglings.org)
 تعلم Zig عن طريق تصحيح برامج تالفة بسيطة.

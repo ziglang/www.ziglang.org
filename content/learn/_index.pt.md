@@ -38,7 +38,7 @@ Se você estiver pronto para começar a programar em Zig, este guia o ajudará a
 - [Comece Agora]({{< ref "getting-started.md" >}})  
 
 ## Recursos de aprendizado online
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
 - Uma introdução estruturada ao Zig, por [Sobeston](https://github.com/sobeston).
 - Aprenda Zig enquanto conserta pequenos programas quebrados com [ziglings](https://ziglings.org).
 - [Zig on Exercism](https://exercism.org/tracks/zig)

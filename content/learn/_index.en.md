@@ -38,7 +38,7 @@ If you're ready to start programming in Zig, this guide will help you setup your
 - [Getting started]({{< ref "getting-started.md" >}})  
 
 ## Online learning resources
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
 A structured introduction to Zig by [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://ziglings.org)  
 Learn Zig by fixing tiny broken programs.

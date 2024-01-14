@@ -11,7 +11,7 @@ In practical terms, **Zig releases tend to be far apart and eventually become st
 It's fine to evaluate Zig using a tagged version, but if you decide that you like Zig and 
 want to dive deeper, **we encourage you to upgrade to a nightly build**, mainly because 
 that way it will be easier for you to get help: most of the community and sites like 
-[ziglearn.org](https://ziglearn.org) track the master branch for the reasons stated above.
+[zig.guide](https://zig.guide) track the master branch for the reasons stated above.
 
 The good news is that it's very easy to switch from one Zig version to another, or even have multiple versions present on the system at the same time: Zig releases are self-contained archives that can be placed anywhere in your system.
 
@@ -143,7 +143,7 @@ Congratulations, you have a working Zig installation!
 
 ## Next steps
 **Check out other resources present in the [Learn](../) section**, make sure to find the Documentation for your version
-of Zig (note: nightly builds should use `master` docs) and consider giving [ziglearn.org](https://ziglearn.org) a read.
+of Zig (note: nightly builds should use `master` docs) and consider giving [zig.guide](https://zig.guide) a read.
 
 Zig is a young project and unfortunately we don't have yet the capacity to produce extensive documentation and learning
 materials for everything, so you should consider [joining one of the existing Zig communities](https://github.com/ziglang/zig/wiki/Community)

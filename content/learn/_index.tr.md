@@ -42,7 +42,7 @@ Eğer Zig'de programlamaya hazırsanız, bu rehber size ortamınızı kurmanızd
 
 ## Çevrimiçi öğrenme kaynakları
 
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
   [Sobeston](https://github.com/sobeston) tarafından yapılandırılmış Zig'e yönelik bir giriş.
 - [Ziglings](https://ziglings.org)  
   Programların küçük hatalarını düzelterek Zig öğrenin.

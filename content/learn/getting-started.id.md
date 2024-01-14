@@ -8,7 +8,7 @@ toc: true
 Zig belum mencapai versi 1.0 dan siklus rilis saat ini terkait dengan rilis baru dari LLVM, yang memiliki jangka waktu sekitar ~6 bulan.
 Secara praktis, **rilis Zig cenderung berjauhan dan akhirnya menjadi kurang relevan mengingat kecepatan pengembangan saat ini**.
 
-Tidak masalah untuk mengevaluasi Zig menggunakan versi berlabel, tetapi jika anda memutuskan untuk menyukai Zig dan ingin memperdalam, **kami mendorong anda untuk melakukan upgrade ke build nightly**, karena itu akan lebih mempermudah anda untuk mendapatkan bantuan: sebagian besar komunitas dan situs seperti [ziglearn.org](https://ziglearn.org) melacak atau menggunakan branch master karena alasan yang telah dijelaskan di atas.
+Tidak masalah untuk mengevaluasi Zig menggunakan versi berlabel, tetapi jika anda memutuskan untuk menyukai Zig dan ingin memperdalam, **kami mendorong anda untuk melakukan upgrade ke build nightly**, karena itu akan lebih mempermudah anda untuk mendapatkan bantuan: sebagian besar komunitas dan situs seperti [zig.guide](https://zig.guide) melacak atau menggunakan branch master karena alasan yang telah dijelaskan di atas.
 
 Berita baiknya adalah untuk beralih dari satu versi Zig ke versi lainnya sangatlah mudah, atau bahkan memiliki beberapa versi yang ada di sistem pada saat yang bersamaan: rilis Zig adalah arsip mandiri yang dapat ditempatkan di mana saja dalam sistem anda.
 
@@ -134,7 +134,7 @@ Selamat, anda telah memiliki instalasi Zig yang berfungsi!
 
 ## Langkah selanjutnya
 **Cek sumber lain yang ada di bagian [Belajar](../)**, pastikan untuk menemukan dokumentasi untuk versi Zig anda
-(catatan: build nightly harus menggunakan dokumen `master`) dan pertimbangkan untuk membaca [ziglearn.org](https://ziglearn.org).
+(catatan: build nightly harus menggunakan dokumen `master`) dan pertimbangkan untuk membaca [zig.guide](https://zig.guide).
 
 Zig adalah proyek baru dan sayangnya kami belum memiliki kapasitas untuk menghasilkan dokumentasi dan materi pembelajaran yang luas
 untuk semuanya, jadi anda sebaiknya mempertimbangkan [bergabung dengan salah satu komunitas Zig yang sudah ada](https://github.com/ziglang/zig/wiki/Community)

@@ -9,7 +9,7 @@ Zig ainda não atingiu a v1.0 e o atual ciclo de liberação está ligado a nova
 Em termos práticos, **As versões Zig tendem a ser muito distantes e eventualmente se tornam obsoletas, dada a velocidade atual de desenvolvimento**.
 
 É bom avaliar o Zig usando uma versão com tags, mas se você decidir que gosta do Zig e quer mergulhar mais fundo, **nós o encorajamos a atualizar para versão nightly**, principalmente porque dessa forma será mais fácil para você obter ajuda: a maioria da comunidade e sites como
-[ziglearn.org](https://ziglearn.org) se baseiam no *master branch* pelas razões acima expostas.
+[zig.guide](https://zig.guide) se baseiam no *master branch* pelas razões acima expostas.
 
 A boa notícia é que é muito fácil mudar de uma versão Zig para outra, ou mesmo ter várias versões presentes no sistema ao mesmo tempo: As versões Zig são arquivos autocontidos que podem ser colocados em qualquer lugar em seu sistema.
 
@@ -117,7 +117,7 @@ info: All your codebase are belong to us.
 Parabéns, você tem uma instalação Zig funcionando!  
 
 ## Próximos passos
-**Verifique outros recursos presentes na seção** [Aprender](../), certifique-se de encontrar a Documentação de sua versão do Zig (nota: as construções nightly devem utilizar documentação `master`) e considerar dar uma lida no [ziglearn.org](https://ziglearn.org) também.
+**Verifique outros recursos presentes na seção** [Aprender](../), certifique-se de encontrar a Documentação de sua versão do Zig (nota: as construções nightly devem utilizar documentação `master`) e considerar dar uma lida no [zig.guide](https://zig.guide) também.
 
 Zig é um projeto jovem e infelizmente ainda não temos a capacidade de produzir extensa documentação e materiais de aprendizagem para tudo, portanto, você deve considerar [juntando-se a uma das comunidades Zig existentes](https://github.com/ziglang/zig/wiki/Community)
 para obter ajuda quando você ficar confuso, bem como para verificar iniciativas como [Zig SHOWTIME](https://zig.show).

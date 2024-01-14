@@ -38,7 +38,7 @@ Introduction to the Zig build system.
 - [快速入门]({{< ref "getting-started.md" >}})
 
 ## 在线学习资源
-- [学习 Zig](https://ziglearn.org)
+- [学习 Zig](https://zig.guide)
 Zig 的结构化介绍，由 [Sobeston](https://github.com/sobeston) 编写
 - [Zig 小练习](https://ziglings.org)
 通过修补与调试一系列带有故障的小程序来学习 Zig
