@@ -112,8 +112,8 @@ we have plans to switch to Fastly which should save about $500/month.
 <td class="description">In a 2022 meeting, <a href="https://docs.google.com/document/d/1EqyZcd4AKu7Y9Zb_xdE_7q8i-NnqIz1BW8IiJxMX6Xc">the board decided</a>
 that the previous year's travel budget successfully helped grow Zig adoption,
 and raised the budget from $10,000 to $15,000. In 2023, ZSF spent $10,847
-of those allocated funds, increasing Zig's presence in (place example), (place example),
-<a href="https://handmade-seattle.com/">Handmade Seattle</a>, ...
+of those allocated funds, increasing Zig's presence in North America (e.g. Seattle, Vancouver) and Europe (e.g. Stockholm, Berlin, Amsterdam) as well as keeping up relationships with likeminded communities like
+<a href="https://handmade-seattle.com/">Handmade Seattle</a>.
 </td>
 </tr><tr>
 <td>Legal System</td>
@@ -408,15 +408,15 @@ be irresponsible not to.
 
 <table>
 <tr>
-<th>Companies</th><td class="description">Contact us to get your logo on ziglang.org in exchange for a monthly donation. This can come out of your marketing budget.
+<th>Companies</th><td class="description">Contact us to get your logo on ziglang.org in exchange for a monthly donation. This can come out of your marketing budget.</td>
 </tr><tr>
 <th>Employees</th><td class="description">Check if your company matches donations to charities such as Zig Software Foundation. That 2x multiplier makes a huge difference. We're already in the system.</td>
 </tr><tr>
-<th>Venture Capitalists</th><td class="description">You have so much money. Can we just have a little bit? It's likely that every tech company in your entire portfolio is benefitting from the work we do. Think of it as an ethically sound way to convert taxes into an investment.</td>
+<th>Venture Capitalists</th><td class="description">We are aware of a few startups betting on Zig as their language and toolchain of choice to build tomorrow's critical infrastructure. Helping the Zig Software Foundation reach v1.0 faster is one of the most efficient uses of capital you can make to boost your portfolio.</td>
 </tr><tr>
 <th>Individuals</th><td class="description">Can you spare $5-10 per month? This is our favorite
 kind of donation because it helps diversify ZSF's income, keeping us free from undue influence
-from any single party.
+from any single party.</td>
 </tr>
 </table>
 
@@ -433,13 +433,17 @@ Since I mentioned income diversification above, let's look at some numbers.
         19851.42,
         184800,
         22000,
-        219129.55,
+        58666.67,
+        15000.00,
+        145462.88,
         8710.76,
       ],
       labels: [
         "Benevity",
         "Uber Support Contract",
         "TigerBeetle",
+        "Bun",
+        "Pex",
         "GitHub Sponsors",
         "Individuals",
       ]
@@ -457,12 +461,6 @@ Since I mentioned income diversification above, let's look at some numbers.
 <th>2023 Amount</th>
 <th>Description</th>
 </tr><tr>
-<td>GitHub Sponsors</td>
-<td>$219,129.55</td>
-<td class="description"><a href="https://github.com/sponsors/ziglang">Zig on GitHub Sponsors</a>. This category contains a numerous amount of both individuals and companies. It's pretty convenient
-for both ZSF and donors, as long as Microsoft keeps being cool about it. Hopefully they don't
-alter the deal anytime soon. We lost a lot of donors when they dropped PayPal support.</td>
-</tr><tr>
 <td>Uber Support Contract</td>
 <td>$184,800.00</td>
 <td class="description">Uber has wisely agreed to a support contract since
@@ -472,12 +470,26 @@ Other companies are invited to follow in their footsteps and obtain a ZSF suppor
 order to guarantee speedy response when encountering a bug while using Zig.
 </td>
 </tr><tr>
+<td>GitHub Sponsors</td>
+<td>$145,462.88</td>
+<td class="description"><a href="https://github.com/sponsors/ziglang">Zig on GitHub Sponsors</a>. This category contains a numerous amount of both individuals and companies. It's pretty convenient
+for both ZSF and donors, as long as Microsoft keeps being cool about it. Hopefully they don't
+alter the deal anytime soon. We lost a lot of donors when they dropped PayPal support.</td>
+</tr><tr>
+<td>Bun</td>
+<td>$58,666.67</td>
+<td class="description"><a href="https://bun.sh/">Bun</a> </td>
+</tr><tr>
 <td>TigerBeetle</td>
 <td>$22,000.00</td>
 <td class="description"><a href="https://tigerbeetle.com/">TigerBeetle</a> is a database company
 whose product is built on the Zig programming language and has wisely decided
 to sponsor ZSF in order to ensure that the tech stack they depend on continues
 to flourish, improve, and become more widely adopted.</td>
+</tr><tr>
+<td>Pex</td>
+<td>$15,000.00</td>
+<td class="description"><a href="https://pex.com/">Pex</a> </td>
 </tr><tr>
 <td>Benevity</td>
 <td>$19,851.42</td>
