@@ -1,6 +1,6 @@
 ---
-title: "ZSF Needs More Money to Meet Rising Demands"
-mobile_menu_title: "2024 Fundraiser"
+title: "2024 Financial Report and Fundraiser"
+mobile_menu_title: "2024 Financials"
 date: 2024-01-16T00:00:00.000Z
 ---
 
@@ -26,8 +26,7 @@ td.description {
 }
 </style>
 
-# ZSF Needs More Money to Meet Rising Demands
-## Announcing a 2024 Fundraiser
+# 2024 Financial Report and Fundraiser
 
 Zig Software Foundation is a 501(c)(3) non-profit organization which I am proud
 to say makes **extremely efficient use of monetary resources**. Unlike many of
