@@ -153,6 +153,8 @@ infrequently when possible to help reduce this cost.</td>
 </tr>
 </table>
 
+**We spent 92% of our money in 2023 on paying contributors for their time.**
+
 So far so good. You can see we've been hard at work spending our esteemed
 donors' money on advancing the [mission statement](/zsf/#mission-statement).
 
@@ -394,35 +396,12 @@ Source: [Repo Trends](https://www.repotrends.com/ziglang/zig)
   );
 </script>
 
-## A Plea for Donations
-
-We have extremely talented Zig core team members who would like to renew their
-contracts, and others who are interested to start getting paid for their
-valuable work for the first time.
-
-In order to do this, **we need more recurring donations**. I for one do not enjoy
-asking for money, but in the interest of our users and contributors, it would
-be irresponsible not to.
-
-**Please sign up for a monthly donation** if you can.
-
-<table>
-<tr>
-<th>Companies</th><td class="description">Contact us to get your logo on ziglang.org in exchange for a monthly donation. This can come out of your marketing budget.</td>
-</tr><tr>
-<th>Employees</th><td class="description">Check if your company matches donations to charities such as Zig Software Foundation. That 2x multiplier makes a huge difference. We're already in the system.</td>
-</tr><tr>
-<th>Venture Capitalists</th><td class="description">We are aware of a few startups betting on Zig as their language and toolchain of choice to build tomorrow's critical infrastructure. Helping the Zig Software Foundation reach v1.0 faster is one of the most efficient uses of capital you can make to boost your portfolio.</td>
-</tr><tr>
-<th>Individuals</th><td class="description">Can you spare $5-10 per month? This is our favorite
-kind of donation because it helps diversify ZSF's income, keeping us free from undue influence
-from any single party.</td>
-</tr>
-</table>
+In response to this rising demand, we
+[added incredible new members to the Zig core team](/news/welcome-jacob-young/).
+Thanks to the income that was available to us in 2023, we were able to offer
+new contracts.
 
 ## 2023 Income
-
-Since I mentioned income diversification above, let's look at some numbers.
 
 <div id="chart-categorized-income" style="height: 30em"></div>
 <script>
@@ -478,23 +457,28 @@ alter the deal anytime soon. We lost a lot of donors when they dropped PayPal su
 </tr><tr>
 <td>Bun</td>
 <td>$58,666.67</td>
-<td class="description"><a href="https://bun.sh/">Bun</a> </td>
+<td class="description"><a href="https://bun.sh/">Bun</a> is a
+fast JavaScript all-in-one toolkit built using the Zig programming language. The company
+behind Bun has wisely decided to sponsor ZSF in order to ensure that the tech
+stack they depend on continues to flourish, improve, and become more widely
+adopted.</td>
 </tr><tr>
 <td>TigerBeetle</td>
 <td>$22,000.00</td>
 <td class="description"><a href="https://tigerbeetle.com/">TigerBeetle</a> is a database company
-whose product is built on the Zig programming language and has wisely decided
-to sponsor ZSF in order to ensure that the tech stack they depend on continues
-to flourish, improve, and become more widely adopted.</td>
-</tr><tr>
-<td>Pex</td>
-<td>$15,000.00</td>
-<td class="description"><a href="https://pex.com/">Pex</a> </td>
+whose product is built on the Zig programming language and likewise sponsors ZSF. 
+</td>
 </tr><tr>
 <td>Benevity</td>
 <td>$19,851.42</td>
-<td class="description">Benevity helps us collect donations from employees that are matched
-by their company. This category contains a number of individuals.</td>
+<td class="description">Benevity helps us collect company-matched donations from employees.
+This category contains a number of individuals.</td>
+</tr><tr>
+<td>Pex</td>
+<td>$15,000.00</td>
+<td class="description"><a href="https://pex.com/">Pex</a> helps
+enable the fair and transparent use of copyrighted content.
+</td>
 </tr><tr>
 <td>Individuals</td>
 <td>$8,710.76</td>
@@ -507,3 +491,62 @@ UK Online Giving Foundation.</td>
 </tr>
 </table>
 
+However, with our current level of recurring income, we will not be able to renew
+everyone's contracts, nor offer new contracts to Zig core team members.
+
+## A Plea for Donations
+
+We have extremely talented Zig core team members who want to renew their
+contracts, and others who are interested to start getting paid for their
+valuable work for the first time.
+
+In order to do this, **we need more recurring donations**. I for one do not enjoy
+asking for money, but in the interest of our users and contributors, it would
+be irresponsible not to.
+
+**Please sign up for a monthly donation** if you can. Our preferred donation method
+is [Zig Software Foundation on Every.org](https://www.every.org/zig-software-foundation-inc/f/help-zig-stay-indepe).
+A fellow 501(c)(3) non-profit, they seamlessly manage gift receipts, and are
+not currently
+[pivoting to AI](https://github.blog/2023-11-08-universe-2023-copilot-transforms-github-into-the-ai-powered-developer-platform/) like GitHub is currently doing, which to be honest scares the shit
+out of us.
+
+<div id="every-donate-btn">
+  <a href="https://www.every.org/zig-software-foundation-inc?utm_campaign=2024_financials#/donate">Donate</a>
+  <script async defer src="https://embeds.every.org/0.4/button.js?explicit=1" id="every-donate-btn-js"></script>
+  <script>
+    function createWidget() {
+      everyDotOrgDonateButton.createButton({
+        selector: "#every-donate-btn",
+      });
+      everyDotOrgDonateButton.createWidget({
+        selector: "#every-donate-btn",
+        nonprofitSlug: "zig-software-foundation-inc",
+        fundraiserSlug: "help-zig-stay-indepe",
+        defaultDonationAmount: 10,
+        defaultFrequency: 'monthly'
+      });
+    }
+    if (window.everyDotOrgDonateButton) {
+      createWidget();
+    } else {
+      document.getElementById("every-donate-btn-js").onload = createWidget;
+    }
+  </script>
+</div>
+
+<table>
+<tr>
+<th>Companies</th><td class="description">Contact us to get your logo on ziglang.org in exchange for a monthly donation.</td>
+</tr><tr>
+<th>Employees</th><td class="description">Check if your company matches donations to charities such as Zig Software Foundation. That 2x multiplier makes a huge difference. We're already in the system.</td>
+</tr><tr>
+<th>Venture Capitalists</th><td class="description">We are aware of a few startups betting on Zig as their language and toolchain of choice to build tomorrow's critical infrastructure. Helping the Zig Software Foundation reach v1.0 faster is one of the most efficient uses of capital you can make to boost your portfolio.</td>
+</tr><tr>
+<th>Individuals</th><td class="description">Can you spare $5-10 per month? This is our favorite
+kind of donation because it helps diversify ZSF's income, keeping us free from undue influence
+from any single party.</td>
+</tr>
+</table>
+
+Huge thanks to all who graciously donate funds to our cause. Together we serve the users!
