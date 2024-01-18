@@ -24,7 +24,7 @@
     <a href="https://github.com/ziglang/zig/wiki/Community" class="navbar-item external-link external-link-light">{{ i18n "menu-community" }}</a>
     {{ with .Site.GetPage "zsf"}}
       <a href="{{ "zsf/" | relLangURL }}" class="navbar-item">
-        <img src="{{ "heart.svg" | absURL }}" style="vertical-align:middle; margin-right: 5px">{{ .Params.mobile_menu_title }}</a>
+        {{ .Params.mobile_menu_title }}</a>
     {{ end }}
   </div>
 </div>
@@ -41,15 +41,166 @@
       {{ with .Site.GetPage "news"}}
         <a href="{{ "news/" | relLangURL }}" class="navbar-item">{{ .Params.menu_title }}</a>
       {{ end }} 
-      <a href="https://github.com/ziglang/zig" class="navbar-item external-link external-link-light">{{ i18n "menu-source" }}</a> 
-      <a href="https://github.com/ziglang/zig/wiki/Community" class="navbar-item external-link external-link-light">{{ i18n "menu-community" }}</a> 
       {{ with .Site.GetPage "zsf"}}
         <a href="{{ "zsf/" | relLangURL }}" class="navbar-item" style="">
-          <img src="{{ "heart.svg" | absURL }}" style="vertical-align:middle; margin-inline-end: 5px">{{ .Params.menu_title }}
+          {{ .Params.menu_title }}
         </a>
       {{ end }}
+      <a href="https://github.com/ziglang/zig" class="navbar-item external-link external-link-light">{{ i18n "menu-source" }}</a> 
+      <a href="https://github.com/ziglang/zig/wiki/Community" class="navbar-item external-link external-link-light">{{ i18n "menu-community" }}</a> 
     </div>
   </div>
 </nav>
+
+
+<style type="text/css">
+  .fundraiser {
+    color: white;
+    background-color: #7521ae;
+    padding: 40px 10px;
+    margin: 0;
+  }
+
+  .fundraiser-heading {
+    text-align: center;
+    font-size: 2em;
+    padding-bottom: 0.3em;
+  }
+
+  .fundraiser a {
+    color: #cbcbff;
+    text-decoration: underline;
+  }
+
+   #bar-bg {
+    background-color: white;
+    width: 15em;
+   }
+
+   #bar-fg {
+    background-color: green;
+    height: 1.3em;
+    overflow: visible;
+    white-space: nowrap;
+   }
+
+   #every-donate-btn-nav {
+    float:left;
+    padding:0 2em;
+   }
+
+   #supporters {
+    padding-left:0.2em;
+   }
+
+  .progress {
+    background-color: #f7a41d;
+    width: 15em;
+    color: black;
+    padding: 1em;
+    font-size: 1.3em;
+    float:left;
+  }
+
+  .progress .time {
+    font-size: 1.4em;
+  }
+
+  .showtime img {
+    height: 7em;
+    border: 1px solid white;
+  }
+
+  @media (prefers-color-scheme:dark) {
+    .fundraiser {
+      color: black;
+      background-color: white;
+    }
+
+    .fundraiser strong {
+      color: black;
+    }
+
+    .fundraiser a {
+      color: #352891;
+    }
+  }
+</style>
+<div class="fundraiser">
+  <div class="fundraiser-heading">
+    <strong>ZSF Needs Money!</strong>
+    <a href="/news/2024-financials/">Announcing Our 2024 Fundraiser</a> 
+  </div>
+  <div class="container">
+  <div class="progress">
+    <div class="time"><span id="days-remaining">...</span> Days Remaining</div>
+    <div id="bar-bg">
+      <div id="bar-fg" style="width: 0%">
+        <span id="supporters">(loading...)</span> new sponsors joined
+      </div>
+    </div>
+    <script>
+    function updateSupporters() {
+      let ms_diff = (new Date("Feb 18 2024")) - (new Date());
+      let day_diff = Math.ceil(ms_diff / 1000 / 60 / 60 / 24);
+      document.getElementById("days-remaining").textContent = day_diff;
+
+      fetch("https://partners.every.org/v0.2/nonprofit/zig-software-foundation-inc/fundraiser/help-zig-stay-indepe/raised?apiKey=pk_live_bfe7cb0be9f5f91b98be1ac89bc3150f").then((res) => {
+        if (res.ok) {
+          res.json().then((data) => {
+            let sponsor_goal = 500;
+            let sponsor_count = data.supporters;
+            let percent = Math.min((sponsor_count / sponsor_goal), 1)
+            document.getElementById("bar-fg").style.width = (percent * 100) + "%";
+            document.getElementById("supporters").textContent = sponsor_count + "/" + sponsor_goal;
+          })
+        }
+      })
+    }
+    setInterval(updateSupporters, 60 * 1000);
+    updateSupporters();
+    </script>
+  </div>
+  <div id="every-donate-btn-nav">
+    <img src="https://ziglang.org/img/Ziggy_6.svg" style="height:7em">
+    <a href="https://www.every.org/zig-software-foundation-inc?utm_campaign=2024_financials#/donate">Donate</a>
+    <script async defer src="https://embeds.every.org/0.4/button.js?explicit=1" id="every-donate-btn-js"></script>
+    <script>
+      function createWidgetNav() {
+        everyDotOrgDonateButton.createButton({
+          selector: "#every-donate-btn-nav",
+          nonprofitSlug: "zig-software-foundation-inc",
+          fundraiserSlug: "help-zig-stay-indepe",
+          fontSize: "32px",
+          label: "Sponsor"
+        });
+        everyDotOrgDonateButton.createWidget({
+          selector: "#every-donate-btn-nav",
+          nonprofitSlug: "zig-software-foundation-inc",
+          fundraiserSlug: "help-zig-stay-indepe",
+          defaultDonationAmount: 10,
+          defaultFrequency: 'monthly'
+        });
+        // Workaround for https://github.com/everydotorg/donate-button/issues/384
+        let style = document.createElement('style');
+        style.innerHTML = '#donation-input { color: black; } #privateNote { color: black }';
+        document.getElementById("shadow-wrapper").shadowRoot.appendChild(style);
+      }
+      if (window.everyDotOrgDonateButton) {
+        createWidgetNav();
+      } else {
+        document.getElementById("every-donate-btn-js").addEventListener("load", createWidgetNav);
+      }
+    </script>
+  </div>
+
+  <div class="showtime">
+    <a href="https://zig.show/">
+      <img src="/img/showtime-roadmap-2024.png" alt="Zig Showtime Episode: Roadmap 2024 - Andrew Kelley">
+    </a>
+  </div>
+  <div style="clear:both">&nbsp;</div>
+  </div>
+</div> 
 
 <div class="nav-spacer"></div>

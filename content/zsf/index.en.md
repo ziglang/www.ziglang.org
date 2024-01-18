@@ -1,7 +1,7 @@
 ---
-title: "Sponsor ZSF"
-menu_title: "Sponsor the Zig Software Foundation"
-mobile_menu_title: "Sponsor the ZSF"
+title: "ZSF"
+menu_title: "Zig Software Foundation"
+mobile_menu_title: "ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
 ## Sponsoring the Zig Software Foundation
