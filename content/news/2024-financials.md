@@ -517,6 +517,10 @@ out of us.
     function createWidget() {
       everyDotOrgDonateButton.createButton({
         selector: "#every-donate-btn",
+        nonprofitSlug: "zig-software-foundation-inc",
+        fundraiserSlug: "help-zig-stay-indepe",
+        fontSize: "32px",
+        label: "Sponsor"
       });
       everyDotOrgDonateButton.createWidget({
         selector: "#every-donate-btn",
