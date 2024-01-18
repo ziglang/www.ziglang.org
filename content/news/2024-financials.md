@@ -512,7 +512,6 @@ out of us.
 
 <div id="every-donate-btn">
   <a href="https://www.every.org/zig-software-foundation-inc?utm_campaign=2024_financials#/donate">Donate</a>
-  <script async defer src="https://embeds.every.org/0.4/button.js?explicit=1" id="every-donate-btn-js"></script>
   <script>
     function createWidget() {
       everyDotOrgDonateButton.createButton({
@@ -533,7 +532,7 @@ out of us.
     if (window.everyDotOrgDonateButton) {
       createWidget();
     } else {
-      document.getElementById("every-donate-btn-js").addEventListener('load', createWidget);
+      document.getElementById("every-donate-btn-js-nav").addEventListener('load', createWidget);
     }
   </script>
 </div>
