@@ -459,14 +459,14 @@ alter the deal anytime soon. We lost a lot of donors when they dropped PayPal su
 <td>$58,666.67</td>
 <td class="description"><a href="https://bun.sh/">Bun</a> is a
 fast JavaScript all-in-one toolkit built using the Zig programming language. The company
-behind Bun has wisely decided to sponsor ZSF in order to ensure that the tech
-stack they depend on continues to flourish, improve, and become more widely
-adopted.</td>
+behind Bun sponsors ZSF in order to ensure that the tech stack they depend on
+continues to flourish, improve, and become more widely adopted.</td>
 </tr><tr>
 <td>TigerBeetle</td>
 <td>$22,000.00</td>
 <td class="description"><a href="https://tigerbeetle.com/">TigerBeetle</a> is a database company
-whose product is built on the Zig programming language and likewise sponsors ZSF. 
+whose product is built on the Zig programming language and likewise sponsors ZSF. It's
+good business practice to keep your software supply chain healthy.
 </td>
 </tr><tr>
 <td>Benevity</td>
@@ -476,7 +476,7 @@ This category contains a number of individuals.</td>
 </tr><tr>
 <td>Pex</td>
 <td>$15,000.00</td>
-<td class="description"><a href="https://pex.com/">Pex</a> helps
+<td class="description"><a href="https://pex.com/">Pex</a> is a company whose product helps
 enable the fair and transparent use of copyrighted content.
 </td>
 </tr><tr>
@@ -505,10 +505,9 @@ asking for money, but in the interest of our users and contributors, it would
 be irresponsible not to.
 
 **Please sign up for a monthly donation** if you can. Our preferred donation method
-is [Zig Software Foundation on Every.org](https://www.every.org/zig-software-foundation-inc/f/help-zig-stay-indepe).
-A fellow 501(c)(3) non-profit, they seamlessly manage gift receipts, and are
-not currently
-[pivoting to AI](https://github.blog/2023-11-08-universe-2023-copilot-transforms-github-into-the-ai-powered-developer-platform/) like GitHub is currently doing, which to be honest scares the shit
+is [via Every.org](https://www.every.org/zig-software-foundation-inc/f/help-zig-stay-indepe).
+A fellow 501(c)(3) non-profit, they seamlessly manage gift receipts, and are not 
+pivoting to AI [like GitHub is currently doing](https://github.blog/2023-11-08-universe-2023-copilot-transforms-github-into-the-ai-powered-developer-platform/), which frankly scares the shit
 out of us.
 
 <div id="every-donate-btn">
@@ -530,7 +529,7 @@ out of us.
     if (window.everyDotOrgDonateButton) {
       createWidget();
     } else {
-      document.getElementById("every-donate-btn-js").onload = createWidget;
+      document.getElementById("every-donate-btn-js").addEventListener('load', createWidget);
     }
   </script>
 </div>
