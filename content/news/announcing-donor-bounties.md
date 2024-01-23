@@ -11,9 +11,9 @@ As we also pointed out in the past, this is an issue with certain kinds of bount
 
 Comments on social media have pointed out how the kinds of bounties we have issues with are generally known as "feature bounties".
 
-So we did some thinking and figured out a way of mitigating all the flaws of features bounties. The change is minimal but mutates drastically the nature of the bounty, here it is: **instead of offering money to the implementer, the money is offered as a donation to the open source project itself**.
+So we did some thinking and figured out a way of mitigating all the flaws of feature bounties. The change is minimal but mutates drastically the nature of the bounty, here it is: **instead of offering money to the implementer, the money is offered as a donation to the open source project itself**.
 
-By offering the bounty to the open source project, the cooperative nature of open source work is fully preserved and all other issues are mitigated. Of course giving money to the project and not to who is doing the work is very different in nature, but it makes a lot of sense when the project is run by a non-profit corporation that pays developers, like in the case for the Zig Software Foundation.
+By offering the bounty to the open source project, the cooperative nature of open source work is fully preserved. Of course giving money to the project and not to who is doing the work is very different in nature, but it makes a lot of sense when the project is run by a non-profit corporation that pays developers, like in the case for the Zig Software Foundation.
 
 **[In 2023 we spent 92% of our money on paying contributors for their time](/news/2024-financials/)**, as a point of reference.
 
