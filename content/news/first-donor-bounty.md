@@ -15,6 +15,11 @@ expression](https://github.com/ziglang/zig/issues/8220) according to
 Andrew's specifications outlined in the issue, and along with any 
 follow-up clarifications.
 
+It doesn't matter who implements it, or whether multiple people work together
+on implementing it, or how much help is needed from the core Zig team. As long
+as it gets done properly and the donor is satisfied with the results, the
+bounty will be awarded.
+
 ## Reward
 
 The anonymous donor has offered 4,000 USD to be donated to Zig Software 
