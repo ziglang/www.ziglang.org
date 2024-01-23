@@ -3,6 +3,7 @@ title: "Donor Bounty: Labeled Switch Continue Syntax"
 date: 2024-01-23T01:00:00+00:00
 mobile_menu_title: "Labeled Switch Bounty"
 ---
+# Donor Bounty: Labeled Switch Continue Syntax
 
 As part of our [Donor Bounty Program](/news/announcing-donor-bounties/), a new 
 bounty has been confirmed with an anonymous donor.

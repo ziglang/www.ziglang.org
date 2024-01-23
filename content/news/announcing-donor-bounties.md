@@ -3,6 +3,7 @@ title: "Donor Bounties: A New Kind of Feature Bounty"
 date: 2024-01-23T00:00:00+00:00
 mobile_menu_title: "Donor Bounties"
 ---
+# Donor Bounties: A New Kind of Feature Bounty
 
 [We have previously written](/news/bounties-damage-open-source-projects/) about how bounties can be damaging to Open Source projects as, even when the subject of the bounty is in accordance with the wishes of the project maintainers, it still fosters competition at the expense of cooperation and more in general is a strictly worse version of just offering contract work, as bounties default to potentially unfair resolutions when things don't go as planned, among other things.
 
