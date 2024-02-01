@@ -100,7 +100,7 @@ CMAKE_GENERATOR=Ninja ./build aarch64-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build aarch64-macos-none apple_a14
 CMAKE_GENERATOR=Ninja ./build riscv64-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build powerpc64le-linux-musl baseline
-CMAKE_GENERATOR=Ninja ./build powerpc-linux-musl baseline
+#CMAKE_GENERATOR=Ninja ./build powerpc-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
 CMAKE_GENERATOR=Ninja ./build aarch64-windows-gnu baseline
@@ -119,7 +119,7 @@ cp -r $BOOTSTRAP_SRC/out/zig-x86-linux-musl-baseline zig-linux-x86-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-arm-linux-musleabihf-generic+v7a zig-linux-armv7a-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-riscv64-linux-musl-baseline zig-linux-riscv64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-powerpc64le-linux-musl-baseline zig-linux-powerpc64le-$ZIG_VERSION/
-cp -r $BOOTSTRAP_SRC/out/zig-powerpc-linux-musl-baseline zig-linux-powerpc-$ZIG_VERSION/
+#cp -r $BOOTSTRAP_SRC/out/zig-powerpc-linux-musl-baseline zig-linux-powerpc-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-x86_64-windows-gnu-baseline zig-windows-x86_64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-aarch64-windows-gnu-baseline zig-windows-aarch64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-x86-windows-gnu-baseline zig-windows-x86-$ZIG_VERSION/
@@ -133,7 +133,7 @@ XZ_OPT=-9 tar cJf zig-linux-x86-$ZIG_VERSION.tar.xz zig-linux-x86-$ZIG_VERSION/ 
 XZ_OPT=-9 tar cJf zig-linux-armv7a-$ZIG_VERSION.tar.xz zig-linux-armv7a-$ZIG_VERSION/ --sort=name
 XZ_OPT=-9 tar cJf zig-linux-riscv64-$ZIG_VERSION.tar.xz zig-linux-riscv64-$ZIG_VERSION/ --sort=name
 XZ_OPT=-9 tar cJf zig-linux-powerpc64le-$ZIG_VERSION.tar.xz zig-linux-powerpc64le-$ZIG_VERSION/ --sort=name
-XZ_OPT=-9 tar cJf zig-linux-powerpc-$ZIG_VERSION.tar.xz zig-linux-powerpc-$ZIG_VERSION/ --sort=name
+#XZ_OPT=-9 tar cJf zig-linux-powerpc-$ZIG_VERSION.tar.xz zig-linux-powerpc-$ZIG_VERSION/ --sort=name
 7z a zig-windows-x86_64-$ZIG_VERSION.zip zig-windows-x86_64-$ZIG_VERSION/
 7z a zig-windows-aarch64-$ZIG_VERSION.zip zig-windows-aarch64-$ZIG_VERSION/
 7z a zig-windows-x86-$ZIG_VERSION.zip zig-windows-x86-$ZIG_VERSION/
@@ -150,7 +150,7 @@ echo | minisign -Sm zig-linux-x86-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-armv7a-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-riscv64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-powerpc64le-$ZIG_VERSION.tar.xz
-echo | minisign -Sm zig-linux-powerpc-$ZIG_VERSION.tar.xz
+#echo | minisign -Sm zig-linux-powerpc-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-windows-x86_64-$ZIG_VERSION.zip
 echo | minisign -Sm zig-windows-aarch64-$ZIG_VERSION.zip
 echo | minisign -Sm zig-windows-x86-$ZIG_VERSION.zip
@@ -168,7 +168,7 @@ s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" z
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc64le-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/
@@ -184,7 +184,7 @@ s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" z
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc64le-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
+#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
@@ -233,9 +233,9 @@ export POWERPC64LE_LINUX_TARBALL="zig-linux-powerpc64le-$ZIG_VERSION.tar.xz"
 export POWERPC64LE_LINUX_BYTESIZE=$(wc -c < "zig-linux-powerpc64le-$ZIG_VERSION.tar.xz")
 export POWERPC64LE_LINUX_SHASUM="$(sha256sum "zig-linux-powerpc64le-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
-export POWERPC_LINUX_TARBALL="zig-linux-powerpc-$ZIG_VERSION.tar.xz"
-export POWERPC_LINUX_BYTESIZE=$(wc -c < "zig-linux-powerpc-$ZIG_VERSION.tar.xz")
-export POWERPC_LINUX_SHASUM="$(sha256sum "zig-linux-powerpc-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
+#export POWERPC_LINUX_TARBALL="zig-linux-powerpc-$ZIG_VERSION.tar.xz"
+#export POWERPC_LINUX_BYTESIZE=$(wc -c < "zig-linux-powerpc-$ZIG_VERSION.tar.xz")
+#export POWERPC_LINUX_SHASUM="$(sha256sum "zig-linux-powerpc-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export X86_LINUX_TARBALL="zig-linux-x86-$ZIG_VERSION.tar.xz"
 export X86_LINUX_BYTESIZE=$(wc -c < "zig-linux-x86-$ZIG_VERSION.tar.xz")
