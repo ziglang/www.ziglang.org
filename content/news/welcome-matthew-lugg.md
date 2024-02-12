@@ -5,8 +5,8 @@ mobile_menu_title: "Matthew Lugg Joins"
 ---
 # Matthew Lugg Joins the Core Zig Team
 
-I am pleased to announce our newest Zig team member, Matthew Lugg
-(screenname: [mlugg](https://mlugg.co.uk/)).
+I am pleased to announce our newest Zig team member,
+[Matthew Lugg](https://mlugg.co.uk/).
 
 This announcement is long overdue. Matthew started contributing in the
 beginning of 2023. He did not waste any time getting his hands dirty -
