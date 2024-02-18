@@ -512,27 +512,30 @@ out of us.
 
 <div id="every-donate-btn">
   <a href="https://www.every.org/zig-software-foundation-inc?utm_campaign=2024_financials#/donate">Donate</a>
+  <script async defer src="https://embeds.every.org/0.4/button.js?explicit=1" id="every-donate-btn-js"></script>
   <script>
     function createWidget() {
       everyDotOrgDonateButton.createButton({
         selector: "#every-donate-btn",
         nonprofitSlug: "zig-software-foundation-inc",
-        fundraiserSlug: "help-zig-stay-indepe",
         fontSize: "32px",
         label: "Sponsor"
       });
       everyDotOrgDonateButton.createWidget({
         selector: "#every-donate-btn",
         nonprofitSlug: "zig-software-foundation-inc",
-        fundraiserSlug: "help-zig-stay-indepe",
         defaultDonationAmount: 10,
         defaultFrequency: 'monthly'
       });
+        // Workaround for https://github.com/everydotorg/donate-button/issues/384
+        let style = document.createElement('style');
+        style.innerHTML = '#donation-input { color: black; } #privateNote { color: black }';
+        document.getElementById("shadow-wrapper").shadowRoot.appendChild(style);
     }
     if (window.everyDotOrgDonateButton) {
       createWidget();
     } else {
-      document.getElementById("every-donate-btn-js-nav").addEventListener('load', createWidget);
+      document.getElementById("every-donate-btn-js").addEventListener('load', createWidget);
     }
   </script>
 </div>
