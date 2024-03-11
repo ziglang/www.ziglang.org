@@ -283,84 +283,40 @@ git push
 
 # Update autodocs and langref directly to S3 in order to prevent the
 # www.ziglang.org git repo from growing too big.
-
-# Please do not edit this script to pre-compress the artifacts before they hit
-# S3. This prevents the website from working on browsers that do not support gzip
-# encoding. Cloudfront will automatically compress files if they are less than
-# 9.5 MiB, and the client advertises itself as capable of decompressing.
-# The data.js file is currently 16 MiB. In order to fix this problem, we need to do
-# one of the following things:
-# * Reduce the size of data.js to less than 9.5 MiB.
-# * Figure out how to adjust the Cloudfront settings to increase the max size for
-#   auto-compressed objects.
-# * Migrate to fastly.
 DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
+
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$DOCDIR/langref.html" s3://ziglang.org/documentation/master/index.html
 
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/index.html" s3://ziglang.org/documentation/master/std/index.html
+# Cloudfront will automatically compress some kinds of files if they are less
+# than 9.5 MiB, and the client advertises itself as capable of decompressing.
+# Tar files are not included in this list unfortunately, and, there is no way
+# to change the settings in Cloudfront.
+#
+# Until we migrate to a different static website file hosting service, this logic
+# stores the files compressed on S3 with the gzip HTTP header hard-coded.
+gzip -c -9 "$DOCDIR/std/index.html"  > "$DOCDIR/std/index.html.gz"
+gzip -c -9 "$DOCDIR/std/main.js"     > "$DOCDIR/std/main.js.gz"
+gzip -c -9 "$DOCDIR/std/main.wasm"   > "$DOCDIR/std/main.wasm.gz"
+gzip -c -9 "$DOCDIR/std/sources.tar" > "$DOCDIR/std/sources.tar.gz"
 
 s3cmd put -P --no-mime-magic \
+  --add-header="Content-Encoding: gzip" \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/main.js" s3://ziglang.org/documentation/master/std/main.js
+  "$DOCDIR/std/index.html.gz" s3://ziglang.org/documentation/master/std/index.html
 
 s3cmd put -P --no-mime-magic \
+  --add-header="Content-Encoding: gzip" \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/ziglexer.js" s3://ziglang.org/documentation/master/std/ziglexer.js
-  
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/commonmark.js" s3://ziglang.org/documentation/master/std/commonmark.js
+  "$DOCDIR/std/main.js.gz" s3://ziglang.org/documentation/master/std/main.js
 
 s3cmd put -P --no-mime-magic \
+  --add-header="Content-Encoding: gzip" \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-typeKinds.js" s3://ziglang.org/documentation/master/std/data-typeKinds.js
+  "$DOCDIR/std/main.wasm.gz" s3://ziglang.org/documentation/master/std/main.wasm
 
 s3cmd put -P --no-mime-magic \
+  --add-header="Content-Encoding: gzip" \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-rootMod.js" s3://ziglang.org/documentation/master/std/data-rootMod.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-modules.js" s3://ziglang.org/documentation/master/std/data-modules.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-astNodes.js" s3://ziglang.org/documentation/master/std/data-astNodes.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-calls.js" s3://ziglang.org/documentation/master/std/data-calls.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-files.js" s3://ziglang.org/documentation/master/std/data-files.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-decls.js" s3://ziglang.org/documentation/master/std/data-decls.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-exprs.js" s3://ziglang.org/documentation/master/std/data-exprs.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-types.js" s3://ziglang.org/documentation/master/std/data-types.js
-  
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-comptimeExprs.js" s3://ziglang.org/documentation/master/std/data-comptimeExprs.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/data-guideSections.js" s3://ziglang.org/documentation/master/std/data-guideSections.js
-
-
-s3cmd put -P --no-mime-magic --recursive \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  -m "text/html" \
-  "$DOCDIR/std/src/" s3://ziglang.org/documentation/master/std/src/
+  "$DOCDIR/std/sources.tar.gz" s3://ziglang.org/documentation/master/std/sources.tar
