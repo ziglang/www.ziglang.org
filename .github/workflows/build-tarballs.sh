@@ -283,11 +283,14 @@ git push
 
 # Update autodocs and langref directly to S3 in order to prevent the
 # www.ziglang.org git repo from growing too big.
-DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
-
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$DOCDIR/langref.html" s3://ziglang.org/documentation/master/index.html
+
+# Standard library autodocs are intentionally excluded from tarballs of Zig but
+# we want to host them on the website.
+DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
+"$ZIG" build-obj -fno-emit-bin -femit-docs="$DOCDIR/std" "$BOOTSTRAP_SRC/zig/lib/std/std.zig"
 
 # Cloudfront will automatically compress some kinds of files if they are less
 # than 9.5 MiB, and the client advertises itself as capable of decompressing.
