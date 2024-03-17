@@ -4,6 +4,11 @@ mobile_menu_title: "Code Samples"
 toc: true
 ---
 
+## Calling external library functions
+All system API functions can be invoked this way, you do not need library bindings to interface them.
+
+{{< zigdoctest "assets/zig-code/samples/0-windows-msgbox.zig" >}}
+
 ## Memory leak detection
 Using `std.heap.GeneralPurposeAllocator` you can track double frees and memory leaks.
 
