@@ -1,11 +1,11 @@
 const std = @import("std");
 
-const url = "https://api.github.com/graphql";
-const env_key = "GH_TOKEN";
+// const url = "https://api.github.com/graphql";
+// const env_key = "GH_TOKEN";
 
 // For debugging with a local netcat:
-// const url = "http://localhost:3000";
-// const env_key = "TERM";
+const url = "http://localhost:3000";
+const env_key = "TERM";
 
 const github_endpoint = std.Uri.parse(url) catch unreachable;
 const gql_query = blk: {
@@ -110,18 +110,21 @@ pub fn main() !void {
         .endCursor = null,
     };
 
+    const header_buf = try gpa.allocator().alloc(u8, 4 * 1024 * 1024);
+    defer gpa.allocator().free(header_buf);
+
     while (current.hasNextPage) {
         std.debug.print(
             "starting request ({}, {?s})\n",
             .{ current.hasNextPage, current.endCursor },
         );
 
-        var headers = std.http.Headers.init(gpa.allocator());
-        defer headers.deinit();
-
-        try headers.append("Authorization", bearer);
-
-        var request = try gh.open(.POST, github_endpoint, headers, .{});
+        var request = try gh.open(.POST, github_endpoint, .{
+            .server_header_buffer = header_buf,
+            .extra_headers = &.{
+                .{ .name = "Authorization", .value = bearer },
+            },
+        });
         defer request.deinit();
         request.transfer_encoding = .chunked;
 
