@@ -1,11 +1,11 @@
 const std = @import("std");
 
-// const url = "https://api.github.com/graphql";
-// const env_key = "GH_TOKEN";
+const url = "https://api.github.com/graphql";
+const env_key = "GH_TOKEN";
 
 // For debugging with a local netcat:
-const url = "http://localhost:3000";
-const env_key = "TERM";
+// const url = "http://localhost:3000";
+// const env_key = "TERM";
 
 const github_endpoint = std.Uri.parse(url) catch unreachable;
 const gql_query = blk: {
