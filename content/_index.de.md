@@ -112,6 +112,6 @@ Dank der Sponsoren von Zig ist das Projekt der Open-Source-Gemeinschaft gegenüb
 
 {{< ghsponsors >}}
 
-Dieser Abschnitt wird zu Beginn jedes Monats aktualisiert.
+Dieser Abschnitt wird zu Beginn jeden Monats aktualisiert.
 {{% /div %}}
 {{< /div >}}
