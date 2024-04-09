@@ -121,7 +121,7 @@ Navigate to your projects directory and run:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init
+zig init-exe
 ```
 
 This should output:
