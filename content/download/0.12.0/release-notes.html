@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>0.12.0 Release Notes ⚡ The Zig Programming Language</title>
+    <link rel="icon" href="/favicon.png">
+    <link rel="icon" href="/favicon.svg">
+    <style>
+      :root{
+         --nav-width: 24em;
+         --nav-margin-l: 1em;
+      }
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+      header {
+        padding: 0 1em;
+      }
+      h1, h2, h3, h4, h5 {
+        margin: 0.5em 0 0.5em;
+        line-height: 1.2;
+        font-weight: bold;
+        clear: both;
+      }
+      h1, h2 { font-size: 2.0em; }
+      h3 { font-size: 1.5em; }
+      h4 { font-size: 1.25em; }
+      h5 { font-size: 1.0em; }
+      #contents {
+        max-width: 60em;
+        margin: auto;
+        padding: 0 1em;
+      }
+      #navigation {
+        padding: 0 1em;
+      }
+
+      @media screen and (min-width: 1025px) {
+        header {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+        header h1 {
+          margin: auto;
+          max-width: 30em;
+        }
+        #navigation {
+          overflow: auto;
+          width: var(--nav-width);
+          height: 100vh;
+          position: fixed;
+          top:0;
+          left:0;
+          bottom:0;
+          padding: unset;
+          margin-left: var(--nav-margin-l);
+        }
+        #navigation nav ul {
+          padding-left: 1em;
+        }
+        #contents-wrapper {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+    }
+
+    a:hover,a:focus {
+      background: #fff2a8;
+    }
+    dt {
+      font-weight: bold;
+    }
+    th, td {
+      padding: 0.6em;
+    }
+    tr:nth-child(even) {
+      background: #f2f3f3;
+    }
+    .t0_1, .t37, .t37_1 {
+      font-weight: bold;
+    }
+    .t2_0 {
+      color: #575757;
+    }
+    .t31_1 {
+      color: #b40000;
+    }
+    .t32_1 {
+      color: green;
+    }
+    .t36_1 {
+      color: #005C7A;
+    }
+    .file {
+      font-weight: bold;
+      border: unset;
+    }
+    code {
+      background: #f8f8f8;
+      border: 1px dotted silver;
+      padding-left: 0.3em;
+      padding-right: 0.3em;
+    }
+    pre > code {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    samp {
+      background: #fafafa;
+    }
+    pre > samp {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    kbd {
+      font-weight: bold;
+    }
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .tok-kw {
+        color: #333;
+        font-weight: bold;
+    }
+    .tok-str {
+        color: #d14;
+    }
+    .tok-builtin {
+        color: #005C7A;
+    }
+    .tok-comment {
+        color: #545454;
+        font-style: italic;
+    }
+    .tok-fn {
+        color: #900;
+        font-weight: bold;
+    }
+    .tok-null {
+        color: #005C5C;
+    }
+    .tok-number {
+        color: #005C5C;
+    }
+    .tok-type {
+        color: #458;
+        font-weight: bold;
+    }
+
+    figure {
+      margin: auto 0;
+    }
+    figure pre {
+      margin-top: 0;
+    }
+
+    figcaption {
+      padding-left: 0.5em;
+      font-size: small;
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+    figcaption.zig-cap {
+      background: #fcdba5;
+    }
+    figcaption.c-cap {
+      background: #a8b9cc;
+      color: #000;
+    }
+    figcaption.peg-cap {
+      background: #fcdba5;
+    }
+    figcaption.javascript-cap {
+      background: #365d95;
+      color: #fff;
+    }
+    figcaption.shell-cap {
+      background: #ccc;
+      color: #000;
+    }
+
+    aside {
+      border-left: 0.25em solid #f7a41d;
+      padding: 0 1em 0 1em;
+    }
+
+    h1 a, h2 a, h3 a, h4 a, h5 a {
+      text-decoration: none;
+      color: #333;
+    }
+
+    a.hdr {
+      visibility: hidden;
+    }
+    h1:hover > a.hdr, h2:hover > a.hdr, h3:hover > a.hdr, h4:hover > a.hdr, h5:hover > a.hdr {
+      visibility: visible;
+    }
+
+    pre {
+      counter-reset: line;
+    }
+    pre .line:before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      padding-right: 1em;
+      width: 2em;
+      text-align: right;
+      color: #999;
+    }
+    th pre code {
+        background: none;
+    }
+    th .line:before {
+        display: none;
+    }
+
+    #logo {
+      width: 100%;
+      height: 7em;
+      display: block;
+      background-image: url(https://ziglang.org/img/zig-logo-dark.svg);
+      background-repeat: no-repeat;
+    }
+
+    #stage2-progress-dark {
+      display: none;
+    }
+
+    .diff-red {
+      background-color: #ffaeae;
+      display: block;
+    }
+    .diff-green {
+      background-color: #bfb;
+      display: block;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body{
+          background:#121212;
+          color: #ccc;
+      }
+      a {
+          color: #88f;
+      }
+      a:hover,a:focus {
+          color: #000;
+      }
+      tr:nth-child(even) {
+        background: #1e1e1e;
+      }
+      .t2_0 {
+          color: grey;
+      }
+      .t31_1 {
+          color: red;
+      }
+      .t32_1 {
+          color: #00B800;
+      }
+      .t36_1 {
+          color: #0086b3;
+      }
+      code {
+        background: #222;
+        border-color: #444;
+      }
+      pre > code {
+          color: #ccc;
+          background: #222;
+          border: unset;
+      }
+      samp {
+        background: #000;
+        color: #ccc;
+      }
+      pre > samp {
+        border: unset;
+      }
+      .tok-kw {
+          color: #eee;
+      }
+      .tok-str {
+          color: #2e5;
+      }
+      .tok-builtin {
+          color: #ff894c;
+      }
+      .tok-comment {
+          color: #aa7;
+      }
+      .tok-fn {
+          color: #B1A0F8;
+      }
+      .tok-null {
+          color: #ff8080;
+      }
+      .tok-number {
+          color: #ff8080;
+      }
+      .tok-type {
+          color: #68f;
+      }
+      h1 a, h2 a, h3 a, h4 a, h5 a {
+          color: #aaa;
+      }
+      figcaption.zig-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.peg-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.shell-cap {
+        background: #2a2a2a;
+        color: #fff;
+      }
+      #logo {
+        background-image: url(https://ziglang.org/img/zig-logo-light.svg);
+      }
+      #stage2-progress-dark {
+        display: block;
+      }
+      #stage2-progress-light {
+        display: none;
+      }
+      .diff-red {
+        background-color: #410000;
+      }
+      .diff-green {
+        background-color: #002d00;
+      }
+    }
+  </style>
+  </head>
+  <body>
+    <div id="contents">
+    <a href="https://ziglang.org/"><span id="logo"></span></a>
+    <h1>0.12.0 Release Notes</h1>
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_1.svg" style="height: 18em; float: right">
+    <p>
+    <a href="https://ziglang.org/download/#release-0.12.0">Download &amp; Documentation</a>
+    </p>
+    <p>
+    Zig is a general-purpose programming language and toolchain for maintaining
+    <strong>robust</strong>, <strong>optimal</strong>, and <strong>reusable</strong> software.
+    </p>
+    <p>Zig development is funded via <a href="/zsf/">Zig Software Foundation</a>,
+    a 501(c)(3) non-profit organization. Please consider a recurring donation
+    so that we can offer more billable hours to our core team members. This is
+    the most straightforward way to accelerate the project along the
+    <a href="#Roadmap">Roadmap</a> to 1.0.</p>
+    <p>
+    This release features <strong>8 months of work</strong>:
+    changes from <strong>268 different contributors</strong>, spread among
+    <strong>3688 commits</strong>..</p>
+    <h2 id="Table-of-Contents"><a href="#toc-Table-of-Contents">Table of Contents</a> <a class="hdr" href="#Table-of-Contents">§</a></h2>
+
+    
+
+    <ul>
+        <li><a id="toc-Table-of-Contents" href="#Table-of-Contents">Table of Contents</a></li>
+        <li><a id="toc-Support-Table" href="#Support-Table">Support Table</a>
+        <ul>
+            <li><a id="toc-Tier-System" href="#Tier-System">Tier System</a>
+            <ul>
+                <li><a id="toc-Tier-1-Support" href="#Tier-1-Support">Tier 1 Support</a></li>
+                <li><a id="toc-Tier-2-Support" href="#Tier-2-Support">Tier 2 Support</a></li>
+                <li><a id="toc-Tier-3-Support" href="#Tier-3-Support">Tier 3 Support</a></li>
+                <li><a id="toc-Tier-4-Support" href="#Tier-4-Support">Tier 4 Support</a></li>
+            </ul></li>
+        </ul></li>
+        <li><a id="toc-Autodoc" href="#Autodoc">Autodoc</a></li>
+        <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a></li>
+        <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a></li>
+        <li><a id="toc-Build-System" href="#Build-System">Build System</a></li>
+        <li><a id="toc-Package-Management" href="#Package-Management">Package Management</a></li>
+        <li><a id="toc-Compiler" href="#Compiler">Compiler</a></li>
+        <li><a id="toc-Linker" href="#Linker">Linker</a></li>
+        <li><a id="toc-Bug-Fixes" href="#Bug-Fixes">Bug Fixes</a>
+        <ul>
+            <li><a id="toc-This-Release-Contains-Bugs" href="#This-Release-Contains-Bugs">This Release Contains Bugs</a></li>
+        </ul></li>
+        <li><a id="toc-Toolchain" href="#Toolchain">Toolchain</a>
+        <ul>
+            <li><a id="toc-LLVM-17" href="#LLVM-17">LLVM 17</a></li>
+            <li><a id="toc-musl-124" href="#musl-124">musl 1.2.4</a></li>
+            <li><a id="toc-glibc-238" href="#glibc-238">glibc 2.38</a></li>
+            <li><a id="toc-mingw-w64" href="#mingw-w64">mingw-w64</a></li>
+        </ul></li>
+        <li><a id="toc-Roadmap" href="#Roadmap">Roadmap</a></li>
+        <li><a id="toc-Thank-You-Contributors" href="#Thank-You-Contributors">Thank You Contributors!</a></li>
+        <li><a id="toc-Thank-You-Sponsors" href="#Thank-You-Sponsors">Thank You Sponsors!</a></li>
+    </ul>
+
+    
+
+    <h2 id="Support-Table"><a href="#toc-Support-Table">Support Table</a> <a class="hdr" href="#Support-Table">§</a></h2>
+
+    <h3 id="Tier-System"><a href="#toc-Tier-System">Tier System</a> <a class="hdr" href="#Tier-System">§</a></h3>
+
+    <p>
+    A green check mark (✅) indicates the target meets all the requirements for the
+    support tier. The other icons indicate what is <em>preventing the target from
+      reaching the support tier</em>. In other words, the icons are
+    <strong>to-do items</strong>. If you find any wrong data here please
+    <a href="https://github.com/ziglang/www.ziglang.org">submit a pull request</a>!
+    </p>
+    <h4 id="Tier-1-Support"><a href="#toc-Tier-1-Support">Tier 1 Support</a> <a class="hdr" href="#Tier-1-Support">§</a></h4>
+
+    <ul>
+      <li>Not only can Zig generate machine code for these targets, but the
+        <a href="#Standard-Library">Standard Library</a> cross-platform abstractions have implementations
+        for these targets.</li>
+      <li>The CI server automatically tests these targets on every commit to master
+        branch. The 🧪 icon means this target does not yet have CI test coverage.</li>
+      <li>The CI server automatically produces pre-built binaries for these targets,
+        on every commit to master, and updates
+        <a href="https://ziglang.org/download/">the download page</a> with links.
+        The 📦 icon means the download page is missing this target.
+      </li>
+      <li>These targets have debug info capabilities and therefore
+        produce stack traces on failed assertions.</li>
+      <li>libc is available for this target even when cross compiling.</li>
+      <li>All the behavior tests and applicable standard library tests pass for this target.
+          All language features are known to work correctly. Experimental features do not
+          count towards disqualifying an operating system or architecture from Tier 1.
+          The 🐛 icon means there are known <a href="#This-Release-Contains-Bugs">bugs</a> preventing
+          this target from reaching Tier 1.
+      </li>
+      <li>zig cc, zig c++, and related toolchain commands support
+        this target.</li>
+      <li>If the Operating System is proprietary then the target is not marked deprecated
+        by the vendor. The 💀 icon means the OS is officially deprecated,
+        <a href="https://support.apple.com/en-us/HT208436">such as macos/x86</a>.</li>
+    </ul>
+    <table>
+    <thead>
+    <tr>
+    <th></th>
+    <th>freestanding</th>
+    <th>Linux 3.16+</th>
+    <th>macOS 11+</th>
+    <th>Windows 10+</th>
+    <th>WASI</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>x86_64</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>x86</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/1929">#1929</a> 🐛</td>
+    <td>💀</td>
+    <td><a href="https://github.com/ziglang/zig/issues/537">#537</a> 🐛</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>aarch64</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/2443">#2443</a> 🐛</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/16665">#16665</a> 🐛</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>arm</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/3174">#3174</a> 🐛</td>
+    <td>💀</td>
+    <td>🐛📦🧪</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>mips</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/3345">#3345</a> 🐛📦</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>riscv64</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/4456">#4456</a> 🐛</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>sparc64</td>
+    <td>✅</td>
+    <td><a href="https://github.com/ziglang/zig/issues/4931">#4931</a> 🐛📦🧪</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc64</td>
+    <td>✅</td>
+    <td>🐛</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc</td>
+    <td>✅</td>
+    <td>🐛</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>wasm32</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>✅</td>
+    </tr>
+    </tbody>
+    </table>
+    
+
+    <h4 id="Tier-2-Support"><a href="#toc-Tier-2-Support">Tier 2 Support</a> <a class="hdr" href="#Tier-2-Support">§</a></h4>
+
+    <ul>
+    <li>The <a href="#Standard-Library">Standard Library</a> supports this target, but it is possible that some
+      APIs will give an "Unsupported OS" compile error. One can link with libc or other
+      libraries to fill in the gaps in the standard library. The 📖 icon means the
+      standard library is too incomplete to be considered Tier 2 worthy.</li>
+    <li>These targets are known to work, but may not be automatically tested, so there
+      are occasional regressions. 🔍 means that nobody has really looked into this target
+      so whether or not it works is unknown.</li>
+    <li>Some tests may be disabled for these targets as we work toward
+      <a href="#Tier-1-Support">Tier 1 Support</a>.</li>
+    </ul>
+    <table>
+    <thead>
+    <tr>
+    <th></th>
+    <th>free standing</th>
+    <th>Linux 3.16+</th>
+    <th>macOS 11+</th>
+    <th>Windows 10+</th>
+    <th>FreeBSD 12.0+</th>
+    <th>NetBSD 8.0+</th>
+    <th>Dragon FlyBSD 5.8+</th>
+    <th>OpenBSD 7.3+</th>
+    <th>UEFI</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>x86_64</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    </tr>
+    <tr>
+    <td>x86</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>✅</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>✅</td>
+    </tr>
+    <tr>
+    <td>aarch64</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    </tr>
+    <tr>
+    <td>arm</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    </tr>
+    <tr>
+    <td>mips64</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>mips</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc64</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>powerpc</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>💀</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    </tr>
+    <tr>
+    <td>riscv64</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    </tr>
+    <tr>
+    <td>sparc64</td>
+    <td><a href="#Tier-1-Support">Tier 1</a></td>
+    <td>✅</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    <td>🔍</td>
+    <td>N/A</td>
+    </tr>
+    </tbody>
+    </table>
+    
+
+    <h4 id="Tier-3-Support"><a href="#toc-Tier-3-Support">Tier 3 Support</a> <a class="hdr" href="#Tier-3-Support">§</a></h4>
+
+    <ul>
+    <li>The standard library has little to no knowledge of the existence of this
+        target.</li>
+    <li>If this target is provided by LLVM, LLVM has the target enabled by default.</li>
+    <li>These targets are not frequently tested; one will likely need to contribute
+      to Zig in order to build for these targets.</li>
+    <li>The Zig compiler might need to be updated with a few things such as<ul>
+       <li>what sizes are the C integer types</li>
+       <li>C ABI calling convention for this target</li>
+       <li>start code and default panic handler</li>
+      </ul></li>
+     <li><code>zig targets</code> is guaranteed to include this target.</li>
+    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>freestanding</th>
+          <th>Linux 3.16+</th>
+          <th>Windows 10+</th>
+          <th>FreeBSD 12.0+</th>
+          <th>NetBSD 8.0+</th>
+          <th>UEFI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>x86_64</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+        </tr>
+        <tr>
+          <td>x86</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+        </tr>
+        <tr>
+          <td>aarch64</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>arm</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>mips64</td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>mips</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>riscv64</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>powerpc32</td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>powerpc64</td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td><a href="#Tier-2-Support">Tier 2</a></td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>bpf</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>hexagon</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>amdgcn</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>sparc</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>s390x</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>lanai</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>csky</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>freestanding</th>
+          <th>emscripten</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>wasm32</td>
+          <td><a href="#Tier-1-Support">Tier 1</a></td>
+          <td>✅</td>
+        </tr>
+      </tbody>
+    </table>
+    
+
+    <h4 id="Tier-4-Support"><a href="#toc-Tier-4-Support">Tier 4 Support</a> <a class="hdr" href="#Tier-4-Support">§</a></h4>
+
+    <ul>
+      <li>Support for these targets is entirely experimental.</li>
+      <li>If this target is provided by LLVM, LLVM may have the target as an
+        experimental target, which means that you need to use Zig-provided binaries
+        for the target to be available, or build LLVM from source with special configure flags.
+        <code>zig targets</code> will display the target if it is available.</li>
+      <li>This target may be considered deprecated by an official party, in
+        which case this target will remain forever stuck in Tier 4.</li>
+      <li>This target may only support <code>-femit-asm</code> and cannot emit
+        object files, in which case <code>-fno-emit-bin</code> is enabled by
+        default and cannot be overridden.</li>
+    </ul>
+    <p>Tier 4 targets:</p>
+    <ul style="columns: 3">
+      <li>avr</li>
+      <li>riscv32</li>
+      <li>xcore</li>
+      <li>nvptx</li>
+      <li>msp430</li>
+      <li>r600</li>
+      <li>arc</li>
+      <li>tce</li>
+      <li>le</li>
+      <li>amdil</li>
+      <li>hsail</li>
+      <li>spir</li>
+      <li>kalimba</li>
+      <li>shave</li>
+      <li>renderscript</li>
+      <li>32-bit x86 macOS, 32-bit ARM macOS, powerpc32 and powerpc64 macOS, because
+        <a href="https://support.apple.com/en-us/HT208436">Apple has officially dropped support for them</a>.</li>
+    </ul>
+    
+    
+    
+
+    <h2 id="Autodoc"><a href="#toc-Autodoc">Autodoc</a> <a class="hdr" href="#Autodoc">§</a></h2>
+
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_4.svg" style="height: 13em; float: right">
+    
+
+    <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
+
+    
+
+    <h2 id="Standard-Library"><a href="#toc-Standard-Library">Standard Library</a> <a class="hdr" href="#Standard-Library">§</a></h2>
+
+    
+
+    <h2 id="Build-System"><a href="#toc-Build-System">Build System</a> <a class="hdr" href="#Build-System">§</a></h2>
+
+    
+
+    <h2 id="Package-Management"><a href="#toc-Package-Management">Package Management</a> <a class="hdr" href="#Package-Management">§</a></h2>
+
+    
+
+    <h2 id="Compiler"><a href="#toc-Compiler">Compiler</a> <a class="hdr" href="#Compiler">§</a></h2>
+
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+    
+
+    <h2 id="Linker"><a href="#toc-Linker">Linker</a> <a class="hdr" href="#Linker">§</a></h2>
+
+    
+
+    <h2 id="Bug-Fixes"><a href="#toc-Bug-Fixes">Bug Fixes</a> <a class="hdr" href="#Bug-Fixes">§</a></h2>
+
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.12.0">Full list of the 502 bug reports closed during this release cycle</a>.</p>
+    <p>Many bugs were both introduced and resolved within this release cycle.
+    Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+    <h3 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h3>
+
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
+    <p>
+    Zig has
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>
+    and even some
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Amiscompilation">miscompilations</a>.
+    </p>
+    <p>Zig is immature. Even with Zig 0.12.0, working on a non-trivial project using Zig will
+    likely require participating in the development process.</p>
+    <p>When Zig reaches 1.0.0, <a href="#Tier-1-Support">Tier 1 Support</a> will gain a bug policy as an additional
+    requirement.</p>
+    
+    
+
+    <h2 id="Toolchain"><a href="#toc-Toolchain">Toolchain</a> <a class="hdr" href="#Toolchain">§</a></h2>
+
+    <h3 id="LLVM-17"><a href="#toc-LLVM-17">LLVM 17</a> <a class="hdr" href="#LLVM-17">§</a></h3>
+
+    <p>This release of Zig upgrades to
+    <a href="http://releases.llvm.org/16.0.0/docs/ReleaseNotes.html">LLVM 17.0.6</a>.</p>
+    <p>Zig now generates LLVM bitcode module files directly and then passes those to LLVM. This
+    means that a Zig compiler built without LLVM libraries can still produce <code>.bc</code> files,
+    which can then be passed to clang for compilation.</p>
+    
+
+    <h3 id="musl-124"><a href="#toc-musl-124">musl 1.2.4</a> <a class="hdr" href="#musl-124">§</a></h3>
+
+    <p>Although musl v1.2.5 is now available upstream, this version of Zig
+    continues to provide v1.2.4. The next release of Zig is expected to have
+    the updated musl.</p>
+    
+
+    <h3 id="glibc-238"><a href="#toc-glibc-238">glibc 2.38</a> <a class="hdr" href="#glibc-238">§</a></h3>
+
+    <p>glibc versions 2.35, 2.36, 2.37, and 2.38 are now available when cross-compiling.</p>
+    
+
+    <h3 id="mingw-w64"><a href="#toc-mingw-w64">mingw-w64</a> <a class="hdr" href="#mingw-w64">§</a></h3>
+
+    <p>Based on a suggestion from <a
+    href="https://github.com/sponsors/mstorsjo">Martin Storsjö</a>, Zig now
+    tracks the latest master branch commit of mingw-w64.</p>
+    
+    
+
+    <h2 id="Roadmap"><a href="#toc-Roadmap">Roadmap</a> <a class="hdr" href="#Roadmap">§</a></h2>
+
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right; transform: scaleX(-1)">
+
+    <p>The major theme of the 0.13.0 release cycle will be <strong>compilation speed</strong>.</p>
+
+    TODO
+    
+
+    <h2 id="Thank-You-Contributors"><a href="#toc-Thank-You-Contributors">Thank You Contributors!</a> <a class="hdr" href="#Thank-You-Contributors">§</a></h2>
+
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em; float: right">
+    <p>Here are all the people who landed at least one contribution into this release:</p>
+    <ul style="columns: 3">
+<li>Andrew Kelley</li>
+<li>Jakub Konka</li>
+<li>Jacob Young</li>
+<li>Matthew Lugg</li>
+<li>Robin Voetter</li>
+<li>Igor Anić</li>
+<li>Ryan Liptak</li>
+<li>Veikka Tuominen</li>
+<li>antlilja</li>
+<li>Carl Åstholm</li>
+<li>Luuk de Gram</li>
+<li>Michael Dusan</li>
+<li>Dominic</li>
+<li>Krzysztof Wolicki</li>
+<li>Casey Banner</li>
+<li>Ali Chraghi</li>
+<li>Nameless</li>
+<li>Ian Johnson</li>
+<li>David Rubin</li>
+<li>Meghan Denny</li>
+<li>Marc Tiehuis</li>
+<li>Techatrix</li>
+<li>Xavier Bouchoux</li>
+<li>Bogdan Romanyuk</li>
+<li>Pat Tullmann</li>
+<li>Frank Denis</li>
+<li>Tristan Ross</li>
+<li>Loris Cro</li>
+<li>Stephen Gregoratto</li>
+<li>xdBronch</li>
+<li>Evan Haas</li>
+<li>John Schmidt</li>
+<li>Ryan Zezeski</li>
+<li>expikr</li>
+<li>Elaine Gibson</li>
+<li>MrDmitry</li>
+<li>e4m2</li>
+<li>Adam Goertz</li>
+<li>Jan Philipp Hafer</li>
+<li>Jay Petacat</li>
+<li>Jonathan Marler</li>
+<li>Travis Staloch</li>
+<li>Wooster</li>
+<li>XXIV</li>
+<li>joadnacer</li>
+<li>Jae B</li>
+<li>Kai Jellinghaus</li>
+<li>Linus Groh</li>
+<li>frmdstryr</li>
+<li>Garrett Beck</li>
+<li>Josh Wolfe</li>
+<li>Karl Seguin</li>
+<li>Sahnvour</li>
+<li>february cozzocrea</li>
+<li>fn ⌃ ⌥</li>
+<li>Carter Snook</li>
+<li>Eric Joldasov</li>
+<li>Erik Arvstedt</li>
+<li>Gordon Cassie</li>
+<li>HydroH</li>
+<li>JustinWayland</li>
+<li>Lucas Santos</li>
+<li>Luis Cáceres</li>
+<li>Motiejus Jakštys</li>
+<li>Nguyễn Gia Phong</li>
+<li>Paul Berg</li>
+<li>Pavel Verigo</li>
+<li>Piotr Szlachciak</li>
+<li>Prokop Randáček</li>
+<li>Ratakor</li>
+<li>Stevie Hryciw</li>
+<li>SuperAuguste</li>
+<li>Zachary Raineri</li>
+<li>amp-59</li>
+<li>garrisonhh</li>
+<li>Alex Kladov</li>
+<li>Ben Crist</li>
+<li>Eric Eastwood</li>
+<li>Jan200101</li>
+<li>Jari Vetoniemi</li>
+<li>Jeremy Volkman</li>
+<li>Kang Seonghoon</li>
+<li>Manlio Perillo</li>
+<li>Markus F.X.J. Oberhumer</li>
+<li>Michael Ortmann</li>
+<li>Pascal S. de Kloe</li>
+<li>Philipp Lühmann</li>
+<li>Ruben Dimas</li>
+<li>Sean</li>
+<li>Tobias Simetsreiter</li>
+<li>Tom Read Cutting</li>
+<li>Tw</li>
+<li>Vlad Pănăzan</li>
+<li>cipharius</li>
+<li>jimying</li>
+<li>nikneym</li>
+<li>none</li>
+<li>ocrap7</li>
+<li>riverbl</li>
+<li>snoire</li>
+<li>tjog</li>
+<li>xEgoist</li>
+<li>Abhinav Gupta</li>
+<li>Adrià Arrufat</li>
+<li>Ahmed</li>
+<li>Alex</li>
+<li>Alexander Heinrich</li>
+<li>AlliedEnvy</li>
+<li>Ambareesh "Amby" Balaji</li>
+<li>Amir Alawi</li>
+<li>Andre Herbst</li>
+<li>Andre Weissflog</li>
+<li>Andreas Herrmann</li>
+<li>Anubhab Ghosh</li>
+<li>Arnau</li>
+<li>Artem Kolichenkov</li>
+<li>Aven Bross</li>
+<li>Banacial</li>
+<li>Becker A</li>
+<li>Ben Sinclair</li>
+<li>Brandon Black</li>
+<li>Brandon Botsch</li>
+<li>CPestka</li>
+<li>Chadwain Holness</li>
+<li>Chris Boesch</li>
+<li>Chris Burgess</li>
+<li>Christian Flicker</li>
+<li>Christiano Haesbaert</li>
+<li>Christofer Nolander</li>
+<li>Constantin Bilz</li>
+<li>Constantin Pestka</li>
+<li>Craig O'Connor</li>
+<li>Curtis Tate Wilkinson</li>
+<li>Daniel A.C. Martin</li>
+<li>Daniel Guzman</li>
+<li>David Gonzalez Martin</li>
+<li>DilithiumNitrate</li>
+<li>Dillen Meijboom</li>
+<li>DraagrenKirneh</li>
+<li>Emil Lerch</li>
+<li>Emil Tywoniak</li>
+<li>F3real</li>
+<li>Federico Stra</li>
+<li>Felix Kollmann</li>
+<li>Gregory Anders</li>
+<li>Gregory Mullen</li>
+<li>Guillaume Wenzek</li>
+<li>Gustavo C. Viegas</li>
+<li>Hashi364</li>
+<li>Hong Shick Pak</li>
+<li>Ian Kerins</li>
+<li>Igor Sadikov</li>
+<li>IntegratedQuantum</li>
+<li>Jacob G-W</li>
+<li>James Chen-Smith</li>
+<li>Jan Weidner</li>
+<li>Jeremia Dominguez</li>
+<li>Jiacai Liu</li>
+<li>Jim Calabro</li>
+<li>Joachim Schmidt</li>
+<li>Joel Gustafson</li>
+<li>Johan Jansson</li>
+<li>John Benediktsson</li>
+<li>Jordyfel</li>
+<li>Justus Klausecker</li>
+<li>Kamil T</li>
+<li>Karl Böhlmark</li>
+<li>Khang Nguyen Duy</li>
+<li>Kirk Scheibelhut</li>
+<li>Koakuma</li>
+<li>Lateef Jackson</li>
+<li>Lauri Tirkkonen</li>
+<li>Lee Cannon</li>
+<li>Leo Emar-Kar</li>
+<li>Leonardo Gatti</li>
+<li>Lewis Gaul</li>
+<li>LinuxUserGD</li>
+<li>Littleote</li>
+<li>Liviu Dudau</li>
+<li>LordMZTE</li>
+<li>Luca Ivaldi</li>
+<li>Lucas Culverhouse</li>
+<li>Maciej 'vesim' Kuliński</li>
+<li>Marcius</li>
+<li>Mason Remaley</li>
+<li>Matt Knight</li>
+<li>Matthew Wozniak</li>
+<li>Maximilian</li>
+<li>Michael Bradshaw</li>
+<li>Michael Lynch</li>
+<li>Michael Pfaff</li>
+<li>Michael Scott</li>
+<li>Michal Ziulek</li>
+<li>Mikko Kaihlavirta</li>
+<li>Minsoo Choo</li>
+<li>Mustafa Uzun</li>
+<li>Naboris</li>
+<li>Nan Zhong</li>
+<li>Niles Salter</li>
+<li>Nitin Prakash</li>
+<li>OK Ryoko</li>
+<li>PanSashko</li>
+<li>Paul Jimenez</li>
+<li>PauloCampana</li>
+<li>Peng He</li>
+<li>Phil Richards</li>
+<li>Prcuvu</li>
+<li>Purrie</li>
+<li>Pyry Kovanen</li>
+<li>Qusai Hroub</li>
+<li>Rafael Fernández López</li>
+<li>Rahul Prabhu</li>
+<li>Reokodoku</li>
+<li>Robinson Collado</li>
+<li>Roman Frołow</li>
+<li>Ryan Barth</li>
+<li>Samuel Fiedler</li>
+<li>Samuel Nevarez</li>
+<li>Scott Schwarz</li>
+<li>Sebastien Marie</li>
+<li>Simon Brown</li>
+<li>Stefan Su</li>
+<li>Stephen Gutekanst</li>
+<li>Tim Culverhouse</li>
+<li>Tobias Simetsreiter</li>
+<li>Tomasz Lisowski</li>
+<li>Vitalijus Valantiejus</li>
+<li>Winter</li>
+<li>andrewkraevskii</li>
+<li>arbrk1</li>
+<li>bfredl</li>
+<li>binarycraft007</li>
+<li>castholm</li>
+<li>cdrmack</li>
+<li>cfillion</li>
+<li>crayon</li>
+<li>cryptocode</li>
+<li>danielsan901998</li>
+<li>davideger</li>
+<li>dbandstra</li>
+<li>dhash</li>
+<li>dundargoc</li>
+<li>emberfade</li>
+<li>hdert</li>
+<li>iwVerve</li>
+<li>jacwil</li>
+<li>jaina heartles</li>
+<li>jd</li>
+<li>leap123</li>
+<li>lockbox</li>
+<li>loris</li>
+<li>mataha</li>
+<li>melonedo</li>
+<li>mllken</li>
+<li>ndbn</li>
+<li>notcancername</li>
+<li>pancelor</li>
+<li>paoda</li>
+<li>radar roark</li>
+<li>regeliv</li>
+<li>salo-dea</li>
+<li>sammy j</li>
+<li>tinusgraglin</li>
+<li>tison</li>
+<li>vinnichase</li>
+<li>yunsh1</li>
+<li>zhylmzr</li>
+<li>Андрей Краевский</li>
+    </ul>
+    
+
+    <h2 id="Thank-You-Sponsors"><a href="#toc-Thank-You-Sponsors">Thank You Sponsors!</a> <a class="hdr" href="#Thank-You-Sponsors">§</a></h2>
+
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 18em">
+    <p>
+    Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
+    Because of recurring donations, Zig is driven by the open source community, rather
+    than the goal of making profit. In particular, these fine folks sponsor Zig
+    for $50/month or more:
+    </p>
+    <ul style="columns: 3">
+    TODO
+    </ul>
+    
+    </div>
+  </body>
+</html>
