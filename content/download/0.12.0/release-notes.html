@@ -363,7 +363,7 @@
     <p>
     This release features <strong>8 months of work</strong>:
     changes from <strong>268 different contributors</strong>, spread among
-    <strong>3688 commits</strong>..</p>
+    <strong>3688 commits</strong>.</p>
     <h2 id="Table-of-Contents"><a href="#toc-Table-of-Contents">Table of Contents</a> <a class="hdr" href="#Table-of-Contents">§</a></h2>
 
     
@@ -381,7 +381,14 @@
             </ul></li>
         </ul></li>
         <li><a id="toc-Autodoc" href="#Autodoc">Autodoc</a></li>
-        <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a></li>
+        <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
+        <ul>
+            <li><a id="toc-Unnecessary-Use-of-var" href="#Unnecessary-Use-of-var">Unnecessary Use of var</a></li>
+            <li><a id="toc-Result-Location-Semantics" href="#Result-Location-Semantics">Result Location Semantics</a></li>
+            <li><a id="toc-Aggregate-Destructuring" href="#Aggregate-Destructuring">Aggregate Destructuring</a></li>
+            <li><a id="toc-Namespace-Type-Equivalence" href="#Namespace-Type-Equivalence">Namespace Type Equivalence</a></li>
+            <li><a id="toc-Comptime-Memory-Changes" href="#Comptime-Memory-Changes">Comptime Memory Changes</a></li>
+        </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a></li>
         <li><a id="toc-Package-Management" href="#Package-Management">Package Management</a></li>
@@ -389,6 +396,7 @@
         <li><a id="toc-Linker" href="#Linker">Linker</a></li>
         <li><a id="toc-Bug-Fixes" href="#Bug-Fixes">Bug Fixes</a>
         <ul>
+            <li><a id="toc-Comptime-Pointer-Access" href="#Comptime-Pointer-Access">Comptime Pointer Access</a></li>
             <li><a id="toc-This-Release-Contains-Bugs" href="#This-Release-Contains-Bugs">This Release Contains Bugs</a></li>
         </ul></li>
         <li><a id="toc-Toolchain" href="#Toolchain">Toolchain</a>
@@ -926,10 +934,282 @@
     <h2 id="Autodoc"><a href="#toc-Autodoc">Autodoc</a> <a class="hdr" href="#Autodoc">§</a></h2>
 
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_4.svg" style="height: 13em; float: right">
+    <p>Zig 0.12.0 features <a href="https://github.com/ziglang/zig/pull/19208">a complete rewrite</a> of the Autodoc
+    documentation generation system. The generated documentation is now far more robust, quicker to generate, and has a
+    smaller filesize.</p>
+    <p>Zig 0.11.0 shipped with a <code>docs/std/</code> directory which contained the generated documentation for the
+    Zig Standard Libarary. This directory does not exist in the Zig 0.12.0 release. Instead, running the command
+    <code>zig std</code> will host the standard library documentation locally and automatically spawn a browser window
+    to view it. This makes the Zig installation 15% smaller, and the new documentation is generated lazily by the hosted
+    documentation site itself, so there is no need to wait for the docs to build.</p>
+    <p>The strategy for generating documentation on the CLI and in build
+    scripts is unchanged: use the <code>-femit-docs</code> CLI option or the <code>getEmittedDocs</code> method on
+    <code>std.Build.Step.Compile</code>.
     
 
     <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
 
+    <h3 id="Unnecessary-Use-of-var"><a href="#toc-Unnecessary-Use-of-var">Unnecessary Use of var</a> <a class="hdr" href="#Unnecessary-Use-of-var">§</a></h3>
+
+    <p>Zig 0.12.0 introduces a new compile error which is emitted when a local variable is declared as
+    a <code><span class="tok-kw">var</span></code>, but the compiler can infer that <code><span class="tok-kw">const</span></code> would suffice.</p>
+<figure><figcaption class="zig-cap"><cite class="file">unnecessary_var.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> expectEqual = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expectEqual;
+<span class="tok-kw">test</span> <span class="tok-str">&quot;unnecessary use of var&quot;</span> {
+    <span class="tok-kw">var</span> x: <span class="tok-type">u32</span> = <span class="tok-number">123</span>;
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">123</span>, x);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test unnecessary_var.zig</kbd>
+<span class="sgr-1m">docgen_tmp/unnecessary_var.zig:3:9: </span><span class="sgr-31m">error: </span><span class="sgr-1m">local variable is never mutated
+</span>    var x: u32 = 123;
+        <span class="sgr-32m">^
+</span><span class="sgr-1m">docgen_tmp/unnecessary_var.zig:3:9: </span><span class="sgr-36m">note: </span><span class="sgr-1m">consider using 'const'
+</span>
+</samp></pre></figure>
+    <p>As indicated by the error message, the solution is simple: use <code><span class="tok-kw">const</span></code> instead
+    where applicable.</p>
+    
+    <h3 id="Result-Location-Semantics"><a href="#toc-Result-Location-Semantics">Result Location Semantics</a> <a class="hdr" href="#Result-Location-Semantics">§</a></h3>
+
+    <p>Zig 0.12.0 contains several enhancements to Result Location Semantics (RLS).</p>
+    <p>This release implements forwarding of result types through the address-of operator (<code>&</code>). This allows
+    syntactic constructs which rely on result types, such as anonymous initializations <code>.{ ... }</code>
+    and casting builtins like <code><span class="tok-builtin">@intCast</span></code>, to function correctly in the presence of the
+    address-of operator:</p>
+<figure><figcaption class="zig-cap"><cite class="file">address_of_rls.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> { x: <span class="tok-type">u32</span> };
+<span class="tok-kw">const</span> int: <span class="tok-type">u64</span> = <span class="tok-number">123</span>;
+<span class="tok-kw">const</span> val: *<span class="tok-kw">const</span> S = &amp;.{ .x = <span class="tok-builtin">@intCast</span>(int) };
+<span class="tok-kw">comptime</span> {
+    _ = val;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test address_of_rls.zig</kbd>
+All 0 tests passed.
+</samp></pre></figure>
+    <p>In addition, Zig 0.12.0 removes the ability for result <i>locations</i> to propagate through <code><span class="tok-builtin">@as</span></code>
+    and explicitly-typed aggregate initializations <code>T{ ... }</code>. This restriction is in place to
+    simplify the language design: previous releases contained several bugs relating to incorrect casting of result pointers.</p>
+    
+    <h3 id="Aggregate-Destructuring"><a href="#toc-Aggregate-Destructuring">Aggregate Destructuring</a> <a class="hdr" href="#Aggregate-Destructuring">§</a></h3>
+
+    <p>Zig 0.12.0 introduces a new syntax to allow destructuring indexable aggregates: that is, tuples, vectors, and arrays.
+    Writing a sequence of lvalues or local variable declarations on the left-hand side of the assignment will attempt to
+    destructure the value specified on the right-hand side:</p>
+<figure><figcaption class="zig-cap"><cite class="file">destructure.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> assert = std.debug.assert;
+<span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;
+<span class="tok-kw">test</span> <span class="tok-str">&quot;destructure array&quot;</span> {
+    <span class="tok-kw">var</span> z: <span class="tok-type">u32</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-kw">const</span> x, <span class="tok-kw">var</span> y, z = [<span class="tok-number">3</span>]<span class="tok-type">u32</span>{ <span class="tok-number">1</span>, <span class="tok-number">2</span>, <span class="tok-number">3</span> };
+    y += <span class="tok-number">10</span>;
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">1</span>, x);
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">12</span>, y);
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">3</span>, z);
+}
+<span class="tok-kw">test</span> <span class="tok-str">&quot;destructure vector&quot;</span> {
+    <span class="tok-comment">// Comptime-known values are propagated as you would expect.</span>
+    <span class="tok-kw">const</span> x, <span class="tok-kw">const</span> y = <span class="tok-builtin">@Vector</span>(<span class="tok-number">2</span>, <span class="tok-type">u32</span>){ <span class="tok-number">1</span>, <span class="tok-number">2</span> };
+    <span class="tok-kw">comptime</span> assert(x == <span class="tok-number">1</span>);
+    <span class="tok-kw">comptime</span> assert(y == <span class="tok-number">2</span>);
+}
+<span class="tok-kw">test</span> <span class="tok-str">&quot;destructure tuple&quot;</span> {
+    <span class="tok-kw">var</span> runtime: <span class="tok-type">u32</span> = <span class="tok-null">undefined</span>;
+    runtime = <span class="tok-number">123</span>;
+    <span class="tok-kw">const</span> x, <span class="tok-kw">const</span> y = .{ <span class="tok-number">42</span>, runtime };
+    <span class="tok-comment">// The first tuple field is a `comptime` field, so `x` is comptime-known even</span>
+    <span class="tok-comment">// though `y` is runtime-known.</span>
+    <span class="tok-kw">comptime</span> assert(x == <span class="tok-number">42</span>);
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">123</span>, y);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test destructure.zig</kbd>
+1/3 destructure.test.destructure array... OK
+2/3 destructure.test.destructure vector... OK
+3/3 destructure.test.destructure tuple... OK
+All 3 tests passed.
+</samp></pre></figure>
+    <p>Slices cannot be directly destructured. To destructure values from a slice, convert it to an array by slicing
+    with comptime-known bounds, such as <code>slice[<span class="tok-number">0</span>..<span class="tok-number">3</span>].*</code>.</p>
+    
+    <h3 id="Namespace-Type-Equivalence"><a href="#toc-Namespace-Type-Equivalence">Namespace Type Equivalence</a> <a class="hdr" href="#Namespace-Type-Equivalence">§</a></h3>
+
+    <p>In Zig, <code>struct</code>, <code>enum</code>, <code>union</code>, and <code>opaque</code> types are special. They
+    do not use structural equivalence, like tuples and arrays do; instead, they create distinct types. These types have
+    namespaces, and thus may contain declarations. For this reason, they can be referred to collectively as "namespace
+    types".</p>
+    <p>In 0.11.0, every time a declaration of such a type was semantically analyzed, a new type was created. Equivalence of
+    generic types was handled via memoization of comptime function calls; i.e.
+    <code>std.ArrayList(u8) == std.ArrayList(u8)</code> held because the <code>ArrayList</code> function was only called
+    once, and its results memoized.</p>
+    <p>In 0.12.0, this has changed. Namespace types are now deduplicated based on two factors: their source location, and
+    their captures.</p>
+    <p>The "captures" of a type refers to the set of comptime-known types and values which it closes over. In other words,
+    it is the set of values referenced within the type but declared outside of it. For instance, the
+    <code>comptime T: type</code> parameter of <code>std.ArrayList</code> is captured by the type it returns. If two
+    namespace types are declared by the same piece of code and have the same captures, they are now considered to be
+    precisely the same type.</p>
+    <p>Note that the compiler will still memoize comptime calls: that hasn't changed. However, this memoization no longer
+    has a meaningful impact on language semantics.</p>
+    <p>It is unlikely that this change will cause breakage in existing code. The most likely scenario where it could is
+    something like the following:</p>
+<figure><figcaption class="zig-cap"><cite class="file">opaque_generator.zig</cite></figcaption><pre><code><span class="tok-kw">fn</span> <span class="tok-fn">MakeOpaque</span>(<span class="tok-kw">comptime</span> n: <span class="tok-type">comptime_int</span>) <span class="tok-type">type</span> {
+    _ = n;
+    <span class="tok-kw">return</span> <span class="tok-kw">opaque</span> {};
+}
+<span class="tok-kw">const</span> A = MakeOpaque(<span class="tok-number">0</span>);
+<span class="tok-kw">const</span> B = MakeOpaque(<span class="tok-number">1</span>);</code></pre></figure>
+    <p>In Zig 0.11.0, this code would create two distinct types, because the calls to <code>MakeOpaque</code> are distinct
+    and thus the <code>opaque</code> declaration was analyzed separately for each call. In Zig 0.12.0, these types are
+    identical (<code>A == B</code>), because while the function is called twice, the declaration does not capture any
+    value.</p>
+    <p>This code can be fixed by forcing the type declaration to capture <code>n</code>:</p>
+<figure><figcaption class="zig-cap"><cite class="file">opaque_generator.zig</cite></figcaption><pre><code><span class="tok-kw">fn</span> <span class="tok-fn">MakeOpaque</span>(<span class="tok-kw">comptime</span> n: <span class="tok-type">comptime_int</span>) <span class="tok-type">type</span> {
+    <span class="tok-kw">return</span> <span class="tok-kw">opaque</span> {
+        <span class="tok-kw">comptime</span> {
+            _ = n;
+        }
+    };
+}
+<span class="tok-kw">const</span> A = MakeOpaque(<span class="tok-number">0</span>);
+<span class="tok-kw">const</span> B = MakeOpaque(<span class="tok-number">1</span>);</code></pre></figure>
+    <p>Since <code>n</code> is referenced within the <code>opaque</code> declaration, this code creates two distinct types.</p>
+    
+
+    <h3 id="Comptime-Memory-Changes"><a href="#toc-Comptime-Memory-Changes">Comptime Memory Changes</a> <a class="hdr" href="#Comptime-Memory-Changes">§</a></h3>
+
+    <p>Zig 0.12.0 overhauls the compiler's internal representation of comptime memory, and more specifically
+    comptime-mutable memory (i.e. <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code>). This overhaul comes with some user-facing
+    changes in the form of new restrictions on what you can do with a <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code>.</p>
+    <p>The first, and most significant, new rule is that a pointer to a <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code> is never
+    allowed to become runtime-known. For instance, consider the following snippet:</p>
+<figure><figcaption class="zig-cap"><cite class="file">comptime_var_ptr_runtime.zig</cite></figcaption><pre><code><span class="tok-kw">test</span> <span class="tok-str">&quot;runtime-known comptime var pointer&quot;</span> {
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> x: <span class="tok-type">u32</span> = <span class="tok-number">123</span>;
+    <span class="tok-comment">// `var` makes `ptr` runtime-known</span>
+    <span class="tok-kw">var</span> ptr: *<span class="tok-kw">const</span> <span class="tok-type">u32</span> = <span class="tok-null">undefined</span>;
+    ptr = &amp;x;
+    <span class="tok-kw">if</span> (ptr.* != <span class="tok-number">123</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TestFailed;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test comptime_var_ptr_runtime.zig</kbd>
+<span class="sgr-1m">docgen_tmp/comptime_var_ptr_runtime.zig:5:11: </span><span class="sgr-31m">error: </span><span class="sgr-1m">runtime value contains reference to comptime var
+</span>    ptr = &amp;x;
+          <span class="sgr-32m">^~
+</span><span class="sgr-1m">docgen_tmp/comptime_var_ptr_runtime.zig:5:11: </span><span class="sgr-36m">note: </span><span class="sgr-1m">comptime var pointers are not available at runtime
+</span>
+</samp></pre></figure>
+    <p>In previous versions of Zig, this test passed as you might expect. In Zig 0.12.0, it emits a compile error,
+    because the assignment to <code>ptr</code> makes the value <code>&x</code> - which is a pointer to a
+    <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code> - runtime-known.</p>
+    <p>Such pointers can also become runtime-known by, for instance, being passed to a function called at runtime:</p>
+<figure><figcaption class="zig-cap"><cite class="file">comptime_var_ptr_runtime_arg.zig</cite></figcaption><pre><code><span class="tok-kw">test</span> <span class="tok-str">&quot;comptime var pointer as runtime argument&quot;</span> {
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> x: <span class="tok-type">u32</span> = <span class="tok-number">123</span>;
+    <span class="tok-kw">if</span> (load(&amp;x) != <span class="tok-number">123</span>) <span class="tok-kw">return</span> <span class="tok-kw">error</span>.TestFailed;
+}
+<span class="tok-kw">fn</span> <span class="tok-fn">load</span>(ptr: *<span class="tok-kw">const</span> <span class="tok-type">u32</span>) <span class="tok-type">u32</span> {
+    <span class="tok-kw">return</span> ptr.*;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test comptime_var_ptr_runtime_arg.zig</kbd>
+<span class="sgr-1m">docgen_tmp/comptime_var_ptr_runtime_arg.zig:3:14: </span><span class="sgr-31m">error: </span><span class="sgr-1m">runtime value contains reference to comptime var
+</span>    if (load(&amp;x) != 123) return error.TestFailed;
+             <span class="sgr-32m">^~
+</span><span class="sgr-1m">docgen_tmp/comptime_var_ptr_runtime_arg.zig:3:14: </span><span class="sgr-36m">note: </span><span class="sgr-1m">comptime var pointers are not available at runtime
+</span>
+</samp></pre></figure>
+    <p>This test also emits a compile error in Zig 0.12.0. The call to <code>load</code> occurs at runtime, and its
+    <code>ptr</code> parameter is not marked <code><span class="tok-kw">comptime</span></code>, so <code>ptr</code> is runtime-known
+    within the body of <code>load</code>. This means the call to <code>load</code> makes the pointer <code>&x</code>
+    runtime-known, hence the compile error.</p>
+    <p>This restriction was put in place to fix some soundness bugs. When a pointer to a <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code>
+    becomes runtime-known, mutations to it become invalid since the pointed-to data becomes constant, but the type system
+    fails to reflect this, leading to the potential for runtime segmentation faults in what appears to be valid code. In
+    addition, the value you read from such a pointer at runtime would be its "final" comptime value, which was an
+    unintuitive behavior. Thus, these pointers can no longer be runtime-known.</p>
+    <p>The second new restriction is that a pointer to a <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code> is never allowed to be contained
+    within the resolved value of a global declaration. For instance, consider the following snippet:</p>
+<figure><figcaption class="zig-cap"><cite class="file">comptime_var_ptr_global.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> ptr: *<span class="tok-kw">const</span> <span class="tok-type">u32</span> = ptr: {
+    <span class="tok-kw">var</span> x: <span class="tok-type">u32</span> = <span class="tok-number">123</span>;
+    <span class="tok-kw">break</span> :ptr &amp;x;
+};
+<span class="tok-kw">comptime</span> {
+    _ = ptr;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test comptime_var_ptr_global.zig</kbd>
+<span class="sgr-1m">docgen_tmp/comptime_var_ptr_global.zig:1:30: </span><span class="sgr-31m">error: </span><span class="sgr-1m">global variable contains reference to comptime var
+</span>const ptr: *const u32 = ptr: {
+                        <span class="sgr-32m">~~~~~^
+</span><span class="sgr-2m">referenced by:
+    comptime_0: docgen_tmp/comptime_var_ptr_global.zig:6:9
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+</span>
+</samp></pre></figure>
+    <p>Here, <code>ptr</code> is a global declaration whose value is a pointer to a <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code>.
+    This declaration was permitted in Zig 0.11.0, but raises a compile error in Zig 0.12.0. The same rule applies in
+    more complex cases, such as when the pointer is contained within a struct field:</p>
+<figure><figcaption class="zig-cap"><cite class="file">comptime_var_ptr_global_struct.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> S = <span class="tok-kw">struct</span> { ptr: *<span class="tok-kw">const</span> <span class="tok-type">u32</span> };
+<span class="tok-kw">const</span> val: S = blk: {
+    <span class="tok-kw">var</span> x: <span class="tok-type">u32</span> = <span class="tok-number">123</span>;
+    <span class="tok-kw">break</span> :blk .{ .ptr = &amp;x };
+};
+<span class="tok-kw">comptime</span> {
+    _ = val;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test comptime_var_ptr_global_struct.zig</kbd>
+<span class="sgr-1m">docgen_tmp/comptime_var_ptr_global_struct.zig:2:21: </span><span class="sgr-31m">error: </span><span class="sgr-1m">global variable contains reference to comptime var
+</span>const val: S = blk: {
+               <span class="sgr-32m">~~~~~^
+</span><span class="sgr-2m">referenced by:
+    comptime_0: docgen_tmp/comptime_var_ptr_global_struct.zig:7:9
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+</span>
+</samp></pre></figure>
+    <p>This code raises the same compile error as the previous example. This restriction has been put in place primarily to
+    aid the implementation of incremental compilation in the Zig compiler, which depends on the fact that analysis of
+    global declarations is order-independent, and the dependencies between declarations can be easily modeled.</p>
+    <p>The most common way for this to manifest as a compile error in existing code is if a function constructs a slice
+    at comptime which is then used at runtime. For instance, consider the following snippet:</p>
+<figure><figcaption class="zig-cap"><cite class="file">construct_slice_comptime.zig</cite></figcaption><pre><code><span class="tok-kw">fn</span> <span class="tok-fn">getName</span>() []<span class="tok-kw">const</span> <span class="tok-type">u8</span> {
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> buf: [<span class="tok-number">9</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-comment">// In practice there would likely be more complex logic here to populate `buf`.</span>
+    <span class="tok-builtin">@memcpy</span>(&amp;buf, <span class="tok-str">&quot;some name&quot;</span>);
+    <span class="tok-kw">return</span> &amp;buf;
+}
+<span class="tok-kw">test</span> getName {
+    <span class="tok-kw">try</span> <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expectEqualStrings(<span class="tok-str">&quot;some name&quot;</span>, getName());
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test construct_slice_comptime.zig</kbd>
+<span class="sgr-1m">docgen_tmp/construct_slice_comptime.zig:5:12: </span><span class="sgr-31m">error: </span><span class="sgr-1m">runtime value contains reference to comptime var
+</span>    return &amp;buf;
+           <span class="sgr-32m">^~~~
+</span><span class="sgr-1m">docgen_tmp/construct_slice_comptime.zig:5:12: </span><span class="sgr-36m">note: </span><span class="sgr-1m">comptime var pointers are not available at runtime
+</span><span class="sgr-2m">referenced by:
+    decltest.getName: docgen_tmp/construct_slice_comptime.zig:8:64
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+</span>
+</samp></pre></figure>
+    <p>A call to <code>getName</code> returns a slice whose <code>ptr</code> field is a pointer to a
+    <code><span class="tok-kw">comptime</span> <span class="tok-kw">var</span></code>. This means the value cannot be used at runtime, nor can it appear in the value
+    of a global declaration. This code can be fixed by promoting the computed data to a <code><span class="tok-kw">const</span></code>
+    after filling the buffer:</p>
+<figure><figcaption class="zig-cap"><cite class="file">construct_slice_comptime.zig</cite></figcaption><pre><code><span class="tok-kw">fn</span> <span class="tok-fn">getName</span>() []<span class="tok-kw">const</span> <span class="tok-type">u8</span> {
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> buf: [<span class="tok-number">9</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    <span class="tok-comment">// In practice there would likely be more complex logic here to populate `buf`.</span>
+    <span class="tok-builtin">@memcpy</span>(&amp;buf, <span class="tok-str">&quot;some name&quot;</span>);
+    <span class="tok-kw">const</span> final_name = buf;
+    <span class="tok-kw">return</span> &amp;final_name;
+}
+<span class="tok-kw">test</span> getName {
+    <span class="tok-kw">try</span> <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expectEqualStrings(<span class="tok-str">&quot;some name&quot;</span>, getName());
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test construct_slice_comptime.zig</kbd>
+1/1 construct_slice_comptime.decltest.getName... OK
+All 1 tests passed.
+</samp></pre></figure>
+    <p>Like in previous versions of Zig, comptime-known <code><span class="tok-kw">const</span></code>s have infinite lifetime, and the
+    restrictions discussed here do not apply to them. Therefore, this code functions as expected.</p>
+    <p>Another possible failure mode is in code which used the old semantics to create global mutable comptime state. For
+    instance, the following snippet attempts to create a global comptime counter:</p>
+<figure><figcaption class="zig-cap"><cite class="file">global_comptime_counter.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> counter: *<span class="tok-type">u32</span> = counter: {
+    <span class="tok-kw">comptime</span> <span class="tok-kw">var</span> n: <span class="tok-type">u32</span> = <span class="tok-number">0</span>;
+    <span class="tok-kw">break</span> :counter &amp;n;
+}
+<span class="tok-kw">comptime</span> {
+    counter.* += <span class="tok-number">1</span>;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test global_comptime_counter.zig</kbd>
+<span class="sgr-1m">docgen_tmp/global_comptime_counter.zig:4:2: </span><span class="sgr-31m">error: </span><span class="sgr-1m">expected ';' after declaration
+</span>}
+ <span class="sgr-32m">^
+</span>
+</samp></pre></figure>
+    <p>This code emits a compile error in Zig 0.12.0. This use case is not and will not be supported by Zig: any mutable
+    comptime state must be represented locally.</p>
+    
     
 
     <h2 id="Standard-Library"><a href="#toc-Standard-Library">Standard Library</a> <a class="hdr" href="#Standard-Library">§</a></h2>
@@ -947,8 +1227,18 @@
     <h2 id="Compiler"><a href="#toc-Compiler">Compiler</a> <a class="hdr" href="#Compiler">§</a></h2>
 
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+    <p>Zig 0.12.0 includes many improvements to the compiler implementation, both internal and user-facing.</p>
+    <p>Significant progress has been made on the self-hosted x86_64 machine code backend. This backend can be accessed
+    when compiling for an x86_64 target by passing the CLI options <code>-fno-llvm -fno-lld</code>, or by setting the build system
+    flags <code>use_llvm</code> and <code>use_lld</code> on <code>std.Build.Step.Compile</code> to <code>false</code>. This
+    backend is now able to compile many Zig projects, including the compiler itself. You might consider trying it out on your
+    own projects, but please note that this backend still has some
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aissue+is%3Aopen+label%3Abackend-self-hosted+label%3Aarch-x86_64">known bugs</a>,
+    and that the debugging experience may be limited.</p>
+    <p>This release cycle also makes heavy progress towards the implementation of incremental compilation. This feature
+    is not yet available in Zig 0.12.0, but will be a key focus of the 0.13.0 release cycle, and will debut in a future release.</p>
     
-
+ 
     <h2 id="Linker"><a href="#toc-Linker">Linker</a> <a class="hdr" href="#Linker">§</a></h2>
 
     
@@ -958,6 +1248,17 @@
     <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.12.0">Full list of the 502 bug reports closed during this release cycle</a>.</p>
     <p>Many bugs were both introduced and resolved within this release cycle.
     Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+    <h3 id="Comptime-Pointer-Access"><a href="#toc-Comptime-Pointer-Access">Comptime Pointer Access</a> <a class="hdr" href="#Comptime-Pointer-Access">§</a></h3>
+
+    <p>Zig has had several long-standing bugs relating to accessing pointers at compile time. When attempting to access
+    pointers in a non-trivial way, such as loading a slice of an array or reinterpreting memory, you would at times
+    be greeted with a false positive compile error stating that the comptime dereference required a certain type to
+    have a well-defined layout.</p>
+    <p>The merge of <a href="https://github.com/ziglang/zig/pull/19630">#19630</a> resolves this issue. In Zig 0.12.0,
+    the compiler should no longer emit incorrect compile errors when doing complex things with comptime memory.
+    This change also includes some fixes to the logic for comptime <code><span class="tok-builtin">@bitCast</span></code>; in particular,
+    bitcasting aggregates containing pointers no longer incorrectly forces the operation to occur at runtime.</p>
+    
     <h3 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h3>
 
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">

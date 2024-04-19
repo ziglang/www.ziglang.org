@@ -882,9 +882,242 @@
 
     {#header_open|Autodoc#}
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_4.svg" style="height: 13em; float: right">
+    <p>Zig 0.12.0 features <a href="https://github.com/ziglang/zig/pull/19208">a complete rewrite</a> of the Autodoc
+    documentation generation system. The generated documentation is now far more robust, quicker to generate, and has a
+    smaller filesize.</p>
+    <p>Zig 0.11.0 shipped with a <code>docs/std/</code> directory which contained the generated documentation for the
+    Zig Standard Libarary. This directory does not exist in the Zig 0.12.0 release. Instead, running the command
+    <code>zig std</code> will host the standard library documentation locally and automatically spawn a browser window
+    to view it. This makes the Zig installation 15% smaller, and the new documentation is generated lazily by the hosted
+    documentation site itself, so there is no need to wait for the docs to build.</p>
+    <p>The strategy for generating documentation on the CLI and in build
+    scripts is unchanged: use the <code>-femit-docs</code> CLI option or the <code>getEmittedDocs</code> method on
+    <code>std.Build.Step.Compile</code>.
     {#header_close#}
 
     {#header_open|Language Changes#}
+    {#header_open|Unnecessary Use of var#}
+    <p>Zig 0.12.0 introduces a new compile error which is emitted when a local variable is declared as
+    a {#syntax#}var{#endsyntax#}, but the compiler can infer that {#syntax#}const{#endsyntax#} would suffice.</p>
+{#code_begin|test_err|unnecessary_var#}
+const expectEqual = @import("std").testing.expectEqual;
+test "unnecessary use of var" {
+    var x: u32 = 123;
+    try expectEqual(123, x);
+}
+{#code_end#}
+    <p>As indicated by the error message, the solution is simple: use {#syntax#}const{#endsyntax#} instead
+    where applicable.</p>
+    {#header_close#}
+    {#header_open|Result Location Semantics#}
+    <p>Zig 0.12.0 contains several enhancements to Result Location Semantics (RLS).</p>
+    <p>This release implements forwarding of result types through the address-of operator (<code>&</code>). This allows
+    syntactic constructs which rely on result types, such as anonymous initializations {#syntax#}.{ ... }{#endsyntax#}
+    and casting builtins like {#syntax#}@intCast{#endsyntax#}, to function correctly in the presence of the
+    address-of operator:</p>
+{#code_begin|test|address_of_rls#}
+const S = struct { x: u32 };
+const int: u64 = 123;
+const val: *const S = &.{ .x = @intCast(int) };
+comptime {
+    _ = val;
+}
+{#code_end#}
+    <p>In addition, Zig 0.12.0 removes the ability for result <i>locations</i> to propagate through {#syntax#}@as{#endsyntax#}
+    and explicitly-typed aggregate initializations {#syntax#}T{ ... }{#endsyntax#}. This restriction is in place to
+    simplify the language design: previous releases contained several bugs relating to incorrect casting of result pointers.</p>
+    {#header_close#}
+    {#header_open|Aggregate Destructuring#}
+    <p>Zig 0.12.0 introduces a new syntax to allow destructuring indexable aggregates: that is, tuples, vectors, and arrays.
+    Writing a sequence of lvalues or local variable declarations on the left-hand side of the assignment will attempt to
+    destructure the value specified on the right-hand side:</p>
+{#code_begin|test|destructure#}
+const std = @import("std");
+const assert = std.debug.assert;
+const expectEqual = std.testing.expectEqual;
+test "destructure array" {
+    var z: u32 = undefined;
+    const x, var y, z = [3]u32{ 1, 2, 3 };
+    y += 10;
+    try expectEqual(1, x);
+    try expectEqual(12, y);
+    try expectEqual(3, z);
+}
+test "destructure vector" {
+    // Comptime-known values are propagated as you would expect.
+    const x, const y = @Vector(2, u32){ 1, 2 };
+    comptime assert(x == 1);
+    comptime assert(y == 2);
+}
+test "destructure tuple" {
+    var runtime: u32 = undefined;
+    runtime = 123;
+    const x, const y = .{ 42, runtime };
+    // The first tuple field is a `comptime` field, so `x` is comptime-known even
+    // though `y` is runtime-known.
+    comptime assert(x == 42);
+    try expectEqual(123, y);
+}
+{#code_end#}
+    <p>Slices cannot be directly destructured. To destructure values from a slice, convert it to an array by slicing
+    with comptime-known bounds, such as {#syntax#}slice[0..3].*{#endsyntax#}.</p>
+    {#header_close#}
+    {#header_open|Namespace Type Equivalence#}
+    <p>In Zig, <code>struct</code>, <code>enum</code>, <code>union</code>, and <code>opaque</code> types are special. They
+    do not use structural equivalence, like tuples and arrays do; instead, they create distinct types. These types have
+    namespaces, and thus may contain declarations. For this reason, they can be referred to collectively as "namespace
+    types".</p>
+    <p>In 0.11.0, every time a declaration of such a type was semantically analyzed, a new type was created. Equivalence of
+    generic types was handled via memoization of comptime function calls; i.e.
+    <code>std.ArrayList(u8) == std.ArrayList(u8)</code> held because the <code>ArrayList</code> function was only called
+    once, and its results memoized.</p>
+    <p>In 0.12.0, this has changed. Namespace types are now deduplicated based on two factors: their source location, and
+    their captures.</p>
+    <p>The "captures" of a type refers to the set of comptime-known types and values which it closes over. In other words,
+    it is the set of values referenced within the type but declared outside of it. For instance, the
+    <code>comptime T: type</code> parameter of <code>std.ArrayList</code> is captured by the type it returns. If two
+    namespace types are declared by the same piece of code and have the same captures, they are now considered to be
+    precisely the same type.</p>
+    <p>Note that the compiler will still memoize comptime calls: that hasn't changed. However, this memoization no longer
+    has a meaningful impact on language semantics.</p>
+    <p>It is unlikely that this change will cause breakage in existing code. The most likely scenario where it could is
+    something like the following:</p>
+{#code_begin|syntax|opaque_generator#}
+fn MakeOpaque(comptime n: comptime_int) type {
+    _ = n;
+    return opaque {};
+}
+const A = MakeOpaque(0);
+const B = MakeOpaque(1);
+{#code_end#}
+    <p>In Zig 0.11.0, this code would create two distinct types, because the calls to <code>MakeOpaque</code> are distinct
+    and thus the <code>opaque</code> declaration was analyzed separately for each call. In Zig 0.12.0, these types are
+    identical (<code>A == B</code>), because while the function is called twice, the declaration does not capture any
+    value.</p>
+    <p>This code can be fixed by forcing the type declaration to capture <code>n</code>:</p>
+{#code_begin|syntax|opaque_generator#}
+fn MakeOpaque(comptime n: comptime_int) type {
+    return opaque {
+        comptime {
+            _ = n;
+        }
+    };
+}
+const A = MakeOpaque(0);
+const B = MakeOpaque(1);
+{#code_end#}
+    <p>Since <code>n</code> is referenced within the <code>opaque</code> declaration, this code creates two distinct types.</p>
+    {#header_close#}
+
+    {#header_open|Comptime Memory Changes#}
+    <p>Zig 0.12.0 overhauls the compiler's internal representation of comptime memory, and more specifically
+    comptime-mutable memory (i.e. {#syntax#}comptime var{#endsyntax#}). This overhaul comes with some user-facing
+    changes in the form of new restrictions on what you can do with a {#syntax#}comptime var{#endsyntax#}.</p>
+    <p>The first, and most significant, new rule is that a pointer to a {#syntax#}comptime var{#endsyntax#} is never
+    allowed to become runtime-known. For instance, consider the following snippet:</p>
+{#code_begin|test_err|comptime_var_ptr_runtime#}
+test "runtime-known comptime var pointer" {
+    comptime var x: u32 = 123;
+    // `var` makes `ptr` runtime-known
+    var ptr: *const u32 = undefined;
+    ptr = &x;
+    if (ptr.* != 123) return error.TestFailed;
+}
+{#code_end#}
+    <p>In previous versions of Zig, this test passed as you might expect. In Zig 0.12.0, it emits a compile error,
+    because the assignment to <code>ptr</code> makes the value <code>&x</code> - which is a pointer to a
+    {#syntax#}comptime var{#endsyntax#} - runtime-known.</p>
+    <p>Such pointers can also become runtime-known by, for instance, being passed to a function called at runtime:</p>
+{#code_begin|test_err|comptime_var_ptr_runtime_arg#}
+test "comptime var pointer as runtime argument" {
+    comptime var x: u32 = 123;
+    if (load(&x) != 123) return error.TestFailed;
+}
+fn load(ptr: *const u32) u32 {
+    return ptr.*;
+}
+{#code_end#}
+    <p>This test also emits a compile error in Zig 0.12.0. The call to <code>load</code> occurs at runtime, and its
+    <code>ptr</code> parameter is not marked {#syntax#}comptime{#endsyntax#}, so <code>ptr</code> is runtime-known
+    within the body of <code>load</code>. This means the call to <code>load</code> makes the pointer <code>&x</code>
+    runtime-known, hence the compile error.</p>
+    <p>This restriction was put in place to fix some soundness bugs. When a pointer to a {#syntax#}comptime var{#endsyntax#}
+    becomes runtime-known, mutations to it become invalid since the pointed-to data becomes constant, but the type system
+    fails to reflect this, leading to the potential for runtime segmentation faults in what appears to be valid code. In
+    addition, the value you read from such a pointer at runtime would be its "final" comptime value, which was an
+    unintuitive behavior. Thus, these pointers can no longer be runtime-known.</p>
+    <p>The second new restriction is that a pointer to a {#syntax#}comptime var{#endsyntax#} is never allowed to be contained
+    within the resolved value of a global declaration. For instance, consider the following snippet:</p>
+{#code_begin|test_err|comptime_var_ptr_global#}
+const ptr: *const u32 = ptr: {
+    var x: u32 = 123;
+    break :ptr &x;
+};
+comptime {
+    _ = ptr;
+}
+{#code_end#}
+    <p>Here, <code>ptr</code> is a global declaration whose value is a pointer to a {#syntax#}comptime var{#endsyntax#}.
+    This declaration was permitted in Zig 0.11.0, but raises a compile error in Zig 0.12.0. The same rule applies in
+    more complex cases, such as when the pointer is contained within a struct field:</p>
+{#code_begin|test_err|comptime_var_ptr_global_struct#}
+const S = struct { ptr: *const u32 };
+const val: S = blk: {
+    var x: u32 = 123;
+    break :blk .{ .ptr = &x };
+};
+comptime {
+    _ = val;
+}
+{#code_end#}
+    <p>This code raises the same compile error as the previous example. This restriction has been put in place primarily to
+    aid the implementation of incremental compilation in the Zig compiler, which depends on the fact that analysis of
+    global declarations is order-independent, and the dependencies between declarations can be easily modeled.</p>
+    <p>The most common way for this to manifest as a compile error in existing code is if a function constructs a slice
+    at comptime which is then used at runtime. For instance, consider the following snippet:</p>
+{#code_begin|test_err|construct_slice_comptime#}
+fn getName() []const u8 {
+    comptime var buf: [9]u8 = undefined;
+    // In practice there would likely be more complex logic here to populate `buf`.
+    @memcpy(&buf, "some name");
+    return &buf;
+}
+test getName {
+    try @import("std").testing.expectEqualStrings("some name", getName());
+}
+{#code_end#}
+    <p>A call to <code>getName</code> returns a slice whose <code>ptr</code> field is a pointer to a
+    {#syntax#}comptime var{#endsyntax#}. This means the value cannot be used at runtime, nor can it appear in the value
+    of a global declaration. This code can be fixed by promoting the computed data to a {#syntax#}const{#endsyntax#}
+    after filling the buffer:</p>
+{#code_begin|test|construct_slice_comptime#}
+fn getName() []const u8 {
+    comptime var buf: [9]u8 = undefined;
+    // In practice there would likely be more complex logic here to populate `buf`.
+    @memcpy(&buf, "some name");
+    const final_name = buf;
+    return &final_name;
+}
+test getName {
+    try @import("std").testing.expectEqualStrings("some name", getName());
+}
+{#code_end#}
+    <p>Like in previous versions of Zig, comptime-known {#syntax#}const{#endsyntax#}s have infinite lifetime, and the
+    restrictions discussed here do not apply to them. Therefore, this code functions as expected.</p>
+    <p>Another possible failure mode is in code which used the old semantics to create global mutable comptime state. For
+    instance, the following snippet attempts to create a global comptime counter:</p>
+{#code_begin|test_err|global_comptime_counter#}
+const counter: *u32 = counter: {
+    comptime var n: u32 = 0;
+    break :counter &n;
+}
+comptime {
+    counter.* += 1;
+}
+{#code_end#}
+    <p>This code emits a compile error in Zig 0.12.0. This use case is not and will not be supported by Zig: any mutable
+    comptime state must be represented locally.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -898,8 +1131,18 @@
 
     {#header_open|Compiler#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+    <p>Zig 0.12.0 includes many improvements to the compiler implementation, both internal and user-facing.</p>
+    <p>Significant progress has been made on the self-hosted x86_64 machine code backend. This backend can be accessed
+    when compiling for an x86_64 target by passing the CLI options <code>-fno-llvm -fno-lld</code>, or by setting the build system
+    flags <code>use_llvm</code> and <code>use_lld</code> on <code>std.Build.Step.Compile</code> to <code>false</code>. This
+    backend is now able to compile many Zig projects, including the compiler itself. You might consider trying it out on your
+    own projects, but please note that this backend still has some
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aissue+is%3Aopen+label%3Abackend-self-hosted+label%3Aarch-x86_64">known bugs</a>,
+    and that the debugging experience may be limited.</p>
+    <p>This release cycle also makes heavy progress towards the implementation of incremental compilation. This feature
+    is not yet available in Zig 0.12.0, but will be a key focus of the 0.13.0 release cycle, and will debut in a future release.</p>
     {#header_close#}
-
+ 
     {#header_open|Linker#}
     {#header_close#}
 
@@ -907,6 +1150,16 @@
     <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.12.0">Full list of the 502 bug reports closed during this release cycle</a>.</p>
     <p>Many bugs were both introduced and resolved within this release cycle.
     Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+    {#header_open|Comptime Pointer Access#}
+    <p>Zig has had several long-standing bugs relating to accessing pointers at compile time. When attempting to access
+    pointers in a non-trivial way, such as loading a slice of an array or reinterpreting memory, you would at times
+    be greeted with a false positive compile error stating that the comptime dereference required a certain type to
+    have a well-defined layout.</p>
+    <p>The merge of <a href="https://github.com/ziglang/zig/pull/19630">#19630</a> resolves this issue. In Zig 0.12.0,
+    the compiler should no longer emit incorrect compile errors when doing complex things with comptime memory.
+    This change also includes some fixes to the logic for comptime {#syntax#}@bitCast{#endsyntax#}; in particular,
+    bitcasting aggregates containing pointers no longer incorrectly forces the operation to occur at runtime.</p>
+    {#header_close#}
     {#header_open|This Release Contains Bugs#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
     <p>
