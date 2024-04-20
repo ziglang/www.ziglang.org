@@ -393,6 +393,7 @@
             <li><a id="toc-Namespace-Type-Equivalence" href="#Namespace-Type-Equivalence">Namespace Type Equivalence</a></li>
             <li><a id="toc-Comptime-Memory-Changes" href="#Comptime-Memory-Changes">Comptime Memory Changes</a></li>
             <li><a id="toc-fieldParentPtr" href="#fieldParentPtr">@fieldParentPtr</a></li>
+            <li><a id="toc-support-coercing-ref-to-anonymous-array-init-to-many-pointer" href="#support-coercing-ref-to-anonymous-array-init-to-many-pointer">support coercing ref to anonymous array init to many-pointer</a></li>
         </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
         <ul>
@@ -1386,6 +1387,35 @@ All 1 tests passed.
     <p>depending on what parent pointer alignment the compiler is able to prove.
     The second form is more portable, since it's possible for the
     <code><span class="tok-builtin">@alignCast</span></code> to be needed for some targets but not others.</p>
+    
+
+    <h3 id="support-coercing-ref-to-anonymous-array-init-to-many-pointer"><a href="#toc-support-coercing-ref-to-anonymous-array-init-to-many-pointer">support coercing ref to anonymous array init to many-pointer</a> <a class="hdr" href="#support-coercing-ref-to-anonymous-array-init-to-many-pointer">§</a></h3>
+
+    <p>Makes <code>&amp;.{ a, b, c }</code> coerce to <code>[*]<span class="tok-kw">const</span> T</code>/<code>[*:x]<span class="tok-kw">const</span> T</code>:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">coerce_many.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+<span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;
+
+<span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> { bar: [*]<span class="tok-kw">const</span> <span class="tok-type">i32</span> };
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;ref to anon array init coerced to many-ptr&quot;</span> {
+    <span class="tok-kw">const</span> foo: Foo = .{ .bar = &amp;.{ <span class="tok-number">1</span>, -<span class="tok-number">2</span> } };
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">1</span>, foo.bar[<span class="tok-number">0</span>]);
+    <span class="tok-kw">try</span> expectEqual(-<span class="tok-number">2</span>, foo.bar[<span class="tok-number">1</span>]);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">checkSentinelManyPtr</span>(values: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">i32</span>) !<span class="tok-type">void</span> {
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">3</span>, values[<span class="tok-number">0</span>]);
+    <span class="tok-kw">try</span> expectEqual(-<span class="tok-number">4</span>, values[<span class="tok-number">1</span>]);
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">0</span>, values[<span class="tok-number">2</span>]);
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;ref to anon array init coerced to sentinel many-ptr&quot;</span> {
+    <span class="tok-kw">try</span> checkSentinelManyPtr(&amp;.{ <span class="tok-number">3</span>, -<span class="tok-number">4</span> });
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test coerce_many.zig</kbd>
+1/2 coerce_many.test.ref to anon array init coerced to many-ptr... OK
+2/2 coerce_many.test.ref to anon array init coerced to sentinel many-ptr... OK
+All 2 tests passed.
+</samp></pre></figure>
     
     
 

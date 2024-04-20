@@ -1253,6 +1253,32 @@ const parent_ptr: *Parent = @alignCast(@fieldParentPtr("field_name", field_ptr))
     The second form is more portable, since it's possible for the
     {#syntax#}@alignCast{#endsyntax#} to be needed for some targets but not others.</p>
     {#header_close#}
+
+    {#header_open|support coercing ref to anonymous array init to many-pointer#}
+    <p>Now {#syntax#}&.{ a, b, c }{#endsyntax#} coerces to {#syntax#}[*]const T{#endsyntax#}/{#syntax#}[*:x]const T{#endsyntax#}:</p>
+    {#code_begin|test|coerce_many#}
+const std = @import("std");
+const expectEqual = std.testing.expectEqual;
+
+const Foo = struct { bar: [*]const i32 };
+
+test "ref to anon array init coerced to many-ptr" {
+    const foo: Foo = .{ .bar = &.{ 1, -2 } };
+    try expectEqual(1, foo.bar[0]);
+    try expectEqual(-2, foo.bar[1]);
+}
+
+fn checkSentinelManyPtr(values: [*:0]const i32) !void {
+    try expectEqual(3, values[0]);
+    try expectEqual(-4, values[1]);
+    try expectEqual(0, values[2]);
+}
+
+test "ref to anon array init coerced to sentinel many-ptr" {
+    try checkSentinelManyPtr(&.{ 3, -4 });
+}
+    {#code_end#}
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Standard Library#}
