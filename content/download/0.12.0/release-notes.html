@@ -378,6 +378,7 @@
             <li><a id="toc-Aggregate-Destructuring" href="#Aggregate-Destructuring">Aggregate Destructuring</a></li>
             <li><a id="toc-Namespace-Type-Equivalence" href="#Namespace-Type-Equivalence">Namespace Type Equivalence</a></li>
             <li><a id="toc-Comptime-Memory-Changes" href="#Comptime-Memory-Changes">Comptime Memory Changes</a></li>
+            <li><a id="toc-fieldParentPtr" href="#fieldParentPtr">@fieldParentPtr</a></li>
         </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
         <ul>
@@ -1209,6 +1210,20 @@ All 1 tests passed.
     <p>This code emits a compile error in Zig 0.12.0. This use case is not and will not be supported by Zig: any mutable
     comptime state must be represented locally.</p>
     
+
+    <h3 id="fieldParentPtr"><a href="#toc-fieldParentPtr">@fieldParentPtr</a> <a class="hdr" href="#fieldParentPtr">§</a></h3>
+
+    <p>The first argument is removed in favor of using the <a href="#Result-Location-Semantics">result type</a>.</p>
+    <p>Migration guide:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">const</span> parent_ptr = <span class="tok-builtin">@fieldParentPtr</span>(Parent, <span class="tok-str">&quot;field_name&quot;</span>, field_ptr);</code></pre></figure>
+    &downarrow;
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">const</span> parent_ptr: *Parent = <span class="tok-builtin">@fieldParentPtr</span>(<span class="tok-str">&quot;field_name&quot;</span>, field_ptr);</code></pre></figure>
+    <p>or</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">const</span> parent_ptr: *Parent = <span class="tok-builtin">@alignCast</span>(<span class="tok-builtin">@fieldParentPtr</span>(<span class="tok-str">&quot;field_name&quot;</span>, field_ptr));</code></pre></figure>
+    <p>depending on what parent pointer alignment the compiler is able to prove.
+    The second form is more portable, since it's possible for the
+    <code><span class="tok-builtin">@alignCast</span></code> to be needed for some targets but not others.</p>
+    
     
 
     <h2 id="Standard-Library"><a href="#toc-Standard-Library">Standard Library</a> <a class="hdr" href="#Standard-Library">§</a></h2>
@@ -1255,17 +1270,17 @@ All 1 tests passed.
     <p>Upgrade guide:</p>
     <p>Source-Relative LazyPath:</p>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.root_source_file = .{ .path = <span class="tok-str">&quot;src/main.zig&quot;</span> },</code></pre></figure>
-    ⬇️
+    &downarrow;
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.root_source_file = b.path(<span class="tok-str">&quot;src/main.zig&quot;</span>),</code></pre></figure>
 
     <p>LazyPath.relative</p>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.root_source_file = LazyPath.relative(<span class="tok-str">&quot;src/main.zig&quot;</span>),</code></pre></figure>
-    ⬇️
+    &downarrow;
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.root_source_file = b.path(<span class="tok-str">&quot;src/main.zig&quot;</span>),</code></pre></figure>
 
     <p>Test Runner</p>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.test_runner = <span class="tok-str">&quot;path/to/test_runner.zig&quot;</span>,</code></pre></figure>
-    ⬇️
+    &downarrow;
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.test_runner = b.path(<span class="tok-str">&quot;path/to/test_runner.zig&quot;</span>),</code></pre></figure>
     
     

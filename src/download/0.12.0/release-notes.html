@@ -1108,6 +1108,25 @@ comptime {
     <p>This code emits a compile error in Zig 0.12.0. This use case is not and will not be supported by Zig: any mutable
     comptime state must be represented locally.</p>
     {#header_close#}
+
+    {#header_open|@fieldParentPtr#}
+    <p>The first argument is removed in favor of using the {#link|result type|Result Location Semantics#}.</p>
+    <p>Migration guide:</p>
+    {#syntax_block|zig#}
+const parent_ptr = @fieldParentPtr(Parent, "field_name", field_ptr);
+    {#end_syntax_block#}
+    &downarrow;
+    {#syntax_block|zig#}
+const parent_ptr: *Parent = @fieldParentPtr("field_name", field_ptr);
+    {#end_syntax_block#}
+    <p>or</p>
+    {#syntax_block|zig#}
+const parent_ptr: *Parent = @alignCast(@fieldParentPtr("field_name", field_ptr));
+    {#end_syntax_block#}
+    <p>depending on what parent pointer alignment the compiler is able to prove.
+    The second form is more portable, since it's possible for the
+    {#syntax#}@alignCast{#endsyntax#} to be needed for some targets but not others.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1143,16 +1162,16 @@ comptime {
     {#header_close#}
 
     {#header_open|Build System#}
-    {#header_open|introduce std.Build.path; deprecate LazyPath.relative#}
+    {#header_open|introduce b.path; deprecate LazyPath.relative#}
     <p>This adds the {#syntax#}*std.Build{#endsyntax#} owner to LazyPath so
     that lazy paths returned from a dependency can be used in the application's
     build script without friction or footguns.</p>
-    <p>Upgrade guide:</p>
+    <p>Migration guide:</p>
     <p>Source-Relative LazyPath:</p>
     {#syntax_block|zig#}
 .root_source_file = .{ .path = "src/main.zig" },
     {#end_syntax_block#}
-    ⬇️
+    &downarrow;
     {#syntax_block|zig#}
 .root_source_file = b.path("src/main.zig"),
     {#end_syntax_block#}
@@ -1161,7 +1180,7 @@ comptime {
     {#syntax_block|zig#}
 .root_source_file = LazyPath.relative("src/main.zig"),
     {#end_syntax_block#}
-    ⬇️
+    &downarrow;
     {#syntax_block|zig#}
 .root_source_file = b.path("src/main.zig"),
     {#end_syntax_block#}
@@ -1170,7 +1189,7 @@ comptime {
     {#syntax_block|zig#}
 .test_runner = "path/to/test_runner.zig",
     {#end_syntax_block#}
-    ⬇️
+    &downarrow;
     {#syntax_block|zig#}
 .test_runner = b.path("path/to/test_runner.zig"),
     {#end_syntax_block#}
