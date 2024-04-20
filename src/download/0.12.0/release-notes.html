@@ -1258,31 +1258,64 @@ const parent_ptr: *Parent = @alignCast(@fieldParentPtr("field_name", field_ptr))
     {#syntax#}@alignCast{#endsyntax#} to be needed for some targets but not others.</p>
     {#header_close#}
 
-    {#header_open|support coercing ref to anonymous array init to many-pointer#}
-    <p>Now {#syntax#}&.{ a, b, c }{#endsyntax#} coerces to {#syntax#}[*]const T{#endsyntax#}/{#syntax#}[*:x]const T{#endsyntax#}:</p>
-    {#code_begin|test|coerce_many#}
-const std = @import("std");
-const expectEqual = std.testing.expectEqual;
-
-const Foo = struct { bar: [*]const i32 };
-
-test "ref to anon array init coerced to many-ptr" {
-    const foo: Foo = .{ .bar = &.{ 1, -2 } };
-    try expectEqual(1, foo.bar[0]);
-    try expectEqual(-2, foo.bar[1]);
-}
-
-fn checkSentinelManyPtr(values: [*:0]const i32) !void {
-    try expectEqual(3, values[0]);
-    try expectEqual(-4, values[1]);
-    try expectEqual(0, values[2]);
-}
-
-test "ref to anon array init coerced to sentinel many-ptr" {
-    try checkSentinelManyPtr(&.{ 3, -4 });
+    {#header_open|Disallow alignment on function type#}
+    <p>Zig 0.11.0 allowed function <i>types</i> to specify an alignment. This is disallowed in Zig 0.12.0,
+    because is it a property of function declarations and pointers, not of function types.</p>
+    {#code_begin|test_err|func_type_align#}
+comptime {
+    _ = fn () align(4) void;
 }
     {#code_end#}
     {#header_close#}
+
+    {#header_open|@errorCast#}
+    <p>Previous releases of Zig included an {#syntax#}@errSetCast{#endsyntax#} builtin which performed a safety-checked
+    cast from one error set to another, potentially smaller, one. In Zig 0.12.0, this builtin is replaced with
+    {#syntax#}@errorCast{#endsyntax#}. Previous uses will continue to work, but in addition, this new builtin can cast
+    the error set of an error <i>union</i>:</p>
+{#code_begin|test|error_cast#}
+const testing = @import("std").testing;
+
+test "@errorCast error set" {
+    const err: error{Foo, Bar} = error.Foo;
+    const casted: error{Foo} = @errorCast(err);
+    try testing.expectEqual(error.Foo, casted);
+}
+
+test "@errorCast error union" {
+    const err: error{Foo, Bar}!u32 = error.Foo;
+    const casted: error{Foo}!u32 = @errorCast(err);
+    try testing.expectError(error.Foo, casted);
+}
+
+test "@errorCast error union payload" {
+    const err: error{Foo, Bar}!u32 = 123;
+    const casted: error{Foo}!u32 = @errorCast(err);
+    try testing.expectEqual(123, casted);
+}
+{#code_end#}
+    {#header_close#}
+
+    {#header_open|@abs#}
+    <p>Previous releases of Zig included the {#syntax#}@fabs{#endsyntax#} builtin. This has been replaced with a new
+    {#syntax#}@abs{#endsyntax#} builtin, which is able to operate on integers as well as floats:</p>
+{#code_begin|test|abs#}
+const expectEqual = @import("std").testing.expectEqual;
+
+test "@abs on float" {
+    const x: f32 = -123.5;
+    const y = @abs(x);
+    try expectEqual(123.5, y);
+}
+
+test "@abs on int" {
+    const x: i32 = -12345;
+    const y = @abs(x);
+    try expectEqual(12345, y);
+}
+{#code_end#}
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1717,6 +1750,19 @@ pub const tc_lflag_t = switch (native_arch) {
     {#end_syntax_block#}
     <p>Many more {#syntax#}std.posix{#endsyntax#} APIs were adjusted in a
     similar way.</p>
+    {#header_close#}
+
+    {#header_open|std.builtin Enum Fields Lowercased#}
+    <p>Zig 0.12.0 takes the opportunity to adjust the field names of some enums in <code>std.builtin</code> to align
+    with our current naming conventions, which dictate that enum fields should be <code>snake_case</code>. The following enums have been updated:</p>
+    <ul>
+      <li><code>std.builtin.AtomicOrder</code></li>
+      <li><code>std.builtin.ContainerLayout</code></li>
+      <li><code>std.builtin.Endian</code></li>
+      <li><code>std.builtin.FloatMode</code></li>
+      <li><code>std.builtin.GlobalLinkage</code></li>
+      <li><code>std.builtin.LinkMode</code></li>
+    </ul>
     {#header_close#}
 
     {#header_open|Global Configuration#}

@@ -397,7 +397,9 @@
             <li><a id="toc-Namespace-Type-Equivalence" href="#Namespace-Type-Equivalence">Namespace Type Equivalence</a></li>
             <li><a id="toc-Comptime-Memory-Changes" href="#Comptime-Memory-Changes">Comptime Memory Changes</a></li>
             <li><a id="toc-fieldParentPtr" href="#fieldParentPtr">@fieldParentPtr</a></li>
-            <li><a id="toc-support-coercing-ref-to-anonymous-array-init-to-many-pointer" href="#support-coercing-ref-to-anonymous-array-init-to-many-pointer">support coercing ref to anonymous array init to many-pointer</a></li>
+            <li><a id="toc-Disallow-alignment-on-function-type" href="#Disallow-alignment-on-function-type">Disallow alignment on function type</a></li>
+            <li><a id="toc-errorCast" href="#errorCast">@errorCast</a></li>
+            <li><a id="toc-abs" href="#abs">@abs</a></li>
         </ul></li>
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
         <ul>
@@ -412,6 +414,7 @@
             </ul></li>
             <li><a id="toc-deflate-reimplemented-from-first-principles" href="#deflate-reimplemented-from-first-principles">deflate reimplemented from first principles</a></li>
             <li><a id="toc-stdposix-APIs-Gain-Type-Safety" href="#stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type Safety</a></li>
+            <li><a id="toc-stdbuiltin-Enum-Fields-Lowercased" href="#stdbuiltin-Enum-Fields-Lowercased">std.builtin Enum Fields Lowercased</a></li>
             <li><a id="toc-Global-Configuration" href="#Global-Configuration">Global Configuration</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
@@ -1408,34 +1411,75 @@ All 1 tests passed.
     <code><span class="tok-builtin">@alignCast</span></code> to be needed for some targets but not others.</p>
     
 
-    <h3 id="support-coercing-ref-to-anonymous-array-init-to-many-pointer"><a href="#toc-support-coercing-ref-to-anonymous-array-init-to-many-pointer">support coercing ref to anonymous array init to many-pointer</a> <a class="hdr" href="#support-coercing-ref-to-anonymous-array-init-to-many-pointer">§</a></h3>
+    <h3 id="Disallow-alignment-on-function-type"><a href="#toc-Disallow-alignment-on-function-type">Disallow alignment on function type</a> <a class="hdr" href="#Disallow-alignment-on-function-type">§</a></h3>
 
-    <p>Now <code>&amp;.{ a, b, c }</code> coerces to <code>[*]<span class="tok-kw">const</span> T</code>/<code>[*:x]<span class="tok-kw">const</span> T</code>:</p>
-    <figure><figcaption class="zig-cap"><cite class="file">coerce_many.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
-<span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;
+    <p>Zig 0.11.0 allowed function <i>types</i> to specify an alignment. This is disallowed in Zig 0.12.0,
+    because is it a property of function declarations and pointers, not of function types.</p>
+    <figure><figcaption class="zig-cap"><cite class="file">func_type_align.zig</cite></figcaption><pre><code><span class="tok-kw">comptime</span> {
+    _ = <span class="tok-kw">fn</span> () <span class="tok-kw">align</span>(<span class="tok-number">4</span>) <span class="tok-type">void</span>;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test func_type_align.zig</kbd>
+<span class="sgr-1m">docgen_tmp/func_type_align.zig:2:21: </span><span class="sgr-31m">error: </span><span class="sgr-1m">function type cannot have an alignment
+</span>    _ = fn () align(4) void;
+                    <span class="sgr-32m">^
+</span>
+</samp></pre></figure>
+    
 
-<span class="tok-kw">const</span> Foo = <span class="tok-kw">struct</span> { bar: [*]<span class="tok-kw">const</span> <span class="tok-type">i32</span> };
+    <h3 id="errorCast"><a href="#toc-errorCast">@errorCast</a> <a class="hdr" href="#errorCast">§</a></h3>
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;ref to anon array init coerced to many-ptr&quot;</span> {
-    <span class="tok-kw">const</span> foo: Foo = .{ .bar = &amp;.{ <span class="tok-number">1</span>, -<span class="tok-number">2</span> } };
-    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">1</span>, foo.bar[<span class="tok-number">0</span>]);
-    <span class="tok-kw">try</span> expectEqual(-<span class="tok-number">2</span>, foo.bar[<span class="tok-number">1</span>]);
+    <p>Previous releases of Zig included an <code><span class="tok-builtin">@errSetCast</span></code> builtin which performed a safety-checked
+    cast from one error set to another, potentially smaller, one. In Zig 0.12.0, this builtin is replaced with
+    <code><span class="tok-builtin">@errorCast</span></code>. Previous uses will continue to work, but in addition, this new builtin can cast
+    the error set of an error <i>union</i>:</p>
+<figure><figcaption class="zig-cap"><cite class="file">error_cast.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> testing = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@errorCast error set&quot;</span> {
+    <span class="tok-kw">const</span> err: <span class="tok-kw">error</span>{Foo, Bar} = <span class="tok-kw">error</span>.Foo;
+    <span class="tok-kw">const</span> casted: <span class="tok-kw">error</span>{Foo} = <span class="tok-builtin">@errorCast</span>(err);
+    <span class="tok-kw">try</span> testing.expectEqual(<span class="tok-kw">error</span>.Foo, casted);
 }
 
-<span class="tok-kw">fn</span> <span class="tok-fn">checkSentinelManyPtr</span>(values: [*:<span class="tok-number">0</span>]<span class="tok-kw">const</span> <span class="tok-type">i32</span>) !<span class="tok-type">void</span> {
-    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">3</span>, values[<span class="tok-number">0</span>]);
-    <span class="tok-kw">try</span> expectEqual(-<span class="tok-number">4</span>, values[<span class="tok-number">1</span>]);
-    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">0</span>, values[<span class="tok-number">2</span>]);
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@errorCast error union&quot;</span> {
+    <span class="tok-kw">const</span> err: <span class="tok-kw">error</span>{Foo, Bar}!<span class="tok-type">u32</span> = <span class="tok-kw">error</span>.Foo;
+    <span class="tok-kw">const</span> casted: <span class="tok-kw">error</span>{Foo}!<span class="tok-type">u32</span> = <span class="tok-builtin">@errorCast</span>(err);
+    <span class="tok-kw">try</span> testing.expectError(<span class="tok-kw">error</span>.Foo, casted);
 }
 
-<span class="tok-kw">test</span> <span class="tok-str">&quot;ref to anon array init coerced to sentinel many-ptr&quot;</span> {
-    <span class="tok-kw">try</span> checkSentinelManyPtr(&amp;.{ <span class="tok-number">3</span>, -<span class="tok-number">4</span> });
-}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test coerce_many.zig</kbd>
-1/2 coerce_many.test.ref to anon array init coerced to many-ptr... OK
-2/2 coerce_many.test.ref to anon array init coerced to sentinel many-ptr... OK
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@errorCast error union payload&quot;</span> {
+    <span class="tok-kw">const</span> err: <span class="tok-kw">error</span>{Foo, Bar}!<span class="tok-type">u32</span> = <span class="tok-number">123</span>;
+    <span class="tok-kw">const</span> casted: <span class="tok-kw">error</span>{Foo}!<span class="tok-type">u32</span> = <span class="tok-builtin">@errorCast</span>(err);
+    <span class="tok-kw">try</span> testing.expectEqual(<span class="tok-number">123</span>, casted);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test error_cast.zig</kbd>
+1/3 error_cast.test.@errorCast error set... OK
+2/3 error_cast.test.@errorCast error union... OK
+3/3 error_cast.test.@errorCast error union payload... OK
+All 3 tests passed.
+</samp></pre></figure>
+    
+
+    <h3 id="abs"><a href="#toc-abs">@abs</a> <a class="hdr" href="#abs">§</a></h3>
+
+    <p>Previous releases of Zig included the <code><span class="tok-builtin">@fabs</span></code> builtin. This has been replaced with a new
+    <code><span class="tok-builtin">@abs</span></code> builtin, which is able to operate on integers as well as floats:</p>
+<figure><figcaption class="zig-cap"><cite class="file">abs.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> expectEqual = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>).testing.expectEqual;
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@abs on float&quot;</span> {
+    <span class="tok-kw">const</span> x: <span class="tok-type">f32</span> = -<span class="tok-number">123.5</span>;
+    <span class="tok-kw">const</span> y = <span class="tok-builtin">@abs</span>(x);
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">123.5</span>, y);
+}
+
+<span class="tok-kw">test</span> <span class="tok-str">&quot;@abs on int&quot;</span> {
+    <span class="tok-kw">const</span> x: <span class="tok-type">i32</span> = -<span class="tok-number">12345</span>;
+    <span class="tok-kw">const</span> y = <span class="tok-builtin">@abs</span>(x);
+    <span class="tok-kw">try</span> expectEqual(<span class="tok-number">12345</span>, y);
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig test abs.zig</kbd>
+1/2 abs.test.@abs on float... OK
+2/2 abs.test.@abs on int... OK
 All 2 tests passed.
 </samp></pre></figure>
     
+
     
 
     <h2 id="Standard-Library"><a href="#toc-Standard-Library">Standard Library</a> <a class="hdr" href="#Standard-Library">§</a></h2>
@@ -1864,6 +1908,20 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
 };</code></pre></figure>
     <p>Many more <code>std.posix</code> APIs were adjusted in a
     similar way.</p>
+    
+
+    <h3 id="stdbuiltin-Enum-Fields-Lowercased"><a href="#toc-stdbuiltin-Enum-Fields-Lowercased">std.builtin Enum Fields Lowercased</a> <a class="hdr" href="#stdbuiltin-Enum-Fields-Lowercased">§</a></h3>
+
+    <p>Zig 0.12.0 takes the opportunity to adjust the field names of some enums in <code>std.builtin</code> to align
+    with our current naming conventions, which dictate that enum fields should be <code>snake_case</code>. The following enums have been updated:</p>
+    <ul>
+      <li><code>std.builtin.AtomicOrder</code></li>
+      <li><code>std.builtin.ContainerLayout</code></li>
+      <li><code>std.builtin.Endian</code></li>
+      <li><code>std.builtin.FloatMode</code></li>
+      <li><code>std.builtin.GlobalLinkage</code></li>
+      <li><code>std.builtin.LinkMode</code></li>
+    </ul>
     
 
     <h3 id="Global-Configuration"><a href="#toc-Global-Configuration">Global Configuration</a> <a class="hdr" href="#Global-Configuration">§</a></h3>
