@@ -231,10 +231,6 @@
       background-repeat: no-repeat;
     }
 
-    #stage2-progress-dark {
-      display: none;
-    }
-
     .diff-red {
       background-color: #ffaeae;
       display: block;
@@ -327,12 +323,6 @@
       }
       #logo {
         background-image: url(https://ziglang.org/img/zig-logo-light.svg);
-      }
-      #stage2-progress-dark {
-        display: block;
-      }
-      #stage2-progress-light {
-        display: none;
       }
       .diff-red {
         background-color: #410000;
@@ -1121,6 +1111,35 @@ comptime {
     {#header_close#}
 
     {#header_open|Standard Library#}
+    {#header_open|Windows Command Line Argument Parsing#}
+    <p>On Windows, the command line arguments of a program are a single WTF-16
+    encoded string and it's up to the program to split it into an array of
+    strings. In C/C++, the entry point of the C runtime takes care of splitting
+    the command line and passing argc/argv to the main function.</p>
+
+    <p>Previously, ArgIteratorWindows matched the behavior of
+    CommandLineToArgvW, but it turns out that CommandLineToArgvW's behavior
+    does not match the behavior of the C runtime post-2008. In 2008, the C
+    runtime argv splitting
+    <a href="https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULESDOC">changed how it handles consecutive double quotes</a>
+    within a quoted argument (it's now considered an escaped quote, e.g.
+    <code>"foo""bar"</code> post-2008 would get parsed into <code>foo"bar</code>), and the rules around
+    argv[0] were also changed.</p>
+    <p>This release makes ArgIteratorWindows match the behavior of the
+    post-2008 C runtime. The motivation here is roughly the same as when the
+    <a href="https://github.com/rust-lang/rust/pull/87580">same change was made in Rust</a>,
+    that is (paraphrased):</p>
+    <ul>
+      <li>Consistent behavior between Zig and modern C/C++ programs</li>
+      <li>Allows users to escape double quotes in a way that can be more straightforward</li>
+    </ul>
+    <p>Additionally, the suggested mitigation for
+    <a href="https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/">BatBadBut</a>
+    relies on the post-2008 argv splitting behavior for roundtripping of the
+    arguments given to cmd.exe.</p>
+    <p>The <a href="https://github.com/ziglang/zig/pull/19698">BadBatBut
+    mitigation</a> did not make the 0.12.0 release cutoff.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
@@ -1586,7 +1605,7 @@ comptime {
       <li>Ross Rheingans-Yoo</li>
       <li>Emily A. Bellows</li>
       <li>Justin "J.R." Hill</li>
-      <li>Mykhailo Tsiuptsiun (miktwon) [Flag of Ukraine]</li>
+      <li>Mykhailo Tsiuptsiun</li>
       <li>Kiril Mihaylov</li>
       <li>Brett Slatkin</li>
       <li>Sean Carey</li>
@@ -1631,3 +1650,4 @@ comptime {
     </div>
   </body>
 </html>
+TODO run against tidy
