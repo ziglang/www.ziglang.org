@@ -370,7 +370,22 @@
                 <li><a id="toc-Tier-4-Support" href="#Tier-4-Support">Tier 4 Support</a></li>
             </ul></li>
         </ul></li>
-        <li><a id="toc-Autodoc" href="#Autodoc">Autodoc</a></li>
+        <li><a id="toc-Redesign-How-Autodoc-Works" href="#Redesign-How-Autodoc-Works">Redesign How Autodoc Works</a>
+        <ul>
+            <li><a id="toc-Installed-Standard-Library-Documentation" href="#Installed-Standard-Library-Documentation">Installed Standard Library Documentation</a></li>
+            <li><a id="toc-Time-to-Generate-Documentation" href="#Time-to-Generate-Documentation">Time to Generate Documentation</a></li>
+            <li><a id="toc-New-Autodoc-Features" href="#New-Autodoc-Features">New Autodoc Features</a>
+            <ul>
+                <li><a id="toc-Reliable-Linkification" href="#Reliable-Linkification">Reliable Linkification</a></li>
+                <li><a id="toc-Interactive-Source-Listings" href="#Interactive-Source-Listings">Interactive Source Listings</a></li>
+                <li><a id="toc-Embedded-Source-Listings" href="#Embedded-Source-Listings">Embedded Source Listings</a></li>
+                <li><a id="toc-Search-Includes-Doc-Comments" href="#Search-Includes-Doc-Comments">Search Includes Doc Comments</a></li>
+                <li><a id="toc-Error-Set-View" href="#Error-Set-View">Error Set View</a></li>
+                <li><a id="toc-Correct-Type-Detection" href="#Correct-Type-Detection">Correct Type Detection</a></li>
+                <li><a id="toc-Correct-Implementation-of-Scroll-History" href="#Correct-Implementation-of-Scroll-History">Correct Implementation of Scroll History</a></li>
+            </ul></li>
+            <li><a id="toc-Follow-Up-Autodoc-Work" href="#Follow-Up-Autodoc-Work">Follow-Up Autodoc Work</a></li>
+        </ul></li>
         <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
         <ul>
             <li><a id="toc-Unnecessary-Use-of-var" href="#Unnecessary-Use-of-var">Unnecessary Use of var</a></li>
@@ -385,7 +400,7 @@
             <li><a id="toc-Windows-Command-Line-Argument-Parsing" href="#Windows-Command-Line-Argument-Parsing">Windows Command Line Argument Parsing</a></li>
             <li><a id="toc-Bring-Your-Own-OS-API-Layer-Regressed" href="#Bring-Your-Own-OS-API-Layer-Regressed">Bring-Your-Own-OS API Layer Regressed</a></li>
             <li><a id="toc-stdos-renamed-to-stdposix" href="#stdos-renamed-to-stdposix">std.os renamed to std.posix</a></li>
-            <li><a id="toc-ryu-floating-point-formatting" href="#ryu-floating-point-formatting">ryu floating-point formatting</a></li>
+            <li><a id="toc-Ryu-Floating-Point-Formatting" href="#Ryu-Floating-Point-Formatting">Ryu Floating-Point Formatting</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -935,20 +950,162 @@
     
     
 
-    <h2 id="Autodoc"><a href="#toc-Autodoc">Autodoc</a> <a class="hdr" href="#Autodoc">§</a></h2>
+    <h2 id="Redesign-How-Autodoc-Works"><a href="#toc-Redesign-How-Autodoc-Works">Redesign How Autodoc Works</a> <a class="hdr" href="#Redesign-How-Autodoc-Works">§</a></h2>
 
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_4.svg" style="height: 13em; float: right">
-    <p>Zig 0.12.0 features <a href="https://github.com/ziglang/zig/pull/19208">a complete rewrite</a> of the Autodoc
-    documentation generation system. The generated documentation is now far more robust, quicker to generate, and has a
-    smaller filesize.</p>
-    <p>Zig 0.11.0 shipped with a <code>docs/std/</code> directory which contained the generated documentation for the
-    Zig Standard Libarary. This directory does not exist in the Zig 0.12.0 release. Instead, running the command
-    <code>zig std</code> will host the standard library documentation locally and automatically spawn a browser window
-    to view it. This makes the Zig installation 15% smaller, and the new documentation is generated lazily by the hosted
-    documentation site itself, so there is no need to wait for the docs to build.</p>
-    <p>The strategy for generating documentation on the CLI and in build
-    scripts is unchanged: use the <code>-femit-docs</code> CLI option or the <code>getEmittedDocs</code> method on
-    <code>std.Build.Step.Compile</code>.
+    <p>This release deletes the previous (experimental) Autodoc implementation and replaces it with a new (not experimental!) one.</p>
+<p>The old implementation looked like this:</p>
+<pre>   5987 src/Autodoc.zig
+   435 src/autodoc/render_source.zig
+ 10270 lib/docs/commonmark.js
+  1245 lib/docs/index.html
+  5242 lib/docs/main.js
+  2146 lib/docs/ziglexer.js
+ 25325 total</pre>
+    <p>After compilation (sizes are for standard library documentation):</p>
+<pre>272K commonmark.js
+3.8M data-astNodes.js
+360K data-calls.js
+767K data-comptimeExprs.js
+2.2M data-decls.js
+896K data-exprs.js
+ 13K data-files.js
+  45 data-guideSections.js
+ 129 data-modules.js
+  15 data-rootMod.js
+ 294 data-typeKinds.js
+3.2M data-types.js
+ 38K index.html
+158K main.js
+ 36M src/ (470 .zig.html files)
+ 78K ziglexer.js</pre>
+    <p>Total output size: 47M (5.7M gzipped)</p>
+    <p><code>src/Autodoc.zig</code> processed ZIR code, outputting JSON data for a web application to consume. This resulted in a lot of code ineffectively trying to reconstruct the AST from no-longer-available data.</p>
+    <p><code>lib/docs/commonmark.js</code> was a third-party markdown implementation that supported <em>too many features</em>; for example I do not want it to be possible to have HTML tags in doc comments, because that would make source code uglier. Only markdown that looks good both as source and rendered should be allowed.</p>
+    <p><code>lib/docs/ziglexer.js</code> was an implementation of Zig language tokenization in JavaScript, despite Zig already exposing its own tokenizer in the standard library. When I saw this <a href="https://github.com/ziglang/zig/pull/16306">added to the zig project</a>, <a href="https://github.com/ziglang/zig/issues/16490">a little part of me died inside</a>.</p>
+    <p><code>src/autodoc/render_source.zig</code> was a tool that converted .zig files to a syntax-highlighted but non-interactive .zig.html files.</p>
+    <p>The new implementation looks like this:</p>
+<pre>   942 lib/docs/main.js
+   403 lib/docs/index.html
+   933 lib/docs/wasm/markdown.zig
+   226 lib/docs/wasm/Decl.zig
+  1500 lib/docs/wasm/markdown/Parser.zig
+   254 lib/docs/wasm/markdown/renderer.zig
+   192 lib/docs/wasm/markdown/Document.zig
+   941 lib/docs/wasm/main.zig
+  1038 lib/docs/wasm/Walk.zig
+  6630 total</pre>
+    <p>After compilation (sizes are for standard library documentation):</p>
+    <pre> 12K index.html
+ 32K main.js
+192K main.wasm
+ 12M sources.tar</pre>
+    <p>Total output size: 12M (2.3M gzipped)</p>
+    <p>As you can see, it is both dramatically simpler in terms of implementation as well as build artifacts. Now there are exactly 4 files instead of many, with a 4x reduction in total file size of the generated web app.</p>
+    <p>However, not only is it simpler, it is actually more powerful than the old system, because instead of processing ZIR, this system processes the source files directly, meaning it has 100% of the information and never needs to piece anything together backwards.</p>
+    <p>This strategy uses a WebAssembly module written in Zig. This allows it to reuse components from the compiler, such as the tokenizer, parser, and other utilities for operating on Zig code.</p>
+    <p>The sources.tar file, after being decompressed by the HTTP layer, is fed directly into the wasm module's memory. The tar file is parsed using std.tar and source files are parsed in place, with some additional computations added to hash tables on the side.</p>
+    <p>There is room for introducing worker threads to speed up the parsing, although single-threaded it is already so fast that it does not seem necessary.</p>
+
+    <h3 id="Installed-Standard-Library-Documentation"><a href="#toc-Installed-Standard-Library-Documentation">Installed Standard Library Documentation</a> <a class="hdr" href="#Installed-Standard-Library-Documentation">§</a></h3>
+
+    <p>In Zig 0.11.0, a Zig installation comes with a <code>docs/std/</code>
+    directory that contains those 47M of output artifacts mentioned above.</p>
+    <p>This rewrite removed those artifacts from Zig installations, instead
+    offering the <code>zig std</code> command, which hosts std lib autodocs and
+    spawns a browser window to view them. When this command is activated,
+    <code>lib/compiler/std-docs.zig</code> is compiled from source to perform
+    this operation.</p>
+    <p>The HTTP server creates the requested files on the fly, including
+    rebuilding <code>main.wasm</code> if any of its source files changed, and constructing
+    <code>sources.tar</code>, meaning that any source changes to the documented files,
+    <em>or to the autodoc system itself</em> are immediately reflected when
+    viewing docs. Prefixing the URL with <code>/debug</code> results in a debug
+    build of the WebAssembly module.</p>
+    <p>This means contributors can test changes to Zig standard library documentation, as well as autodocs functionality, by pressing refresh in their browser window, using a binary distribution of Zig.</p>
+    <p>In total, this reduced the Zig installation size from 317M to 268M (-15%).</p>
+    <p>A ReleaseSmall build of the compiler shrinks from 10M to 9.8M (-1%).</p>
+    
+    <h3 id="Time-to-Generate-Documentation"><a href="#toc-Time-to-Generate-Documentation">Time to Generate Documentation</a> <a class="hdr" href="#Time-to-Generate-Documentation">§</a></h3>
+
+<p>Autodocs generation is now done properly as part of the pipeline of the compiler rather than tacked on at the end. It also no longer has any dependencies on other parts of the pipeline.</p>
+<p>This is how long it now takes to generate standard library documentation:</p>
+<pre>Benchmark 1 (3 runs): old/zig test /home/andy/dev/zig/lib/std/std.zig -fno-emit-bin -femit-docs=docs
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          13.3s  ±  405ms    12.8s  … 13.6s           0 ( 0%)        0%
+  peak_rss           1.08GB ±  463KB    1.08GB … 1.08GB          0 ( 0%)        0%
+  cpu_cycles         54.8G  ±  878M     54.3G  … 55.8G           0 ( 0%)        0%
+  instructions        106G  ±  313K      106G  …  106G           0 ( 0%)        0%
+  cache_references   2.11G  ± 35.4M     2.07G  … 2.14G           0 ( 0%)        0%
+  cache_misses       41.3M  ±  455K     40.8M  … 41.7M           0 ( 0%)        0%
+  branch_misses       116M  ± 67.8K      116M  …  116M           0 ( 0%)        0%
+Benchmark 2 (197 runs): new/zig build-obj -fno-emit-bin -femit-docs=docs ../lib/std/std.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          24.6ms ± 1.03ms    22.8ms … 28.3ms          4 ( 2%)        ⚡- 99.8% ±  0.3%
+  peak_rss           87.3MB ± 60.6KB    87.2MB … 87.4MB          0 ( 0%)        ⚡- 91.9% ±  0.0%
+  cpu_cycles         38.4M  ±  903K     37.4M  … 46.1M          13 ( 7%)        ⚡- 99.9% ±  0.2%
+  instructions       39.7M  ± 12.4K     39.7M  … 39.8M           0 ( 0%)        ⚡-100.0% ±  0.0%
+  cache_references   2.65M  ± 89.1K     2.54M  … 3.43M           3 ( 2%)        ⚡- 99.9% ±  0.2%
+  cache_misses        197K  ± 5.71K      186K  …  209K           0 ( 0%)        ⚡- 99.5% ±  0.1%
+  branch_misses       184K  ± 1.97K      178K  …  190K           6 ( 3%)        ⚡- 99.8% ±  0.0%</pre>
+    <p>It used to take upwards of 13 seconds. Now it takes 25ms.</p>
+    
+    <h3 id="New-Autodoc-Features"><a href="#toc-New-Autodoc-Features">New Autodoc Features</a> <a class="hdr" href="#New-Autodoc-Features">§</a></h3>
+
+    <h4 id="Reliable-Linkification"><a href="#toc-Reliable-Linkification">Reliable Linkification</a> <a class="hdr" href="#Reliable-Linkification">§</a></h4>
+
+    <p>This stems from the fact that with full source files we have all the information, and can write more robust code to look up identifiers from the context they occur in.</p>
+    
+
+    <h4 id="Interactive-Source-Listings"><a href="#toc-Interactive-Source-Listings">Interactive Source Listings</a> <a class="hdr" href="#Interactive-Source-Listings">§</a></h4>
+
+    <p>Press <code>u</code> to go to source code for any declaration:</p>
+    <img src="https://ziglang.org/download/0.12.0/release-notes/interactive-source-listings.png" alt="interactive source listings">
+    <p>The links take you to the API page for that specific link by changing the location hash.</p>
+    
+
+    <h4 id="Embedded-Source-Listings"><a href="#toc-Embedded-Source-Listings">Embedded Source Listings</a> <a class="hdr" href="#Embedded-Source-Listings">§</a></h4>
+
+    <img src="https://ziglang.org/download/0.12.0/release-notes/embedded-source-listings.png" alt="embedded source listings">
+    
+
+    <h4 id="Search-Includes-Doc-Comments"><a href="#toc-Search-Includes-Doc-Comments">Search Includes Doc Comments</a> <a class="hdr" href="#Search-Includes-Doc-Comments">§</a></h4>
+
+    <img src="https://ziglang.org/download/0.12.0/release-notes/search-including-doc-comments.png" alt="search including doc comments">
+    
+
+    <h4 id="Error-Set-View"><a href="#toc-Error-Set-View">Error Set View</a> <a class="hdr" href="#Error-Set-View">§</a></h4>
+
+    <p>Merged error sets are detected:</p>
+    <img src="https://ziglang.org/download/0.12.0/release-notes/merged-error-sets.png" alt="merged error sets">
+    <p>Errors that come from other declarations are linked:</p>
+    <img src="https://ziglang.org/download/0.12.0/release-notes/other-error-sets.png" alt="other error sets">
+    <p>Errors are also shown on function view:</p>
+    <img src="https://ziglang.org/download/0.12.0/release-notes/function-view-errors.png" alt="function view errors">
+    
+
+    <h4 id="Correct-Type-Detection"><a href="#toc-Correct-Type-Detection">Correct Type Detection</a> <a class="hdr" href="#Correct-Type-Detection">§</a></h4>
+
+    <img src="https://ziglang.org/download/0.12.0/release-notes/correct-type-detection.png" alt="correct type detection">
+    <p>Previous implementation guesses wrong on the type of <code>options</code> as well as <code>DynLib</code>.</p>
+    
+
+    <h4 id="Correct-Implementation-of-Scroll-History"><a href="#toc-Correct-Implementation-of-Scroll-History">Correct Implementation of Scroll History</a> <a class="hdr" href="#Correct-Implementation-of-Scroll-History">§</a></h4>
+
+    <p>The previous implementation implemented scroll history in JavaScript, which is impossible to do
+    correctly. The new system makes careful use of the 'popstate' event combined with the history API
+    to scroll to the top of the window only when the user navigates to a new link - respecting the browser's
+    saved scroll history in all other cases.</p>
+    <p>For more details see
+    <a href="https://github.com/andrewrk/autodoc/commit/6d96a63430b39c8a08158410b25dd0ecafea28db">the commit diff</a>.</p>
+    
+    
+
+    <h3 id="Follow-Up-Autodoc-Work"><a href="#toc-Follow-Up-Autodoc-Work">Follow-Up Autodoc Work</a> <a class="hdr" href="#Follow-Up-Autodoc-Work">§</a></h3>
+
+    <p><a href="https://github.com/ziglang/zig/issues/19249">autodoc follow-up enhancements and bug fixes mega issue</a></p>
+    <p><a href="https://github.com/ziglang/zig/issues/19386">Generic structs should include field listings</a></p>
+    
     
 
     <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
@@ -1290,10 +1447,10 @@ All 1 tests passed.
     to be available on a given OS when the OS implements that corresponding POSIX functionality.</p>
     
 
-    <h3 id="ryu-floating-point-formatting"><a href="#toc-ryu-floating-point-formatting">ryu floating-point formatting</a> <a class="hdr" href="#ryu-floating-point-formatting">§</a></h3>
+    <h3 id="Ryu-Floating-Point-Formatting"><a href="#toc-Ryu-Floating-Point-Formatting">Ryu Floating-Point Formatting</a> <a class="hdr" href="#Ryu-Floating-Point-Formatting">§</a></h3>
 
     <p>Zig 0.12.0 replaces the previous errol floating point formatting algorithm with one based on
-    <a href="https://github.com/ulfjack/ryu">Ryu</a>, an algorithm for
+    <a href="https://github.com/ulfjack/ryu">Ryu</a>, a modern algorithm for
     converting IEEE-754 floating-point numbers to decimal strings.</p>
     <p>The improvements this brings are:</p>
     <ul>
@@ -1346,7 +1503,7 @@ ryu:   2e0</pre>
     </li>
     </ul>
     <p>Performance: ~2.3x performance improvement</p>
-    <p>Code Size: roughly +10KB, which is 2x</p>
+    <p>Code Size: roughly +5KB (2x)</p>
     <p><a href="https://github.com/ziglang/zig/pull/19229">Source for those stats</a></p>
     
     
