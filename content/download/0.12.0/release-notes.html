@@ -383,14 +383,17 @@
         <li><a id="toc-Standard-Library" href="#Standard-Library">Standard Library</a>
         <ul>
             <li><a id="toc-Windows-Command-Line-Argument-Parsing" href="#Windows-Command-Line-Argument-Parsing">Windows Command Line Argument Parsing</a></li>
+            <li><a id="toc-Bring-Your-Own-OS-API-Layer-Regressed" href="#Bring-Your-Own-OS-API-Layer-Regressed">Bring-Your-Own-OS API Layer Regressed</a></li>
+            <li><a id="toc-stdos-renamed-to-stdposix" href="#stdos-renamed-to-stdposix">std.os renamed to std.posix</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
-            <li><a id="toc-introduce-stdBuildpath-deprecate-LazyPathrelative" href="#introduce-stdBuildpath-deprecate-LazyPathrelative">introduce std.Build.path; deprecate LazyPath.relative</a></li>
+            <li><a id="toc-introduce-bpath-deprecate-LazyPathrelative" href="#introduce-bpath-deprecate-LazyPathrelative">introduce b.path; deprecate LazyPath.relative</a></li>
         </ul></li>
         <li><a id="toc-Package-Management" href="#Package-Management">Package Management</a></li>
         <li><a id="toc-Compiler" href="#Compiler">Compiler</a></li>
         <li><a id="toc-Linker" href="#Linker">Linker</a></li>
+        <li><a id="toc-Cache-System" href="#Cache-System">Cache System</a></li>
         <li><a id="toc-Bug-Fixes" href="#Bug-Fixes">Bug Fixes</a>
         <ul>
             <li><a id="toc-Comptime-Pointer-Access" href="#Comptime-Pointer-Access">Comptime Pointer Access</a></li>
@@ -1258,16 +1261,40 @@ All 1 tests passed.
     <p>The <a href="https://github.com/ziglang/zig/pull/19698">BadBatBut
     mitigation</a> did not make the 0.12.0 release cutoff.</p>
     
+
+    <h3 id="Bring-Your-Own-OS-API-Layer-Regressed"><a href="#toc-Bring-Your-Own-OS-API-Layer-Regressed">Bring-Your-Own-OS API Layer Regressed</a> <a class="hdr" href="#Bring-Your-Own-OS-API-Layer-Regressed">§</a></h3>
+
+    <p>Previous versions of Zig allowed applications to override the POSIX API layer of the standard library.
+    This release intentionally removes this ability, with no migration path offered.</p>
+    <p>This was a mistake from day one. This is the wrong abstraction layer to do this in.</p>
+    <p>The alternate plan for this is to make all I/O operations require an IO
+    interface parameter, similar to how allocations require an Allocator
+    interface parameter today.</p>
+    <p>Such a plan is not yet implemented, so applications which require this functionality must maintain a
+    fork of the standard library until then.</p>
+    
+
+    <h3 id="stdos-renamed-to-stdposix"><a href="#toc-stdos-renamed-to-stdposix">std.os renamed to std.posix</a> <a class="hdr" href="#stdos-renamed-to-stdposix">§</a></h3>
+
+    <p>Migration guide:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>std.os.abort();</code></pre></figure>
+    &downarrow;
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>std.posix.abort();</code></pre></figure>
+    <p>Generally, one should prefer to use the higher-level cross-platform abstractions rather than reaching
+    into the POSIX API layer. For example, <code>std.process.exit</code> is more portable than
+    <code>std.posix.exit</code>. You should generally expect the API inside <code>std.posix</code>
+    to be available on a given OS if the OS implements that corresponding POSIX functionality.</p>
+    
     
 
     <h2 id="Build-System"><a href="#toc-Build-System">Build System</a> <a class="hdr" href="#Build-System">§</a></h2>
 
-    <h3 id="introduce-stdBuildpath-deprecate-LazyPathrelative"><a href="#toc-introduce-stdBuildpath-deprecate-LazyPathrelative">introduce std.Build.path; deprecate LazyPath.relative</a> <a class="hdr" href="#introduce-stdBuildpath-deprecate-LazyPathrelative">§</a></h3>
+    <h3 id="introduce-bpath-deprecate-LazyPathrelative"><a href="#toc-introduce-bpath-deprecate-LazyPathrelative">introduce b.path; deprecate LazyPath.relative</a> <a class="hdr" href="#introduce-bpath-deprecate-LazyPathrelative">§</a></h3>
 
     <p>This adds the <code>*std.Build</code> owner to LazyPath so
     that lazy paths returned from a dependency can be used in the application's
     build script without friction or footguns.</p>
-    <p>Upgrade guide:</p>
+    <p>Migration guide:</p>
     <p>Source-Relative LazyPath:</p>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.root_source_file = .{ .path = <span class="tok-str">&quot;src/main.zig&quot;</span> },</code></pre></figure>
     &downarrow;
@@ -1308,11 +1335,37 @@ All 1 tests passed.
 
     
 
+    <h2 id="Cache-System"><a href="#toc-Cache-System">Cache System</a> <a class="hdr" href="#Cache-System">§</a></h2>
+
+    <p>This rather annoying bug is fixed now: <a href="https://github.com/ziglang/zig/issues/16149">error: StreamTooLong when recompiling; duplicate source files in cache manifest</a></p>
+    <p>The fix, which deduplicates files listed in the cache manifest, makes cache hits significantly faster.
+    Data point: cache hit building hello world with static musl libc</p>
+    <pre>Benchmark 1 (61 runs): master/zig build-exe hello.c -target native-native-musl -lc
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          81.4ms ± 1.76ms    77.7ms … 87.1ms          1 ( 2%)        0%
+  peak_rss           64.6MB ± 77.7KB    64.4MB … 64.7MB          0 ( 0%)        0%
+  cpu_cycles         97.2M  ± 1.04M     95.1M  …  101M           1 ( 2%)        0%
+  instructions        153M  ± 11.1K      152M  …  153M           0 ( 0%)        0%
+  cache_references   2.21M  ± 97.1K     2.05M  … 2.54M           2 ( 3%)        0%
+  cache_misses        529K  ± 24.4K      486K  …  600K           4 ( 7%)        0%
+  branch_misses       409K  ± 6.45K      397K  …  437K           1 ( 2%)        0%
+Benchmark 2 (189 runs): cache-dedup/zig build-exe hello.c -target native-native-musl -lc
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          25.8ms ± 1.26ms    23.9ms … 30.7ms         11 ( 6%)        ⚡- 68.4% ±  0.5%
+  peak_rss           65.2MB ± 61.8KB    65.1MB … 65.4MB          2 ( 1%)        💩+  1.0% ±  0.0%
+  cpu_cycles         41.2M  ±  608K     40.1M  … 46.3M           4 ( 2%)        ⚡- 57.6% ±  0.2%
+  instructions       64.3M  ± 12.6K     64.3M  … 64.4M           2 ( 1%)        ⚡- 57.8% ±  0.0%
+  cache_references   1.28M  ± 34.5K     1.21M  … 1.35M           0 ( 0%)        ⚡- 41.9% ±  0.7%
+  cache_misses        348K  ± 18.6K      297K  …  396K           0 ( 0%)        ⚡- 34.2% ±  1.1%
+  branch_misses       199K  ± 1.34K      197K  …  206K           6 ( 3%)        ⚡- 51.2% ±  0.2%</pre>
+    
+
     <h2 id="Bug-Fixes"><a href="#toc-Bug-Fixes">Bug Fixes</a> <a class="hdr" href="#Bug-Fixes">§</a></h2>
 
     <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.12.0">Full list of the 502 bug reports closed during this release cycle</a>.</p>
     <p>Many bugs were both introduced and resolved within this release cycle.
     Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+
     <h3 id="Comptime-Pointer-Access"><a href="#toc-Comptime-Pointer-Access">Comptime Pointer Access</a> <a class="hdr" href="#Comptime-Pointer-Access">§</a></h3>
 
     <p>Zig has had several long-standing bugs relating to accessing pointers at compile time. When attempting to access
@@ -1324,6 +1377,7 @@ All 1 tests passed.
     This change also includes some fixes to the logic for comptime <code><span class="tok-builtin">@bitCast</span></code>; in particular,
     bitcasting aggregates containing pointers no longer incorrectly forces the operation to occur at runtime.</p>
     
+
     <h3 id="This-Release-Contains-Bugs"><a href="#toc-This-Release-Contains-Bugs">This Release Contains Bugs</a> <a class="hdr" href="#This-Release-Contains-Bugs">§</a></h3>
 
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">

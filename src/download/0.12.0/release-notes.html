@@ -1159,6 +1159,32 @@ const parent_ptr: *Parent = @alignCast(@fieldParentPtr("field_name", field_ptr))
     <p>The <a href="https://github.com/ziglang/zig/pull/19698">BadBatBut
     mitigation</a> did not make the 0.12.0 release cutoff.</p>
     {#header_close#}
+
+    {#header_open|Bring-Your-Own-OS API Layer Regressed#}
+    <p>Previous versions of Zig allowed applications to override the POSIX API layer of the standard library.
+    This release intentionally removes this ability, with no migration path offered.</p>
+    <p>This was a mistake from day one. This is the wrong abstraction layer to do this in.</p>
+    <p>The alternate plan for this is to make all I/O operations require an IO
+    interface parameter, similar to how allocations require an Allocator
+    interface parameter today.</p>
+    <p>Such a plan is not yet implemented, so applications which require this functionality must maintain a
+    fork of the standard library until then.</p>
+    {#header_close#}
+
+    {#header_open|std.os renamed to std.posix#}
+    <p>Migration guide:</p>
+    {#syntax_block|zig#}
+std.os.abort();
+    {#end_syntax_block#}
+    &downarrow;
+    {#syntax_block|zig#}
+std.posix.abort();
+    {#end_syntax_block#}
+    <p>Generally, one should prefer to use the higher-level cross-platform abstractions rather than reaching
+    into the POSIX API layer. For example, {#syntax#}std.process.exit{#endsyntax#} is more portable than
+    {#syntax#}std.posix.exit{#endsyntax#}. You should generally expect the API inside <code>std.posix</code>
+    to be available on a given OS when the OS implements that corresponding POSIX functionality.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
@@ -1216,10 +1242,35 @@ const parent_ptr: *Parent = @alignCast(@fieldParentPtr("field_name", field_ptr))
     {#header_open|Linker#}
     {#header_close#}
 
+    {#header_open|Cache System#}
+    <p>This rather annoying bug is fixed now: <a href="https://github.com/ziglang/zig/issues/16149">error: StreamTooLong when recompiling; duplicate source files in cache manifest</a></p>
+    <p>The fix, which deduplicates files listed in the cache manifest, makes cache hits significantly faster.
+    Data point: cache hit building hello world with static musl libc</p>
+    <pre>Benchmark 1 (61 runs): master/zig build-exe hello.c -target native-native-musl -lc
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          81.4ms ± 1.76ms    77.7ms … 87.1ms          1 ( 2%)        0%
+  peak_rss           64.6MB ± 77.7KB    64.4MB … 64.7MB          0 ( 0%)        0%
+  cpu_cycles         97.2M  ± 1.04M     95.1M  …  101M           1 ( 2%)        0%
+  instructions        153M  ± 11.1K      152M  …  153M           0 ( 0%)        0%
+  cache_references   2.21M  ± 97.1K     2.05M  … 2.54M           2 ( 3%)        0%
+  cache_misses        529K  ± 24.4K      486K  …  600K           4 ( 7%)        0%
+  branch_misses       409K  ± 6.45K      397K  …  437K           1 ( 2%)        0%
+Benchmark 2 (189 runs): cache-dedup/zig build-exe hello.c -target native-native-musl -lc
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          25.8ms ± 1.26ms    23.9ms … 30.7ms         11 ( 6%)        ⚡- 68.4% ±  0.5%
+  peak_rss           65.2MB ± 61.8KB    65.1MB … 65.4MB          2 ( 1%)        💩+  1.0% ±  0.0%
+  cpu_cycles         41.2M  ±  608K     40.1M  … 46.3M           4 ( 2%)        ⚡- 57.6% ±  0.2%
+  instructions       64.3M  ± 12.6K     64.3M  … 64.4M           2 ( 1%)        ⚡- 57.8% ±  0.0%
+  cache_references   1.28M  ± 34.5K     1.21M  … 1.35M           0 ( 0%)        ⚡- 41.9% ±  0.7%
+  cache_misses        348K  ± 18.6K      297K  …  396K           0 ( 0%)        ⚡- 34.2% ±  1.1%
+  branch_misses       199K  ± 1.34K      197K  …  206K           6 ( 3%)        ⚡- 51.2% ±  0.2%</pre>
+    {#header_close#}
+
     {#header_open|Bug Fixes#}
     <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.12.0">Full list of the 502 bug reports closed during this release cycle</a>.</p>
     <p>Many bugs were both introduced and resolved within this release cycle.
     Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+
     {#header_open|Comptime Pointer Access#}
     <p>Zig has had several long-standing bugs relating to accessing pointers at compile time. When attempting to access
     pointers in a non-trivial way, such as loading a slice of an array or reinterpreting memory, you would at times
@@ -1230,6 +1281,7 @@ const parent_ptr: *Parent = @alignCast(@fieldParentPtr("field_name", field_ptr))
     This change also includes some fixes to the logic for comptime {#syntax#}@bitCast{#endsyntax#}; in particular,
     bitcasting aggregates containing pointers no longer incorrectly forces the operation to occur at runtime.</p>
     {#header_close#}
+
     {#header_open|This Release Contains Bugs#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
     <p>
