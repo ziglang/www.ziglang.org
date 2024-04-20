@@ -411,11 +411,19 @@
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
+            <li><a id="toc-System-Package-Mode" href="#System-Package-Mode">System Package Mode</a>
+            <ul>
+                <li><a id="toc-Ability-to-Declare-Optional-System-Library-Integration" href="#Ability-to-Declare-Optional-System-Library-Integration">Ability to Declare Optional System Library Integration</a></li>
+                <li><a id="toc-System-Integration-Help-Section" href="#System-Integration-Help-Section">System Integration Help Section</a></li>
+                <li><a id="toc-Using-the-System-Integration-Options" href="#Using-the-System-Integration-Options">Using the System Integration Options</a></li>
+                <li><a id="toc-New-Release-Option" href="#New-Release-Option">New Release Option</a></li>
+                <li><a id="toc-Avoid-Fetching-in-System-Mode" href="#Avoid-Fetching-in-System-Mode">Avoid Fetching in System Mode</a></li>
+            </ul></li>
+            <li><a id="toc-Lazy-Dependencies" href="#Lazy-Dependencies">Lazy Dependencies</a></li>
             <li><a id="toc-introduce-bpath-deprecate-LazyPathrelative" href="#introduce-bpath-deprecate-LazyPathrelative">introduce b.path; deprecate LazyPath.relative</a></li>
             <li><a id="toc-Header-Installation" href="#Header-Installation">Header Installation</a></li>
             <li><a id="toc-dependencyFromBuildZig" href="#dependencyFromBuildZig">dependencyFromBuildZig</a></li>
         </ul></li>
-        <li><a id="toc-Package-Management" href="#Package-Management">Package Management</a></li>
         <li><a id="toc-Compiler" href="#Compiler">Compiler</a>
         <ul>
             <li><a id="toc-x86_64-Backend" href="#x86_64-Backend">x86_64 Backend</a></li>
@@ -1853,6 +1861,235 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
 
     <h2 id="Build-System"><a href="#toc-Build-System">Build System</a> <a class="hdr" href="#Build-System">§</a></h2>
 
+
+    <h3 id="System-Package-Mode"><a href="#toc-System-Package-Mode">System Package Mode</a> <a class="hdr" href="#System-Package-Mode">§</a></h3>
+
+    <p>Makes the zig build system significantly more friendly to system package maintainers by introducing System Integration Options.</p>
+    <p>Let's examine this feature using
+    <a href="https://github.com/andrewrk/groovebasin/tree/old-client">groovebasin</a>
+    as an example project:</p>
+    <h4 id="Ability-to-Declare-Optional-System-Library-Integration"><a href="#toc-Ability-to-Declare-Optional-System-Library-Integration">Ability to Declare Optional System Library Integration</a> <a class="hdr" href="#Ability-to-Declare-Optional-System-Library-Integration">§</a></h4>
+
+    TODO make this diff highlighted
+    <pre><code>
+--- a/build.zig
++++ b/build.zig
+@@ -5,18 +5,8 @@ pub fn build(b: *std.Build) void {
+     const optimize = b.standardOptimizeOption(.{
+         .preferred_optimize_mode = .ReleaseSafe,
+     });
+-    const libgroove_optimize_mode = b.option(
+-        std.builtin.OptimizeMode,
+-        "libgroove-optimize",
+-        "override optimization mode of libgroove and its dependencies",
+-    );
+     const use_llvm = b.option(bool, "use-llvm", "LLVM backend");
+ 
+-    const groove_dep = b.dependency("groove", .{
+-        .optimize = libgroove_optimize_mode orelse .ReleaseFast,
+-        .target = target,
+-    });
+-
+     b.installDirectory(.{
+         .source_dir = .{ .path = "public" },
+         .install_dir = .lib,
+@@ -31,7 +21,22 @@ pub fn build(b: *std.Build) void {
+         .use_llvm = use_llvm,
+         .use_lld = use_llvm,
+     });
+-    server.linkLibrary(groove_dep.artifact("groove"));
++
++    if (b.systemIntegrationOption("groove", .{})) {
++        server.linkSystemLibrary("groove");
++    } else {
++        const libgroove_optimize_mode = b.option(
++            std.builtin.OptimizeMode,
++            "libgroove-optimize",
++            "override optimization mode of libgroove and its dependencies",
++        );
++        const groove_dep = b.dependency("groove", .{
++            .optimize = libgroove_optimize_mode orelse .ReleaseFast,
++            .target = target,
++        });
++        server.linkLibrary(groove_dep.artifact("groove"));
++    }
++
+     b.installArtifact(server);
+ 
+     const run_cmd = b.addRunArtifact(server);
+    </code></pre>
+    <p>With this diff plus some similar changes in the project's dependency tree...</p>
+    
+
+    <h4 id="System-Integration-Help-Section"><a href="#toc-System-Integration-Help-Section">System Integration Help Section</a> <a class="hdr" href="#System-Integration-Help-Section">§</a></h4>
+
+    <p>There is a new <code>--help</code> section:</p>
+    <pre>System Integration Options:
+  --system [dir]               System Package Mode. Disable fetching; prefer system libs
+  -fsys=[name]                 Enable a system integration
+  -fno-sys=[name]              Disable a system integration
+  --host-target [triple]       Use the provided target as the host
+  --host-cpu [cpu]             Use the provided CPU as the host
+  --host-dynamic-linker [path] Use the provided dynamic linker as the host
+
+  Available System Integrations:                Enabled:
+    groove                                      no
+    z                                           no
+    mp3lame                                     no
+    vorbis                                      no
+    ogg                                         no</pre>
+    
+
+    <h4 id="Using-the-System-Integration-Options"><a href="#toc-Using-the-System-Integration-Options">Using the System Integration Options</a> <a class="hdr" href="#Using-the-System-Integration-Options">§</a></h4>
+
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>[nix-shell:~/dev/groovebasin]$ zig build -fsys=z
+
+[nix-shell:~/dev/groovebasin]$ ldd zig-out/bin/groovebasin
+    linux-vdso.so.1 (0x00007fff054c7000)
+    libz.so.1 =&gt; /nix/store/8mw6ssjspf8k1ija88cfldmxlbarl1bb-zlib-1.2.13/lib/libz.so.1 (0x00007fe164675000)
+    libm.so.6 =&gt; /nix/store/whypqfa83z4bsn43n4byvmw80n4mg3r8-glibc-2.37-45/lib/libm.so.6 (0x00007fe164595000)
+    libc.so.6 =&gt; /nix/store/whypqfa83z4bsn43n4byvmw80n4mg3r8-glibc-2.37-45/lib/libc.so.6 (0x00007fe1643ae000)
+    /nix/store/whypqfa83z4bsn43n4byvmw80n4mg3r8-glibc-2.37-45/lib64/ld-linux-x86-64.so.2 (0x00007fe164696000)
+</samp></pre></figure>
+    <p>Now, re-run the command but removing <code>-fsys=z</code>:</p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>[nix-shell:~/dev/groovebasin]$ ~/Downloads/zig/build-release/stage4/bin/zig build
+
+[nix-shell:~/dev/groovebasin]$ ldd zig-out/bin/groovebasin
+    linux-vdso.so.1 (0x00007ffcc23f6000)
+    libm.so.6 =&gt; /nix/store/whypqfa83z4bsn43n4byvmw80n4mg3r8-glibc-2.37-45/lib/libm.so.6 (0x00007f525feea000)
+    libc.so.6 =&gt; /nix/store/whypqfa83z4bsn43n4byvmw80n4mg3r8-glibc-2.37-45/lib/libc.so.6 (0x00007f525fd03000)
+    /nix/store/whypqfa83z4bsn43n4byvmw80n4mg3r8-glibc-2.37-45/lib64/ld-linux-x86-64.so.2 (0x00007f525ffcc000)
+</samp></pre></figure>
+    
+
+    <h4 id="New-Release-Option"><a href="#toc-New-Release-Option">New Release Option</a> <a class="hdr" href="#New-Release-Option">§</a></h4>
+
+    <p>System package maintainers can provide the new <code>--release</code> option in order to
+    set a system-wide preference for optimization mode, while respecting the application developer's choice.</p>
+    <pre>  --release[=mode]             Request release mode, optionally specifying a
+                               preferred optimization mode: fast, safe, small</pre>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>andy@ark ~/d/a/zlib (main)&gt; zig build --release
+the project does not declare a preferred optimization mode. choose: --release=fast, --release=safe, or --release=small
+error: the following build command failed with exit code 1:
+/home/andy/dev/ayb/zlib/zig-cache/o/6f46a03cb0f5f70d2c891f31086fecc9/build /home/andy/Downloads/zig/build-release/stage3/bin/zig /home/andy/dev/ayb/zlib /home/andy/dev/ayb/zlib/zig-cache /home/andy/.cache/zig --seed 0x3e999c60 --release
+andy@ark ~/d/a/zlib (main) [1]&gt; zig build --release=safe
+andy@ark ~/d/a/zlib (main)&gt; vim build.zig
+andy@ark ~/d/a/zlib (main)&gt; git diff
+diff --git a/build.zig b/build.zig
+index 76bbb01..1bc13e6 100644
+--- a/build.zig
++++ b/build.zig
+@@ -5,7 +5,9 @@ pub fn build(b: *std.Build) void {
+     const lib = b.addStaticLibrary(.{
+         .name = &quot;z&quot;,
+         .target = b.standardTargetOptions(.{}),
+-        .optimize = b.standardOptimizeOption(.{}),
++        .optimize = b.standardOptimizeOption(.{
++            .preferred_optimize_mode = .ReleaseFast,
++        }),
+     });
+     lib.linkLibC();
+     lib.addCSourceFiles(.{
+andy@ark ~/d/a/zlib (main)&gt; zig build --release
+andy@ark ~/d/a/zlib (main)&gt; zig build --release=small
+andy@ark ~/d/a/zlib (main)&gt;
+</samp></pre></figure>
+    <p>This option may be set even if the project's build script does not explicitly expose an optimization
+    configuration option.</p>
+    
+
+    <h4 id="Avoid-Fetching-in-System-Mode"><a href="#toc-Avoid-Fetching-in-System-Mode">Avoid Fetching in System Mode</a> <a class="hdr" href="#Avoid-Fetching-in-System-Mode">§</a></h4>
+
+    <p><code>--system</code> prevents Zig from fetching packages. Instead, a directory of Zig packages
+    is provided, populated presumably by the system package manager.</p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>[nix-shell:~/dev/2Pew]$ zig build --system ~/tmp/p -fno-sys=SDL2
+error: lazy dependency package not found: /home/andy/tmp/p/1220c5360c9c71c215baa41b46ec18d0711059b48416a2b1cf96c7c2d87b2e8e4cf6
+info: remote package fetching disabled due to --system mode
+info: dependencies might be avoidable depending on build configuration
+
+[nix-shell:~/dev/2Pew]$ zig build --system ~/tmp/p
+
+[nix-shell:~/dev/2Pew]$ mv ~/.cache/zig/p/1220c5360c9c71c215baa41b46ec18d0711059b48416a2b1cf96c7c2d87b2e8e4cf6 ~/tmp/p
+
+[nix-shell:~/dev/2Pew]$ zig build --system ~/tmp/p -fno-sys=SDL2
+steps [5/8] zig build-lib SDL2 ReleaseFast native... Compile C Objects [75/128] e_atan2... ^C
+
+[nix-shell:~/dev/2Pew]$
+</samp></pre></figure>
+    
+
+    
+
+    <h3 id="Lazy-Dependencies"><a href="#toc-Lazy-Dependencies">Lazy Dependencies</a> <a class="hdr" href="#Lazy-Dependencies">§</a></h3>
+
+    TODO make this diff highlighted
+    <pre><code>
+--- a/build.zig
++++ b/build.zig
+-    const groove_dep = b.dependency("groove", .{
+-        .optimize = libgroove_optimize_mode orelse .ReleaseFast,
+-        .target = target,
+-    });
++    if (b.lazyDependency("groove", .{
++        .optimize = libgroove_optimize_mode orelse .ReleaseFast,
++        .target = target,
++    })) |groove_dep| {
++        server.linkLibrary(groove_dep.artifact("groove"));
++    }
+    </pre></code>
+    TODO make this diff highlighted
+    <pre><code>
+--- a/build.zig.zon
++++ b/build.zig.zon
+@@ -5,6 +5,7 @@
+         .groove = .{
+             .url = "https://github.com/andrewrk/libgroove/archive/66745eae734e986cd478e7220664f2de902d10a1.tar.gz",
+             .hash = "1220285f0f6b2be336519a0e612a11617c655f78b0efe1cac12fc73fc1e50c7b3e14",
++            .lazy = true,
+         },
+     },
+     .paths = .{
+    </pre></code>
+    <p>This makes the dependency only get fetched if it is actually used. The
+    build runner will be rebuilt if any missing lazy dependencies are
+    encountered.</p>
+    <p>There is an error for using <code>dependency()</code> instead of <code>lazyDependency()</code>:</p>
+    <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build -h</kbd>
+thread 2904684 panic: dependency 'groove' is marked as lazy in build.zig.zon which means it must use the lazyDependency function instead
+/home/andy/Downloads/zig/lib/std/debug.zig:434:22: 0x11901a9 in panicExtra__anon_18741 (build)
+    std.builtin.panic(msg, trace, ret_addr);
+                     ^
+/home/andy/Downloads/zig/lib/std/debug.zig:409:15: 0x1167399 in panic__anon_18199 (build)
+    panicExtra(null, null, format, args);
+              ^
+/home/andy/Downloads/zig/lib/std/Build.zig:1861:32: 0x1136dca in dependency__anon_16705 (build)
+                std.debug.panic(&quot;dependency '{s}{s}' is marked as lazy in build.zig.zon which means it must use the lazyDependency function instead&quot;, .{ b.dep_prefix, name });
+                               ^
+/home/andy/dev/groovebasin/build.zig:33:40: 0x10e8865 in build (build)
+        const groove_dep = b.dependency(&quot;groove&quot;, .{
+                                       ^
+/home/andy/Downloads/zig/lib/std/Build.zig:1982:33: 0x10ca783 in runBuild__anon_8952 (build)
+        .Void =&gt; build_zig.build(b),
+                                ^
+/home/andy/Downloads/zig/lib/build_runner.zig:310:29: 0x10c6708 in main (build)
+        try builder.runBuild(root);
+                            ^
+/home/andy/Downloads/zig/lib/std/start.zig:585:37: 0x10af845 in posixCallMainAndExit (build)
+            const result = root.main() catch |err| {
+                                    ^
+/home/andy/Downloads/zig/lib/std/start.zig:253:5: 0x10af331 in _start (build)
+    asm volatile (switch (native_arch) {
+    ^
+???:?:?: 0x8 in ??? (???)
+Unwind information for `???:0x8` was not available, trace may be incomplete
+
+error: the following build command crashed:
+/home/andy/dev/groovebasin/zig-cache/o/20af710f8e0e96a0ccc68c47688b2d0d/build /home/andy/Downloads/zig/build-release/stage3/bin/zig /home/andy/dev/groovebasin /home/andy/dev/groovebasin/zig-cache /home/andy/.cache/zig --seed 0x513e8ce9 -Z4472a09906216280 -h
+</samp></pre></figure>
+    <p>It's allowed to do the reverse - <code>lazyDependency()</code> when the manifest file does not mark it as lazy.</p>
+    <p>It's probably best practice to always use <code>lazyDependency()</code> in build.zig.</p>
+    
+
     <h3 id="introduce-bpath-deprecate-LazyPathrelative"><a href="#toc-introduce-bpath-deprecate-LazyPathrelative">introduce b.path; deprecate LazyPath.relative</a> <a class="hdr" href="#introduce-bpath-deprecate-LazyPathrelative">§</a></h3>
 
     <p>This adds the <code>*std.Build</code> owner to LazyPath so
@@ -1957,10 +2194,6 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
 <span class="tok-comment">// in consumer build.zig</span>
 <span class="tok-kw">const</span> file = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;foo&quot;</span>).getImportantFile(b);</code></pre></figure>
     
-    
-
-    <h2 id="Package-Management"><a href="#toc-Package-Management">Package Management</a> <a class="hdr" href="#Package-Management">§</a></h2>
-
     
 
     <h2 id="Compiler"><a href="#toc-Compiler">Compiler</a> <a class="hdr" href="#Compiler">§</a></h2>
