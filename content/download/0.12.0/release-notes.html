@@ -233,11 +233,9 @@
 
     .diff-red {
       background-color: #ffaeae;
-      display: block;
     }
     .diff-green {
       background-color: #bfb;
-      display: block;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -1939,26 +1937,24 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
     as an example project:</p>
     <h4 id="Ability-to-Declare-Optional-System-Library-Integration"><a href="#toc-Ability-to-Declare-Optional-System-Library-Integration">Ability to Declare Optional System Library Integration</a> <a class="hdr" href="#Ability-to-Declare-Optional-System-Library-Integration">§</a></h4>
 
-    TODO make this diff highlighted
-    <pre><code>
---- a/build.zig
-+++ b/build.zig
+    <pre><code><span class="diff-red">--- a/build.zig</span>
+<span class="diff-green">+++ b/build.zig</span>
 @@ -5,18 +5,8 @@ pub fn build(b: *std.Build) void {
      const optimize = b.standardOptimizeOption(.{
          .preferred_optimize_mode = .ReleaseSafe,
      });
--    const libgroove_optimize_mode = b.option(
--        std.builtin.OptimizeMode,
--        "libgroove-optimize",
--        "override optimization mode of libgroove and its dependencies",
--    );
+<span class="diff-red">-    const libgroove_optimize_mode = b.option(</span>
+<span class="diff-red">-        std.builtin.OptimizeMode,</span>
+<span class="diff-red">-        "libgroove-optimize",</span>
+<span class="diff-red">-        "override optimization mode of libgroove and its dependencies",</span>
+<span class="diff-red">-    );</span>
      const use_llvm = b.option(bool, "use-llvm", "LLVM backend");
  
--    const groove_dep = b.dependency("groove", .{
--        .optimize = libgroove_optimize_mode orelse .ReleaseFast,
--        .target = target,
--    });
--
+<span class="diff-red">-    const groove_dep = b.dependency("groove", .{</span>
+<span class="diff-red">-        .optimize = libgroove_optimize_mode orelse .ReleaseFast,</span>
+<span class="diff-red">-        .target = target,</span>
+<span class="diff-red">-    });</span>
+<span class="diff-red">-</span>
      b.installDirectory(.{
          .source_dir = .{ .path = "public" },
          .install_dir = .lib,
@@ -1966,27 +1962,26 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
          .use_llvm = use_llvm,
          .use_lld = use_llvm,
      });
--    server.linkLibrary(groove_dep.artifact("groove"));
-+
-+    if (b.systemIntegrationOption("groove", .{})) {
-+        server.linkSystemLibrary("groove");
-+    } else {
-+        const libgroove_optimize_mode = b.option(
-+            std.builtin.OptimizeMode,
-+            "libgroove-optimize",
-+            "override optimization mode of libgroove and its dependencies",
-+        );
-+        const groove_dep = b.dependency("groove", .{
-+            .optimize = libgroove_optimize_mode orelse .ReleaseFast,
-+            .target = target,
-+        });
-+        server.linkLibrary(groove_dep.artifact("groove"));
-+    }
-+
+<span class="diff-red">-    server.linkLibrary(groove_dep.artifact("groove"));</span>
+<span class="diff-green">+</span>
+<span class="diff-green">+    if (b.systemIntegrationOption("groove", .{})) {</span>
+<span class="diff-green">+        server.linkSystemLibrary("groove");</span>
+<span class="diff-green">+    } else {</span>
+<span class="diff-green">+        const libgroove_optimize_mode = b.option(</span>
+<span class="diff-green">+            std.builtin.OptimizeMode,</span>
+<span class="diff-green">+            "libgroove-optimize",</span>
+<span class="diff-green">+            "override optimization mode of libgroove and its dependencies",</span>
+<span class="diff-green">+        );</span>
+<span class="diff-green">+        const groove_dep = b.dependency("groove", .{</span>
+<span class="diff-green">+            .optimize = libgroove_optimize_mode orelse .ReleaseFast,</span>
+<span class="diff-green">+            .target = target,</span>
+<span class="diff-green">+        });</span>
+<span class="diff-green">+        server.linkLibrary(groove_dep.artifact("groove"));</span>
+<span class="diff-green">+    }</span>
+<span class="diff-green">+</span>
      b.installArtifact(server);
  
-     const run_cmd = b.addRunArtifact(server);
-    </code></pre>
+     const run_cmd = b.addRunArtifact(server);</code></pre>
     <p>With this diff plus some similar changes in the project's dependency tree...</p>
     
 
@@ -2091,34 +2086,29 @@ steps [5/8] zig build-lib SDL2 ReleaseFast native... Compile C Objects [75/128] 
 
     <h3 id="Lazy-Dependencies"><a href="#toc-Lazy-Dependencies">Lazy Dependencies</a> <a class="hdr" href="#Lazy-Dependencies">§</a></h3>
 
-    TODO make this diff highlighted
-    <pre><code>
---- a/build.zig
-+++ b/build.zig
--    const groove_dep = b.dependency("groove", .{
--        .optimize = libgroove_optimize_mode orelse .ReleaseFast,
--        .target = target,
--    });
-+    if (b.lazyDependency("groove", .{
-+        .optimize = libgroove_optimize_mode orelse .ReleaseFast,
-+        .target = target,
-+    })) |groove_dep| {
-+        server.linkLibrary(groove_dep.artifact("groove"));
-+    }
-    </pre></code>
-    TODO make this diff highlighted
-    <pre><code>
---- a/build.zig.zon
-+++ b/build.zig.zon
+    <pre><code><span class="diff-red">--- a/build.zig</span>
+<span class="diff-green">+++ b/build.zig</span>
+<span class="diff-red">-    const groove_dep = b.dependency("groove", .{</span>
+<span class="diff-red">-        .optimize = libgroove_optimize_mode orelse .ReleaseFast,</span>
+<span class="diff-red">-        .target = target,</span>
+<span class="diff-red">-    });</span>
+<span class="diff-green">+    if (b.lazyDependency("groove", .{</span>
+<span class="diff-green">+        .optimize = libgroove_optimize_mode orelse .ReleaseFast,</span>
+<span class="diff-green">+        .target = target,</span>
+<span class="diff-green">+    })) |groove_dep| {</span>
+<span class="diff-green">+        server.linkLibrary(groove_dep.artifact("groove"));</span>
+<span class="diff-green">+    }</span></code></pre>
+    <pre><code><span class="diff-red">--- a/build.zig.zon</span>
+<span class="diff-green">+++ b/build.zig.zon</span>
 @@ -5,6 +5,7 @@
          .groove = .{
              .url = "https://github.com/andrewrk/libgroove/archive/66745eae734e986cd478e7220664f2de902d10a1.tar.gz",
              .hash = "1220285f0f6b2be336519a0e612a11617c655f78b0efe1cac12fc73fc1e50c7b3e14",
-+            .lazy = true,
+<span class="diff-green">+            .lazy = true,</span>
          },
      },
      .paths = .{
-    </pre></code>
+    </code></pre>
     <p>This makes the dependency only get fetched if it is actually used. The
     build runner will be rebuilt if any missing lazy dependencies are
     encountered.</p>
