@@ -1185,6 +1185,65 @@ std.posix.abort();
     {#syntax#}std.posix.exit{#endsyntax#}. You should generally expect the API inside <code>std.posix</code>
     to be available on a given OS when the OS implements that corresponding POSIX functionality.</p>
     {#header_close#}
+
+    {#header_open|Ryu Floating-Point Formatting#}
+    <p>Zig 0.12.0 replaces the previous errol floating point formatting algorithm with one based on
+    <a href="https://github.com/ulfjack/ryu">Ryu</a>, a modern algorithm for
+    converting IEEE-754 floating-point numbers to decimal strings.</p>
+    <p>The improvements this brings are:</p>
+    <ul>
+      <li>Ability to format f80 and f128 types</li>
+      <li>More accurate f16 and f32 formatting</li>
+      <li>Complete round-trip support for every float type</li>
+      <li>Generic backend that can be used to print any float of a general number of bits (less than or equal to 128 bits)</li>
+    </ul>
+    <p>Behavior Differences:</p>
+    <ul>
+    <li>Exponents are no longer padded with a leading 0 to 2-digits and if positive, the sign is no longer printed:
+<pre>errol: 1e+02
+ryu:   1e2</pre>
+    </li>
+    <li>Fractional values of 0 are omitted in full precision mode:
+<pre>errol: 2.0e+00
+ryu:   2e0</pre>
+    </li>
+    <li>Full precision output is more accurate in all cases other than f64,
+    since we no longer do a cast internally to f64:
+<pre># Ryu
+3.1234567891011121314151617181920212E0 :f128
+3.1234567891011121314E0 :f80
+3.1234567891011121314E0 :c_longdouble
+3.123456789101112E0 :f64
+3.1234567E0 :f32
+3.123E0 :f16
+
+## Errol
+3.123456789101112e+00 :f128
+3.123456789101112e+00 :f80
+3.123456789101112e+00 :c_longdouble
+3.123456789101112e+00 :f64
+3.12345671e+00 :f32
+3.123046875e+00 :f16</pre>
+    </li>
+    <li>Additionally, rounding behaviour in these cases can differ in the fixed
+    precision case as the shortest representation will typically differ:
+<pre># bits:         141333
+# precision:    3
+# std_shortest: 1.98049715e-40
+# ryu_shortest: 1.9805e-40
+# type:         f32
+|
+| std_dec: 0.000
+| ryu_dec: 0.000
+|
+| std_exp: 1.980e-40
+| ryu_exp: 1.981e-40</pre>
+    </li>
+    </ul>
+    <p>Performance: ~2.3x performance improvement</p>
+    <p>Code Size: roughly +5KB (2x)</p>
+    <p><a href="https://github.com/ziglang/zig/pull/19229">Source for those stats</a></p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
