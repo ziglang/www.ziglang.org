@@ -1226,17 +1226,41 @@ std.posix.abort();
     {#header_close#}
 
     {#header_open|Compiler#}
+    {#header_open|x86_64 Backend#}
     <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
-    <p>Zig 0.12.0 includes many improvements to the compiler implementation, both internal and user-facing.</p>
-    <p>Significant progress has been made on the self-hosted x86_64 machine code backend. This backend can be accessed
-    when compiling for an x86_64 target by passing the CLI options <code>-fno-llvm -fno-lld</code>, or by setting the build system
-    flags <code>use_llvm</code> and <code>use_lld</code> on <code>std.Build.Step.Compile</code> to <code>false</code>. This
-    backend is now able to compile many Zig projects, including the compiler itself. You might consider trying it out on your
-    own projects, but please note that this backend still has some
-    <a href="https://github.com/ziglang/zig/issues?q=is%3Aissue+is%3Aopen+label%3Abackend-self-hosted+label%3Aarch-x86_64">known bugs</a>,
-    and that the debugging experience may be limited.</p>
-    <p>This release cycle also makes heavy progress towards the implementation of incremental compilation. This feature
-    is not yet available in Zig 0.12.0, but will be a key focus of the 0.13.0 release cycle, and will debut in a future release.</p>
+    <p>The x86_64 backend is now passing 1765/1828 (97%) of the behavior test suite, compared to the LLVM backend.
+    It is far enough along that it is sometimes useful while developing, mainly due to the fact that it
+    offers dramatically faster compilation speed:</p>
+    <pre>Benchmark 1 (8 runs): zig-0.12.0 build-exe hello.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time           667ms ± 26.7ms     643ms …  729ms          1 (13%)        0%
+  peak_rss            175MB ± 19.3MB     168MB …  223MB          1 (13%)        0%
+  cpu_cycles         3.42G  ±  532M     3.21G  … 4.74G           1 (13%)        0%
+  instructions       6.20G  ± 1.05G     5.83G  … 8.79G           1 (13%)        0%
+  cache_references    241M  ± 19.9M      234M  …  291M           1 (13%)        0%
+  cache_misses       48.3M  ± 1.26M     47.7M  … 51.4M           1 (13%)        0%
+  branch_misses      35.3M  ± 4.07M     33.7M  … 45.4M           1 (13%)        0%
+Benchmark 2 (26 runs): zig-0.12.0 build-exe hello.zig -fno-llvm -fno-lld
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time           196ms ± 5.77ms     187ms …  208ms          0 ( 0%)        ⚡- 70.6% ±  1.7%
+  peak_rss           88.7MB ±  721KB    87.8MB … 90.4MB          2 ( 8%)        ⚡- 49.3% ±  4.3%
+  cpu_cycles          842M  ± 6.01M      836M  …  866M           1 ( 4%)        ⚡- 75.4% ±  6.0%
+  instructions       1.60G  ± 9.62K     1.60G  … 1.60G           0 ( 0%)        ⚡- 74.1% ±  6.5%
+  cache_references   56.6M  ±  378K     56.0M  … 57.3M           0 ( 0%)        ⚡- 76.6% ±  3.2%
+  cache_misses       8.43M  ±  104K     8.30M  … 8.79M           2 ( 8%)        ⚡- 82.5% ±  1.0%
+  branch_misses      7.20M  ± 30.2K     7.15M  … 7.28M           2 ( 8%)        ⚡- 79.6% ±  4.4%</pre>
+    <p>This backend can be accessed when compiling for an x86_64 target by passing the CLI options
+    <code>-fno-llvm -fno-lld</code>, or by setting the build system
+    flags <code>use_llvm</code> and <code>use_lld</code> on
+    <code>std.Build.Step.Compile</code> to <code>false</code>. This backend is
+    now able to compile many Zig projects, including the compiler itself.</p>
+    <p>Remaining tasks until it can be selected by default instead of LLVM for debug builds:</p>
+    <ul>
+      <li>100% behavior tests passing</li>
+      <li>Improved debug info</li>
+      <li>Improved runtime performance</li>
+    </ul>
+    {#header_close#}
     {#header_close#}
  
     {#header_open|Linker#}
