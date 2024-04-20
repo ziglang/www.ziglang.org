@@ -1631,6 +1631,89 @@ pub fn oldGzip(allocator: std.mem.Allocator) !void {
 }
     {#end_syntax_block#}
     {#header_close#}
+
+    {#header_open|std.posix APIs Gain Type-Safety#}
+    <p>For example, let's look at <code>std.posix.termios</code>:</p>
+    <ul>
+    <li>Add missing API bits to termios and the types of its fields for all 12 operating systems</li>
+    <li>Correct API bits on Linux (they were wrong for some CPU architectures)</li>
+    <li>Consolidate std.c definitions</li>
+    <li>Add type safety to all integers</li>
+    </ul>
+<p>For example previously this is how you would set immediate mode on a tty:</p>
+    {#syntax_block|zig#}
+const in = std.io.getStdIn();
+
+// copy original settings and restore them once done
+const original_termios = try std.posix.tcgetattr(in.handle);
+defer std.posix.tcsetattr(in.handle, .FLUSH, original_termios) catch {};
+
+// set immediate input mode
+var termios = original_termios;
+termios.lflag &= ~@as(std.posix.system.tcflag_t, std.posix.system.ICANON);
+
+// flush changes
+try std.posix.tcsetattr(in.handle, .FLUSH, termios);
+    {#end_syntax_block#}
+<p>Now the middle part looks like this:</p>
+    {#syntax_block|zig#}
+// set immediate input mode
+var termios = original_termios;
+termios.lflag.ICANON = false;
+    {#end_syntax_block#}
+<p>This is thanks to the new definitions based on <code>packed struct</code>. 
+Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
+    {#syntax_block|zig#}
+pub const tc_lflag_t = switch (native_arch) {
+    .powerpc, .powerpcle, .powerpc64, .powerpc64le => packed struct(u32) {
+        _0: u1 = 0,
+        ECHOE: bool = false,
+        ECHOK: bool = false,
+        ECHO: bool = false,
+        ECHONL: bool = false,
+        _5: u2 = 0,
+        ISIG: bool = false,
+        ICANON: bool = false,
+        _9: u1 = 0,
+        IEXTEN: bool = false,
+        _11: u11 = 0,
+        TOSTOP: bool = false,
+        _23: u8 = 0,
+        NOFLSH: bool = false,
+    },
+    .mips, .mipsel, .mips64, .mips64el => packed struct(u32) {
+        ISIG: bool = false,
+        ICANON: bool = false,
+        _2: u1 = 0,
+        ECHO: bool = false,
+        ECHOE: bool = false,
+        ECHOK: bool = false,
+        ECHONL: bool = false,
+        NOFLSH: bool = false,
+        IEXTEN: bool = false,
+        _9: u6 = 0,
+        TOSTOP: bool = false,
+        _: u16 = 0,
+    },
+    else => packed struct(u32) {
+        ISIG: bool = false,
+        ICANON: bool = false,
+        _2: u1 = 0,
+        ECHO: bool = false,
+        ECHOE: bool = false,
+        ECHOK: bool = false,
+        ECHONL: bool = false,
+        NOFLSH: bool = false,
+        TOSTOP: bool = false,
+        _9: u6 = 0,
+        IEXTEN: bool = false,
+        _: u16 = 0,
+    },
+};
+    {#end_syntax_block#}
+    <p>Many more {#syntax#}std.posix{#endsyntax#} APIs were adjusted in a
+    similar way.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}

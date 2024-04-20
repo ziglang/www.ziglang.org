@@ -407,6 +407,7 @@
                 <li><a id="toc-Rework-Server-Entirely" href="#Rework-Server-Entirely">Rework Server Entirely</a></li>
             </ul></li>
             <li><a id="toc-deflate-reimplemented-from-first-principles" href="#deflate-reimplemented-from-first-principles">deflate reimplemented from first principles</a></li>
+            <li><a id="toc-Type-Safety-Added-to-stdposix-APIs" href="#Type-Safety-Added-to-stdposix-APIs">Type-Safety Added to std.posix APIs</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -1768,6 +1769,84 @@ ryu:   2e0</pre>
     <span class="tok-kw">defer</span> allocator.free(plain);
     <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, data, plain);
 }</code></pre></figure>
+    
+
+    <h3 id="Type-Safety-Added-to-stdposix-APIs"><a href="#toc-Type-Safety-Added-to-stdposix-APIs">Type-Safety Added to std.posix APIs</a> <a class="hdr" href="#Type-Safety-Added-to-stdposix-APIs">§</a></h3>
+
+    <p>For example, let's look at <code>std.posix.termios</code>:</p>
+    <ul>
+    <li>Add missing API bits to termios and the types of its fields for all 12 operating systems</li>
+    <li>Correct API bits on Linux (they were wrong for some CPU architectures)</li>
+    <li>Consolidate std.c definitions</li>
+    <li>Add type safety to all integers</li>
+    </ul>
+<p>For example previously this is how you would set immediate mode on a tty:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">const</span> in = std.io.getStdIn();
+
+<span class="tok-comment">// copy original settings and restore them once done</span>
+<span class="tok-kw">const</span> original_termios = <span class="tok-kw">try</span> std.posix.tcgetattr(in.handle);
+<span class="tok-kw">defer</span> std.posix.tcsetattr(in.handle, .FLUSH, original_termios) <span class="tok-kw">catch</span> {};
+
+<span class="tok-comment">// set immediate input mode</span>
+<span class="tok-kw">var</span> termios = original_termios;
+termios.lflag &amp;= ~<span class="tok-builtin">@as</span>(std.posix.system.tcflag_t, std.posix.system.ICANON);
+
+<span class="tok-comment">// flush changes</span>
+<span class="tok-kw">try</span> std.posix.tcsetattr(in.handle, .FLUSH, termios);</code></pre></figure>
+<p>Now the middle part looks like this:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-comment">// set immediate input mode</span>
+<span class="tok-kw">var</span> termios = original_termios;
+termios.lflag.ICANON = <span class="tok-null">false</span>;</code></pre></figure>
+<p>This is thanks to the new definitions based on <code>packed struct</code>. 
+Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">const</span> tc_lflag_t = <span class="tok-kw">switch</span> (native_arch) {
+    .powerpc, .powerpcle, .powerpc64, .powerpc64le =&gt; <span class="tok-kw">packed</span> <span class="tok-kw">struct</span>(<span class="tok-type">u32</span>) {
+        _0: <span class="tok-type">u1</span> = <span class="tok-number">0</span>,
+        ECHOE: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHOK: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHO: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHONL: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _5: <span class="tok-type">u2</span> = <span class="tok-number">0</span>,
+        ISIG: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ICANON: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _9: <span class="tok-type">u1</span> = <span class="tok-number">0</span>,
+        IEXTEN: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _11: <span class="tok-type">u11</span> = <span class="tok-number">0</span>,
+        TOSTOP: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _23: <span class="tok-type">u8</span> = <span class="tok-number">0</span>,
+        NOFLSH: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+    },
+    .mips, .mipsel, .mips64, .mips64el =&gt; <span class="tok-kw">packed</span> <span class="tok-kw">struct</span>(<span class="tok-type">u32</span>) {
+        ISIG: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ICANON: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _2: <span class="tok-type">u1</span> = <span class="tok-number">0</span>,
+        ECHO: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHOE: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHOK: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHONL: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        NOFLSH: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        IEXTEN: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _9: <span class="tok-type">u6</span> = <span class="tok-number">0</span>,
+        TOSTOP: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _: <span class="tok-type">u16</span> = <span class="tok-number">0</span>,
+    },
+    <span class="tok-kw">else</span> =&gt; <span class="tok-kw">packed</span> <span class="tok-kw">struct</span>(<span class="tok-type">u32</span>) {
+        ISIG: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ICANON: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _2: <span class="tok-type">u1</span> = <span class="tok-number">0</span>,
+        ECHO: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHOE: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHOK: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        ECHONL: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        NOFLSH: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        TOSTOP: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _9: <span class="tok-type">u6</span> = <span class="tok-number">0</span>,
+        IEXTEN: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+        _: <span class="tok-type">u16</span> = <span class="tok-number">0</span>,
+    },
+};</code></pre></figure>
+    <p>Many more <code>std.posix</code> APIs were adjusted in a
+    similar way.</p>
     
     
 
