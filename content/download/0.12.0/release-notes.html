@@ -1488,31 +1488,22 @@ All 2 tests passed.
 
     <h3 id="Windows-Command-Line-Argument-Parsing"><a href="#toc-Windows-Command-Line-Argument-Parsing">Windows Command Line Argument Parsing</a> <a class="hdr" href="#Windows-Command-Line-Argument-Parsing">§</a></h3>
 
-    <p>On Windows, the command line arguments of a program are a single WTF-16
+    <p>On Windows, the command line arguments of a program are a single
+    <a href="https://simonsapin.github.io/wtf-8/#potentially-ill-formed-utf-16">WTF-16</a>
     encoded string and it's up to the program to split it into an array of
     strings. In C/C++, the entry point of the C runtime takes care of splitting
     the command line and passing argc/argv to the main function.</p>
 
-    <p>Previously, ArgIteratorWindows matched the behavior of
-    CommandLineToArgvW, but it turns out that CommandLineToArgvW's behavior
-    does not match the behavior of the C runtime post-2008. In 2008, the C
-    runtime argv splitting
-    <a href="https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULESDOC">changed how it handles consecutive double quotes</a>
-    within a quoted argument (it's now considered an escaped quote, e.g.
-    <code>"foo""bar"</code> post-2008 would get parsed into <code>foo"bar</code>), and the rules around
-    argv[0] were also changed.</p>
-    <p>This release makes ArgIteratorWindows match the behavior of the
-    post-2008 C runtime. The motivation here is roughly the same as when the
-    <a href="https://github.com/rust-lang/rust/pull/87580">same change was made in Rust</a>,
-    that is (paraphrased):</p>
-    <ul>
-      <li>Consistent behavior between Zig and modern C/C++ programs</li>
-      <li>Allows users to escape double quotes in a way that can be more straightforward</li>
-    </ul>
-    <p>Additionally, the suggested mitigation for
+    <p>Previously, <code>std.process.argsAlloc</code> and related functions did not fully match the parsing behavior of
+    the C runtime and would split the command line incorrectly in some cases. For example, when encountering consecutive
+    double quotes inside a quoted block like <code>"foo""bar"</code>, these functions would produce <code>foobar</code>
+    instead of the expected <code>foo"bar</code></p>
+    <p>This release updates Zig's command line splitting to match
+    <a href="https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULESDOC">the post-2008 splitting behavior of the C runtime</a>,
+    which ensures consistent behavior between Zig and modern C/C++ programs on Windows.
+    Additionally, the suggested mitigation for
     <a href="https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/">BatBadBut</a>
-    relies on the post-2008 argv splitting behavior for roundtripping of the
-    arguments given to cmd.exe.</p>
+    relies on the post-2008 C runtime splitting behavior for roundtripping of the arguments given to cmd.exe.</p>
     <p>The <a href="https://github.com/ziglang/zig/pull/19698">BadBatBut
     mitigation</a> did not make the 0.12.0 release cutoff.</p>
     
@@ -2011,7 +2002,7 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
     <span class="tok-kw">return</span> <span class="tok-number">999</span>;
 }</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe safety_locks.zig</kbd>
 $ <kbd>./safety_locks</kbd>
-thread 188810 panic: reached unreachable code
+thread 209915 panic: reached unreachable code
 <span class="sgr-1m">/home/andy/local/lib/zig/std/debug.zig:403:14</span>: <span class="sgr-2m">0x1036b4d in assert (safety_locks)</span>
     if (!ok) unreachable; // assertion failure
              <span class="sgr-32m">^</span>
@@ -2340,7 +2331,7 @@ error: the following build command crashed:
 
     <p>Migration guide:</p>
 
-    <p>installHeader now takes a <code>LazyPath</code>:</p>
+    <p><code>Compile.installHeader</code> now takes a <code>LazyPath</code>:</p>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">for</span> (headers) |h| lib.installHeader(h, h);</code></pre></figure>
     &downarrow;
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">for</span> (headers) |h| lib.installHeader(b.path(h), h);</code></pre></figure>
@@ -2373,25 +2364,26 @@ error: the following build command crashed:
             <span class="tok-str">&quot;zlib.h&quot;</span>,
         },
     });</code></pre></figure>
+    <p>Additionally:</p>
     <ul>
-      <li>[Breaking] <code>b.addInstallHeaderFile</code> now takes a <code>LazyPath</code>.</li>
-      <li>[Breaking] As a workaround for
+      <li><code>b.addInstallHeaderFile</code> now takes a <code>LazyPath</code>.</li>
+      <li>As a workaround for
       <a href="https://github.com/ziglang/zig/issues/9698">resurrect emit-h</a>, the generated
-      <code>-femit-h</code> header is now never emitted even when the user specifies an
-      override for h_dir. If you absolutely need the emitted header, you now
+      <code>-femit-h</code> header is no longer emitted even when the user specifies an
+      override for <code>h_dir</code>. If you absolutely need the emitted header, you now
       need to do <code>install_artifact.emitted_h = artifact.getEmittedH()</code> until
       <code>-femit-h</code> is fixed.</li>
       <li>Added <code>WriteFile.addCopyDirectory</code>, which functions very similar to InstallDir.</li>
-      <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by h_dir (which is <code>zig-out/include</code> by default).</li>
+      <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by <code>h_dir</code> (which is <code>zig-out/include</code> by default).</li>
     </ul>
     
 
     <h3 id="dependencyFromBuildZig"><a href="#toc-dependencyFromBuildZig">dependencyFromBuildZig</a> <a class="hdr" href="#dependencyFromBuildZig">§</a></h3>
 
-    <p>Given a struct that corresponds to the build.zig of a dependency, <code>b.dependencyFromBuildZig</code> returns that same dependency. In other words, if you have already a <code>@import</code>ed a depdency&#39;s build.zig, you can use this function to obtain the corresponding <code>Dependency</code>:</p>
+    <p>Given a struct that corresponds to the build.zig of a dependency, <code>b.dependencyFromBuildZig</code> returns that same dependency. In other words, if you have already <code>@import</code>ed a dependency&#39;s build.zig struct, you can use this function to obtain a corresponding <code>Dependency</code>:</p>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-comment">// in consumer build.zig</span>
 <span class="tok-kw">const</span> foo_dep = b.dependencyFromBuildZig(<span class="tok-builtin">@import</span>(<span class="tok-str">&quot;foo&quot;</span>), .{});</code></pre></figure>
-    <p>This function is also important for packages that expose functions from their build.zig files that need to use their corresponding <code>Dependency</code> (for example, for package-relative paths, or for running system commands and returning the output as lazy paths). This would be accomplished through:</p>
+    <p>This function is useful for packages that expose functions from their build.zig files that need to use their corresponding <code>Dependency</code>, such as for accessing package-relative paths, or for running system commands and returning the output as lazy paths. This can now be accomplished through:</p>
     
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-comment">// in dependency build.zig</span>
 <span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">getImportantFile</span>(b: *std.Build) std.Build.LazyPath {
