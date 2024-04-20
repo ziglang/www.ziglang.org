@@ -1632,7 +1632,7 @@ pub fn oldGzip(allocator: std.mem.Allocator) !void {
     {#end_syntax_block#}
     {#header_close#}
 
-    {#header_open|std.posix APIs Gain Type-Safety#}
+    {#header_open|std.posix APIs Gain Type Safety#}
     <p>For example, let's look at <code>std.posix.termios</code>:</p>
     <ul>
     <li>Add missing API bits to termios and the types of its fields for all 12 operating systems</li>
@@ -1713,6 +1713,73 @@ pub const tc_lflag_t = switch (native_arch) {
     {#end_syntax_block#}
     <p>Many more {#syntax#}std.posix{#endsyntax#} APIs were adjusted in a
     similar way.</p>
+    {#header_close#}
+
+    {#header_open|Global Configuration#}
+    <p>Previously, when one wanted to override defaults, such as the logging function used by <code>std.log</code>, they would have to define <code>std_options</code> in their root file, like so:</p>
+    {#syntax_block|zig#}
+pub const std_options = struct {
+    pub const logFn = myLogFn;
+};
+    {#end_syntax_block#}
+    <p>Note how <code>std_options</code> above is a <em>struct type definiton</em>. In this release <code>std_options</code> is now an instance of <code>std.Options</code>, making the process of defining overrides less error-prone.</p>
+    <p>The code above would look like this now:</p>
+    {#syntax_block|zig#}
+pub const std_options: std.Options = .{
+    .logFn = myLogFn,
+};
+    {#end_syntax_block#}
+    <p>And this is the definition of <code>std.Options</code> to see what else you can override. </p>
+    {#syntax_block|zig#}
+pub const Options = struct {
+    enable_segfault_handler: bool = debug.default_enable_segfault_handler,
+
+    /// Function used to implement `std.fs.cwd` for WASI.
+    wasiCwd: fn () os.wasi.fd_t = fs.defaultWasiCwd,
+
+    /// The current log level.
+    log_level: log.Level = log.default_level,
+
+    log_scope_levels: []const log.ScopeLevel = &.{},
+
+    logFn: fn (
+        comptime message_level: log.Level,
+        comptime scope: @TypeOf(.enum_literal),
+        comptime format: []const u8,
+        args: anytype,
+    ) void = log.defaultLog,
+
+    fmt_max_depth: usize = fmt.default_max_depth,
+
+    cryptoRandomSeed: fn (buffer: []u8) void = @import("crypto/tlcsprng.zig").defaultRandomSeed,
+
+    crypto_always_getrandom: bool = false,
+
+    crypto_fork_safety: bool = true,
+
+    /// By default Zig disables SIGPIPE by setting a "no-op" handler for it.  Set this option
+    /// to `true` to prevent that.
+    ///
+    /// Note that we use a "no-op" handler instead of SIG_IGN because it will not be inherited by
+    /// any child process.
+    ///
+    /// SIGPIPE is triggered when a process attempts to write to a broken pipe. By default, SIGPIPE
+    /// will terminate the process instead of exiting.  It doesn't trigger the panic handler so in many
+    /// cases it's unclear why the process was terminated.  By capturing SIGPIPE instead, functions that
+    /// write to broken pipes will return the EPIPE error (error.BrokenPipe) and the program can handle
+    /// it like any other error.
+    keep_sigpipe: bool = false,
+
+    /// By default, std.http.Client will support HTTPS connections.  Set this option to `true` to
+    /// disable TLS support.
+    ///
+    /// This will likely reduce the size of the binary, but it will also make it impossible to
+    /// make a HTTPS connection.
+    http_disable_tls: bool = false,
+
+    side_channels_mitigations: crypto.SideChannelsMitigations = crypto.default_side_channels_mitigations,
+};
+    {#end_syntax_block#}
     {#header_close#}
     {#header_close#}
 
@@ -2114,6 +2181,9 @@ Benchmark 2 (26 runs): zig-0.12.0 build-exe hello.zig -fno-llvm -fno-lld
     {#header_close#}
  
     {#header_open|Linker#}
+    <p>Zig now supports ELF linking for x86_64, aarch64, and partial support for riscv64.</p>
+    <p>Dependency on LLD is expected to be dropped during the next release cycle.</p>
+    <p>The <code>-fno-lld</code> flag can be used to use Zig's linker where it is not currently the default.</p>
     {#header_close#}
 
     {#header_open|Cache System#}

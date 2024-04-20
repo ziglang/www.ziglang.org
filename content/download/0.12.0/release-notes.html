@@ -407,7 +407,8 @@
                 <li><a id="toc-Rework-Server-Entirely" href="#Rework-Server-Entirely">Rework Server Entirely</a></li>
             </ul></li>
             <li><a id="toc-deflate-reimplemented-from-first-principles" href="#deflate-reimplemented-from-first-principles">deflate reimplemented from first principles</a></li>
-            <li><a id="toc-stdposix-APIs-Gain-Type-Safety" href="#stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type-Safety</a></li>
+            <li><a id="toc-stdposix-APIs-Gain-Type-Safety" href="#stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type Safety</a></li>
+            <li><a id="toc-Global-Configuration" href="#Global-Configuration">Global Configuration</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -1780,7 +1781,7 @@ ryu:   2e0</pre>
 }</code></pre></figure>
     
 
-    <h3 id="stdposix-APIs-Gain-Type-Safety"><a href="#toc-stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type-Safety</a> <a class="hdr" href="#stdposix-APIs-Gain-Type-Safety">§</a></h3>
+    <h3 id="stdposix-APIs-Gain-Type-Safety"><a href="#toc-stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type Safety</a> <a class="hdr" href="#stdposix-APIs-Gain-Type-Safety">§</a></h3>
 
     <p>For example, let's look at <code>std.posix.termios</code>:</p>
     <ul>
@@ -1856,6 +1857,68 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
 };</code></pre></figure>
     <p>Many more <code>std.posix</code> APIs were adjusted in a
     similar way.</p>
+    
+
+    <h3 id="Global-Configuration"><a href="#toc-Global-Configuration">Global Configuration</a> <a class="hdr" href="#Global-Configuration">§</a></h3>
+
+    <p>Previously, when one wanted to override defaults, such as the logging function used by <code>std.log</code>, they would have to define <code>std_options</code> in their root file, like so:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">const</span> std_options = <span class="tok-kw">struct</span> {
+    <span class="tok-kw">pub</span> <span class="tok-kw">const</span> logFn = myLogFn;
+};</code></pre></figure>
+    <p>Note how <code>std_options</code> above is a <em>struct type definiton</em>. In this release <code>std_options</code> is now an instance of <code>std.Options</code>, making the process of defining overrides less error-prone.</p>
+    <p>The code above would look like this now:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">const</span> std_options: std.Options = .{
+    .logFn = myLogFn,
+};</code></pre></figure>
+    <p>And this is the definition of <code>std.Options</code> to see what else you can override. </p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">const</span> Options = <span class="tok-kw">struct</span> {
+    enable_segfault_handler: <span class="tok-type">bool</span> = debug.default_enable_segfault_handler,
+
+    <span class="tok-comment">/// Function used to implement `std.fs.cwd` for WASI.</span>
+    wasiCwd: <span class="tok-kw">fn</span> () os.wasi.fd_t = fs.defaultWasiCwd,
+
+    <span class="tok-comment">/// The current log level.</span>
+    log_level: log.Level = log.default_level,
+
+    log_scope_levels: []<span class="tok-kw">const</span> log.ScopeLevel = &amp;.{},
+
+    logFn: <span class="tok-kw">fn</span> (
+        <span class="tok-kw">comptime</span> message_level: log.Level,
+        <span class="tok-kw">comptime</span> scope: <span class="tok-builtin">@TypeOf</span>(.enum_literal),
+        <span class="tok-kw">comptime</span> format: []<span class="tok-kw">const</span> <span class="tok-type">u8</span>,
+        args: <span class="tok-kw">anytype</span>,
+    ) <span class="tok-type">void</span> = log.defaultLog,
+
+    fmt_max_depth: <span class="tok-type">usize</span> = fmt.default_max_depth,
+
+    cryptoRandomSeed: <span class="tok-kw">fn</span> (buffer: []<span class="tok-type">u8</span>) <span class="tok-type">void</span> = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;crypto/tlcsprng.zig&quot;</span>).defaultRandomSeed,
+
+    crypto_always_getrandom: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+
+    crypto_fork_safety: <span class="tok-type">bool</span> = <span class="tok-null">true</span>,
+
+    <span class="tok-comment">/// By default Zig disables SIGPIPE by setting a &quot;no-op&quot; handler for it.  Set this option</span>
+    <span class="tok-comment">/// to `true` to prevent that.</span>
+    <span class="tok-comment">///</span>
+    <span class="tok-comment">/// Note that we use a &quot;no-op&quot; handler instead of SIG_IGN because it will not be inherited by</span>
+    <span class="tok-comment">/// any child process.</span>
+    <span class="tok-comment">///</span>
+    <span class="tok-comment">/// SIGPIPE is triggered when a process attempts to write to a broken pipe. By default, SIGPIPE</span>
+    <span class="tok-comment">/// will terminate the process instead of exiting.  It doesn't trigger the panic handler so in many</span>
+    <span class="tok-comment">/// cases it's unclear why the process was terminated.  By capturing SIGPIPE instead, functions that</span>
+    <span class="tok-comment">/// write to broken pipes will return the EPIPE error (error.BrokenPipe) and the program can handle</span>
+    <span class="tok-comment">/// it like any other error.</span>
+    keep_sigpipe: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+
+    <span class="tok-comment">/// By default, std.http.Client will support HTTPS connections.  Set this option to `true` to</span>
+    <span class="tok-comment">/// disable TLS support.</span>
+    <span class="tok-comment">///</span>
+    <span class="tok-comment">/// This will likely reduce the size of the binary, but it will also make it impossible to</span>
+    <span class="tok-comment">/// make a HTTPS connection.</span>
+    http_disable_tls: <span class="tok-type">bool</span> = <span class="tok-null">false</span>,
+
+    side_channels_mitigations: crypto.SideChannelsMitigations = crypto.default_side_channels_mitigations,
+};</code></pre></figure>
     
     
 
@@ -2000,7 +2063,7 @@ andy@ark ~/d/a/zlib (main)&gt;
 
     <h4 id="Avoid-Fetching-in-System-Mode"><a href="#toc-Avoid-Fetching-in-System-Mode">Avoid Fetching in System Mode</a> <a class="hdr" href="#Avoid-Fetching-in-System-Mode">§</a></h4>
 
-    <p><code>--system</code> prevents Zig from fetching packages. Instead, a directory of Zig packages
+    <p><code>--system</code> prevents Zig from fetching packages. Instead, a directory of packages
     is provided, populated presumably by the system package manager.</p>
     <figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>[nix-shell:~/dev/2Pew]$ zig build --system ~/tmp/p -fno-sys=SDL2
 error: lazy dependency package not found: /home/andy/tmp/p/1220c5360c9c71c215baa41b46ec18d0711059b48416a2b1cf96c7c2d87b2e8e4cf6
@@ -2238,6 +2301,9 @@ Benchmark 2 (26 runs): zig-0.12.0 build-exe hello.zig -fno-llvm -fno-lld
  
     <h2 id="Linker"><a href="#toc-Linker">Linker</a> <a class="hdr" href="#Linker">§</a></h2>
 
+    <p>Zig now supports ELF linking for x86_64, aarch64, and partial support for riscv64.</p>
+    <p>Dependency on LLD is expected to be dropped during the next release cycle.</p>
+    <p>The <code>-fno-lld</code> flag can be used to use Zig's linker where it is not currently the default.</p>
     
 
     <h2 id="Cache-System"><a href="#toc-Cache-System">Cache System</a> <a class="hdr" href="#Cache-System">§</a></h2>
