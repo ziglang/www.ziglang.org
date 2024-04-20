@@ -384,7 +384,6 @@
                 <li><a id="toc-Correct-Type-Detection" href="#Correct-Type-Detection">Correct Type Detection</a></li>
                 <li><a id="toc-Correct-Implementation-of-Scroll-History" href="#Correct-Implementation-of-Scroll-History">Correct Implementation of Scroll History</a></li>
             </ul></li>
-            <li><a id="toc-Follow-Up-Autodoc-Work" href="#Follow-Up-Autodoc-Work">Follow-Up Autodoc Work</a></li>
         </ul></li>
         <li><a id="toc-Language-Changes" href="#Language-Changes">Language Changes</a>
         <ul>
@@ -401,6 +400,11 @@
             <li><a id="toc-Bring-Your-Own-OS-API-Layer-Regressed" href="#Bring-Your-Own-OS-API-Layer-Regressed">Bring-Your-Own-OS API Layer Regressed</a></li>
             <li><a id="toc-stdos-renamed-to-stdposix" href="#stdos-renamed-to-stdposix">std.os renamed to std.posix</a></li>
             <li><a id="toc-Ryu-Floating-Point-Formatting" href="#Ryu-Floating-Point-Formatting">Ryu Floating-Point Formatting</a></li>
+            <li><a id="toc-Reworked-HTTP" href="#Reworked-HTTP">Reworked HTTP</a>
+            <ul>
+                <li><a id="toc-Removal-of-stdhttpHeaders" href="#Removal-of-stdhttpHeaders">Removal of std.http.Headers</a></li>
+                <li><a id="toc-Rework-Server-Entirely" href="#Rework-Server-Entirely">Rework Server Entirely</a></li>
+            </ul></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -1101,12 +1105,6 @@ Benchmark 2 (197 runs): new/zig build-obj -fno-emit-bin -femit-docs=docs ../lib/
     <a href="https://github.com/andrewrk/autodoc/commit/6d96a63430b39c8a08158410b25dd0ecafea28db">the commit diff</a>.</p>
     
     
-
-    <h3 id="Follow-Up-Autodoc-Work"><a href="#toc-Follow-Up-Autodoc-Work">Follow-Up Autodoc Work</a> <a class="hdr" href="#Follow-Up-Autodoc-Work">§</a></h3>
-
-    <p><a href="https://github.com/ziglang/zig/issues/19249">autodoc follow-up enhancements and bug fixes mega issue</a></p>
-    <p><a href="https://github.com/ziglang/zig/issues/19386">Generic structs should include field listings</a></p>
-    
     
 
     <h2 id="Language-Changes"><a href="#toc-Language-Changes">Language Changes</a> <a class="hdr" href="#Language-Changes">§</a></h2>
@@ -1506,6 +1504,99 @@ ryu:   2e0</pre>
     <p>Performance: ~2.3x performance improvement</p>
     <p>Code Size: roughly +5KB (2x)</p>
     <p><a href="https://github.com/ziglang/zig/pull/19229">Source for those stats</a></p>
+    
+
+    <h3 id="Reworked-HTTP"><a href="#toc-Reworked-HTTP">Reworked HTTP</a> <a class="hdr" href="#Reworked-HTTP">§</a></h3>
+
+    <p>First, some pretty straightforward changes:</p>
+    <ul>
+    <li>don't emit Server HTTP header. Let the user add that if they wish to. It's not strictly necessary, and arguably a harmful default.</li>
+    <li>correct the error set of <code>finish</code> to not have NotWriteable and MessageTooLong in it</li>
+    <li>protect against zero-length chunks in Server</li>
+    <li>add missing redirect behavior option to FetchOptions and make it an enum instead of 2 fields</li>
+    <li><code><span class="tok-kw">error</span>.CompressionNotSupported</code> is renamed to <code><span class="tok-kw">error</span>.CompressionUnsupported</code>, matching the naming convention from all the other errors in the same set.</li>
+    <li>Removed documentation comments that were redundant with field and type names.</li>
+    <li>Disabling zstd decompression in the server for now; see #18937.</li>
+    <li>Automatically handle expect: 100-continue requests</li>
+    </ul>
+    <p>Next, <strong>removed the ability to heap-allocate the buffer for headers</strong>. The buffer for HTTP headers is now always provided via a static buffer. As a consequence, <code>OutOfMemory</code> is no longer a member of the <code>read()</code> error set, and the API and implementation of Client and Server are simplified. <code><span class="tok-kw">error</span>.HttpHeadersExceededSizeLimit</code> is renamed to <code><span class="tok-kw">error</span>.HttpHeadersOversize</code>.</p>
+    <p>Finally, the big changes:</p>
+
+    <h4 id="Removal-of-stdhttpHeaders"><a href="#toc-Removal-of-stdhttpHeaders">Removal of std.http.Headers</a> <a class="hdr" href="#Removal-of-stdhttpHeaders">§</a></h4>
+
+    <p>Instead, some headers are provided via explicit field names populated
+    while parsing the HTTP request/response, and some are provided via new
+    fields that support passing extra, arbitrary headers. This resulted in
+    simplification of logic in many places, as well as elimination of the
+    possibility of failure in many places. There is less deinitialization
+    code happening now. Furthermore, it made it no longer necessary to clone
+    the headers data structure in order to handle redirects.</p>
+
+    <p>http_proxy and https_proxy fields are now pointers since it is common for them to be unpopulated.</p>
+
+    <p><code>loadDefaultProxies</code> is changed into <code>initDefaultProxies</code> to communicate that it does not actually load anything from disk or from the network. The function now is leaky; the API user must pass an already instantiated arena allocator. Removes the need to deinitialize proxies.</p>
+    <p>Before, proxies stored arbitrary sets of headers. Now they only store the authorization value.</p>
+    <p>Removed the duplicated code between https_proxy and http_proxy. Finally, parsing failures of the environment variables result in errors being emitted rather than silently ignoring the proxy.</p>
+    
+
+    <h4 id="Rework-Server-Entirely"><a href="#toc-Rework-Server-Entirely">Rework Server Entirely</a> <a class="hdr" href="#Rework-Server-Entirely">§</a></h4>
+
+    <p>Mainly, this removes the poorly named <code>wait</code>, <code>send</code>, <code>finish</code> functions, which all operated on the same &quot;Response&quot; object, which was actually being used as the request.</p>
+    <p>Now, it looks like this:</p>
+    <ol>
+    <li><code>std.net.Server.accept()</code> gives you a <code>std.net.Server.Connection</code></li>
+    <li><code>std.http.Server.init()</code> with the connection</li>
+    <li><code>Server.receiveHead()</code> gives you a Request</li>
+    <li><code>Request.reader()</code> gives you a body reader</li>
+    <li><code>Request.respond()</code> is a one-shot, or <code>Request.respondStreaming()</code> creates
+    a <code>Response</code></li>
+    <li><code>Response.writer()</code> gives you a body writer</li>
+    <li><code>Response.end()</code> finishes the response; <code>Response.endChunked()</code> allows
+    passing response trailers.</li>
+    </ol>
+    <p>In other words, the type system now guides the API user down the correct path.</p>
+    <p><code>receiveHead</code> allows extra bytes to be read into the read buffer, and then will reuse those bytes for the body or the next request upon connection reuse.</p>
+    <p><code>respond()</code>, the one-shot function, will send the entire response in one syscall.</p>
+    <p>Streaming response bodies no longer wastefully wraps every call to write with a chunk header and trailer; instead it only sends the HTTP chunk wrapper when flushing. This means the user can still control when it happens but it also does not add unnecessary chunks.</p>
+    <p>Empirically, the usage code is significantly less noisy, it has less
+    error handling while handling errors more correctly, it's more obvious what
+    is happening, and it is syscall-optimal.</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">var</span> read_buffer: [<span class="tok-number">8000</span>]<span class="tok-type">u8</span> = <span class="tok-null">undefined</span>;
+    accept: <span class="tok-kw">while</span> (<span class="tok-null">true</span>) {
+        <span class="tok-kw">const</span> connection = <span class="tok-kw">try</span> http_server.accept();
+        <span class="tok-kw">defer</span> connection.stream.close();
+
+        <span class="tok-kw">var</span> server = std.http.Server.init(connection, &amp;read_buffer);
+        <span class="tok-kw">while</span> (server.state == .ready) {
+            <span class="tok-kw">var</span> request = server.receiveHead() <span class="tok-kw">catch</span> |err| {
+                std.debug.print(<span class="tok-str">&quot;error: {s}\n&quot;</span>, .{<span class="tok-builtin">@errorName</span>(err)});
+                <span class="tok-kw">continue</span> :accept;
+            };
+            <span class="tok-kw">try</span> static_http_file_server.serve(&amp;request);
+        }
+    }</code></pre></figure>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">serve</span>(context: *Context, request: *std.http.Server.Request) ServeError!<span class="tok-type">void</span> {
+    <span class="tok-comment">// ...</span>
+    <span class="tok-kw">return</span> request.respond(content, .{
+        .status = status,
+        .extra_headers = &amp;.{
+            .{ .name = <span class="tok-str">&quot;content-type&quot;</span>, .value = <span class="tok-builtin">@tagName</span>(file.mime_type) },
+        },
+    });</code></pre></figure>
+    <p>Additionally:</p>
+    <ul>
+    <li>Uncouple <code>std.http.HeadParser</code> from protocol.zig</li>
+    <li>Delete <code>std.Server.Connection</code>; use <code>std.net.Server.Connection</code> instead.<ul>
+    <li>The API user supplies the read buffer when initializing the
+    http.Server, and it is used for the HTTP head as well as a buffer
+    for reading the body into.</li>
+    </ul>
+    </li>
+    <li>Replace and document the State enum. No longer is there both &quot;start&quot;
+    and &quot;first&quot;.</li>
+    </ul>
+    <p><code>std.http.Client</code> has not yet been reworked in a similar manner as <code>std.http.Server</code>.</p>
+    
     
     
 

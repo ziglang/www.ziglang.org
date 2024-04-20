@@ -1009,11 +1009,6 @@ Benchmark 2 (197 runs): new/zig build-obj -fno-emit-bin -femit-docs=docs ../lib/
     <a href="https://github.com/andrewrk/autodoc/commit/6d96a63430b39c8a08158410b25dd0ecafea28db">the commit diff</a>.</p>
     {#header_close#}
     {#header_close#}
-
-    {#header_open|Follow-Up Autodoc Work#}
-    <p><a href="https://github.com/ziglang/zig/issues/19249">autodoc follow-up enhancements and bug fixes mega issue</a></p>
-    <p><a href="https://github.com/ziglang/zig/issues/19386">Generic structs should include field listings</a></p>
-    {#header_close#}
     {#header_close#}
 
     {#header_open|Language Changes#}
@@ -1374,6 +1369,100 @@ ryu:   2e0</pre>
     <p>Performance: ~2.3x performance improvement</p>
     <p>Code Size: roughly +5KB (2x)</p>
     <p><a href="https://github.com/ziglang/zig/pull/19229">Source for those stats</a></p>
+    {#header_close#}
+
+    {#header_open|Reworked HTTP#}
+    <p>First, some pretty straightforward changes:</p>
+    <ul>
+    <li>don't emit Server HTTP header. Let the user add that if they wish to. It's not strictly necessary, and arguably a harmful default.</li>
+    <li>correct the error set of <code>finish</code> to not have NotWriteable and MessageTooLong in it</li>
+    <li>protect against zero-length chunks in Server</li>
+    <li>add missing redirect behavior option to FetchOptions and make it an enum instead of 2 fields</li>
+    <li>{#syntax#}error.CompressionNotSupported{#endsyntax#} is renamed to {#syntax#}error.CompressionUnsupported{#endsyntax#}, matching the naming convention from all the other errors in the same set.</li>
+    <li>Removed documentation comments that were redundant with field and type names.</li>
+    <li>Disabling zstd decompression in the server for now; see #18937.</li>
+    <li>Automatically handle expect: 100-continue requests</li>
+    </ul>
+    <p>Next, <strong>removed the ability to heap-allocate the buffer for headers</strong>. The buffer for HTTP headers is now always provided via a static buffer. As a consequence, <code>OutOfMemory</code> is no longer a member of the <code>read()</code> error set, and the API and implementation of Client and Server are simplified. {#syntax#}error.HttpHeadersExceededSizeLimit{#endsyntax#} is renamed to {#syntax#}error.HttpHeadersOversize{#endsyntax#}.</p>
+    <p>Finally, the big changes:</p>
+
+    {#header_open|Removal of std.http.Headers#}
+    <p>Instead, some headers are provided via explicit field names populated
+    while parsing the HTTP request/response, and some are provided via new
+    fields that support passing extra, arbitrary headers. This resulted in
+    simplification of logic in many places, as well as elimination of the
+    possibility of failure in many places. There is less deinitialization
+    code happening now. Furthermore, it made it no longer necessary to clone
+    the headers data structure in order to handle redirects.</p>
+
+    <p>http_proxy and https_proxy fields are now pointers since it is common for them to be unpopulated.</p>
+
+    <p><code>loadDefaultProxies</code> is changed into <code>initDefaultProxies</code> to communicate that it does not actually load anything from disk or from the network. The function now is leaky; the API user must pass an already instantiated arena allocator. Removes the need to deinitialize proxies.</p>
+    <p>Before, proxies stored arbitrary sets of headers. Now they only store the authorization value.</p>
+    <p>Removed the duplicated code between https_proxy and http_proxy. Finally, parsing failures of the environment variables result in errors being emitted rather than silently ignoring the proxy.</p>
+    {#header_close#}
+
+    {#header_open|Rework Server Entirely#}
+    <p>Mainly, this removes the poorly named <code>wait</code>, <code>send</code>, <code>finish</code> functions, which all operated on the same &quot;Response&quot; object, which was actually being used as the request.</p>
+    <p>Now, it looks like this:</p>
+    <ol>
+    <li><code>std.net.Server.accept()</code> gives you a <code>std.net.Server.Connection</code></li>
+    <li><code>std.http.Server.init()</code> with the connection</li>
+    <li><code>Server.receiveHead()</code> gives you a Request</li>
+    <li><code>Request.reader()</code> gives you a body reader</li>
+    <li><code>Request.respond()</code> is a one-shot, or <code>Request.respondStreaming()</code> creates
+    a <code>Response</code></li>
+    <li><code>Response.writer()</code> gives you a body writer</li>
+    <li><code>Response.end()</code> finishes the response; <code>Response.endChunked()</code> allows
+    passing response trailers.</li>
+    </ol>
+    <p>In other words, the type system now guides the API user down the correct path.</p>
+    <p><code>receiveHead</code> allows extra bytes to be read into the read buffer, and then will reuse those bytes for the body or the next request upon connection reuse.</p>
+    <p><code>respond()</code>, the one-shot function, will send the entire response in one syscall.</p>
+    <p>Streaming response bodies no longer wastefully wraps every call to write with a chunk header and trailer; instead it only sends the HTTP chunk wrapper when flushing. This means the user can still control when it happens but it also does not add unnecessary chunks.</p>
+    <p>Empirically, the usage code is significantly less noisy, it has less
+    error handling while handling errors more correctly, it's more obvious what
+    is happening, and it is syscall-optimal.</p>
+    {#syntax_block|zig#}
+    var read_buffer: [8000]u8 = undefined;
+    accept: while (true) {
+        const connection = try http_server.accept();
+        defer connection.stream.close();
+
+        var server = std.http.Server.init(connection, &read_buffer);
+        while (server.state == .ready) {
+            var request = server.receiveHead() catch |err| {
+                std.debug.print("error: {s}\n", .{@errorName(err)});
+                continue :accept;
+            };
+            try static_http_file_server.serve(&request);
+        }
+    }
+    {#end_syntax_block#}
+    {#syntax_block|zig#}
+pub fn serve(context: *Context, request: *std.http.Server.Request) ServeError!void {
+    // ...
+    return request.respond(content, .{
+        .status = status,
+        .extra_headers = &.{
+            .{ .name = "content-type", .value = @tagName(file.mime_type) },
+        },
+    });
+    {#end_syntax_block#}
+    <p>Additionally:</p>
+    <ul>
+    <li>Uncouple <code>std.http.HeadParser</code> from protocol.zig</li>
+    <li>Delete <code>std.Server.Connection</code>; use <code>std.net.Server.Connection</code> instead.<ul>
+    <li>The API user supplies the read buffer when initializing the
+    http.Server, and it is used for the HTTP head as well as a buffer
+    for reading the body into.</li>
+    </ul>
+    </li>
+    <li>Replace and document the State enum. No longer is there both &quot;start&quot;
+    and &quot;first&quot;.</li>
+    </ul>
+    <p><code>std.http.Client</code> has not yet been reworked in a similar manner as <code>std.http.Server</code>.</p>
+    {#header_close#}
     {#header_close#}
     {#header_close#}
 
