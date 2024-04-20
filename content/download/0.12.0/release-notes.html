@@ -405,6 +405,7 @@
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
             <li><a id="toc-introduce-bpath-deprecate-LazyPathrelative" href="#introduce-bpath-deprecate-LazyPathrelative">introduce b.path; deprecate LazyPath.relative</a></li>
+            <li><a id="toc-Header-Installation" href="#Header-Installation">Header Installation</a></li>
         </ul></li>
         <li><a id="toc-Package-Management" href="#Package-Management">Package Management</a></li>
         <li><a id="toc-Compiler" href="#Compiler">Compiler</a>
@@ -1022,7 +1023,7 @@
     <em>or to the autodoc system itself</em> are immediately reflected when
     viewing docs. Prefixing the URL with <code>/debug</code> results in a debug
     build of the WebAssembly module.</p>
-    <p>This means contributors can test changes to Zig standard library documentation, as well as autodocs functionality, by pressing refresh in their browser window, using a binary distribution of Zig.</p>
+    <p>This means contributors can test changes to Zig standard library documentation, as well as autodocs functionality, by pressing refresh in their browser window, using a only binary distribution of Zig.</p>
     <p>In total, this reduced the Zig installation size from 317M to 268M (-15%).</p>
     <p>A ReleaseSmall build of the compiler shrinks from 10M to 9.8M (-1%).</p>
     
@@ -1530,6 +1531,72 @@ ryu:   2e0</pre>
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.test_runner = <span class="tok-str">&quot;path/to/test_runner.zig&quot;</span>,</code></pre></figure>
     &downarrow;
     <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>.test_runner = b.path(<span class="tok-str">&quot;path/to/test_runner.zig&quot;</span>),</code></pre></figure>
+    
+
+    <h3 id="Header-Installation"><a href="#toc-Header-Installation">Header Installation</a> <a class="hdr" href="#Header-Installation">§</a></h3>
+
+    <p>The intent for <code>Compile.installHeader</code> and friends has always been to
+    bundle the headers alongside an artifact, have them be installed together
+    with the artifact and get automatically added to the include search paths
+    of modules that link with the artifact.</p>
+    <p>In Zig 0.11.0, however, these functions modified the default
+    <code>install</code> top-level step of the builder, lead to a number of
+    unexpected results such as installing or not installing the headers
+    depending on which top-level build steps are invoked.</p>
+
+    <p>Zig 0.12.0 changes it so that installed headers are added to the compile
+    step itself instead of modifying the top-level install step. To handle the
+    construction of the include search path for dependent linking modules, an
+    intermediary <code>WriteFile</code> step responsible for constructing the appropriate
+    include tree is created and set up the first time a module links to an
+    artifact.</p>
+
+    <p>Migration guide:</p>
+
+    <p>installHeader now takes a <code>LazyPath</code>:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">for</span> (headers) |h| lib.installHeader(h, h);</code></pre></figure>
+    &downarrow;
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">for</span> (headers) |h| lib.installHeader(b.path(h), h);</code></pre></figure>
+
+    <p><code>Compile.installConfigHeader</code> has had its second argument removed and now
+    uses the value of <code>include_path</code> as its sub path, for parity with
+    <code>Module.addConfigHeader</code>. Use
+    <code>artifact.installHeader(config_h.getOutput(), <span class="tok-str">&quot;foo.h&quot;</span>)</code>
+    if you want to set the sub path to something different.</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>lib.installConfigHeader(avconfig_h, .{});</code></pre></figure>
+    &downarrow;
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>lib.installConfigHeader(avconfig_h);</code></pre></figure>
+
+    <p><code>Compile.installHeadersDirectory</code>/<code>installHeadersDirectoryOptions</code>
+    have been consolidated into <code>Compile.installHeadersDirectory</code>, which takes a
+    <code>LazyPath</code> and allows exclude/include filters just like <code>InstallDir</code>.</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>lib.installHeadersDirectoryOptions(.{
+        .source_dir = upstream.path(<span class="tok-str">&quot;&quot;</span>),
+        .install_dir = .header,
+        .install_subdir = <span class="tok-str">&quot;&quot;</span>,
+        .include_extensions = &amp;.{
+            <span class="tok-str">&quot;zconf.h&quot;</span>,
+            <span class="tok-str">&quot;zlib.h&quot;</span>,
+        },
+    });</code></pre></figure>
+    &downarrow;
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code>lib.installHeadersDirectory(upstream.path(<span class="tok-str">&quot;&quot;</span>), <span class="tok-str">&quot;&quot;</span>, .{
+        .include_extensions = &amp;.{
+            <span class="tok-str">&quot;zconf.h&quot;</span>,
+            <span class="tok-str">&quot;zlib.h&quot;</span>,
+        },
+    });</code></pre></figure>
+    <ul>
+      <li>[Breaking] <code>b.addInstallHeaderFile</code> now takes a <code>LazyPath</code>.</li>
+      <li>[Breaking] As a workaround for
+      <a href="https://github.com/ziglang/zig/issues/9698">resurrect emit-h</a>, the generated
+      <code>-femit-h</code> header is now never emitted even when the user specifies an
+      override for h_dir. If you absolutely need the emitted header, you now
+      need to do <code>install_artifact.emitted_h = artifact.getEmittedH()</code> until
+      <code>-femit-h</code> is fixed.</li>
+      <li>Added <code>WriteFile.addCopyDirectory</code>, which functions very similar to InstallDir.</li>
+      <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by h_dir (which is <code>zig-out/include</code> by default).</li>
+    </ul>
     
     
 
