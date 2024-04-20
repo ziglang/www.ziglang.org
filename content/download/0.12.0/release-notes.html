@@ -406,6 +406,7 @@
                 <li><a id="toc-Removal-of-stdhttpHeaders" href="#Removal-of-stdhttpHeaders">Removal of std.http.Headers</a></li>
                 <li><a id="toc-Rework-Server-Entirely" href="#Rework-Server-Entirely">Rework Server Entirely</a></li>
             </ul></li>
+            <li><a id="toc-deflate-reimplemented-from-first-principles" href="#deflate-reimplemented-from-first-principles">deflate reimplemented from first principles</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -1391,7 +1392,7 @@ All 1 tests passed.
 
     <h3 id="support-coercing-ref-to-anonymous-array-init-to-many-pointer"><a href="#toc-support-coercing-ref-to-anonymous-array-init-to-many-pointer">support coercing ref to anonymous array init to many-pointer</a> <a class="hdr" href="#support-coercing-ref-to-anonymous-array-init-to-many-pointer">§</a></h3>
 
-    <p>Makes <code>&amp;.{ a, b, c }</code> coerce to <code>[*]<span class="tok-kw">const</span> T</code>/<code>[*:x]<span class="tok-kw">const</span> T</code>:</p>
+    <p>Now <code>&amp;.{ a, b, c }</code> coerces to <code>[*]<span class="tok-kw">const</span> T</code>/<code>[*:x]<span class="tok-kw">const</span> T</code>:</p>
     <figure><figcaption class="zig-cap"><cite class="file">coerce_many.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
 <span class="tok-kw">const</span> expectEqual = std.testing.expectEqual;
 
@@ -1627,6 +1628,146 @@ ryu:   2e0</pre>
     </ul>
     <p><code>std.http.Client</code> has not yet been reworked in a similar manner as <code>std.http.Server</code>.</p>
     
+    
+
+    <h3 id="deflate-reimplemented-from-first-principles"><a href="#toc-deflate-reimplemented-from-first-principles">deflate reimplemented from first principles</a> <a class="hdr" href="#deflate-reimplemented-from-first-principles">§</a></h3>
+
+    <p>In Zig 0.11.0, the deflate implementation was ported from the Go
+    standard library, which had a bunch of undesirable properties, such as
+    incorrect use of global variables, comments about Go's optimizer in Zig's
+    codebase, and the requirement of dynamic memory allocation.</p>
+    <p>Zig 0.12.0 has a new implementation that is not a port of an existing codebase.</p>
+    <p>The new implementation is roughly 1.2-1.4x faster in decompression and
+    1.1-1.2x faster in compression. Compressed sizes are pretty much the same
+    in both cases (<a href="https://github.com/ziglang/zig/pull/18923">source</a>).</p>
+    <p>The new code uses static allocations for all structures, doesn't require
+    allocator. That makes sense especially for deflate where all structures,
+    internal buffers are allocated to the full size. Little less for inflate
+    where the previous verision used less memory by not preallocating to theoretical
+    max size array which are usually not fully used.</p>
+    <p>For deflate the new implementaiton allocates 395K while previous
+    implementation used 779K. For inflate the new implementation allocates
+    74.5K while the old one around 36K.</p>
+    <p>Inflate difference is because we here use 64K history instead of 32K previously.</p>
+    <p>Migration guide:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-comment">// To get this file:</span>
+<span class="tok-comment">// wget -nc -O war_and_peace.txt https://www.gutenberg.org/ebooks/2600.txt.utf-8</span>
+<span class="tok-kw">const</span> data = <span class="tok-builtin">@embedFile</span>(<span class="tok-str">&quot;war_and_peace.txt&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    <span class="tok-kw">defer</span> std.debug.assert(gpa.deinit() == .ok);
+    <span class="tok-kw">const</span> allocator = gpa.allocator();
+
+    <span class="tok-kw">try</span> oldDeflate(allocator);
+    <span class="tok-kw">try</span> new(std.compress.flate, allocator);
+
+    <span class="tok-kw">try</span> oldZlib(allocator);
+    <span class="tok-kw">try</span> new(std.compress.zlib, allocator);
+
+    <span class="tok-kw">try</span> oldGzip(allocator);
+    <span class="tok-kw">try</span> new(std.compress.gzip, allocator);
+}
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">new</span>(<span class="tok-kw">comptime</span> pkg: <span class="tok-type">type</span>, allocator: std.mem.Allocator) !<span class="tok-type">void</span> {
+    <span class="tok-kw">var</span> buf = std.ArrayList(<span class="tok-type">u8</span>).init(allocator);
+    <span class="tok-kw">defer</span> buf.deinit();
+
+    <span class="tok-comment">// Compressor</span>
+    <span class="tok-kw">var</span> cmp = <span class="tok-kw">try</span> pkg.compressor(buf.writer(), .{});
+    _ = <span class="tok-kw">try</span> cmp.write(data);
+    <span class="tok-kw">try</span> cmp.finish();
+
+    <span class="tok-kw">var</span> fbs = std.io.fixedBufferStream(buf.items);
+    <span class="tok-comment">// Decompressor</span>
+    <span class="tok-kw">var</span> dcp = pkg.decompressor(fbs.reader());
+
+    <span class="tok-kw">const</span> plain = <span class="tok-kw">try</span> dcp.reader().readAllAlloc(allocator, std.math.maxInt(<span class="tok-type">usize</span>));
+    <span class="tok-kw">defer</span> allocator.free(plain);
+    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, data, plain);
+}
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">oldDeflate</span>(allocator: std.mem.Allocator) !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> deflate = std.compress.v1.deflate;
+
+    <span class="tok-comment">// Compressor</span>
+    <span class="tok-kw">var</span> buf = std.ArrayList(<span class="tok-type">u8</span>).init(allocator);
+    <span class="tok-kw">defer</span> buf.deinit();
+    <span class="tok-comment">// Remove allocator</span>
+    <span class="tok-comment">// Rename deflate -&gt; flate</span>
+    <span class="tok-kw">var</span> cmp = <span class="tok-kw">try</span> deflate.compressor(allocator, buf.writer(), .{});
+    _ = <span class="tok-kw">try</span> cmp.write(data);
+    <span class="tok-kw">try</span> cmp.close(); <span class="tok-comment">// Rename to finish</span>
+    cmp.deinit(); <span class="tok-comment">// Remove</span>
+
+    <span class="tok-comment">// Decompressor</span>
+    <span class="tok-kw">var</span> fbs = std.io.fixedBufferStream(buf.items);
+    <span class="tok-comment">// Remove allocator and last param</span>
+    <span class="tok-comment">// Rename deflate -&gt; flate</span>
+    <span class="tok-comment">// Remove try</span>
+    <span class="tok-kw">var</span> dcp = <span class="tok-kw">try</span> deflate.decompressor(allocator, fbs.reader(), <span class="tok-null">null</span>);
+    <span class="tok-kw">defer</span> dcp.deinit(); <span class="tok-comment">// Remove</span>
+
+    <span class="tok-kw">const</span> plain = <span class="tok-kw">try</span> dcp.reader().readAllAlloc(allocator, std.math.maxInt(<span class="tok-type">usize</span>));
+    <span class="tok-kw">defer</span> allocator.free(plain);
+    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, data, plain);
+}
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">oldZlib</span>(allocator: std.mem.Allocator) !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> zlib = std.compress.v1.zlib;
+
+    <span class="tok-kw">var</span> buf = std.ArrayList(<span class="tok-type">u8</span>).init(allocator);
+    <span class="tok-kw">defer</span> buf.deinit();
+
+    <span class="tok-comment">// Compressor</span>
+    <span class="tok-comment">// Rename compressStream =&gt; compressor</span>
+    <span class="tok-comment">// Remove allocator</span>
+    <span class="tok-kw">var</span> cmp = <span class="tok-kw">try</span> zlib.compressStream(allocator, buf.writer(), .{});
+    _ = <span class="tok-kw">try</span> cmp.write(data);
+    <span class="tok-kw">try</span> cmp.finish();
+    cmp.deinit(); <span class="tok-comment">// Remove</span>
+
+    <span class="tok-kw">var</span> fbs = std.io.fixedBufferStream(buf.items);
+    <span class="tok-comment">// Decompressor</span>
+    <span class="tok-comment">// decompressStream =&gt; decompressor</span>
+    <span class="tok-comment">// Remove allocator</span>
+    <span class="tok-comment">// Remove try</span>
+    <span class="tok-kw">var</span> dcp = <span class="tok-kw">try</span> zlib.decompressStream(allocator, fbs.reader());
+    <span class="tok-kw">defer</span> dcp.deinit(); <span class="tok-comment">// Remove</span>
+
+    <span class="tok-kw">const</span> plain = <span class="tok-kw">try</span> dcp.reader().readAllAlloc(allocator, std.math.maxInt(<span class="tok-type">usize</span>));
+    <span class="tok-kw">defer</span> allocator.free(plain);
+    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, data, plain);
+}
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">oldGzip</span>(allocator: std.mem.Allocator) !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> gzip = std.compress.v1.gzip;
+
+    <span class="tok-kw">var</span> buf = std.ArrayList(<span class="tok-type">u8</span>).init(allocator);
+    <span class="tok-kw">defer</span> buf.deinit();
+
+    <span class="tok-comment">// Compressor</span>
+    <span class="tok-comment">// Rename compress =&gt; compressor</span>
+    <span class="tok-comment">// Remove allocator</span>
+    <span class="tok-kw">var</span> cmp = <span class="tok-kw">try</span> gzip.compress(allocator, buf.writer(), .{});
+    _ = <span class="tok-kw">try</span> cmp.write(data);
+    <span class="tok-kw">try</span> cmp.close(); <span class="tok-comment">// Rename to finisho</span>
+    cmp.deinit(); <span class="tok-comment">// Remove</span>
+
+    <span class="tok-kw">var</span> fbs = std.io.fixedBufferStream(buf.items);
+    <span class="tok-comment">// Decompressor</span>
+    <span class="tok-comment">// Rename decompress =&gt; decompressor</span>
+    <span class="tok-comment">// Remove allocator</span>
+    <span class="tok-comment">// Remove try</span>
+    <span class="tok-kw">var</span> dcp = <span class="tok-kw">try</span> gzip.decompress(allocator, fbs.reader());
+    <span class="tok-kw">defer</span> dcp.deinit(); <span class="tok-comment">// Remove</span>
+
+    <span class="tok-kw">const</span> plain = <span class="tok-kw">try</span> dcp.reader().readAllAlloc(allocator, std.math.maxInt(<span class="tok-type">usize</span>));
+    <span class="tok-kw">defer</span> allocator.free(plain);
+    <span class="tok-kw">try</span> std.testing.expectEqualSlices(<span class="tok-type">u8</span>, data, plain);
+}</code></pre></figure>
     
     
 

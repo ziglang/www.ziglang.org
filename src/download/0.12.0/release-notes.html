@@ -1490,6 +1490,147 @@ pub fn serve(context: *Context, request: *std.http.Server.Request) ServeError!vo
     <p><code>std.http.Client</code> has not yet been reworked in a similar manner as <code>std.http.Server</code>.</p>
     {#header_close#}
     {#header_close#}
+
+    {#header_open|deflate reimplemented from first principles#}
+    <p>In Zig 0.11.0, the deflate implementation was ported from the Go
+    standard library, which had a bunch of undesirable properties, such as
+    incorrect use of global variables, comments about Go's optimizer in Zig's
+    codebase, and the requirement of dynamic memory allocation.</p>
+    <p>Zig 0.12.0 has a new implementation that is not a port of an existing codebase.</p>
+    <p>The new implementation is roughly 1.2-1.4x faster in decompression and
+    1.1-1.2x faster in compression. Compressed sizes are pretty much the same
+    in both cases (<a href="https://github.com/ziglang/zig/pull/18923">source</a>).</p>
+    <p>The new code uses static allocations for all structures, doesn't require
+    allocator. That makes sense especially for deflate where all structures,
+    internal buffers are allocated to the full size. Little less for inflate
+    where the previous verision used less memory by not preallocating to theoretical
+    max size array which are usually not fully used.</p>
+    <p>For deflate the new implementaiton allocates 395K while previous
+    implementation used 779K. For inflate the new implementation allocates
+    74.5K while the old one around 36K.</p>
+    <p>Inflate difference is because we here use 64K history instead of 32K previously.</p>
+    <p>Migration guide:</p>
+    {#syntax_block|zig#}
+const std = @import("std");
+
+// To get this file:
+// wget -nc -O war_and_peace.txt https://www.gutenberg.org/ebooks/2600.txt.utf-8
+const data = @embedFile("war_and_peace.txt");
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer std.debug.assert(gpa.deinit() == .ok);
+    const allocator = gpa.allocator();
+
+    try oldDeflate(allocator);
+    try new(std.compress.flate, allocator);
+
+    try oldZlib(allocator);
+    try new(std.compress.zlib, allocator);
+
+    try oldGzip(allocator);
+    try new(std.compress.gzip, allocator);
+}
+
+pub fn new(comptime pkg: type, allocator: std.mem.Allocator) !void {
+    var buf = std.ArrayList(u8).init(allocator);
+    defer buf.deinit();
+
+    // Compressor
+    var cmp = try pkg.compressor(buf.writer(), .{});
+    _ = try cmp.write(data);
+    try cmp.finish();
+
+    var fbs = std.io.fixedBufferStream(buf.items);
+    // Decompressor
+    var dcp = pkg.decompressor(fbs.reader());
+
+    const plain = try dcp.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(plain);
+    try std.testing.expectEqualSlices(u8, data, plain);
+}
+
+pub fn oldDeflate(allocator: std.mem.Allocator) !void {
+    const deflate = std.compress.v1.deflate;
+
+    // Compressor
+    var buf = std.ArrayList(u8).init(allocator);
+    defer buf.deinit();
+    // Remove allocator
+    // Rename deflate -> flate
+    var cmp = try deflate.compressor(allocator, buf.writer(), .{});
+    _ = try cmp.write(data);
+    try cmp.close(); // Rename to finish
+    cmp.deinit(); // Remove
+
+    // Decompressor
+    var fbs = std.io.fixedBufferStream(buf.items);
+    // Remove allocator and last param
+    // Rename deflate -> flate
+    // Remove try
+    var dcp = try deflate.decompressor(allocator, fbs.reader(), null);
+    defer dcp.deinit(); // Remove
+
+    const plain = try dcp.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(plain);
+    try std.testing.expectEqualSlices(u8, data, plain);
+}
+
+pub fn oldZlib(allocator: std.mem.Allocator) !void {
+    const zlib = std.compress.v1.zlib;
+
+    var buf = std.ArrayList(u8).init(allocator);
+    defer buf.deinit();
+
+    // Compressor
+    // Rename compressStream => compressor
+    // Remove allocator
+    var cmp = try zlib.compressStream(allocator, buf.writer(), .{});
+    _ = try cmp.write(data);
+    try cmp.finish();
+    cmp.deinit(); // Remove
+
+    var fbs = std.io.fixedBufferStream(buf.items);
+    // Decompressor
+    // decompressStream => decompressor
+    // Remove allocator
+    // Remove try
+    var dcp = try zlib.decompressStream(allocator, fbs.reader());
+    defer dcp.deinit(); // Remove
+
+    const plain = try dcp.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(plain);
+    try std.testing.expectEqualSlices(u8, data, plain);
+}
+
+pub fn oldGzip(allocator: std.mem.Allocator) !void {
+    const gzip = std.compress.v1.gzip;
+
+    var buf = std.ArrayList(u8).init(allocator);
+    defer buf.deinit();
+
+    // Compressor
+    // Rename compress => compressor
+    // Remove allocator
+    var cmp = try gzip.compress(allocator, buf.writer(), .{});
+    _ = try cmp.write(data);
+    try cmp.close(); // Rename to finisho
+    cmp.deinit(); // Remove
+
+    var fbs = std.io.fixedBufferStream(buf.items);
+    // Decompressor
+    // Rename decompress => decompressor
+    // Remove allocator
+    // Remove try
+    var dcp = try gzip.decompress(allocator, fbs.reader());
+    defer dcp.deinit(); // Remove
+
+    const plain = try dcp.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(plain);
+    try std.testing.expectEqualSlices(u8, data, plain);
+}
+    {#end_syntax_block#}
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
