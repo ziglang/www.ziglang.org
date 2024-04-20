@@ -416,6 +416,7 @@
             <li><a id="toc-stdposix-APIs-Gain-Type-Safety" href="#stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type Safety</a></li>
             <li><a id="toc-stdbuiltin-Enum-Fields-Lowercased" href="#stdbuiltin-Enum-Fields-Lowercased">std.builtin Enum Fields Lowercased</a></li>
             <li><a id="toc-Global-Configuration" href="#Global-Configuration">Global Configuration</a></li>
+            <li><a id="toc-Pointer-Stability-Locks" href="#Pointer-Stability-Locks">Pointer Stability Locks</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
@@ -1984,6 +1985,92 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
 
     side_channels_mitigations: crypto.SideChannelsMitigations = crypto.default_side_channels_mitigations,
 };</code></pre></figure>
+    
+
+
+    <h3 id="Pointer-Stability-Locks"><a href="#toc-Pointer-Stability-Locks">Pointer Stability Locks</a> <a class="hdr" href="#Pointer-Stability-Locks">§</a></h3>
+
+    <p>This adds <code>std.debug.SafetyLock</code> and uses it in standard library hash maps by adding <code>lockPointers()</code> and <code>unlockPointers()</code>.</p>
+    <p>This provides a way to detect when an illegal modification has happened and panic rather than invoke undefined behavior:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">safety_locks.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> gpa = std.heap.page_allocator;
+    <span class="tok-kw">var</span> map: std.AutoHashMapUnmanaged(<span class="tok-type">i32</span>, <span class="tok-type">i32</span>) = .{};
+
+    <span class="tok-kw">const</span> gop = <span class="tok-kw">try</span> map.getOrPut(gpa, <span class="tok-number">1234</span>);
+    map.lockPointers();
+    <span class="tok-kw">defer</span> map.unlockPointers();
+
+    gop.value_ptr.* = <span class="tok-kw">try</span> calculate(gpa, &amp;map);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">calculate</span>(gpa: std.mem.Allocator, m: <span class="tok-kw">anytype</span>) !<span class="tok-type">i32</span> {
+    <span class="tok-kw">try</span> m.put(gpa, <span class="tok-number">42</span>, <span class="tok-number">420</span>);
+    <span class="tok-kw">return</span> <span class="tok-number">999</span>;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe safety_locks.zig</kbd>
+$ <kbd>./safety_locks</kbd>
+thread 180730 panic: reached unreachable code
+<span class="sgr-1m">/home/andy/local/lib/zig/std/debug.zig:403:14</span>: <span class="sgr-2m">0x1036b4d in assert (safety_locks)</span>
+    if (!ok) unreachable; // assertion failure
+             <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/debug.zig:2845:15</span>: <span class="sgr-2m">0x10375fb in lock (safety_locks)</span>
+        assert(l.state == .unlocked);
+              <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/hash_map.zig:1331:44</span>: <span class="sgr-2m">0x1066683 in getOrPutContextAdapted__anon_6584 (safety_locks)</span>
+                self.pointer_stability.lock();
+                                           <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/hash_map.zig:1318:56</span>: <span class="sgr-2m">0x1037505 in getOrPutContext (safety_locks)</span>
+            const gop = try self.getOrPutContextAdapted(allocator, key, ctx, ctx);
+                                                       <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/hash_map.zig:1244:52</span>: <span class="sgr-2m">0x103765a in putContext (safety_locks)</span>
+            const result = try self.getOrPutContext(allocator, key, ctx);
+                                                   <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/hash_map.zig:1241:35</span>: <span class="sgr-2m">0x1034023 in put (safety_locks)</span>
+            return self.putContext(allocator, key, value, undefined);
+                                  <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/dev/release-cutter/docgen_tmp/safety_locks.zig:15:14</span>: <span class="sgr-2m">0x1033fb6 in calculate__anon_3194 (safety_locks)</span>
+    try m.put(gpa, 42, 420);
+             <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/dev/release-cutter/docgen_tmp/safety_locks.zig:11:36</span>: <span class="sgr-2m">0x10341eb in main (safety_locks)</span>
+    gop.value_ptr.* = try calculate(gpa, &amp;map);
+                                   <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/start.zig:511:37</span>: <span class="sgr-2m">0x1033ec5 in posixCallMainAndExit (safety_locks)</span>
+            const result = root.main() catch |err| {
+                                    <span class="sgr-32m">^</span>
+<span class="sgr-1m">/home/andy/local/lib/zig/std/start.zig:253:5</span>: <span class="sgr-2m">0x10339e1 in _start (safety_locks)</span>
+    asm volatile (switch (native_arch) {
+    <span class="sgr-32m">^</span>
+<span class="sgr-1m">???:?:?</span>: <span class="sgr-2m">0x0 in ??? (???)</span>
+(process terminated by signal)
+</samp></pre></figure>
+    <p>Something nice about this is that if you use the "assume capacity" variants then such mutations are actually well-defined, and don't trigger the problem:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">assume_capacity.zig</cite></figcaption><pre><code><span class="tok-kw">const</span> std = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;std&quot;</span>);
+
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">main</span>() !<span class="tok-type">void</span> {
+    <span class="tok-kw">const</span> gpa = std.heap.page_allocator;
+    <span class="tok-kw">var</span> map: std.AutoHashMapUnmanaged(<span class="tok-type">i32</span>, <span class="tok-type">i32</span>) = .{};
+
+    <span class="tok-kw">try</span> map.ensureUnusedCapacity(gpa, <span class="tok-number">2</span>);
+    <span class="tok-kw">const</span> gop = map.getOrPutAssumeCapacity(<span class="tok-number">1234</span>);
+    map.lockPointers();
+    <span class="tok-kw">defer</span> map.unlockPointers();
+
+    gop.value_ptr.* = calculate(&amp;map);
+}
+
+<span class="tok-kw">fn</span> <span class="tok-fn">calculate</span>(m: <span class="tok-kw">anytype</span>) <span class="tok-type">i32</span> {
+    m.putAssumeCapacity(<span class="tok-number">42</span>, <span class="tok-number">420</span>);
+    <span class="tok-kw">return</span> <span class="tok-number">999</span>;
+}</code></pre></figure><figure><figcaption class="shell-cap">Shell</figcaption><pre><samp>$ <kbd>zig build-exe assume_capacity.zig</kbd>
+$ <kbd>./assume_capacity</kbd>
+</samp></pre></figure>
+    <p>Follow-up tasks that did not make the release cutoff:</p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/19326">introduce pointer stability safety locks to array lists</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/19327">introduce pointer stability safety locks to MultiArrayList</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/19328">add stack traces to pointer stability safety locks</a></li>
+    </ul>
     
     
 

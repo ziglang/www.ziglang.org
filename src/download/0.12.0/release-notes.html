@@ -1831,6 +1831,58 @@ pub const Options = struct {
 };
     {#end_syntax_block#}
     {#header_close#}
+
+
+    {#header_open|Pointer Stability Locks#}
+    <p>This adds <code>std.debug.SafetyLock</code> and uses it in standard library hash maps by adding <code>lockPointers()</code> and <code>unlockPointers()</code>.</p>
+    <p>This provides a way to detect when an illegal modification has happened and panic rather than invoke undefined behavior:</p>
+    {#code_begin|exe_err|safety_locks#}
+const std = @import("std");
+
+pub fn main() !void {
+    const gpa = std.heap.page_allocator;
+    var map: std.AutoHashMapUnmanaged(i32, i32) = .{};
+
+    const gop = try map.getOrPut(gpa, 1234);
+    map.lockPointers();
+    defer map.unlockPointers();
+
+    gop.value_ptr.* = try calculate(gpa, &map);
+}
+
+fn calculate(gpa: std.mem.Allocator, m: anytype) !i32 {
+    try m.put(gpa, 42, 420);
+    return 999;
+}
+    {#code_end#}
+    <p>Something nice about this is that if you use the "assume capacity" variants then such mutations are actually well-defined, and don't trigger the problem:</p>
+    {#code_begin|exe|assume_capacity#}
+const std = @import("std");
+
+pub fn main() !void {
+    const gpa = std.heap.page_allocator;
+    var map: std.AutoHashMapUnmanaged(i32, i32) = .{};
+
+    try map.ensureUnusedCapacity(gpa, 2);
+    const gop = map.getOrPutAssumeCapacity(1234);
+    map.lockPointers();
+    defer map.unlockPointers();
+
+    gop.value_ptr.* = calculate(&map);
+}
+
+fn calculate(m: anytype) i32 {
+    m.putAssumeCapacity(42, 420);
+    return 999;
+}
+    {#code_end#}
+    <p>Follow-up tasks that did not make the release cutoff:</p>
+    <ul>
+      <li><a href="https://github.com/ziglang/zig/issues/19326">introduce pointer stability safety locks to array lists</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/19327">introduce pointer stability safety locks to MultiArrayList</a></li>
+      <li><a href="https://github.com/ziglang/zig/issues/19328">add stack traces to pointer stability safety locks</a></li>
+    </ul>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
