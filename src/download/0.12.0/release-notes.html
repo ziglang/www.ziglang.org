@@ -1826,6 +1826,26 @@ pub const tc_lflag_t = switch (native_arch) {
       <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by h_dir (which is <code>zig-out/include</code> by default).</li>
     </ul>
     {#header_close#}
+
+    {#header_open|dependencyFromBuildZig#}
+    <p>Given a struct that corresponds to the build.zig of a dependency, <code>b.dependencyFromBuildZig</code> returns that same dependency. In other words, if you have already a <code>@import</code>ed a depdency&#39;s build.zig, you can use this function to obtain the corresponding <code>Dependency</code>:</p>
+    {#syntax_block|zig#}
+// in consumer build.zig
+const foo_dep = b.dependencyFromBuildZig(@import("foo"), .{});
+    {#end_syntax_block#}
+    <p>This function is also important for packages that expose functions from their build.zig files that need to use their corresponding <code>Dependency</code> (for example, for package-relative paths, or for running system commands and returning the output as lazy paths). This would be accomplished through:</p>
+    
+    {#syntax_block|zig#}
+// in dependency build.zig
+pub fn getImportantFile(b: *std.Build) std.Build.LazyPath {
+    const this_dep = b.dependencyFromBuildZig(@This(), .{});
+    return this_dep.path("file.txt");
+}
+
+// in consumer build.zig
+const file = @import("foo").getImportantFile(b);
+    {#end_syntax_block#}
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Package Management#}

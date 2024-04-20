@@ -407,12 +407,13 @@
                 <li><a id="toc-Rework-Server-Entirely" href="#Rework-Server-Entirely">Rework Server Entirely</a></li>
             </ul></li>
             <li><a id="toc-deflate-reimplemented-from-first-principles" href="#deflate-reimplemented-from-first-principles">deflate reimplemented from first principles</a></li>
-            <li><a id="toc-Type-Safety-Added-to-stdposix-APIs" href="#Type-Safety-Added-to-stdposix-APIs">Type-Safety Added to std.posix APIs</a></li>
+            <li><a id="toc-stdposix-APIs-Gain-Type-Safety" href="#stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type-Safety</a></li>
         </ul></li>
         <li><a id="toc-Build-System" href="#Build-System">Build System</a>
         <ul>
             <li><a id="toc-introduce-bpath-deprecate-LazyPathrelative" href="#introduce-bpath-deprecate-LazyPathrelative">introduce b.path; deprecate LazyPath.relative</a></li>
             <li><a id="toc-Header-Installation" href="#Header-Installation">Header Installation</a></li>
+            <li><a id="toc-dependencyFromBuildZig" href="#dependencyFromBuildZig">dependencyFromBuildZig</a></li>
         </ul></li>
         <li><a id="toc-Package-Management" href="#Package-Management">Package Management</a></li>
         <li><a id="toc-Compiler" href="#Compiler">Compiler</a>
@@ -1771,7 +1772,7 @@ ryu:   2e0</pre>
 }</code></pre></figure>
     
 
-    <h3 id="Type-Safety-Added-to-stdposix-APIs"><a href="#toc-Type-Safety-Added-to-stdposix-APIs">Type-Safety Added to std.posix APIs</a> <a class="hdr" href="#Type-Safety-Added-to-stdposix-APIs">§</a></h3>
+    <h3 id="stdposix-APIs-Gain-Type-Safety"><a href="#toc-stdposix-APIs-Gain-Type-Safety">std.posix APIs Gain Type-Safety</a> <a class="hdr" href="#stdposix-APIs-Gain-Type-Safety">§</a></h3>
 
     <p>For example, let's look at <code>std.posix.termios</code>:</p>
     <ul>
@@ -1938,6 +1939,23 @@ Here&#39;s for example the definition of <code>lflag</code> for Linux:</p>
       <li>Added <code>WriteFile.addCopyDirectory</code>, which functions very similar to InstallDir.</li>
       <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by h_dir (which is <code>zig-out/include</code> by default).</li>
     </ul>
+    
+
+    <h3 id="dependencyFromBuildZig"><a href="#toc-dependencyFromBuildZig">dependencyFromBuildZig</a> <a class="hdr" href="#dependencyFromBuildZig">§</a></h3>
+
+    <p>Given a struct that corresponds to the build.zig of a dependency, <code>b.dependencyFromBuildZig</code> returns that same dependency. In other words, if you have already a <code>@import</code>ed a depdency&#39;s build.zig, you can use this function to obtain the corresponding <code>Dependency</code>:</p>
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-comment">// in consumer build.zig</span>
+<span class="tok-kw">const</span> foo_dep = b.dependencyFromBuildZig(<span class="tok-builtin">@import</span>(<span class="tok-str">&quot;foo&quot;</span>), .{});</code></pre></figure>
+    <p>This function is also important for packages that expose functions from their build.zig files that need to use their corresponding <code>Dependency</code> (for example, for package-relative paths, or for running system commands and returning the output as lazy paths). This would be accomplished through:</p>
+    
+    <figure><figcaption class="zig-cap"><cite class="file">sample_code</cite></figcaption><pre><code><span class="tok-comment">// in dependency build.zig</span>
+<span class="tok-kw">pub</span> <span class="tok-kw">fn</span> <span class="tok-fn">getImportantFile</span>(b: *std.Build) std.Build.LazyPath {
+    <span class="tok-kw">const</span> this_dep = b.dependencyFromBuildZig(<span class="tok-builtin">@This</span>(), .{});
+    <span class="tok-kw">return</span> this_dep.path(<span class="tok-str">&quot;file.txt&quot;</span>);
+}
+
+<span class="tok-comment">// in consumer build.zig</span>
+<span class="tok-kw">const</span> file = <span class="tok-builtin">@import</span>(<span class="tok-str">&quot;foo&quot;</span>).getImportantFile(b);</code></pre></figure>
     
     
 
