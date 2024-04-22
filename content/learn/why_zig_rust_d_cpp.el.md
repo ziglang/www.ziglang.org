@@ -7,7 +7,7 @@ toc: true
 
 ## Χωρίς κρυφές ροές ελέγχου
 
-If Zig code doesn't look like it's jumping away to call a function, then it isn't. This means you can be sure that the following code calls only `foo()` and then `bar()`, and this is guaranteed without needing to know the types of anything:
+Εάν ο κώδικας Zig δεν φαίνεται ότι καλεί μια συνάρτηση, τότε δεν το κάνει. Αυτό σημαίνει ότι μπορείτε να είστε βέβαιοι ότι ο παρακάτω κώδικας καλεί μόνο το `foo()` και μετά το `bar()`, και αυτό είναι εγγυημένο χωρίς να χρειάζεται να γνωρίζετε οποιουδήποτε τύπους:
 
 ```zig
 var a = b + c.d;
@@ -15,13 +15,13 @@ foo();
 bar();
 ```
 
-Examples of hidden control flow:
+Παραδείγματα κρυφής ροής ελέγχου:
 
-* D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
-* C++, D, and Rust have operator overloading, so the `+` operator might call a function.
-* C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called. (Of course, even in Zig `foo()` could deadlock and prevent `bar()` from being called, but that can happen in any Turing-complete language.)
+* Η D έχει συναρτήσεις `@property`, οι οποίες είναι μέθοδοι που καλείτε με κάτι που μοιάζει με πρόσβαση πεδίου, επομένως στο παραπάνω παράδειγμα, το `c.d` μπορεί να καλέσει μια συνάρτηση.
+* Οι C++, D και Rust έχουν υπερφόρτωση τελεστή, επομένως ο τελεστής `+` μπορεί να καλέσει μια συνάρτηση.
+* Οι C++, D και Go έχουν εξαιρέσεις (exceptions), επομένως το `foo()` μπορεί να δημιουργήσει μια εξαίρεση και να αποτρέψει την κλήση του `bar()`. (Φυσικά, ακόμη και στη Zig το `foo()` θα μπορούσε να είναι αδιέξοδο (deadlock) και να αποτρέψει την κλήση του `bar()`, αλλά αυτό μπορεί να συμβεί σε οποιαδήποτε γλώσσα που είναι πλήρης κατά Turing.)
 
-The purpose of this design decision is to improve readability.
+Σκοπός αυτής της σχεδίασης είναι η βελτίωση της αναγνωσιμότητας.
 
 ## Χωρίς κρυφές δεσμεύσεις μνήμης
 
@@ -66,9 +66,9 @@ bundle any number of allocations into one and free them all at once rather than 
 each allocation independently. Special-purpose allocators can be used to improve performance
 or memory usage for any particular application's needs.
 
+\[1]: Actually there is a string concatenation operator (generally an array concatenation operator), but it only works at compile time, so it still doesn't do any runtime heap allocation.
 
-
-## Πλήρη υποστήριξη απουσίας τυπικής βιβλιοθήκης
+## Πλήρη υποστήριξη απουσίας πρότυπης βιβλιοθήκης
 
 As hinted above, Zig has an entirely optional standard library. Each std lib API only gets compiled
 into your program if you use it. Zig has equal support for either linking against libc or
@@ -153,5 +153,3 @@ get with one of these archives:
 * compiles C and C++ code with libc support
 * drop-in GCC/Clang command line compatibility with `zig cc`
 * Windows resource compiler
-
-[1]: Actually

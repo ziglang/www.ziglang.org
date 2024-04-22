@@ -199,7 +199,7 @@ Zig can also evaluate functions and blocks of code at compile-time. In some cont
 
 {{< zigdoctest "assets/zig-code/features/21-comptime.zig" >}}
 
-## Ενσωμάτωση σε βιβλιοθήκες C χωρίς FFI
+## Ολοκλήρωση με βιβλιοθήκες C χωρίς FFI
 
 [@cImport](https://ziglang.org/documentation/master/#cImport) directly imports types, variables, functions, and simple macros for use in Zig. It even translates inline functions from C into Zig.
 
