@@ -10,8 +10,8 @@ toc: true
 {{< zigdoctest "assets/zig-code/samples/1-memory-leak.zig" >}}
 
 
-## C互操作性
-导入 C 头文件并链接到libc和raylib的示例。
+## C 互操作性
+导入 C 头文件并链接到 libc 和 raylib 的示例。
 
 {{< zigdoctest "assets/zig-code/samples/2-c-interop.zig" >}}
 
@@ -23,12 +23,12 @@ Zig 已为代码面试做了*优化*（并没有）。
 
 
 ## 泛型
-在Zig中，类型是编译期的值，我们使用返回类型的函数来实现泛型算法和数据结构。
+在 Zig 中，类型是编译期的值，我们使用返回类型的函数来实现泛型算法和数据结构。
 在此示例中，我们实现了一个简单的泛型队列并测试其行为。
 
 {{< zigdoctest "assets/zig-code/samples/4-generic-type.zig" >}}
 
 
-## 在Zig中使用cURL
+## 在 Zig 中使用 cURL
 
 {{< zigdoctest "assets/zig-code/samples/5-curl.zig" >}}
