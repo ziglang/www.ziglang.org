@@ -59,9 +59,27 @@ export PATH=$PATH:~/path/to/zig
 
 ### パッケージマネージャ
 #### Windows
+**WinGet**  
+Zigは[WinGet](https://github.com/microsoft/winget-pkgs/tree/master/manifests/z/zig/zig)で使用できます。
+```
+winget install -e --id zig.zig
+```
+
+**Chocolatey**  
 Zigは[Chocolatey](https://chocolatey.org/packages/zig)で使用できます。
 ```
 choco install zig
+```
+
+**Scoop**  
+Zigは[Scoop](https://scoop.sh/#/apps?q=zig&id=7e124d6047c32d426e4143ab395d863fc9d6d491)で使用できます。
+```
+scoop install zig
+```
+最新の[開発版](https://scoop.sh/#/apps?q=zig&id=921df07e75042de645204262e784a17c2421944c)：
+```
+scoop bucket add versions
+scoop install versions/zig-dev
 ```
 
 #### macOS
@@ -107,14 +125,17 @@ zig init-exe
 
 これが出力されるはずです：
 ```
-info: Created build.zig
-info: Created src/main.zig
-info: Next, try `zig build --help` or `zig build run`
+info: created build.zig
+info: created build.zig.zon
+info: created src/main.zig
+info: created src/root.zig
+info: see `zig build --help` for a menu of options
 ```
 
 `zig build run`を実行すると、実行ファイルがコンパイルされて実行され、最終的に以下のような結果になります：
 ```
-info: All your codebase are belong to us.
+All your codebase are belong to us.
+Run `zig build test` to run the tests.
 ```
 
 おめでとうございます！これでZigのインストールは完了です！
