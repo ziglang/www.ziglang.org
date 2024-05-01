@@ -1,10 +1,12 @@
 ---
-title: "ZSFのスポンサー"
-menu_title: "Zigソフトウェア財団のスポンサーになる"
-mobile_menu_title: "ZSFのスポンサーになる"
+title: "ZSF"
+menu_title: "Zigソフトウェア財団"
+mobile_menu_title: "ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
 ## Zigソフトウェア財団のスポンサーになる
+
+ぜひ定期的な寄付をご検討ください。高品質なソフトウェアを維持、サポートするには、継続的な労力が必要です！
 
 {{< sponsor-title-cta >}}
 
@@ -34,10 +36,10 @@ GitHub Sponsors 以外の手段で寄付をする際に役立つ情報をご紹�
 | 84-5105214 | Zig Software Foundation  <br> 1632 1st Ave #21385  <br> New York, NY 10028|
 
 ### その他の寄付方法にも対応
-- [Every](https://www.every.org/zig-software-foundation-inc/) (暗号通貨に対応しています！)
+- [Every](https://www.every.org/zig-software-foundation-inc/)
 - [GitHub Sponsors](https://github.com/sponsors/ziglang)
 - [Benevity](https://benevity.com) (勤務先が寄付と同額を負担してくれるならおすすめ！)
-- 銀行振込（米国外からの振込も含む。）
+- 銀行振込（米国外からの振込も含む、詳細についてはお問い合わせください）
 - 物理的な小切手（上記の郵送先住所参照）
 - [Wise](https://wise.com)
 
