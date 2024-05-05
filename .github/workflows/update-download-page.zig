@@ -95,5 +95,5 @@ fn render(
             line += 1;
         }
     }
-    try std.fs.cwd().writeFile(out_file, buffer.items);
+    try std.fs.cwd().writeFile(.{ .sub_path = out_file, .data = buffer.items });
 }
