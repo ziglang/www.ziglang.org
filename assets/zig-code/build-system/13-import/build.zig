@@ -4,7 +4,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const tool = b.addExecutable(.{
         .name = "generate_struct",
-        .root_source_file = .{ .path = "tools/generate_struct.zig" },
+        .root_source_file = b.path("tools/generate_struct.zig" },
         .target = b.host,
     });
 
@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const exe = b.addExecutable(.{
         .name = "hello",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });

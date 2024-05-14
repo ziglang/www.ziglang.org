@@ -4,13 +4,13 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "demo",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
     });
     b.installArtifact(exe);
 
     const proto_gen = b.addExecutable(.{
         .name = "proto_gen",
-        .root_source_file = .{ .path = "tools/proto_gen.zig" },
+        .root_source_file = b.path("tools/proto_gen.zig"),
     });
 
     const run = b.addRunArtifact(proto_gen);

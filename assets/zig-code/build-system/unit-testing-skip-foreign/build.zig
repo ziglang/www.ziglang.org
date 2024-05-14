@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
 
     for (test_targets) |target| {
         const unit_tests = b.addTest(.{
-            .root_source_file = .{ .path = "main.zig" },
+            .root_source_file = b.path("main.zig"),
             .target = b.resolveTargetQuery(target),
         });
 
