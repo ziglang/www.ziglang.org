@@ -4,7 +4,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "app",
-        .root_source_file = .{ .path = "app.zig" },
+        .root_source_file = b.path("app.zig"),
         .target = b.host,
     });
 
