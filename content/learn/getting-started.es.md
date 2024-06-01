@@ -93,7 +93,7 @@ Navega a tu directorio de proyectos y ejecuta:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Esto deberá arrojar:

@@ -117,7 +117,7 @@ Proje dizininize gidin ve şunları çalıştırın:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Alttaki çıktıyı vermeli:
