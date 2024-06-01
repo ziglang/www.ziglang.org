@@ -104,7 +104,7 @@ Zig와 텍스트 편집기의 깊은 연동에 관심이 있으시다면,
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 그러면 다음과 같이 출력됩니다:
