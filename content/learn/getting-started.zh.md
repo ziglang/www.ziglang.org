@@ -100,7 +100,7 @@ Zig 也存在于许多 Linux 的包管理器中。 [从这里（英文）](https
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 这将会输出：

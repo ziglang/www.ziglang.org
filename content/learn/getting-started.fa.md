@@ -121,7 +121,7 @@ Zig همچنین در بسیاری از پکیج منیجر ها برای لین
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 خروجی باید این باشد:
