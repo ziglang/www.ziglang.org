@@ -69,7 +69,13 @@ cd "$BOOTSTRAP_SRC"
 git clean -fd
 git reset --hard HEAD
 git fetch
-git checkout origin/master
+
+if [ -z "$ZIG_BOOTSTRAP_BRANCH" ]; then
+  git checkout origin/master
+else
+  git checkout "origin/$ZIG_BOOTSTRAP_BRANCH"
+fi
+
 rm -rf zig
 cp -r "$TARBALLS_DIR/zig-$ZIG_VERSION" zig
 sed -i "/^ZIG_VERSION=\".*\"\$/c\\ZIG_VERSION=\"$ZIG_VERSION\"" build
