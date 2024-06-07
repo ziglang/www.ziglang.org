@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 const path = std.fs.path;
 const mem = std.mem;
@@ -95,5 +96,13 @@ fn render(
             line += 1;
         }
     }
-    try std.fs.cwd().writeFile(.{ .sub_path = out_file, .data = buffer.items });
+    if (new_writefile_api) {
+        try std.fs.cwd().writeFile(.{ .sub_path = out_file, .data = buffer.items });
+    } else {
+        try std.fs.cwd().writeFile(out_file, buffer.items);
+    }
 }
+
+const new_writefile_api = builtin.zig_version.order(
+    std.SemanticVersion.parse("0.13.0-dev.68+b86c4bde6") catch unreachable,
+).compare(.gte);
