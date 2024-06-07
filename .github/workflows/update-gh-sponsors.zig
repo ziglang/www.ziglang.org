@@ -90,6 +90,12 @@ pub fn main() !void {
 
     const arena = arena_allocator.allocator();
 
+    var it = std.process.args();
+    _ = it.skip();
+
+    const home_path = it.next() orelse @panic("missing arguments");
+    const notes_path = it.next() orelse @panic("missing arguments");
+
     var gh: std.http.Client = .{
         .allocator = gpa.allocator(),
     };
@@ -168,60 +174,126 @@ pub fn main() !void {
         current = replies.items[replies.items.len - 1].data.organization.sponsorshipsAsMaintainer.pageInfo;
     }
 
-    var with_link = std.ArrayList(GqlReply.Sponsor).init(gpa.allocator());
-    defer with_link.deinit();
-    var name_only = std.ArrayList(GqlReply.Sponsor).init(gpa.allocator());
-    defer name_only.deinit();
+    var home_with_link = std.ArrayList(GqlReply.Sponsor).init(gpa.allocator());
+    defer home_with_link.deinit();
+    var home_name_only = std.ArrayList(GqlReply.Sponsor).init(gpa.allocator());
+    defer home_name_only.deinit();
+
+    var notes_with_link = std.ArrayList(GqlReply.Sponsor).init(gpa.allocator());
+    defer notes_with_link.deinit();
+    var notes_name_only = std.ArrayList(GqlReply.Sponsor).init(gpa.allocator());
+    defer notes_name_only.deinit();
 
     for (replies.items) |r| {
         for (r.data.organization.sponsorshipsAsMaintainer.nodes) |s| {
             if (s.isOneTimePayment) continue;
             const amount = s.tier.monthlyPriceInDollars;
-            if (amount < 200) continue;
-            if (amount < 400) {
-                try name_only.append(s.sponsorEntity);
-            } else {
-                try with_link.append(s.sponsorEntity);
+
+            switch (amount) {
+                0...49 => continue,
+                50...99 => {
+                    try notes_name_only.append(s.sponsorEntity);
+                },
+                100...199 => {
+                    try notes_with_link.append(s.sponsorEntity);
+                },
+                200...400 => {
+                    try home_name_only.append(s.sponsorEntity);
+                    try notes_with_link.append(s.sponsorEntity);
+                },
+                else => {
+                    try home_with_link.append(s.sponsorEntity);
+                    try notes_with_link.append(s.sponsorEntity);
+                },
             }
         }
     }
 
-    var buffered_out = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const out = buffered_out.writer();
-    for (with_link.items) |s| {
-        const name = s.name orelse s.login;
-        const link = blk: {
-            if (s.websiteUrl) |w| {
-                if (std.mem.startsWith(u8, w, "http")) break :blk w;
-                break :blk try std.fmt.allocPrint(arena, "https://{s}", .{w});
-            }
-            if (s.twitterUsername) |t| {
-                break :blk try std.fmt.allocPrint(
-                    arena,
-                    "https://twitter.com/{s}",
-                    .{t},
-                );
-            }
-            break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{s.login});
-        };
+    const home_file = try std.fs.cwd().createFile(home_path, .{});
+    defer home_file.close();
 
-        try out.print(
-            \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a></li>
-            \\
-        ,
-            .{ link, name },
-        );
+    const notes_file = try std.fs.cwd().createFile(notes_path, .{});
+    defer notes_file.close();
+
+    var buffered_home = std.io.bufferedWriter(home_file.writer());
+    const home = buffered_home.writer();
+    var buffered_notes = std.io.bufferedWriter(notes_file.writer());
+    const notes = buffered_notes.writer();
+
+    // Homepage
+    {
+        for (home_with_link.items) |s| {
+            const name = s.name orelse s.login;
+            const link = blk: {
+                if (s.websiteUrl) |w| {
+                    if (std.mem.startsWith(u8, w, "http")) break :blk w;
+                    break :blk try std.fmt.allocPrint(arena, "https://{s}", .{w});
+                }
+                if (s.twitterUsername) |t| {
+                    break :blk try std.fmt.allocPrint(
+                        arena,
+                        "https://twitter.com/{s}",
+                        .{t},
+                    );
+                }
+                break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{s.login});
+            };
+
+            try home.print(
+                \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a></li>
+                \\
+            ,
+                .{ link, name },
+            );
+        }
+        for (home_name_only.items) |s| {
+            const name = s.name orelse s.login;
+            try home.print(
+                \\<li>{s}</li>
+                \\
+            ,
+                .{name},
+            );
+        }
+
+        try buffered_home.flush();
     }
+    // Release notes
+    {
+        for (notes_with_link.items) |s| {
+            const name = s.name orelse s.login;
+            const link = blk: {
+                if (s.websiteUrl) |w| {
+                    if (std.mem.startsWith(u8, w, "http")) break :blk w;
+                    break :blk try std.fmt.allocPrint(arena, "https://{s}", .{w});
+                }
+                if (s.twitterUsername) |t| {
+                    break :blk try std.fmt.allocPrint(
+                        arena,
+                        "https://twitter.com/{s}",
+                        .{t},
+                    );
+                }
+                break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{s.login});
+            };
 
-    for (name_only.items) |s| {
-        const name = s.name orelse s.login;
-        try out.print(
-            \\<li>{s}</li>
-            \\
-        ,
-            .{name},
-        );
+            try notes.print(
+                \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a></li>
+                \\
+            ,
+                .{ link, name },
+            );
+        }
+        for (notes_name_only.items) |s| {
+            const name = s.name orelse s.login;
+            try notes.print(
+                \\<li>{s}</li>
+                \\
+            ,
+                .{name},
+            );
+        }
+
+        try buffered_notes.flush();
     }
-
-    try buffered_out.flush();
 }
