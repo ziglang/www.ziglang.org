@@ -414,8 +414,6 @@ This functionality is more than bundling a cross-compilation toolchain along wit
 
 Note that only the [Tier 1 Support](#tier-1-support) targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
 
-It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](#zig-build-system) attractive for Zig programmers and C programmers alike.
-
 ## Zig Build System
 
 Zig comes with a build system, so you don't need make, cmake, or anything like that.
@@ -482,6 +480,12 @@ Here are some example build scripts:
 - [Build script of OpenGL Tetris game](https://github.com/andrewrk/tetris/blob/master/build.zig)
 - [Build script of bare metal Raspberry Pi 3 arcade game](https://github.com/andrewrk/clashos/blob/master/build.zig)
 - [Build script of self-hosted Zig compiler](https://github.com/ziglang/zig/blob/master/build.zig)
+
+### Package Management
+
+Zig comes with a package manager. The package manager is still in its early stages, but is mature enough to use in many cases. 
+
+[Package manager as of Zig 0.11.0](https://ziglang.org/download/0.11.0/release-notes.html#Package-Management)
 
 ## Concurrency via Async Functions
 
