@@ -99,7 +99,7 @@ Navegue até o diretório de seus projetos e execute:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Isto deve sair:
