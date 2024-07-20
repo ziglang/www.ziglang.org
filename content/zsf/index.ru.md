@@ -17,7 +17,7 @@ date: 2020-10-20T16:29:51+02:00
 
 - [Andrew Kelley](https://andrewkelley.me/) (Президент)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Секретарь)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Заведующий кассой)
+- [Mason Remaley](https://www.masonremaley.com/) (Заведующий кассой)
 
 ## Спонсорство
 

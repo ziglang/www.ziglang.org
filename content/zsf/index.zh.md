@@ -16,7 +16,7 @@ Zig 软件基金会的使命是促进、保护和发展 Zig 编程语言。支�
 
 - [Andrew Kelley](https://andrewkelley.me/) （主席）
 - [Josh Wolfe](https://github.com/thejoshwolfe/) （秘书）
-- [Mason Remaley](https://twitter.com/masonremaley/) （财务主管）
+- [Mason Remaley](https://www.masonremaley.com/) （财务主管）
 
 ## 赞助活动
 

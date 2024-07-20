@@ -18,7 +18,7 @@ date: 2020-10-20T16:29:51+02:00
 
 - [Andrew Kelley](https://andrewkelley.me/) (رئيس)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (سكرتير)
-- [Mason Remaley](https://twitter.com/masonremaley/) (أمين الصندوق)
+- [Mason Remaley](https://www.masonremaley.com/) (أمين الصندوق)
 
 ## الدعم
 
