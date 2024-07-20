@@ -18,7 +18,7 @@ Zig Yazılım Vakfı'nın misyonu, Zig programlama dilini teşvik etmek, korumak
 
 - [Andrew Kelley](https://andrewkelley.me/) (Başkan)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Sekreter)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Sayman)
+- [Mason Remaley](https://www.masonremaley.com/) (Sayman)
 
 ## Sponsorluk
 

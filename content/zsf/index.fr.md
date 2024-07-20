@@ -20,7 +20,7 @@ La trésorerie, les notes des réunions et les autres détails sont [disponibles
 
 - [Andrew Kelley](https://andrewkelley.me/) (Président)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Secrétaire)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Trésorier)
+- [Mason Remaley](https://www.masonremaley.com/) (Trésorier)
 
 ## Parrainage
 

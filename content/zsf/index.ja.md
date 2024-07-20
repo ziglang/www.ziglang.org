@@ -19,7 +19,7 @@ Zigソフトウェア財団の使命は、プログラミング言語Zigの普�
 
 - [Andrew Kelley](https://andrewkelley.me/) (社長)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (秘書)
-- [Mason Remaley](https://twitter.com/masonremaley/) (財務担当)
+- [Mason Remaley](https://www.masonremaley.com/) (財務担当)
 
 ## スポンサーシップ
 

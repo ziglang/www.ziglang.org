@@ -17,7 +17,7 @@ Zig Software Foundation의 사명은 Zig 프로그래밍 언어를 홍보, 보�
 
 - [Andrew Kelley](https://andrewkelley.me/) (의장)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (서기)
-- [Mason Remaley](https://twitter.com/masonremaley/) (회계)
+- [Mason Remaley](https://www.masonremaley.com/) (회계)
 
 ## 후원하기
 

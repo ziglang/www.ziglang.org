@@ -18,7 +18,7 @@ Der Auftrag der Zig Software Foundation ist es, die Programmiersprache Zig zu f�
 
 - [Andrew Kelley](https://andrewkelley.me/) (Präsident)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Sekretär)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Schatzmeister)
+- [Mason Remaley](https://www.masonremaley.com/) (Schatzmeister)
 
 ## Förderung
 
