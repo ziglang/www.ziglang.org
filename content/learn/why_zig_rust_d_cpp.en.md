@@ -19,7 +19,7 @@ Examples of hidden control flow:
 
 * D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
 * C++, D, and Rust have operator overloading, so the `+` operator might call a function.
-* C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called. (Of course, even in Zig `foo()` could deadlock and prevent `bar()` from being called, but that can happen in any Turing-complete language.)
+* C++ and D have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called. (Of course, even in Zig `foo()` could deadlock and prevent `bar()` from being called, but that can happen in any Turing-complete language.)
 
 The purpose of this design decision is to improve readability.
 
