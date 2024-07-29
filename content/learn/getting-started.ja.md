@@ -120,7 +120,7 @@ Linux、macOS、Windows用のZigをソースからビルドする方法につい
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 これが出力されるはずです：
