@@ -10,7 +10,7 @@ date: 2020-10-20T16:29:51+02:00
 {{< sponsor-title-cta >}}
 
 ## Auftrag
-Der Auftrag der Zig Software Foundation ist es, die Programmiersprache Zig zu fördern, zu schützen und zu entwickeln, um das Wachstum einer diversen und internationalen Gemeinschaft von Zig-Programmierern zu ermöglichen und zu unterstützen und Schülern Bildung und Hilfe zu bieten, um die nächste Generation von Programmierern auszubilden, kompetent und ethisch zu handeln und sich an hohen Standards zu messen.
+Die Aufgabe der Zig Software Foundation ist es, die Zig-Programmiersprache zu fördern, zu schützen und voranzubringen, das Wachstum einer vielfältigen und internationalen Gemeinschaft von Zig-Programmierern zu unterstützen und zu erleichtern sowie Studenten auszubilden und anzuleiten, damit die nächste Generation von Programmierern kompetent und ethisch korrekt arbeitet und sich gegenseitig an hohe Standards hält.
 
 **Die ZSF ist eine amerikanische *501(c)(3) organization*.** Finanzen, Sitzungsprotokolle und andere Details sind [öffentlich verfügbar](https://drive.google.com/drive/folders/1ucHARxVbhrBbuZDbhrGHYDTsYAs8_bMH?usp=sharing).
 
@@ -22,13 +22,13 @@ Der Auftrag der Zig Software Foundation ist es, die Programmiersprache Zig zu f�
 
 ## Förderung
 
-Indem du der ZSF spendest, finanzierst du die Entwicklung der Programmiersprache Zig und ihrem Ökosystem, was wiederum der gesamten Open-Source-Community hilft. Mitglieder der Zig-Community haben zu Bugfixes in [LLVM](https://llvm.org/), [Wine](https://winehq.org/), [QEMU](https://qemu.org/), [musl libc](https://musl.libc.org/), [GDB](https://www.gnu.org/software/gdb/) und anderen Projekten beigetragen.
+Mit einer Spende an die ZSF finanzierst du die Entwicklung der Programmiersprache Zig und ihres Ökosystems, was wiederum der gesamten Open-Source-Gemeinschaft zugute kommt. Mitglieder der Zig-Community haben zu Fehlerbehebungen in [LLVM](https://llvm.org/), [Wine](https://winehq.org/), [QEMU](https://qemu.org/), [musl libc](https://musl.libc.org/), [GDB](https://www.gnu.org/software/gdb/) und anderen Projekten beigetragen.
 
-Die ZSF ist eine kleine Organisation, die ihre Mittel effizient nutzt. Der Plan ist es, das zu erhalten, aber wir möchten unbezahlte Freiwillige zu bezahlten Unterstützern machen, um Pullrequests zu mergen und das 1.0-Release schneller zu erreichen. Der ganze Sinn der Non-Profit-Organisation ist es, Leuten zugute zu kommen. Wir versuchen, Open-Source-Unterstützer für ihre Zeit zu bezahlen.
+Die ZSF ist eine kleine Organisation, die ihre finanziellen Mittel effizient einsetzt. Das soll auch so bleiben, aber wir wollen unsere unbezahlten Freiwilligen zu bezahlten Helfern machen, um die Zusammenführung von Pull Requests zu unterstützen und schnellere Fortschritte in Richtung Version 1.0 zu machen. Der Sinn der Gemeinnützigkeit der ZSF ist es, den Menschen zu helfen. Wir versuchen, dass Open-Source-Betreuer für ihre Zeit bezahlt werden.
 
 ## Spendeninformationen
-Nützliche Informationen, um auf anderem Wege als durch GitHub Sponsors zu spenden.
-Überprüfe, ob du deine Spende von der Steuer absetzen kannst.
+Nützliche Informationen, um auf anderem Wege als durch GitHub-Sponsors zu spenden.
+Informiere dich, ob du deine Spende von der Steuer absetzen kannst.
 
 |   **EIN**   | **Adresse** |
 |-------------|-------------|
