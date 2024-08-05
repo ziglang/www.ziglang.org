@@ -197,7 +197,7 @@ pub fn main() !void {
                 100...199 => {
                     try notes_with_link.append(s.sponsorEntity);
                 },
-                200...400 => {
+                200...399 => {
                     try home_name_only.append(s.sponsorEntity);
                     try notes_with_link.append(s.sponsorEntity);
                 },
