@@ -17,7 +17,7 @@ Misi dari Zig Software Foundation adalah untuk mempromosikan, melindungi, dan me
 
 - [Andrew Kelley](https://andrewkelley.me/) (Presiden)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Sekretaris)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Bendahara)
+- [Mason Remaley](https://www.masonremaley.com/) (Bendahara)
 
 ## Dukungan (Sponsorship)
 

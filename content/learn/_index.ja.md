@@ -38,7 +38,7 @@ Zigでプログラミングを始める準備ができたら、このガイド�
 - [始めましょう]({{< ref "getting-started.md" >}})
 
 ## オンライン学習リソース
-- [Zigを学ぶ](https://ziglearn.org)
+- [Zigを学ぶ](https://zig.guide)
 [Sobeston](https://github.com/sobeston)によるZigの構造的な紹介。
 - [Ziglings](https://ziglings.org)
 小さな壊れたプログラムを修正することでZigを学ぶ。

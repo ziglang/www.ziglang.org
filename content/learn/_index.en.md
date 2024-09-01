@@ -38,12 +38,14 @@ If you're ready to start programming in Zig, this guide will help you setup your
 - [Getting started]({{< ref "getting-started.md" >}})  
 
 ## Online learning resources
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
 A structured introduction to Zig by [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://ziglings.org)  
 Learn Zig by fixing tiny broken programs.
 - [Zig on Exercism](https://exercism.org/tracks/zig)
 Solve coding exercises and get mentored to develop fluency in Zig.
+- [Learning Zig](https://www.openmymind.net/learning_zig/)
+Short introduction to Zig well suited for developers coming from garbage-collected languages.
 
 ## Relevant videos and blog posts
 - [Road to Zig 1.0](https://www.youtube.com/watch?v=Gv2I7qTux7g) [video]  

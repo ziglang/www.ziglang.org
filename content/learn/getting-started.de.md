@@ -10,7 +10,7 @@ Zig hat noch nicht die Version 1.0 erreicht und der aktuelle Release-Zyklus ist 
 In der Praxis **liegen Zigs Releases weit auseinander und werden bei der momentanen Entwicklungsgeschwindigkeit schnell veraltet**.
 
 Die getaggten Versionen können verwendet werden, aber wenn du tiefer in Zig einsteigen möchtest, **empfehlen wir, auf ein Nightly Build umzusteigen**, vor allem, weil du so einfacher Hilfe bekommen kannst: der Großteil der Community und Seiten wie 
-[ziglearn.org](https://ziglearn.org) verfolgen aus obigen Gründen den Master-Branch.
+[zig.guide](https://zig.guide) verfolgen aus obigen Gründen den Master-Branch.
 
 Die gute Nachricht ist, dass es sehr einfach ist, von einer Version von Zig auf eine andere umzusteigen, oder sogar mehrere Versionen gleichzeitig zu nutzen: Zigs Releases sind einfach Archive, die alles Notwendige enthalten und überall im System platziert werden können.
 
@@ -100,7 +100,7 @@ Wechsle in dein Projektverzeichnis und führe aus:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Das sollte Folgendes ausgeben:
@@ -117,7 +117,7 @@ info: All your codebase are belong to us.
 ausgibt. Glückwunsch, du hast jetzt eine funktionierende Installation von Zig!
 
 ## Nächste Schritte
-**Sieh dir auch auch die anderen Ressourcen im Abschnitt [Lernen](../) an**, suche dir die Dokumentation für deine Version (Hinweis: Nightly Builds sollten die `master`-Dokumentation benutzen) und lies vielleicht [ziglearn.org](https://ziglearn.org).
+**Sieh dir auch auch die anderen Ressourcen im Abschnitt [Lernen](../) an**, suche dir die Dokumentation für deine Version (Hinweis: Nightly Builds sollten die `master`-Dokumentation benutzen) und lies vielleicht [zig.guide](https://zig.guide).
 
 Zig ist ein junges Projekt, und wir haben leider nicht die Kapazitäten, umfangreiche Dokumentation und Lernmaterialien zu erzeugen. Wenn du feststeckst, kannst du aber auch [einer Zig-Community beitreten](https://github.com/ziglang/zig/wiki/Community), oder Initiativen wie [Zig SHOWTIME](https://zig.show) ansehen.
 

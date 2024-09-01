@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
 
     const libfizzbuzz = b.addSharedLibrary(.{
         .name = "fizzbuzz",
-        .root_source_file = .{ .path = "fizzbuzz.zig" },
+        .root_source_file = b.path("fizzbuzz.zig"),
         .target = target,
         .optimize = optimize,
         .version = .{ .major = 1, .minor = 2, .patch = 3 },

@@ -17,7 +17,7 @@ La misión de la Zig Software Foundation es promover, proteger y desarrollar el 
 
 - [Andrew Kelley](https://andrewkelley.me/) (Presidente)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Secretario)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Tesorero)
+- [Mason Remaley](https://www.masonremaley.com/) (Tesorero)
 
 ## Patrocinio
 

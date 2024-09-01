@@ -10,7 +10,7 @@ Zig n'a pas encore atteint la version 1.0 et le cycle de sorties est lié aux no
 En pratique, **les versions de Zig sont éloignées et vont l'être de plus en plus**.
 
 Il est valable d'utiliser Zig dans une version numérotée, mais si vous aimez Zig et que vous voulez aller plus loin, **nous vous encourageons à passer à la version nightly**.
-Cela sera plus facile pour vous d'être aidé : la plupart de la communauté et des sites comme [ziglearn.org](https://ziglearn.org) suivent la branche master pour les raisons évoquées plus tôt.
+Cela sera plus facile pour vous d'être aidé : la plupart de la communauté et des sites comme [zig.guide](https://zig.guide) suivent la branche master pour les raisons évoquées plus tôt.
 
 La bonne nouvelle est qu'il est très facile de passer d'une version de Zig à une autre, ou même d'avoir plusieurs versions installées sur le système en même temps : les versions de Zig sont des archives qui se suffisent à elles-mêmes et qui peuvent être placées n'importe où sur le système.
 
@@ -97,7 +97,7 @@ Naviguez dans votre répertoire de projets et lancez :
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Cela devrait donner ceci :
@@ -115,7 +115,7 @@ info: All your codebase are belong to us.
 Félicitations, vous avez une installation fonctionnelle de Zig !
 
 ## Prochaines étapes
-**Allez voir les autres ressources présentes dans la section [Apprendre](../)**, assurez-vous de regarder la documentation qui correspond à votre version de Zig (note : les nightly doivent utiliser la documentation `master`) et pensez éventuellement à lire [ziglearn.org](https://ziglearn.org).
+**Allez voir les autres ressources présentes dans la section [Apprendre](../)**, assurez-vous de regarder la documentation qui correspond à votre version de Zig (note : les nightly doivent utiliser la documentation `master`) et pensez éventuellement à lire [zig.guide](https://zig.guide).
 
 Zig est un projet assez jeune et malheureusement nous n'avons pas encore la capacité à produire une documentation exhaustive, donc vous devriez considérer [joindre l'une des communautés existantes de Zig](https://github.com/ziglang/zig/wiki/Community) pour obtenir de l'aide si vous rencontrez un problème, ainsi que regarder des initiatives comme [Zig SHOWTIME](https://zig.show).
 

@@ -12,12 +12,11 @@ Bagian ini berisi sumber daya yang berguna untuk beralih dari tidak mengetahui a
 ## Dokumentasi
 {{% learn_docs %}}
 
-## Guides
-This section is eventually going to be bundled with Zig's standard library documentation, but
-in the meantime you can browse it from here.
+## Panduan
+Bagian ini akan akhirnya digabungkan dengan dokumentasi pustaka standar Zig, tetapi sementara itu, Anda dapat menjelajahnya dari sini.
 
-- [Zig Build System](build-system/)
-Introduction to the Zig build system.
+- [Sistem Pembangunan Zig](build-system/)
+Pengenalan terhadap sistem pembangunan Zig.
 
 ## Pengantar
 Berikut adalah pengenalan tentang Zig yang ditujukan untuk para programmer dengan latar belakang yang berbeda.
@@ -29,15 +28,15 @@ Sebuah pengenalan tentang Zig untuk para programmer C++, D, dan Rust.
 - [Contoh Kode](samples/)  
 Daftar contoh kode untuk memberikan gambaran tentang bagaimana kode Zig terlihat.
 - [Daftar Tool](tools/)  
-Kumpulan tool yang berguna untuk membantu anda menulis kode Zig.
+Kumpulan tool yang berguna untuk membantu Anda menulis kode Zig.
 
 ## Memulai
-Jika anda siap untuk memulai pemrograman dengan Zig, panduan ini akan membantu anda menyiapkan lingkungan kerja anda.
+Jika Anda siap untuk memulai pemrograman dengan Zig, panduan ini akan membantu Anda menyiapkan lingkungan kerja Anda.
 
 - [Memulai]({{< ref "getting-started.md" >}})  
 
 ## Sumber pembelajaran online
-- [Zig Learn](https://ziglearn.org)  
+- [zig.guide](https://zig.guide)  
 Pengenalan terstruktur mengenai Zig oleh [Sobeston](https://github.com/sobeston).
 - [Ziglings](https://ziglings.org)  
 Mempelajari Zig dengan memperbaiki program-program kecil yang rusak.

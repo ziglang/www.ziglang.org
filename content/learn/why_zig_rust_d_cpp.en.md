@@ -88,28 +88,68 @@ One of the holy grails of programming is code reuse. Sadly, in practice, we find
 
 ## A Package Manager and Build System for Existing Projects
 
-Zig is a programming language, but it also will ship with a build system and package manager that are intended to be useful even in the context of a traditional C/C++ project.
+Zig is a toolchain in addition to a programming language. It comes with a
+[build system and package manager](/learn/build-system/) that are useful even
+in the context of a traditional C/C++ project.
 
-Not only can you write Zig code instead of C or C++ code, but you can use Zig as a replacement for autotools, cmake, make, scons, ninja, etc. And on top of this, it (will) provide a package manager for native dependencies. This build system is intended to be appropriate even if the entirety of a project's codebase is in C or C++.
+Not only can you write Zig code instead of C or C++ code, but you can use Zig
+as a replacement for autotools, cmake, make, scons, ninja, etc. And on top of
+this, it provides a package manager for native dependencies. This build system
+is appropriate even if the entirety of a project's codebase is in C or C++.
+For example, by
+[porting ffmpeg to the zig build system](https://github.com/andrewrk/ffmpeg),
+it becomes possible to compile ffmpeg on any supported system for any supported
+system using only a [50 MiB download of zig](/download/). For open source
+projects, this streamlined ability to build from source - and even
+cross-compile - can be the difference between gaining or losing valuable
+contributors.
 
-System package managers such as apt-get, pacman, homebrew, and others are instrumental for end user experience, but they can be insufficient for the needs of developers. A language-specific package manager can be the difference between having no contributors and having many. For open source projects, the difficulty of getting the project to build at all is a huge hurdle for potential contributors. For C/C++ projects, having dependencies can be fatal, especially on Windows, where there is no package manager. Even when just building Zig itself, most potential contributors have a difficult time with the LLVM dependency. Zig is (will be) offering a way for projects to depend on native libraries directly - without depending on the users' system package manager to have the correct version available, and in a way that is practically guaranteed to successfully build projects on the first try regardless of what system is being used and independent of what platform is being targeted.
+System package managers such as apt-get, pacman, homebrew, and others are
+instrumental for end user experience, but they can be insufficient for the
+needs of developers. A language-specific package manager can be the difference
+between having no contributors and having many. For open source projects, the
+difficulty of getting the project to build at all is a huge hurdle for
+potential contributors. For C/C++ projects, having dependencies can be fatal,
+especially on Windows, where there is no package manager. Even when just
+building Zig itself, most potential contributors have a difficult time with the
+LLVM dependency. Zig offers a way for projects to depend on native libraries
+directly - without depending on the users' system package manager to have the
+correct version available, and in a way that is practically guaranteed to
+successfully build projects on the first try regardless of what system is being
+used and independent of what platform is being targeted.
 
-Zig is offering to replace a project's build system with a reasonable language using a declarative API for building projects, that also provides package management, and thus the ability to actually depend on other C libraries. The ability to have dependencies enables higher level abstractions, and thus the proliferation of reusable high-level code.
+**Other languages have package managers but they do not eliminate pesky system
+dependencies like Zig does.**
+
+Zig can replace a project's build system with a reasonable language using
+a declarative API for building projects, that also provides package management,
+and thus the ability to actually depend on other C libraries. The ability to
+have dependencies enables higher level abstractions, and thus the proliferation
+of reusable high-level code.
 
 ## Simplicity
 
 C++, Rust, and D have such a large number of features that they can be distracting from the actual meaning of the application you are working on. One finds oneself debugging one's knowledge of the programming language instead of debugging the application itself.
 
-Zig has no macros and no metaprogramming, yet is still powerful enough to express complex programs in a clear, non-repetitive way. Even Rust has macros with special cases like `format!`, which is implemented in the compiler itself. Meanwhile in Zig, the equivalent function is implemented in the standard library with no special case code in the compiler.
+Zig has no macros yet is still powerful enough to express complex programs in a
+clear, non-repetitive way. Even Rust has macros with special cases like
+`format!`, which is implemented in the compiler itself. Meanwhile in Zig, the
+equivalent function is implemented in the standard library with no special case
+code in the compiler.
 
 ## Tooling
 
-Zig can be downloaded from [the downloads section](/download/).  Zig provides binary archives for Linux, Windows, macOS and FreeBSD. The following describes what you get with one of these archives:
+Zig can be downloaded from [the downloads section](/download/).  Zig provides
+binary archives for Linux, Windows, and macOS. The following describes what you
+get with one of these archives:
 
 * installed by downloading and extracting a single archive, no system configuration needed
 * statically compiled so there are no runtime dependencies
-* uses the mature well-supported LLVM infrastructure which enables deep optimization and support for most major platforms
+* supports using LLVM for optimized release builds while using Zig's custom backends for faster compilation performance
+* additionally supports a backend for outputting C code
 * out of the box cross-compilation to most major platforms
 * ships with source code for libc that will be dynamically compiled when needed for any supported platform
-* includes build system with caching
+* includes build system with concurrency and caching
 * compiles C and C++ code with libc support
+* drop-in GCC/Clang command line compatibility with `zig cc`
+* Windows resource compiler

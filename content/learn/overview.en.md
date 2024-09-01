@@ -497,7 +497,7 @@ The Zig Standard Library implements an event loop that multiplexes async functio
 
 Zig uses a "support tier" system to communicate the level of support for different targets.
 
-[Support Table as of Zig 0.8.0](/download/0.8.0/release-notes.html#Support-Table)
+[Support Table as of Zig 0.11.0](/download/0.11.0/release-notes.html#Support-Table)
 
 ## Friendly toward package maintainers
 

@@ -8,7 +8,7 @@ toc: true
 Zig no ha alcanzado la versión 1.0 aún y el ciclo de lanzamiento actual depende de la liberación de LLVM, lo cual ocurre cada ~6 meses.
 En términos prácticos, **los lanzamientos de Zig tienden a ser muy separados entre si y ocasionalmente llegan a perder vigencia debido a la velocidad en el desarrollo del lenguaje.**.
 
-No hay problema con evaluar Zig utilizando alguna de las versiones etiquetadas, pero si decides que quieres continuar programando con Zig mas a fondo, **te recomendamos actualizar a las compilaciones nightly**, ya que de esa manera será más fácil obtener ayuda: la mayoría de los miembros de la comunidad y sitios como [ziglearn.org](https://ziglearn.org) siguen la rama "master" del repositorio por las razones expuestas arriba.
+No hay problema con evaluar Zig utilizando alguna de las versiones etiquetadas, pero si decides que quieres continuar programando con Zig mas a fondo, **te recomendamos actualizar a las compilaciones nightly**, ya que de esa manera será más fácil obtener ayuda: la mayoría de los miembros de la comunidad y sitios como [zig.guide](https://zig.guide) siguen la rama "master" del repositorio por las razones expuestas arriba.
 
 La buena noticia es que es muy fácil de moverse de una versión de Zig a otra, o incluso tener múltiples versiones presentes en el sistema al mismo tiempo: las versiones de Zig son un simple directorio con todo lo necesario, el cual puede ser colocado en cualquier ubicación del sistema.
 
@@ -93,7 +93,7 @@ Navega a tu directorio de proyectos y ejecuta:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Esto deberá arrojar:
@@ -111,7 +111,7 @@ info: All your codebase are belong to us.
 Felicidades, ahora tienes una instalación de Zig funcional!
 
 ## Siguientes pasos
-**Revisa otros recursos presentes en la sección [Aprender](../)**, asegurate de encontrar la documentación para tu versión de Zig (nota: los compilados nightly corresponden a la documentación `master`) y considera leer [ziglearn.org](https://ziglearn.org).
+**Revisa otros recursos presentes en la sección [Aprender](../)**, asegurate de encontrar la documentación para tu versión de Zig (nota: los compilados nightly corresponden a la documentación `master`) y considera leer [zig.guide](https://zig.guide).
 
 Zig es un proyecto joven y desafortunadamente aún no tenemos la capacidad para producir documentación y materiales extensivos para todas sus características, así que considera [unirte a alguna de las comunidades existentes de Zig](https://github.com/ziglang/zig/wiki/Community) para obtener ayuda. También da un vistazo a [Zig SHOWTIME](https://zig.show).
 

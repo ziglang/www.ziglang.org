@@ -10,7 +10,7 @@ Zigはまだv1.0に到達しておらず、現在のリリースサイクルはL
 
 タグ付きバージョンを使ってZigを評価するのは良いのですが、もしZigが好きでもっと深く知りたいと思ったら
 **ナイトリービルドにアップグレードすることをお勧めします** 。
-そうすれば、助けを得るのがより簡単になるからです：[ziglearn.org](https://ziglearn.org)のようなサイトは、上記の理由から master ブランチを追跡しています。
+そうすれば、助けを得るのがより簡単になるからです：[zig.guide](https://zig.guide)のようなサイトは、上記の理由から master ブランチを追跡しています。
 
 Zigのバージョンを切り替えるのはとても簡単で、同時に複数のバージョンをシステム上に存在させることも可能です。Zigのリリースは自己完結型のアーカイブで、システムのどこにでも配置することができます。
 
@@ -59,9 +59,27 @@ export PATH=$PATH:~/path/to/zig
 
 ### パッケージマネージャ
 #### Windows
+**WinGet**  
+Zigは[WinGet](https://github.com/microsoft/winget-pkgs/tree/master/manifests/z/zig/zig)で使用できます。
+```
+winget install -e --id zig.zig
+```
+
+**Chocolatey**  
 Zigは[Chocolatey](https://chocolatey.org/packages/zig)で使用できます。
 ```
 choco install zig
+```
+
+**Scoop**  
+Zigは[Scoop](https://scoop.sh/#/apps?q=zig&id=7e124d6047c32d426e4143ab395d863fc9d6d491)で使用できます。
+```
+scoop install zig
+```
+最新の[開発版](https://scoop.sh/#/apps?q=zig&id=921df07e75042de645204262e784a17c2421944c)：
+```
+scoop bucket add versions
+scoop install versions/zig-dev
 ```
 
 #### macOS
@@ -102,26 +120,29 @@ Linux、macOS、Windows用のZigをソースからビルドする方法につい
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 これが出力されるはずです：
 ```
-info: Created build.zig
-info: Created src/main.zig
-info: Next, try `zig build --help` or `zig build run`
+info: created build.zig
+info: created build.zig.zon
+info: created src/main.zig
+info: created src/root.zig
+info: see `zig build --help` for a menu of options
 ```
 
 `zig build run`を実行すると、実行ファイルがコンパイルされて実行され、最終的に以下のような結果になります：
 ```
-info: All your codebase are belong to us.
+All your codebase are belong to us.
+Run `zig build test` to run the tests.
 ```
 
 おめでとうございます！これでZigのインストールは完了です！
 
 ## 次のステップ
 **[学ぶ](../) セクションにある他のリソースもチェックし**、あなたのバージョンのZigのドキュメントを見つけてください（注意：ナイトリービルドは `master` ドキュメントを使うべきです）、
-そして、[ziglearn.org](https://ziglearn.org)を読んでみてください。
+そして、[zig.guide](https://zig.guide)を読んでみてください。
 
 Zigは若いプロジェクトであり、残念ながら、すべてのことについて広範な文書や学習資料を作成する能力はまだありません。
 したがって、行き詰まったときに助けを得るために[既存のZigコミュニティのいずれかに参加すること](https://github.com/ziglang/zig/wiki/Community)や、

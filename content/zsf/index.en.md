@@ -1,7 +1,7 @@
 ---
-title: "Sponsor ZSF"
-menu_title: "Sponsor the Zig Software Foundation"
-mobile_menu_title: "Sponsor the ZSF"
+title: "ZSF"
+menu_title: "Zig Software Foundation"
+mobile_menu_title: "ZSF"
 date: 2020-10-20T16:29:51+02:00
 ---
 ## Sponsoring the Zig Software Foundation
@@ -20,7 +20,7 @@ The mission of the Zig Software Foundation is to promote, protect, and advance t
 
 - [Andrew Kelley](https://andrewkelley.me/) (President)
 - [Josh Wolfe](https://github.com/thejoshwolfe/) (Secretary)
-- [Mason Remaley](https://twitter.com/masonremaley/) (Treasurer)
+- [Mason Remaley](https://www.masonremaley.com/) (Treasurer)
 
 ## Sponsorship
 

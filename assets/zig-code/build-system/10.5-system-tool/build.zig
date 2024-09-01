@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
         , .{lang}),
         "-r", // raw output to omit quotes around the selected string
     });
-    tool_run.addFileArg(.{ .path = "words.json" });
+    tool_run.addFileArg(b.path("words.json"));
 
     const output = tool_run.captureStdOut();
 
@@ -20,7 +20,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const exe = b.addExecutable(.{
         .name = "hello",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
