@@ -1,0 +1,10 @@
+---
+.title = "Impara",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Impara",
+},
+---
+Learn

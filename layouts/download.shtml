@@ -1,0 +1,137 @@
+<extend template="locale.shtml">
+<title id="title" text="$page.title.suffix(' ⚡')"></title>
+<head id="head">
+  <link
+  type="text/css"
+  rel="stylesheet"
+  href="$site.asset('css/home.css').link()"
+>
+</head>
+<div id="content">
+  <div class="container">
+    <ctx html="$page.content()"></ctx>
+    <ctx
+      data="$site.asset('releases.json').ziggy()"
+      OSs="$page.locale!('en-US').custom.get!('OSs')"
+    >
+      <style>
+        tbody th {
+          text-align: center;
+        }
+      </style>
+      <div loop="$ctx.data.iterate()">
+        <h2 text="$loop.it.key()"></h2>
+        <ctx tag="$loop.it.value()">
+          <ul>
+            <li text="$ctx.tag.get!('date')"></li>
+            <ctx if="$ctx.tag.get?('notes')">
+              <li><a href="$if" text="$i18n.get!('release_notes')"></a></li>
+            </ctx>
+            <ctx if="$ctx.tag.get?('docs')">
+              <li><a href="$if" text="$i18n.get!('docs')"></a></li>
+            </ctx>
+            <ctx if="$ctx.tag.get?('stdDocs')">
+              <li><a href="$if" text="$i18n.get!('std_docs')"></a></li>
+            </ctx>
+          </ul>
+          <table>
+            <colgroup>
+              <col width="10%">
+              <col width="10%">
+              <col width="40%">
+              <col width="10%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th text="$i18n.get!('download_os')"></th>
+                <th text="$i18n.get!('download_arch')"></th>
+                <th text="$i18n.get!('download_filename')"></th>
+                <th text="$i18n.get!('download_sig')"></th>
+                <th text="$i18n.get!('download_size')"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="src"><ctx
+                  src="$ctx.tag.get!('src')"
+                  bt="$ctx.tag.has('bootstrap').not()"
+                >
+                  <th
+                    colspan="2"
+                    rowspan="$ctx.bt.then('1', '2')"
+                  >Source</th>
+                  <td
+                    class="$ctx.bt.then('last-row-in-section')"
+                  >
+                    <a
+                      href="$ctx.src.get!('tarball')"
+                      text="$ctx.src.get!('tarball').basename()"
+                    ></a>
+                  </td>
+                  <td
+                    class="$ctx.bt.then('last-row-in-section')"
+                  >
+                    <a href="$ctx.src.get!('tarball').suffix('.minisig')">
+                      minisig
+                    </a>
+                  </td>
+                  <td
+                    class="$ctx.bt.then('last-row-in-section')"
+                    text="$ctx.src.get!('size').parseInt().byteSize()"
+                  ></td>
+                </ctx></tr>
+              <ctx if="$ctx.tag.get?('bootstrap')">
+                <tr class="src">
+                  <td class="last-row-in-section">
+                    <a
+                      href="$if.get!('tarball')"
+                      text="$if.get!('tarball').basename()"
+                    ></a>
+                  </td>
+                  <td class="last-row-in-section">
+                    <a href="$if.get!('tarball').suffix('.minisig')">
+                      minisig
+                    </a>
+                  </td>
+                  <td
+                    class="last-row-in-section"
+                    text="$if.get!('size').parseInt().byteSize()"
+                  ></td>
+                </tr>
+              </ctx>
+              <ctx loop="$ctx.OSs">
+                <ctx loop="$ctx.tag.iterate($loop.it.lower())">
+                  <ctx build="$loop.it.value()">
+                    <tr>
+                      <ctx if="$loop.first">
+                        <th rowspan="$loop.len()" text="$loop.up().it"></th>
+                      </ctx>
+                      <td
+                        class="$loop.last.then('last-row-in-section')"
+                        text="$loop.it.key().splitN('-', 0)"
+                      ></td>
+                      <td class="$loop.last.then('last-row-in-section')">
+                        <a
+                          href="$ctx.build.get!('tarball')"
+                          text="$ctx.build.get!('tarball').basename()"
+                        ></a>
+                      </td>
+                      <td class="$loop.last.then('last-row-in-section')">
+                        <a href="$ctx.build.get!('tarball').suffix('.minisig')">
+                          minisig
+                        </a>
+                      </td>
+                      <td
+                        class="$loop.last.then('last-row-in-section')"
+                        text="$ctx.build.get!('size').parseInt().byteSize()"
+                      ></td>
+                    </tr>
+                  </ctx>
+                </ctx>
+              </ctx>
+            </tbody>
+          </table>
+        </ctx>
+      </div>
+    </ctx>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 const std = @import("std");
+const zine = @import("zine");
 const assert = std.debug.assert;
 
 /// Used for updating the langref documentation version links of old releases.
@@ -25,6 +26,90 @@ const releases = [_][]const u8{
 };
 
 pub fn build(b: *std.Build) void {
+    var build_assets = std.ArrayList(zine.BuildAsset).init(b.allocator);
+    runZigScripts(b, &build_assets, "assets/zig-code", &.{
+        "index.zig",
+    });
+
+    zine.multilingualWebsite(b, .{
+        .host_url = "https://ziglang.org",
+        .i18n_dir_path = "i18n",
+        .layouts_dir_path = "layouts",
+        .assets_dir_path = "assets",
+        .debug = true,
+        .build_assets = build_assets.items,
+        .static_assets = &.{
+            "external-link-dark.svg",
+            "external-link-light.svg",
+            "heart.svg",
+            "zig-logo-dark.svg",
+            "zig-logo-light.svg",
+            "zig-performance-logo-dark.svg",
+            "zig-performance-logo-light.svg",
+        },
+        .locales = &.{
+            .{
+                .code = "en-US",
+                .name = "English (original)",
+                .site_title = "Zig Programming Language",
+                .content_dir_path = "content/en-US",
+                .output_prefix_override = "",
+            },
+            .{
+                .code = "it-IT",
+                .name = "Italiano",
+                .site_title = "Zig Programming Language",
+                .content_dir_path = "content/it-IT",
+            },
+        },
+    });
+}
+
+fn runZigScripts(
+    b: *std.Build,
+    assets: *std.ArrayList(zine.BuildAsset),
+    assets_dir_path: []const u8,
+    paths: []const []const u8,
+) void {
+    const doctest_dep = b.dependency("doctest", .{
+        .target = b.host,
+        .optimize = .Debug,
+    });
+    const doctest_exe = doctest_dep.artifact("doctest");
+    assets.ensureUnusedCapacity(paths.len) catch unreachable;
+
+    for (paths) |p| {
+        const lp = runSingleZigScript(b, doctest_exe, assets_dir_path, p);
+        assets.appendAssumeCapacity(.{
+            .name = std.fs.path.basename(p),
+            .lp = lp,
+        });
+    }
+}
+
+fn runSingleZigScript(
+    b: *std.Build,
+    doctest_exe: *std.Build.Step.Compile,
+    assets_dir_path: []const u8,
+    path: []const u8,
+) std.Build.LazyPath {
+    const cmd = b.addRunArtifact(doctest_exe);
+    cmd.addArgs(&.{
+        "--zig",        b.graph.zig_exe,
+        "--cache-root", b.cache_root.path orelse ".",
+    });
+    if (b.zig_lib_dir) |p| {
+        cmd.addArg("--zig-lib-dir");
+        cmd.addDirectoryArg(p);
+    }
+    cmd.addArgs(&.{"-i"});
+    cmd.addFileArg(b.path(b.fmt("{s}/{s}", .{ assets_dir_path, path })));
+
+    cmd.addArgs(&.{"-o"});
+    return cmd.addOutputFileArg(path);
+}
+
+pub fn oldBuild(b: *std.Build) void {
     const doctest_dep = b.dependency("doctest", .{
         .target = b.host,
         .optimize = .Debug,

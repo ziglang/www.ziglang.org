@@ -1,4 +1,3 @@
-// zig-doctest: test --name parse_integers --skip-name
 const std = @import("std");
 const parseInt = std.fmt.parseInt;
 
@@ -23,3 +22,5 @@ test "parse integers" {
         try std.testing.expectEqual(exp, actual);
     }
 }
+
+// test
