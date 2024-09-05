@@ -48,13 +48,13 @@ is what the `installArtifact` function call does above.
 ```
 ├── build.zig
 ├── hello.zig
-├── zig-cache
+├── .zig-cache
 └── zig-out
     └── bin
         └── hello
 ```
 
-There are two generated directories in this output: `zig-cache` and `zig-out`. The first one contains files that will make subsequent builds faster, but these files are not intended to be checked into source-control and this directory can be completely deleted at any time with no consequences.
+There are two generated directories in this output: `.zig-cache` and `zig-out`. The first one contains files that will make subsequent builds faster, but these files are not intended to be checked into source-control and this directory can be completely deleted at any time with no consequences.
 
 The second one, `zig-out`, is an "installation prefix". This maps to the standard file system hierarchy concept. This directory is not chosen by the project, but by the user of `zig build` with the `--prefix` flag (`-p` for short).
 
@@ -409,7 +409,7 @@ zig-out/
 ### Dealing With One or More Generated Files
 
 The **WriteFiles** step provides a way to generate one or more files which
-share a parent directory. The generated directory lives inside the local zig-cache,
+share a parent directory. The generated directory lives inside the local .zig-cache,
 and each generated file is independently available as a `std.Build.LazyPath`.
 The parent directory itself is also available as a LazyPath.
 
