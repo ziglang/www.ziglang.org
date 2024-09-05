@@ -162,6 +162,38 @@ echo | minisign -Sm zig-windows-aarch64-$ZIG_VERSION.zip
 echo | minisign -Sm zig-windows-x86-$ZIG_VERSION.zip
 #echo | minisign -Sm zig-freebsd-x86_64-$ZIG_VERSION.tar.xz
 
+# Delete builds older than 30 days so the server does not run out of disk space.
+WWW_PREFIX="/var/www/html"
+find $WWW_PREFIX/* -ctime +30 -exec rm -rf {} \;
+
+cp zig-$ZIG_VERSION.tar.xz                            "$WWW_PREFIX/builds/"
+cp zig-bootstrap-$ZIG_VERSION.tar.xz                  "$WWW_PREFIX/builds/"
+cp zig-linux-x86_64-$ZIG_VERSION.tar.xz               "$WWW_PREFIX/builds/"
+cp zig-macos-x86_64-$ZIG_VERSION.tar.xz               "$WWW_PREFIX/builds/"
+cp zig-linux-aarch64-$ZIG_VERSION.tar.xz              "$WWW_PREFIX/builds/"
+cp zig-macos-aarch64-$ZIG_VERSION.tar.xz              "$WWW_PREFIX/builds/"
+cp zig-linux-x86-$ZIG_VERSION.tar.xz                  "$WWW_PREFIX/builds/"
+cp zig-linux-armv7a-$ZIG_VERSION.tar.xz               "$WWW_PREFIX/builds/"
+cp zig-linux-riscv64-$ZIG_VERSION.tar.xz              "$WWW_PREFIX/builds/"
+cp zig-linux-powerpc64le-$ZIG_VERSION.tar.xz          "$WWW_PREFIX/builds/"
+cp zig-windows-x86_64-$ZIG_VERSION.zip                "$WWW_PREFIX/builds/"
+cp zig-windows-aarch64-$ZIG_VERSION.zip               "$WWW_PREFIX/builds/"
+cp zig-windows-x86-$ZIG_VERSION.zip                   "$WWW_PREFIX/builds/"
+cp zig-$ZIG_VERSION.tar.xz.minisig                    "$WWW_PREFIX/builds/"
+cp zig-bootstrap-$ZIG_VERSION.tar.xz.minisig          "$WWW_PREFIX/builds/"
+cp zig-linux-x86_64-$ZIG_VERSION.tar.xz.minisig       "$WWW_PREFIX/builds/"
+cp zig-macos-x86_64-$ZIG_VERSION.tar.xz.minisig       "$WWW_PREFIX/builds/"
+cp zig-linux-aarch64-$ZIG_VERSION.tar.xz.minisig      "$WWW_PREFIX/builds/"
+cp zig-macos-aarch64-$ZIG_VERSION.tar.xz.minisig      "$WWW_PREFIX/builds/"
+cp zig-linux-x86-$ZIG_VERSION.tar.xz.minisig          "$WWW_PREFIX/builds/"
+cp zig-linux-armv7a-$ZIG_VERSION.tar.xz.minisig       "$WWW_PREFIX/builds/"
+cp zig-linux-riscv64-$ZIG_VERSION.tar.xz.minisig      "$WWW_PREFIX/builds/"
+cp zig-linux-powerpc64le-$ZIG_VERSION.tar.xz.minisig  "$WWW_PREFIX/builds/"
+cp zig-windows-x86_64-$ZIG_VERSION.zip.minisig        "$WWW_PREFIX/builds/"
+cp zig-windows-aarch64-$ZIG_VERSION.zip.minisig       "$WWW_PREFIX/builds/"
+cp zig-windows-x86-$ZIG_VERSION.zip.minisig           "$WWW_PREFIX/builds/"
+
+
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
 
@@ -276,6 +308,8 @@ s3cmd put -P \
   out/index.json.minisig \
   s3://ziglang.org/builds/zig-$ZIG_VERSION-index.json.minisig
 
+cp out/index.json.minisig "$WWW_PREFIX/builds/zig-$ZIG_VERSION-index.json.minisig"
+
 mv out/index.json "$WEBSITEDIR/data/releases.json"
 cd "$WEBSITEDIR"
 
@@ -293,6 +327,8 @@ DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
 s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$DOCDIR/langref.html" s3://ziglang.org/documentation/master/index.html
+
+cp "$DOCDIR/langref.html" "$WWW_PREFIX/documentation/master/index.html"
 
 # Standard library autodocs are intentionally excluded from tarballs of Zig but
 # we want to host them on the website.
@@ -329,3 +365,11 @@ s3cmd put -P --no-mime-magic \
   --add-header="Content-Encoding: gzip" \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$DOCDIR/std/sources.tar.gz" s3://ziglang.org/documentation/master/std/sources.tar
+
+
+cp "$DOCDIR/std/index.html.gz" "$WWW_PREFIX/documentation/master/std/index.html"
+cp "$DOCDIR/std/main.js.gz" "$WWW_PREFIX/documentation/master/std/main.js"
+cp "$DOCDIR/std/main.wasm.gz" "$WWW_PREFIX/documentation/master/std/main.wasm"
+cp "$DOCDIR/std/sources.tar.gz" "$WWW_PREFIX/documentation/master/std/sources.tar"
+
+
