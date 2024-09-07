@@ -165,6 +165,7 @@ echo | minisign -Sm zig-windows-x86-$ZIG_VERSION.zip
 # Delete builds older than 30 days so the server does not run out of disk space.
 WWW_PREFIX="/var/www/html"
 find $WWW_PREFIX/* -ctime +30 -exec rm -rf {} \;
+mkdir -p "$WWW_PREFIX/builds"
 
 cp zig-$ZIG_VERSION.tar.xz                            "$WWW_PREFIX/builds/"
 cp zig-bootstrap-$ZIG_VERSION.tar.xz                  "$WWW_PREFIX/builds/"
@@ -328,6 +329,7 @@ s3cmd put -P --no-mime-magic \
   --add-header="Cache-Control: max-age=0, must-revalidate" \
   "$DOCDIR/langref.html" s3://ziglang.org/documentation/master/index.html
 
+mkdir -p "$WWW_PREFIX/documentation/master"
 cp "$DOCDIR/langref.html" "$WWW_PREFIX/documentation/master/index.html"
 
 # Standard library autodocs are intentionally excluded from tarballs of Zig but
@@ -367,6 +369,7 @@ s3cmd put -P --no-mime-magic \
   "$DOCDIR/std/sources.tar.gz" s3://ziglang.org/documentation/master/std/sources.tar
 
 
+mkdir -p "$WWW_PREFIX/documentation/master/std"
 cp "$DOCDIR/std/index.html.gz" "$WWW_PREFIX/documentation/master/std/index.html"
 cp "$DOCDIR/std/main.js.gz" "$WWW_PREFIX/documentation/master/std/main.js"
 cp "$DOCDIR/std/main.wasm.gz" "$WWW_PREFIX/documentation/master/std/main.wasm"
