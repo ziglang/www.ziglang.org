@@ -370,9 +370,9 @@ s3cmd put -P --no-mime-magic \
 
 
 mkdir -p "$WWW_PREFIX/documentation/master/std"
-cp "$DOCDIR/std/index.html.gz" "$WWW_PREFIX/documentation/master/std/index.html"
-cp "$DOCDIR/std/main.js.gz" "$WWW_PREFIX/documentation/master/std/main.js"
-cp "$DOCDIR/std/main.wasm.gz" "$WWW_PREFIX/documentation/master/std/main.wasm"
-cp "$DOCDIR/std/sources.tar.gz" "$WWW_PREFIX/documentation/master/std/sources.tar"
+cp "$DOCDIR/std/index.html.gz" "$WWW_PREFIX/documentation/master/std/index.html.gz"
+cp "$DOCDIR/std/main.js.gz" "$WWW_PREFIX/documentation/master/std/main.js.gz"
+cp "$DOCDIR/std/main.wasm.gz" "$WWW_PREFIX/documentation/master/std/main.wasm.gz"
+cp "$DOCDIR/std/sources.tar.gz" "$WWW_PREFIX/documentation/master/std/sources.tar.gz"
 
 
