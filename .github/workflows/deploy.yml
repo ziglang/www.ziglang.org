@@ -8,61 +8,19 @@ on:
         required: true
   push:
     branches:
-      - master
+      - zine-rewrite
 concurrency:
   group: website
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, website]
     steps:
       - name: Check out code
         uses: actions/checkout@v3
         with:
           ref: "${{ inputs.ref }}"
 
-      - name: Setup Directories
-        run: |
-          mkdir zig
-          mkdir doctest
-          mkdir hugo
-
-          echo "$(pwd)/zig" >> $GITHUB_PATH
-          echo "$(pwd)/doctest/zig-out/bin" >> $GITHUB_PATH
-          echo "$(pwd)/hugo" >> $GITHUB_PATH
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v1
-        with:
-          version: 0.13.0
-          
-      - name: Setup s3cmd
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y s3cmd
-
-      - name: Build Doctest
-        working-directory: doctest
-        run: |
-          wget -qO doctest.tar "https://api.github.com/repos/kristoff-it/zig-doctest/tarball/"
-          tar --strip-components=1 -xvf doctest.tar
-
-          zig build
-
-      - name: Download Hugo
-        working-directory: hugo
-        run: |
-          wget -qO hugo "https://github.com/kristoff-it/hugo/releases/download/v0.0.1/hugo"
-          chmod +x hugo
-
       - name: Build the website
         run: |
-          cp data/releases.json content/download/index.json
-          hugo --minify --cleanDestinationDir
-
-      - name: Deploy
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          s3cmd put -P --no-mime-magic --recursive --add-header="Cache-Control: max-age=0, must-revalidate" "public/" "s3://ziglang.org/"
+          /home/ci/deps/zig-linux-x86_64-0.13.0/zig build -p /var/www/html/
