@@ -1,4 +1,3 @@
-// zig-doctest: syntax --name build
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -26,3 +25,5 @@ pub fn build(b: *std.Build) void {
 fn detectWhetherToEnableLibFoo() bool {
     return false;
 }
+
+// syntax

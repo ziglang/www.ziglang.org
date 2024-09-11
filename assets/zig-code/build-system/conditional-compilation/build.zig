@@ -1,4 +1,3 @@
-// zig-doctest: build-system -- -Dversion=1.2.3 --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -23,3 +22,8 @@ pub fn build(b: *std.Build) void {
 fn detectWhetherToEnableLibFoo() bool {
     return false;
 }
+
+// build=succeed
+// additional_option=-Dversion=1.2.3
+// additional_option=--summary
+// additional_option=all

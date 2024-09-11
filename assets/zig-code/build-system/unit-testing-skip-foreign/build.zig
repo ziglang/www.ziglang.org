@@ -1,4 +1,3 @@
-// zig-doctest: build-system --collapseable -- test --summary all
 const std = @import("std");
 
 const test_targets = [_]std.Target.Query{
@@ -27,3 +26,9 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run_unit_tests.step);
     }
 }
+
+// zig-doctest: build-system --collapseable -- test --summary all
+
+// build=succeed
+// additional_option=--summary
+// additional_option=all

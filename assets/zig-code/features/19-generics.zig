@@ -1,4 +1,3 @@
-// zig-doctest: run --name generics
 const std = @import("std");
 
 fn List(comptime T: type) type {
@@ -19,3 +18,5 @@ pub fn main() void {
 
     std.debug.print("{d}\n", .{list.items.len});
 }
+
+// exe=succeed

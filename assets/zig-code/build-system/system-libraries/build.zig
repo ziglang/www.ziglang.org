@@ -1,4 +1,3 @@
-// zig-doctest: build-system -- --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -13,3 +12,7 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 }
+
+// build=succeed
+// additional_option=--summary
+// additional_option=all

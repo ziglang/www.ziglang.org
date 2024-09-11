@@ -100,7 +100,7 @@ Wechsle in dein Projektverzeichnis und führe aus:
 ```bash
 mkdir hello-world
 cd hello-world
-zig init-exe
+zig init
 ```
 
 Das sollte Folgendes ausgeben:

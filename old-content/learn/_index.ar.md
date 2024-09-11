@@ -13,11 +13,11 @@ layout: single
 {{% learn_docs %}}
 
 ## Guides
-This section is eventually going to be bundled with Zig's standard library documentation, but
-in the meantime you can browse it from here.
+سيُجمع هذا القسم في النهاية مع وثائق المكتبة الفياسية لـZig, لكن
+في هذه الأثناء يمكنك تصفحها هنا.
 
-- [Zig Build System](build-system/)
-Introduction to the Zig build system.
+- [نظام البناء في Zig](build-system/)
+مقدمة لنظام البناء في Zig.
 
 
 ## مقدمة

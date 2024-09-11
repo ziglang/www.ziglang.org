@@ -1,4 +1,3 @@
-// zig-doctest: syntax
 fn doAThing(optional_foo: ?*Foo) void {
     // do some stuff
 
@@ -8,3 +7,5 @@ fn doAThing(optional_foo: ?*Foo) void {
 
     // do some stuff
 }
+
+// syntax

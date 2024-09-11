@@ -1,4 +1,3 @@
-// zig-doctest: run --name iterator
 const std = @import("std");
 
 pub fn main() void {
@@ -8,3 +7,5 @@ pub fn main() void {
         std.debug.print("{s}\n", .{item});
     }
 }
+
+// exe=succeed

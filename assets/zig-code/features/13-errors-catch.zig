@@ -1,4 +1,3 @@
-// zig-doctest: run --name catch
 const std = @import("std");
 
 pub fn main() void {
@@ -9,3 +8,5 @@ pub fn main() void {
     };
     file.writeAll("all your codebase are belong to us\n") catch return;
 }
+
+// exe=succeed

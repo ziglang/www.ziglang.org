@@ -28,6 +28,12 @@ toc: true
 ### Kate
 - [ziglang/kde-syntax-highlighting](https://github.com/ziglang/kde-syntax-highlighting)
 
+### JetBrains family ( IntelliJ IDEA, Fleet and etc)
+- [ZigBrains](https://plugins.jetbrains.com/plugin/22456-zigbrains)
+- [ZigLang](https://plugins.jetbrains.com/plugin/17143-ziglang)
+- [ZigSupport](https://plugins.jetbrains.com/plugin/18062-zig-support)
+- [Zig](https://plugins.jetbrains.com/plugin/10560-zig)
+
 ## 문서화 및 테스트
 - [kristoff-it/zig-doctest](https://github.com/kristoff-it/zig-doctest)
 

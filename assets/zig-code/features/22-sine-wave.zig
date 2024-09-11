@@ -1,4 +1,3 @@
-// zig-doctest: syntax
 const c = @cImport(@cInclude("soundio/soundio.h"));
 const std = @import("std");
 
@@ -103,3 +102,5 @@ pub fn main() !void {
 
     while (true) c.soundio_wait_events(soundio);
 }
+
+// syntax

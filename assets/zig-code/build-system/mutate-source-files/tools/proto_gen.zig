@@ -1,4 +1,3 @@
-// zig-doctest: syntax --name proto_gen
 const std = @import("std");
 
 pub fn main() !void {
@@ -31,3 +30,5 @@ fn fatal(comptime format: []const u8, args: anytype) noreturn {
     std.debug.print(format, args);
     std.process.exit(1);
 }
+
+// syntax

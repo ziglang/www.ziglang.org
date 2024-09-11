@@ -1,4 +1,3 @@
-// zig-doctest: syntax
 // compile with `zig build-exe zig-curl-test.zig --library curl --library c $(pkg-config --cflags libcurl)`
 const std = @import("std");
 const cURL = @cImport({
@@ -50,3 +49,5 @@ fn writeToArrayListCallback(data: *anyopaque, size: c_uint, nmemb: c_uint, user_
     buffer.appendSlice(typed_data[0 .. nmemb * size]) catch return 0;
     return nmemb * size;
 }
+
+// syntax

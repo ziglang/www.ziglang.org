@@ -1,4 +1,3 @@
-// zig-doctest: run --fail FileNotFound --name try
 const std = @import("std");
 
 pub fn main() !void {
@@ -6,3 +5,5 @@ pub fn main() !void {
     defer file.close();
     try file.writeAll("all your codebase are belong to us\n");
 }
+
+// exe=fail

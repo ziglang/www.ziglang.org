@@ -1,4 +1,3 @@
-// zig-doctest: syntax
 const Builder = @import("std").build.Builder;
 
 pub fn build(b: *Builder) void {
@@ -14,3 +13,5 @@ pub fn build(b: *Builder) void {
     b.default_step.dependOn(&exe.step);
     b.installArtifact(exe);
 }
+
+// syntax

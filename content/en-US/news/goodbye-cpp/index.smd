@@ -1,0 +1,401 @@
+---
+.title = "Goodbye to the C++ Implementation of Zig",
+.author = "",
+.date = "2022-12-07T20:13:00+00:00",
+.layout = "news-page.shtml",
+.custom = {
+    "mobile_menu_title": "Goodbye to the C++ Implementation of Zig",
+},
+---
+
+## How we used WebAssembly to annihilate 80,000 lines of legacy code
+
+Author: Andrew Kelley
+
+It's funny - I have shared this story a handful of times with friends of mine
+who are qualified, competent software engineers, and each time the response was
+confusion about why any of this would be necessary or even remotely helpful. *WebAssembly*?!
+
+After ten minutes of puzzled expressions, furrowed brows, and intense
+questioning, something clicks, and everything makes sense - but it takes patient
+explanation and reasoning from first principles to follow along.
+
+![](github-pr-lines.png "Screenshot of GitHub Pull Request depicting many lines deleted")
+
+### The Problem Statement
+
+Before this change, the Zig codebase consisted of two compilers:
+
+ * The old one, written in 80,000 lines of C++, plus sharing Zig code with the new one.
+ * The new one, written in 250,000 lines of Zig.
+
+The new one was faster, used less memory, and was actively maintained and
+enhanced. Meanwhile, nobody wanted to touch the old one, but it was required to
+build the new one from source.
+
+This means that **new Zig language features had to be implemented twice** - once in
+the new codebase, and then again in the old codebase. This was a huge pain,
+especially as the design of these two compilers diverged.
+
+Furthermore, the C++ implementation of Zig originally used the same strategy as
+the D compiler - not freeing memory until process exit. This design
+decision [stopped being practical](https://github.com/ziglang/zig/issues/6485)
+as compile-time code execution became one of the flagship features of the
+language, and projects grew larger combined with Zig using one compilation unit
+for everything.
+
+![The DOOM logo but with 'D' removed, humorously indicating Out Of Memory](oom.png)
+
+### The Solution Space
+
+This problem is fascinating, and there are many solutions to it, each with
+their own set of tradeoffs. In all the conversations I mentioned above, once the
+problem was clear in the person's mind whom I was talking to, the discussion
+turned to a rapid-fire brainstorming session about different possibilities.
+Each idea had a different set of concrete benefits as well as downsides.
+
+**Don't self-host** - This is the approach taken by
+[Odin](https://odin-lang.org/), for example.
+
+It entirely solves the problem, but the downside, obviously, is that we would
+have to use C instead of Zig. I'm not willing to do that because the
+improvements offered by the language are too great to miss out on. For example,
+some of the [Data-Oriented Design techniques that I
+used](https://media.handmade-seattle.com/practical-data-oriented-design/) are
+impractical in C/C++ because of language footguns.
+
+**Use a prior build of the compiler** - This is the approach taken by
+[Rust](https://www.rust-lang.org/) as well as many other languages.
+
+One big downside is losing the ability to build any commit from source without
+meta-complexity creeping in. For example, let's say that you are trying to do
+`git bisect`. At some point, git checks out an older commit, but the script
+fails to build from source because the binary that is being used to build the
+compiler is now the wrong version. Sure, this can be addressed, but this
+introduces unwanted complexity that contributors would rather not deal with.
+
+Additionally, building the compiler is limited by what targets prior binaries
+are available for. For example, if there is not a riscv64 build of the compiler available,
+then you can't build from source on riscv64 hardware.
+
+The bottom line here is that it does not adequately support the use case of
+being able to build any commit on any system.
+
+**Compile the compiler to C code** - This is the approach taken by
+[Nim](https://nim-lang.org/), for example.
+
+The upside compared to the previous strategy is that committing generated
+C source code to source control *feels* less yucky than committing machine code,
+but it is effectively the same if the C code is target-specific.
+
+I'm not sure how target-independent [Nim's generated C
+code](https://github.com/nim-lang/csources_v1) is, for example, but I see in
+the description it says "Supports more CPU/OS combinations than the older
+csources repository" which implies that, while it has many handy combinations in
+there, it is not truly portable C code. It is also in a separate repository than
+the main compiler, so it suffers from the same problems as the previous
+strategy.
+
+In Zig's case, I explored this possibility, and found the generated C code to
+not only be target-specific, but also large. For us it was an 80 MiB C file,
+and, while this could be improved with C backend enhancements, this is orders
+of magnitude larger than I would feel comfortable with when it comes to
+committing a binary file to a Git repository.
+
+**Compile the compiler to C code exactly once, but clean it up and maintain it
+directly from then on** - This is what I [planned to do for
+years](https://github.com/ziglang/zig/issues/5246#issuecomment-685172360) until
+I actually started investigating implementing the approach. This has the
+obvious downside that cleaning up a massive amount of auto-generated C source
+code is a task straight from Computer Science Hell, and plus from that point on
+we're still stuck with two compiler implementations, making contributors less
+motivated to help out since they would have to do all the work twice, once in
+Zig, and once in C.
+
+**Compile the compiler to a simple virtual machine** -
+Occasionally, I talk shop with [Drew DeVault](https://drewdevault.com/)
+since he's working on [Hare](https://harelang.org/). We started chatting
+about compiler bootstrapping and he mentioned [OCaml](https://ocaml.org/)'s
+strategy off the cuff:
+
+    <andrewrk> do you care about the "stage 0" bootstrapping process?
+    <ddevault> marginally
+    <andrewrk> idea is to start with literally only a text editor and get up and running
+    <ddevault> text editor? pfft! back in my day we used a magnetized needle and a steady hand
+    <andrewrk> classic xkcd
+    <andrewrk> did I say text editor? I meant hex editor
+    <ddevault> anyway, there's a bootstrapping path taken by, uh, ocaml I think
+    <ddevault> which is kind of interesting
+    <ddevault> they have a backend for a tiny VM target
+    <ddevault> you implement that VM on your desired platform and you can then compile ocaml proper
+    <andrewrk> ooooooh
+
+This got my creative juices flowing. A bespoke backend just for bootstrapping
+is a neat idea, but I think the sweet spot for Zig looks different than what it
+does for OCaml.
+
+There is exactly one VM target available to Zig that is both OS-agnostic and
+subject to [LLVM](https://llvm.org/)'s state-of-the-art optimization passes,
+and that is [WebAssembly](https://webassembly.org/), using
+[WASI](https://wasi.dev/) as the operating system abstraction layer.
+
+### Exploring the Idea
+
+The idea here is to use a minimal wasm binary as a *stage1 kernel* that is
+committed to source control and therefore can be used to build any commit from
+source. We provide a minimal WASI interpreter implementation that is built from
+C source, and then used to translate the Zig self-hosted compiler source code
+into C code. The C code is then compiled and linked, again by the system C
+compiler, into a stage2 binary. The stage2 binary can then be used repeatedly
+with `zig build` to build from source from that point on.
+
+The wasm binary is produced with `zig build update-zig1` which uses the LLVM
+backend to produce a
+[ReleaseSmall](https://ziglang.org/documentation/0.10.0/#ReleaseSmall) binary
+that targets `wasm32-wasi` with a CPU of `generic+bulk_memory`. **All backends in
+this binary are disabled except for the C backend**. This produces a 2.6 MiB
+file. It is then further optimized with `wasm-opt -Oz --enable-bulk-memory`
+bringing the total down to 2.4 MiB. Finally, it is compressed with
+[zstd](https://facebook.github.io/zstd/), bringing the total down to 637 KB.
+This is offset by the size of the zstd decoder implementation in C, however it
+is worth it because the zstd implementation will change rarely if ever, saving
+a total of 1.8 MiB every time the wasm binary is updated.
+
+Thus, instead of 80,000 lines of C++, there are now 4,000 of portable C. This code
+only uses standard libc functions, and does not depend on any POSIX headers or
+windows.h. The OS interop layer has been completely abstracted into a handful
+of WASI functions to be implemented in the WASI interpreter:
+
+    (import "wasi_snapshot_preview1" "args_sizes_get" (func (;0;) (type 3)))
+    (import "wasi_snapshot_preview1" "args_get" (func (;1;) (type 3)))
+    (import "wasi_snapshot_preview1" "fd_prestat_get" (func (;2;) (type 3)))
+    (import "wasi_snapshot_preview1" "fd_prestat_dir_name" (func (;3;) (type 6)))
+    (import "wasi_snapshot_preview1" "proc_exit" (func (;4;) (type 11)))
+    (import "wasi_snapshot_preview1" "fd_close" (func (;5;) (type 8)))
+    (import "wasi_snapshot_preview1" "path_create_directory" (func (;6;) (type 6)))
+    (import "wasi_snapshot_preview1" "fd_read" (func (;7;) (type 5)))
+    (import "wasi_snapshot_preview1" "fd_filestat_get" (func (;8;) (type 3)))
+    (import "wasi_snapshot_preview1" "path_rename" (func (;9;) (type 9)))
+    (import "wasi_snapshot_preview1" "fd_filestat_set_size" (func (;10;) (type 36)))
+    (import "wasi_snapshot_preview1" "fd_pwrite" (func (;11;) (type 28)))
+    (import "wasi_snapshot_preview1" "random_get" (func (;12;) (type 3)))
+    (import "wasi_snapshot_preview1" "fd_filestat_set_times" (func (;13;) (type 51)))
+    (import "wasi_snapshot_preview1" "path_filestat_get" (func (;14;) (type 12)))
+    (import "wasi_snapshot_preview1" "fd_fdstat_get" (func (;15;) (type 3)))
+    (import "wasi_snapshot_preview1" "fd_readdir" (func (;16;) (type 28)))
+    (import "wasi_snapshot_preview1" "fd_write" (func (;17;) (type 5)))
+    (import "wasi_snapshot_preview1" "path_open" (func (;18;) (type 52)))
+    (import "wasi_snapshot_preview1" "clock_time_get" (func (;19;) (type 53)))
+    (import "wasi_snapshot_preview1" "path_remove_directory" (func (;20;) (type 6)))
+    (import "wasi_snapshot_preview1" "path_unlink_file" (func (;21;) (type 6)))
+    (import "wasi_snapshot_preview1" "fd_pread" (func (;22;) (type 28)))
+
+This is the entire set. In order for the Zig compiler to compile itself to C,
+these are the only syscalls needed.
+
+[Jacob Young](https://github.com/jacobly0) and I worked together on this
+WebAssembly/WASI interpreter over in
+[andrewrk/zig-wasi](https://github.com/andrewrk/zig-wasi). I created the first
+version in Zig, swiftly exploring the idea by taking advantage of Zig's rich
+standard library and safety mechanisms. This interpreter did not preemptively
+decode the wasm module; instead it used the file offset directly as the program
+counter. It worked fine, but was too slow, taking several hours to interpret
+a run of the compiler that, in native machine code, takes about 5 seconds.
+
+Jacob enhanced the project by introducing a different instruction set more
+optimized for interpretation, as well as a myriad of other techniques that
+brought the performance within acceptable limits. Meanwhile, I got to work on
+converting the codebase from Zig to pure C.
+
+We worked side by side on this project for two weeks, using IRC to communicate,
+cherry-picking commits from each other's branches and sharing frustrations,
+celebrating victories, and generally having a blast hacking with each other. I
+really can't give enough credit to how much work Jacob did on this project,
+especially considering he was responsible for [improving Zig's C
+backend](https://ziglang.org/download/0.10.0/release-notes.html#C-Backend)
+enough to make this a possibility.
+
+Once the concept was proved, Jacob realized it could be made even faster by
+converting the WebAssembly code to C code rather than interpreting it directly.
+This is effectively [JIT
+compilation](https://en.wikipedia.org/wiki/Just-in-time_compilation), but
+taking advantage of the fact that our basic bootstrapping tool is the system C
+compiler.
+
+There is already a general-purpose wasm2c tool out there as part of the
+[WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) project, but
+instead of porting or forking it, Jacob created a wasm2c implementation from scratch.
+This alternate implementation intentionally lacks general usefulness; it only
+contains implementations of WASI functions that the compiler actually calls
+when it builds itself!
+
+Among other benefits, this allows our happy little wasm2c implementation to be
+4,000 lines instead of 60,000, have no dependency on C++, and take simplifying
+shortcuts such as not implementing any sandboxing or security measures.
+
+### The New Build Process
+
+Here is what we finally landed on:
+
+    Building CXX object CMakeFiles/zigcpp.dir/src/zig_llvm.cpp.o
+    Building CXX object CMakeFiles/zigcpp.dir/src/zig_llvm-ar.cpp.o
+    Building CXX object CMakeFiles/zigcpp.dir/src/zig_clang.cpp.o
+    Building CXX object CMakeFiles/zigcpp.dir/src/zig_clang_driver.cpp.o
+    Building CXX object CMakeFiles/zigcpp.dir/src/zig_clang_cc1_main.cpp.o
+    Building CXX object CMakeFiles/zigcpp.dir/src/zig_clang_cc1as_main.cpp.o
+    Building CXX object CMakeFiles/zigcpp.dir/src/windows_sdk.cpp.o
+    Linking CXX static library zigcpp/libzigcpp.a
+    Built target zigcpp
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/wasm2c.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/decompress/huf_decompress.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/decompress/zstd_ddict.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/decompress/zstd_decompress.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/decompress/zstd_decompress_block.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/common/entropy_common.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/common/error_private.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/common/fse_decompress.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/common/pool.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/common/xxhash.c.o
+    Building C object CMakeFiles/zig-wasm2c.dir/stage1/zstd/lib/common/zstd_common.c.o
+    Linking C executable zig-wasm2c
+    Built target zig-wasm2c
+    Converting ../stage1/zig1.wasm.zst to zig1.c
+    Building C object CMakeFiles/zig1.dir/zig1.c.o
+    Building C object CMakeFiles/zig1.dir/stage1/wasi.c.o
+    Linking C executable zig1
+    Built target zig1
+    Running zig1.wasm to produce zig2.c
+    Running zig1.wasm to produce compiler_rt.c
+    Building C object CMakeFiles/zig2.dir/zig2.c.o
+    Building C object CMakeFiles/zig2.dir/compiler_rt.c.o
+    Linking CXX executable zig2
+    Built target zig2
+    Building stage3
+
+To summarize:
+
+ 1. Use system C compiler to compile zig-wasm2.c
+ 2. Use zig-wasm2.c to convert zig1.wasm.zst to zig1.c
+ 3. Use system C compiler to compile zig1.c.
+    - Note that zig1 only has the C backend enabled.
+ 4. Use zig1 to build the Zig compiler into zig2.c
+ 5. Use system C compiler to compile zig2.c
+    - This one has the correct final *logic* however its machine code has been
+      optimized by the system C compiler rather than by itself. We proceed to
+      step 6 in order to get a binary with self-hosted *performance
+      characteristics*.
+ 6. `zig2 build` (standard build process for building Zig using an older Zig build)
+
+If you take the output of this final step and build Zig again, it produces the same thing
+byte-for-byte. In other words, `zig3` and `zig4` are identical, and therefore
+we are finished and name this final binary `zig` without any suffix.
+
+The wasm binary only needs to be updated when a breaking change or new feature
+affects the compiler *when building itself*. For example, a bug fix that the
+compiler does not trigger when building itself can be ignored. However, if the
+bug fix is required for Zig to build itself, then the wasm binary needs to
+be updated. Similarly when the language is changed and the compiler wants to
+use the changes to build itself, the binary needs to be updated.
+
+Updating `stage1/zig1.wasm.zst` looks like this:
+
+    zig build update-zig1
+
+### Performance
+
+I collected two measurements:
+
+**Measurement #1**, compiling from source with `make -j8 install`, configured with
+`-DCMAKE_BUILD_TYPE=Debug`:
+
+    old: 8m12s with 11.3 GiB peak RSS
+    new: 9m59s with  3.8 GiB peak RSS
+
+**Measurement #2**, compiling from source with `ninja install`, configured with
+`-DCMAKE_BUILD_TYPE=Release`:
+
+    old: 13m20s with 10.3 GiB peak RSS
+    new: 10m53s with  3.2 GiB peak RSS
+
+I took these measurements racing against each other, and one of them while
+[streaming on Twitch](https://twitch.tv/andrewrok/), so the times are a bit
+volatile, but you get the idea. The important thing to note here is the amount
+of memory required to build. It's the difference between a person with 4-8 GiB of
+RAM being able to contribute to Zig or not. It's the difference between being
+able to [use a GitHub-provided Actions
+runner](https://github.com/ziglang/zig/pull/13802) or not.
+
+### Moving Forward
+
+I want to be clear that while this change landing in Zig is a net win, it does
+represent the [regression of a particular use
+case](https://github.com/ziglang/zig/issues/6378): the ability to bootstrap Zig
+from only source code in a fixed number of steps. Until now, the building from
+source process did not involve any binary blobs, except for a system C/C++
+compiler. Now, there is this WebAssembly binary, which is not source code, but
+is in fact a build artifact. Some people, rightly, take these things very seriously - see
+for example the [Debian Free Software
+  Guidelines](https://wiki.debian.org/DebianFreeSoftwareGuidelines).
+
+I openly acknowledge that this cost is being paid, however, I strongly believe
+that it is worth it in the end. I suspect that combined with an official language specification
+and a growing popularity of Zig, we will see a third-party project start an
+alternate Zig implementation in C, similar to how
+[mrustc](https://github.com/thepowersgang/mrustc) exists for Rust (despite not
+yet having a spec). This would fill the necessary role to solve O(1) source
+bootstrapping again.
+
+I *am* willing to tag 1.0 without this use case solved, and there is no current
+plan to take on this alternate compiler implementation project within the scope
+of the [Zig Software Foundation](/zsf/). Of course, things may change, but this
+is the plan as it stands.
+
+Furthermore, this change represents the removal of the `-fstage1` flag, which allowed
+users of Zig to opt out of the new compiler and use the old one. This was the only way to
+take advantage of async functions, an experimental language feature that is
+[not yet implemented in the new
+compiler](https://github.com/ziglang/zig/issues/6025).
+
+I recommend users of `-fstage1` to stick with 0.10.0, and then upgrade to
+0.10.1 when it is released, and then finally upgrade to 0.11.0, which will
+have async function support. Note that Zig follows [Semantic
+Versioning](https://semver.org/) and so everything described in this blog post
+will *not* be included in the 0.10.1 release, which will **only contain bug
+fixes** cherry-picked from master branch.
+
+#### Language Mobility
+
+On a more positive note, this change means swift progress on all those planned
+language changes that we have been sitting on. Without the legacy compiler
+codebase to hold us back, you can expect major progress towards completing the
+Zig language during the Zig 0.11.0 release cycle.
+
+This allows us to dogfood language changes immediately by using them in the
+compiler as well as the standard library. And before I am accused of designing
+the language to be overfit to writing compilers, I am happy to report that I
+have started taking Fridays to work *with* Zig instead of *on* Zig. That is,
+Fridays for me are for side projects where I act as a regular user of the
+language rather than as a compiler developer.
+
+When this change landed in master branch, there were 650 [open issues with the
+"stage1"
+label](https://github.com/ziglang/zig/issues?q=is%3Aissue+is%3Aopen+label%3Astage1),
+indicating a problem with a now deleted codebase! So in theory, we could
+instantly close all of these issues, which would be ever so satisfying.
+However, I have instituted a policy that to close one of these issues, one must
+either add test coverage for it, or identify test coverage that already covers
+it. Perhaps this is more effort than it is worth, but for now this is what we
+are doing.
+
+Finally, I want to leave you with my [all-time favorite
+Tweet](https://twitter.com/leonard_ritter/status/879737741986103298), which has
+been deleted since [Leonard Ritter moved to
+Mastodon](https://mastodon.social/@lritter@mastodon.gamedev.place), so I will
+reproduce it for you here: 
+
+## Using C++ to bootstrap a new programming language
+
+
+[]($video.asset('mario-betrays-yoshi.webm').muted(true).loop(true).autoplay(true))
+
+[credit](https://www.youtube.com/watch?v=e9x4o1gAzTc)

@@ -1,4 +1,3 @@
-// zig-doctest: build-system -- -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -13,3 +12,9 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 }
+
+// build=succeed
+// additional_option=-Dtarget=x86_64-windows
+// additional_option=-Doptimize=ReleaseSmall
+// additional_option=--summary
+// additional_option=all

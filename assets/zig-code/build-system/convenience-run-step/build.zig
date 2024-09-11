@@ -1,4 +1,3 @@
-// zig-doctest: build-system -- run --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -15,3 +14,8 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the application");
     run_step.dependOn(&run_exe.step);
 }
+
+// build=succeed
+// additional_option=run
+// additional_option=--summary
+// additional_option=all

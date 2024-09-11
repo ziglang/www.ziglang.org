@@ -1,4 +1,3 @@
-// zig-doctest: test --fail Overflow --name test
 const std = @import("std");
 
 test "switch on error" {
@@ -32,3 +31,5 @@ fn charToDigit(c: u8) !u8 {
 
     return value;
 }
+
+// exe=build_fail

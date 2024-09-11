@@ -1,4 +1,3 @@
-// zig-doctest: run --name stack_traces
 const std = @import("std");
 
 var address_buffer: [8]usize = undefined;
@@ -30,3 +29,5 @@ fn foo() void {
 fn bar() void {
     std.debug.captureStackTrace(null, &trace2);
 }
+
+// exe=succeed

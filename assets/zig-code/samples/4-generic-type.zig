@@ -1,4 +1,3 @@
-// zig-doctest: test --name queue
 const std = @import("std");
 
 pub fn Queue(comptime Child: type) type {
@@ -58,3 +57,5 @@ test "queue" {
     try std.testing.expectEqual(int_queue.dequeue(), 5);
     try std.testing.expectEqual(int_queue.dequeue(), null);
 }
+
+// test

@@ -1,4 +1,3 @@
-// zig-doctest: syntax --name demo
 const std = @import("std");
 
 extern fn fizzbuzz(n: usize) ?[*:0]const u8;
@@ -16,3 +15,5 @@ pub fn main() !void {
     }
     try bw.flush();
 }
+
+// syntax

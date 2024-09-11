@@ -1,4 +1,3 @@
-// zig-doctest: syntax
 const Device = struct {
     name: []u8,
 
@@ -14,3 +13,5 @@ const Device = struct {
         return device;
     }
 };
+
+// syntax

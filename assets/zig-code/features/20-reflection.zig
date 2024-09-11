@@ -1,4 +1,3 @@
-// zig-doctest: run --name reflection
 const std = @import("std");
 
 const Header = struct {
@@ -23,3 +22,5 @@ fn printInfoAboutStruct(comptime T: type) void {
         );
     }
 }
+
+// exe=succeed

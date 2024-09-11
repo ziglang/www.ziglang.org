@@ -1,4 +1,3 @@
-// zig-doctest: test --fail unreachable --name test
 const std = @import("std");
 const assert = std.debug.assert;
 
@@ -16,3 +15,5 @@ test "compile-time evaluation" {
         assert(array.len == 12345);
     }
 }
+
+// test_safety=unreachable

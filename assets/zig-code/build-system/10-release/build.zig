@@ -1,4 +1,3 @@
-// zig-doctest: build-system -- --summary all
 const std = @import("std");
 
 const targets: []const std.Target.Query = &.{
@@ -29,3 +28,7 @@ pub fn build(b: *std.Build) !void {
         b.getInstallStep().dependOn(&target_output.step);
     }
 }
+
+// build=succeed
+// additional_option=--summary
+// additional_option=all

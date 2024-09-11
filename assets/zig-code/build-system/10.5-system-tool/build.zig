@@ -1,4 +1,3 @@
-// zig-doctest: build-system -- -Dlanguage=ja --summary all
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -30,3 +29,8 @@ pub fn build(b: *std.Build) void {
     });
     b.getInstallStep().dependOn(&install_artifact.step);
 }
+
+// build=succeed
+// additional_option=-Dlanguage=ja
+// additional_option=--summary
+// additional_option=all

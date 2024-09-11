@@ -1,4 +1,3 @@
-// zig-doctest: syntax --name fizzbuzz
 export fn fizzbuzz(n: usize) ?[*:0]const u8 {
     if (n % 5 == 0) {
         if (n % 3 == 0) {
@@ -11,3 +10,5 @@ export fn fizzbuzz(n: usize) ?[*:0]const u8 {
     }
     return null;
 }
+
+// syntax

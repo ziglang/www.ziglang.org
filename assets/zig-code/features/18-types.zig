@@ -1,4 +1,3 @@
-// zig-doctest: test --name types
 const std = @import("std");
 const assert = std.debug.assert;
 
@@ -10,3 +9,5 @@ test "types are values" {
     const x: T2 = true;
     assert(x);
 }
+
+// test

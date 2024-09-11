@@ -1,4 +1,3 @@
-// zig-doctest: syntax --name app
 const std = @import("std");
 const config = @import("config");
 
@@ -16,3 +15,5 @@ pub fn main() !void {
         foo_bar();
     }
 }
+
+// syntax
