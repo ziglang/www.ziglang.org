@@ -111,7 +111,7 @@ CMAKE_GENERATOR=Ninja ./build x86-linux-musl baseline
 CMAKE_GENERATOR=Ninja ./build x86_64-windows-gnu baseline
 CMAKE_GENERATOR=Ninja ./build aarch64-windows-gnu baseline
 CMAKE_GENERATOR=Ninja ./build x86-windows-gnu baseline
-CMAKE_GENERATOR=Ninja ./build arm-linux-musleabihf generic+v7a
+CMAKE_GENERATOR=Ninja ./build arm-linux-musleabihf baseline
 
 ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
 
