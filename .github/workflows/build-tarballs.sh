@@ -25,7 +25,7 @@ if [ -z "$ZIG_RELEASE_TAG" ]; then
   ZIG_VERSION="$(zig-ver)"
   echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
 
-  LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/master/data/releases.json" | jq --raw-output ".master.version")
+  LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/master/assets/download/index.json" | jq --raw-output ".master.version")
   echo "Last deployed version: $LAST_TARBALL"
 
   if [ $ZIG_VERSION = $LAST_TARBALL ]; then
@@ -276,14 +276,14 @@ s3cmd put -P \
   out/index.json.minisig \
   s3://ziglang.org/builds/zig-$ZIG_VERSION-index.json.minisig
 
-mv out/index.json "$WEBSITEDIR/data/releases.json"
+mv out/index.json "$WEBSITEDIR/assets/download/index.json"
 cd "$WEBSITEDIR"
 
 # This is the user when pushing to the website repo.
 git config user.email "ziggy@ziglang.org"
 git config user.name "Ziggy"
 
-git add data/releases.json
+git add assets/download/index.json
 git commit -m "CI: update master branch builds"
 git push
 
