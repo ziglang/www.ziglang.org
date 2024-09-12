@@ -25,7 +25,7 @@ if [ -z "$ZIG_RELEASE_TAG" ]; then
   ZIG_VERSION="$(zig-ver)"
   echo "Last commit with green CI: $LAST_SUCCESS\n Zig version: $ZIG_VERSION"
 
-  LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/master/assets/download/index.json" | jq --raw-output ".master.version")
+  LAST_TARBALL=$(curl "https://raw.githubusercontent.com/ziglang/www.ziglang.org/main/assets/download/index.json" | jq --raw-output ".master.version")
   echo "Last deployed version: $LAST_TARBALL"
 
   if [ $ZIG_VERSION = $LAST_TARBALL ]; then
