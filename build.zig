@@ -106,7 +106,6 @@ pub fn build(b: *std.Build) void {
         .i18n_dir_path = "i18n",
         .layouts_dir_path = "layouts",
         .assets_dir_path = "assets",
-        .debug = true,
         .build_assets = build_assets.items,
         .static_assets = &.{
             "external-link-dark.svg",
