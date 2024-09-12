@@ -194,40 +194,6 @@ cp zig-windows-x86_64-$ZIG_VERSION.zip.minisig        "$WWW_PREFIX/builds/"
 cp zig-windows-aarch64-$ZIG_VERSION.zip.minisig       "$WWW_PREFIX/builds/"
 cp zig-windows-x86-$ZIG_VERSION.zip.minisig           "$WWW_PREFIX/builds/"
 
-
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc64le-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip s3://ziglang.org/builds/
-
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-bootstrap-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86_64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-x86_64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-freebsd-x86_64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-aarch64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-macos-aarch64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-x86-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-armv7a-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-riscv64-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc64le-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-#s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-linux-powerpc-$ZIG_VERSION.tar.xz.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86_64-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-aarch64-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
-s3cmd put -P --add-header="cache-control: public, max-age=31536000, immutable" zig-windows-x86-$ZIG_VERSION.zip.minisig s3://ziglang.org/builds/
-
 export SRC_TARBALL="zig-$ZIG_VERSION.tar.xz"
 export SRC_SHASUM=$(sha256sum "zig-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
 export SRC_BYTESIZE=$(wc -c < "zig-$ZIG_VERSION.tar.xz")
@@ -304,10 +270,6 @@ git pull
 "$ZIG" run update-download-page.zig
 
 echo | minisign -Sm out/index.json
-s3cmd put -P \
-  --add-header="cache-control: public, max-age=31536000, immutable" \
-  out/index.json.minisig \
-  s3://ziglang.org/builds/zig-$ZIG_VERSION-index.json.minisig
 
 cp out/index.json.minisig "$WWW_PREFIX/builds/zig-$ZIG_VERSION-index.json.minisig"
 
@@ -325,9 +287,6 @@ git push
 # Update autodocs and langref directly to S3 in order to prevent the
 # www.ziglang.org git repo from growing too big.
 DOCDIR="$TARBALLS_DIR/zig-linux-x86_64-$ZIG_VERSION/doc"
-s3cmd put -P --no-mime-magic \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/langref.html" s3://ziglang.org/documentation/master/index.html
 
 mkdir -p "$WWW_PREFIX/documentation/master"
 cp "$DOCDIR/langref.html" "$WWW_PREFIX/documentation/master/index.html"
@@ -336,43 +295,13 @@ cp "$DOCDIR/langref.html" "$WWW_PREFIX/documentation/master/index.html"
 # we want to host them on the website.
 "$ZIG" build-obj -fno-emit-bin -femit-docs="$DOCDIR/std" "$BOOTSTRAP_SRC/zig/lib/std/std.zig"
 
-# Cloudfront will automatically compress some kinds of files if they are less
-# than 9.5 MiB, and the client advertises itself as capable of decompressing.
-# Tar files are not included in this list unfortunately, and, there is no way
-# to change the settings in Cloudfront.
-#
-# Until we migrate to a different static website file hosting service, this logic
-# stores the files compressed on S3 with the gzip HTTP header hard-coded.
+mkdir -p "$WWW_PREFIX/documentation/master/std"
 gzip -c -9 "$DOCDIR/std/index.html"  > "$DOCDIR/std/index.html.gz"
 gzip -c -9 "$DOCDIR/std/main.js"     > "$DOCDIR/std/main.js.gz"
 gzip -c -9 "$DOCDIR/std/main.wasm"   > "$DOCDIR/std/main.wasm.gz"
 gzip -c -9 "$DOCDIR/std/sources.tar" > "$DOCDIR/std/sources.tar.gz"
 
-s3cmd put -P --no-mime-magic \
-  --add-header="Content-Encoding: gzip" \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/index.html.gz" s3://ziglang.org/documentation/master/std/index.html
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Content-Encoding: gzip" \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/main.js.gz" s3://ziglang.org/documentation/master/std/main.js
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Content-Encoding: gzip" \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/main.wasm.gz" s3://ziglang.org/documentation/master/std/main.wasm
-
-s3cmd put -P --no-mime-magic \
-  --add-header="Content-Encoding: gzip" \
-  --add-header="Cache-Control: max-age=0, must-revalidate" \
-  "$DOCDIR/std/sources.tar.gz" s3://ziglang.org/documentation/master/std/sources.tar
-
-
-mkdir -p "$WWW_PREFIX/documentation/master/std"
-cp "$DOCDIR/std/index.html.gz" "$WWW_PREFIX/documentation/master/std/index.html.gz"
-cp "$DOCDIR/std/main.js.gz" "$WWW_PREFIX/documentation/master/std/main.js.gz"
-cp "$DOCDIR/std/main.wasm.gz" "$WWW_PREFIX/documentation/master/std/main.wasm.gz"
-cp "$DOCDIR/std/sources.tar.gz" "$WWW_PREFIX/documentation/master/std/sources.tar.gz"
-
-
+mv "$DOCDIR/std/index.html.gz"  "$WWW_PREFIX/documentation/master/std/index.html.gz"
+mv "$DOCDIR/std/main.js.gz"     "$WWW_PREFIX/documentation/master/std/main.js.gz"
+mv "$DOCDIR/std/main.wasm.gz"   "$WWW_PREFIX/documentation/master/std/main.wasm.gz"
+mv "$DOCDIR/std/sources.tar.gz" "$WWW_PREFIX/documentation/master/std/sources.tar.gz"
