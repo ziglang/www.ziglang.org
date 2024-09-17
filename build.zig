@@ -44,8 +44,10 @@ pub fn build(b: *std.Build) void {
         "build-system/10.5-system-tool/build.zig",
         "build-system/10.5-system-tool/src/main.zig",
         "build-system/11-zig-tool/build.zig",
+        "build-system/11-zig-tool/tools/word_select.zig",
         "build-system/11-zig-tool/src/main.zig",
         "build-system/12-embedfile/build.zig",
+        "build-system/12-embedfile/tools/word_select.zig",
         "build-system/12-embedfile/src/main.zig",
         "build-system/13-import/build.zig",
         "build-system/13-import/src/main.zig",
@@ -152,6 +154,12 @@ pub fn build(b: *std.Build) void {
                 .name = "Deutsch",
                 .site_title = "Zig Programmiersprache",
                 .content_dir_path = "content/de-DE",
+            },
+            .{
+                .code = "uk-UA",
+                .name = "Українська",
+                .site_title = "Zig Programming Language",
+                .content_dir_path = "content/uk-UA",
             },
         },
     });
