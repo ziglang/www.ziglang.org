@@ -1,0 +1,491 @@
+---
+.title = "Zig Build-System",
+.author = "",
+.date = @date("2024-09-14:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Zig Build-System",
+	"toc": true,
+},
+---
+# [Wann sollte man das Zig-Build-System einsetzen?]($heading.id('build-system'))
+
+Die grundlegenden Befehle `zig build-exe`, `zig build-lib`, `zig build-obj`, und
+`zig test` sind oftmals ausreichend. Manchmal benötigt man jedoch eine weitere
+Abstaktionsebene, um komplexere Kompilationen durchzuführen.
+
+Wenn beispielsweise eine dieser Situationen zutrifft:
+
+- Die Kommandozeile wird zu lang und unhandlich, und du möchtest sie aufschreiben.
+- Du willst viele Dinge bauen, oder der Build-Prozess umfasst viele Schritte.
+- Du möchten die Vorteile der Parallelverarbeitung und des Cachings nutzen,
+  um die Erstellungszeit zu verkürzen.
+- Du möchtest Konfigurationsoptionen für das Projekt freigeben.
+- Der Build-Prozess ist je nach Zielsystem und anderen Optionen unterschiedlich.
+- Du hast Abhängigkeiten zu anderen Projekten.
+- Du möchtest unnötige Abhängigkeiten zu 'cmake', 'make', 'shell', 'msvc',
+  'python', etc. vermeiden und/oder das Projekt mehr Mitwirkenden zugänglich machen.
+- Du möchtest ein Paket anbieten, das auch von Dritten genutzt werden kann.
+- Du möchtest einen standardisierten Weg für Werkzeuge wie IDEs bieten, damit diese
+  semantisch verstehen, wie das Projekt zu bauen ist.
+
+Wenn einer dieser Punkte zutrifft, wird das Projekt von der Verwendung des Zig-Build-Systems profitieren.
+
+# [Erste Schritte]($heading.id('getting-started'))
+## [Einfaches ausführbares Programm]($heading.id('simple'))
+Dieses Build-Skript erzeugt ein ausführbares Programm aus einer Zig-Datei, mit einer von außen aufrufbaren Funktion.
+
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
+
+## [Installation von Build-Artefakten]($heading.id('installing-artifacts'))
+
+Das Zig-Build-System basiert, wie die meisten Build-Systeme, auf der Modellierung des Projekts als gerichteter azyklischer Graph (DAG) von Schritten,
+die unabhängig und gleichzeitig ausgeführt werden.
+
+Standardmäßig ist der Hauptschritt im Graph der Schritt **Install**, dessen Zweck es ist,
+Build-Artefakte an ihren endgültigen Platz zu kopieren. Der Install-Schritt startet ohne
+Abhängigkeiten, und daher wird nichts passieren, wenn `zig build` ausgeführt wird.
+Das Build-Skript eines Projekts muss den zu installierenden Dingen etwas hinzufügen,
+was der obige Aufruf der Funktion `installArtifact` macht.
+
+**Ausgabe**
+```
+├── build.zig
+├── hello.zig
+├── .zig-cache
+└── zig-out
+    └── bin
+        └── hello
+```
+
+In der Ausgabe sind zwei Verzeichnisse enthalten: `.zig-cache` und `zig-out`. Das erste enthält Dateien,
+die nachfolgende Builds schneller machen, aber diese Dateien sind nicht dafür gedacht, in eine Versionskontrolle
+eingecheckt zu werden. Dieses Verzeichnis kann auch jederzeit ohne Konsequenzen vollständig gelöscht werden.
+
+Das zweite, `zig-out`, ist ein „Installationspräfix“. Dies entspricht dem Standardkonzept der Dateisystemhierarchie.
+Dieses Verzeichnis wird nicht vom Projekt bestimmt, sondern vom Benutzer von `zig build` mittels dem `--prefix`-Flag (kurz `-p`).
+
+Als Projektbetreuer wählst du aus, was in dieses Verzeichnis gelegt wird, aber der Benutzer wählt aus, wo er es
+in seinem System installieren möchte. Das Build-Skript kann die Ausgabepfade nicht fest kodieren, da dies die Zwischenspeicherung,
+die Gleichzeitigkeit und die Kompatibilität beeinträchtigen und den Endbenutzer verärgern würde.
+
+## [Hinzufügen eines Komfortschritts zur Ausführung der Anwendung]($heading.id('run-step'))
+
+Es ist üblich einen `Run`-Schritt hinzuzufügen, um eine Möglichkeit zu schaffen, die eigene
+Hauptanwendung direkt aus dem Build-Befehl zu starten (`zig build run`).
+
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
+
+# [Grundlagen]($heading.id('basics'))
+
+## [Benutzeroptionen]($heading.id('user-options'))
+
+Verwende `b.option`, um das Build-Skript sowohl für Benutzer konfigurierbar zu machen,
+als auch für andere Projekte, die von dem Projekt als Paket abhängen.
+
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
+
+Beachte bitte diese Zeilen:
+
+```
+Project-Specific Options:
+  -Dwindows=[bool]             Target Microsoft Windows
+```
+
+Dieser Teil des Hilfemenüs wird automatisch erzeugt, wenn die Logik von `build.zig` ausgeführt wird.
+Benutzer können auf diese Weise Konfigurationsoptionen des Build-Skripts erkunden.
+
+## [Standard-Konfigurationsoptionen]($heading.id('standard-options'))
+
+Bisher haben wir ein boolesches Flag verwendet, um die Erstellung für Windows anzuzeigen.
+Das können wir jedoch besser machen.
+
+Die meisten Projekte möchten die Möglichkeit bieten, die Ziel- und Optimierungseinstellungen zu ändern.
+Um Standard-Namenskonventionen für diese Optionen zu fördern, bietet Zig die Hilfsfunktionen
+`standardTargetOptions` und `standardOptimizeOption`.
+
+Mit den Standard-Zieloptionen kann die Person, die `zig build` ausführt, wählen, für welches
+Ziel (Betriebssystem/Platform) gebaut werden soll. Standardmäßig ist jedes Ziel erlaubt.
+Keine Auswahl bedeutet, dass als Ziel das Host-System automatisch gewählt wird.
+Weitere Optionen zur Einschränkung der unterstützten Zielsysteme sind ebenfalls verfügbar.
+
+Die Standard-Optimierungsoptionen erlauben es der Person, die `zig build` ausführt,
+zwischen `Debug`, `ReleaseSafe`, `ReleaseFast` und `ReleaseSmall` zu wählen.
+Standardmäßig wird keine der Release-Optionen vom Build-Skript als bevorzugte Option angesehen,
+und der Benutzer muss eine Entscheidung treffen, um einen Release-Build zu erstellen.
+
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
+
+Jetzt enthält unser `--help`-Menü zusätzliche Einträge:
+
+```
+Project-Specific Options:
+  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
+  -Dcpu=[string]               Target CPU features to add or subtract
+  -Doptimize=[enum]            Prioritize performance, safety, or binary size (-O flag)
+                                 Supported Values:
+                                   Debug
+                                   ReleaseSafe
+                                   ReleaseFast
+                                   ReleaseSmall
+```
+
+Es ist durchaus möglich, diese Optionen direkt über `b.option` zu erstellen, aber diese
+API bietet eine allgemein gebräuchliche Namenskonvention für häufig verwendete Einstellungen.
+
+In unserer Terminalausgabe siehst du, dass wir `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall` übergeben haben.
+Im Vergleich zum ersten Beispiel sehen wir jetzt andere Dateien im Installationspräfix:
+
+```
+zig-out/
+└── bin
+    └── hello.exe
+```
+
+## [Optionen zur bedingten Kompilierung]($heading.id('conditional-compilation'))
+
+Um Optionen aus dem Build-Skript in den Zig-Code des Projekts zu übertragen, verwenden wir
+den Schritt `Options`.
+
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
+
+In diesem Beispiel sind die Daten, die von `@import("config")` bereitgestellt werden
+zur Kompilierzeit bekannt (comptime-known), was verhindert, dass der `@compileError`
+ausgelöst wird. Wenn wir `-Dversion=0.2.3` übergeben hätten, oder die Option weggelassen,
+dann wäre die Kompilierung von 'app.zig' mit dem Fehler "zu alt" fehlschlagen.
+
+## [Statische Bibliothek]($heading.id('static-library'))
+
+Dieses Build-Skript erstellt eine statische Bibliothek aus Zig-Code und dann auch eine
+ausführbare Datei aus anderem Zig-Code, der diese Bibliothek verwendet.
+
+[]($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
+
+In diesem Fall wird am Ende nur die statische Bibliothek installiert:
+
+```
+zig-out/
+└── lib
+    └── libfizzbuzz.a
+```
+
+Wenn du jedoch genau hinsiehst, enthält das Build-Skript eine Option, um auch die Demo zu installieren.
+Wenn wir zusätzlich `-Denable-demo` übergeben, dann sehen wir dies im Installationspräfix:
+
+```
+zig-out/
+├── bin
+│   └── demo
+└── lib
+    └── libfizzbuzz.a
+```
+
+Beachte bitte, dass trotz des bedingungslosen Aufrufs von `addExecutable`, das Build-System in der Tat
+keine Zeit damit verschwendet, die ausführbare Datei `demo` zu bauen, es sei denn, dass wird mit
+mit `-Denable-demo` angefordert, denn das Build-System basiert auf einem gerichteten azyklischen
+Graph mit Abhängigkeits-Kanten.
+
+## [Dynamische Bibliothek]($heading.id('dynamic-library'))
+
+Hier behalten wir alle Dateien aus dem [Staische Bibliothek](#static-library)-Beispiel bei, außer
+dass die Datei `build.zig` geändert wird.
+
+[]($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
+
+**Ausgabe**
+```
+zig-out
+└── lib
+    ├── libfizzbuzz.so -> libfizzbuzz.so.1
+    ├── libfizzbuzz.so.1 -> libfizzbuzz.so.1.2.3
+    └── libfizzbuzz.so.1.2.3
+```
+
+Wie im Beispiel der statischen Bibliothek zu sehen, um eine ausführbare Datei mit ihr zu verknüpfen,
+verwendest du den folgenden Code:
+
+```zig
+exe.linkLibrary(libfizzbuzz);
+```
+
+## [Testen]($heading.id('testing'))
+
+Einzelne Dateien können direkt mit `zig test foo.zig` getestet werden, aber komplexere
+Anwendungsfälle können durch die Orchestrierung von Tests über das Build-Skript gelöst werden.
+
+Wenn du das Build-Skript verwendest, werden die Unit-Tests in zwei verschiedene Schritte
+unterteilt, den Schritt **Compile** und den Schritt **Run**. Ohne einen Aufruf von
+`addRunArtifact`, der eine Abhängigkeit zwischen diesen beiden Schritten herstellt,
+werden die Unit-Tests nicht ausgeführt.
+
+Der Kompilierschritt kann genauso konfiguriert werden wie jede ausführbare Datei, Bibliothek oder
+Objektdatei, zum Beispiel durch [Linken gegen Systembibliotheken](#linking-to-system-libraries),
+Zieloptionen festlegen oder zusätzliche Kompiliereinheiten hinzufügen.
+
+Der Ausführungsschritt kann wie jeder andere Ausführungsschritt konfiguriert werden, zum Beispiel durch
+Überspringen der Ausführung, wenn der Host nicht in der Lage ist, die Binärdatei auszuführen.
+
+Wenn du das Build-System zur Ausführung von Unit-Tests verwendest, kommunizieren der Build-Runner
+und der Test-Runner über 'stdin' und 'stdout', um mehrere Unit-Testsuiten gleichzeitig auszuführen,
+und Testfehler auf sinnvolle Weise zu melden, ohne dass ihre Ausgaben durcheinander geworfen werden.
+Das ist ein Grund für [Schreiben nach 'stdout' ist in Unit-Tests problematisch](https://github.com/ziglang/zig/issues/15091) -
+es wird diese Kommunikationskanäle stören. Auf der anderen Seite, wird dieser Mechanismus eine
+zukünftige Funktion ermöglichen, nämlich die [Fähigkeit eines Unit-Tests, eine Panik zu erwarten](https://github.com/ziglang/zig/issues/1356).
+
+[]($code.language('=html').buildAsset("build-system/unit-testing/main.zig"))
+[]($code.language('=html').buildAsset("build-system/unit-testing/build.zig"))
+
+In diesem Fall könnte es eine nette Anpassung sein, `skip_foreign_checks` in Unit-Tests zu aktivieren:
+
+```diff
+@@ -23,6 +23,7 @@
+         });
+ 
+         const run_unit_tests = b.addRunArtifact(unit_tests);
++        run_unit_tests.skip_foreign_checks = true;
+         test_step.dependOn(&run_unit_tests.step);
+     }
+ }
+```
+
+[]($code.language('=html').buildAsset("build-system/unit-testing-skip-foreign/build.zig"))
+
+## [System-Bibliotheken verlinken]($heading.id('linking-system-libraries'))
+
+Für die Erfüllung von Bibliotheksabhängigkeiten gibt es zwei Möglichkeiten:
+
+1. Stelle die Bibliotheken über das Zig Build System bereit
+   (siehe [Paketverwaltung](#package-management) und [Statische Bibliothek](#static-library)).
+2. Verwende die vom Hostsystem bereitgestellten Dateien.
+
+Für den Anwendungsfall von Upstream-Projektbetreuern bietet die Beschaffung dieser Bibliotheken über
+das Zig Build System die geringsten Reibungsverluste und legt die Konfigurationshoheit in die Hände
+der Betreuer. Jeder der auf diese Weise baut, erhält reproduzierbare und konsistente Ergebnisse.
+Es wird auf jedem Betriebssystem funktionieren und unterstützt sogar Cross-Compilation.
+Außerdem erlaubt es dem Projekt mit perfekter Präzision zu entscheiden, welche genauen Versionen
+des gesamten Abhängigkeitsbaums verwendet werden, gegen den es bauen möchte.
+Es wird erwartet, dass dies der allgemein bevorzugte Weg sein wird, um externen Bibliotheken einzubinden.
+
+Für den Anwendungsfall der Paketierung von Software in Repositories wie Debian, Homebrew oder Nix,
+ist es zwingend erforderlich Systembibliotheken zu verlinken. Das heißt, Build-Skripte
+müssen [den Modus erkennen](https://github.com/ziglang/zig/issues/14281) und entsprechend konfigurieren.
+
+[]($code.language('=html').buildAsset("build-system/system-libraries/build.zig"))
+
+Benutzer von `zig build` können `--search-prefix` verwenden, um zusätzliche Verzeichnisse anzugeben,
+die als "Systemverzeichnisse" für die Suche nach statischen und dynamischen Bibliotheken mit einbezogen werden.
+
+# [Dateien erzeugen]($heading.id('generating-files'))
+
+## [Systemwerkzeuge ausführen]($heading.id('system-tools'))
+Diese Version von "hello world" erwartet, dass eine `word.txt`-Datei im gleichen Pfad zu finden ist,
+und wir wollen ein Systemwerkzeug verwenden, um sie aus einer JSON-Datei zu erzeugen.
+
+Sei dir bitte bewusst, dass Systemabhängigkeiten die Erstellung deines Projekts für Benutzer erschweren.
+Dieses Build-Skript hängt zum Beispiel von `jq` ab, das in den meisten Linux-Distributionen nicht
+standardmäßig vorhanden ist und für Windows-Benutzer unbekannt sein kann.
+
+Im nächsten Abschnitt wird `jq` durch ein im Quellbaum enthaltenes Zig-Werkzeug ersetzt,
+was der bevorzugte Ansatz ist.
+
+**`words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/build.zig"))
+
+**Ausgabe**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+
+Beachte bitte, wie `captureStdOut` eine temporäre Datei mit der Ausgabe des `jq`-Aufrufs erstellt.
+
+## [Projektwerkzeuge ausführen]($heading.id('project-tools'))
+
+Diese Version von "hello world" erwartet, dass eine `word.txt`-Datei im gleichen Pfad zu finden ist,
+und wir wollen sie zur Erstellungszeit erzeugen, indem wir ein Zig-Programm für die JSON-Datei aufrufen.
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/src/main.zig"))
+
+```=html
+<details>
+<summary>
+<span class="file">tools/word_select.zig</span> (click to expand/collapse)
+</summary>
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/tools/word_select.zig"))
+
+</details>
+```
+
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/build.zig"))
+
+**Ausgabe**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+## [Erzeugen von Assets für `@embedFile`]($heading.id('embed-file'))
+
+Diese Version von "hello world" erwartet ein zur Build-Zeit erzeugtes Asset für `@embededFile`,
+das wir mit einem in Zig geschriebenen Werkzeug erzeugen werden.
+
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/src/main.zig"))
+
+```=html
+<details>
+<summary>
+<span class="file">tools/word_select.zig</span> (click to expand/collapse)
+</summary>
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/tools/word_select.zig"))
+
+</details>
+```
+
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/build.zig"))
+
+**Ausgabe**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [Erzeugen von Zig-Quellcode]($heading.id('generating-zig'))
+
+Diese Build-Datei verwendet ein Zig-Programm, um eine Zig-Datei zu erzeugen, welches sie dann
+dem Hauptprogramm als eine Modulabhängigkeit zur Verfügung stellt.
+
+[]($code.language('=html').buildAsset("build-system/13-import/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/tools/generate_struct.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/build.zig"))
+
+**Ausgabe**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [Umgang mit einer oder mehreren erzeugten Dateien]($heading.id('write-files'))
+
+Der Schritt **WriteFiles** bietet eine Möglichkeit, eine oder mehrere Dateien zu erzeugen, die
+ein übergeordnetes Verzeichnis teilen. Das erzeugte Verzeichnis befindet sich innerhalb des
+lokalen `.zig-cache`, und jede erzeugte Datei ist unabhängig als `std.Build.LazyPath` verfügbar.
+Das übergeordnete Verzeichnis selbst ist ebenfalls als 'LazyPath' verfügbar.
+
+Diese API unterstützt das Schreiben beliebiger Zeichenketten in das erzeugte Verzeichnis
+sowie das Kopieren von Dateien in das Verzeichnis.
+
+[]($code.language('=html').buildAsset("build-system/write-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/write-files/build.zig"))
+
+**Ausgabe**
+
+```
+zig-out/
+└── project.tar.gz
+```
+
+## [Quelldateien verändern]($heading.id('mutating-source'))
+
+Es ist unüblich, aber manchmal der Fall, dass ein Projekt die generierte Dateien
+in die Versionskontrolle überträgt. Das kann nützlich sein, wenn die generierten Dateien
+selten aktualisiert werden und für den Aktualisierungsprozess lästige Systemabhängigkeiten
+haben, die aber *nur* während des Aktualisierungsprozess auftreten.
+
+Hierfür bietet **WriteFiles** eine Möglichkeit, diese Aufgabe zu erfüllen. Das ist eine Funktion,
+[wie aus WriteFiles in einen eigenen Build-Step extrahiert wird](https://github.com/ziglang/zig/issues/14944)
+in einer zukünftigen Zig-Version.
+
+Sei aber vorsichtig mit dieser Funktion; sie sollte nicht während des normalen Build-Prozesses
+verwendet werden, sondern als Dienstprogramm, das von einem Entwickler mit der Absicht ausgeführt
+wird, die Quelldateien zu aktualisieren, die dann an die Versionskontrolle übergeben werden.
+Wenn dies während des normalen Build-Prozesses durchgeführt wird, führt das zu Caching- und Gleichzeitigkeitsfehlern.
+
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/tools/proto_gen.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/protocol.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/build.zig"))
+
+```=html
+<pre><code class="shell">$ zig build update-protocol --summary all
+<span class="sgr-36m">Build Summary:</span> 4/4 steps succeeded
+update-protocol<span class="sgr-32m"> success</span>
+└─ WriteFile<span class="sgr-32m"> success</span>
+   └─ run proto_gen (protocol.zig)<span class="sgr-32m"> success</span><span class="sgr-2m"> 401us</span><span class="sgr-2m"> MaxRSS:1M</span>
+      └─ zig build-exe proto_gen Debug native<span class="sgr-32m"> success</span><span class="sgr-2m"> 1s</span><span class="sgr-2m"> MaxRSS:183M</span>
+</code></pre>
+```
+
+Nach der Ausführung dieses Befehls wird `src/protocol.zig` an Ort und Stelle aktualisiert.
+
+# [Praktische Beispiele]($heading.id('examples'))
+
+## [Build für mehrere Ziele, um eine Freigabe zu erstellen]($heading.id('release'))
+
+In diesem Beispiel werden wir einige Voreinstellungen beim Erstellen eines `InstallArtifact`-Schrittes ändern,
+um den Build für jedes Ziel in ein eigenes Unterverzeichnis innerhalb des Installationspfades zu legen.
+
+[]($code.language('=html').buildAsset("build-system/10-release/build.zig"))
+[]($code.language('=html').buildAsset("build-system/10-release/hello.zig"))
+
+**Ausgabe**
+
+```
+zig-out
+├── aarch64-linux
+│   └── hello
+├── aarch64-macos
+│   └── hello
+├── x86_64-linux-gnu
+│   └── hello
+├── x86_64-linux-musl
+│   └── hello
+└── x86_64-windows
+    ├── hello.exe
+    └── hello.pdb
+```

@@ -150,6 +150,12 @@ pub fn build(b: *std.Build) void {
                 .content_dir_path = "content/it-IT",
             },
             .{
+                .code = "de-DE",
+                .name = "Deutsch",
+                .site_title = "Zig Programmiersprache",
+                .content_dir_path = "content/de-DE",
+            },
+            .{
                 .code = "uk-UA",
                 .name = "Українська",
                 .site_title = "Zig Programming Language",

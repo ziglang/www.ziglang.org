@@ -1,0 +1,158 @@
+---
+.title = "Warum Zig, wenn es bereits C++, D, und Rust gibt?",
+.author = "",
+.date = @date("2024-09-14:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Warum Zig?",
+},
+---
+
+# Kein versteckter Kontrollfluss
+
+Wenn Zig-Code nicht so aussieht, als würde er wegspringen, um eine Funktion aufzurufen, dann dann tut er das auch nicht. Das bedeutet, dass man sicher sein kann, dass der folgende Code nur `foo()` und dann `bar()` aufruft, und das dies garantiert ist, ohne dass man die Typen von irgendetwas kennen müsste:
+
+```zig
+var a = b + c.d;
+foo();
+bar();
+```
+
+Beispiele versteckten Kontrollflusses:
+
+* D hat `@property`-Funktionen, das sind Methoden, die man mit etwas aufruft, das wie ein Feldzugriff aussieht, im obigen Beispiel könnte also `c.d` eine Funktion aufrufen.
+* C++, D und Rust haben Operatorüberladung, so dass der Operator „+“ eine Funktion aufrufen kann.
+* C++, D und Go haben 'throw/catch'-Ausnahmen, also könnte `foo()` eine Ausnahme auslösen und verhindern, dass `bar()` aufgerufen wird. (Natürlich könnte auch in Zig `foo()` in eine Sackgasse geraten und den Aufruf von `bar()` verhindern, aber das kann in jeder Turing-kompletten Sprache passieren).
+
+Der Zweck dieser Entscheidung ist die Verbesserung der Lesbarkeit.
+
+# Keine versteckten Zuweisungen
+
+Zig verfolgt einen zurückhaltenden Ansatz, wenn es um Speicherzuweisungen geht. Es gibt kein `new`-Schlüsselwort
+oder ein anderes Sprachmerkmal, das eine Speicherzuweisung verwendet (z. B. der String-Verkettungsoperator[1]).
+Das gesamte Konzept der Speicherzuweisung wird von der Bibliothek und dem Anwendungscode verwaltet, nicht von der Sprache.
+
+Beispiele für versteckte Zuweisungen:
+
+* Go's `defer` reserviert Speicher auf einem funktionslokalen Stack. Abgesehen davon, dass es eine unintuitive
+  Art und Weise ist, wie dieser Kontrollfluss funktioniert, kann es zu Speicherüberläufen führen, wenn man
+  `defer` innerhalb einer Schleife verwendet.
+* C++-Coroutinen reserviert Hauptspeicher, um eine Coroutine aufzurufen.
+* In Go kann ein Funktionsaufruf zu einer Speicherreservierung führen, da Goroutinen kleine Stacks zuweisen
+  die ihre Größe ändern, wenn der Aufruf-Stack tief genug wird.
+* Die Haupt-APIs der Rust-Standardbibliothek geraten bei Speichermangel in Panik, und die alternativen
+  APIs, die Allocator-Parameter akzeptieren, sind ein nachträglicher Einfall
+  (siehe [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
+
+In fast allen Sprachen mit automatischer Speicherverwaltung gibt es versteckte Zuweisungen, da der
+Garbage-Collector die Spuren auf der Aufräumseite verwischt.
+
+Das Hauptproblem bei versteckten Zuweisungen besteht darin, dass sie die *Wiederverwendbarkeit* eines
+Codeteils verhindern und die Anzahl der Umgebungen in denen der Code eingesetzt werden kann, unnötig
+einschränken. Einfach ausgedrückt gibt es Anwendungsfälle, in denen man sich darauf verlassen können muss,
+dass der Kontrollfluss und die Funktionsaufrufe nicht den Nebeneffekt der Speicherzuweisung aufweisen.
+Daher kann eine Programmiersprache diese Anwendungsfälle nur dann bedienen, wenn sie diese Garantie
+realistisch bieten kann.
+
+In Zig gibt es Standardbibliotheksfunktionen, die Speicherzuweisungen bereitstellen und mit ihnen arbeiten,
+aber das sind optionale Standardbibliotheksfunktionen, die nicht in die Sprache selbst eingebaut sind.
+Wenn man niemals einen Sspeicherzuweisungs-Allokator initialisiert, kann man sicher sein, dass das Programm
+auch keine Speicherzuweisungen durchführen wird.
+
+Jede Funktion der Standardbibliothek, die Speicher zuweisen muss, akzeptiert einen Parameter `Allocator`,
+um dies zu tun. Das bedeutet, dass die Zig-Standardbibliothek freistehende Ziele unterstützt.
+Zum Beispiel können `std.ArrayList` und `std.AutoHashMap` für direkte Hardware-Programmierung (Bare-Metal)
+verwendet werden!
+
+Benutzerdefinierte Allokatoren machen die manuelle Speicherverwaltung zum Kinderspiel. Zig hat einen
+Debug-Allokator, der die Speichersicherheit angesichts von 'use-after-free' und 'double-free' aufrechterhält.
+Er erkennt automatisch Speicherlecks und gibt davon dann Stack-Traces aus. Es gibt einen Arena-Allokator,
+mit dem man eine beliebige Anzahl von Zuweisungen zu einer bündeln und diese alle auf einmal freigeben kann,
+anstatt jede Zuweisung einzeln zu verwalten. Spezielle Allokatoren können verwendet werden, um die Leistung
+oder die Speichernutzung für die Bedürfnisse einer bestimmten Anwendung zu verbessern.
+
+[1]: Es gibt zwar einen String-Verkettungsoperator (im Allgemeinen ein Array-Verkettungsoperator), aber er funktioniert nur zur Kompilierzeit, d.h. er führt keine Speicherzuweisung zur Laufzeit durch.
+
+# Erstklassige Unterstützung für Nicht-Standardbibliotheken
+
+Wie bereits angedeutet verfügt Zig über eine vollständig optionale Standardbibliothek.
+Jede Standardbibliotheks-API wird nur dann in das Programm kompiliert, wenn sie auch verwendet wird.
+Zig bietet die gleiche Unterstützung sowohl für das Verknüpfen mit 'libc' als auch für das
+Nichtverknüpfen damit. Zig ist besonders geeignet für Bare-Metal- und High-Performance-Entwicklung.
+
+Das Beste aus beiden Welten: In Zig können WebAssembly-Programme zum Beispiel die normalen
+Funktionen der Standardbibliothek nutzen und dennoch die kleinsten Binärdateien erzeugen,
+im Vergleich zu anderen Programmiersprachen, die ebenfalls das Kompilieren nach WebAssembly unterstützen.
+
+# Eine portable Sprache für Bibliotheken
+
+Einer der heiligen Grale der Programmierung ist die Wiederverwendung von Code. Leider erleben wir in der Praxis, dass wir das Rad immer wieder neu erfinden. Oft ist das sogar gerechtfertigt.
+
+ * Wenn eine Anwendung Echtzeitanforderungen hat, dann ist jede Bibliothek, die automatische Speicherverwaltung oder ein anderes nicht-deterministisches Verhalten verwendet, als Abhängigkeit disqualifiziert.
+ * Wenn eine Sprache es zu leicht macht, Fehler zu ignorieren, und es daher schwer ist zu überprüfen, ob eine Bibliothek Fehler korrekt behandelt und aufzeigt, kann es verlockend sein, die Bibliothek zu ignorieren und sie neu zu implementieren, weil man weiß, dass man dann alle relevanten Fehler korrekt behandelt hat. Zig ist so konzipiert, dass das Faulste, was ein Programmierer tun kann, die korrekte Behandlung von Fehlern ist, und daher kann man einigermaßen zuversichtlich sein, dass eine Bibliothek Fehler korrekt aufzeigen wird.
+ * Derzeit ist es pragmatisch gesehen wahr, dass C die vielseitigste und portabelste Sprache ist. Jede Sprache die nicht die Fähigkeit hat mit C-Code zu interagieren, riskiert in Vergessenheit zu geraten. Zig versucht die neue portable Sprache für Bibliotheken zu werden, indem es gleichzeitig die Konformität mit der C-ABI für externe Funktionen vereinfacht, sowie Sicherheit und ein Sprachdesign einführt, das häufige Fehler innerhalb der Implementierungen verhindert.
+
+# Ein Paketmanager und Build-System für bestehende Projekte
+
+Zig ist nicht nur eine Programmiersprache, sondern auch eine Werkzeugsammlung. Sie kommt mit einem
+[Build-System und Paketmanager](/learn/build-system/) einher, die auch im Kontext eines
+traditionellen C/C++-Projekts nützlich sind.
+
+Man kann nicht nur Zig-Code anstelle von C- oder C++-Code schreiben, sondern man kann Zig
+als Ersatz für Autotools, wie 'cmake', 'make', 'scons', 'ninja', etc. verwenden. Und obendrein
+bietet es einen Paketmanager für native Abhängigkeiten. Dieses Build-System ist auch dann geeignet,
+wenn die gesamte Codebasis eines Projekts in C oder C++ vorliegt.
+Zum Beispiel durch [Portierung von 'ffmpeg' auf das Zig-Build-System](https://github.com/andrewrk/ffmpeg),
+wird es möglich, 'ffmpeg' auf jedem unterstützten System für jedes unterstützte System zu kompilieren,
+indem man nur die knapp [50 MiB von Zig](/download/) herunterlädt. Für Open-Source-Projekte kann diese
+vereinfachte Möglichkeit, aus dem Quellcode zu kompilieren - und sogar Cross-Compile - den Unterschied
+zwischen der Gewinnung oder dem Verlust wertvoller Mitwirkender führen.
+
+System-Paketmanager wie 'apt-get', 'pacman', 'homebrew' und andere, sind für die Verwendung
+der Endbenutzer gedacht und können daher unzureichend für die Bedürfnisse von Entwicklern sein.
+Ein sprachspezifischer Paketmanager kann der Unterschied sein, zwischen keinen oder vielen
+Mitwirkenden. Bei Open-Source-Projekten besteht die Schwierigkeit oft darin, das Projekt überhaupt
+zum Bauen zu bringen, eine große Hürde für potenzielle Mitwirkende. Für C/C++ Projekte
+können Abhängigkeiten fatal sein, besonders unter Windows, wo es keinen Paketmanager gibt.
+Selbst um nur Zig zu bauen, haben die meisten potenziell Mitwirkenden Schwierigkeiten
+mit der LLVM-Abhängigkeit. Zig bietet eine Möglichkeit, wie Projekte von nativen Bibliotheken
+abhängen können, ohne davon abhängig zu sein, dass der System-Paketmanager des Benutzers die
+richtige Version zur Verfügung stellt. So wird praktisch garantiert, dass Projekte beim ersten
+Versuch erfolgreich gebaut werden, ganz gleich, welches System verwendet wird und unabhängig davon,
+welche Plattform anvisiert wird.
+
+**Andere Sprachen haben zwar Paketmanager, aber sie beseitigen keine lästigen
+Systemabhängigkeiten wie Zig.**
+
+Zig kann das Build-System eines Projekts durch eine vernünftige Sprache ersetzen,
+die eine deklarative API zum Erstellen von Projekten verwendet. Diese bietet auch
+ein Paketmanagement und damit die Möglichkeit, tatsächlich von anderen C-Bibliotheken
+abhängig zu sein. Die Fähigkeit, Abhängigkeiten zu verwalten, ermöglicht höhere
+Abstraktionen und damit die Weiterverbreitung wiederverwendbaren, hochertigen Codes.
+
+# Einfachheit
+
+C++, Rust und D haben so viele Funktionen, dass sie vom eigentlichen Sinn der Anwendung ablenken können, an der man gerade arbeitet. Man ertappt sich dabei, seine Kenntnisse der Programmiersprache zu debuggen, anstatt die Anwendung selbst zu debuggen.
+
+Zig hat keine Makros, ist aber dennoch leistungsstark genug, um komplexe Programme auf eine
+klare, nicht repetitive Weise auszudrücken. Sogar Rust hat Makros mit Sonderfällen wie
+`format!`, das im Compiler selbst implementiert ist. In Zig hingegen ist die
+äquivalente Funktion in der Standardbibliothek implementiert, ohne Sonderfall-Code
+im Compiler.
+
+# Werkzeuge
+
+Zig kann im [Downloadbereich](/download/) heruntergeladen werden. Zig bietet
+Binärarchive für Linux, Windows und macOS. Im Folgenden wird beschrieben, was man
+mit einem dieser Archive erhält:
+
+* Installation durch Herunterladen und Entpacken eines einzelnen Archivs, keine Systemkonfiguration erforderlich
+* statisch kompiliert, so dass keine Laufzeitabhängigkeiten bestehen
+* unterstützt die Verwendung von LLVM für optimierte Release-Builds bei gleichzeitiger Verwendung der benutzerdefinierten Backends von Zig für eine schnellere Kompilierungsleistung
+* unterstützt zusätzlich ein Backend zur Ausgabe von C-Code
+* sofort einsatzbereite Cross-Kompilierung für die meisten wichtigen Plattformen
+* wird mit Quellcode für libc geliefert, der bei Bedarf für jede unterstützte Plattform dynamisch kompiliert wird
+* beinhaltet ein Build-System mit Parallelität und Caching
+* kompiliert C- und C++-Code mit libc-Unterstützung
+* Drop-In-GCC/Clang-Befehlszeilenkompatibilität mit `zig cc`
+* Windows-Ressourcen-Compiler
