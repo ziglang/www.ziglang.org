@@ -1,4 +1,3 @@
-// zig-doctest: syntax --name word_select --skip-name
 const std = @import("std");
 
 const usage =
@@ -80,3 +79,5 @@ fn fatal(comptime format: []const u8, args: anytype) noreturn {
     std.debug.print(format, args);
     std.process.exit(1);
 }
+
+// syntax
