@@ -24,6 +24,40 @@
 // an example of a correct date string.
 ---
 
+# [2024-09-16]($section.id('2024-09-16'))
+
+Author: Andrew Kelley
+
+I've been porting stb_truetype.h to Zig on the side. Check out this snippet:
+
+```c
+{
+    float sum = 0;
+    for (i=0; i < result->w; ++i) {
+      float k;
+      int m;
+      sum += scanline2[i];
+      k = scanline[i] + sum;
+      k = (float) STBTT_fabs(k)*255 + 0.5f;
+      m = (int) k;
+      if (m > 255) m = 255;
+      result->pixels[j*result->stride + i] = (unsigned char) m;
+    }
+}
+```
+⬇️
+```zig
+{
+    var sum: f32 = 0;
+    for (scanline, scanline2, result.pixels[j*result.stride..][0..result.w]) |s, s2, *p| {
+        sum += s2;
+        p.* = @min(@abs(s + sum)*255 + 0.5, 255);
+    }
+}
+```
+
+Ahh, much better.
+
 # [Zig tokenizer updated to use labeled switch statements]($section.id('2024-09-11'))
 
 Author: Andrew Kelley
