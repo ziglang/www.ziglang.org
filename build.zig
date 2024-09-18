@@ -131,6 +131,7 @@ pub fn build(b: *std.Build) void {
             "sponsors/shiguredo-logo-light.svg",
             "sponsors/tb-logo-black.png",
             "sponsors/tb-logo-white.png",
+            "sponsors/zml.svg",
 
             "chart/chartist-1.3.0.css",
             "chart/chartist-1.3.0.umd.js",
