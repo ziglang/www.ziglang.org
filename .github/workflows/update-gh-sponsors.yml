@@ -15,16 +15,10 @@ jobs:
           ssh-key: ${{ secrets.TARBALL_COMMIT_SSH_KEY }}
         uses: actions/checkout@v2
 
-      - name: Setup Directories
-        run: |
-          mkdir zig
-          echo "$(pwd)/zig" >> $GITHUB_PATH
-
-      - name: Download Zig
-        working-directory: zig
-        run: |
-          wget -qO zig.tar.xf "$(cat ../data/releases.json | jq -r '.master."x86_64-linux".tarball')"
-          tar --strip-components=1 -xJf zig.tar.xf
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
           
       - name: Update Sponsors List
         run: zig run .github/workflows/update-gh-sponsors.zig -- assets/github-sponsors-homepage.html assets/github-sponsors-release-notes.html
