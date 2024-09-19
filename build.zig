@@ -104,6 +104,7 @@ pub fn build(b: *std.Build) void {
     });
 
     zine.multilingualWebsite(b, .{
+        .debug = true,
         .host_url = "https://ziglang.org",
         .i18n_dir_path = "i18n",
         .layouts_dir_path = "layouts",
