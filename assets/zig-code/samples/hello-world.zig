@@ -1,7 +1,9 @@
 const std = @import("std");
+const stdout = std.io.getStdOut().writer();
 
-pub fn main() void {
-   std.debug.print("hello world!", .{});
+pub fn main() !void {
+   try stdout.print("hello world!\n", .{});
 }
 
 // exe=succeed
+
