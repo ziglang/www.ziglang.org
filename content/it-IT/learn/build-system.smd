@@ -8,45 +8,44 @@
 	"toc": true,
 },
 ---
-# [When to bust out the Zig Build System?]($heading.id('build-system'))
+# [Quando introdurre il Zig Build System?]($heading.id('build-system'))
 
-The fundamental commands `zig build-exe`, `zig build-lib`, `zig build-obj`, and
-`zig test` are often sufficient. However, sometimes a project needs another
-layer of abstraction to manage the complexity of building from source.
+In molti casi sono sufficienti i comandi base `zig build-exe`, `zig build-lib`, `zig build-obj` e
+`zig test`. A volte però un progetto necessita di un ulteriore livello di astrazione
+per gestire la complessità del compilare da sorgente.
 
-For example, perhaps one of these situations applies:
+Per esempio, potrebbe verificarsi una di queste situazioni:
 
-- The command line becomes too long and unwieldly, and you want some place to
-  write it down.
-- You want to build many things, or the build process contains many steps.
-- You want to take advantage of concurrency and caching to reduce build time.
-- You want to expose configuration options for the project.
-- The build process is different depending on the target system and other options.
-- You have dependencies on other projects.
-- You want to avoid an unnecessary dependency on cmake, make, shell, msvc,
-  python, etc., making the project accessible to more contributors.
-- You want to provide a package to be consumed by third parties.
-- You want to provide a standardized way for tools such as IDEs to semantically understand
-  how to build the project.
+- La riga di comando diventa troppo lunga e complessa, e vuoi trascriverla altrove.
+- Vuoi compilare molte cose, o il processo di compilazione ha molti passaggi.
+- Vuoi sfruttare processi paralleli e caching per ridurre il tempo di compilazione.
+- Vuoi esporre delle opzioni di configurazione per il progetto.
+- Il processo di compilazione è differente a seconda del sistema di destinazione e altre opzioni.
+- Il tuo progetto ha dipendenze da altri progetti.
+- Vuoi evitare dipendenze superflue da cmake, make, shell, msvc,
+  python e altro, rendendo il progetto accessibile a più contributori.
+- Vuoi fornire un pacchetto usufruibile da terzi.
+- Vuoi mettere a disposizione a strumenti come gli IDE un modo standardizzato
+  per comprendere semanticamente come compilare il progetto.
 
-If any of these apply, the project will benefit from using the Zig Build System.
+Se qualunque di queste è applicabile, il progetto trarrà benificio dal Zig Build System.
 
-# [Getting Started]($heading.id('getting-started'))
-## [Simple Executable]($heading.id('simple'))
-This build script creates an executable from a Zig file that contains a public main function definition.
+# [Per iniziare]($heading.id('getting-started'))
+## [Eseguibile semplice]($heading.id('simple'))
+Questo build script crea un eseguibile a partire da un file Zig contenente una funzione `main` pubblica.
 
 []($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
 []($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
 
-## [Installing Build Artifacts]($heading.id('installing-artifacts'))
+## [Installare artefatti di build]($heading.id('installing-artifacts'))
 
-The Zig build system, like most build systems, is based on modeling the project as a directed acyclic graph (DAG) of steps, which are independently and concurrently run.
+Il build system di Zig, come la maggior parte dei build system, è basato sul modellare il progetto come un grafo aciclico diretto (DAG) di "step", che vengono eseguiti in parallelo.
 
-By default, the main step in the graph is the **Install** step, whose purpose
-is to copy build artifacts into their final resting place. The Install step
-starts with no dependencies, and therefore nothing will happen when `zig build`
-is run. A project's build script must add to the set of things to install, which
-is what the `installArtifact` function call does above.
+Di default, lo step principale nel grafo è lo step di **installazione**, il cui scopo
+è copiare gli artefatti di build nella loro destinazione finale.
+Lo step di installazione parte senza dipendenze, quindi eseguendo `zig build` non accade nulla.
+Il build script di un progetto deve aggiungere elementi all'insieme delle cose da installare,
+ed è ciò che fa la chiamata alla funzione `installArtifact` qui sopra.
 
 **Output**
 ```
@@ -58,63 +57,62 @@ is what the `installArtifact` function call does above.
         └── hello
 ```
 
-There are two generated directories in this output: `.zig-cache` and `zig-out`. The first one contains files that will make subsequent builds faster, but these files are not intended to be checked into source-control and this directory can be completely deleted at any time with no consequences.
+In questo output sono presenti due cartelle generate: `.zig-cache` and `zig-out`. La prima contiene file che renderanno le compilazioni successive più rapide, ma questi file non sono pensati per essere tracciati in un sistema di controllo versione; questa cartella può essere completamente eliminata in qualunque momento senza conseguenze.
 
-The second one, `zig-out`, is an "installation prefix". This maps to the standard file system hierarchy concept. This directory is not chosen by the project, but by the user of `zig build` with the `--prefix` flag (`-p` for short).
+La seconda cartella generata, `zig-out`, è un "prefisso di installazione". Questo è correlato al concetto standard di gerarchia del file system. Questa cartella non è scelta dal progetto, ma dall'utente del comando `zig build` con la flag `--prefix` (`-p` per abbreviare).
 
-You, as the project maintainer, pick what gets put in this directory, but the user chooses where to install it in their system. The build script cannot hardcode output paths because this would break caching, concurrency, and composability, as well as annoy the final user.
+Tu, come responsabile del progetto, scegli cosa conterrà questa cartella, ma l'utente sceglie dove installarla nel proprio sistema. Il build script non può definire percorsi di output assoluti perchè questo ostacolerebbe il caching, concorrenza e composibilità, oltre a infastidire l'utente finale.
 
-## [Adding a Convenience Step for Running the Application]($heading.id('run-step'))
+## [Aggiungere uno step per eseguire l'applicazione]($heading.id('run-step'))
 
-It is common to add a `Run` step to provide a way to run one's main application directly
-from the build command.
+È pratica comune aggiungere uno step `Run`, per permettere di eseguire l'applicazione principale direttamente dalla riga di comando.
 
 []($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
 []($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
 
-# [The Basics]($heading.id('basics'))
+# [Le basi]($heading.id('basics'))
 
-## [User-Provided Options]($heading.id('user-options'))
+## [Opzioni fornite dall'utente]($heading.id('user-options'))
 
-Use `b.option` to make the build script configurable to end users as well as
-other projects that depend on the project as a package.
+Usa `b.option` per rendere il build script configurabile dagli utenti finali e anche
+da altri progetti che dipendono dal tuo progetto come pacchetto.
 
 []($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
 []($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
 
-Please direct your attention to these lines:
+Nota la presenza di queste righe:
 
 ```
 Project-Specific Options:
   -Dwindows=[bool]             Target Microsoft Windows
 ```
 
-This part of the help menu is auto-generated based on running the `build.zig` logic. Users
-can discover configuration options of the build script this way.
+Questa parte del menù di aiuto è generata automaticamente in base alla logica in `build.zig`.
+Gli utenti possono scoprire le opzioni di configurazione del build script in questo modo.
 
-## [Standard Configuration Options]($heading.id('standard-options'))
+## [Opzioni di configurazione standard]($heading.id('standard-options'))
 
-Previously, we used a boolean flag to indicate building for Windows. However, we can do
-better.
+Nella sezione precedente abbiamo usato una flag booleana per indicare una compilazione per Windows.
+Possiamo fare ancora di meglio.
 
-Most projects want to provide the ability to change the target and optimization settings.
-In order to encourage standard naming conventions for these options, Zig provides the
-helper functions, `standardTargetOptions` and `standardOptimizeOption`.
+La maggior parte dei progetti vuole rendere possibile modificare la piattaforma di destinazione e le opzioni di ottimizzazione.
+Per incoraggiare una convenzione standard nella nomenclatura di queste opzioni,
+Zig fornisce le funzioni `standardTargetOptions` e `standardOptimizeOption`.
 
-Standard target options allows the person running `zig build` to choose what
-target to build for. By default, any target is allowed, and no choice means to
-target the host system. Other options for restricting supported target set are
-available.
+Le opzioni di destinazione standard permettono a chi esegue `zig build` di scegliere la piattaforma
+per cui compilare. Di default è permessa qualunque piattaforma, escluderle tutte significa
+compilare per il sistema host (quello usato per la compilazione).
+Sono disponibili ulteriori opzioni per restringere l'insieme di piattaforme supportate.
 
-Standard optimization options allow the person running `zig build` to select
-between `Debug`, `ReleaseSafe`, `ReleaseFast`, and `ReleaseSmall`. By default
-none of the release options are considered the preferable choice by the build
-script, and the user must make a decision in order to create a release build.
+Le opzioni di ottimizzazione standard permettono a chi esegue `zig build` di scegliere
+tra `Debug`, `ReleaseSafe`, `ReleaseFast` e `ReleaseSmall`. Di default
+il build script non considera nessuna delle opzioni di rilascio come preferibile,
+quindi l'utente deve prendere una decisione per poter creare una build di rilascio.
 
 []($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
 []($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
 
-Now, our `--help` menu contains more items:
+Ora il nostro menù `--help` contiene più elementi:
 
 ```
 Project-Specific Options:
@@ -128,11 +126,11 @@ Project-Specific Options:
                                    ReleaseSmall
 ```
 
-It is entirely possible to create these options via `b.option` directly, but this
-API provides a commonly used naming convention for these frequently used settings.
+È del tutto possibile creare queste opzioni usando direttamente `b.option`, ma questa API
+fornisce una convenzione comune per i nomi di queste opzioni, che sono utilizzate di frequente.
 
-In our terminal output, observe that we passed `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`.
-Compared to the first example, now we see different files in the installation prefix:
+Nell'output del nostro terminale, osserva che abbiamo passato `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`.
+In confronto al primo esempio, ora vediamo file diversi nel prefisso di installazione:
 
 ```
 zig-out/
@@ -140,29 +138,27 @@ zig-out/
     └── hello.exe
 ```
 
-## [Options for Conditional Compilation]($heading.id('conditional-compilation'))
+## [Opzioni per la compilazione condizionale]($heading.id('conditional-compilation'))
 
-To pass options from the build script and into the project's Zig code, use
-the `Options` step.
+Per passare delle opzioni dal build script al codice Zig del progetto, usa lo step `Options`.
 
 []($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
 []($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
 
-In this example, the data provided by `@import("config")` is comptime-known,
-preventing the `@compileError` from triggering. If we had passed `-Dversion=0.2.3`
-or omitted the option, then we would have seen the compilation of app.zig fail with
-the "too old" error.
+In questo esempio, i dati forniti da `@import("config")` sono noti in fase di compilazione,
+impedendo l'innesco di `@compileError`. Se avessimo passato `-Dversion=0.2.3`
+oppure omesso l'opzione, avremmo visto la compilazione di `app.zig` fallire con l'errore "too old".
 
-## [Static Library]($heading.id('static-library'))
+## [Libreria statica]($heading.id('static-library'))
 
-This build script creates a static library from Zig code, and then also an
-executable from other Zig code that consumes it.
+Questo build script crea una libreria statica di codice Zig, e inoltre crea
+un eseguibile di altro codice Zig che usa la libreria..
 
 []($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
 []($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
 []($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
 
-In this case, only the static library ends up being installed:
+In questo caso, viene installata solo la libreria statica:
 
 ```
 zig-out/
@@ -170,8 +166,8 @@ zig-out/
     └── libfizzbuzz.a
 ```
 
-However, if you look closely, the build script contains an option to also install the demo.
-If we additionally pass `-Denable-demo`, then we see this in the installation prefix:
+Però, se guardi attentamente, il build script contiene un'opzione per installare anche la demo.
+Se passiamo anche l'opzione `-Denable-demo`, allora dovremmo vedere questo nel prefisso di installazione:
 
 ```
 zig-out/
@@ -181,15 +177,15 @@ zig-out/
     └── libfizzbuzz.a
 ```
 
-Note that despite the unconditional call to `addExecutable`, the build system in fact
-does not waste any time building the `demo` executable unless it is requested
-with `-Denable-demo`, because the build system is based on a Directed Acyclic
-Graph with dependency edges.
+Nota che nonostante la chiamata non condizionale a `addExecutable`, il build system
+non perde tempo compilando l'eseguibile `demo` a meno che sia richiesto
+con `-Denable-demo`, perchè il build system è basato su un grafo aciclico diretto (DAG)
+in cui gli archi rappresentano dipendenze.
 
-## [Dynamic Library]($heading.id('dynamic-library'))
+## [Libreria dinamica]($heading.id('dynamic-library'))
 
-Here we keep all the files the same from the [Static Library](#static-library) example, except
-the `build.zig` file is changed.
+Qui usiamo gli stessi file dell'esempio sulla [libreria statica](#static-library),
+eccetto il file `build.zig` che ha delle modifiche.
 
 []($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
 
@@ -202,7 +198,7 @@ zig-out
     └── libfizzbuzz.so.1.2.3
 ```
 
-As in the static library example, to make an executable link against it, use code like this:
+Come nell'esempio della libreria statica, per ottenere un link dell'eseguibile alla libreria, usa codice come questo:
 
 ```zig
 exe.linkLibrary(libfizzbuzz);
