@@ -1,0 +1,389 @@
+---
+.title = "Zig 构建系统",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Zig 构建系统",
+	"toc": true,
+},
+---
+# [何时使用 Zig 构建系统？]($heading.id('build-system'))
+
+基本的命令 `zig build-exe`、`zig build-lib`、`zig build-obj` 和 `zig test` 通常已经足够。然而，有时项目需要另一层抽象来管理从源代码构建的复杂性。
+
+例如，可能存在以下情况之一：
+
+- 命令行变得过长且难以操作，你希望有一个地方可以将其写下来。
+- 你想要构建许多东西，或者构建过程包含许多步骤。
+- 你想要利用并发和缓存来减少构建时间。
+- 你想要为项目提供配置选项。
+- 构建过程根据目标系统和其他选项的不同而有所区别。
+- 你的项目依赖于其他项目。
+- 你想要避免对 cmake、make、shell、msvc、python 等不必要的依赖，使项目对更多贡献者开放。
+- 你想要提供一个包供第三方使用。
+- 你想要为工具（如 IDE）提供一个标准化的方式，以便它们能够从语义上理解如何构建项目。
+
+如果符合以上任何一种情况，采用 Zig 构建系统将大有裨益。
+
+# [开始使用]($heading.id('getting-started'))
+## [简单的可执行文件]($heading.id('simple'))
+这个构建脚本负责将一个包含对外可见 main 函数的 Zig 文件编译成可执行文件。
+
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
+
+## [安装构建产物]($heading.id('installing-artifacts'))
+
+Zig 构建系统与其他大多数构建系统一样，将项目视为一系列步骤，这些步骤构成一个有向无环图（DAG），每个步骤都可以独立且并发地执行。
+
+默认情况下，图中的主要步骤是 **Install**，其作用是将构建产物复制到它们的最终存放位置。Install 步骤开始时没有依赖，因此当执行 `zig build` 命令时，不会发生任何操作。项目的构建脚本必须添加到要安装的物品清单中，这正是上面提到的 `installArtifact` 函数调用所执行的操作。
+
+**Output**
+```
+├── build.zig
+├── hello.zig
+├── .zig-cache
+└── zig-out
+    └── bin
+        └── hello
+```
+
+输出结果中包含了两个生成的目录：`.zig-cache` 和 `zig-out`。第一个目录包含的文件可以加快后续构建的速度，但这些文件不应该被提交到源代码控制系统中，并且这个目录可以在任何时候完全删除，而不会产生任何影响。
+
+第二个目录，`zig-out`，用作“安装路径”（installation prefix）。它对应于标准的文件系统层次结构概念。这个目录不是由项目选择的，而是由使用 `zig build` 的用户通过 `--prefix` 参数（简写为 `-p`）来指定的。
+
+作为项目维护者，你决定将哪些内容放入这个目录，但用户选择在他们的系统中安装到哪个位置。构建脚本不应将输出路径直接编写在代码中，因为这样做会破坏缓存、并发性和组合性，同时也会让最终用户感到不便。
+
+## [为运行应用程序添加一个便捷步骤]($heading.id('run-step'))
+
+通常，我们会添加一个 `Run` 步骤，以便可以直接从构建命令中运行主应用程序。
+
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
+
+# [基础]($heading.id('basics'))
+
+## [用户提供的选项]($heading.id('user-options'))
+
+使用 `b.option` 来配置构建脚本，便于最终用户和其他依赖此项目的包进行调整。
+
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
+
+请关注这几行：
+
+```
+Project-Specific Options:
+  -Dwindows=[bool]             Target Microsoft Windows
+```
+
+帮助菜单的这一部分是在运行 `build.zig` 逻辑时自动生成的。用户可以通过这种方式发现构建脚本的配置选项。
+
+## [标准配置选项]($heading.id('standard-options'))
+
+之前我们使用一个布尔选项来表示为 Windows 构建。然而，我们可以做得更好。
+
+大多数项目都希望提供更改目标和优化设置的能力。为了鼓励这些选项的标准命名约定，Zig 提供了辅助函数 `standardTargetOptions` 和 `standardOptimizeOption`。
+
+standardTargetOptions 使得执行 `zig build` 命令的用户能够选择他们想要构建的目标平台。默认情况下，脚本将允许构建任何目标平台，如果不做选择，则默认为目标宿主系统。此外，还提供了选项来限制支持的目标平台集合。
+
+standardOptimizeOption 为执行 `zig build` 命令的用户提供了在 `Debug`、`ReleaseSafe`、`ReleaseFast` 和 `ReleaseSmall` 之间进行选择的机会。在默认情况下，构建脚本不会自动选择任何发布模式作为首选设置，因此用户需要明确选择一个优化级别，以便生成一个发布版本的构建。
+
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
+
+现在，我们的帮助菜单包含了更多的项目：
+
+```
+Project-Specific Options:
+  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
+  -Dcpu=[string]               Target CPU features to add or subtract
+  -Doptimize=[enum]            Prioritize performance, safety, or binary size (-O flag)
+                                 Supported Values:
+                                   Debug
+                                   ReleaseSafe
+                                   ReleaseFast
+                                   ReleaseSmall
+```
+
+完全可以直接通过 `b.option` 创建这些选项，但这个 API 为这些常用设置提供了一种常用的命名约定。
+
+在我们的终端输出中，请注意我们传递了 `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`。与第一个示例相比，现在我们在安装路径中看到了不同的文件：
+
+```
+zig-out/
+└── bin
+    └── hello.exe
+```
+
+## [用于条件编译的选项]($heading.id('conditional-compilation'))
+
+要从构建脚本传递选项到项目的 Zig 代码中，请使用 `Options` 步骤。
+
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
+
+在这个例子中，由 `@import(“config”)` 提供的数据是编译时已知的，这阻止了触发 `@compileError` 语句。如果我们传递了 `-Dversion=0.2.3` 或者省略了这个选项，那么我们将会看到 app.zig 的编译因为“太旧”的错误而失败。
+
+## [静态库]($heading.id('static-library'))
+
+这个构建脚本从 Zig 代码创建了一个静态库，并且还创建了一个可执行文件，这个可执行文件依赖于这个静态库。
+
+[]($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
+
+在这种情况下，最终只有静态库被安装：
+
+```
+zig-out/
+└── lib
+    └── libfizzbuzz.a
+```
+
+然而，如果你仔细观察，构建脚本中包含了一个选项，也可以安装 demo 程序。如果我们额外传递 `-Denable-demo` 参数，那么我们会在安装路径中看到它：
+
+```
+zig-out/
+├── bin
+│   └── demo
+└── lib
+    └── libfizzbuzz.a
+```
+
+请注意，尽管无条件地调用了 `addExecutable`，但实际上，除非我们明确使用 `-Denable-demo` 参数，构建系统是不会去构建 demo 程序的。这是因为构建系统是根据一个有向无环图来工作的，这个图记录了不同部分之间的依赖关系。
+
+## [动态库]($heading.id('dynamic-library'))
+
+在这里，我们使用了之前[静态库](#static-library)示例中的所有代码文件，但是对 `build.zig` 文件进行了修改。
+
+[]($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
+
+**Output**
+```
+zig-out
+└── lib
+    ├── libfizzbuzz.so -> libfizzbuzz.so.1
+    ├── libfizzbuzz.so.1 -> libfizzbuzz.so.1.2.3
+    └── libfizzbuzz.so.1.2.3
+```
+
+就像在静态库示例中一样，为了让一个可执行文件链接到这个动态库，你需要添加类似这样的代码：
+
+```zig
+exe.linkLibrary(libfizzbuzz);
+```
+
+## [测试]($heading.id('testing'))
+
+单个文件可以直接使用 `zig test foo.zig` 命令进行测试，然而，更复杂的使用场景可以通过构建脚本来解决。
+
+当使用构建脚本时，单元测试在构建图中被分为两个不同的步骤：**Compile** 步骤和 **Run** 步骤。如果没有调用 `addRunArtifact` 来在这两个步骤之间建立依赖关系，单元测试将不会被执行。
+
+Compile 步骤可以像配置任何可执行文件、库或对象文件一样进行配置，例如通过[链接系统库](#linking-to-system-libraries)、设置目标选项或添加额外的编译单元。
+
+Run 步骤可以像配置其他 Run 步骤一样进行配置，例如，当主机无法执行二进制文件时，可以跳过执行。
+
+当使用构建系统来运行单元测试时，构建运行器（build runner）和测试运行器（test runner）通过标准输入和标准输出进行通信，以便并发运行多个单元测试套件，并以一种有意义的方式报告测试失败，而不会使它们的输出混淆在一起。这就是为什么[在单元测试中向标准输出写数据会是个问题](https://github.com/ziglang/zig/issues/15091)——因为这样会干扰这个通信通道。另一方面，这种机制将启用一个即将推出的功能，即[单元测试能够预测 panic](https://github.com/ziglang/zig/issues/1356)。
+
+[]($code.language('=html').buildAsset("build-system/unit-testing/main.zig"))
+[]($code.language('=html').buildAsset("build-system/unit-testing/build.zig"))
+
+在这种情况下，为单元测试开启 `skip_foreign_checks` 可能是个好主意：
+
+```diff
+@@ -23,6 +23,7 @@
+         });
+ 
+         const run_unit_tests = b.addRunArtifact(unit_tests);
++        run_unit_tests.skip_foreign_checks = true;
+         test_step.dependOn(&run_unit_tests.step);
+     }
+ }
+```
+
+[]($code.language('=html').buildAsset("build-system/unit-testing-skip-foreign/build.zig"))
+
+## [链接系统库]($heading.id('linking-to-system-libraries'))
+
+为了满足库依赖，有两个选择：
+
+1. 通过 Zig 构建系统提供这些库（参见[包管理](#package-management)和[静态库](#static-library)）。
+2. 使用宿主系统提供的文件。
+
+对于上游项目维护者的使用场景，通过 Zig 构建系统获取这些库可以减少很多麻烦，并将配置能力掌握在维护者手中。像这样构建，每个人都会得到可复现、一致的结果，并且它可以在每个操作系统上工作，甚至支持交叉编译。此外，它允许项目精确决定其整个依赖树中希望构建的每个库的确切版本。这被认为是依赖外部库的普遍首选方式。
+
+然而，对于将软件打包到诸如 Debian、Homebrew 或 Nix 等仓库的使用场景，必须链接到系统库。因此，构建脚本必须能[检测模式](https://github.com/ziglang/zig/issues/14281)并相应地配置。
+
+[]($code.language('=html').buildAsset("build-system/system-libraries/build.zig"))
+
+使用 `zig build` 的用户可以使用 `--search-prefix` 参数来提供额外的目录，这些目录将被视为“系统目录”，用于查找静态库和动态库。
+
+# [生成文件]($heading.id('generating-files'))
+
+## [运行系统工具]($heading.id('system-tools'))
+这个版本的 “hello world” 期望在相同的路径下找到一个 `word.txt` 文件，并且我们希望使用一个系统工具从 JSON 文件生成它。
+
+请注意，系统依赖项会使你的项目对用户来说更难构建。例如，这个构建脚本依赖于 `jq`，而在大多数 Linux 发行版中默认并不包含它，对于 Windows 用户来说可能也不熟悉这个工具。
+
+下一节将使用源代码中包含的 Zig 工具替换 `jq`，这种方法是更推荐的。
+
+**`words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/build.zig"))
+
+**Output**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+
+注意 `captureStdOut` 如何创建一个临时文件来存储 `jq` 命令的输出。
+
+## [运行项目工具]($heading.id('project-tools'))
+
+这个版本的 “hello world” 期望在相同的路径下找到一个 `word.txt` 文件。我们计划在构建过程中，通过运行一个 Zig 程序来处理 JSON 文件并生成目标文件。
+
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/src/main.zig"))
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/tools/word_select.zig"))
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/build.zig"))
+
+**Output**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+## [为 `@embedFile` 生成文件]($heading.id('embed-file'))
+
+这个版本的 “hello world” 希望将构建时生成的文件通过 `@embedFile` 进行嵌入，我们将使用一个用 Zig 编写的工具来生成这个文件。
+
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界" 
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/src/main.zig"))
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/tools/word_select.zig"))
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/build.zig"))
+
+**Output**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [生成 Zig 源代码]($heading.id('generating-zig'))
+这个构建脚本使用一个 Zig 程序来生成一个 Zig 源文件，并将其作为模块提供给主程序。
+
+[]($code.language('=html').buildAsset("build-system/13-import/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/tools/generate_struct.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/build.zig"))
+
+**Output**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [处理一个或多个生成的文件]($heading.id('write-files'))
+
+**WriteFiles** 步骤提供了一种方法，用于生成同一父目录下一个或多个文件。生成的目录位于项目的 `.zig-cache` 里，每个生成的文件以及父目录本身都可以独立地作为 `std.Build.LazyPath` 使用。
+
+这个 API 支持将任意字符串写入生成的目录，以及将文件复制到其中。
+
+[]($code.language('=html').buildAsset("build-system/write-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/write-files/build.zig"))
+
+**Output**
+
+```
+zig-out/
+└── project.tar.gz
+```
+
+## [直接修改源文件]($heading.id('mutating-source'))
+
+虽然不常见，但有时项目会将生成的文件直接提交到版本控制中。当生成的文件很少更新，且更新过程依赖于繁琐的系统依赖时，这样做可能是有用的，但*仅限于*更新过程中。
+
+为此，**WriteFiles** 提供了一种方法来完成这个任务。这个功能将在未来的 Zig 版本中[从 WriteFiles 中提取出来，成为一个独立的构建步骤](https://github.com/ziglang/zig/issues/14944)。
+
+使用这个功能时要小心；它不应该在正常的构建过程中使用，而应该由有意更新源文件的开发者作为工具运行，然后这些文件将被提交到版本控制中。如果在正常的构建过程中使用，它将导致缓存和并发错误。
+
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/tools/proto_gen.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/protocol.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/build.zig"))
+
+```=html
+<pre><code class="shell">$ zig build update-protocol --summary all
+<span class="sgr-36m">Build Summary:</span> 4/4 steps succeeded
+update-protocol<span class="sgr-32m"> success</span>
+└─ WriteFile<span class="sgr-32m"> success</span>
+   └─ run proto_gen (protocol.zig)<span class="sgr-32m"> success</span><span class="sgr-2m"> 401us</span><span class="sgr-2m"> MaxRSS:1M</span>
+      └─ zig build-exe proto_gen Debug native<span class="sgr-32m"> success</span><span class="sgr-2m"> 1s</span><span class="sgr-2m"> MaxRSS:183M</span>
+</code></pre>
+```
+
+运行这个命令后，`src/protocol.zig` 文件会被原地更新。
+
+# [实用示例]($heading.id('examples'))
+
+## [为多个目标构建以发布版本]($heading.id('release'))
+
+在这个例子中，我们在创建 `InstallArtifact` 步骤时更改一些默认设置，以便将每个目标的构建产物放入安装路径内的单独子目录中。
+
+[]($code.language('=html').buildAsset("build-system/10-release/build.zig"))
+[]($code.language('=html').buildAsset("build-system/10-release/hello.zig"))
+
+**Output**
+
+```
+zig-out
+├── aarch64-linux
+│   └── hello
+├── aarch64-macos
+│   └── hello
+├── x86_64-linux-gnu
+│   └── hello
+├── x86_64-linux-musl
+│   └── hello
+└── x86_64-windows
+    ├── hello.exe
+    └── hello.pdb
+```
