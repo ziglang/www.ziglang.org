@@ -1,20 +1,20 @@
 ---
-.title = "Overview",
+.title = "Revisión a fondo",
 .author = "",
-.date = @date("2024-08-07:00:00:00"),
+.date = @date("2024-10-06:00:00:00"),
 .layout = "page.shtml",
 .custom = {
-	"mobile_menu_title": "Overview",
+	"mobile_menu_title": "Revisión a fondo",
 },
 ---
-# Feature Highlights
-## Small, simple language
+# Características destacadas
+## Lenguaje simple y compacto
 
-Focus on debugging your application rather than debugging your programming language knowledge.
+Concéntrate en depurar tu aplicación y no tus conocimientos del lenguaje.
 
-Zig's entire syntax is specified with a [500-line PEG grammar file](https://ziglang.org/documentation/master/#Grammar).
+La sintaxis completa de Zig se encuentra especificada en un [archivo de 500 lineas de gramática PEG](https://ziglang.org/documentation/master/#Grammar).
 
-There is **no hidden control flow**, no hidden memory allocations, no preprocessor, and no macros. If Zig code doesn't look like it's jumping away to call a function, then it isn't. This means you can be sure that the following code calls only `foo()` and then `bar()`, and this is guaranteed without needing to know the types of anything:
+En Zig, no hay **control de flujo oculto**, ni asignaciones de memoria ocultas, ni preprocesador, ni macros. Si un fragmento de código Zig no parece estar saltando a hacer una llamada a una función, es por que no lo está haciendo. Esto significa que podemos estar seguros de que el siguiente código llama solo a `foo()` y después a `bar()` y esto esta garantizado sin tener que conocer tipo de dato alguno:
 
 ```zig
 var a = b + c.d;
@@ -22,60 +22,61 @@ foo();
 bar();
 ```
 
-Examples of hidden control flow:
+Ejemplos de control de flujo oculto:
 
-- D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
-- C++, D, and Rust have operator overloading, so the `+` operator might call a function.
-- C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called.
+- D tiene funciones `@property`, las cuales son métodos que puedes llamar con algo que se percibe como acceso a propiedades, de tal forma que el ejemplo de código anterior, `c.d`, podría estar llamando a una función.
+- C++, D y Rust tienen sobrecarga de operadores, de tal forma que el operador `+` podría llamar a una función.
+- C++, D y Go tienen manejo de excepciones con throw/catch, de tal manera que `foo()` podría arrojar una excepción y prevenir que `bar()` sea llamada.
 
- Zig promotes code maintenance and readability by making all control flow managed exclusively with language keywords and function calls.
+Zig promueve la facilidad de mantenimiento y legibilidad haciendo que todo control de flujo sea manejado exclusivamente con palabras reservadas del lenguaje y con llamadas a funciones.
 
-## Performance and Safety: Choose Two
+## Rendimiento y Seguridad: Elije dos
 
-Zig has four [build modes](https://ziglang.org/documentation/master/#Build-Mode), and they can all be mixed and matched all the way down to [scope granularity](https://ziglang.org/documentation/master/#setRuntimeSafety).
+Zig tiene cuatro [modos de compilación](https://ziglang.org/documentation/master/#Build-Mode), los cuales pueden ser usados en forma individual o combinada en un [alcance granular](https://ziglang.org/documentation/master/#setRuntimeSafety).
 
-| Parameter | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
+| Parámetro | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
-Optimizations - improve speed, harm debugging, harm compile time | | -O3 | -O3| -Os |
-Runtime Safety Checks - harm speed, harm size, crash instead of undefined behavior | On | On | | |
+Optimizaciones - ejecutable rápido, depuración lenta, compilación lenta | | -O3 | -O3| -Os |
+Chequeo de seguridad - ejecutable lento, ejecutable grande, finaliza en vez de 'undefined behavior' | On | On | | |
 
-Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode:
+Así es como se ve el [desbordamiento de entero](https://ziglang.org/documentation/master/#Integer-Overflow) en tiempo de compilación, sin importar el modo de compilación:
+
 
 []($code.language('=html').buildAsset('features/1-integer-overflow.zig'))
 
-Here is what it looks like at runtime, in safety-checked builds:
+Así es como se ve en tiempo de ejecución con chequeos de seguridad:
 
 []($code.language('=html').buildAsset('features/2-integer-overflow-runtime.zig'))
 
 
-Those [stack traces work on all targets](#stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
+Estos ['stack traces' funcionan en todos los 'targets'](#stack-traces-on-all-targets), incluyendo [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
 
-With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this:
+Con Zig podemos confiar en un modo de compilación seguro y podemos deshabilitar selectivamente esos chequeos de seguridad cuando sea necesario exprimir al máximo el rendimiento. Por ejemplo, el fragmento de código anterior podría ser modificado así:
 
 []($code.language('=html').buildAsset('features/3-undefined-behavior.zig'))
 
-Zig uses [undefined behavior](https://ziglang.org/documentation/master/#Undefined-Behavior) as a razor sharp tool for both bug prevention and performance enhancement.
+Zig utiliza ['undefined behavior'](https://ziglang.org/documentation/master/#Undefined-Behavior) como una herramienta para prevención de bugs y mejoras de desempeño.
 
-Speaking of performance, Zig is faster than C.
+Hablando de desempeño, Zig es mas rápido que C.
 
-- The reference implementation uses LLVM as a backend for state of the art optimizations.
-- What other projects call "Link Time Optimization" Zig does automatically.
-- For native targets, advanced CPU features are enabled (-march=native), thanks to the fact that [Cross-compiling is a first-class use case](#cross-compiling-is-a-first-class-use-case).
-- Carefully chosen undefined behavior. For example, in Zig both signed and unsigned integers have undefined behavior on overflow, contrasted to only signed integers in C. This [facilitates optimizations that are not available in C](https://godbolt.org/z/n_nLEU).
-- Zig directly exposes a [SIMD vector type](https://ziglang.org/documentation/master/#Vectors), making it easy to write portable vectorized code.
+- La implementación de referencia usa LLVM como backend para optimizaciones avanzadas.
+- Zig hace automáticamente lo que otros proyectos llaman "Link Time Optimization"
+- Zig tiene habilitadas algunas características avanzadas de CPU para 'targets' nativos (-march=native), gracias al hecho de que el ['cross-compiling' es un caso de uso de primera clase](#cross-compiling-is-a-first-class-use-case).
+- 'undefined behavior' ha sido seleccionado cuidadosamente. En Zig, tipos enteros con o sin signo (signed/unsigned) presentan comportamiento indefinido (undefined behavior) al momento de desborde (overflow), en contraste a C que solo presenta esta característica en enteros con signo. Esto [facilita optimizaciones que no están disponibles en C](https://godbolt.org/z/n_nLEU).
+- Zig expone directamente un [tipo vector SIMD](https://ziglang.org/documentation/master/#Vectors), haciendo más simple escribir código portable con vectores.
 
-Please note that Zig is not a fully safe language. For those interested in following Zig's safety story, subscribe to these issues:
+Ten en cuenta que Zig no es un lenguaje completamente seguro. Si tienes interés en seguir la historia relacionada con la seguridad de Zig, suscríbete a los siguientes issues:
 
-- [enumerate all kinds of undefined behavior, even that which cannot be safety-checked](https://github.com/ziglang/zig/issues/1966)
-- [make Debug and ReleaseSafe modes fully safe](https://github.com/ziglang/zig/issues/2301)
+- [Enumeración de todos los tipos de 'undefined behavior', incluyendo aquellos que no pueden ser verificados por los chequeos de seguridad](https://github.com/ziglang/zig/issues/1966)
+- [Hacer los modos Debug y ReleaseSafe modos completamente seguros](https://github.com/ziglang/zig/issues/2301)
 
-## Zig competes with C instead of depending on it
+## Zig compite con C en vez de depender de el
 
-The Zig Standard Library integrates with libc, but does not depend on it. Here's Hello World:
+La biblioteca estándar de Zig se integra con libc, pero no depende de ella. Aquí está un Hello World:
 
 []($code.language('=html').buildAsset('features/4-hello.zig'))
 
-When compiled with `-O ReleaseSmall`, debug symbols stripped, single-threaded mode, this produces a 9.8 KiB static executable for the x86_64-linux target:
+Al compilar con `-O ReleaseSmall`, lo cual remueve símbolos de depuración y es un modo single-threaded, se produce un ejecutable estático de 9.8 KiB para la arquitectura x86_64-linux:
 ```
 $ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
 $ wc -c hello
@@ -84,7 +85,7 @@ $ ldd hello
   not a dynamic executable
 ```
 
-A Windows build is even smaller, coming out to 4096 bytes:
+En Windows se produce una compilación aún mas pequeña, llegando a 4096 bytes:
 ```
 $ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
 $ wc -c hello.exe
@@ -93,121 +94,122 @@ $ file hello.exe
 hello.exe: PE32+ executable (console) x86-64, for MS Windows
 ```
 
-## Order independent top level declarations
+## Declaraciones de nivel superior independientes de orden
 
-Top level declarations such as global variables are order-independent and lazily analyzed. The initialization values of global variables are [evaluated at compile-time](#compile-time-reflection-and-compile-time-code-execution).
+Las declaraciones de de nivel superior, como son las variables globales, son independientes de orden y analizadas en forma tardía. La inicialización de valores de variables globales es [evaluada en tiempo de compilación](#compile-time-reflection-and-compile-time-code-execution).
 
 []($code.language('=html').buildAsset('features/5-global-variables.zig'))
 
-## Optional type instead of null pointers
+## Tipo de dato Opcional en vez de punteros a null
 
-In other programming languages, null references are the source of many runtime exceptions, and even stand accused of being [the worst mistake of computer science](https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/).
+En otros lenguajes de programación, las referencias a null son una fuente de excepciones en tiempo de ejecución, incluso son acusadas de ser [el peor error en la ciencia de la computación](https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/).
 
-Unadorned Zig pointers cannot be null:
+Los punteros Zig (sin adornos) no pueden ser null:
 
 []($code.language('=html').buildAsset('features/6-null-to-ptr.zig'))
 
-However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with ?:
+No obstante, cualquier tipo pude ser un [tipo opcional](https://ziglang.org/documentation/master/#Optionals) utilizando el prefijo ?:
 
 []($code.language('=html').buildAsset('features/7-optional-syntax.zig'))
 
-To unwrap an optional value, one can use `orelse` to provide a default value:
+Para resolver un valor opcional, se puede usar `orelse` para proveer un valor por defecto:
 
 []($code.language('=html').buildAsset('features/8-optional-orelse.zig'))
 
-Another option is to use if:
+Otra opción es usar `if`:
 
 []($code.language('=html').buildAsset('features/9-optional-if.zig'))
 
- The same syntax works with [while](https://ziglang.org/documentation/master/#while):
+La misma sintaxis funciona con [while](https://ziglang.org/documentation/master/#while):
 
 []($code.language('=html').buildAsset('features/10-optional-while.zig'))
 
-## Manual memory management
+## Manejo manual de memoria
 
-A library written in Zig is eligible to be used anywhere:
+Una biblioteca escrita en Zig es elegible para ser usada en cualquier lugar:
 
-- [Desktop applications](https://github.com/TM35-Metronome/)
-- Low latency servers
-- [Operating System kernels](https://github.com/AndreaOrru/zen)
-- [Embedded devices](https://github.com/skyfex/zig-nrf-demo/)
-- Real-time software, e.g. live performances, airplanes, pacemakers
-- [In web browsers or other plugins with WebAssembly](https://shritesh.github.io/zigfmt-web/)
-- By other programming languages, using the C ABI
+- [Aplicaciones de escritorio](https://github.com/TM35-Metronome/)
+- Servidores de baja latencia
+- [Kernels de sistemas operativos](https://github.com/AndreaOrru/zen)
+- [Dispositivos embebidos](https://github.com/skyfex/zig-nrf-demo/)
+- Software en tiempo real, ejemplos: actuaciones en vivo, aviones, marcapasos
+- [En web browsers o plugins con WebAssembly](https://shritesh.github.io/zigfmt-web/)
+- Desde otros lenguajes de programación, usando el ABI de C
 
-In order to accomplish this, Zig programmers must manage their own memory, and must handle memory allocation failure.
+Para lograr esto, los programadores de Zig deben hacer un manejo de memoria manual y deben poder resolver fallas de asignación de memoria.
 
-This is true of the Zig Standard Library as well. Any functions that need to allocate memory accept an allocator parameter. As a result, the Zig Standard Library can be used even for the freestanding target.
+Esto también aplica para la biblioteca estándar de Zig. Cualquier función que requiera asignaciones de memoria acepta un parámetro 'allocator' (asignador de memoria). Como resultado, la biblioteca estándar de Zig pude ser usada para cualquier arquitectura objetivo.
 
-In addition to [A fresh take on error handling](#a-fresh-take-on-error-handling), Zig provides [defer](https://ziglang.org/documentation/master/#defer) and [errdefer](https://ziglang.org/documentation/master/#errdefer) to make all resource management - not only memory - simple and easily verifiable.
+Adicionalmente de lo dicho en [Una visión fresca sobre manejo de errores](#a-fresh-take-on-error-handling), Zig provee [defer](https://ziglang.org/documentation/master/#defer) y [errdefer](https://ziglang.org/documentation/master/#errdefer) para lograr que todo manejo de recursos, no solo de memoria, sea simple y fácilmente verificable.
 
-For an example of `defer`, see [Integration with C libraries without FFI/bindings](#integration-with-c-libraries-without-ffibindings). Here is an example of using `errdefer`:
+Como ejemplo de `defer`, ve [Integración con bibliotecas de C sin FFI/bindings](#integration-with-c-libraries-without-ffibindings). Este es un ejemplo del uso de `errdefer`:
 []($code.language('=html').buildAsset('features/11-errdefer.zig'))
 
 
-## A fresh take on error handling
+## Una visión fresca sobre manejo de errores
 
-Errors are values, and may not be ignored:
+Los errores son valores y no deben ser ignorados:
 
 []($code.language('=html').buildAsset('features/12-errors-as-values.zig'))
 
-Errors can be handled with [catch](https://ziglang.org/documentation/master/#catch):
+Los errores pueden ser manejados con [catch](https://ziglang.org/documentation/master/#catch):
 
 []($code.language('=html').buildAsset('features/13-errors-catch.zig'))
 
-The keyword [try](https://ziglang.org/documentation/master/#try) is a shortcut for `catch |err| return err`:
+La palabra reservada [try](https://ziglang.org/documentation/master/#try) es un atajo para `catch |err| return err`:
 
 []($code.language('=html').buildAsset('features/14-errors-try.zig'))
 
-Note that is an [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), not a [stack trace](#stack-traces-on-all-targets). The code did not pay the price of unwinding the stack to come up with that trace.
+Notese que se trata de una traza de error: [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), y no de una traza de pila: [stack trace](#stack-traces-on-all-targets). Este código no incurrió en el costo de deshilar el stack (pila) para arrojar esa traza.
 
-The [switch](https://ziglang.org/documentation/master/#switch) keyword used on an error ensures that all possible errors are handled:
+La plabra reservada [switch](https://ziglang.org/documentation/master/#switch), usada para evaluar un error asegura que todos los posibles errores sean manejados.
 
 []($code.language('=html').buildAsset('features/15-errors-switch.zig'))
 
-The keyword [unreachable](https://ziglang.org/documentation/master/#unreachable) is used to assert that no errors will occur:
+La palabra reservada [unreachable](https://ziglang.org/documentation/master/#unreachable) es usada para asumir que no ocurrirán errores:
 
 []($code.language('=html').buildAsset('features/16-unreachable.zig'))
 
-This invokes [undefined behavior](#performance-and-safety-choose-two) in the unsafe build modes, so be sure to use it only when success is guaranteed.
+Esto invoca [undefined behavior](#performance-and-safety-choose-two) (comportamiento indefinido) en modos de compilación no segura, asegúrate de solo utilizarla cuando esté garantizado que no habrá errores.
 
-### Stack traces on all targets
+### Stack traces (trazas de pila) en todas las arquitecturas objetivo
 
-The stack traces and [error return traces](https://ziglang.org/documentation/master/#Error-Return-Traces) shown on this page work on all Tier 1 Support and some Tier 2 Support targets. [Even freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
+Las stack traces (trazas de pila) y las [error return traces](https://ziglang.org/documentation/master/#Error-Return-Traces) (trazas de error) mostradas en esta página funcionan para targets (arquitecturas objetivo) de Soporte nivel 1 y algunas de Soporte nivel 2. [Incluso freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
 
-In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later:
+Adicionalmente, la biblioteca estándar es capaz de capturar trazas de pila en cualquier punto para posteriormente arrojarlas a la salida de error estándar:
 
 []($code.language('=html').buildAsset('features/17-stack-traces.zig'))
 
-You can see this technique being used in the ongoing [GeneralPurposeDebugAllocator project](https://github.com/andrewrk/zig-general-purpose-allocator/#current-status).
+Puedes ver como se emplea esta técnica en el [proyecto GeneralPurposeDebugAllocator](https://github.com/andrewrk/zig-general-purpose-allocator/#current-status).
 
-## Generic data structures and functions
+## Estructuras genéricas de datos y funciones
 
-Types are values that must be known at compile-time:
+Los tipos de datos son valores y esto debe ser conocido en tiempo de compilacion:
 
 []($code.language('=html').buildAsset('features/18-types.zig'))
 
-A generic data structure is simply a function that returns a `type`:
+Una estructura genérica de datos es simplemente una función que retorna un `tipo`:
 
 []($code.language('=html').buildAsset('features/19-generics.zig'))
 
-## Compile-time reflection and compile-time code execution
+## Introspección y ejecución de código en tiempo de compilación
 
-The [@typeInfo](https://ziglang.org/documentation/master/#typeInfo) builtin function provides reflection:
+La función [@typeInfo](https://ziglang.org/documentation/master/#typeInfo) provee introspección (reflection):
 
 []($code.language('=html').buildAsset('features/20-reflection.zig'))
 
-The Zig Standard Library uses this technique to implement formatted printing. Despite being a [Small, simple language](#small-simple-language), Zig's formatted printing is implemented entirely in Zig. Meanwhile, in C, compile errors for printf are hard-coded into the compiler. Similarly, in Rust, the formatted printing macro is hard-coded into the compiler.
+La biblioteca estándar de Zig utiliza esta técnica para implementar salida formateada.
+No obstante de ser un [lenguaje compacto y simple](#small-simple-language), el formateo de salida de Zig está implementado completamente con el mismo lenguaje Zig. Mientras tanto en C, los errores de compilación para `printf` están codificados manualmente dentro del compilador. De forma similar, en Rust, el macro para salida formateada esta codificado dentro del compilador.
 
-Zig can also evaluate functions and blocks of code at compile-time. In some contexts, such as global variable initializations, the expression is implicitly evaluated at compile-time. Otherwise, one can explicitly evaluate code at compile-time with the [comptime](https://ziglang.org/documentation/master/#comptime) keyword. This can be especially powerful when combined with assertions:
+Zig es capaz de evaluar funciones y bloques de código en tiempo de compilación. En algunos contextos tales como inicialización de variables globales, la expresión se evalua implícitamente en tiempo de compilación. Además de esto, es posible evaluar código en tiempo de compilación con la palabra reservada [comptime](https://ziglang.org/documentation/master/#comptime). Esta característica, combinada con 'assertions' de pruebas aporta gran poder:
 
 []($code.language('=html').buildAsset('features/21-comptime.zig'))
 
-## Integration with C libraries without FFI/bindings
+## Integración con bibliotecas de C sin FFI/bindings
 
-[@cImport](https://ziglang.org/documentation/master/#cImport) directly imports types, variables, functions, and simple macros for use in Zig. It even translates inline functions from C into Zig.
+[@cImport](https://ziglang.org/documentation/master/#cImport) importa directamente tipos, variables, funciones y macros simples para ser usados en Zig. Incluso traduce funciones 'inline' de C a Zig.
 
-Here is an example of emitting a sine wave using [libsoundio](http://libsound.io/):
+Este es un ejemplo de como emitir una onda sinusoidal usando [libsoundio](http://libsound.io/):
 
 <u>sine.zig</u>
 []($code.language('=html').buildAsset('features/22-sine-wave.zig'))
@@ -219,13 +221,13 @@ Output device: Built-in Audio Analog Stereo
 ^C
 ```
 
-[This Zig code is significantly simpler than the equivalent C code](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8), as well as having more safety protections, and all this is accomplished by directly importing the C header file - no API bindings.
+[Este código Zig es significativamente mas simple que su equivalente en C](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8), además de contar con mayores protecciones de seguridad y todo esto se logra importando directamente archivos de encabezado de C y no 'bindings' de API.
 
-*Zig is better at using C libraries than C is at using C libraries.*
+*Zig es mejor usando bibliotecas de C que el mismo C.*
 
-### Zig is also a C compiler
+### Zig es también un compilador de C
 
-Here's an example of Zig building some C code:
+Este es un ejemplo de Zig compilado algo de código C:
 
 <u>hello.c</u>
 ```c
@@ -243,13 +245,13 @@ $ ./hello
 Hello world
 ```
 
-You can use `--verbose-cc` to see what C compiler command this executed:
+Puedes usar la opción `--verbose-cc` para ver que comando del compilador de C fue ejecutado:
 ```
 $ zig build-exe hello.c --library c --verbose-cc
 zig cc -MD -MV -MF .zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o .zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC
 ```
 
-Note that if you run the command again, there is no output, and it finishes instantly:
+Observa que si se ejecuta el comando de nuevo, no habrá salida y el comando termina al instante:
 ```
 $ time zig build-exe hello.c --library c --verbose-cc
 
@@ -258,28 +260,28 @@ user	0m0.018s
 sys	0m0.009s
 ```
 
-This is thanks to [Build Artifact Caching](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching). Zig automatically parses the .d file uses a robust caching system to avoid duplicating work.
+Esto ocurre gracias a [Build Artifact Caching](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching). Zig, automaticamente interpreta el archivo .d utilizando un robusto sistema de cache para evitar duplicar el trabajo.
 
-Not only can Zig compile C code, but there is a very good reason to use Zig as a C compiler: [Zig ships with libc](#zig-ships-with-libc).
+Existe un buen motivo para usar Zig como compilador de C: [Zig ships with libc](#zig-ships-with-libc).
 
-### Export functions, variables, and types for C code to depend on
+### Funciones, variables y tipos de exportación como dependencias de código C
 
-One of the primary use cases for Zig is exporting a library with the C ABI for other programming languages to call into. The `export` keyword in front of functions, variables, and types causes them to be part of the library API:
+Uno de los principales casos de uso de Zig es exportar una biblioteca con el ABI de C para ser llamada desde otros lenguajes de programación. La palabra reservada `export` antes del nombre de una función, variable o definición de tipo, hace que dichos elementos sean parte de la API de la biblioteca:
 
 <u>mathtest.zig</u>
 []($code.language('=html').buildAsset('features/23-math-test.zig'))
 
-To make a static library:
+Para crear una biblioteca estática:
 ```
 $ zig build-lib mathtest.zig
 ```
 
-To make a shared library:
+Para crear una biblioteca compartida:
 ```
 $ zig build-lib mathtest.zig -dynamic
 ```
 
-Here is an example with the [Zig Build System](#zig-build-system):
+Este es un ejemplo con el [Zig Build System](#zig-build-system):
 
 <u>test.c</u>
 ```c
@@ -301,13 +303,13 @@ $ zig build test
 1379
 ```
 
-## Cross-compiling is a first-class use case
+## Cross-compiling (compilación para arquitectura objetivo distinta) es un caso de uso de primera clase
 
-Zig can build for any of the targets from the Support Table (see latest release notes) with Tier 3 Support or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
+Zig puede compilar para cualquiera de los objetivos en Support Table(ver las release notes más recientes) con Tier 3 Support o mayor. No se necesitan herramientas adicionales. Este es un ejemplo nativo de Hello World:
 
 []($code.language('=html').buildAsset('features/4-hello.zig'))
 
-Now to build it for x86_64-windows, x86_64-macos, and aarch64-linux:
+Para compilar este ejemplo específicamente para arquitecturas x86_64-windows, x86_64-macos, y aarch64-linux:
 ```
 $ zig build-exe hello.zig -target x86_64-windows
 $ file hello.exe
@@ -320,11 +322,11 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
 
-This works on any Tier 3+ target, for any Tier 3+ target.
+Esto aplica en cualquier objetivo Tier 3+, para cualquier objetivo Tier 3+.
 
-### Zig ships with libc
+### libc viene incluida en Zig
 
-You can find the available libc targets with `zig targets`:
+Puedes encontrar las arquitecturas objetivo libc con `zig targets`:
 ```
 ...
  "libc": [
@@ -377,9 +379,9 @@ You can find the available libc targets with `zig targets`:
  ],
  ```
 
-What this means is that `--library c` for these targets *does not depend on any system files*!
+Esto significa que `--library c` para estos objetivos *no depende de ningun archivo del sistema*!
 
-Let's look at that [C hello world example](#zig-is-also-a-c-compiler) again:
+Demos de nuevo un vistazo al [ejemplo de hello world en C](#zig-is-also-a-c-compiler):
 ```
 $ zig build-exe hello.c --library c
 $ ./hello
@@ -394,7 +396,7 @@ $ ldd ./hello
 	/lib/ld-linux-x86-64.so.2 => /lib64/ld-linux-x86-64.so.2 (0x00007fc4b6672000)
 ```
 
-[glibc](https://www.gnu.org/software/libc/) does not support building statically, but [musl](https://www.musl-libc.org/) does:
+[glibc](https://www.gnu.org/software/libc/) no soporta compilar en forma estática, pero [musl](https://www.musl-libc.org/) si:
 ```
 $ zig build-exe hello.c --library c -target x86_64-linux-musl
 $ ./hello
@@ -403,26 +405,26 @@ $ ldd hello
   not a dynamic executable
 ```
 
-In this example, Zig built musl libc from source and then linked against it. The build of musl libc for x86_64-linux remains available thanks to the [caching system](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching), so any time this libc is needed again it will be available instantly.
+En este ejemplo, Zig compiló musl libc desde los fuentes para luego proceder a hacer el 'link'. La compilación de musl libc para x86_64-linux se mantiene disponible gracias al [sistema de cache](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching), de manera que esta libc estará disponible cuando sea necesaria inmediatamente.
 
-This means that this functionality is available on any platform. Windows and macOS users can build Zig and C code, and link against libc, for any of the targets listed above. Similarly code can be cross compiled for other architectures:
+Esta funcionalidad está disponible en cualquier plataforma. Los usuarios de Windows y macOs pueden compilar código Zig y C y efectuar link con libc para cualquiera de los objetivos listados arriba. De igual forma, el código puede ser compilado entre otras arquitecturas(cross-compiled):
 ```
 $ zig build-exe hello.c --library c -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
 
-In some ways, Zig is a better C compiler than C compilers!
+De alguna forma, Zig es un mejor compilador de C que el mismo C!
 
-This functionality is more than bundling a cross-compilation toolchain along with Zig. For example, the total size of libc headers that Zig ships is 22 MiB uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux headers), yet Zig currently ships with 40 libcs. With a naive bundling that would be 444 MiB. However, thanks to this [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig), and some [good old manual labor](https://github.com/ziglang/zig/wiki/Updating-libc), Zig binary tarballs remain roughly 30 MiB total, despite supporting libc for all these targets, as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler. For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132 MiB.
+Esta funcionalidad es mas que construir una cadena de herramientas de inter-compilación con Zig. Por ejemplo, el tamaño total los encabezados de libc que vienen con Zig es de 22 MiB sin comprimir. Mientras tanto, los encabezados de musl libc + encabezados de linux en solamente x86_64 son 8 MiB y para glibc 3.1 MiB (glibc no incluye los encabezados de linux), aun así, Zig se distribuye con 40 diferentes libc. Con una compilación típica, esto resultaría en 444 MiB. Gracias al [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig) y un poco de [trabajo manual](https://github.com/ziglang/zig/wiki/Updating-libc), Los tarballs (archivos tar comprimidos) de binarios de Zig se mantienen en aproximadamente 30 MiB en total a pesar de soportar libc para todos estas arquitecturas y soportar compiler-rt, libunwind y libcxx y a pesar de ser un compilador compatible con C. Como comparación, el binario de Windows para clang 8.0.0 de llvm.org es de 132 MiB.
 
-Note that only the Tier 1 Support targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
+Ten en cuenta que solo las arquitecturas de Tire 1 Support han sido probadas exhaustivamente. Hay planes para [añadir más libcs](https://github.com/ziglang/zig/issues/514) (incluyendo Windows) y para [añadir cobertura de pruebas para compilar hacia todas las libc](https://github.com/ziglang/zig/issues/2058).
 
-It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](#zig-build-system) attractive for Zig programmers and C programmers alike.
+Está planeado [tener un manejador de paquetes para Zig](https://github.com/ziglang/zig/issues/943), pero aun no está listo. Una de las cosas que serán posibles es la capacidad de crear un paquete para bibliotecas de C. Esto hará el [sistema de compilación de Zig](#zig-build-system) atractivo tanto para programadores de Zig como de C.
 
-## Zig Build System
+## El sistema de compilación de Zig
 
-Zig comes with a build system, so you don't need make, cmake, or anything like that.
+Zig viene con un sistema de compilación, de tal forma que no necesitas make, cmake o nada parecido. 
 ```
 $ zig init-exe
 Created build.zig
@@ -439,7 +441,7 @@ Next, try `zig build --help` or `zig build run`
 []($code.language('=html').buildAsset('features/26-build.zig'))
 
 
-Let's have a look at that `--help` menu.
+Veamos el menú `--help`.
 ```
 $ zig build --help
 Usage: zig build [steps] [options]
@@ -475,45 +477,43 @@ Advanced Options:
   --verbose-llvm-cpu-features Enable compiler debug output for LLVM CPU features
 ```
 
-You can see that one of the available steps is run.
+Podemos ver que uno de los pasos es `run`.
 ```
 $ zig build run
 All your base are belong to us.
 ```
 
-Here are some example build scripts:
+Aquí, algunos ejemplos de scripts de compilación:
 
 - [Build script of OpenGL Tetris game](https://github.com/andrewrk/tetris/blob/master/build.zig)
 - [Build script of bare metal Raspberry Pi 3 arcade game](https://github.com/andrewrk/clashos/blob/master/build.zig)
 - [Build script of self-hosted Zig compiler](https://github.com/ziglang/zig/blob/master/build.zig)
 
-## Concurrency via Async Functions
+## Concurrencia vía funciones asíncronas
 
-Zig 0.5.0 [introduced async functions](https://ziglang.org/download/0.5.0/release-notes.html#Async-Functions). This feature has no dependency on a host operating system or even heap-allocated memory. That means async functions are available for the freestanding target.
+Zig 0.5.0 [introdujo funciones asincronas](https://ziglang.org/download/0.5.0/release-notes.html#Async-Functions). Esta característica no tiene dependencia con un sistema operativo o memoria asignada. Las funciones asíncronas están disponibles independientemente de la arquitectura.
 
-Zig infers whether a function is async, and allows `async`/`await` on non-async functions, which means that **Zig libraries are agnostic of blocking vs async I/O**. [Zig avoids function colors](http://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/).
+Zig puede inferir si una función es asíncrona o no y permite `async/await` en funciones no asíncronas, lo que significa que **las bibliotecas de Zig son agnósticas con respecto a I/O (entrada/salida) blocking vs. async**. [Zig avoids function colors](http://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/).
 
+La biblioteca estándar de Zig implementa un loop de evento que multiplexa funciones 'async' en un pool de hilos para concurrencia M:N. Seguridad multi-hilo y detección de 'race conditions' son áreas de investigación continua.
 
+## Amplia gama de arquitecturas soportadas
 
-The Zig Standard Library implements an event loop that multiplexes async functions onto a thread pool for M:N concurrency. Multithreading safety and race detection are areas of active research.
+Zig utilíza un sistema de "support tier" (nivel de soporte) para comunicar el nivel de soporte de diferentes arquitecturas.
 
-## Wide range of targets supported
+[Tabla de soporte en la versión 0.11.0 de Zig](https://ziglang.org/download/0.11.0/release-notes.html#Support-Table)
 
-Zig uses a "support tier" system to communicate the level of support for different targets.
+## Amigable con los desarrolladores de paquetes
 
-[Support Table as of Zig 0.11.0](https://ziglang.org/download/0.11.0/release-notes.html#Support-Table)
+El compilador estándar de Zig no está completamente auto-contenido aún, no obstante [permanecerá a exactamente 3 pasos](https://github.com/ziglang/zig/issues/853) de ser un compilador de C++ a ser un compilador totalmente autocontenido para cualquier plataforma. Como lo menciona Maya Rashish [portar Zig a otras plataformas es divertido y rápido](http://coypu.sdf.org/porting-zig.html).
 
-## Friendly toward package maintainers
+[Los modos de compilación sin depuración](https://ziglang.org/documentation/master/#Build-Mode) son reproducibles y deterministicos.
 
-The reference Zig compiler is not completely self-hosted yet, but no matter what, [it will remain exactly 3 steps](https://github.com/ziglang/zig/issues/853) to go from having a system C++ compiler to having a fully self-hosted Zig compiler for any target. As Maya Rashish notes, [porting Zig to other platforms is fun and speedy](http://coypu.sdf.org/porting-zig.html).
+Existe una [versión JSON de la página de descargas](https://ziglang.org/download/index.json).
 
-Non-debug [build modes](https://ziglang.org/documentation/master/#Build-Mode) are reproducible/deterministic.
+Muchos miembros del equipo de Zig tienen experiencia manteniendo paquetes.
 
-There is a [JSON version of the download page](https://ziglang.org/download/index.json).
-
-Several members of the Zig team have experience maintaining packages.
-
-- [Daurnimator](https://github.com/daurnimator) maintains the [Arch Linux package](https://archlinux.org/packages/extra/x86_64/zig/)
-- [Marc Tiehuis](https://tiehuis.github.io/) maintains the Visual Studio Code package.
-- [Andrew Kelley](https://andrewkelley.me/) spent a year or so doing [Debian and Ubuntu packaging](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), and casually contributes to [nixpkgs](https://github.com/NixOS/nixpkgs/).
-- [Jeff Fowler](https://blog.jfo.click/) maintains the Homebrew package and started the [Sublime package](https://github.com/ziglang/sublime-zig-language) (now maintained by [emekoi](https://github.com/emekoi)).
+- [Daurnimator](https://github.com/daurnimator) mantiene el [paquete para Arch Linux](https://archlinux.org/packages/extra/x86_64/zig/)
+- [Marc Tiehuis](https://tiehuis.github.io/) mantiene el paquete de Visual Studio Code.
+- [Andrew Kelley](https://andrewkelley.me/) trabajó por un año desarrollando [paquetes para Debian y Ubuntu](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), y ocasionalmente contribuye con [nixpkgs](https://github.com/NixOS/nixpkgs/).
+- [Jeff Fowler](https://blog.jfo.click/) mantiene el paquete Homebrew e inició el [paquete Sublime](https://github.com/ziglang/sublime-zig-language) (hoy mantenido por [emekoi](https://github.com/emekoi)).
