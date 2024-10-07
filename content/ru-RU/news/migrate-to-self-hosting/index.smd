@@ -1,0 +1,82 @@
+---
+.title = "Migrating from AWS to Self-Hosting",
+.date = "2024-09-12T20:52:45.536Z",
+.author = "Andrew Kelley",
+.layout = "news-page.shtml",
+.custom = {
+  "mobile_menu_title": "Website Migration",
+}
+---
+
+You often hear this story in tech news: some project got increasingly popular,
+so they had to migrate from their simple, one-computer setup to some kind of
+autoscaling cloud hosting solution to meet demands.
+
+The Rust Foundation for example, reports that they spent
+[$404,400 on infrastructure costs in 2023](https://foundation.rust-lang.org/static/publications/annual-reports/annual-report-2023.pdf).
+That's 88% of ZSF's [entire operating costs in 2024](https://ziglang.org/news/2024-financials/).
+It's hard to find the exact number from Python Software Foundation's financials because their infrastructure
+costs are sponsored, but suffice to say
+[PyPI wheel storage is huge and exponentially growing](https://www.youtube.com/watch?v=HPmefnqirHk):
+
+![PyPI data storage over time](pypi.png)
+
+[source](https://py-code.org/stats)
+
+In this story, however, we take the opposite approach.
+
+ziglang.org used to be hosted on Amazon S3 + CloudFront, but as it became more
+expensive to run due to increased traffic, we have migrated to a one-computer
+solution for the website and tarball hosting.
+
+Our AWS costs over the last 6 years looks like this:
+
+![](aws-expenses.png "graph of ZSF AWS monthly costs going up")
+
+Amazon sometimes offers free credits to organizations like ours, but despite
+being a non-profit with our primary source of income being unrestricted
+donations, we don't like begging for money, especially from Jeff Bezos and his
+ilk. We like the idea of increasing overall computing efficiency rather than
+externalizing costs onto someone with deep pockets.
+
+The thing is, ziglang.org is not an essential service. It's not really an
+emergency if it goes down, and 99% uptime is perfectly fine for this use case.
+The funny thing about that [last 1% of uptime is that it represents 99% of the
+costs](https://en.wikipedia.org/wiki/Pareto_principle).
+
+With that in mind, here is the plan. As traffic to ziglang.org continues to
+increase, we will continue to host the website and tarballs on the same €36
+Hetzner instance, perhaps someday upgrading it to a €100-200 beefier machine,
+but not more than that.
+
+If the website is temporarily unavailable because of too much traffic, so be
+it. If it gets accidentally DDoS'd by too many people not [properly caching
+their CI runs](https://ziggit.dev/t/github-actions-mlugg-setup-zig/4659), so be
+it. That's why we sign artifacts with a static public key, so that you can use
+mirrors.
+
+Instead of spending donation money eating these costs which are ultimately due
+to inefficient use of computing resources, we push those otherwise hidden costs
+onto users of Zig, causing Zig users in general to avoid waste, and then we
+have more money to spend on paying contributors for their time.
+
+So far, so good. We're enjoying instant website deploys rather than waiting 5
+minutes after pushing.
+
+![Before: 5 minutes](deploy-before.png)
+
+![After: instant](deploy-after.png)
+
+Moving forward, we'll look into providing torrent files for releases. In the
+meantime, big thanks to [slimsag](https://slimsag.com/) and
+[hryx](https://hryx.net/) for [providing mirrors of Zig
+releases](https://github.com/mlugg/setup-zig/blob/45d39f8bb4d61ccfb37ea3bd0ad319a5f20e4e77/main.js#L18-L21).
+If you want to join them, please submit a pull request to [Setup Zig
+Compiler](https://github.com/marketplace/actions/setup-zig-compiler). In any
+case, by using this particular GitHub Action that integrates with mirrors,
+you'll not only be doing us a favor, but you'll make your own CI more
+resilient.
+
+Happy hacking,
+
+Andrew
