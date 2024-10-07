@@ -169,6 +169,12 @@ pub fn build(b: *std.Build) void {
                 .site_title = "Zig Programming Language",
                 .content_dir_path = "content/ja-JP",
             },
+            .{
+                .code = "zh-CN",
+                .name = "中文",
+                .site_title = "Zig 编程语言",
+                .content_dir_path = "content/zh-CN",
+            },
         },
     });
 }
