@@ -113,6 +113,7 @@ CMAKE_GENERATOR=Ninja ./build aarch64-windows-gnu baseline
 CMAKE_GENERATOR=Ninja ./build x86-windows-gnu baseline
 CMAKE_GENERATOR=Ninja ./build arm-linux-musleabihf baseline
 CMAKE_GENERATOR=Ninja ./build loongarch64-linux-musl baseline
+CMAKE_GENERATOR=Ninja ./build s390x-linux-musl baseline
 
 ZIG="$BOOTSTRAP_SRC/out/host/bin/zig"
 
@@ -132,6 +133,7 @@ cp -r $BOOTSTRAP_SRC/out/zig-aarch64-windows-gnu-baseline zig-windows-aarch64-$Z
 cp -r $BOOTSTRAP_SRC/out/zig-x86-windows-gnu-baseline zig-windows-x86-$ZIG_VERSION/
 #cp -r $BOOTSTRAP_SRC/out/zig-x86_64-freebsd-gnu-baseline zig-freebsd-x86_64-$ZIG_VERSION/
 cp -r $BOOTSTRAP_SRC/out/zig-loongarch64-linux-musl-baseline zig-linux-loongarch64-$ZIG_VERSION/
+cp -r $BOOTSTRAP_SRC/out/zig-s390x-linux-musl-baseline zig-linux-s390x-$ZIG_VERSION/
 
 XZ_OPT=-9 tar cJf zig-linux-x86_64-$ZIG_VERSION.tar.xz zig-linux-x86_64-$ZIG_VERSION/ --sort=name
 XZ_OPT=-9 tar cJf zig-macos-x86_64-$ZIG_VERSION.tar.xz zig-macos-x86_64-$ZIG_VERSION/ --sort=name
@@ -147,6 +149,7 @@ XZ_OPT=-9 tar cJf zig-linux-powerpc64le-$ZIG_VERSION.tar.xz zig-linux-powerpc64l
 7z a zig-windows-x86-$ZIG_VERSION.zip zig-windows-x86-$ZIG_VERSION/
 #XZ_OPT=-9 tar cJf zig-freebsd-x86_64-$ZIG_VERSION.tar.xz zig-freebsd-x86_64-$ZIG_VERSION/ --sort=name
 XZ_OPT=-9 tar cJf zig-linux-loongarch64-$ZIG_VERSION.tar.xz zig-linux-loongarch64-$ZIG_VERSION/ --sort=name
+XZ_OPT=-9 tar cJf zig-linux-s390x-$ZIG_VERSION.tar.xz zig-linux-s390x-$ZIG_VERSION/ --sort=name
 
 echo | minisign -Sm zig-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-bootstrap-$ZIG_VERSION.tar.xz
@@ -165,6 +168,7 @@ echo | minisign -Sm zig-windows-aarch64-$ZIG_VERSION.zip
 echo | minisign -Sm zig-windows-x86-$ZIG_VERSION.zip
 #echo | minisign -Sm zig-freebsd-x86_64-$ZIG_VERSION.tar.xz
 echo | minisign -Sm zig-linux-loongarch64-$ZIG_VERSION.tar.xz
+echo | minisign -Sm zig-linux-s390x-$ZIG_VERSION.tar.xz
 
 # Delete builds older than 30 days so the server does not run out of disk space.
 WWW_PREFIX="/var/www/html"
@@ -198,6 +202,7 @@ cp zig-windows-x86_64-$ZIG_VERSION.zip.minisig        "$WWW_PREFIX/builds/"
 cp zig-windows-aarch64-$ZIG_VERSION.zip.minisig       "$WWW_PREFIX/builds/"
 cp zig-windows-x86-$ZIG_VERSION.zip.minisig           "$WWW_PREFIX/builds/"
 cp zig-linux-loongarch64-$ZIG_VERSION.tar.xz          "$WWW_PREFIX/builds/"
+cp zig-linux-s390x-$ZIG_VERSION.tar.xz                "$WWW_PREFIX/builds/"
 
 export SRC_TARBALL="zig-$ZIG_VERSION.tar.xz"
 export SRC_SHASUM=$(sha256sum "zig-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)
@@ -267,6 +272,9 @@ export LOONGARCH64_LINUX_TARBALL="zig-linux-loongarch64-$ZIG_VERSION.tar.xz"
 export LOONGARCH64_LINUX_BYTESIZE=$(wc -c < "zig-linux-loongarch64-$ZIG_VERSION.tar.xz")
 export LOONGARCH64_LINUX_SHASUM="$(sha256sum "zig-linux-loongarch64-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
+export S390X_LINUX_TARBALL="zig-linux-s390x-$ZIG_VERSION.tar.xz"
+export S390X_LINUX_BYTESIZE=$(wc -c < "zig-linux-s390x-$ZIG_VERSION.tar.xz")
+export S390X_LINUX_SHASUM="$(sha256sum "zig-linux-s390x-$ZIG_VERSION.tar.xz" | cut '-d ' -f1)"
 
 export MASTER_DATE="$(date +%Y-%m-%d)"
 export MASTER_VERSION="$ZIG_VERSION"
