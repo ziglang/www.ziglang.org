@@ -172,7 +172,7 @@ echo | minisign -Sm zig-linux-s390x-$ZIG_VERSION.tar.xz
 
 # Delete builds older than 30 days so the server does not run out of disk space.
 WWW_PREFIX="/var/www/html"
-find $WWW_PREFIX/* -ctime +30 -exec rm -rf {} \;
+find $WWW_PREFIX/builds/* -ctime +30 -exec rm -rf {} \;
 mkdir -p "$WWW_PREFIX/builds"
 
 cp zig-$ZIG_VERSION.tar.xz                            "$WWW_PREFIX/builds/"
