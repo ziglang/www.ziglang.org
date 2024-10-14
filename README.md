@@ -2,7 +2,7 @@
 
 Website for [Zig](https://github.com/ziglang/zig).
 
-## How to run locally
+## How to Run Locally
 
 We use [Zine](https://zine-ssg.io) for static site generation.
 
@@ -16,7 +16,7 @@ Once you have the correct version of Zig setup, simply run:
 zig build serve
 ```
 
-### Get editor support
+### Get Editor Support
 
 This step is optional but highly recommended.
 
@@ -24,7 +24,7 @@ Follow [the instructions](https://zine-ssg.io/docs/editors/) on the official Zin
 
 Following this step will give you syntax highlighting and LSP support for the templating language.
 
-## Writing a translation
+## Writing a Translation
 
 See [the Zine documentation](https://zine-ssg.io/docs/) to learn more about content and templating syntax.
 
@@ -36,7 +36,7 @@ To recap, a translation needs to:
 - have a corresponding Ziggy file under `i18n/`, containing the localized version of every phrase used throughout the site
 - have all content files translated, with the exception of `news` and `devlog` that should not be translated
 
-### Getting help
+### Getting Help
 
 Crafting a translation is not a straight-forward process. You have to think about adaptation, spatial constraints (in the front page especially), and other Zine-specific issues that might not be immediately obvious.
 
