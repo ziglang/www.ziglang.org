@@ -111,7 +111,9 @@ pub fn build(b: *std.Build) void {
         .assets_dir_path = "assets",
         .build_assets = build_assets.items,
         .static_assets = &.{
-            "funding/funding.json",
+            ".well-known/funding-manifest-urls",
+            "funding.json",
+
             "external-link-dark.svg",
             "external-link-light.svg",
             "heart.svg",
