@@ -1,0 +1,519 @@
+---
+.title = "Overview",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Overview",
+},
+---
+# Feature Highlights
+## Small, simple language
+
+Focus on debugging your application rather than debugging your programming language knowledge.
+
+Zig's entire syntax is specified with a [580-line PEG grammar file](https://ziglang.org/documentation/master/#Grammar).
+
+There is **no hidden control flow**, no hidden memory allocations, no preprocessor, and no macros. If Zig code doesn't look like it's jumping away to call a function, then it isn't. This means you can be sure that the following code calls only `foo()` and then `bar()`, and this is guaranteed without needing to know the types of anything:
+
+```zig
+var a = b + c.d;
+foo();
+bar();
+```
+
+Examples of hidden control flow:
+
+- D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
+- C++, D, and Rust have operator overloading, so the `+` operator might call a function.
+- C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called.
+
+ Zig promotes code maintenance and readability by making all control flow managed exclusively with language keywords and function calls.
+
+## Performance and Safety: Choose Two
+
+Zig has four [build modes](https://ziglang.org/documentation/master/#Build-Mode), and they can all be mixed and matched all the way down to [scope granularity](https://ziglang.org/documentation/master/#setRuntimeSafety).
+
+| Parameter | [Debug](/documentation/master/#Debug) | [ReleaseSafe](/documentation/master/#ReleaseSafe) | [ReleaseFast](/documentation/master/#ReleaseFast) | [ReleaseSmall](/documentation/master/#ReleaseSmall) |
+|-----------|-------|-------------|-------------|--------------|
+Optimizations - improve speed, harm debugging, harm compile time | | -O3 | -O3| -Os |
+Runtime Safety Checks - harm speed, harm size, crash instead of undefined behavior | On | On | | |
+
+Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode:
+
+[]($code.language('=html').buildAsset('features/1-integer-overflow.zig'))
+
+Here is what it looks like at runtime, in safety-checked builds:
+
+[]($code.language('=html').buildAsset('features/2-integer-overflow-runtime.zig'))
+
+
+Those [stack traces work on all targets](#stack-traces-on-all-targets), including [freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html).
+
+With Zig one can rely on a safety-enabled build mode, and selectively disable safety at the performance bottlenecks. For example the previous example could be modified like this:
+
+[]($code.language('=html').buildAsset('features/3-undefined-behavior.zig'))
+
+Zig uses [undefined behavior](https://ziglang.org/documentation/master/#Undefined-Behavior) as a razor sharp tool for both bug prevention and performance enhancement.
+
+Speaking of performance, Zig is faster than C.
+
+- The reference implementation uses LLVM as a backend for state of the art optimizations.
+- What other projects call "Link Time Optimization" Zig does automatically.
+- For native targets, advanced CPU features are enabled (-march=native), thanks to the fact that [Cross-compiling is a first-class use case](#cross-compiling-is-a-first-class-use-case).
+- Carefully chosen undefined behavior. For example, in Zig both signed and unsigned integers have undefined behavior on overflow, contrasted to only signed integers in C. This [facilitates optimizations that are not available in C](https://godbolt.org/z/n_nLEU).
+- Zig directly exposes a [SIMD vector type](https://ziglang.org/documentation/master/#Vectors), making it easy to write portable vectorized code.
+
+Please note that Zig is not a fully safe language. For those interested in following Zig's safety story, subscribe to these issues:
+
+- [enumerate all kinds of undefined behavior, even that which cannot be safety-checked](https://github.com/ziglang/zig/issues/1966)
+- [make Debug and ReleaseSafe modes fully safe](https://github.com/ziglang/zig/issues/2301)
+
+## Zig competes with C instead of depending on it
+
+The Zig Standard Library integrates with libc, but does not depend on it. Here's Hello World:
+
+[]($code.language('=html').buildAsset('features/4-hello.zig'))
+
+When compiled with `-O ReleaseSmall`, debug symbols stripped, single-threaded mode, this produces a 9.8 KiB static executable for the x86_64-linux target:
+```
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded
+$ wc -c hello
+9944 hello
+$ ldd hello
+  not a dynamic executable
+```
+
+A Windows build is even smaller, coming out to 4096 bytes:
+```
+$ zig build-exe hello.zig -O ReleaseSmall -fstrip -fsingle-threaded -target x86_64-windows
+$ wc -c hello.exe
+4096 hello.exe
+$ file hello.exe
+hello.exe: PE32+ executable (console) x86-64, for MS Windows
+```
+
+## Order independent top level declarations
+
+Top level declarations such as global variables are order-independent and lazily analyzed. The initialization values of global variables are [evaluated at compile-time](#compile-time-reflection-and-compile-time-code-execution).
+
+[]($code.language('=html').buildAsset('features/5-global-variables.zig'))
+
+## Optional type instead of null pointers
+
+In other programming languages, null references are the source of many runtime exceptions, and even stand accused of being [the worst mistake of computer science](https://www.lucidchart.com/techblog/2015/08/31/the-worst-mistake-of-computer-science/).
+
+Unadorned Zig pointers cannot be null:
+
+[]($code.language('=html').buildAsset('features/6-null-to-ptr.zig'))
+
+However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with ?:
+
+[]($code.language('=html').buildAsset('features/7-optional-syntax.zig'))
+
+To unwrap an optional value, one can use `orelse` to provide a default value:
+
+[]($code.language('=html').buildAsset('features/8-optional-orelse.zig'))
+
+Another option is to use if:
+
+[]($code.language('=html').buildAsset('features/9-optional-if.zig'))
+
+ The same syntax works with [while](https://ziglang.org/documentation/master/#while):
+
+[]($code.language('=html').buildAsset('features/10-optional-while.zig'))
+
+## Manual memory management
+
+A library written in Zig is eligible to be used anywhere:
+
+- [Desktop applications](https://github.com/TM35-Metronome/)
+- Low latency servers
+- [Operating System kernels](https://github.com/AndreaOrru/zen)
+- [Embedded devices](https://github.com/skyfex/zig-nrf-demo/)
+- Real-time software, e.g. live performances, airplanes, pacemakers
+- [In web browsers or other plugins with WebAssembly](https://shritesh.github.io/zigfmt-web/)
+- By other programming languages, using the C ABI
+
+In order to accomplish this, Zig programmers must manage their own memory, and must handle memory allocation failure.
+
+This is true of the Zig Standard Library as well. Any functions that need to allocate memory accept an allocator parameter. As a result, the Zig Standard Library can be used even for the freestanding target.
+
+In addition to [A fresh take on error handling](#a-fresh-take-on-error-handling), Zig provides [defer](https://ziglang.org/documentation/master/#defer) and [errdefer](https://ziglang.org/documentation/master/#errdefer) to make all resource management - not only memory - simple and easily verifiable.
+
+For an example of `defer`, see [Integration with C libraries without FFI/bindings](#integration-with-c-libraries-without-ffibindings). Here is an example of using `errdefer`:
+[]($code.language('=html').buildAsset('features/11-errdefer.zig'))
+
+
+## A fresh take on error handling
+
+Errors are values, and may not be ignored:
+
+[]($code.language('=html').buildAsset('features/12-errors-as-values.zig'))
+
+Errors can be handled with [catch](https://ziglang.org/documentation/master/#catch):
+
+[]($code.language('=html').buildAsset('features/13-errors-catch.zig'))
+
+The keyword [try](https://ziglang.org/documentation/master/#try) is a shortcut for `catch |err| return err`:
+
+[]($code.language('=html').buildAsset('features/14-errors-try.zig'))
+
+Note that is an [Error Return Trace](https://ziglang.org/documentation/master/#Error-Return-Traces), not a [stack trace](#stack-traces-on-all-targets). The code did not pay the price of unwinding the stack to come up with that trace.
+
+The [switch](https://ziglang.org/documentation/master/#switch) keyword used on an error ensures that all possible errors are handled:
+
+[]($code.language('=html').buildAsset('features/15-errors-switch.zig'))
+
+The keyword [unreachable](https://ziglang.org/documentation/master/#unreachable) is used to assert that no errors will occur:
+
+[]($code.language('=html').buildAsset('features/16-unreachable.zig'))
+
+This invokes [undefined behavior](#performance-and-safety-choose-two) in the unsafe build modes, so be sure to use it only when success is guaranteed.
+
+### Stack traces on all targets
+
+The stack traces and [error return traces](https://ziglang.org/documentation/master/#Error-Return-Traces) shown on this page work on all Tier 1 Support and some Tier 2 Support targets. [Even freestanding](https://andrewkelley.me/post/zig-stack-traces-kernel-panic-bare-bones-os.html)!
+
+In addition, the standard library has the ability to capture a stack trace at any point and then dump it to standard error later:
+
+[]($code.language('=html').buildAsset('features/17-stack-traces.zig'))
+
+You can see this technique being used in the ongoing [GeneralPurposeDebugAllocator project](https://github.com/andrewrk/zig-general-purpose-allocator/#current-status).
+
+## Generic data structures and functions
+
+Types are values that must be known at compile-time:
+
+[]($code.language('=html').buildAsset('features/18-types.zig'))
+
+A generic data structure is simply a function that returns a `type`:
+
+[]($code.language('=html').buildAsset('features/19-generics.zig'))
+
+## Compile-time reflection and compile-time code execution
+
+The [@typeInfo](https://ziglang.org/documentation/master/#typeInfo) builtin function provides reflection:
+
+[]($code.language('=html').buildAsset('features/20-reflection.zig'))
+
+The Zig Standard Library uses this technique to implement formatted printing. Despite being a [Small, simple language](#small-simple-language), Zig's formatted printing is implemented entirely in Zig. Meanwhile, in C, compile errors for printf are hard-coded into the compiler. Similarly, in Rust, the formatted printing macro is hard-coded into the compiler.
+
+Zig can also evaluate functions and blocks of code at compile-time. In some contexts, such as global variable initializations, the expression is implicitly evaluated at compile-time. Otherwise, one can explicitly evaluate code at compile-time with the [comptime](https://ziglang.org/documentation/master/#comptime) keyword. This can be especially powerful when combined with assertions:
+
+[]($code.language('=html').buildAsset('features/21-comptime.zig'))
+
+## Integration with C libraries without FFI/bindings
+
+[@cImport](https://ziglang.org/documentation/master/#cImport) directly imports types, variables, functions, and simple macros for use in Zig. It even translates inline functions from C into Zig.
+
+Here is an example of emitting a sine wave using [libsoundio](http://libsound.io/):
+
+<u>sine.zig</u>
+[]($code.language('=html').buildAsset('features/22-sine-wave.zig'))
+
+```
+$ zig build-exe sine.zig -lsoundio -lc
+$ ./sine
+Output device: Built-in Audio Analog Stereo
+^C
+```
+
+[This Zig code is significantly simpler than the equivalent C code](https://gist.github.com/andrewrk/d285c8f912169329e5e28c3d0a63c1d8), as well as having more safety protections, and all this is accomplished by directly importing the C header file - no API bindings.
+
+*Zig is better at using C libraries than C is at using C libraries.*
+
+### Zig is also a C compiler
+
+Here's an example of Zig building some C code:
+
+<u>hello.c</u>
+```c
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+    printf("Hello world\n");
+    return 0;
+}
+```
+
+```
+$ zig build-exe hello.c --library c
+$ ./hello
+Hello world
+```
+
+You can use `--verbose-cc` to see what C compiler command this executed:
+```
+$ zig build-exe hello.c --library c --verbose-cc
+zig cc -MD -MV -MF .zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o .zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC
+```
+
+Note that if you run the command again, there is no output, and it finishes instantly:
+```
+$ time zig build-exe hello.c --library c --verbose-cc
+
+real	0m0.027s
+user	0m0.018s
+sys	0m0.009s
+```
+
+This is thanks to [Build Artifact Caching](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching). Zig automatically parses the .d file uses a robust caching system to avoid duplicating work.
+
+Not only can Zig compile C code, but there is a very good reason to use Zig as a C compiler: [Zig ships with libc](#zig-ships-with-libc).
+
+### Export functions, variables, and types for C code to depend on
+
+One of the primary use cases for Zig is exporting a library with the C ABI for other programming languages to call into. The `export` keyword in front of functions, variables, and types causes them to be part of the library API:
+
+<u>mathtest.zig</u>
+[]($code.language('=html').buildAsset('features/23-math-test.zig'))
+
+To make a static library:
+```
+$ zig build-lib mathtest.zig
+```
+
+To make a shared library:
+```
+$ zig build-lib mathtest.zig -dynamic
+```
+
+Here is an example with the [Zig Build System](#zig-build-system):
+
+<u>test.c</u>
+```c
+#include "mathtest.h"
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+    int32_t result = add(42, 1337);
+    printf("%d\n", result);
+    return 0;
+}
+```
+
+<u>build.zig</u>
+[]($code.language('=html').buildAsset('features/24-build.zig'))
+
+```
+$ zig build test
+1379
+```
+
+## Cross-compiling is a first-class use case
+
+Zig can build for any of the targets from the Support Table (see latest release notes) with Tier 3 Support or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
+
+[]($code.language('=html').buildAsset('features/4-hello.zig'))
+
+Now to build it for x86_64-windows, x86_64-macos, and aarch64-linux:
+```
+$ zig build-exe hello.zig -target x86_64-windows
+$ file hello.exe
+hello.exe: PE32+ executable (console) x86-64, for MS Windows
+$ zig build-exe hello.zig -target x86_64-macos
+$ file hello
+hello: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
+$ zig build-exe hello.zig -target aarch64-linux
+$ file hello
+hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
+```
+
+This works on any Tier 3+ target, for any Tier 3+ target.
+
+### Zig ships with libc
+
+You can find the available libc targets with `zig targets`:
+```
+...
+ "libc": [
+  "aarch64_be-linux-gnu",
+  "aarch64_be-linux-musl",
+  "aarch64_be-windows-gnu",
+  "aarch64-linux-gnu",
+  "aarch64-linux-musl",
+  "aarch64-windows-gnu",
+  "armeb-linux-gnueabi",
+  "armeb-linux-gnueabihf",
+  "armeb-linux-musleabi",
+  "armeb-linux-musleabihf",
+  "armeb-windows-gnu",
+  "arm-linux-gnueabi",
+  "arm-linux-gnueabihf",
+  "arm-linux-musleabi",
+  "arm-linux-musleabihf",
+  "arm-windows-gnu",
+  "mips64el-linux-gnuabi64",
+  "mips64el-linux-gnuabin32",
+  "mips64el-linux-musl",
+  "mips64-linux-gnuabi64",
+  "mips64-linux-gnuabin32",
+  "mips64-linux-musl",
+  "mipsel-linux-gnu",
+  "mipsel-linux-musl",
+  "mips-linux-gnu",
+  "mips-linux-musl",
+  "powerpc64le-linux-gnu",
+  "powerpc64le-linux-musl",
+  "powerpc64-linux-gnu",
+  "powerpc64-linux-musl",
+  "powerpc-linux-gnu",
+  "powerpc-linux-musl",
+  "riscv64-linux-gnu",
+  "riscv64-linux-musl",
+  "s390x-linux-gnu",
+  "s390x-linux-musl",
+  "sparc-linux-gnu",
+  "sparcv9-linux-gnu",
+  "wasm32-freestanding-musl",
+  "x86-linux-gnu",
+  "x86-linux-musl",
+  "x86-windows-gnu",
+  "x86_64-linux-gnu",
+  "x86_64-linux-gnux32",
+  "x86_64-linux-musl",
+  "x86_64-windows-gnu"
+ ],
+ ```
+
+What this means is that `--library c` for these targets *does not depend on any system files*!
+
+Let's look at that [C hello world example](#zig-is-also-a-c-compiler) again:
+```
+$ zig build-exe hello.c --library c
+$ ./hello
+Hello world
+$ ldd ./hello
+	linux-vdso.so.1 (0x00007ffd03dc9000)
+	libc.so.6 => /lib/libc.so.6 (0x00007fc4b62be000)
+	libm.so.6 => /lib/libm.so.6 (0x00007fc4b5f29000)
+	libpthread.so.0 => /lib/libpthread.so.0 (0x00007fc4b5d0a000)
+	libdl.so.2 => /lib/libdl.so.2 (0x00007fc4b5b06000)
+	librt.so.1 => /lib/librt.so.1 (0x00007fc4b58fe000)
+	/lib/ld-linux-x86-64.so.2 => /lib64/ld-linux-x86-64.so.2 (0x00007fc4b6672000)
+```
+
+[glibc](https://www.gnu.org/software/libc/) does not support building statically, but [musl](https://www.musl-libc.org/) does:
+```
+$ zig build-exe hello.c --library c -target x86_64-linux-musl
+$ ./hello
+Hello world
+$ ldd hello
+  not a dynamic executable
+```
+
+In this example, Zig built musl libc from source and then linked against it. The build of musl libc for x86_64-linux remains available thanks to the [caching system](https://ziglang.org/download/0.4.0/release-notes.html#Build-Artifact-Caching), so any time this libc is needed again it will be available instantly.
+
+This means that this functionality is available on any platform. Windows and macOS users can build Zig and C code, and link against libc, for any of the targets listed above. Similarly code can be cross compiled for other architectures:
+```
+$ zig build-exe hello.c --library c -target aarch64-linux-gnu
+$ file hello
+hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
+```
+
+In some ways, Zig is a better C compiler than C compilers!
+
+This functionality is more than bundling a cross-compilation toolchain along with Zig. For example, the total size of libc headers that Zig ships is 22 MiB uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux headers), yet Zig currently ships with 40 libcs. With a naive bundling that would be 444 MiB. However, thanks to this [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig), and some [good old manual labor](https://github.com/ziglang/zig/wiki/Updating-libc), Zig binary tarballs remain roughly 30 MiB total, despite supporting libc for all these targets, as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler. For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132 MiB.
+
+Note that only the Tier 1 Support targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
+
+It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](#zig-build-system) attractive for Zig programmers and C programmers alike.
+
+## Zig Build System
+
+Zig comes with a build system, so you don't need make, cmake, or anything like that.
+```
+$ zig init-exe
+Created build.zig
+Created src/main.zig
+
+Next, try `zig build --help` or `zig build run`
+```
+
+<u>src/main.zig</u>
+[]($code.language('=html').buildAsset('features/25-all-bases.zig'))
+
+
+<u>build.zig</u>
+[]($code.language('=html').buildAsset('features/26-build.zig'))
+
+
+Let's have a look at that `--help` menu.
+```
+$ zig build --help
+Usage: zig build [steps] [options]
+
+Steps:
+  install (default)      Copy build artifacts to prefix path
+  uninstall              Remove build artifacts from prefix path
+  run                    Run the app
+
+General Options:
+  --help                 Print this help and exit
+  --verbose              Print commands before executing them
+  --prefix [path]        Override default install prefix
+  --search-prefix [path] Add a path to look for binaries, libraries, headers
+
+Project-Specific Options:
+  -Dtarget=[string]      The CPU architecture, OS, and ABI to build for.
+  -Drelease-safe=[bool]  optimizations on and safety on
+  -Drelease-fast=[bool]  optimizations on and safety off
+  -Drelease-small=[bool] size optimizations on and safety off
+
+Advanced Options:
+  --build-file [file]         Override path to build.zig
+  --cache-dir [path]          Override path to zig cache directory
+  --override-lib-dir [arg]    Override path to Zig lib directory
+  --verbose-tokenize          Enable compiler debug output for tokenization
+  --verbose-ast               Enable compiler debug output for parsing into an AST
+  --verbose-link              Enable compiler debug output for linking
+  --verbose-ir                Enable compiler debug output for Zig IR
+  --verbose-llvm-ir           Enable compiler debug output for LLVM IR
+  --verbose-cimport           Enable compiler debug output for C imports
+  --verbose-cc                Enable compiler debug output for C compilation
+  --verbose-llvm-cpu-features Enable compiler debug output for LLVM CPU features
+```
+
+You can see that one of the available steps is run.
+```
+$ zig build run
+All your base are belong to us.
+```
+
+Here are some example build scripts:
+
+- [Build script of OpenGL Tetris game](https://github.com/andrewrk/tetris/blob/master/build.zig)
+- [Build script of bare metal Raspberry Pi 3 arcade game](https://github.com/andrewrk/clashos/blob/master/build.zig)
+- [Build script of self-hosted Zig compiler](https://github.com/ziglang/zig/blob/master/build.zig)
+
+## Concurrency via Async Functions
+
+Zig 0.5.0 [introduced async functions](https://ziglang.org/download/0.5.0/release-notes.html#Async-Functions). This feature has no dependency on a host operating system or even heap-allocated memory. That means async functions are available for the freestanding target.
+
+Zig infers whether a function is async, and allows `async`/`await` on non-async functions, which means that **Zig libraries are agnostic of blocking vs async I/O**. [Zig avoids function colors](http://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/).
+
+
+
+The Zig Standard Library implements an event loop that multiplexes async functions onto a thread pool for M:N concurrency. Multithreading safety and race detection are areas of active research.
+
+## Wide range of targets supported
+
+Zig uses a "support tier" system to communicate the level of support for different targets.
+
+[Support Table as of Zig 0.11.0](https://ziglang.org/download/0.11.0/release-notes.html#Support-Table)
+
+## Friendly toward package maintainers
+
+The reference Zig compiler is not completely self-hosted yet, but no matter what, [it will remain exactly 3 steps](https://github.com/ziglang/zig/issues/853) to go from having a system C++ compiler to having a fully self-hosted Zig compiler for any target. As Maya Rashish notes, [porting Zig to other platforms is fun and speedy](http://coypu.sdf.org/porting-zig.html).
+
+Non-debug [build modes](https://ziglang.org/documentation/master/#Build-Mode) are reproducible/deterministic.
+
+There is a [JSON version of the download page](https://ziglang.org/download/index.json).
+
+Several members of the Zig team have experience maintaining packages.
+
+- [Daurnimator](https://github.com/daurnimator) maintains the [Arch Linux package](https://archlinux.org/packages/extra/x86_64/zig/)
+- [Marc Tiehuis](https://tiehuis.github.io/) maintains the Visual Studio Code package.
+- [Andrew Kelley](https://andrewkelley.me/) spent a year or so doing [Debian and Ubuntu packaging](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), and casually contributes to [nixpkgs](https://github.com/NixOS/nixpkgs/).
+- [Jeff Fowler](https://blog.jfo.click/) maintains the Homebrew package and started the [Sublime package](https://github.com/ziglang/sublime-zig-language) (now maintained by [emekoi](https://github.com/emekoi)).
