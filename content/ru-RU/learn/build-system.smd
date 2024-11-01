@@ -1,54 +1,45 @@
 ---
-.title = "Zig Build System",
+.title = "Система сборки Zig",
 .author = "",
 .date = @date("2024-08-07:00:00:00"),
 .layout = "page.shtml",
 .custom = {
-	"mobile_menu_title": "Zig Build System",
+	"mobile_menu_title": "Система сборки Zig",
 	"toc": true,
 },
 ---
-# [When to bust out the Zig Build System?]($heading.id('build-system'))
+# [Когда стоит использовать систему сборки Zig?]($heading.id('build-system'))
 
-The fundamental commands `zig build-exe`, `zig build-lib`, `zig build-obj`, and
-`zig test` are often sufficient. However, sometimes a project needs another
-layer of abstraction to manage the complexity of building from source.
+Для выполнения основных задач обычно достаточно команд `zig build-exe`, `zig build-lib`, `zig build-obj` и `zig test`. Тем не менее, в некоторых случаях проекту может понадобиться дополнительный уровень абстракции для более эффективного управления сложностью процесса сборки.
 
-For example, perhaps one of these situations applies:
+Система сборки Zig может значительно упростить процесс разработки и сборки в следующих ситуациях:
 
-- The command line becomes too long and unwieldly, and you want some place to
-  write it down.
-- You want to build many things, or the build process contains many steps.
-- You want to take advantage of concurrency and caching to reduce build time.
-- You want to expose configuration options for the project.
-- The build process is different depending on the target system and other options.
-- You have dependencies on other projects.
-- You want to avoid an unnecessary dependency on cmake, make, shell, msvc,
-  python, etc., making the project accessible to more contributors.
-- You want to provide a package to be consumed by third parties.
-- You want to provide a standardized way for tools such as IDEs to semantically understand
-  how to build the project.
+- Если команды в терминале становятся слишком громоздкими и сложными для запоминания, использование системы сборки позволит сохранить их в одном месте.
+- При наличии множества компонентов или этапов сборки Zig поможет организовать процесс, разбив его на более управляемые части.
+- Если вы хотите сократить время сборки, система сборки Zig поддерживает параллелизм и кэширование, что значительно ускоряет процесс.
+- Zig позволяет легко задавать параметры конфигурации для вашего проекта, что делает его более гибким и адаптируемым к различным условиям.
+- Если процесс сборки варьируется в зависимости от целевой системы или других параметров, Zig поможет вам настроить его под конкретные нужды.
+- При наличии зависимостей от других проектов система сборки Zig упростит управление ими и обеспечит правильную интеграцию.
+- Если вы стремитесь уменьшить зависимость от таких инструментов, как CMake, Make, Shell, MSVC или Python, Zig поможет сделать ваш проект более универсальным и доступным.
+- Если вы хотите упростить процесс создания пакетов для использования другими разработчиками, система сборки Zig обеспечит удобные механизмы для этого.
+- С помощью Zig вы сможете предложить стандартизированный подход к сборке проекта, что облегчит интеграцию с различными IDE и инструментами разработки.
 
-If any of these apply, the project will benefit from using the Zig Build System.
+Если хотя бы один из перечисленных пунктов имеет отношение к вашему проекту, применение системы сборки Zig может существенно облегчить процесс разработки.
 
-# [Getting Started]($heading.id('getting-started'))
-## [Simple Executable]($heading.id('simple'))
-This build script creates an executable from a Zig file that contains a public `main` function definition.
+# [Начало работы]($heading.id('getting-started'))
+## [Простое исполняемое приложение]($heading.id('simple'))
+Этот скрипт сборки создаёт исполняемый файл из Zig-файла, который содержит определение публичной функции `main`.
 
 []($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
 []($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
 
-## [Installing Build Artifacts]($heading.id('installing-artifacts'))
+## [Установка артефактов сборки]($heading.id('installing-artifacts'))
 
-The Zig build system, like most build systems, is based on modeling the project as a directed acyclic graph (DAG) of steps, which are independently and concurrently run.
+Система сборки Zig, подобно большинству других систем сборки, моделирует проект как направленный ациклический граф (DAG), где этапы выполняются независимо и параллельно.
 
-By default, the main step in the graph is the **Install** step, whose purpose
-is to copy build artifacts into their final resting place. The Install step
-starts with no dependencies, and therefore nothing will happen when `zig build`
-is run. A project's build script must add to the set of things to install, which
-is what the `installArtifact` function call does above.
+По умолчанию основным этапом в графе является этап **Установки (Install)**, который предназначен для копирования артефактов сборки в их конечное местоположение. Этот этап не имеет зависимостей, поэтому при выполнении команды `zig build` ничего не произойдёт. Скрипт сборки проекта должен дополнительно указать, какие элементы необходимо установить, и именно это делает вызов функции `installArtifact`, представленный выше.
 
-**Output**
+**Вывод**
 ```
 ├── build.zig
 ├── hello.zig
@@ -58,63 +49,51 @@ is what the `installArtifact` function call does above.
         └── hello
 ```
 
-There are two generated directories in this output: `.zig-cache` and `zig-out`. The first one contains files that will make subsequent builds faster, but these files are not intended to be checked into source-control and this directory can be completely deleted at any time with no consequences.
+В этом выводе можно увидеть две сгенерированные директории: `.zig-cache` и `zig-out`. Первая из них содержит файлы, которые ускоряют последующие сборки. Эти файлы не предназначены для добавления в систему контроля версий, и данную директорию можно удалить в любое время без каких-либо негативных последствий.
 
-The second one, `zig-out`, is an "installation prefix". This maps to the standard file system hierarchy concept. This directory is not chosen by the project, but by the user of `zig build` with the `--prefix` flag (`-p` for short).
+Вторая директория, `zig-out`, является целевой директорией установки. Она соответствует стандартной структуре файловой системы. Выбор этой директории осуществляется не проектом, а пользователем команды `zig build` с помощью флага `--prefix` (сокращенно `-p`).
 
-You, as the project maintainer, pick what gets put in this directory, but the user chooses where to install it in their system. The build script cannot hardcode output paths because this would break caching, concurrency, and composability, as well as annoy the final user.
+Вы, как разработчик проекта, определяете, что будет помещено в эту директорию, но пользователь решает, куда установить её на своём компьютере. Скрипт сборки не должен жёстко задавать пути вывода, так как это может нарушить кэширование, параллельное выполнение и совместимость, а также вызвать недовольство у конечного пользователя.
 
-## [Adding a Convenience Step for Running the Application]($heading.id('run-step'))
+## [Этап запуска приложения]($heading.id('run-step'))
 
-It is common to add a **Run** step to provide a way to run one's main application directly
-from the build command.
+Обычно этап **Запуска (Run)** добавляют, чтобы упростить процесс запуска основного приложения непосредственно через команду сборки.
 
 []($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
 []($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
 
-# [The Basics]($heading.id('basics'))
+# [Основы]($heading.id('basics'))
 
-## [User-Provided Options]($heading.id('user-options'))
+## [Опции, задаваемые пользователем]($heading.id('user-options'))
 
-Use `b.option` to make the build script configurable to end users as well as
-other projects that depend on the project as a package.
+Можно использовать `b.option`, чтобы сделать скрипт сборки настраиваемым для конечных пользователей и других проектов, которые используют данный проект в качестве пакета.
 
 []($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
 []($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
 
-Please direct your attention to these lines:
+Обратите внимание на эти строки:
 
 ```
 Project-Specific Options:
   -Dwindows=[bool]             Target Microsoft Windows
 ```
 
-This part of the help menu is auto-generated based on running the `build.zig` logic. Users
-can discover configuration options of the build script this way.
+Эта секция меню помощи создаётся автоматически в результате выполнения `build.zig`. Таким образом, пользователи могут ознакомиться с параметрами конфигурации скрипта сборки.
 
-## [Standard Configuration Options]($heading.id('standard-options'))
+## [Стандартные параметры конфигурации]($heading.id('standard-options'))
 
-Previously, we used a boolean flag to indicate building for Windows. However, we can do
-better.
+Ранее мы применяли булев флаг для обозначения сборки под Windows. Однако, существует более эффективный подход.
 
-Most projects want to provide the ability to change the target and optimization settings.
-In order to encourage standard naming conventions for these options, Zig provides the
-helper functions, `standardTargetOptions` and `standardOptimizeOption`.
+Большинство проектов стремятся предоставить возможность изменять целевую платформу и параметры оптимизации. Для стандартизации названий этих параметров Zig предлагает вспомогательные функции `standardTargetOptions` и `standardOptimizeOption`.
 
-Standard target options allows the person running `zig build` to choose what
-target to build for. By default, any target is allowed, and no choice means to
-target the host system. Other options for restricting supported target set are
-available.
+Стандартные параметры для выбора целевой платформы позволяют пользователю, выполняющему команду `zig build`, указать, для какой платформы будет осуществляться сборка проекта. По умолчанию поддерживаются все платформы, и если выбор не сделан, проект будет собран для текущей системы. Существуют дополнительные опции для ограничения списка поддерживаемых платформ.
 
-Standard optimization options allow the person running `zig build` to select
-between `Debug`, `ReleaseSafe`, `ReleaseFast`, and `ReleaseSmall`. By default
-none of the release options are considered the preferable choice by the build
-script, and the user must make a decision in order to create a release build.
+Параметры оптимизации по умолчанию позволяют пользователю выбрать один из следующих режимов: `Debug`, `ReleaseSafe`, `ReleaseFast` и `ReleaseSmall`. Поскольку ни один из этих режимов по умолчанию не является предпочтительным, пользователю следует самостоятельно решить, какой из них использовать.
 
 []($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
 []($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
 
-Now, our `--help` menu contains more items:
+Теперь меню `--help` содержит больше пунктов:
 
 ```
 Project-Specific Options:
@@ -128,11 +107,9 @@ Project-Specific Options:
                                    ReleaseSmall
 ```
 
-It is entirely possible to create these options via `b.option` directly, but this
-API provides a commonly used naming convention for these frequently used settings.
+Хотя эти параметры можно задать напрямую с помощью `b.option`, данный API предоставляет стандартные наименования для часто используемых настроек.
 
-In our terminal output, observe that we passed `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`.
-Compared to the first example, now we see different files in the installation prefix:
+Обратите внимание на вывод в терминале, где мы указали `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`. В отличие от первого примера, теперь в целевой директории появляются дополнительные файлы:
 
 ```
 zig-out/
@@ -140,29 +117,24 @@ zig-out/
     └── hello.exe
 ```
 
-## [Options for Conditional Compilation]($heading.id('conditional-compilation'))
+## [Условная компиляция]($heading.id('conditional-compilation'))
 
-To pass options from the build script and into the project's Zig code, use
-the `Options` step.
+Для передачи параметров из скрипта сборки в код Zig вашего проекта используйте `Options`.
 
 []($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
 []($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
 
-In this example, the data provided by `@import("config")` is comptime-known,
-preventing the `@compileError` from triggering. If we had passed `-Dversion=0.2.3`
-or omitted the option, then we would have seen the compilation of `app.zig` fail with
-the "too old" error.
+В этом примере данные, предоставленные `@import("config")`, известны на этапе компиляции, что предотвращает срабатывание `@compileError`. Если бы мы передали `-Dversion=0.2.3` или пропустили эту опцию, то компиляция `app.zig` завершилась бы с ошибкой "too old".
 
-## [Static Library]($heading.id('static-library'))
+## [Статические библиотеки]($heading.id('static-library'))
 
-This build script creates a static library from Zig code, and then also an
-executable from other Zig code that consumes it.
+Этот скрипт сборки создаёт статическую библиотеку из кода на Zig, а затем и исполняемый файл из другого кода на Zig, который использует эту библиотеку.
 
 []($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
 []($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
 []($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
 
-In this case, only the static library ends up being installed:
+В этом случае только статическая библиотека будет установлена:
 
 ```
 zig-out/
@@ -170,8 +142,7 @@ zig-out/
     └── libfizzbuzz.a
 ```
 
-However, if you look closely, the build script contains an option to also install the demo.
-If we additionally pass `-Denable-demo`, then we see this in the installation prefix:
+Однако, если присмотреться, можно заметить, что в скрипте сборки есть опция для установки демо-версии. Если дополнительно указать `-Denable-demo`, то в целевой директории мы увидим следующее:
 
 ```
 zig-out/
@@ -181,19 +152,15 @@ zig-out/
     └── libfizzbuzz.a
 ```
 
-Note that despite the unconditional call to `addExecutable`, the build system in fact
-does not waste any time building the `demo` executable unless it is requested
-with `-Denable-demo`, because the build system is based on a Directed Acyclic
-Graph with dependency edges.
+Заметьте, что хотя `addExecutable` вызывается безусловно, система сборки не будет создавать исполняемый файл `demo`, если только его не запросить с помощью параметра `-Denable-demo`. Это возможно благодаря тому, что система сборки использует ориентированный ациклический граф (DAG), который управляет зависимостями.
 
-## [Dynamic Library]($heading.id('dynamic-library'))
+## [Динамические библиотеки]($heading.id('dynamic-library'))
 
-Here we keep all the files the same from the [Static Library](#static-library) example, except
-the `build.zig` file is changed.
+Здесь мы оставляем все файлы такими же, как в примере со [статической библиотекой](#static-library), за исключением изменений в файле `build.zig`.
 
 []($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
 
-**Output**
+**Вывод**
 ```
 zig-out
 └── lib
@@ -202,43 +169,32 @@ zig-out
     └── libfizzbuzz.so.1.2.3
 ```
 
-As in the static library example, to make an executable link against it, use code like this:
+Как и в примере со статической библиотекой, чтобы создать исполняемый файл, который будет ссылаться на неё, можно использовать такой код:
 
 ```zig
 exe.linkLibrary(libfizzbuzz);
 ```
 
-## [Testing]($heading.id('testing'))
+## [Тестирование]($heading.id('testing'))
 
-Individual files can be tested directly with `zig test foo.zig`, however, more
-complex use cases can be solved by orchestrating testing via the build script.
+Отдельные файлы можно протестировать напрямую с помощью команды `zig test foo.zig`.
 
-When using the build script, unit tests are broken into two different steps in
-the build graph, the **Compile** step and the **Run** step. Without a call to
-`addRunArtifact`, which establishes a dependency edge between these two steps,
-the unit tests will not be executed.
+Для более сложных случаев тестирование можно организовать с помощью скрипта сборки. В этом случае юнит-тесты разделяются на два этапа: **Компиляции (Compile)** и **Запуска (Run)**.
 
-The *Compile* step can be configured the same as any executable, library, or
-object file, for example by [linking against system libraries](#linking-to-system-libraries),
-setting target options, or adding additional compilation units.
+Важно помнить, что если не вызвать `addRunArtifact`, устанавливающий зависимость между этими двумя этапами, юнит-тесты не будут выполнены.
 
-The *Run* step can be configured the same as any Run step, for example by
-skipping execution when the host is not capable of executing the binary.
+Этап *Компиляции (Compile)* настраивается аналогично исполняемомым файлам, библиотекам или объектным файлам. Например, его можно [связывать с системными библиотеками](#linking-to-system-libraries) или задавать параметры целевой платформы.
 
-When using the build system to run unit tests, the build runner and the test
-runner communicate via *stdin* and *stdout* in order to run multiple unit test
-suites concurrently, and report test failures in a meaningful way without
-having their output jumbled together. This is one reason why
-[writing to *standard out* in unit tests is problematic](https://github.com/ziglang/zig/issues/15091) -
-it will interfere with this communication channel. On the flip side, this
-mechanism will enable an upcoming feature, which is is the
-[ability for a unit test to expect a *panic*](https://github.com/ziglang/zig/issues/1356).
+Этап *Запуска (Run)* настраивается аналогично другим этапам *Запуска (Run)*. Например, можно пропустить выполнение, если текущая платформа не поддерживает запуск исполняемого файла.
+
+При использовании системы сборки для запуска юнит-тестов сборщик и тестовый раннер взаимодействуют через *stdin* и *stdout*. Это позволяет одновременно запускать несколько наборов юнит-тестов и сообщать о сбоях в тестах понятным способом, избегая смешивания их вывода.
+
+Одной из причин, по которой [запись в *стандартный вывод* в юнит-тестах является проблематичной](https://github.com/ziglang/zig/issues/15091), является возможность нарушения этого канала связи. С другой стороны, эта механика откроет возможность для новой функции — [возможности юнит-теста ожидать *сбоя*](https://github.com/ziglang/zig/issues/1356). 
 
 []($code.language('=html').buildAsset("build-system/unit-testing/main.zig"))
 []($code.language('=html').buildAsset("build-system/unit-testing/build.zig"))
 
-In this case it might be a nice adjustment to enable `skip_foreign_checks` for
-the unit tests:
+В этом случае будет полезно включить параметр `skip_foreign_checks` для юнит-тестов.
 
 ```diff
 @@ -23,6 +23,7 @@
@@ -253,47 +209,29 @@ the unit tests:
 
 []($code.language('=html').buildAsset("build-system/unit-testing-skip-foreign/build.zig"))
 
-## [Linking to System Libraries]($heading.id('linking-system-libraries'))
+## [Подключение системных библиотек]($heading.id('linking-system-libraries'))
 
-For satisfying library dependencies, there are two choices:
+Существует два основных способа управления зависимостями:
 
-1. Provide these libraries via the Zig Build System
-   (see [Package Management](#package-management) and [Static Library](#static-library)).
-2. Use the files provided by the host system.
+1. **Использование системы сборки Zig.** Этот метод позволяет предоставлять библиотеки через встроенные механизмы сборки Zig. Подробности можно найти в разделах [Управление пакетами](#package-management) и [Статические библиотеки](#static-library).
+2. **Использование системных библиотек.** В этом случае библиотеки предоставляются операционной системой.
 
-For the use case of upstream project maintainers, obtaining these libraries via
-the Zig Build System provides the least friction and puts the configuration
-power in the hands of those maintainers. Everyone who builds this way will have
-reproducible, consistent results as each other, and it will work on every
-operating system and even support cross-compilation. Furthermore, it allows the
-project to decide with perfect precision the exact versions of its entire
-dependency tree it wishes to build against. This is expected to be the
-generally preferred way to depend on external libraries.
+Для upstream-проектов использование системы сборки Zig для управления зависимостями снижает уровень сложности и предоставляет полный контроль над конфигурацией. Этот подход обеспечивает воспроизводимость и согласованность результатов сборки на всех операционных системах, а также упрощает процесс кросс-компиляции. Кроме того, он дает возможность точно выбирать версии всех зависимостей, необходимых для проекта. В большинстве случаев данный метод считается предпочтительным для работы с внешними библиотеками.
 
-However, for the use case of packaging software into repositories such as
-Debian, Homebrew, or Nix, it is mandatory to link against system libraries. So,
-build scripts must
-[detect the build mode](https://github.com/ziglang/zig/issues/14281) and configure accordingly.
+Тем не менее, если требуется упаковать программное обеспечение для репозиториев, таких как Debian, Homebrew или Nix, использование системных библиотек становится обязательным. Поэтому в скриптах сборки важно [определить режим сборки](https://github.com/ziglang/zig/issues/14281) и соответствующим образом настроить проект.
 
 []($code.language('=html').buildAsset("build-system/system-libraries/build.zig"))
 
-Users of `zig build` may use `--search-prefix` to provide additional
-directories that are considered "system directories" for the purposes of finding
-static and dynamic libraries.
+Пользователи команды `zig build` могут воспользоваться опцией `--search-prefix`, чтобы указать дополнительные директории, которые будут рассматриваться как системные для поиска статических и динамических библиотек.
 
-# [Generating Files]($heading.id('generating-files'))
+# [Генерация файлов]($heading.id('generating-files'))
 
-## [Running System Tools]($heading.id('system-tools'))
-This version of hello world expects to find a `word.txt` file in the same path,
-and we want to use a system tool to generate it starting from a JSON file.
+## [Запуск системных инструментов]($heading.id('system-tools'))
+Эта версия примера с "Hello, World!" ожидает, что в той же папке будет находиться файл `word.txt`. Мы собираемся использовать системный инструмент для его генерации на основе JSON-файла. 
 
-Be aware that system dependencies will make your project harder to build for your
-users. This build script depends on `jq`, for example, which is not present by
-default in most Linux distributions and which might be an unfamiliar tool for
-Windows users.
+Учтите, что системные зависимости могут усложнить сборку вашего проекта. Например, этот скрипт сборки зависит от программы `jq`, которая по умолчанию отсутствует в большинстве дистрибутивов Linux и может быть незнакома пользователям Windows.
 
-The next section will replace `jq` with a Zig tool included in the source tree,
-which is the preferred approach.
+В следующем разделе мы заменим утилиту `jq` на встроенный инструмент Zig, который уже присутствует в исходном коде. Этот подход предпочтителен, так как он устраняет необходимость в сторонних зависимостях.
 
 **`words.json`**
 ```json
@@ -307,7 +245,7 @@ which is the preferred approach.
 []($code.language('=html').buildAsset("build-system/10.5-system-tool/src/main.zig"))
 []($code.language('=html').buildAsset("build-system/10.5-system-tool/build.zig"))
 
-**Output**
+**Вывод**
 
 ```
 zig-out
@@ -315,12 +253,11 @@ zig-out
 └── word.txt
 ```
 
-Note how `captureStdOut` creates a temporary file with the output of the `jq` invocation.
+Обратите внимание, что функция `captureStdOut` создает временный файл с выводом вызова утилиты `jq`.
 
-## [Running the Project's Tools]($heading.id('project-tools'))
+## [Запуск инструментов проекта]($heading.id('project-tools'))
 
-This version of hello world expects to find a `word.txt` file in the same path,
-and we want to produce it at build-time by invoking a Zig program on a JSON file.
+Эта версия программы "Hello, World!" ожидает найти файл `word.txt` в той же директории. Мы планируем сгенерировать его в процессе сборки, используя программу на Zig для обработки JSON-файла.
 
 **`tools/words.json`**
 ```json
@@ -337,7 +274,7 @@ and we want to produce it at build-time by invoking a Zig program on a JSON file
 
 []($code.language('=html').buildAsset("build-system/11-zig-tool/build.zig"))
 
-**Output**
+**Вывод**
 
 ```
 zig-out
@@ -345,11 +282,9 @@ zig-out
 └── word.txt
 ```
 
+## [Создание ресурсов для `@embedFile`]($heading.id('embed-file'))
 
-## [Producing Assets for `@embedFile`]($heading.id('embed-file'))
-
-This version of hello world wants to `@embedFile` an asset generated at build time,
-which we're going to produce using a tool written in Zig.
+В этой версии программы "Hello, World!" планируется использовать `@embedFile` для встраивания ресурса, который будет создан в процессе сборки. Мы будем генерировать этот ресурс с помощью инструмента, написанного на Zig.
 
 **`tools/words.json`**
 ```json
@@ -366,7 +301,7 @@ which we're going to produce using a tool written in Zig.
 
 []($code.language('=html').buildAsset("build-system/12-embedfile/build.zig"))
 
-**Output**
+**Вывод**
 
 ```
 zig-out/
@@ -374,15 +309,14 @@ zig-out/
     └── hello
 ```
 
-## [Generating Zig Source Code]($heading.id('generating-zig'))
-This build file uses a Zig program to generate a Zig file and then exposes it
-to the main program as a module dependency.
+## [Генерация исходного кода Zig]($heading.id('generating-zig'))
+В этом файле сборки используется программа на Zig, которая создаёт новый Zig-файл. Сгенерированный файл затем подключается к основной программе в качестве зависимости.
 
 []($code.language('=html').buildAsset("build-system/13-import/src/main.zig"))
 []($code.language('=html').buildAsset("build-system/13-import/tools/generate_struct.zig"))
 []($code.language('=html').buildAsset("build-system/13-import/build.zig"))
 
-**Output**
+**Вывод**
 
 ```
 zig-out/
@@ -390,41 +324,30 @@ zig-out/
     └── hello
 ```
 
-## [Dealing With One or More Generated Files]($heading.id('write-files'))
+## [Работа с одним или несколькими сгенерированными файлами]($heading.id('write-files'))
 
-The **WriteFiles** step provides a way to generate one or more files which
-share a parent directory. The generated directory lives inside the local `.zig-cache`,
-and each generated file is independently available as a `std.Build.LazyPath`.
-The parent directory itself is also available as a `LazyPath`.
+Этап **WriteFiles** предоставляет возможность генерировать один или несколько файлов, которые имеют общую родительскую директорию. Сгенерированная директория располагается внутри локального `.zig-cache`, и каждый созданный файл доступен как `std.Build.LazyPath`. Кроме того, сама родительская директория также представлена в виде `LazyPath`.
 
-This API supports writing arbitrary strings to the generated directory as well
-as copying files into it.
+Этот API позволяет записывать произвольные строки в сгенерированную директорию, а также копировать в неё файлы. 
 
 []($code.language('=html').buildAsset("build-system/write-files/src/main.zig"))
 []($code.language('=html').buildAsset("build-system/write-files/build.zig"))
 
-**Output**
+**Вывод**
 
 ```
 zig-out/
 └── project.tar.gz
 ```
 
-## [Mutating Source Files in Place]($heading.id('mutating-source'))
+## [Мутирование исходных файлов]($heading.id('mutating-source'))
 
-It is uncommon, but sometimes the case that a project commits generated files
-into version control. This can be useful when the generated files are seldomly updated
-and have burdensome system dependencies for the update process, but *only* during the
-update process.
+Хотя это и не является распространённой практикой, иногда проекты сохраняют сгенерированные файлы в системе контроля версий. Это может быть полезно, когда такие файлы обновляются редко и имеют сложные системные зависимости, которые затрудняют процесс обновления, но *только* в рамках самого процесса обновления.
 
-For this, **WriteFiles** provides a way to accomplish this task. This is a feature that
-[will be extracted from WriteFiles into its own Build Step](https://github.com/ziglang/zig/issues/14944)
-in a future Zig version.
 
-Be careful with this functionality; it should not be used during the normal
-build process, but as a utility run by a developer with intention to update
-source files, which will then be committed to version control. If it is done
-during the normal build process, it will cause caching and concurrency bugs.
+Для этой цели этап **WriteFiles** предоставляет необходимый функционал. В будущих версиях Zig эта возможность [будет выделена из **WriteFiles** в отдельный этап сборки](https://github.com/ziglang/zig/issues/14944).
+
+С этим следует быть осторожным: данный функционал не предназначен для использования в процессе обычной сборки. Он должен применяться как утилита, запускаемая разработчиком с целью обновления исходных файлов, которые затем будут зафиксированы в системе контроля версий. Если использовать эту функцию во время стандартного процесса сборки, это может привести к ошибкам кэширования и параллельного выполнения.
 
 []($code.language('=html').buildAsset("build-system/mutate-source-files/tools/proto_gen.zig"))
 []($code.language('=html').buildAsset("build-system/mutate-source-files/src/main.zig"))
@@ -441,18 +364,18 @@ update-protocol<span class="sgr-32m"> success</span>
 </code></pre>
 ```
 
-After running this command, `src/protocol.zig` is updated in place.
+После выполнения этой команды файл src/protocol.zig будет обновлён.
 
-# [Handy Examples]($heading.id('examples'))
+# [Полезные примеры]($heading.id('examples'))
 
-## [Build for multiple targets to make a release]($heading.id('release'))
+## [Сборка для нескольких целевых платформ с целью создания релиза]($heading.id('release'))
 
-In this example we're going to change some defaults when creating an `InstallArtifact` step in order to put the build for each target into a separate subdirectory inside the install path.
+В этом примере мы изменим некоторые стандартные параметры на этапе `InstallArtifact`, чтобы размещать сборку для каждой целевой платформы в отдельной подпапке. Такой подход позволит более эффективно организовать артефакты, созданные для различных платформ, а также упростит их управление и развёртывание в дальнейшем.
 
 []($code.language('=html').buildAsset("build-system/10-release/build.zig"))
 []($code.language('=html').buildAsset("build-system/10-release/hello.zig"))
 
-**Output**
+**Вывод**
 
 ```
 zig-out
