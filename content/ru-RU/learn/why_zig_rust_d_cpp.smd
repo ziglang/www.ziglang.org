@@ -1,16 +1,16 @@
 ---
-.title = "Why Zig When There is Already C++, D, and Rust?",
+.title = "Почему Zig, когда уже есть C++, D и Rust?",
 .author = "",
 .date = @date("2024-08-07:00:00:00"),
 .layout = "page.shtml",
 .custom = {
-	"mobile_menu_title": "Why Zig?",
+	"mobile_menu_title": "Почему Zig?",
 },
 ---
 
-# No hidden control flow
+# Нет скрытых потоков управления
 
-If Zig code doesn't look like it's jumping away to call a function, then it isn't. This means you can be sure that the following code calls only `foo()` and then `bar()`, and this is guaranteed without needing to know the types of anything:
+Если код на Zig не показывает вызов функции, значит, он её не вызывает. Можно быть уверенным, что в приведённом ниже коде вызываются только `foo()`, а затем `bar()` – независимо от типов данных:
 
 ```zig
 var a = b + c.d;
@@ -18,141 +18,81 @@ foo();
 bar();
 ```
 
-Examples of hidden control flow:
+Примеры скрытых потоков управления:
 
-* D has `@property` functions, which are methods that you call with what looks like field access, so in the above example, `c.d` might call a function.
-* C++, D, and Rust have operator overloading, so the `+` operator might call a function.
-* C++, D, and Go have throw/catch exceptions, so `foo()` might throw an exception, and prevent `bar()` from being called. (Of course, even in Zig `foo()` could deadlock and prevent `bar()` from being called, but that can happen in any Turing-complete language.)
+* В языке D есть `@property`-функции, которые вызываются как доступ к полю. Например, в D выражение `c.d` может быть вызовом функции.
+* C++, D и Rust поддерживают перегрузку операторов, в результате чего оператор `+` может вызывать функции.
+* В языках C++, D и Go есть механизм исключений с использованием throw/catch, из-за чего `foo()` может выбросить исключение и помешать вызову `bar()`. (Конечно, даже в Zig вызов `foo()` может привести к взаимной блокировке и помешать `bar()` выполниться, но подобное возможно в любом Тьюринг-полном языке.)
 
-The purpose of this design decision is to improve readability.
+Zig делает код более читабельным и простым, управляя потоком выполнения исключительно при помощи ключевых слов и вызовов функций.
 
-# No hidden allocations
+# Нет скрытых выделений памяти
 
-Zig has a hands-off approach when it comes to heap allocation. There is no `new` keyword
-or any other language feature that uses a heap allocator (e.g. string concatenation operator[1]).
-The entire concept of the heap is managed by library and application code, not by the language.
+Zig позволяет разработчикам полностью управлять выделением памяти в куче. В языке отсутствует ключевое слово `new` или другие механизмы, которые бы автоматически использовали кучу (например, оператор объединения строк[1]). Концепция работы с кучей полностью отдана на откуп библиотекам и собственно приложению, а не встроена в сам язык.
 
-Examples of hidden allocations:
+Примеры скрытого выделения памяти:
 
-* Go's `defer` allocates memory to a function-local stack. In addition to being an unintuitive
-  way for this control flow to work, it can cause out-of-memory failures if you use
-  `defer` inside a loop.
-* C++ coroutines allocate heap memory in order to call a coroutine.
-* In Go, a function call can cause heap allocation because goroutines allocate small stacks
-  that get resized when the call stack gets deep enough.
-* The main Rust standard library APIs panic on out of memory conditions, and the alternate
-  APIs that accept allocator parameters are an afterthought
-  (see [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
+* В Go использование `defer` приводит к выделению памяти на локальном стеке функции. Этот подход к управлению потоком может быть неочевидным и способен вызвать ошибки из-за нехватки памяти, особенно если `defer` используется внутри цикла.* В C++ корутины используют память в куче для выполнения своих вызовов.
+* В Go вызов функции может вызвать выделение памяти в куче, поскольку горутины используют небольшие стеки, которые увеличиваются по мере углубления стека вызовов.
+* Основные API стандартной библиотеки Rust паникуют при нехватке памяти, а альтернативные API, принимающие параметры аллокатора, недостаточно проработаны (см. [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
 
-Nearly all garbage collected languages have hidden allocations strewn about, since the
-garbage collector hides the evidence on the cleanup side.
+Почти все языки программирования с автоматическим управлением памятью имеют скрытые выделения памяти, так как сборщик мусора незаметно управляет ими при очистке, скрывая их от глаз разработчика.
 
-The main problem with hidden allocations is that it prevents the *reusability* of a
-piece of code, unnecessarily limiting the number of environments that code would be
-appropriate to be deployed to. Simply put, there are use cases where one must be able
-to rely on control flow and function calls not to have the side-effect of memory allocation,
-therefore a programming language can only serve these use cases if it can realistically
-provide this guarantee.
+Основная проблема скрытых выделений памяти в том, что они затрудняют *переиспользование* кода, неоправданно ограничивая количество сред, в которых этот код можно использовать. Проще говоря, существуют случаи, когда важно быть уверенным, что поток управления и вызовы функций не будут иметь побочных эффектов в виде выделения памяти, и язык программирования может удовлетворять этим требованиям только в том случае, если он чётко регулирует, когда и где выделяется память.
 
-In Zig, there are standard library features that provide and work with heap allocators,
-but those are optional standard library features, not built into the language itself.
-If you never initialize a heap allocator, you can be confident your program will not heap allocate.
+В языке Zig существуют функции стандартной библиотеки, которые позволяют работать с аллокаторами памяти в куче. Однако эти функции не являются обязательными и не встроены в сам язык. Если вы не инициализируете такой аллокатор, можете быть уверены, что ваша программа не будет выделять память в куче.
 
-Every standard library feature that needs to allocate heap memory accepts an `Allocator` parameter
-in order to do it. This means that the Zig standard library supports freestanding targets. For
-example `std.ArrayList` and `std.AutoHashMap` can be used for bare metal programming!
+Каждая функция стандартной библиотеки Zig, которая требует выделения памяти в куче, принимает параметр `Allocator`. Это означает, что стандартная библиотека Zig поддерживает и независимые целевые платформы. Так, например, `std.ArrayList` и `std.AutoHashMap` могут использоваться для программирования на голом железе!
 
-Custom allocators make manual memory management a breeze. Zig has a debug allocator that
-maintains memory safety in the face of use-after-free and double-free. It automatically
-detects and prints stack traces of memory leaks. There is an arena allocator so that you can
-bundle any number of allocations into one and free them all at once rather than manage
-each allocation independently. Special-purpose allocators can be used to improve performance
-or memory usage for any particular application's needs.
+Кастомные аллокаторы упрощают ручное управление памятью. В Zig есть отладочный аллокатор, который обеспечивает безопасность памяти, предотвращая ошибки, такие как использование освобожденной памяти или двойное освобождение. Он автоматически обнаруживает и выводит стек вызовов для утечек памяти. Также существует арена-аллокатор, который позволяет объединять любое количество аллокаций в одну, освобождая их все сразу, вместо того чтобы управлять каждой аллокацией отдельно. Специальные аллокаторы могут быть использованы для повышения производительности или оптимизации использования памяти в зависимости от потребностей конкретного приложения.
 
-[1]: Actually there is a string concatenation operator (generally an array concatenation operator), but it only works at compile time, so it still doesn't do any runtime heap allocation.
+[1]: На самом деле в Zig есть оператор объединения строк (или, более широко, объединения массивов), но он работает только на этапе компиляции и, следовательно, не требует выделения памяти в куче во время выполнения программы.
 
-# First-class support for no standard library
+# Полноценная поддержка работы без стандартной библиотеки
 
-As hinted above, Zig has an entirely optional standard library. Each std lib API only gets compiled
-into your program if you use it. Zig has equal support for either linking against libc or
-not linking against it. Zig is friendly to bare-metal and high-performance development.
+Как уже упоминалось, стандартная библиотека в Zig является полностью опциональной. Каждый API стандартной библиотеки компилируется в вашу программу только при его использовании. Zig одинаково поддерживает как связывание с libc, так и работу без него. Этот язык удобен для разработок как на голом железе, так и для создания сложных высокопроизводительных приложений.
 
-It's the best of both worlds; for example in Zig, WebAssembly programs can both use
-the normal features of the standard library, and still result in the tiniest binaries when
-compared to other programming languages that support compiling to WebAssembly.
+Таким образом, вы получаете лучшее из обоих миров: например, программы WebAssembly на Zig могут использовать функционал стандартной библиотеки и при этом создавать минимальные по размеру бинарные файлы по сравнению с другими языками, поддерживающими компиляцию в WebAssembly.
 
-# A Portable Language for Libraries
+# Кроссплатформенный язык для библиотек
 
-One of the holy grails of programming is code reuse. Sadly, in practice, we find ourselves re-inventing the wheel many times over again. Often it's justified.
+Повторное использование кода является одной из ключевых идей в программировании. Однако на практике часто приходится изобретать велосипед заново, и порой это оправдано:
 
- * If an application has real-time requirements, then any library that uses garbage collection or any other non-deterministic behavior is disqualified as a dependency.
- * If a language makes it too easy to ignore errors, and thus hard to verify that a library correctly handles and bubbles up errors, it can be tempting to ignore the library and re-implement it, knowing that one handled all the relevant errors correctly. Zig is designed such that the laziest thing a programmer can do is handle errors correctly, and thus one can be reasonably confident that a library will properly bubble errors up.
- * Currently it is pragmatically true that C is the most versatile and portable language. Any language that does not have the ability to interact with C code risks obscurity. Zig is attempting to become the new portable language for libraries by simultaneously making it straightforward to conform to the C ABI for external functions, and introducing safety and language design that prevents common bugs within the implementations.
+ * Если у приложения есть требования к работе в реальном времени, то использование библиотек со сборщиком мусора или любым другим недетерминированным поведением недопустимо.
+ * Когда язык программирования позволяет игнорировать ошибки, возникает риск того, что они не будут корректно обрабатываться в используемых библиотеках. Это может приводить к желанию переписать библиотеку с нуля, чтобы гарантировать надёжную обработку всех ошибок. Однако язык Zig разработан с акцентом на то, чтобы обработка ошибок была наиболее очевидным и простым решением для программиста. Поэтому часто можно быть уверенным в том, что библиотеки, написанные на Zig, обеспечивают надлежащую обработку всех ошибок.
+ * Сегодня можно с уверенностью сказать, что C — это самый универсальный и кроссплатформенный язык программирования. Любой язык, который не предоставляет возможности взаимодействия с кодом на C, рискует остаться в тени. Zig стремится стать новым стандартом, одновременно упрощая соответствие C ABI (Application Binary Interface) для работы с внешними функциями и внедряя механизмы безопасности, которые помогают избежать типичных ошибок при разработке.
 
-# A Package Manager and Build System for Existing Projects
+# Менеджер пакетов и система сборки для существующих проектов
 
-Zig is a toolchain in addition to a programming language. It comes with a
-[build system and package manager](/learn/build-system/) that are useful even
-in the context of a traditional C/C++ project.
+Zig — это не только язык программирования, но и целый набор инструментов. В его составе есть [система сборки и менеджер пакетов](/learn/build-system/), которые будут полезны даже для традиционных C/C++ проектов.
 
-Not only can you write Zig code instead of C or C++ code, but you can use Zig
-as a replacement for autotools, cmake, make, scons, ninja, etc. And on top of
-this, it provides a package manager for native dependencies. This build system
-is appropriate even if the entirety of a project's codebase is in C or C++.
-For example, by
-[porting ffmpeg to the zig build system](https://github.com/andrewrk/ffmpeg),
-it becomes possible to compile ffmpeg on any supported system for any supported
-system using only a [50 MiB download of zig](/download/). For open source
-projects, this streamlined ability to build from source - and even
-cross-compile - can be the difference between gaining or losing valuable
-contributors.
+Zig можно использовать не только для написания кода вместо C или C++, но и в качестве замены инструментам вроде autotools, CMake, Make, SCons, Ninja и других. Помимо этого, Zig предлагает менеджер пакетов для управления нативными зависимостями, а система сборки Zig актуальна даже в том случае, если весь код вашего проекта полностью написан на C или C++. Например, [портирование ffmpeg на систему сборки Zig](https://github.com/andrewrk/ffmpeg) позволяет компилировать ffmpeg на любой платформе для любой другой платформы с использованием единственного [исполняемого файла zig размером 50 МиБ](/download/). Для проектов с открытым исходным кодом такая возможность сборки из исходников — и даже кросс-компиляция — может стать критически важным фактором в привлечении и удержании ценных разработчиков.
 
-System package managers such as apt-get, pacman, homebrew, and others are
-instrumental for end user experience, but they can be insufficient for the
-needs of developers. A language-specific package manager can be the difference
-between having no contributors and having many. For open source projects, the
-difficulty of getting the project to build at all is a huge hurdle for
-potential contributors. For C/C++ projects, having dependencies can be fatal,
-especially on Windows, where there is no package manager. Even when just
-building Zig itself, most potential contributors have a difficult time with the
-LLVM dependency. Zig offers a way for projects to depend on native libraries
-directly - without depending on the users' system package manager to have the
-correct version available, and in a way that is practically guaranteed to
-successfully build projects on the first try regardless of what system is being
-used and independent of what platform is being targeted.
+Системные менеджеры пакетов, такие как apt-get, pacman, homebrew и другие, играют ключевую роль в удобстве пользователей, но зачастую не полностью удовлетворяют потребностям разработчиков. Для проектов с открытым исходным кодом сложный процесс сборки может стать серьёзным препятствием. В проектах на C/C++ наличие зависимостей особенно критично – особенно в Windows, где отсутствует централизованный менеджер пакетов. Даже сборка самого Zig часто затруднительна для многих из-за зависимости от LLVM. Zig предлагает способ подключения проектов к нативным библиотекам напрямую, без необходимости полагаться на то, что в системном менеджере пакетов пользователей установлена нужная версия. Этот подход практически гарантирует успешную сборку проектов с первой попытки, независимо от используемой системы и целевой платформы.
 
-**Other languages have package managers but they do not eliminate pesky system
-dependencies like Zig does.**
+**Другие языки программирования имеют свои менеджеры пакетов, но они не устраняют назойливые системные зависимости так эффективно, как это делает Zig.**
 
-Zig can replace a project's build system with a reasonable language using
-a declarative API for building projects, that also provides package management,
-and thus the ability to actually depend on other C libraries. The ability to
-have dependencies enables higher level abstractions, and thus the proliferation
-of reusable high-level code.
+Zig может заменить систему сборки проекта на более удобный язык, используя декларативный API для сборки проектов. Этот API также обеспечивает управление пакетами, что фактически позволяет зависеть от других библиотек на C. Возможность иметь такие зависимости даёт возможность создавать более высокоуровневые абстракции, что в свою очередь способствует распространению и переиспользованию кода.
 
-# Simplicity
+# Простота
 
-C++, Rust, and D have such a large number of features that they can be distracting from the actual meaning of the application you are working on. One finds oneself debugging one's knowledge of the programming language instead of debugging the application itself.
+C++, Rust и D настолько насыщены различными функциями, что это может отвлечь от разработки. Вместо того чтобы сосредоточиться на разработке самого приложения, вы можете оказаться погружёнными в изучение тонкостей самих языков.
 
-Zig has no macros yet is still powerful enough to express complex programs in a
-clear, non-repetitive way. Even Rust has macros with special cases like
-`format!`, which is implemented in the compiler itself. Meanwhile in Zig, the
-equivalent function is implemented in the standard library with no special case
-code in the compiler.
+В отличие от них, в Zig нет макросов, но это не делает его менее мощным. Этот язык позволяет выразить сложные программы в ясной и ненавязчивой форме. Например, в Rust есть макросы, такие как `format!`, которые требуют поддержки на уровне компилятора. В Zig же аналогичная функция реализована в стандартной библиотеке, без какой-либо специальной поддержки на уровне компилятора.
 
-# Tooling
+Таким образом, Zig помогает сосредоточиться на разработке приложения, минимизируя отвлекающие факторы, связанные с освоением языка.
 
-Zig can be downloaded from [the downloads section](/download/).  Zig provides
-binary archives for Linux, Windows, and macOS. The following describes what you
-get with one of these archives:
+# Инструментарий
 
-* installed by downloading and extracting a single archive, no system configuration needed
-* statically compiled so there are no runtime dependencies
-* supports using LLVM for optimized release builds while using Zig's custom backends for faster compilation performance
-* additionally supports a backend for outputting C code
-* out of the box cross-compilation to most major platforms
-* ships with source code for libc that will be dynamically compiled when needed for any supported platform
-* includes build system with concurrency and caching
-* compiles C and C++ code with libc support
-* drop-in GCC/Clang command line compatibility with `zig cc`
-* Windows resource compiler
+Zig можно скачать из [раздела загрузок](/download/). Zig предоставляет бинарные архивы для Linux, Windows и macOS. Вот что включает в себя такой архив:
+
+* устанавливается простым скачиванием и распаковкой архива, не требуя системной конфигурации
+* статически скомпилирован, поэтому отсутствуют зависимости во время выполнения
+* поддерживает использование LLVM для оптимизированных релизных сборок, одновременно используя собственные бэкенды для более быстрой компиляции
+* предоставляет возможность экспортировать код на C
+* готов для кросс-компиляции на большинство основных платформ
+* содержит исходный код для libc, который будет динамически компилироваться по мере необходимости для любой поддерживаемой платформы
+* включает систему сборки с поддержкой параллельности и кэширования
+* компилирует код на C и C++ с поддержкой libc
+* обеспечивает полную совместимость с командной строкой GCC/Clang через `zig cc`
+* содержит компилятор ресурсов для Windows
