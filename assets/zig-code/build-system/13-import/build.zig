@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const tool = b.addExecutable(.{
         .name = "generate_struct",
         .root_source_file = b.path("tools/generate_struct.zig"),
-        .target = b.host,
+        .target = b.graph.host,
     });
 
     const tool_step = b.addRunArtifact(tool);
