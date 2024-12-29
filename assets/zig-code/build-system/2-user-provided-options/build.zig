@@ -15,5 +15,4 @@ pub fn build(b: *std.Build) void {
 }
 
 // build=succeed
-// additional_option=--summary
-// additional_option=all
+// additional_option=--help
