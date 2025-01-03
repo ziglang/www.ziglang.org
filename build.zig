@@ -149,6 +149,12 @@ pub fn build(b: *std.Build) void {
                 .output_prefix_override = "",
             },
             .{
+                .code = "ru-RU",
+                .name = "Русский",
+                .site_title = "Язык программирования Zig",
+                .content_dir_path = "content/ru-RU",
+            },
+            .{
                 .code = "it-IT",
                 .name = "Italiano",
                 .site_title = "Zig Programming Language",
