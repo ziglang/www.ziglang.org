@@ -1,0 +1,499 @@
+---
+.title = "Sistema de Armado de Zig",
+.author = "",
+.date = @date("2024-10-07:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Sistema de Armado de Zig",
+	"toc": true,
+},
+---
+# [¿Cómo sacarle provecho al Sistema de Armado(build system) de Zig?]($heading.id('build-system'))
+Los comandos fundamentales `zig build-exe`, `zig build-lib`, `zig build-obj`, y
+`zig test` en el mayor de los casos son suficientes. Sin embargo, hay ocasiones
+en las que un proyecto necesita otra capa de abstracción para manejar la complejidad
+de construir desde las fuentes.
+
+Por ejemplo, puede que alguna de estas situaciones aplique:
+
+- La línea de comandos se hace muy larga y difícil de manejar, y deseas un
+  lugar donde quede escrita.
+- Quieres armar muchos artefactos, o el proceso de armado contiene muchos pasos.
+- Quieres aprovechar concurrencia y caché para reducir el tiempo de armado.
+- Quieres exponer las opciones de configuración para el proyecto.
+- El proceso de armado es diferente dependiendo del sistema objetivo(target) y
+  otras opciones.
+- Tienes dependencias de otros proyectos.
+- Quieres evitar dependencias innecesarias con cmake, make, shell, msvc,
+  python, etc., haciendo tu proyecto asequible a más contribuyentes
+- Quieres proveer un paquete que otros puedan consumir.
+- Quieres proveer una forma estandarizada para que herramientas tales como
+  IDEs puedan entender semánticamente cómo armar el proyecto.
+
+Si cualquiera de estas aplican, el proyecto se beneficiará al usar el sistema
+de armado de Zig.
+
+# [Iniciando]($heading.id('getting-started'))
+## [Un ejecutable sencillo]($heading.id('simple'))
+Este guión de armado(build script) crea un ejecutable desde un archivo Zig que
+contiene la definición de una función pública `main`.
+
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
+
+## [Instalar artefactos armados]($heading.id('installing-artifacts'))
+
+El sistema de armado de Zig, como la mayoría de sistemas de armado se basa en modelar el proyecto como un grafo acíclico dirigido(DAG) de pasos que son independientes y se ejecutan concurrentemente.
+
+De forma predeterminada el paso principal en el grafo es el paso **Install**,
+cuyo propósito es copiar los artefactos en el lugar donde deberían quedar. El
+paso de instalación comienza sin dependencias, y por lo tanto nada sucederá
+cuando se ejecute `zig build`. El guión de armado de un proyecto debe incluir
+el conjunto de cosas a instalar, que es lo que hace la función
+`installArtifact`.
+
+**Resultado**
+```
+├── build.zig
+├── hello.zig
+├── .zig-cache
+└── zig-out
+    └── bin
+        └── hello
+```
+
+Hay dos directorios generados en este resultado: `.zig-cache` y `zig-out`. El primero contiene archivos que harán subsecuentes armados más rápidos, aunque estos archivos no se espera que estén incluidos en el control de versiones(source-control) y este directorio puede eliminarse completamente en cualquier momento sin consecuencias.
+
+El segundo, `zig-out`, es un "prefijo de instalación". Se mapea al concepto de la jerarquía del sistema estándar de archivos. Este directorio no lo elige el proyecto y si por el usuario de `zig build` con la opción bandera(flag) `--prefix` (`-p` en corto).
+
+Tú, como el mantenedor del proyecto elige lo que se debe colocar en este directorio, pero el usuario elige dónde instalarlo en su sistema. El guión de armado no puede establecer los paths de salida porque esto rompería el caché, la concurrencia y la componibilidad molestando al usuario final.
+
+## [Añadir un paso útil para ejecutar la Aplicación]($heading.id('run-step'))
+
+Es común añadir el paso `Run` para ofrecer una forma de ejecutar nuestra
+aplicación directamente desde el comando de armado.
+
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
+
+# [Lo Básico]($heading.id('basics'))
+
+## [Opciones dadas por el usuario]($heading.id('user-options'))
+
+Use `b.option` para hacer que el guión de armado sea configurable para
+usuarios finales y otros proyectos que dependan del proyecto como un paquete.
+
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
+
+Por favor fija tu atención a estas líneas:
+
+```
+Project-Specific Options:
+  -Dwindows=[bool]             Target Microsoft Windows
+```
+
+Esta parte del menú de ayuda es auto-generada basada en la ejecución de la lógica de
+`build.zig`. Los usuarios pueden descubrir las opciones de configuración del guión
+de armado de esta forma.
+
+## [Opciones estándar de configuración]($heading.id('standard-options'))
+
+Previamente usamos la bandera booleana para indicar el armado para Windows. Sin
+embargo, podemos hacerlo mejor.
+
+La mayoría de proyectos desean ofrecer la habilidad de cambiar el objetivo(arquitectura objetivo)
+y los ajustes de optimización. Para estimular la convención de nombramiento estándar de
+estas opciones Zig provee las funciones de ayuda `standardTargetOptions` y
+`standardOptimizeOption`.
+
+Las opciones estándar de arquitectura le permiten a la persona que ejecuta
+`zig build` elegir la arquitectura para generar. De forma predeterminada,
+se permite cualquier arquitectura y no elegir significa apuntar al sistema
+en el que se ejecuta(host system). Se proveen otras opciones para restringir
+las arquitecturas soportadas.
+
+Las opciones de optimizaciones estándar le permiten a la persona que ejecuta
+`zig build` seleccionar entre `Debug`, `ReleaseSafe`, `ReleaseFast`, y
+`ReleaseSmall`. De forma predeterminada ninguna de las opciones versión(release)
+se considera una opción preferible por el guión de armado, y el usuario debe
+tomar una decisión para crear una versión.
+
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
+
+Ahora nuestro menú `--help` contiene más entradas:
+
+```
+Project-Specific Options:
+  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
+  -Dcpu=[string]               Target CPU features to add or subtract
+  -Doptimize=[enum]            Prioritize performance, safety, or binary size (-O flag)
+                                 Supported Values:
+                                   Debug
+                                   ReleaseSafe
+                                   ReleaseFast
+                                   ReleaseSmall
+```
+
+Es totalmente posible crear estas opciones vía `b.option` directamente, pero
+este API provee una convención comúnmente usada para nombrar estas opciones
+frecuentemente usadas.
+
+En nuestra salida de la terminal, observa que pasamos `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`.
+Comparado con el primer ejemplo, ahora vemos archivos diferentes en el prefijo de
+instalación(installation prefix):
+
+```
+zig-out/
+└── bin
+    └── hello.exe
+```
+
+## [Opciones para compilación condicional]($heading.id('conditional-compilation'))
+
+Para pasar opciones desde el guión de armado y en el código del proyecto Zig, usa
+el paso `Options`.
+
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
+
+En este ejemplo, el dato proveído por `@import("config")` se sabe en
+tiempo de compilación (comptime-known), previendo que se lance `@compileError`. Si
+hubiéramos pasado la opción `-Dversion=0.2.3` u omitido la opción, hubiéramos visto
+fallar la compilación de app.zig fallar con el error "too old".
+
+## [Biblioteca estática]($heading.id('static-library'))
+
+Este guión de armado crea una biblioteca estática de código Zig, y también
+un ejecutable de otro código Zig que la consume.
+
+[]($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
+
+En este caso, solamente se instala la librería estática.
+
+```
+zig-out/
+└── lib
+    └── libfizzbuzz.a
+```
+
+Sin embargo, si mira atentamente, el guión de armado contiene una opción para
+instalar también el demo. Si pasamos adicionalmente `-Denable-demo`, entonces
+vemos lo siguiente en el prefijo de instalación:
+
+```
+zig-out/
+├── bin
+│   └── demo
+└── lib
+    └── libfizzbuzz.a
+```
+
+Nota que a pesar de la llamada incondicional a `addExecutable`, el sistema de
+armado no gasta tiempo alguno generando el ejecutable `demo` a menos que sea
+requerido con  `-Denable-demo`, porque el sistema de armado se basa en un
+Grafo Acíclico dirigido con dependencias.
+
+## [Biblioteca estática]($heading.id('dynamic-library'))
+
+Aquí tenemos los mismos archivos del ejemplo de la [biblioteca estática](#static-library)
+excepto por el cambio de `build.zig`.
+
+[]($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
+
+**Resultado**
+```
+zig-out
+└── lib
+    ├── libfizzbuzz.so -> libfizzbuzz.so.1
+    ├── libfizzbuzz.so.1 -> libfizzbuzz.so.1.2.3
+    └── libfizzbuzz.so.1.2.3
+```
+
+Como en el ejemplo de la biblioteca estática, para crear un enlace ejecutable hacia
+esta, usa un código como el siguiente:
+
+```zig
+exe.linkLibrary(libfizzbuzz);
+```
+
+## [Pruebas]($heading.id('testing'))
+
+Puedes probar archivos individualmente con `zig test foo.zig`, sin embargo,
+puedes resolver casos de uso más complejos orquestando las pruebas con el
+guión de armado.
+
+Cuando usas el guión de armado, las pruebas unitarias se parten en dos pasos
+diferentes en el grafo de armado, el paso **Compile** y el paso **Run**. Sin
+el llamado a `addRunArtifact`, que establece una arista de dependencia entre
+los dos pasos, no se ejecutarán las pruebas unitarias(unit tests).
+
+El paso de compilación puede configurarse de la misma manera que con cualquier
+ejecutable, librería o código objeto(object code), por ejemplo al
+[enlazar hacia bibliotecas del sistema](#linking-to-system-libraries),
+establecer opciones de arquitectura, o añadir unidades de compilación
+adicionales.
+
+Puedes configurar el paso `Run` de la misma manera que cualquier paso Run, por ejemplo dejando
+de lado la ejecución cuando el sistema base(host) no tiene capacidad de
+ejecutar el binario.
+
+Cuando se usa el sistema de armado para ejecutar pruebas unitarias, el ejecutor
+de armado(build runner) y el ejecutor de pruebas(test runner) se comunican
+vía `stdin` y `stdout` para ejecutar varios conjuntos de pruebas(test suites)
+concurrentemente y reportar fallos de los test de forma coherente sin que se
+mezclen sus salidas. Esta es una razón por la cual
+[escribir a la salida estándar en pruebas unitarias es problemático](https://github.com/ziglang/zig/issues/15091) -
+interferirá con este canal de comunicación. Por otro lado, este mecanismo
+permitirá una característica que viene, la
+[habilidad de una prueba unitaria de esperar un panic](https://github.com/ziglang/zig/issues/1356).
+
+[]($code.language('=html').buildAsset("build-system/unit-testing/main.zig"))
+[]($code.language('=html').buildAsset("build-system/unit-testing/build.zig"))
+
+En este caso puede ser bueno ajustar `skip_foreign_checks` para las
+pruebas unitarias:
+
+```diff
+@@ -23,6 +23,7 @@
+         });
+
+         const run_unit_tests = b.addRunArtifact(unit_tests);
++        run_unit_tests.skip_foreign_checks = true;
+         test_step.dependOn(&run_unit_tests.step);
+     }
+ }
+```
+
+[]($code.language('=html').buildAsset("build-system/unit-testing-skip-foreign/build.zig"))
+
+## [Enlazar hacia bibliotecas del sistema]($heading.id('linking-system-libraries'))
+
+Para satisfacer dependencia de bibliotecas hay dos opciones:
+
+1. Proveer estas bibliotecas vía el sistema de armado de Zig
+   (ver [Manejo de paquetes](#package-management) y [Bibliotecas estáticas](#static-library)).
+2. Usar los archivos proveídos por el sistema base.
+
+Para el caso de mantenedores de proyectos upstream(upstream projects), obtener
+tales librerías vía el Sistema de Armado de Zig provee la fricción mínima y pone
+el poder de configuración en manos de tales mantenedores. Cualquiera que lo arme
+de esta forma tendrá resultados tan reproducibles y consistentes como cualquier
+otro y funcionará en cualquier sistema operativo soportando incluso compilación
+cruzada. Más aún, le permite al proyecto decidir con perfecta precisión las
+versiones exactas de su árbol de dependencias entero frente al que quiere armar. Esta
+se espera que sea la forma preferida en general al depender de bibliotecas
+externas.
+
+Sin embargo, en el caso de uso de repositorios de empaquetamiento de programas
+como Debian, Homebrew, o Nix, en donde es obligatorio enlazar hacia bibliotecas
+del sistema, los guiones de armado deben
+[detectar el modo](https://github.com/ziglang/zig/issues/14281) y configurar
+acordemente.
+
+[]($code.language('=html').buildAsset("build-system/system-libraries/build.zig"))
+
+Los usuarios de `zig build` pueden usar `--search-prefix` para proveer directorios
+adicionales que se consideran "directorios de sistema" para el propósito de encontrar
+bibliotecas estáticas y dinámicas.
+
+# [Generar archivos]($heading.id('generating-files'))
+
+## [Ejecutar herramientas del sistema]($heading.id('system-tools'))
+Esta versión de hello world espera encontrar un archivo `word.txt` en el
+mismo directorio y queremos usar una herramienta del sistema para generarlo
+a partir de un archivo JSON.
+
+Ten en cuenta que las dependencias del sistema hará que tu proyecto sea más
+difícil de armar para tus usuarios. Este guión de armado depende de `jq`,
+por ejemplo, que no está presente en la mayoría de las distribuciones
+Linux y puede ser una herramienta poco familiar para los usuarios
+Windows.
+
+La siguiente sección reemplazará `jq` por una herramienta Zig incluida en
+el árbol de fuentes, la aproximación preferida.
+
+**`words.json`**
+```json
+{
+  "en": "world",
+  "es": "mundo",
+  "it": "mondo",
+  "ja": "世界"
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/build.zig"))
+
+**Resultado**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+
+Note como `captureStdOut` crea un archivo temporal con el resultado de la invocación
+de `jq`.
+
+## [Ejecutar herramientas del proyecto]($heading.id('project-tools'))
+
+Esta versión de hola mundo espera encontrar un archivo `word.txt` en el mismo
+directorio, y queremos producirlo en tiempo de armado al invocar el programa Zig
+con un archivo JSON.
+
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "es": "mundo",
+  "it": "mondo",
+  "ja": "世界"
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/src/main.zig"))
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/tools/word_select.zig"))
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/build.zig"))
+
+**Resultado**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+## [Producir insumos para `@embedFile`]($heading.id('embed-file'))
+
+Esta versión de hello world quiere embeber `@embedFile` un recurso generado
+en tiempo de armado, que vamos a producir usando una herramienta escrita en
+Zig.
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "es": "mundo",
+  "it": "mondo",
+  "ja": "世界"
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/src/main.zig"))
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/tools/word_select.zig"))
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/build.zig"))
+
+**Resultado**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [Generar código fuente Zig]($heading.id('generating-zig'))
+Este guión de armado usa un programa Zig para generar un archivo Zig y
+después lo expone al programa principal como un módulo de dependencia.
+
+[]($code.language('=html').buildAsset("build-system/13-import/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/tools/generate_struct.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/build.zig"))
+
+**Resultado**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [Tratar con uno o más archivos generados]($heading.id('write-files'))
+
+El paso **WriteFiles** ofrece una forma de generar uno o más archivos que
+comparten un directorio padre. El directorio generado está dentro del
+`.zig-cache` local y cada archivo generado está disponible como un
+`std.Build.LazyPath`. El directorio padre también está disponible como
+un LazyPath.
+
+Esta API soporta escribir cadenas arbitrarias en el directorio generado
+así como copiar archivos en el mismo.
+
+[]($code.language('=html').buildAsset("build-system/write-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/write-files/build.zig"))
+
+**Resultado**
+
+```
+zig-out/
+└── project.tar.gz
+```
+
+## [Mutar archivos directamente(in place)]($heading.id('mutating-source'))
+
+Es poco común, pero sucede que un proyecto incluya archivos generados en el
+sistema de control de versiones. Puede ser útil cuando los archivos generados
+son actualizados en pocas oportunidades y tienen dependencias complejas en
+el proceso de actualización, pero *solamente* durante el proceso de actualización.
+
+Por esto, **WriteFiles** provee una forma de lograr esta tarea.  Es una
+característica que
+[será movida de WriteFiles a su propio paso de compilación](https://github.com/ziglang/zig/issues/14944)
+en una versión futura de Zig.
+
+Ten cuidado con esta funcionalidad; no deberías usarla durante el proceso
+normal de armado, pero es una utilidad ejecutada por un desarrollador con
+intención de actualizar archivos fuente que serán incluidos en el control
+de versiones.  Si se hace durante el proceso normal de armado causará
+bugs de caché y concurrencia.
+
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/tools/proto_gen.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/protocol.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/build.zig"))
+
+```=html
+<pre><code class="shell">$ zig build update-protocol --summary all
+<span class="sgr-36m">Build Summary:</span> 4/4 steps succeeded
+update-protocol<span class="sgr-32m"> success</span>
+└─ WriteFile<span class="sgr-32m"> success</span>
+   └─ run proto_gen (protocol.zig)<span class="sgr-32m"> success</span><span class="sgr-2m"> 401us</span><span class="sgr-2m"> MaxRSS:1M</span>
+      └─ zig build-exe proto_gen Debug native<span class="sgr-32m"> success</span><span class="sgr-2m"> 1s</span><span class="sgr-2m"> MaxRSS:183M</span>
+</code></pre>
+```
+
+Después de ejecutar este comando, `src/protocol.zig` se actualizará.
+
+# [Ejemplos útiles]($heading.id('examples'))
+
+## [Armar múltiples arquitecturas al crear una versión]($heading.id('release'))
+
+En este ejemplo vamos a cambiar algunos predeterminados al crear un paso `InstallArtifact` para colocar el resultado de cada arquitectura en un directorio separado en la ruta(path) de instalación.
+
+[]($code.language('=html').buildAsset("build-system/10-release/build.zig"))
+[]($code.language('=html').buildAsset("build-system/10-release/hello.zig"))
+
+**Resultado**
+
+```
+zig-out
+├── aarch64-linux
+│   └── hello
+├── aarch64-macos
+│   └── hello
+├── x86_64-linux-gnu
+│   └── hello
+├── x86_64-linux-musl
+│   └── hello
+└── x86_64-windows
+    ├── hello.exe
+    └── hello.pdb
+```
