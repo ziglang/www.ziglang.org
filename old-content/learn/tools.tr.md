@@ -29,7 +29,7 @@ Dil sunucuları, sözdizimi vurgulaması, otomatik tamamlama ve birçok diğer �
 ### Kate
 - [ziglang/kde-syntax-highlighting](https://github.com/ziglang/kde-syntax-highlighting)
 
-### JetBrains family ( IntelliJ IDEA, Fleet and etc)
+### JetBrains family (IntelliJ IDEA, Fleet)
 - [ZigBrains](https://plugins.jetbrains.com/plugin/22456-zigbrains)
 - [Zig Fleet Plugin](https://plugins.jetbrains.com/plugin/26070-zig)
 
