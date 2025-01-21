@@ -30,9 +30,7 @@ Ferramentas específicas do editor, em sua maioria marcadores de sintaxe.
 
 ### JetBrains family ( IntelliJ IDEA, Fleet and etc)
 - [ZigBrains](https://plugins.jetbrains.com/plugin/22456-zigbrains)
-- [ZigLang](https://plugins.jetbrains.com/plugin/17143-ziglang)
-- [ZigSupport](https://plugins.jetbrains.com/plugin/18062-zig-support)
-- [Zig](https://plugins.jetbrains.com/plugin/10560-zig)
+- [Zig Fleet Plugin](https://plugins.jetbrains.com/plugin/26070-zig)
 
 ## Documentação e Teste
 - [kristoff-it/zig-doctest](https://github.com/kristoff-it/zig-doctest)
