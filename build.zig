@@ -111,6 +111,9 @@ pub fn build(b: *std.Build) void {
         .assets_dir_path = "assets",
         .build_assets = build_assets.items,
         .static_assets = &.{
+            ".well-known/funding-manifest-urls",
+            "funding.json",
+
             "external-link-dark.svg",
             "external-link-light.svg",
             "heart.svg",
@@ -152,6 +155,12 @@ pub fn build(b: *std.Build) void {
                 .content_dir_path = "content/es-AR",
             },
             .{
+                .code = "ru-RU",
+                .name = "Русский",
+                .site_title = "Язык программирования Zig",
+                .content_dir_path = "content/ru-RU",
+            },
+            .{
                 .code = "it-IT",
                 .name = "Italiano",
                 .site_title = "Zig Programming Language",
@@ -174,6 +183,12 @@ pub fn build(b: *std.Build) void {
                 .name = "日本語",
                 .site_title = "Zig Programming Language",
                 .content_dir_path = "content/ja-JP",
+            },
+            .{
+                .code = "zh-CN",
+                .name = "中文",
+                .site_title = "Zig 编程语言",
+                .content_dir_path = "content/zh-CN",
             },
         },
     });
