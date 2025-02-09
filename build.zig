@@ -195,7 +195,7 @@ fn runZigScripts(
     paths: []const []const u8,
 ) void {
     const doctest_dep = b.dependency("doctest", .{
-        .target = b.host,
+        .target = b.graph.host,
         .optimize = .Debug,
     });
     const doctest_exe = doctest_dep.artifact("doctest");
@@ -234,7 +234,7 @@ fn runSingleZigScript(
 
 pub fn oldBuild(b: *std.Build) void {
     const doctest_dep = b.dependency("doctest", .{
-        .target = b.host,
+        .target = b.graph.host,
         .optimize = .Debug,
     });
     const doctest_exe = doctest_dep.artifact("doctest");
