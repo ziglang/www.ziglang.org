@@ -30,12 +30,13 @@ pub fn build(b: *std.Build) void {
     runZigScripts(b, &build_assets, "assets/zig-code", &.{
         "index.zig",
 
-        "samples/0-windows-msgbox.zig",
-        "samples/1-memory-leak.zig",
-        "samples/2-c-interop.zig",
-        "samples/3-ziggzagg.zig",
-        "samples/4-generic-type.zig",
-        "samples/5-curl.zig",
+        "samples/hello-world.zig",
+        "samples/windows-msgbox.zig",
+        "samples/memory-leak.zig",
+        "samples/c-interop.zig",
+        "samples/ziggzagg.zig",
+        "samples/generic-type.zig",
+        "samples/curl.zig",
 
         "build-system/1-simple-executable/build.zig",
         "build-system/1-simple-executable/hello.zig",
