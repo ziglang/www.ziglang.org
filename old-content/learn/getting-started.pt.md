@@ -72,7 +72,7 @@ brew install zig
 
 **MacPorts**
 ```
-port install zig
+sudo port install zig
 ```
 #### Linux
 Zig também está presente em muitos gerentes de pacotes para Linux. [Aqui](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager)
