@@ -70,7 +70,7 @@ brew install zig
 
 **MacPorts**
 ```
-port install zig
+sudo port install zig
 ```
 #### Linux
 Zig أيضًا موجودة عند العديد من مديري الحزم على Linux. [هنا](https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager) يمكنك العثور على قائمة محدثة ولكن كن حذرًا فبعض الحزم قد تتضمن نسخًا بالية من Zig.
