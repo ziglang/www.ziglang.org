@@ -23,6 +23,7 @@ const releases = [_][]const u8{
     "0.12.0",
     "0.12.1",
     "0.13.0",
+    "0.14.0",
 };
 
 pub fn build(b: *std.Build) void {
@@ -202,7 +203,7 @@ fn runZigScripts(
     paths: []const []const u8,
 ) void {
     const doctest_dep = b.dependency("doctest", .{
-        .target = b.host,
+        .target = b.graph.host,
         .optimize = .Debug,
     });
     const doctest_exe = doctest_dep.artifact("doctest");
@@ -228,10 +229,9 @@ fn runSingleZigScript(
         "--zig",        b.graph.zig_exe,
         "--cache-root", b.cache_root.path orelse ".",
     });
-    if (b.zig_lib_dir) |p| {
-        cmd.addArg("--zig-lib-dir");
-        cmd.addDirectoryArg(p);
-    }
+    cmd.addArg("--zig-lib-dir");
+    cmd.addDirectoryArg(.{ .cwd_relative = b.graph.zig_lib_directory.path orelse "." });
+
     cmd.addArgs(&.{"-i"});
     cmd.addFileArg(b.path(b.fmt("{s}/{s}", .{ assets_dir_path, path })));
 
@@ -272,7 +272,7 @@ fn installReleaseNotes(
     doctest_exe: *std.Build.Step.Compile,
     docgen_exe: *std.Build.Step.Compile,
 ) void {
-    const dirname = "src/download/0.13.0/release-notes";
+    const dirname = "src/download/0.14.0/release-notes";
     var dir = b.build_root.handle.openDir(dirname, .{ .iterate = true }) catch |err| {
         std.debug.panic("unable to open '{s}' directory: {s}", .{ dirname, @errorName(err) });
     };
@@ -307,11 +307,11 @@ fn installReleaseNotes(
     docgen_cmd.addArgs(&.{"--code-dir"});
     docgen_cmd.addDirectoryArg(wf.getDirectory());
 
-    docgen_cmd.addFileArg(b.path("src/download/0.13.0/release-notes.html"));
+    docgen_cmd.addFileArg(b.path("src/download/0.14.0/release-notes.html"));
     const generated = docgen_cmd.addOutputFileArg("release-notes.html");
 
     const copy_generated = b.addWriteFiles();
-    copy_generated.addCopyFileToSource(generated, "content/download/0.13.0/release-notes.html");
+    copy_generated.addCopyFileToSource(generated, "content/download/0.14.0/release-notes.html");
 
     b.getInstallStep().dependOn(&copy_generated.step);
 }
