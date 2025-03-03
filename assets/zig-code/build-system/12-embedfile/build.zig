@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const tool = b.addExecutable(.{
         .name = "word_select",
         .root_source_file = b.path("tools/word_select.zig"),
-        .target = b.host,
+        .target = b.graph.host,
     });
 
     const tool_step = b.addRunArtifact(tool);
