@@ -997,6 +997,14 @@ thread-1:                    thread-2:
     {#header_close#}
 
     {#header_open|Standard Library#}
+    <ul>
+    <li>mem: handle Float and Bool cases in byteSwapAllFields</li>
+    </ul>
+
+    {#header_open|TLS#}
+    TODO
+    {#header_close#}
+
     {#header_open|Deprecations#}
     <p>Deprecated aliases that are now compile errors:</p>
     <ul>
@@ -1053,6 +1061,22 @@ thread-1:                    thread-2:
 
     <p><code>std.zon.stringify.serializer</code> returns a more fine grained interface. It may be used to serialize a value piece by piece, for example to apply different configuration to different parts of the value or to serialize a value in a different form than it is laid out in memory.</p>
 
+    {#header_close#}
+
+    {#header_open|std.c Reorganization#}
+    <p>It is now composed of these main sections:</p>
+    <ul>
+    <li>Declarations that are shared among all operating systems.</li>
+    <li>Declarations that have the same name, but different type signatures depending on the operating system. Often multiple operating systems share the same type signatures however.</li>
+    <li>Declarations that are specific to a single operating system.<ul>
+    <li>These are imported one per line so you can see where they come from, protected by a comptime block inside the OS-specific file to prevent accessing the wrong one.</li>
+    </ul>
+    </li>
+    <li>A namespace called <code>private</code> at the bottom that is a bag of decls for logic above to pick and choose from.</li>
+    </ul>
+    <p>Closes <a href="https://github.com/ziglang/zig/issues/19352">#19352</a> by changing the convention for nonexisting symbols from {#syntax#}@compileError{#endsyntax#} to making types {#syntax#}void{#endsyntax#} and functions {#syntax#}{}{#endsyntax#}, so that it becomes possible to update {#syntax#}@hasDecl{#endsyntax#} sites to use {#syntax#}@TypeOf(f) != void{#endsyntax#} or {#syntax#}T != void{#endsyntax#}. Happily, this ended up removing some duplicate logic and update some bitrotted feature detection checks.</p>
+    <p>A handful of types have been modified to gain namespacing, type safety, and conform to field naming conventions. This is a breaking change.</p>
+    <p>With this, the last usage of {#syntax#}usingnamespace{#endsyntax#} site is eliminated from the standard library.</p>
     {#header_close#}
     {#header_close#}
 
@@ -1198,6 +1222,42 @@ const foo: Foo = @import("foo.zon");
     {#header_close#}
 
     {#header_open|Toolchain#}
+    {#header_open|Integrated Fuzzer#}
+<p>Adds a <code>--fuzz</code> CLI option to the build runner. When this is used it rebuilds any unit test binaries which contained at least one fuzz test with <code>-ffuzz</code> and then tells it to start fuzzing, which does in-process fuzzing.</p>
+<p>Adds <code>std.testing.fuzzInput</code>, which is how unit tests mark themselves as fuzz tests.</p>
+<p>This contains only a rudimentary implementation of fuzzer logic, really just some early, early experiments, but already it makes this test case fail in 65 milliseconds on my machine:</p>
+<pre><code class="language-zig">test &quot;fuzz example&quot; {
+    const input_bytes = std.testing.fuzzInput(.{});
+    try std.testing.expect(!std.mem.eql(u8, &quot;canyoufindme&quot;, input_bytes));
+}
+</code></pre>
+<pre><code>andy@bark ~/t/abc [1]&gt; ~/dev/zig/build-release/stage4/bin/zig build test --fuzz --debug-rt
+test
+└─ run test failure
+/home/andy/dev/zig/lib/std/testing.zig:546:14: 0x1183a59 in expect (test)
+    if (!ok) return error.TestUnexpectedResult;
+             ^
+/home/andy/tmp/abc/src/main.zig:28:5: 0x1183b21 in test.fuzz example (test)
+    try std.testing.expect(!std.mem.eql(u8, &quot;canyoufindme&quot;, input_bytes));
+    ^
+failed with error.TestUnexpectedResult
+error: the following command exited with error code 1:
+/home/andy/tmp/abc/.zig-cache/o/15697f80a9140388803537517083788c/test --seed=0x93a767fd --listen=- 
+error: all fuzz workers crashed
+error: the following build command failed with exit code 1:
+/home/andy/tmp/abc/.zig-cache/o/12ab17aae32a6d5d6c9fba7b28ba3167/build /home/andy/dev/zig/build-release/stage4/bin/zig /home/andy/dev/zig/lib /home/andy/tmp/abc /home/andy/tmp/abc/.zig-cache /home/andy/.cache/zig --seed 0x93a767fd -Zb1f080d4c8ac26d5 test --fuzz --debug-rt
+</code></pre>
+<p><a href="https://asciinema.org/a/asgN7rIr6LFeMhQMOXI825wGe">asciinema demo</a></p>
+    {#header_close#}
+
+    {#header_open|UBSan Runtime#}
+    Zig now <a href="https://github.com/ziglang/zig/pull/22488">provides a native runtime for UBSan</a>,
+    which is enabled by default when compiling in <code>Debug</code> mode. 
+    It works with <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">Clang's UBSan</a> API to improve
+    error messages when undefined behavior is detected in your C code. It can be manually controlled via the 
+    <code>-fubsan-rt</code> and <code>-fno-ubsan-rt</code> flags if the defaults don't fit your usecase.
+    {#header_close#}
+
     {#header_open|LLVM 19#}
     <p>This release of Zig upgrades to
     <a href="https://releases.llvm.org/19.1.0/docs/ReleaseNotes.html">LLVM 19.1.7</a>.</p>
@@ -1222,15 +1282,6 @@ const foo: Foo = @import("foo.zon");
     {#header_open|glibc 2.41#}
     <p>glibc versions 2.40 and 2.41 are now available when cross-compiling.</p>
     {#header_close#}
-
-    {#header_open|UBSan Runtime#}
-    Zig now <a href="https://github.com/ziglang/zig/pull/22488">provides a native runtime for UBSan</a>,
-    which is enabled by default when compiling in <code>Debug</code> mode. 
-    It works with <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">Clang's UBSan</a> API to improve
-    error messages when undefined behavior is detected in your C code. It can be manually controlled via the 
-    <code>-fubsan-rt</code> and <code>-fno-ubsan-rt</code> flags if the defaults don't fit your usecase.
-    {#header_close#}
-
     {#header_close#}
 
     {#header_open|Roadmap#}
@@ -1240,8 +1291,8 @@ const foo: Foo = @import("foo.zon");
     <p>Some upcoming milestones we will be working towards in the 0.14.0 release cycle:</p>
     <ul>
       <li>Making the x86 Backend the default backend for debug mode.</li>
-      <li>Linker support for COFF. Eliminate dependency on <a href="https://lld.llvm.org/">LLD</a>.</li>
-      <li>Enabling incremental compilation for fast rebuilds.</li>
+      <li>Enhance {#link|Linker#} implementations, eliminating dependency on
+      <a href="https://lld.llvm.org/">LLD</a> and supporting {#link|Incremental Compilation#}.</li>
     </ul>
     <p>The idea here is that prioritizing faster compilation will increase
     development velocity on the {#link|Compiler#} itself, leading to more bugs
