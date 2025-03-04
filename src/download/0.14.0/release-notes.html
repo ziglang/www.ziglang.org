@@ -1017,6 +1017,25 @@
 
     {#header_open|Language Changes#}
 
+    {#header_open|Decl Literals#}
+<p>Zig 0.14.0 extends the &quot;enum literal&quot; syntax (<code>.foo</code>) to provide a new feature, known as &quot;decl literals&quot;. Now, an enum literal <code>.foo</code> doesn&#39;t necessarily refer to an enum variant, but, using
+<a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a>, can also refer to any declaration on the target type. For instance, consider the following example:</p>
+    {#code|decl_literals.zig#}
+<p>Since the initialization expression of <code>val</code> has a result type of <code>S</code>, the initialization is effectively equivalent to <code>S.default</code>. This can be particularly useful when initializing struct fields to avoid having to specify the type again:</p>
+    {#code|decl_literals_structs.zig#}
+<p>It can also help in avoiding <a href="https://ziglang.org/documentation/0.14.0/#Faulty-Default-Field-Values">Faulty Default Field Values</a>, like in the following example:</p>
+    {#code|faulty.zig#}
+<p>Many existing uses of field default values may be more appropriately handled by a declaration named <code>default</code> or <code>empty</code> or similar, to ensure data invariants are not violated by overriding single fields.</p>
+<p>Decl literals also support function calls, like this:</p>
+    {#code|call_decl_literal.zig#}
+<p>As before, this syntax can be particularly useful when initializing struct fields. It also supports calling functions which return error unions via <code>try</code>. The following example uses these in combination to initialize a thin wrapper around an <code>ArrayListUnmanaged</code>:</p>
+    {#code|init_with_decl_literal.zig#}
+<p>The introduction of decl literals comes with some standard library changes. In particular, unmanaged containers, including <code>ArrayListUnmanaged</code> and <code>HashMapUnmanaged</code>, should no longer be default-initialized with <code>.{}</code>, because the default field values here violate the guidance discussed above. Instead, they should be initialized using their <code>empty</code> declaration, which can be conveniently accessed via decl literals:</p>
+    {#code|default_init_buffer.zig#}
+<p>Similarly, <code>std.heap.GeneralPurposeAllocator</code> should now be initialized with its <code>.init</code> declaration.</p>
+<p>The deprecated default field values for these data structures will be removed in the next release cycle.</p>
+    {#header_close#}
+
     {#header_open|@export Operand is Now a Pointer#}
 <p>This release of Zig simplifies the <code>@export</code> builtin. In previous versions of Zig, this builtin&#39;s first operand syntactically appeared to be the <em>value</em> which was to be exported, which was restricted to an identifier or field access of a local variable or container-level declaration. This system was unnecessarily restrictive, and moreover, syntactically confusing and inconsistent; it is reasonable to export constant comptime-known values, and this usage implied that the <em>value</em> was somehow being exported, whereas in reality its <em>address</em> was the relevant piece of information. To resolve this, <code>@export</code> has a new usage which closely mirrors that of <code>@extern</code>; its first operand is a <em>pointer</em>, which points to the data being exported. In most cases, solving this will just consist of adding a <code>&amp;</code> operator:</p>
 <pre>{#syntax#}
@@ -1245,7 +1264,7 @@ pub const SourceLocation = struct {
     <p>Note that array hash maps do <em>not</em> have this flaw.</p>
     {#header_close#}
 
-    {#header_open|TLS#}
+    {#header_open|Transport Layer Security (std.crypto.tls)#}
     TODO
     {#header_close#}
 
@@ -1665,8 +1684,8 @@ fish: Job 1, 'zig run test.c -lc' terminated by signal SIGABRT (Abort)</code></p
     {#header_open|Roadmap#}
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right; transform: scaleX(-1)">
 
-    <p>The major theme of the 0.14.0 release cycle will be <strong>compilation speed</strong>.</p>
-    <p>Some upcoming milestones we will be working towards in the 0.14.0 release cycle:</p>
+    <p>The major theme of the 0.15.0 release cycle will be <strong>compilation speed</strong>.</p>
+    <p>Some upcoming milestones we will be working towards:</p>
     <ul>
       <li>Making the x86 Backend the default backend for debug mode.</li>
       <li>Enhance {#link|Linker#} implementations, eliminating dependency on
