@@ -1061,7 +1061,33 @@ thread-1:                    thread-2:
       <li>added <code>WriteFile.addCopyDirectory</code>, which functions very similar to <code>InstallDir</code>.</li>
       <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by <code>h_dir</code> (which is <code>zig-out/include</code> by default).</li>
     </ul>
-    {#header_open|std.Build.Step.Fmt#}
+
+    {#header_open|File System Watching#}
+<pre><code>  --watch                      Continuously rebuild when source files are modified
+  --debounce &lt;ms&gt;              Delay before rebuilding after changed file detected
+</code></pre>
+<p>Uses the build system&#39;s perfect knowledge of all file system inputs to the pipeline to keep the build runner alive after completion, watching the minimal number of directories in order to trigger re-running only the dirty steps from the graph.</p>
+<p>Default debounce time is 50ms but this is configurable. It helps prevent wasted rebuilds when source files are changed in rapid succession, for example when saving with vim it does not do an atomic rename into place but actually deletes the destination file before writing it again, causing a brief period of invalid state, which would cause a build failure without debouncing (it would be followed by a successful build, but it&#39;s annoying to experience the temporary build failure regardless).</p>
+<p>The purpose of this feature is to reduce latency between editing and debugging in the development cycle. In large projects, the cache system must call <code>fstat</code> on a large number of files even when it is a cache hit. File system watching allows more efficient detection of stale pipeline steps.</p>
+<p>Mainly this is motivated by {#link|Incremental Compilation#} landing soon, so that we can keep the compiler running and responding to source code changes as fast as possible. In this case, also keeping the rest of the build pipeline up-to-date is table stakes.</p>
+    {#header_close#}
+
+    {#header_open|WriteFile Step#}
+<p>If you were using <code>WriteFile</code> for its ability to update source files, that functionality has been extracted into a separate step called <code>UpdateSourceFiles</code>. Everything else is the same, so migration looks like this:</p>
+<pre><code class="language-diff">-    const copy_zig_h = b.addWriteFiles();
++    const copy_zig_h = b.addUpdateSourceFiles();
+</code></pre>
+    {#header_close#}
+
+    {#header_open|RemoveDir Step#}
+<p>If you were using a <code>RemoveDir</code> step, it now takes a <code>LazyPath</code> instead of <code>[]const u8</code>. Probably your migration looks like this:</p>
+<pre><code class="language-diff">-        const cleanup = b.addRemoveDirTree(tmp_path);
++        const cleanup = b.addRemoveDirTree(.{ .cwd_relative = tmp_path });
+</code></pre>
+<p>However, please consider not choosing a temporary path at configure time as this is somewhat brittle when it comes to running your build pipeline concurrently.</p>
+    {#header_close#}
+
+    {#header_open|Fmt Step#}
     <p>This step now prints file names that failed the format check.</p>
     {#header_close#}
     {#header_close#}
