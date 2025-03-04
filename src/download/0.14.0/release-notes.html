@@ -1226,11 +1226,12 @@ const foo: Foo = @import("foo.zon");
 <p>Adds a <code>--fuzz</code> CLI option to the build runner. When this is used it rebuilds any unit test binaries which contained at least one fuzz test with <code>-ffuzz</code> and then tells it to start fuzzing, which does in-process fuzzing.</p>
 <p>Adds <code>std.testing.fuzzInput</code>, which is how unit tests mark themselves as fuzz tests.</p>
 <p>This contains only a rudimentary implementation of fuzzer logic, really just some early, early experiments, but already it makes this test case fail in 65 milliseconds on my machine:</p>
-<pre><code class="language-zig">test &quot;fuzz example&quot; {
+    <pre>{#syntax#}
+test "fuzz example" {
     const input_bytes = std.testing.fuzzInput(.{});
-    try std.testing.expect(!std.mem.eql(u8, &quot;canyoufindme&quot;, input_bytes));
+    try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input_bytes));
 }
-</code></pre>
+    {#endsyntax#}</pre>
 <pre><code>andy@bark ~/t/abc [1]&gt; ~/dev/zig/build-release/stage4/bin/zig build test --fuzz --debug-rt
 test
 └─ run test failure
@@ -1251,11 +1252,28 @@ error: the following build command failed with exit code 1:
     {#header_close#}
 
     {#header_open|UBSan Runtime#}
-    Zig now <a href="https://github.com/ziglang/zig/pull/22488">provides a native runtime for UBSan</a>,
-    which is enabled by default when compiling in <code>Debug</code> mode. 
-    It works with <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">Clang's UBSan</a> API to improve
-    error messages when undefined behavior is detected in your C code. It can be manually controlled via the 
-    <code>-fubsan-rt</code> and <code>-fno-ubsan-rt</code> flags if the defaults don't fit your usecase.
+    <p>Zig now provides a runtime library for
+    <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">UBSan</a>,
+    which is enabled by default when compiling in <code>Debug</code> mode.</p>
+    <p>In summary, by default, when Undefined Behavior is triggered in C code, it looks like this now:</p>
+    <pre><code>$ zig run test.c -lc
+thread 208135 panic: signed integer overflow: 2147483647 + 2147483647 cannot be represented in type 'int'
+/home/david/Code/zig/build/test.c:4:14: 0x1013e41 in foo (test.c)
+    return x + y;
+             ^
+/home/david/Code/zig/build/test.c:8:18: 0x1013e63 in main (test.c)
+    int result = foo(0x7fffffff, 0x7fffffff);
+                 ^
+../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7fca4c42e1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+../csu/libc-start.c:360:3: 0x7fca4c42e28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+???:?:?: 0x1013de4 in ??? (???)
+???:?:?: 0x0 in ??? (???)
+fish: Job 1, 'zig run test.c -lc' terminated by signal SIGABRT (Abort)</code></pre>
+    <p>If the default does not correctly detect whether the runtime library
+    should be omitted or included, it can be overridden with
+    <code>-fno-ubsan-rt</code> and <code>-fubsan-rt</code>, respectively.
+    <a href="https://github.com/ziglang/zig/issues/23052">Tracking issue for enhanced default detection</a>.
+    <p><a href="/devlog/2025/#2025-02-24">devlog entry</a></p>
     {#header_close#}
 
     {#header_open|LLVM 19#}
