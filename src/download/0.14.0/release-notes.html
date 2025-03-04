@@ -1158,6 +1158,10 @@ thread-1:                    thread-2:
     <p>A handful of types have been modified to gain namespacing, type safety, and conform to field naming conventions. This is a breaking change.</p>
     <p>With this, the last usage of {#syntax#}usingnamespace{#endsyntax#} site is eliminated from the standard library.</p>
     {#header_close#}
+
+    {#header_open|Binary Search#}
+    TODO https://github.com/ziglang/zig/pull/20927
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Build System#}
@@ -1316,8 +1320,37 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
 </code></pre>
 <p>I also noticed that the tokenizer did not conform to <a href="https://github.com/ziglang/zig-spec/issues/38">https://github.com/ziglang/zig-spec/issues/38</a> so I fixed it.</p>
     {#header_close#}
-
     {#header_close#}
+
+    {#header_open|Fuzzer#}
+    <p>Zig 0.14.0 ships with an integrated fuzzer. It is alpha quality status, which means that
+    using it requires participating in the development process.</p>
+
+    <p>Adds a <code>--fuzz</code> CLI option to the build runner. When this is used it rebuilds any unit test binaries which contained at least one fuzz test with <code>-ffuzz</code> and then tells it to start fuzzing, which does in-process fuzzing.</p>
+
+<p>This contains only a rudimentary implementation of fuzzer logic, really just some early, early experiments, but already it makes this test case fail in 65 milliseconds on my machine:</p>
+    <pre>{#syntax#}
+test "fuzz example" {
+    const input_bytes = std.testing.fuzzInput(.{});
+    try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input_bytes));
+}
+    {#endsyntax#}</pre>
+
+    <p>The <code>--fuzz</code> flag causes the build system to spawn an HTTP
+    server that provides a fuzzer web UI, which shows live-updating code coverage
+    as the fuzzer explores different inputs.</p>
+
+    <pre>$ zig build test --fuzz
+info: web interface listening at http://127.0.0.1:38239/
+info: hint: pass --port 38239 to use this same port next time
+[0/1] Fuzzing
+└─ foo.bar.example</pre>
+
+
+<p><a href="https://asciinema.org/a/asgN7rIr6LFeMhQMOXI825wGe">asciinema demo</a></p>
+<p><a href="https://github.com/ziglang/zig/pull/20958">video demo and screenshots</a></p>
+    {#header_close#}
+
 
     {#header_open|Bug Fixes#}
     <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.14.0">Full list of the 416 bug reports closed during this release cycle</a>.</p>
@@ -1340,35 +1373,6 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
     {#header_close#}
 
     {#header_open|Toolchain#}
-    {#header_open|Integrated Fuzzer#}
-<p>Adds a <code>--fuzz</code> CLI option to the build runner. When this is used it rebuilds any unit test binaries which contained at least one fuzz test with <code>-ffuzz</code> and then tells it to start fuzzing, which does in-process fuzzing.</p>
-<p>Adds <code>std.testing.fuzzInput</code>, which is how unit tests mark themselves as fuzz tests.</p>
-<p>This contains only a rudimentary implementation of fuzzer logic, really just some early, early experiments, but already it makes this test case fail in 65 milliseconds on my machine:</p>
-    <pre>{#syntax#}
-test "fuzz example" {
-    const input_bytes = std.testing.fuzzInput(.{});
-    try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input_bytes));
-}
-    {#endsyntax#}</pre>
-<pre><code>andy@bark ~/t/abc [1]&gt; ~/dev/zig/build-release/stage4/bin/zig build test --fuzz --debug-rt
-test
-└─ run test failure
-/home/andy/dev/zig/lib/std/testing.zig:546:14: 0x1183a59 in expect (test)
-    if (!ok) return error.TestUnexpectedResult;
-             ^
-/home/andy/tmp/abc/src/main.zig:28:5: 0x1183b21 in test.fuzz example (test)
-    try std.testing.expect(!std.mem.eql(u8, &quot;canyoufindme&quot;, input_bytes));
-    ^
-failed with error.TestUnexpectedResult
-error: the following command exited with error code 1:
-/home/andy/tmp/abc/.zig-cache/o/15697f80a9140388803537517083788c/test --seed=0x93a767fd --listen=-
-error: all fuzz workers crashed
-error: the following build command failed with exit code 1:
-/home/andy/tmp/abc/.zig-cache/o/12ab17aae32a6d5d6c9fba7b28ba3167/build /home/andy/dev/zig/build-release/stage4/bin/zig /home/andy/dev/zig/lib /home/andy/tmp/abc /home/andy/tmp/abc/.zig-cache /home/andy/.cache/zig --seed 0x93a767fd -Zb1f080d4c8ac26d5 test --fuzz --debug-rt
-</code></pre>
-<p><a href="https://asciinema.org/a/asgN7rIr6LFeMhQMOXI825wGe">asciinema demo</a></p>
-    {#header_close#}
-
     {#header_open|UBSan Runtime#}
     <p>Zig now provides a runtime library for
     <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">UBSan</a>,
@@ -1429,6 +1433,7 @@ fish: Job 1, 'zig run test.c -lc' terminated by signal SIGABRT (Abort)</code></p
       <li>Making the x86 Backend the default backend for debug mode.</li>
       <li>Enhance {#link|Linker#} implementations, eliminating dependency on
       <a href="https://lld.llvm.org/">LLD</a> and supporting {#link|Incremental Compilation#}.</li>
+      <li>Enhance the integrated {#link|Fuzzer#} to be competitive with AFL and other state-of-the-art fuzzers.</li>
     </ul>
     <p>The idea here is that prioritizing faster compilation will increase
     development velocity on the {#link|Compiler#} itself, leading to more bugs
