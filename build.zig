@@ -46,11 +46,7 @@ pub fn build(b: *std.Build) void {
 
         docgen_cmd.addFileArg(b.path(b.fmt("src/documentation/{s}/index.html", .{release})));
         const generated = docgen_cmd.addOutputFileArg("index.html");
-
-        const copy_generated = b.addUpdateSourceFiles();
-        copy_generated.addCopyFileToSource(generated, b.fmt("content/documentation/{s}/index.html", .{release}));
-
-        b.getInstallStep().dependOn(&copy_generated.step);
+        installFile(b, generated, b.fmt("documentation/{s}/index.html", .{release}));
     }
 
     var build_assets = std.ArrayList(zine.BuildAsset).init(b.allocator);
@@ -222,6 +218,10 @@ pub fn build(b: *std.Build) void {
     });
 }
 
+fn installFile(b: *std.Build, lp: std.Build.LazyPath, dest_rel_path: []const u8) void {
+    b.getInstallStep().dependOn(&b.addInstallFile(lp, dest_rel_path).step);
+}
+
 fn runZigScripts(
     b: *std.Build,
     assets: *std.ArrayList(zine.BuildAsset),
@@ -270,8 +270,12 @@ fn installReleaseNotes(
     doctest_exe: *std.Build.Step.Compile,
     docgen_exe: *std.Build.Step.Compile,
 ) void {
-    const dirname = "src/download/0.14.0/release-notes";
-    var dir = b.build_root.handle.openDir(dirname, .{ .iterate = true }) catch |err| {
+    const release = "0.14.0";
+    const dirname = b.fmt("src/download/{s}/release-notes", .{release});
+    const input = b.fmt("src/download/{s}/release-notes.html", .{release});
+    const output = b.fmt("download/{s}/release-notes.html", .{release});
+
+    var dir = b.build_root.handle.makeOpenPath(dirname, .{ .iterate = true }) catch |err| {
         std.debug.panic("unable to open '{s}' directory: {s}", .{ dirname, @errorName(err) });
     };
     defer dir.close();
@@ -305,13 +309,9 @@ fn installReleaseNotes(
     docgen_cmd.addArgs(&.{"--code-dir"});
     docgen_cmd.addDirectoryArg(wf.getDirectory());
 
-    docgen_cmd.addFileArg(b.path("src/download/0.14.0/release-notes.html"));
+    docgen_cmd.addFileArg(b.path(input));
     const generated = docgen_cmd.addOutputFileArg("release-notes.html");
-
-    const copy_generated = b.addUpdateSourceFiles();
-    copy_generated.addCopyFileToSource(generated, "content/download/0.14.0/release-notes.html");
-
-    b.getInstallStep().dependOn(&copy_generated.step);
+    installFile(b, generated, output);
 }
 
 fn verNavHtml(arena: std.mem.Allocator, active_release: []const u8) []const u8 {
