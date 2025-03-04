@@ -1036,7 +1036,10 @@ thread-1:                    thread-2:
 
     <p>Typical use cases will use <code>std.zon.parse.fromSlice</code>, and <code>std.zon.parse.free</code> if the type requires allocation.</p>
 
-    <p><i>For ZON values with schemas that don't map cleanly to Zig structs, <code>std.zig.ZonGen</code> can be used to generate a tree structure (<code>std.Zoir</code>) that can be interpreted as desired. For importing ZON at compile time, see <a href="#Import-ZON">Import ZON</a>.</i></p>
+    <p>For ZON values with schemas that don't map cleanly to Zig structs,
+    <code>std.zig.ZonGen</code> can be used to generate a tree structure
+    (<code>std.Zoir</code>) that can be interpreted as desired. For importing
+    ZON at compile time, see {#link|Import ZON#}.</p>
 
     <code>std.zon.stringify</code> provides functionality for serializing ZON at runtime:
     <ul>
@@ -1105,18 +1108,69 @@ thread-1:                    thread-2:
     {#header_close#}
 
     {#header_open|Incremental Compilation#}
-    TODO
+    <p>Although this feature is not ready to be enabled by default, it can be
+    opted into via the <code>-fincremental</code>
+    flag passed to <code>zig build</code>. It is recommended to be combined with {#link|File System Watching#},
+    since compiler state serialization is not implemented yet.</p>
+    <p>This feature has varying levels of completeness depending on which {#link|Linker#} backend is being used.
+    None of them are generally ready for use yet, however it works well combined with <code>-fno-emit-bin</code>.</p>
+    <p>Users are encouraged to create a build option for checking compile
+    errors only, and try out incremental compilation this way:</p>
+<pre>{#syntax#}
+const no_bin = b.option(bool, "no-bin", "skip emitting binary") orelse false;
+if (no_bin) {
+    b.getInstallStep().dependOn(&exe.step);
+} else {
+    b.installArtifact(exe);
+}
+{#endsyntax#}</pre>
+    <p>When working on a large refactor and want quick compile error feedback:</p>
+    <pre>
+$ zig build -Dno-bin -fincremental --watch
+Build Summary: 3/3 steps succeeded
+install success
+└─ zig build-exe zig Debug native success 14s
+   └─ options success
+Build Summary: 3/3 steps succeeded
+install success
+└─ zig build-exe zig Debug native success 63ms
+watching 119 directories, 1 processes
+    </pre>
+    <p>In the above example, it takes 14s to generate (no) compile errors for a half-million line codebase. However,
+    because we use <code>--watch</code> and <code>-fincremental</code>, after
+    making an edit and saving, it takes only 63ms to perform reanalysis of only
+    the changed code.</p>
+    <p>Users who invest in adding a <code>-Dno-bin</code> option to their build
+    scripts can enjoy a similar workflow. In the future, this will be able to
+    generate a fully working binary as well, which can be tested and debugged
+    like normal.</p>
+    <p>This feature is not yet compatible with {#syntax#}usingnamespace{#endsyntax#}.
+    Users are encouraged to avoid {#syntax#}usingnamespace{#endsyntax#} as much as possible.</p>
     {#header_close#}
 
     {#header_open|x86 Backend#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+    <p>The x86 backend is now passing 1884/1923 (98%) of the behavior test
+    suite compared to the LLVM backend. Although it is not yet selected by
+    default, it is more often than not a better choice than LLVM backend
+    while developing, due to dramatically faster compilation speed, combined
+    with <a href="https://github.com/ziglang/zig/wiki/LLDB-for-Zig">better debugger support</a>.</p>
+    <p>This backend is nearing completion; it is expected to be selected by default for debug mode
+    early in the next release cycle. Users are encouraged to try it out in this
+    0.14.0 release. It can be selected with <code>-fno-llvm</code>,
+    or {#syntax#}use_llvm = false{#endsyntax#} in a build script.</p>
+    {#header_close#}
+
+    {#header_open|Linker#}
     TODO
     {#header_close#}
+
     {#header_open|Import ZON#}
     <p>ZON can now be imported at compile time:</p>
 
-    <pre><code>
-    const foo: Foo = @import("foo.zon");
-    </code></pre>
+    <pre>{#syntax#}
+const foo: Foo = @import("foo.zon");
+    {#endsyntax#}</pre>
 
     <p>For the time being this requires a known result type, there are plans to lift this restriction in the future. For importing ZON at runtime see <a href="#ZON-Parsing-and-Serialization">ZON Parsing and Serialization</a>.</p>
 
