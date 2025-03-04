@@ -876,32 +876,32 @@
     {#header_open|Language Changes#}
 
     {#header_open|Removal of @fence#}
-    <p>In Zig 0.14, <code>@fence</code> has been removed. <code>@fence</code> was 
-      provided to be consistent with the C11 memory model, however, it complicates 
-      semantics by modifying the memory orderings of all 
-      <a href="https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence#Atomic-fence_synchronization">previous</a> 
-      and 
+    <p>In Zig 0.14, <code>@fence</code> has been removed. <code>@fence</code> was
+      provided to be consistent with the C11 memory model, however, it complicates
+      semantics by modifying the memory orderings of all
+      <a href="https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence#Atomic-fence_synchronization">previous</a>
+      and
       <a href="https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence#Fence-atomic_synchronization">future</a>
-      atomic operations. 
-      This creates unforeseen constraints that are 
-      <a href="https://github.com/google/sanitizers/issues/1415">hard to model in a sanitizer</a>. 
+      atomic operations.
+      This creates unforeseen constraints that are
+      <a href="https://github.com/google/sanitizers/issues/1415">hard to model in a sanitizer</a>.
       Fences can be substituted by either upgrading atomic memory orderings or adding new atomic operations.</p>
-    <p>The most common use cases for <code>@fence</code> can be replaced by utilizing stronger memory orderings 
+    <p>The most common use cases for <code>@fence</code> can be replaced by utilizing stronger memory orderings
       or by introducing a new atomic variable.</p>
 
     {#header_open|StoreLoad Barriers#}
-    <p>The most common use case is <code>@fence(.seq_cst)</code>. This is primarily used to ensure a consistent 
+    <p>The most common use case is <code>@fence(.seq_cst)</code>. This is primarily used to ensure a consistent
       order between multiple operations on different atomic variables.</p>
 <p>For example:
 <pre>
 thread-1:                     thread-2:
 store X         // A          store Y          // C
-fence(seq_cst)  // F1         fence(seq_cst)   // F2   
+fence(seq_cst)  // F1         fence(seq_cst)   // F2
 load  Y         // B          load  X          // D
 </pre></p>
     <p>
       The goal is to ensure either <code>load X</code> (D) sees <code>store X</code> (A), or <code>load Y</code>
-      (B) sees <code>store Y</code> (C). The pair of Sequentially Consistent fences guarantees this via 
+      (B) sees <code>store Y</code> (C). The pair of Sequentially Consistent fences guarantees this via
       <a href="https://en.cppreference.com/w/cpp/atomic/memory_order#Strongly_happens-before:~:text=for%20every%20pair%20of%20atomic%20operations%20A%20and%20B%20on%20an%20object%20M%2C%20where%20A%20is%20coherence%2Dordered%2Dbefore%20B%3A">two</a>
       <a href="https://en.cppreference.com/w/cpp/atomic/memory_order#Strongly_happens-before:~:text=if%20a%20memory_order_seq_cst%20fence%20X%20happens%2Dbefore%20A%2C%20and%20B%20happens%2Dbefore%20a%20memory_order_seq_cst%20fence%20Y%2C%20then%20X%20precedes%20Y%20in%20S.">invariance</a>.
     </p>
@@ -910,8 +910,8 @@ load  Y         // B          load  X          // D
       Now that <code>@fence</code> is removed, there are other ways of achieving this relationship:
       <ul>
         <li>Making all related stores and loads (A, B, C, and D) <code>SeqCst</code>, including them all in the total order.</li>
-        <li>Making a store (A/C) <code>Acquire</code> and its matching load (D/B) <code>Release</code>. 
-          Semantically, this would mean upgrading them to read-modify-write operations, which could 
+        <li>Making a store (A/C) <code>Acquire</code> and its matching load (D/B) <code>Release</code>.
+          Semantically, this would mean upgrading them to read-modify-write operations, which could
           be such ordering. Loads can be replaced with a non-mutating RMW, i.e. <code>fetchAdd(0)</code> or <code>fetchOr(0)</code>.</li>
       </ul>
       Optimizers like LLVM may reduce this into a <code>@fence(.seq_cst) + load</code> internally.
@@ -919,8 +919,8 @@ load  Y         // B          load  X          // D
     {#header_close#}
     {#header_open|Conditional Barriers#}
     <p>
-      Another use case for fences is conditionally creating a <i>synchronizes-with</i> relationship with 
-      previous or future atomic operations, using <code>Acquire</code> or <code>Release</code> respectively. 
+      Another use case for fences is conditionally creating a <i>synchronizes-with</i> relationship with
+      previous or future atomic operations, using <code>Acquire</code> or <code>Release</code> respectively.
       A simple example of this in the real world is an atomic reference counter:
     </p>
     {#syntax_block|zig#}
@@ -930,8 +930,8 @@ fn inc(counter: *RefCounter) void {
 
 fn dec(counter: *RefCounter) void {
   if (counter.rc.fetchSub(1, .release) == 1) {
-      @fence(.acquire); 
-      counter.deinit(); 
+      @fence(.acquire);
+      counter.deinit();
   }
 }
     {#end_syntax_block#}
@@ -960,13 +960,13 @@ fn dec(counter: *RefCounter) void {
     {#header_close#}
     {#header_open|Synchronize External Operations#}
     <p>
-      The least common usage of <code>@fence</code> is providing additional synchronization to atomic operations 
-      the programmer has no control over (i.e. external function calls). Using a <code>@fence</code> in this 
+      The least common usage of <code>@fence</code> is providing additional synchronization to atomic operations
+      the programmer has no control over (i.e. external function calls). Using a <code>@fence</code> in this
       situation relies on the "hidden" functions having atomic operations with undesirably weak orderings.
     </p>
     <p>
       Ideally, the "hidden" functions would be accessible to the user and they could simply increase
-      the order in the source code. But if this isn't possible, a last resort is introducing an 
+      the order in the source code. But if this isn't possible, a last resort is introducing an
       atomic variable to simulate the fence's barriers. For example:
     </p>
 <pre>
