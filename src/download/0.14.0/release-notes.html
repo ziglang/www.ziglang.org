@@ -1435,6 +1435,42 @@ pub const SourceLocation = struct {
     {#header_open|Fmt Step#}
     <p>This step now prints file names that failed the format check.</p>
     {#header_close#}
+
+    {#header_open|Allow Packages to Expose Arbitrary LazyPaths by Name#}
+    <p>In previous versions of Zig, packges could expose <em>artifacts</em>, <em>modules</em>, and <em>named <code>WriteFile</code> steps</em>. These can be exposed through <code>installArtifact</code>, <code>addModule</code>, and <code>addNamedWriteFiles</code> respectively, and can be accessed through methods on <code>std.Build.Dependency</code>. In addition to these, Zig 0.14.0 introduces the ability for packages for expose arbitrary <code>LazyPath</code>s. A dependency exposes them with <code>std.Build.addNamedLazyPath</code>, and a dependant package uses <code>std.Build.Dependency.namedLazyPath</code> to access them.</p>
+<p>One use case for this function is for a dependency to expose a generated file to its dependant package. For instance, in the following example, the dependency package <code>bar</code> exposes a generated Zig file which is used by the main package as a module import of an executable:</p>
+    <p>build.zig</p>
+    <pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+    const bar = b.dependency("bar", .{});
+    const exe = b.addExecutable(.{
+        .name = "main",
+        .root_source_file = b.path("main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("generated", bar.namedLazyPath("generated"));
+    b.installArtifact(exe);
+}
+    {#endsyntax#}</pre>
+
+    <p>bar/build.zig</p>
+    <pre>{#syntax#}
+pub fn build(b: *std.Build) {
+    const generator = b.addExecutable(.{
+        .name = "generator",
+        .root_source_file = b.path("generator.zig"),
+        .target = b.graph.host,
+        .optimize = .ReleaseSafe,
+    });
+    const run_gen = b.addRunArtifact(generator);
+    const generated_file = run_gen.addOutputFileArg("generated.zig");
+    b.addNamedLazyPath("generated", generated_file);
+}
+    {#endsyntax#}</pre>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Compiler#}
