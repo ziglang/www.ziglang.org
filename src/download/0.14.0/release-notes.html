@@ -1026,14 +1026,14 @@
     {#header_open|Code Generation Properties#}
 <p>This language construct is designed to generate code which aids the CPU in predicting branches between cases of the switch, allowing for increased performance in hot loops, particularly those dispatching instructions, evaluating FSAs, or performing similar case-based evaluations. To achieve this, the generated code may be different to what one would intuitively expect.</p>
 <p>If the operand to {#syntax#}continue{#endsyntax#} is comptime-known, then it can be translated to an unconditional branch to the relevant case. Such a branch is perfectly predicted, and hence typically very fast to execute. </p>
-<p>If the operand is runtime-known, then each {#syntax#}continue{#endsyntax#} can become a separate conditional branch (ideally via a shared jump table) back to the same set of potential branch targets. The advantage of this pattern is that it aids the CPU&#39;s branch predictor by providing different branch instructions which can be associated with distinct prediction data. For instance, when evaluating an FSA, if case {#syntax#}a{#endsyntax#} is very likely to be followed by case {#syntax#}b{#endsyntax#}, while case {#syntax#}c{#endsyntax#} is very likely to be followed by case {#syntax#}d{#endsyntax#}, then the branch predictor can use the direct jumps between {#syntax#}switch{#endsyntax#} cases to predict the control flow more accurately, whereas a loop-based lowering causes the state dispatches to be &quot;collapsed&quot; into a single indirect branch or similar, hindering branch prediction.</p>
-<p>This lowering can inflate code size compared to a simple &quot;switch in a loop&quot; lowering, and any Zig implementation is, of course, free to lower this syntax however it wishes provided the language semantics are obeyed. However, the official ZSF compiler implementation will attempt to match the lowering described above, particularly in the <code>ReleaseFast</code> build mode.</p>
+<p>If the operand is runtime-known, then each {#syntax#}continue{#endsyntax#} can become a separate conditional branch (ideally via a shared jump table) back to the same set of potential branch targets. The advantage of this pattern is that it aids the CPU&#39;s branch predictor by providing different branch instructions which can be associated with distinct prediction data. For instance, when evaluating an FSA, if case {#syntax#}a{#endsyntax#} is very likely to be followed by case {#syntax#}b{#endsyntax#}, while case {#syntax#}c{#endsyntax#} is very likely to be followed by case {#syntax#}d{#endsyntax#}, then the branch predictor can use the direct jumps between {#syntax#}switch{#endsyntax#} cases to predict the control flow more accurately, whereas a loop-based lowering causes the state dispatches to be "collapsed" into a single indirect branch or similar, hindering branch prediction.</p>
+<p>This lowering can inflate code size compared to a simple "switch in a loop" lowering, and any Zig implementation is, of course, free to lower this syntax however it wishes provided the language semantics are obeyed. However, the official ZSF compiler implementation will attempt to match the lowering described above, particularly in the <code>ReleaseFast</code> build mode.</p>
     <p><a href="https://github.com/ziglang/zig/pull/21367">Updating Zig's tokenizer to take advantage of this feature resulted in a 13% performance boost</a>.</p>
     {#header_close#}
     {#header_close#}
 
     {#header_open|Decl Literals#}
-<p>Zig 0.14.0 extends the &quot;enum literal&quot; syntax ({#syntax#}.foo{#endsyntax#}) to provide a new feature, known as &quot;decl literals&quot;. Now, an enum literal {#syntax#}.foo{#endsyntax#} doesn&#39;t necessarily refer to an enum variant, but, using
+<p>Zig 0.14.0 extends the "enum literal" syntax ({#syntax#}.foo{#endsyntax#}) to provide a new feature, known as "decl literals". Now, an enum literal {#syntax#}.foo{#endsyntax#} doesn&#39;t necessarily refer to an enum variant, but, using
 <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a>, can also refer to any declaration on the target type. For instance, consider the following example:</p>
     {#code|decl_literals.zig#}
 <p>Since the initialization expression of {#syntax#}val{#endsyntax#} has a result type of {#syntax#}S{#endsyntax#}, the initialization is effectively equivalent to {#syntax#}S.default{#endsyntax#}. This can be particularly useful when initializing struct fields to avoid having to specify the type again:</p>
@@ -1077,7 +1077,7 @@ const Foo = struct {
     <p>Zig 0.14.0 expands the {#syntax#}@splat{#endsyntax#} builtin to apply not
     only to vectors, but to arrays. This is useful when default-initializing an
     array to a constant value. For instance, in conjunction with {#link|Decl Literals#},
-    we can elegantly initialize an array of &quot;color&quot; values:</p>
+    we can elegantly initialize an array of "color" values:</p>
     <pre>{#syntax#}
 const Rgba = struct {
     r: u8,
@@ -1115,7 +1115,7 @@ test "@export" {
     {#header_close#}
 
     {#header_open|New @branchHint Builtin, Replacing @setCold#}
-<p>In high-performance code, it is sometimes desirable to hint to the optimizer which branch of a condition is more likely; this can allow more efficient machine code to be generated. Some languages offer this through a &quot;likely&quot; annotation on a boolean condition; for instance, GCC and Clang implement the <code>__builtin_expect</code> function. Zig 0.14.0 introduces a mechanism to communicate this information: the new <code>@branchHint(comptime hint: std.builtin.BranchHint)</code> builtin. This builtin, rather than modifying a condition, appears as the first statement in a block to communicate whether control flow is likely to reach the block in question:</p>
+<p>In high-performance code, it is sometimes desirable to hint to the optimizer which branch of a condition is more likely; this can allow more efficient machine code to be generated. Some languages offer this through a "likely" annotation on a boolean condition; for instance, GCC and Clang implement the <code>__builtin_expect</code> function. Zig 0.14.0 introduces a mechanism to communicate this information: the new <code>@branchHint(comptime hint: std.builtin.BranchHint)</code> builtin. This builtin, rather than modifying a condition, appears as the first statement in a block to communicate whether control flow is likely to reach the block in question:</p>
 <pre>{#syntax#}
 fn warnIf(cond: bool, message: []const u8) void {
     if (cond) {
@@ -1298,8 +1298,8 @@ thread-1:                    thread-2:
 
     {#header_open|Remove Anonymous Struct Types, Unify Tuples#}
     <p>This change reworks how anonymous struct literals and tuples work.</p>
-    <p>Previously, an untyped anonymous struct literal (e.g. {#syntax#}const x = .{ .a = 123 }{#endsyntax#}) was given an &quot;anonymous struct type&quot;, which is a special kind of struct which coerces using structural equivalence. This mechanism was a holdover from before we used <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a> as the primary mechanism of type inference. This change changes the language so that the type assigned here is a &quot;normal&quot; struct type. It uses a form of equivalence based on the AST node and the type&#39;s structure, much like a reified ({#syntax#}@Type{#endsyntax#}) type.</p>
-    <p>Additionally, tuples have been simplified. The distinction between &quot;simple&quot; and &quot;complex&quot; tuple types is eliminated. All tuples, even those explicitly declared using {#syntax#}struct { ... }{#endsyntax#} syntax, use structural equivalence, and do not undergo staged type resolution. Tuples are very restricted: they cannot have non-{#syntax#}auto{#endsyntax#} layouts, cannot have aligned fields, and cannot have default values with the exception of {#syntax#}comptime{#endsyntax#} fields. Tuples currently do not have optimized layout, but this can be changed in the future.</p>
+    <p>Previously, an untyped anonymous struct literal (e.g. {#syntax#}const x = .{ .a = 123 }{#endsyntax#}) was given an "anonymous struct type", which is a special kind of struct which coerces using structural equivalence. This mechanism was a holdover from before we used <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a> as the primary mechanism of type inference. This change changes the language so that the type assigned here is a "normal" struct type. It uses a form of equivalence based on the AST node and the type&#39;s structure, much like a reified ({#syntax#}@Type{#endsyntax#}) type.</p>
+    <p>Additionally, tuples have been simplified. The distinction between "simple" and "complex" tuple types is eliminated. All tuples, even those explicitly declared using {#syntax#}struct { ... }{#endsyntax#} syntax, use structural equivalence, and do not undergo staged type resolution. Tuples are very restricted: they cannot have non-{#syntax#}auto{#endsyntax#} layouts, cannot have aligned fields, and cannot have default values with the exception of {#syntax#}comptime{#endsyntax#} fields. Tuples currently do not have optimized layout, but this can be changed in the future.</p>
     <p>This change simplifies the language, and fixes some problematic coercions through pointers which led to unintuitive behavior.</p>
     {#header_close#}
 
@@ -1580,6 +1580,56 @@ pub const SourceLocation = struct {
     <li>delete std.heap.WasmPageAllocator in favor of std.heap.WasmAllocator</li>
     </ul>
 
+    {#header_open|SmpAllocator#}
+    <p>An allocator that is designed for ReleaseFast optimization mode, with multi-threading enabled.</p>
+    <p>This allocator is a singleton; it uses global state and only one should be instantiated for the entire process.</p>
+    <p>This is a "sweet spot" - the implementation is about 200 lines of code and yet competitive with glibc performance.
+    For example, here is a comparison of Zig building itself, using glibc malloc vs SmpAllocator:</p>
+<pre>Benchmark 1 (3 runs): glibc/bin/zig build -Dno-lib -p trash
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          12.2s  ± 99.4ms    12.1s  … 12.3s           0 ( 0%)        0%
+  peak_rss            975MB ± 21.7MB     951MB …  993MB          0 ( 0%)        0%
+  cpu_cycles         88.7G  ± 68.3M     88.7G  … 88.8G           0 ( 0%)        0%
+  instructions        188G  ± 1.40M      188G  …  188G           0 ( 0%)        0%
+  cache_references   5.88G  ± 33.2M     5.84G  … 5.90G           0 ( 0%)        0%
+  cache_misses        383M  ± 2.26M      381M  …  385M           0 ( 0%)        0%
+  branch_misses       368M  ± 1.77M      366M  …  369M           0 ( 0%)        0%
+Benchmark 2 (3 runs): SmpAllocator/fast/bin/zig build -Dno-lib -p trash
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          12.2s  ± 49.0ms    12.2s  … 12.3s           0 ( 0%)          +  0.0% ±  1.5%
+  peak_rss            953MB ± 3.47MB     950MB …  957MB          0 ( 0%)          -  2.2% ±  3.6%
+  cpu_cycles         88.4G  ±  165M     88.2G  … 88.6G           0 ( 0%)          -  0.4% ±  0.3%
+  instructions        181G  ± 6.31M      181G  …  181G           0 ( 0%)        ⚡-  3.9% ±  0.0%
+  cache_references   5.48G  ± 17.5M     5.46G  … 5.50G           0 ( 0%)        ⚡-  6.9% ±  1.0%
+  cache_misses        386M  ± 1.85M      384M  …  388M           0 ( 0%)          +  0.6% ±  1.2%
+  branch_misses       377M  ±  899K      377M  …  378M           0 ( 0%)        💩+  2.6% ±  0.9%</pre>
+
+    <p>Basic design:</p>
+    <p>Each thread gets a separate freelist, however, the data must be recoverable when the thread exits. We do not directly learn when a thread exits, so occasionally, one thread must attempt to reclaim another thread&#39;s resources.</p>
+    <p>Above a certain size, those allocations are memory mapped directly, with no storage of allocation metadata. This works because the implementation refuses resizes that would move an allocation from small category to large category or vice versa.</p>
+    <p>Each allocator operation checks the thread identifier from a threadlocal variable to find out which metadata in the global state to access, and attempts to grab its lock. This will usually succeed without contention, unless another thread has been assigned the same id. In the case of such contention, the thread moves on to the next thread metadata slot and repeats the process of attempting to obtain the lock.</p>
+    <p>By limiting the thread-local metadata array to the same number as the CPU count, ensures that as threads are created and destroyed, they cycle through the full set of freelists.</p>
+
+    <p>To use it, put something like this in your main function:</p>
+<pre>{#syntax#}
+var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
+
+pub fn main() !void {
+    const gpa, const is_debug = gpa: {
+        if (native_os == .wasi) break :gpa .{ std.heap.wasm_allocator, false };
+        break :gpa switch (builtin.mode) {
+            .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
+            .ReleaseFast, .ReleaseSmall => .{ std.heap.smp_allocator, false },
+        };
+    };
+    defer if (is_debug) {
+        _ = debug_allocator.deinit();
+    };
+}
+{#endsyntax#}</pre>
+    <p><a href="https://ziglang.org/devlog/2025/#2025-02-07">devlog entry</a></p>
+    {#header_close#}
+
     {#header_open|ZON Parsing and Serialization#}
     <p><code>std.zon.parse</code> provides functionality for parsing ZON into a Zig struct at runtime:</p>
     <ul>
@@ -1661,7 +1711,7 @@ try child.collectOutput(allocator, &stdout, &stderr, max_output_bytes);
     {#header_open|Embracing "Unmanaged"-Style Containers#}
     <p><code>std.ArrayHashMap</code> is now deprecated and aliased to <code>std.ArrayHashMapWithAllocator</code>.</p>
     <p>To upgrade, switch to <code>ArrayHashMapUnmanaged</code> which will entail updating callsites to pass an allocator to methods that need one. After Zig 0.14.0 is released, <code>std.ArrayHashMapWithAllocator</code> will be removed and <code>std.ArrayHashMapUnmanaged</code> will be a deprecated alias of <code>ArrayHashMap</code>. After Zig 0.15.0 is released, the deprecated alias <code>ArrayHashMapUnmanaged</code> will be removed.</p>
-    <p>This move comes from unanimous agreement among veteran Zig users who have converged on the &quot;unmanaged&quot; container variants. They act as better building blocks, avoiding storing the same data redundantly, and the presence/absence of the allocator parameter dovetails nicely with the reserve capacity / reserved insertion pattern.</p>
+    <p>This move comes from unanimous agreement among veteran Zig users who have converged on the "unmanaged" container variants. They act as better building blocks, avoiding storing the same data redundantly, and the presence/absence of the allocator parameter dovetails nicely with the reserve capacity / reserved insertion pattern.</p>
     <p>The other "managed" container variants are also deprecated, such as <code>std.ArrayList</code>.</p>
     <pre>{#syntax#}
 var list = std.ArrayList(i32).init(gpa);
@@ -1744,7 +1794,7 @@ list.appendAssumeCapacity(5678);
       <li>Report error on missing values for addConfigHeader</li>
       <li>fix WriteFile and addCSourceFiles not adding LazyPath deps</li>
       <li><strong>[Breaking]</strong> <code>Compile.installHeader</code> now takes a <code>LazyPath</code>.</li>
-      <li><strong>[Breaking]</strong> <code>Compile.installConfigHeader</code> has had its second argument removed and now uses the value of <code>include_path</code> as its sub path, for parity with <code>Module.addConfigHeader</code>. Use <code>artifact.installHeader(config_h.getOutput(), &quot;foo.h&quot;)</code> if you want to set the sub path to something different.</li>
+      <li><strong>[Breaking]</strong> <code>Compile.installConfigHeader</code> has had its second argument removed and now uses the value of <code>include_path</code> as its sub path, for parity with <code>Module.addConfigHeader</code>. Use <code>artifact.installHeader(config_h.getOutput(), "foo.h")</code> if you want to set the sub path to something different.</li>
       <li><strong>[Breaking]</strong> <code>Compile.installHeadersDirectory/installHeadersDirectoryOptions</code> have been consolidated into <code>Compile.installHeadersDirectory</code>, which takes a <code>LazyPath</code> and allows exclude/include filters just like <code>InstallDir</code>.</li>
       <li><strong>[Breaking]</strong> <code>b.addInstallHeaderFile</code> now takes a <code>LazyPath</code>.</li>
       <li><strong>[Breaking]</strong> As a workaround for <a href="https://github.com/ziglang/zig/issues/9698">#9698</a>, the generated <code>-femit-h</code> header is now never emitted even when the user specifies an override for <code>h_dir</code>. If you absolutely need the emitted header, you now need to do <code>install_artifact.emitted_h = artifact.getEmittedH()</code> until <code>-femit-h</code> is fixed.</li>
@@ -2030,7 +2080,7 @@ const foo: Foo = @import("foo.zon");
     {#header_open|tokenizer: simplification and spec conformance#}
 <p>I pointed a fuzzer at the tokenizer and it crashed immediately. Upon inspection, I was dissatisfied with the implementation. This commit removes several mechanisms:</p>
 <ul>
-<li>Removes the &quot;invalid byte&quot; compile error note.</li>
+<li>Removes the "invalid byte" compile error note.</li>
 <li>Dramatically simplifies tokenizer recovery by making recovery always occur at newlines, and never otherwise.</li>
 <li>Removes UTF-8 validation.</li>
 <li>Moves some character validation logic to <code>std.zig.parseCharLiteral</code>.</li>
@@ -2041,7 +2091,7 @@ const foo: Foo = @import("foo.zon");
 <li>Deprecate <code>std.unicode.utf8Decode</code> and its WTF-8 counterpart. This function has an awkward API that is too easy to misuse.</li>
 <li>Make <code>utf8Decode2</code> and friends use arrays as parameters, eliminating a runtime assertion in favor of using the type system.</li>
 </ul>
-<p>After this commit, the crash found by fuzzing, which was <code>&quot;\x07\xd5\x80\xc3=o\xda|a\xfc{\x9a\xec\x91\xdf\x0f\\\x1a^\xbe;\x8c\xbf\xee\xea&quot;</code> no longer causes a crash. However, I did not feel the need to add this test case because the simplified logic eradicates crashes of this nature.</p>
+<p>After this commit, the crash found by fuzzing, which was <code>"\x07\xd5\x80\xc3=o\xda|a\xfc{\x9a\xec\x91\xdf\x0f\\\x1a^\xbe;\x8c\xbf\xee\xea"</code> no longer causes a crash. However, I did not feel the need to add this test case because the simplified logic eradicates crashes of this nature.</p>
 <pre><code>Benchmark 1 (100 runs): before/zig ast-check /home/andy/dev/zig/src/Sema.zig
   measurement          mean ± σ            min … max           outliers         delta
   wall_time          50.0ms ± 2.04ms    48.7ms … 57.4ms         14 (14%)        0%
