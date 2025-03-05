@@ -1254,6 +1254,101 @@ thread-1:                    thread-2:
     {#code|packed_struct_atomics.zig#}
     {#header_close#}
 
+    {#header_open|Remove Anonymous Struct Types, Unify Tuples#}
+    <p>This change reworks how anonymous struct literals and tuples work.</p>
+    <p>Previously, an untyped anonymous struct literal (e.g. {#syntax#}const x = .{ .a = 123 }{#endsyntax#}) was given an &quot;anonymous struct type&quot;, which is a special kind of struct which coerces using structural equivalence. This mechanism was a holdover from before we used <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a> as the primary mechanism of type inference. This change changes the language so that the type assigned here is a &quot;normal&quot; struct type. It uses a form of equivalence based on the AST node and the type&#39;s structure, much like a reified ({#syntax#}@Type{#endsyntax#}) type.</p>
+    <p>Additionally, tuples have been simplified. The distinction between &quot;simple&quot; and &quot;complex&quot; tuple types is eliminated. All tuples, even those explicitly declared using {#syntax#}struct { ... }{#endsyntax#} syntax, use structural equivalence, and do not undergo staged type resolution. Tuples are very restricted: they cannot have non-{#syntax#}auto{#endsyntax#} layouts, cannot have aligned fields, and cannot have default values with the exception of {#syntax#}comptime{#endsyntax#} fields. Tuples currently do not have optimized layout, but this can be changed in the future.</p>
+    <p>This change simplifies the language, and fixes some problematic coercions through pointers which led to unintuitive behavior.</p>
+    {#header_close#}
+
+    {#header_open|std.builtin.Type Fields Renamed#}
+    <p>In most cases, Zig&#39;s standard library follows <a href="https://ziglang.org/documentation/0.14.0/#Names">naming conventions</a>. Zig 0.14.0 updates the fields of the <code>std.builtin.Type</code> tagged union to follow these conventions by lowercasing them:</p>
+<pre>{#syntax#}
+pub const Type = union(enum) {
+    type: void,
+    void: void,
+    bool: void,
+    noreturn: void,
+    int: Int,
+    float: Float,
+    pointer: Pointer,
+    array: Array,
+    @"struct": Struct,
+    comptime_float: void,
+    comptime_int: void,
+    undefined: void,
+    null: void,
+    optional: Optional,
+    error_union: ErrorUnion,
+    error_set: ErrorSet,
+    @"enum": Enum,
+    @"union": Union,
+    @"fn": Fn,
+    @"opaque": Opaque,
+    frame: Frame,
+    @"anyframe": AnyFrame,
+    vector: Vector,
+    enum_literal: void,
+    // ...
+};
+{#endsyntax#}</pre>
+    <p>Note that this requires using "quoted identifier" syntax for {#syntax#}@"struct"{#endsyntax#}, {#syntax#}@"union"{#endsyntax#}, {#syntax#}@"enum"{#endsyntax#}, {#syntax#}@"opaque"{#endsyntax#}, and {#syntax#}@"anyframe"{#endsyntax#}, because these identifiers are also keywords.</p>
+    <p>This change is widely breaking, but upgrading is simple:</p>
+    <pre>{#syntax#}
+test "switch on type info" {
+    const x = switch (@typeInfo(u8)) {
+        .Int => 0,
+        .ComptimeInt => 1,
+        .Struct => 2,
+        else => 3,
+    };
+    try std.testing.expect(0, x);
+}
+test "reify type" {
+    const U8 = @Type(.{ .Int = .{
+        .signedness = .unsigned,
+        .bits = 8,
+    } });
+    const S = @Type(.{ .Struct = .{
+        .layout = .auto,
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = false,
+    } });
+    try std.testing.expect(U8 == u8);
+    try std.testing.expect(@typeInfo(S) == .Struct);
+}
+const std = @import("std");
+    {#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}
+test "switch on type info" {
+    const x = switch (@typeInfo(u8)) {
+        .int => 0,
+        .comptime_int => 1,
+        .@"struct" => 2,
+        else => 3,
+    };
+    try std.testing.expect(0, x);
+}
+test "reify type" {
+    const U8 = @Type(.{ .int = .{
+        .signedness = .unsigned,
+        .bits = 8,
+    } });
+    const S = @Type(.{ .@"struct" = .{
+        .layout = .auto,
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = false,
+    } });
+    try std.testing.expect(U8 == u8);
+    try std.testing.expect(@typeInfo(S) == .@"struct");
+}
+const std = @import("std");
+    {#endsyntax#}</pre>
+    {#header_close#}
+
     {#header_open|@src Gains Module Field#}
     <p>{#syntax#}std.builtin.SourceLocation{#endsyntax#}:</p>
     <pre>{#syntax#}
