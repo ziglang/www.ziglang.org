@@ -1468,6 +1468,10 @@ pub const SourceLocation = struct {
     <a href="https://github.com/ziglang/zig/pull/22264">#22264</a>
     {#header_close#}
 
+    {#header_open|Branch Quota Rules Adjusted for Function Calls#}
+    <a href="https://github.com/ziglang/zig/pull/22414">#22414</a>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1654,6 +1658,105 @@ list.appendAssumeCapacity(5678);
     <p>This step now prints file names that failed the format check.</p>
     {#header_close#}
 
+    {#header_open|Creating Artifacts from Existing Modules#}
+<p>Zig 0.14.0 modifies the build system APIs for creating <code>Compile</code> steps, allowing them to be created from existing <code>std.Build.Module</code> objects. This allows for module graphs to be defined in a more clear manner, and for components of these graphs to be reused more easily; for instance, a module which exists as a dependency of another can easily have a corresponding test step created. The new APIs can be used by modifying your calls to <code>addExecutable</code>, <code>addTest</code>, etc. Instead of passing options like <code>root_source_file</code>, <code>target</code>, and <code>optimize</code> directly to these functions, you should pass in the <code>root_module</code> field a <code>*std.Build.Module</code> created using these parameters. Zig 0.14.0 still permits the old, deprecated usages for these functions; the next release will remove them.</p>
+<p>Users of the legacy APIs can upgrade with minimal effort by just moving the module-specific parts of their <code>addExecutable</code> (etc) call into a <code>createModule</code> call. For instance, here is the updated version of a simple build script:</p>
+<pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "hello",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    b.installArtifact(exe);
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "hello",
+        .root_module = b.createModule(.{ // this line was added
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }), // this line was added
+    });
+    b.installArtifact(exe);
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+<p>And, to demostrate the benefits of the new API, here is an example build script which elegantly constructs a complex build graph of multiple modules:</p>
+<pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    // First, we create our 3 modules.
+
+    const foo = b.createModule(.{
+        .root_source_file = b.path("src/foo.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const bar = b.createModule(.{
+        .root_source_file = b.path("src/bar.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const qux = b.createModule(.{
+        .root_source_file = b.path("src/qux.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    // Next, we set up all of their dependencies.
+
+    foo.addImport("bar", bar);
+    foo.addImport("qux", qux);
+    bar.addImport("qux", qux);
+    qux.addImport("bar", bar); // mutual recursion!
+
+    // Finally, we will create all of our `Compile` steps.
+    // `foo` will be the root of an executable, but all 3 modules also have unit tests we want to run.
+
+    const foo_exe = b.addExecutable(.{
+        .name = "foo",
+        .root_module = foo,
+    });
+
+    b.installArtifact(foo_exe);
+
+    const foo_test = b.addTest(.{
+        .name = "foo",
+        .root_module = foo,
+    });
+    const bar_test = b.addTest(.{
+        .name = "bar",
+        .root_module = bar,
+    });
+    const qux_test = b.addTest(.{
+        .name = "qux",
+        .root_module = qux,
+    });
+
+    const test_step = b.step("test", "Run all unit tests");
+    test_step.dependOn(&b.addRunArtifact(foo_test).step);
+    test_step.dependOn(&b.addRunArtifact(bar_test).step);
+    test_step.dependOn(&b.addRunArtifact(qux_test).step);
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+    {#header_close#}
+
     {#header_open|Allow Packages to Expose Arbitrary LazyPaths by Name#}
     <p>In previous versions of Zig, packges could expose <em>artifacts</em>, <em>modules</em>, and <em>named <code>WriteFile</code> steps</em>. These can be exposed through <code>installArtifact</code>, <code>addModule</code>, and <code>addNamedWriteFiles</code> respectively, and can be accessed through methods on <code>std.Build.Dependency</code>. In addition to these, Zig 0.14.0 introduces the ability for packages for expose arbitrary <code>LazyPath</code>s. A dependency exposes them with <code>std.Build.addNamedLazyPath</code>, and a dependant package uses <code>std.Build.Dependency.namedLazyPath</code> to access them.</p>
 <p>One use case for this function is for a dependency to expose a generated file to its dependant package. For instance, in the following example, the dependency package <code>bar</code> exposes a generated Zig file which is used by the main package as a module import of an executable:</p>
@@ -1806,13 +1909,32 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
     {#header_close#}
 
     {#header_open|Linker#}
-    TODO
     {#header_open|Move Input File Parsing to the Frontend#}
     <p>Moves GNU ld script processing to the frontend to join the relevant library lookup logic, making the libraries within subject to the same search criteria as all the other libraries.</p>
     <p>This change is necessary so that the compiler has knowledge of all linker inputs at the start of compilation, so that linking and compilation can begin at the same time. Finding out about linker inputs during flush() is too late. This branch fully removes <code>lib_dirs</code> from being passed to the ELF linking code.</p>
     <p>This unfortunately means doing file system access on all .so files when targeting ELF to determine if they are linker scripts, so I introduced an opt-in CLI flag to enable .so scripts. When a GNU ld script is encountered, the error message instructs users about the CLI flag that will immediately solve their problem, which is passing <code>-fallow-so-scripts</code> to <code>zig build</code>. This means that users who don&#39;t have funky libraries, or at least avoid linking against them, don&#39;t have to pay the cost of these file system accesses.</p>
     <p>All object file, archive, and shared object file parsing now happens during the parallel compilation pipeline rather than bottlenecking at the end.</p>
     <p>This is a step towards {#link|Incremental Compilation#}.</p>
+    {#header_close#}
+
+    {#header_open|Wasm Linker Rewritten#}
+    <p>The goals of this rewrite were:</p>
+    <ul>
+    <li>compile faster when using the wasm linker and backend</li>
+    <li>enable saving compiler state by directly copying in-memory linker state to disk.</li>
+    <li>more efficient compiler memory utilization</li>
+    <li>introduce integer type safety to wasm linker code</li>
+    <li>generate better WebAssembly code</li>
+    <li>fully participate in {#link|Incremental Compilation#}</li>
+    <li>do as much work as possible in the compiler pipeline rather than
+    bottlenecking at the end, while continuing to do garbage collection.</li>
+    <li>avoid unnecessary heap allocations</li>
+    <li>avoid unnecessary indirect function calls</li>
+    </ul>
+    <p>All of these goals were accomplished. Demos and performance data points are available
+    in <a href="https://github.com/ziglang/zig/pull/22220">the writeup</a>.
+    <p>Although it is passing the same test suite from before, the linker is not finished yet,
+    not enabled by default yet, and therefore does not eliminate the dependency on LLD.</p>
     {#header_close#}
 
     {#header_close#}
