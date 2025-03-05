@@ -1806,12 +1806,43 @@ pub fn build(b: *std.Build) {
 }
     {#endsyntax#}</pre>
     {#header_close#}
+
+    {#header_open|addLibrary Function#}
+    <p>Acts as a replacement for <code>addSharedLibrary</code> and
+    <code>addStaticLibrary</code>, but linking mode can be changed more easily
+    in build.zig, for example:</p>
+
+    <p>In library:</p>
+    <pre>{#syntax#}
+const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode for a foo_bar library") orelse .static; // or other default
+    
+const lib = b.addLibrary(.{
+    .linkage = linkage,
+    .name = "foo_bar",
+    .root_module = mod,
+});
+    {#endsyntax#}</pre>
+
+    <p>In consumer:</p>
+    <pre>{#syntax#}
+const dep_foo_bar = b.dependency("foo_bar", .{
+    .target = target,
+    .optimize = optimize,
+    .linkage = .dynamic // or leave for default static
+});
+
+mod.linkLibrary(dep_foor_bar.artifact("foo_bar"));
+    {#endsyntax#}</pre>
+    <p>It also matches nicely with <code>linkLibrary</code> name.</p>
+
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Compiler#}
     <p>Uncategorized changes:</p>
     <ul>
       <li><code>-fno-omit-frame-pointer</code> is now the default for ReleaseSmall on x86 targets</li>
+      <li>pipeline: spawn jobs earlier that produce linker inputs</li>
     </ul>
     {#header_open|Multithreaded Backend Support#}
     <p>Some backends of the compiler, such as {#link|x86 Backend#}, now support running codegen
