@@ -1283,6 +1283,60 @@ thread-1:                    thread-2:
     <p>This change simplifies the language, and fixes some problematic coercions through pointers which led to unintuitive behavior.</p>
     {#header_close#}
 
+    {#header_open|Calling Convention Enhancements and @setAlignStack Replaced#}
+<p>Zig allows setting the calling convention of a function with the <code>callconv(...)</code> annotation, where the value in parentheses is of type <code>std.builtin.CallingConvention</code>. In previous versions of Zig, this type was a simple <code>enum</code> listing a small number of common calling conventions, such as <code>.Stdcall</code> for x86 and <code>.AAPCS</code> for ARM. The <code>.C</code> variant referred to the default C calling convention for the target.</p>
+<p>Zig 0.14.0 changes <code>CallingConvention</code> to be far more exhaustive: it now contains every major calling convention for every target currently supported by Zig. Variants have names like <code>.x86_64_sysv</code>, <code>.arm_aapcs</code>, and <code>.riscv64_interrupt</code>. In addition, instead of an enum, <code>CallingConvention</code> is now a tagged union; this allows <em>options</em> to be specified on a calling convention.</p>
+<p>Most available calling conventions have a payload of <code>std.builtin.CallingConvention.CommonOptions</code>, which allows overriding the expected alignment of the stack when the function is called:</p>
+<pre>{#syntax#}
+/// Options shared across most calling conventions.
+pub const CommonOptions = struct {
+    /// The boundary the stack is aligned to when the function is called.
+    /// `null` means the default for this calling convention.
+    incoming_stack_alignment: ?u64 = null,
+};
+{#endsyntax#}</pre>
+<p>This is useful when, for instance, interacting with C code compiled with the <code>-mpreferred-stack-boundary</code> GCC flag.</p>
+<p>A small number of calling conventions have more complex options, for instance:</p>
+<pre>{#syntax#}
+/// Options for x86 calling conventions which support the regparm attribute to pass some
+/// arguments in registers.
+pub const X86RegparmOptions = struct {
+    /// The boundary the stack is aligned to when the function is called.
+    /// `null` means the default for this calling convention.
+    incoming_stack_alignment: ?u64 = null,
+    /// The number of arguments to pass in registers before passing the remaining arguments
+    /// according to the calling convention.
+    /// Equivalent to `__attribute__((regparm(x)))` in Clang and GCC.
+    register_params: u2 = 0,
+};
+{#endsyntax#}</pre>
+<p><strong>The default C calling convention is no longer represented by a special tag.</strong> Instead, <code>CallingConvention</code> contains a declaration named <code>c</code> which is defined as follows:</p>
+<pre>{#syntax#}
+/// This is an alias for the default C calling convention for this target.
+/// Functions marked as `extern` or `export` are given this calling convention by default.
+pub const c = builtin.target.cCallingConvention().?;
+{#endsyntax#}</pre>
+<p>When combined with {#link|Decl Literals#}, this permits writing <code>callconv(.c)</code> to specify this calling convention.</p>
+<p>Zig 0.14.0 includes declarations named <code>Unspecified</code>, <code>C</code>, <code>Naked</code>, <code>Stdcall</code>, etc, to allow existing usages of <code>callconv</code> to continue working thanks to Decl Literals. These declarations are deprecated, and will be removed in a future version of Zig.</p>
+<p>As previously mentioned, most calling conventions have an <code>incoming_stack_alignment</code> options to specify the byte boundary the stack will be aligned to when a function is called, which can be used to interop with code using stack alignments lower than the ABI mandates. Previously, the <code>@setAlignStack</code> builtin could be used for this use case; however, its behavior was somewhat ill-defined, and applying it to this use case required knowing the expected stack alignment for your ABI. As such, the <code>@setAlignStack</code> builtin has been removed. Instead, users should annotate on their <code>callconv</code> the expected stack alignment, allowing the optimizer to realign if necessary. This also allows the optimizer to <em>avoid</em> unnecessarily realigning the stack when such a function is called. For convenience, <code>CallingConvention</code> has a <code>withStackAlign</code> function which can be used to change the incoming stack alignment. Upgrading is generally fairly simple:</p>
+<pre>{#syntax#}
+// This function will be called by C code which uses a 4-byte aligned stack.
+export fn foo() void {
+    // I know that my target's ABI expects a 16-byte aligned stack.
+    @setAlignStack(16);
+    // ...
+}
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+// This function will be called by C code which uses a 4-byte aligned stack.
+// We simply specify that on the `callconv`.
+export fn foo() callconv(.withStackAlign(.c, 4)) void {
+    // ...
+}
+{#endsyntax#}</pre>
+    {#header_close#}
+
     {#header_open|std.builtin.Type Fields Renamed#}
     <p>In most cases, Zig&#39;s standard library follows <a href="https://ziglang.org/documentation/0.14.0/#Names">naming conventions</a>. Zig 0.14.0 updates the fields of the <code>std.builtin.Type</code> tagged union to follow these conventions by lowercasing them:</p>
 <pre>{#syntax#}
@@ -1371,6 +1425,21 @@ const std = @import("std");
     {#endsyntax#}</pre>
     {#header_close#}
 
+    {#header_open|Non-Scalar Sentinel Types Disallowed#}
+    <p>Sentinel values are now forbidden from being aggregate types. In other
+    words, only types that support the {#syntax#}=={#endsyntax#} operator are
+    allowed.</p>
+    {#code|non_scalar_sentinel.zig#}
+    {#header_close#}
+
+    {#header_open|@FieldType builtin#}
+    <p>Zig 0.14.0 introduces the {#syntax#}@FieldType{#endsyntax#} builtin.
+    This serves the same purpose as the <code>std.meta.FieldType</code>
+    function: given a type and the name of one of its fields, it returns the
+    type of that field.</p>
+    {#code|fieldtype.zig#}
+    {#header_close#}
+
     {#header_open|@src Gains Module Field#}
     <p>{#syntax#}std.builtin.SourceLocation{#endsyntax#}:</p>
     <pre>{#syntax#}
@@ -1386,20 +1455,6 @@ pub const SourceLocation = struct {
     <p>The <code>module</code> field is new.</p>
     {#header_close#}
 
-    {#header_open|Non-Scalar Sentinel Types Disallowed#}
-    <p>Sentinel values are now forbidden from being aggregate types. In other
-    words, only types that support the {#syntax#}=={#endsyntax#} operator are
-    allowed.</p>
-    {#code|non_scalar_sentinel.zig#}
-    {#header_close#}
-
-    {#header_open|@FieldType builtin#}
-    <p>Zig 0.14.0 introduces the {#syntax#}@FieldType{#endsyntax#} builtin.
-    This serves the same purpose as the <code>std.meta.FieldType</code>
-    function: given a type and the name of one of its fields, it returns the
-    type of that field.</p>
-    {#code|fieldtype.zig#}
-    {#header_close#}
     {#header_close#}
 
     {#header_open|Standard Library#}
