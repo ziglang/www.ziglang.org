@@ -32,4 +32,4 @@ fn charToDigit(c: u8) !u8 {
     return value;
 }
 
-// exe=build_fail
+// test_safety=possibilities
