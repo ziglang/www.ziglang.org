@@ -1017,22 +1017,37 @@
 
     {#header_open|Language Changes#}
 
+    {#header_open|Labeled Switch#}
+    <p>Zig 0.14.0 implements <a href="https://github.com/ziglang/zig/issues/8220">an accepted proposal</a> which allows {#syntax#}switch{#endsyntax#} statements to be labeled, and to be targeted by {#syntax#}continue{#endsyntax#} statements. Such a {#syntax#}continue{#endsyntax#} statement takes a single operand (like {#syntax#}break{#endsyntax#} can to return a value from a block or loop); this value is treated as a replacement operand to the original {#syntax#}switch{#endsyntax#} expression. This construct is semantically equivalent to a {#syntax#}switch{#endsyntax#} statement inside of a loop, with a variable tracking the {#syntax#}switch{#endsyntax#} operand; for instance, the following tests are equivalent:</p>
+    {#code|labeled_switch.zig#}
+<p>These constructs differ in two ways. The most obvious difference is in clarity: the new syntax form is clearer at times, for instance when implementing Finite State Automata where one can write {#syntax#}continue :fsa new_state{#endsyntax#} to represent a state transition. However, a key motivation for this language feature lies in its code generation. This is expanded on below.</p>
+<p>It is also possible to {#syntax#}break{#endsyntax#} from a labeled {#syntax#}switch{#endsyntax#}. This simply terminates evaluation of the {#syntax#}switch{#endsyntax#} expression, causing it to result in the given value, as though the case body were a labeled block. As with blocks, an unlabeled {#syntax#}break{#endsyntax#} will never target a {#syntax#}switch{#endsyntax#} statement; only a {#syntax#}while{#endsyntax#} or {#syntax#}for{#endsyntax#} loop.</p>
+<p>Unlike a typical {#syntax#}switch{#endsyntax#} statement, a labeled {#syntax#}switch{#endsyntax#} with one or more {#syntax#}continue{#endsyntax#}s targeting it is not implicitly evaluated at compile-time (this is similar to how loops behave). However, as with loops, compile-time evaluation can be forced by evaluating such an expression in a {#syntax#}comptime{#endsyntax#} context. </p>
+    {#header_open|Code Generation Properties#}
+<p>This language construct is designed to generate code which aids the CPU in predicting branches between cases of the switch, allowing for increased performance in hot loops, particularly those dispatching instructions, evaluating FSAs, or performing similar case-based evaluations. To achieve this, the generated code may be different to what one would intuitively expect.</p>
+<p>If the operand to {#syntax#}continue{#endsyntax#} is comptime-known, then it can be translated to an unconditional branch to the relevant case. Such a branch is perfectly predicted, and hence typically very fast to execute. </p>
+<p>If the operand is runtime-known, then each {#syntax#}continue{#endsyntax#} can become a separate conditional branch (ideally via a shared jump table) back to the same set of potential branch targets. The advantage of this pattern is that it aids the CPU&#39;s branch predictor by providing different branch instructions which can be associated with distinct prediction data. For instance, when evaluating an FSA, if case {#syntax#}a{#endsyntax#} is very likely to be followed by case {#syntax#}b{#endsyntax#}, while case {#syntax#}c{#endsyntax#} is very likely to be followed by case {#syntax#}d{#endsyntax#}, then the branch predictor can use the direct jumps between {#syntax#}switch{#endsyntax#} cases to predict the control flow more accurately, whereas a loop-based lowering causes the state dispatches to be &quot;collapsed&quot; into a single indirect branch or similar, hindering branch prediction.</p>
+<p>This lowering can inflate code size compared to a simple &quot;switch in a loop&quot; lowering, and any Zig implementation is, of course, free to lower this syntax however it wishes provided the language semantics are obeyed. However, the official ZSF compiler implementation will attempt to match the lowering described above, particularly in the <code>ReleaseFast</code> build mode.</p>
+    <p><a href="https://github.com/ziglang/zig/pull/21367">Updating Zig's tokenizer to take advantage of this feature resulted in a 13% performance boost</a>.</p>
+    {#header_close#}
+    {#header_close#}
+
     {#header_open|Decl Literals#}
-<p>Zig 0.14.0 extends the &quot;enum literal&quot; syntax (<code>.foo</code>) to provide a new feature, known as &quot;decl literals&quot;. Now, an enum literal <code>.foo</code> doesn&#39;t necessarily refer to an enum variant, but, using
+<p>Zig 0.14.0 extends the &quot;enum literal&quot; syntax ({#syntax#}.foo{#endsyntax#}) to provide a new feature, known as &quot;decl literals&quot;. Now, an enum literal {#syntax#}.foo{#endsyntax#} doesn&#39;t necessarily refer to an enum variant, but, using
 <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a>, can also refer to any declaration on the target type. For instance, consider the following example:</p>
     {#code|decl_literals.zig#}
-<p>Since the initialization expression of <code>val</code> has a result type of <code>S</code>, the initialization is effectively equivalent to <code>S.default</code>. This can be particularly useful when initializing struct fields to avoid having to specify the type again:</p>
+<p>Since the initialization expression of {#syntax#}val{#endsyntax#} has a result type of {#syntax#}S{#endsyntax#}, the initialization is effectively equivalent to {#syntax#}S.default{#endsyntax#}. This can be particularly useful when initializing struct fields to avoid having to specify the type again:</p>
     {#code|decl_literals_structs.zig#}
 <p>It can also help in avoiding <a href="https://ziglang.org/documentation/0.14.0/#Faulty-Default-Field-Values">Faulty Default Field Values</a>, like in the following example:</p>
     {#code|faulty.zig#}
-<p>Many existing uses of field default values may be more appropriately handled by a declaration named <code>default</code> or <code>empty</code> or similar, to ensure data invariants are not violated by overriding single fields.</p>
+<p>Many existing uses of field default values may be more appropriately handled by a declaration named {#syntax#}default{#endsyntax#} or {#syntax#}empty{#endsyntax#} or similar, to ensure data invariants are not violated by overriding single fields.</p>
 <p>Decl literals also support function calls, like this:</p>
     {#code|call_decl_literal.zig#}
-<p>As before, this syntax can be particularly useful when initializing struct fields. It also supports calling functions which return error unions via <code>try</code>. The following example uses these in combination to initialize a thin wrapper around an <code>ArrayListUnmanaged</code>:</p>
+<p>As before, this syntax can be particularly useful when initializing struct fields. It also supports calling functions which return error unions via {#syntax#}try{#endsyntax#}. The following example uses these in combination to initialize a thin wrapper around an {#syntax#}ArrayListUnmanaged{#endsyntax#}:</p>
     {#code|init_with_decl_literal.zig#}
-<p>The introduction of decl literals comes with some standard library changes. In particular, unmanaged containers, including <code>ArrayListUnmanaged</code> and <code>HashMapUnmanaged</code>, should no longer be default-initialized with <code>.{}</code>, because the default field values here violate the guidance discussed above. Instead, they should be initialized using their <code>empty</code> declaration, which can be conveniently accessed via decl literals:</p>
+<p>The introduction of decl literals comes with some standard library changes. In particular, unmanaged containers, including {#syntax#}ArrayListUnmanaged{#endsyntax#} and {#syntax#}HashMapUnmanaged{#endsyntax#}, should no longer be default-initialized with {#syntax#}.{}{#endsyntax#}, because the default field values here violate the guidance discussed above. Instead, they should be initialized using their {#syntax#}empty{#endsyntax#} declaration, which can be conveniently accessed via decl literals:</p>
     {#code|default_init_buffer.zig#}
-<p>Similarly, <code>std.heap.GeneralPurposeAllocator</code> should now be initialized with its <code>.init</code> declaration.</p>
+<p>Similarly, {#syntax#}std.heap.GeneralPurposeAllocator{#endsyntax#} should now be initialized with its {#syntax#}.init{#endsyntax#} declaration.</p>
 <p>The deprecated default field values for these data structures will be removed in the next release cycle.</p>
     {#header_open|Fields and Declarations Cannot Share Names#}
 <p>Zig 0.14.0 introduces a restriction that container types ({#syntax#}struct{#endsyntax#}, {#syntax#}union{#endsyntax#}, {#syntax#}enum{#endsyntax#} and {#syntax#}opaque{#endsyntax#}) cannot have fields and declarations ({#syntax#}const{#endsyntax#}/{#syntax#}var{#endsyntax#}/{#syntax#}fn{#endsyntax#}) with the same names. This restriction has been added to deal with the problem that whether {#syntax#}MyEnum.foo{#endsyntax#} looks up a declaration or an enum field is ambiguous (a problem amplified by {#link|Decl Literals#}. Generally, this can be avoided by following the standard naming conventions:</p>
@@ -1471,7 +1486,6 @@ pub const SourceLocation = struct {
     {#header_open|Branch Quota Rules Adjusted for Function Calls#}
     <a href="https://github.com/ziglang/zig/pull/22414">#22414</a>
     {#header_close#}
-
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1602,7 +1616,7 @@ list.appendAssumeCapacity(5678);
     {#header_close#}
 
     {#header_open|Binary Search#}
-    TODO https://github.com/ziglang/zig/pull/20927
+    <a href="https://github.com/ziglang/zig/pull/20927">#20927</a>
     {#header_close#}
 
     {#header_open|std.hash_map gains a rehash method#}
