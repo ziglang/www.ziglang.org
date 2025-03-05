@@ -1577,8 +1577,34 @@ pub const SourceLocation = struct {
     <p>Uncategorized changes:</p>
     <ul>
     <li>mem: handle Float and Bool cases in byteSwapAllFields</li>
-    <li>delete std.heap.WasmPageAllocator in favor of std.heap.WasmAllocator</li>
+    <li>fmt: remove placeholders from binary</li>
     </ul>
+
+    {#header_open|DebugAllocator#}
+    <p><code>GeneralPurposeAllocator</code> relied on a compile-time known
+    {#link|page size|Runtime Page Size#}, so it had to be rewritten. It is now
+    rewritten to make fewer active mappings, to have better performance, and is renamed
+    to <code>DebugAllocator</code>.</p>
+    <p>Performance data point. This is running ast-check with a debug zig compiler, before/after the rewrite.</p>
+    <pre>Benchmark 1 (3 runs): master/bin/zig ast-check ../lib/compiler_rt/udivmodti4_test.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          22.8s  ±  184ms    22.6s  … 22.9s           0 ( 0%)        0%
+  peak_rss           58.6MB ± 77.5KB    58.5MB … 58.6MB          0 ( 0%)        0%
+  cpu_cycles         38.1G  ± 84.7M     38.0G  … 38.2G           0 ( 0%)        0%
+  instructions       27.7G  ± 16.6K     27.7G  … 27.7G           0 ( 0%)        0%
+  cache_references   1.08G  ± 4.40M     1.07G  … 1.08G           0 ( 0%)        0%
+  cache_misses       7.54M  ± 1.39M     6.51M  … 9.12M           0 ( 0%)        0%
+  branch_misses       165M  ±  454K      165M  …  166M           0 ( 0%)        0%
+Benchmark 2 (3 runs): branch/bin/zig ast-check ../lib/compiler_rt/udivmodti4_test.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          20.5s  ± 95.8ms    20.4s  … 20.6s           0 ( 0%)        ⚡- 10.1% ±  1.5%
+  peak_rss           54.9MB ±  303KB    54.6MB … 55.1MB          0 ( 0%)        ⚡-  6.2% ±  0.9%
+  cpu_cycles         34.8G  ± 85.2M     34.7G  … 34.9G           0 ( 0%)        ⚡-  8.6% ±  0.5%
+  instructions       25.2G  ± 2.21M     25.2G  … 25.2G           0 ( 0%)        ⚡-  8.8% ±  0.0%
+  cache_references   1.02G  ±  195M      902M  … 1.24G           0 ( 0%)          -  5.8% ± 29.0%
+  cache_misses       4.57M  ±  934K     3.93M  … 5.64M           0 ( 0%)        ⚡- 39.4% ± 35.6%
+  branch_misses       142M  ±  183K      142M  …  142M           0 ( 0%)        ⚡- 14.1% ±  0.5%</pre>
+    {#header_close#}
 
     {#header_open|SmpAllocator#}
     <p>An allocator that is designed for ReleaseFast optimization mode, with multi-threading enabled.</p>
@@ -1630,6 +1656,36 @@ pub fn main() !void {
     <p><a href="https://ziglang.org/devlog/2025/#2025-02-07">devlog entry</a></p>
     {#header_close#}
 
+    {#header_open|Allocator API Changes (remap)#}
+    <p>This release introduces a new function to <code>std.mem.Allocator.VTable</code> called <code>remap</code>. The key part from the doc comments:</p>
+    <blockquote>
+    <p>Attempt to expand or shrink memory, allowing relocation.</p>
+    <p>A non-<code>null</code> return value indicates the resize was successful. The allocation
+    may have same address, or may have been relocated. In either case, the
+    allocation now has size of <code>new_len</code>. A <code>null</code> return value indicates that
+    the resize would be equivalent to allocating new memory, copying the bytes
+    from the old memory, and then freeing the old memory. In such case, it is
+    more efficient for the caller to perform the copy.</p>
+    </blockquote>
+    <pre>{#syntax#}
+remap: *const fn (*anyopaque, memory: []u8, alignment: Alignment, new_len: usize, return_address: usize) ?[*]u8,
+    {#endsyntax#}</pre>
+    <p><code>resize</code> remains unchanged with the same semantics.</p>
+    <p>All the <code>Allocator.VTable</code> functions now take a <code>std.mem.Alignment</code> type rather than <code>u8</code>. The numerical value is the same, but now there is type safety and handy methods attached to the type.</p>
+    <p>Both <code>resize</code> and <code>remap</code> have their places. For example, <code>resize</code> is necessary for <code>std.heap.ArenaAllocator</code> which must not relocate its allocations. Meanwhile, <code>remap</code> is appropriate for <code>std.ArrayList</code> when the capacity increases.</p>
+    <p>It&#39;s important to remember with <code>remap</code> that an <code>Allocator</code> implementation should generally behave the same as <code>resize</code>, <em>unless</em> the remap can be done without performing the memcpy inside the allocator.</p>
+    <p>For instance, this release introduces support for calling <code>mremap</code> when supported, in which case the operating system remaps the pages, avoiding an expensive memcpy in userspace. Zig programmers can now expect this to happen when using <code>std.heap.page_allocator</code> as well as when using it as a backing allocator for e.g. <code>std.heap.ArenaAllocator</code> or <code>std.heap.GeneralPurposeAllocator</code>.</p>
+
+    <p>Additionally:</p>
+    <ul>
+    <li><code>std.heap.page_allocator</code> now supports alignments greater than page size, which was needed
+      for the {#link|DebugAllocator#} rewrite.</li>
+    <li>delete <code>std.heap.WasmPageAllocator</code> in favor of <code>std.heap.WasmAllocator</code></li>
+    <li>delete <code>std.heap.LoggingAllocator</code> did not belong in std, at least not in its current form</li>
+    <li>delete <code>std.heap.HeapAllocator</code> - this was Windows-only and depended on kernel32</li>
+    </ul>
+    {#header_close#}
+
     {#header_open|ZON Parsing and Serialization#}
     <p><code>std.zon.parse</code> provides functionality for parsing ZON into a Zig struct at runtime:</p>
     <ul>
@@ -1660,6 +1716,22 @@ pub fn main() !void {
 
     {#header_close#}
 
+    {#header_open|Runtime Page Size#}
+    <p>Compile time known <code>std.mem.page_size</code> is removed, which is a
+    nonsensical concept since the page size is in fact runtime-known (sorry
+    about that), and replaces it with <code>std.heap.page_size_min</code> and
+    <code>std.heap.page_size_max</code> for comptime-known bounds of possible
+    page sizes. Uses of <code>std.mem.page_size</code> in pointer alignment
+    properties, such as in mmap, are migrated to
+    <code>std.heap.page_size_min</code>.</p> <p>In places where the page size
+    must be used, <code>std.heap.pageSize()</code> provides the answer. It will
+    return a comptime-known value if possible, otherwise querying the operating
+    system at runtime, and memoizing the result (atomically, of course). It
+    also has a <code>std.options</code> integration so the application
+    maintainer has the ability to override this behavior.</p>
+    <p>Notably, this fixes support for Linux running on Apple's new hardware,
+    such as <a href="https://asahilinux.org/">Asahi Linux</a>.</p>
+    {#header_close#}
 
     {#header_open|Panic Interface#}
     <a href="https://github.com/ziglang/zig/pull/22594">22594</a>
@@ -2092,7 +2164,7 @@ const foo: Foo = @import("foo.zon");
 <li>Make <code>utf8Decode2</code> and friends use arrays as parameters, eliminating a runtime assertion in favor of using the type system.</li>
 </ul>
 <p>After this commit, the crash found by fuzzing, which was <code>"\x07\xd5\x80\xc3=o\xda|a\xfc{\x9a\xec\x91\xdf\x0f\\\x1a^\xbe;\x8c\xbf\xee\xea"</code> no longer causes a crash. However, I did not feel the need to add this test case because the simplified logic eradicates crashes of this nature.</p>
-<pre><code>Benchmark 1 (100 runs): before/zig ast-check /home/andy/dev/zig/src/Sema.zig
+<pre>Benchmark 1 (100 runs): before/zig ast-check /home/andy/dev/zig/src/Sema.zig
   measurement          mean ± σ            min … max           outliers         delta
   wall_time          50.0ms ± 2.04ms    48.7ms … 57.4ms         14 (14%)        0%
   peak_rss           60.0MB ±  147KB    59.4MB … 60.2MB          3 ( 3%)        0%
@@ -2109,8 +2181,7 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
   instructions        501M  ± 44.8       501M  …  501M           7 ( 7%)        ⚡-  4.0% ±  0.0%
   cache_references   6.65M  ±  141K     6.45M  … 7.67M           4 ( 4%)          +  1.5% ±  0.5%
   cache_misses        208K  ± 3.79K      201K  …  226K           3 ( 3%)          +  1.3% ±  0.5%
-  branch_misses      2.84M  ± 8.62K     2.81M  … 2.86M           1 ( 1%)          -  0.4% ±  0.1%
-</code></pre>
+  branch_misses      2.84M  ± 8.62K     2.81M  … 2.86M           1 ( 1%)          -  0.4% ±  0.1%</pre>
 <p>I also noticed that the tokenizer did not conform to <a href="https://github.com/ziglang/zig-spec/issues/38">https://github.com/ziglang/zig-spec/issues/38</a> so I fixed it.</p>
     {#header_close#}
 
@@ -2228,6 +2299,12 @@ fish: Job 1, 'zig run test.c -lc' terminated by signal SIGABRT (Abort)</code></p
     <p><a href="/devlog/2025/#2025-02-24">devlog entry</a></p>
     {#header_close#}
 
+    {#header_open|compiler_rt#}
+    {#header_open|Optimized memcpy#}
+    <p><a href="https://github.com/ziglang/zig/pull/18912">#18912</a></a>
+    {#header_close#}
+    {#header_close#}
+
     {#header_open|LLVM 19#}
     <p>
       This release of Zig upgrades to
@@ -2254,6 +2331,8 @@ fish: Job 1, 'zig run test.c -lc' terminated by signal SIGABRT (Abort)</code></p
       <li>Updates the list of libc stub symbols made available when linking dynamically.</li>
       <li>Fixes a stack overflow in some special libc functions such as <code>fma</code> on soft float targets.</li>
     </ul>
+    <p>Additionally, Zig <a href="https://github.com/ziglang/zig/pull/22513">no longer ships musl's memcpy files</a>.
+    Instead, Zig provides {#link|Optimized memcpy#}.</p>
     {#header_close#}
 
     {#header_open|glibc 2.41#}
