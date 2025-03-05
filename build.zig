@@ -23,9 +23,32 @@ const releases = [_][]const u8{
     "0.12.0",
     "0.12.1",
     "0.13.0",
+    "0.14.0",
 };
 
 pub fn build(b: *std.Build) void {
+    const doctest_dep = b.dependency("doctest", .{
+        .target = b.graph.host,
+        .optimize = .Debug,
+    });
+    const doctest_exe = doctest_dep.artifact("doctest");
+    const docgen_exe = doctest_dep.artifact("docgen");
+
+    installReleaseNotes(b, doctest_exe, docgen_exe);
+
+    for (releases) |release| {
+        const input_wf = b.addWriteFiles();
+        _ = input_wf.add("vernav", verNavHtml(b.allocator, release));
+
+        const docgen_cmd = b.addRunArtifact(docgen_exe);
+        docgen_cmd.addArgs(&.{"--code-dir"});
+        docgen_cmd.addDirectoryArg(input_wf.getDirectory());
+
+        docgen_cmd.addFileArg(b.path(b.fmt("src/documentation/{s}/index.html", .{release})));
+        const generated = docgen_cmd.addOutputFileArg("index.html");
+        installFile(b, generated, b.fmt("documentation/{s}/index.html", .{release}));
+    }
+
     var build_assets = std.ArrayList(zine.BuildAsset).init(b.allocator);
     runZigScripts(b, &build_assets, "assets/zig-code", &.{
         "index.zig",
@@ -195,6 +218,10 @@ pub fn build(b: *std.Build) void {
     });
 }
 
+fn installFile(b: *std.Build, lp: std.Build.LazyPath, dest_rel_path: []const u8) void {
+    b.getInstallStep().dependOn(&b.addInstallFile(lp, dest_rel_path).step);
+}
+
 fn runZigScripts(
     b: *std.Build,
     assets: *std.ArrayList(zine.BuildAsset),
@@ -202,7 +229,7 @@ fn runZigScripts(
     paths: []const []const u8,
 ) void {
     const doctest_dep = b.dependency("doctest", .{
-        .target = b.host,
+        .target = b.graph.host,
         .optimize = .Debug,
     });
     const doctest_exe = doctest_dep.artifact("doctest");
@@ -228,10 +255,9 @@ fn runSingleZigScript(
         "--zig",        b.graph.zig_exe,
         "--cache-root", b.cache_root.path orelse ".",
     });
-    if (b.zig_lib_dir) |p| {
-        cmd.addArg("--zig-lib-dir");
-        cmd.addDirectoryArg(p);
-    }
+    cmd.addArg("--zig-lib-dir");
+    cmd.addDirectoryArg(.{ .cwd_relative = b.graph.zig_lib_directory.path orelse "." });
+
     cmd.addArgs(&.{"-i"});
     cmd.addFileArg(b.path(b.fmt("{s}/{s}", .{ assets_dir_path, path })));
 
@@ -239,41 +265,17 @@ fn runSingleZigScript(
     return cmd.addOutputFileArg(path);
 }
 
-pub fn oldBuild(b: *std.Build) void {
-    const doctest_dep = b.dependency("doctest", .{
-        .target = b.host,
-        .optimize = .Debug,
-    });
-    const doctest_exe = doctest_dep.artifact("doctest");
-    const docgen_exe = doctest_dep.artifact("docgen");
-
-    installReleaseNotes(b, doctest_exe, docgen_exe);
-
-    for (releases) |release| {
-        const input_wf = b.addWriteFiles();
-        _ = input_wf.add("vernav", verNavHtml(b.allocator, release));
-
-        const docgen_cmd = b.addRunArtifact(docgen_exe);
-        docgen_cmd.addArgs(&.{"--code-dir"});
-        docgen_cmd.addDirectoryArg(input_wf.getDirectory());
-
-        docgen_cmd.addFileArg(b.path(b.fmt("src/documentation/{s}/index.html", .{release})));
-        const generated = docgen_cmd.addOutputFileArg("index.html");
-
-        const copy_generated = b.addWriteFiles();
-        copy_generated.addCopyFileToSource(generated, b.fmt("content/documentation/{s}/index.html", .{release}));
-
-        b.getInstallStep().dependOn(&copy_generated.step);
-    }
-}
-
 fn installReleaseNotes(
     b: *std.Build,
     doctest_exe: *std.Build.Step.Compile,
     docgen_exe: *std.Build.Step.Compile,
 ) void {
-    const dirname = "src/download/0.13.0/release-notes";
-    var dir = b.build_root.handle.openDir(dirname, .{ .iterate = true }) catch |err| {
+    const release = "0.14.0";
+    const dirname = b.fmt("src/download/{s}/release-notes", .{release});
+    const input = b.fmt("src/download/{s}/release-notes.html", .{release});
+    const output = b.fmt("download/{s}/release-notes.html", .{release});
+
+    var dir = b.build_root.handle.makeOpenPath(dirname, .{ .iterate = true }) catch |err| {
         std.debug.panic("unable to open '{s}' directory: {s}", .{ dirname, @errorName(err) });
     };
     defer dir.close();
@@ -292,10 +294,10 @@ fn installReleaseNotes(
             // in a temporary directory
             "--cache-root", b.cache_root.path orelse ".",
         });
-        if (b.zig_lib_dir) |p| {
-            cmd.addArg("--zig-lib-dir");
-            cmd.addDirectoryArg(p);
-        }
+
+        cmd.addArg("--zig-lib-dir");
+        cmd.addDirectoryArg(.{ .cwd_relative = b.graph.zig_lib_directory.path orelse "." });
+
         cmd.addArgs(&.{"-i"});
         cmd.addFileArg(b.path(b.fmt("{s}/{s}", .{ dirname, entry.name })));
 
@@ -307,13 +309,9 @@ fn installReleaseNotes(
     docgen_cmd.addArgs(&.{"--code-dir"});
     docgen_cmd.addDirectoryArg(wf.getDirectory());
 
-    docgen_cmd.addFileArg(b.path("src/download/0.13.0/release-notes.html"));
+    docgen_cmd.addFileArg(b.path(input));
     const generated = docgen_cmd.addOutputFileArg("release-notes.html");
-
-    const copy_generated = b.addWriteFiles();
-    copy_generated.addCopyFileToSource(generated, "content/download/0.13.0/release-notes.html");
-
-    b.getInstallStep().dependOn(&copy_generated.step);
+    installFile(b, generated, output);
 }
 
 fn verNavHtml(arena: std.mem.Allocator, active_release: []const u8) []const u8 {
