@@ -1296,6 +1296,10 @@ thread-1:                    thread-2:
     {#code|packed_struct_atomics.zig#}
     {#header_close#}
 
+    {#header_open|@ptrCast Allows Changing Slice Length#}
+    <p><a href="https://github.com/ziglang/zig/pull/22706">#22706</a></p>
+    {#header_close#}
+
     {#header_open|Remove Anonymous Struct Types, Unify Tuples#}
     <p>This change reworks how anonymous struct literals and tuples work.</p>
     <p>Previously, an untyped anonymous struct literal (e.g. {#syntax#}const x = .{ .a = 123 }{#endsyntax#}) was given an "anonymous struct type", which is a special kind of struct which coerces using structural equivalence. This mechanism was a holdover from before we used <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a> as the primary mechanism of type inference. This change changes the language so that the type assigned here is a "normal" struct type. It uses a form of equivalence based on the AST node and the type&#39;s structure, much like a reified ({#syntax#}@Type{#endsyntax#}) type.</p>
@@ -1875,6 +1879,7 @@ list.appendAssumeCapacity(5678);
       <li>std.Build: Detect pkg-config names with "lib" prefix</li>
       <li>fetch: add support for SHA-256 Git repositories</li>
       <li>fetch: add executable detection for Mach-O file headers</li>
+      <li>Allow ConfigHeader values to be added outside of comptime</li>
     </ul>
 
     {#header_open|File System Watching#}
@@ -1885,6 +1890,57 @@ list.appendAssumeCapacity(5678);
 <p>Default debounce time is 50ms but this is configurable. It helps prevent wasted rebuilds when source files are changed in rapid succession, for example when saving with vim it does not do an atomic rename into place but actually deletes the destination file before writing it again, causing a brief period of invalid state, which would cause a build failure without debouncing (it would be followed by a successful build, but it&#39;s annoying to experience the temporary build failure regardless).</p>
 <p>The purpose of this feature is to reduce latency between editing and debugging in the development cycle. In large projects, the cache system must call <code>fstat</code> on a large number of files even when it is a cache hit. File system watching allows more efficient detection of stale pipeline steps.</p>
 <p>Mainly this is motivated by {#link|Incremental Compilation#} landing soon, so that we can keep the compiler running and responding to source code changes as fast as possible. In this case, also keeping the rest of the build pipeline up-to-date is table stakes.</p>
+    {#header_close#}
+
+    {#header_open|New Package Hash Format#}
+    <p>Old hashes look like this: <code>1220115ff095a3c970cc90fce115294ba67d6fbc4927472dc856abc51e2a1a9364d7</code></p>
+    <p>New hashes look like this: <code>mime-3.0.0-zwmL-6wgAADuFwn7gr-_DAQDGJdIim94aDIPa6qO-6GT</code></p>
+    <p>Along with 200 bits of SHA-256, new hashes have the following additional data inside them:</p>
+    <ul>
+      <li>name</li>
+      <li>version</li>
+      <li>id component of the fingerprint</li>
+      <li>total unpacked size on disk</li>
+    </ul>
+    <p>This provides a better user experience when package hashes show up in compile errors or file paths, and
+    provides the data needed for implementing dependency tree management tooling. For instance, by knowing only the
+    package hashes of the entire dependency tree, it is now possible to know the total file size
+    on disk that will be required after all fetching is complete, as well as performing version selection,
+    <em>without doing any fetching</em>.</p>
+    <p>The file size can also be used as a heuristic when deciding whether to fetch lazy packages by default.</p>
+    <p>These benefits require some new rules that govern <code>build.zig.zon</code> files:</p>
+    <ul>
+      <li><code>name</code> and <code>version</code> are limited to 32 bytes.</li>
+      <li><code>name</code> must be a valid bare Zig-identifier. In the future, this restriction may be lifted;
+        a conservative rule was chosen for now.</li>
+    </ul>
+
+    <p><code>fingeprint</code> is an important concept to understand:</p>
+
+    <p>Together with <code>name</code>, this represents a globally unique package identifier. This
+    field is auto-initialized by the toolchain when the package is first created,
+    and then <em>never changes</em>. Despite the ecosystem being decentralized, this allows
+    Zig to unambiguously detect when one package is an updated version of
+    another.</p>
+    <p>When forking a Zig project, this fingerprint should be regenerated if the upstream
+    project is still maintained. Otherwise, the fork is <em>hostile</em>, attempting to
+    take control over the original project&#39;s identity. The fingerprint can be regenerated
+    by deleting the field and running <code>zig build</code>.</p>
+    <p>This 64-bit integer is the combination of a 32-bit id component and a 32-bit
+    checksum.</p>
+    <p>The id component within the fingerprint has these restrictions:</p>
+    <p><code>0x00000000</code> is reserved for legacy packages.</p>
+    <p><code>0xffffffff</code> is reserved to represent &quot;naked&quot; packages.</p>
+    <p>The checksum is computed from <code>name</code> and serves to protect Zig users from
+    accidental id collisions.</p>
+
+    <p>Version selection and related tooling that takes advantage of <code>fingerprint</code>
+    is not implemented yet.</p>
+
+    <p>Although the legacy hash format is still supported, this change breaks any packages
+    that do not already happen to follow the new package naming rules outlined above.
+    There is also a known bug: <a href="https://github.com/ziglang/zig/issues/23051">legacy packages are unnecessarily fetched</a>.
+    </p>
     {#header_close#}
 
     {#header_open|WriteFile Step#}
