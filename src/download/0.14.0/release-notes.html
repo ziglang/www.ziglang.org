@@ -1548,6 +1548,18 @@ pub const SourceLocation = struct {
     <p>The {#syntax#}module{#endsyntax#} field is new.</p>
     {#header_close#}
 
+    {#header_open|@memcpy Rules Adjusted#}
+    <ul>
+    <li>The langspec definition of {#syntax#}@memcpy{#endsyntax#} has been changed so that the source and destination element types must be in-memory coercible, allowing all such calls to be raw copying operations, not actually applying any coercions.</li>
+    <li>Implement aliasing check for comptime {#syntax#}@memcpy{#endsyntax#}; a compile error will now be emitted if the arguments alias.</li>
+    <li>Implement more efficient comptime {#syntax#}@memcpy{#endsyntax#} by loading and storing a whole array at once, similar to how {#syntax#}@memset{#endsyntax#} is implemented.</li>
+    </ul>
+    <p>This is a breaking change because while the old coercion behavior
+    triggered an "unimplemented" compile error at runtime, it did actually work
+    at comptime.</p>
+
+    {#header_close#}
+
     {#header_open|Unsafe In-Memory Coercions Disallowed#}
     <a href="https://github.com/ziglang/zig/pull/22243">#22243</a>
     {#header_close#}
@@ -1562,8 +1574,10 @@ pub const SourceLocation = struct {
     {#header_close#}
 
     {#header_open|Standard Library#}
+    <p>Uncategorized changes:</p>
     <ul>
     <li>mem: handle Float and Bool cases in byteSwapAllFields</li>
+    <li>delete std.heap.WasmPageAllocator in favor of std.heap.WasmAllocator</li>
     </ul>
 
     {#header_open|ZON Parsing and Serialization#}
@@ -1598,11 +1612,34 @@ pub const SourceLocation = struct {
 
 
     {#header_open|Panic Interface#}
-    TODO
+    <a href="https://github.com/ziglang/zig/pull/22594">22594</a>
     {#header_close#}
 
     {#header_open|Transport Layer Security (std.crypto.tls)#}
     TODO
+    {#header_close#}
+
+    {#header_open|process.Child.collectOutput API Changed#}
+    <p>Upgrade guide:</p>
+    <pre>{#syntax#}
+var stdout = std.ArrayList(u8).init(allocator);
+defer stdout.deinit();
+var stderr = std.ArrayList(u8).init(allocator);
+defer stderr.deinit();
+
+try child.collectOutput(&stdout, &stderr, max_output_bytes);
+    {#endsyntax#}</pre>
+    <p>↓</p>
+    <pre>{#syntax#}
+var stdout: std.ArrayListUnmanaged(u8) = .empty;
+defer stdout.deinit(allocator);
+var stderr: std.ArrayListUnmanaged(u8) = .empty;
+defer stderr.deinit(allocator);
+
+try child.collectOutput(allocator, &stdout, &stderr, max_output_bytes);
+    {#endsyntax#}</pre>
+    <p>Before, {#syntax#}collectOutput{#endsyntax#} included a check to ensure that {#syntax#}stdout.allocator{#endsyntax#} was the same as {#syntax#}stderr.allocator{#endsyntax#}, which was necessary due to its internal implementation. However, comparing the {#syntax#}ptr{#endsyntax#} field of an {#syntax#}Allocator{#endsyntax#} interface can lead to illegal behavior, since {#syntax#}Allocator.ptr{#endsyntax#} is set to undefined in cases where the allocator implementation does not have any associated state ({#syntax#}page_allocator{#endsyntax#}, {#syntax#}c_allocator{#endsyntax#}, etc).</p>
+    <p>With this change, that unsafe {#syntax#}Allocator.ptr{#endsyntax#} comparison has been eliminated from {#syntax#}collectOutput{#endsyntax#} (and it was the only occurrence of such a comparison in the Zig codebase). Additionally, the documentation for the {#syntax#}ptr{#endsyntax#} field of both the {#syntax#}Allocator{#endsyntax#} and {#syntax#}Random{#endsyntax#} interfaces has been updated to mention that any comparison of those fields could lead to illegal behavior. In the future, this comparison <a href="https://github.com/ziglang/zig/issues/211">will become detectable illegal behavior</a>.</p>
     {#header_close#}
 
     {#header_open|LLVM Builder API#}
@@ -1670,6 +1707,7 @@ list.appendAssumeCapacity(5678);
     <ul>
     <li>std.posix.iovec: use .base and .len instead of .iov_base and .iov_len</li>
     <li><code>LockViolation</code> was added to <code>std.posix.ReadError</code>.  This error will occur if <code>std.os.windows.ReadFile</code> encounters <code>ERROR_LOCK_VIOLATION</code>.</li>
+    <li>{#syntax#}popOrNull{#endsyntax#} renamed to {#syntax#}pop{#endsyntax#} in all container types.</li>
     </ul>
     {#header_close#}
     {#header_open|std.c Reorganization#}
