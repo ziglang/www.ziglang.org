@@ -1034,6 +1034,28 @@
     {#code|default_init_buffer.zig#}
 <p>Similarly, <code>std.heap.GeneralPurposeAllocator</code> should now be initialized with its <code>.init</code> declaration.</p>
 <p>The deprecated default field values for these data structures will be removed in the next release cycle.</p>
+    {#header_open|Fields and Declarations Cannot Share Names#}
+<p>Zig 0.14.0 introduces a restriction that container types ({#syntax#}struct{#endsyntax#}, {#syntax#}union{#endsyntax#}, {#syntax#}enum{#endsyntax#} and {#syntax#}opaque{#endsyntax#}) cannot have fields and declarations ({#syntax#}const{#endsyntax#}/{#syntax#}var{#endsyntax#}/{#syntax#}fn{#endsyntax#}) with the same names. This restriction has been added to deal with the problem that whether {#syntax#}MyEnum.foo{#endsyntax#} looks up a declaration or an enum field is ambiguous (a problem amplified by {#link|Decl Literals#}. Generally, this can be avoided by following the standard naming conventions:</p>
+<pre>{#syntax#}
+const Foo = struct {
+    Thing: Thing,
+    const Thing = struct {
+        Data: u32,
+    };
+};
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+const Foo = struct {
+    thing: Thing,
+    const Thing = struct {
+        data: u32,
+    };
+};
+{#endsyntax#}</pre>
+    <p>One upside of this restriction is that documentation comments can now unambiguously refer to
+    field names, thus enabling such references to be hyperlinks.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|@splat Supports Arrays#}
@@ -1364,7 +1386,7 @@ pub const SourceLocation = struct {
     <p>The <code>module</code> field is new.</p>
     {#header_close#}
 
-    {#header_open|Disallow Non-Scalar Sentinel Types#}
+    {#header_open|Non-Scalar Sentinel Types Disallowed#}
     <p>Sentinel values are now forbidden from being aggregate types. In other
     words, only types that support the {#syntax#}=={#endsyntax#} operator are
     allowed.</p>
