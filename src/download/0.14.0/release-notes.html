@@ -1269,13 +1269,20 @@ pub const SourceLocation = struct {
     <p>The <code>module</code> field is new.</p>
     {#header_close#}
 
-    {#header_open|disallow non-scalar sentinel types#}
+    {#header_open|Disallow Non-Scalar Sentinel Types#}
     <p>Sentinel values are now forbidden from being aggregate types. In other
     words, only types that support the {#syntax#}=={#endsyntax#} operator are
     allowed.</p>
     {#code|non_scalar_sentinel.zig#}
     {#header_close#}
 
+    {#header_open|@FieldType builtin#}
+    <p>Zig 0.14.0 introduces the {#syntax#}@FieldType{#endsyntax#} builtin.
+    This serves the same purpose as the <code>std.meta.FieldType</code>
+    function: given a type and the name of one of its fields, it returns the
+    type of that field.</p>
+    {#code|fieldtype.zig#}
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Standard Library#}
@@ -1534,10 +1541,6 @@ watching 119 directories, 1 processes
     or {#syntax#}use_llvm = false{#endsyntax#} in a build script.</p>
     {#header_close#}
 
-    {#header_open|Linker#}
-    TODO
-    {#header_close#}
-
     {#header_open|Import ZON#}
     <p>ZON can now be imported at compile time:</p>
 
@@ -1586,6 +1589,19 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
 <p>I also noticed that the tokenizer did not conform to <a href="https://github.com/ziglang/zig-spec/issues/38">https://github.com/ziglang/zig-spec/issues/38</a> so I fixed it.</p>
     {#header_close#}
     {#header_close#}
+
+    {#header_open|Linker#}
+    TODO
+    {#header_open|Move Input File Parsing to the Frontend#}
+    <p>Moves GNU ld script processing to the frontend to join the relevant library lookup logic, making the libraries within subject to the same search criteria as all the other libraries.</p>
+    <p>This change is necessary so that the compiler has knowledge of all linker inputs at the start of compilation, so that linking and compilation can begin at the same time. Finding out about linker inputs during flush() is too late. This branch fully removes <code>lib_dirs</code> from being passed to the ELF linking code.</p>
+    <p>This unfortunately means doing file system access on all .so files when targeting ELF to determine if they are linker scripts, so I introduced an opt-in CLI flag to enable .so scripts. When a GNU ld script is encountered, the error message instructs users about the CLI flag that will immediately solve their problem, which is passing <code>-fallow-so-scripts</code> to <code>zig build</code>. This means that users who don&#39;t have funky libraries, or at least avoid linking against them, don&#39;t have to pay the cost of these file system accesses.</p>
+    <p>All object file, archive, and shared object file parsing now happens during the parallel compilation pipeline rather than bottlenecking at the end.</p>
+    <p>This is a step towards {#link|Incremental Compilation#}.</p>
+    {#header_close#}
+
+    {#header_close#}
+
 
     {#header_open|Fuzzer#}
     <p>Zig 0.14.0 ships with an integrated fuzzer. It is alpha quality status, which means that
