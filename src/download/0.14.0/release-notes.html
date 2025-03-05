@@ -1445,6 +1445,79 @@ const std = @import("std");
     {#endsyntax#}</pre>
     {#header_close#}
 
+    {#header_open|std.builtin.Type.Pointer.Size Field Renamed#}
+    <p>The fields of the {#syntax#}std.builtin.Type.Pointer.Size{#endsyntax#} enum have been renamed to lowercase, just like the fields of {#syntax#}std.builtin.Type{#endsyntax#}. Again, this is a breaking change, but one which is very easily updated to:</p>
+<pre>{#syntax#}
+test "pointer type info" {
+    comptime assert(@typeInfo(*u8).pointer.size == .One);
+}
+test "reify pointer" {
+    comptime assert(@Type(.{ .pointer = .{
+        .size = .One,
+        .is_const = false,
+        .is_volatile = false,
+        .alignment = 0,
+        .address_space = .generic,
+        .child = u8,
+        .is_allowzero = false,
+        .sentinel_ptr = null,
+    } }) == *u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+test "pointer type info" {
+    comptime assert(@typeInfo(*u8).pointer.size == .one);
+}
+test "reify pointer" {
+    comptime assert(@Type(.{ .pointer = .{
+        .size = .one,
+        .is_const = false,
+        .is_volatile = false,
+        .alignment = 0,
+        .address_space = .generic,
+        .child = u8,
+        .is_allowzero = false,
+        .sentinel_ptr = null,
+    } }) == *u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Simplify Usage Of ?*const anyopaque In std.builtin.Type#}
+<p>The {#syntax#}default_value{#endsyntax#} field on {#syntax#}std.builtin.Type.StructField{#endsyntax#}, and the {#syntax#}sentinel{#endsyntax#} fields on {#syntax#}std.builtin.Type.Array{#endsyntax#} and {#syntax#}std.builtin.Type.Pointer{#endsyntax#}, have to use {#syntax#}?*const anyopaque{#endsyntax#}, because Zig does not provide a way for the struct&#39;s type to depend on a field&#39;s value. This isn&#39;t a problem; however, it isn&#39;t particularly ergonomic at times.</p>
+<p>Zig 0.14.0 renames these fields to {#syntax#}default_value_ptr{#endsyntax#} and {#syntax#}sentinel_ptr{#endsyntax#} respectively, and adds helper methods {#syntax#}defaultValue(){#endsyntax#} and {#syntax#}sentinel(){#endsyntax#} to load the value with the correct type as an optional.</p>
+<pre>{#syntax#}
+test "get pointer sentinel" {
+    const T = [:0]const u8;
+    const ptr = @typeInfo(T).pointer;
+    const s = @as(*const ptr.child, @ptrCast(@alignCast(ptr.sentinel.?))).*;
+    comptime assert(s == 0);
+}
+test "reify array" {
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel = null } }) == [1]u8);
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel = &@as(u8, 0) } }) == [1:0]u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+test "get pointer sentinel" {
+    const T = [:0]const u8;
+    const ptr = @typeInfo(T).pointer;
+    const s = ptr.sentinel().?;
+    comptime assert(s == 0);
+}
+test "reify array" {
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel_ptr = null } }) == [1]u8);
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel_ptr = &@as(u8, 0) } }) == [1:0]u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+    {#header_close#}
+
     {#header_open|Non-Scalar Sentinel Types Disallowed#}
     <p>Sentinel values are now forbidden from being aggregate types. In other
     words, only types that support the {#syntax#}=={#endsyntax#} operator are
@@ -1454,7 +1527,7 @@ const std = @import("std");
 
     {#header_open|@FieldType builtin#}
     <p>Zig 0.14.0 introduces the {#syntax#}@FieldType{#endsyntax#} builtin.
-    This serves the same purpose as the <code>std.meta.FieldType</code>
+    This serves the same purpose as the {#syntax#}std.meta.FieldType{#endsyntax#}
     function: given a type and the name of one of its fields, it returns the
     type of that field.</p>
     {#code|fieldtype.zig#}
@@ -1472,7 +1545,7 @@ pub const SourceLocation = struct {
     line: u32,
     column: u32,
 };{#endsyntax#}</pre>
-    <p>The <code>module</code> field is new.</p>
+    <p>The {#syntax#}module{#endsyntax#} field is new.</p>
     {#header_close#}
 
     {#header_open|Unsafe In-Memory Coercions Disallowed#}
@@ -1640,7 +1713,8 @@ list.appendAssumeCapacity(5678);
       <li>added <code>WriteFile.addCopyDirectory</code>, which functions very similar to <code>InstallDir</code>.</li>
       <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by <code>h_dir</code> (which is <code>zig-out/include</code> by default).</li>
       <li>std.Build: Detect pkg-config names with "lib" prefix</li>
-      <li>zig fetch: add support for SHA-256 Git repositories</li>
+      <li>fetch: add support for SHA-256 Git repositories</li>
+      <li>fetch: add executable detection for Mach-O file headers</li>
     </ul>
 
     {#header_open|File System Watching#}
@@ -1951,6 +2025,11 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
 </code></pre>
 <p>I also noticed that the tokenizer did not conform to <a href="https://github.com/ziglang/zig-spec/issues/38">https://github.com/ziglang/zig-spec/issues/38</a> so I fixed it.</p>
     {#header_close#}
+
+    {#header_open|Include Error Trace in All Functions#}
+    <a href="https://github.com/ziglang/zig/pull/22572">#22572</a>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Linker#}
