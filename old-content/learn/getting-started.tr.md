@@ -83,7 +83,7 @@ brew install zig
 **MacPorts**
 
 ```
-port install zig
+sudo port install zig
 ```
 
 #### Linux
