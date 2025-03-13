@@ -2287,10 +2287,14 @@ Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
 
 <p>This contains only a rudimentary implementation of fuzzer logic, really just some early, early experiments, but already it makes this test case fail in 65 milliseconds on my machine:</p>
     <pre>{#syntax#}
-test "fuzz example" {
-    const input_bytes = std.testing.fuzzInput(.{});
-    try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input_bytes));
+fn findSecret(context: []const u8, input: []const u8) !void {
+    if (std.mem.eql(u8, context, input))
+        return error.FoundSecretString;
 }
+test "fuzz example" {
+    try std.testing.fuzz(@as([]const u8, "canyoufindme"), findSecret, .{});
+}
+const std = @import("std");
     {#endsyntax#}</pre>
 
     <p>The <code>--fuzz</code> flag causes the build system to spawn an HTTP
