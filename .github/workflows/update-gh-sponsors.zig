@@ -227,23 +227,27 @@ pub fn main() !void {
             const link = blk: {
                 if (s.websiteUrl) |w| {
                     if (std.mem.startsWith(u8, w, "http")) break :blk w;
-                    break :blk try std.fmt.allocPrint(arena, "https://{s}", .{w});
+                    break :blk try std.fmt.allocPrint(arena, "https://{s}", .{
+                        HtmlSafe{ .bytes = w },
+                    });
                 }
                 if (s.twitterUsername) |t| {
                     break :blk try std.fmt.allocPrint(
                         arena,
                         "https://twitter.com/{s}",
-                        .{t},
+                        .{HtmlSafe{ .bytes = t }},
                     );
                 }
-                break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{s.login});
+                break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{
+                    HtmlSafe{ .bytes = s.login },
+                });
             };
 
             try home.print(
                 \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a></li>
                 \\
             ,
-                .{ link, name },
+                .{ HtmlSafe{ .bytes = link }, HtmlSafe{ .bytes = name } },
             );
         }
         for (home_name_only.items) |s| {
@@ -252,7 +256,7 @@ pub fn main() !void {
                 \\<li>{s}</li>
                 \\
             ,
-                .{name},
+                .{HtmlSafe{ .bytes = name }},
             );
         }
 
@@ -265,23 +269,27 @@ pub fn main() !void {
             const link = blk: {
                 if (s.websiteUrl) |w| {
                     if (std.mem.startsWith(u8, w, "http")) break :blk w;
-                    break :blk try std.fmt.allocPrint(arena, "https://{s}", .{w});
+                    break :blk try std.fmt.allocPrint(arena, "https://{s}", .{
+                        HtmlSafe{ .bytes = w },
+                    });
                 }
                 if (s.twitterUsername) |t| {
                     break :blk try std.fmt.allocPrint(
                         arena,
                         "https://twitter.com/{s}",
-                        .{t},
+                        .{HtmlSafe{ .bytes = t }},
                     );
                 }
-                break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{s.login});
+                break :blk try std.fmt.allocPrint(arena, "https://github.com/{s}", .{
+                    HtmlSafe{ .bytes = s.login },
+                });
             };
 
             try notes.print(
                 \\<li><a href="{s}" rel="nofollow noopener" target="_blank" class="external-link">{s}</a></li>
                 \\
             ,
-                .{ link, name },
+                .{ HtmlSafe{ .bytes = link }, HtmlSafe{ .bytes = name } },
             );
         }
         for (notes_name_only.items) |s| {
@@ -290,10 +298,34 @@ pub fn main() !void {
                 \\<li>{s}</li>
                 \\
             ,
-                .{name},
+                .{HtmlSafe{ .bytes = name }},
             );
         }
 
         try buffered_notes.flush();
     }
 }
+
+pub const HtmlSafe = struct {
+    bytes: []const u8,
+
+    pub fn format(
+        self: HtmlSafe,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        out_stream: anytype,
+    ) !void {
+        _ = options;
+        _ = fmt;
+        for (self.bytes) |b| {
+            switch (b) {
+                '&' => try out_stream.writeAll("&amp;"),
+                '>' => try out_stream.writeAll("&gt;"),
+                '<' => try out_stream.writeAll("&lt;"),
+                '\'' => try out_stream.writeAll("&apos;"),
+                '\"' => try out_stream.writeAll("&quot;"),
+                else => try out_stream.writeByte(b),
+            }
+        }
+    }
+};

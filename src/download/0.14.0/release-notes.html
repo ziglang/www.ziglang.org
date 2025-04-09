@@ -1,0 +1,2838 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>0.14.0 Release Notes ⚡ The Zig Programming Language</title>
+    <link rel="icon" href="/favicon.png">
+    <link rel="icon" href="/favicon.svg">
+    <style>
+      :root{
+         --nav-width: 24em;
+         --nav-margin-l: 1em;
+      }
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+      header {
+        padding: 0 1em;
+      }
+      h1, h2, h3, h4, h5 {
+        margin: 0.5em 0 0.5em;
+        line-height: 1.2;
+        font-weight: bold;
+        clear: both;
+      }
+      h1, h2 { font-size: 2.0em; }
+      h3 { font-size: 1.5em; }
+      h4 { font-size: 1.25em; }
+      h5 { font-size: 1.0em; }
+      #contents {
+        max-width: 60em;
+        margin: auto;
+        padding: 0 1em;
+      }
+      #navigation {
+        padding: 0 1em;
+      }
+
+      @media screen and (min-width: 1025px) {
+        header {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+        header h1 {
+          margin: auto;
+          max-width: 30em;
+        }
+        #navigation {
+          overflow: auto;
+          width: var(--nav-width);
+          height: 100vh;
+          position: fixed;
+          top:0;
+          left:0;
+          bottom:0;
+          padding: unset;
+          margin-left: var(--nav-margin-l);
+        }
+        #navigation nav ul {
+          padding-left: 1em;
+        }
+        #contents-wrapper {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+    }
+
+    a:hover,a:focus {
+      background: #fff2a8;
+    }
+    dt {
+      font-weight: bold;
+    }
+    th, td {
+      padding: 0.6em;
+    }
+    tr:nth-child(even) {
+      background: #f2f3f3;
+    }
+    .t0_1, .t37, .t37_1 {
+      font-weight: bold;
+    }
+    .t2_0 {
+      color: #575757;
+    }
+    .t31_1 {
+      color: #b40000;
+    }
+    .t32_1 {
+      color: green;
+    }
+    .t36_1 {
+      color: #005C7A;
+    }
+    .file {
+      font-weight: bold;
+      border: unset;
+    }
+    code {
+      background: #f8f8f8;
+      border: 1px dotted silver;
+      padding-left: 0.3em;
+      padding-right: 0.3em;
+    }
+    pre > code {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    samp {
+      background: #fafafa;
+    }
+    pre > samp {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    kbd {
+      font-weight: bold;
+    }
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .tok-kw {
+        color: #333;
+        font-weight: bold;
+    }
+    .tok-str {
+        color: #d14;
+    }
+    .tok-builtin {
+        color: #005C7A;
+    }
+    .tok-comment {
+        color: #545454;
+        font-style: italic;
+    }
+    .tok-fn {
+        color: #900;
+        font-weight: bold;
+    }
+    .tok-null {
+        color: #005C5C;
+    }
+    .tok-number {
+        color: #005C5C;
+    }
+    .tok-type {
+        color: #458;
+        font-weight: bold;
+    }
+
+    figure {
+      margin: auto 0;
+    }
+    figure pre {
+      margin-top: 0;
+    }
+
+    figcaption {
+      padding-left: 0.5em;
+      font-size: small;
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+    figcaption.zig-cap {
+      background: #fcdba5;
+    }
+    figcaption.c-cap {
+      background: #a8b9cc;
+      color: #000;
+    }
+    figcaption.peg-cap {
+      background: #fcdba5;
+    }
+    figcaption.javascript-cap {
+      background: #365d95;
+      color: #fff;
+    }
+    figcaption.shell-cap {
+      background: #ccc;
+      color: #000;
+    }
+
+    aside {
+      border-left: 0.25em solid #f7a41d;
+      padding: 0 1em 0 1em;
+    }
+
+    h1 a, h2 a, h3 a, h4 a, h5 a {
+      text-decoration: none;
+      color: #333;
+    }
+
+    a.hdr {
+      visibility: hidden;
+    }
+    h1:hover > a.hdr, h2:hover > a.hdr, h3:hover > a.hdr, h4:hover > a.hdr, h5:hover > a.hdr {
+      visibility: visible;
+    }
+
+    pre {
+      counter-reset: line;
+    }
+    pre .line:before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      padding-right: 1em;
+      width: 2em;
+      text-align: right;
+      color: #999;
+    }
+    th pre code {
+        background: none;
+    }
+    th .line:before {
+        display: none;
+    }
+
+    #logo {
+      width: 100%;
+      height: 7em;
+      display: block;
+      background-image: url(https://ziglang.org/img/zig-logo-dark.svg);
+      background-repeat: no-repeat;
+    }
+
+    .diff-red {
+      background-color: #ffaeae;
+    }
+    .diff-green {
+      background-color: #bfb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body{
+          background:#121212;
+          color: #ccc;
+      }
+      a {
+          color: #88f;
+      }
+      a:hover,a:focus {
+          color: #000;
+      }
+      tr:nth-child(even) {
+        background: #1e1e1e;
+      }
+      .t2_0 {
+          color: grey;
+      }
+      .t31_1 {
+          color: red;
+      }
+      .t32_1 {
+          color: #00B800;
+      }
+      .t36_1 {
+          color: #0086b3;
+      }
+      code {
+        background: #222;
+        border-color: #444;
+      }
+      pre > code {
+          color: #ccc;
+          background: #222;
+          border: unset;
+      }
+      samp {
+        background: #000;
+        color: #ccc;
+      }
+      pre > samp {
+        border: unset;
+      }
+      .tok-kw {
+          color: #eee;
+      }
+      .tok-str {
+          color: #2e5;
+      }
+      .tok-builtin {
+          color: #ff894c;
+      }
+      .tok-comment {
+          color: #aa7;
+      }
+      .tok-fn {
+          color: #B1A0F8;
+      }
+      .tok-null {
+          color: #ff8080;
+      }
+      .tok-number {
+          color: #ff8080;
+      }
+      .tok-type {
+          color: #68f;
+      }
+      h1 a, h2 a, h3 a, h4 a, h5 a {
+          color: #aaa;
+      }
+      figcaption.zig-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.peg-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.shell-cap {
+        background: #2a2a2a;
+        color: #fff;
+      }
+      #logo {
+        background-image: url(https://ziglang.org/img/zig-logo-light.svg);
+      }
+      .diff-red {
+        background-color: #410000;
+      }
+      .diff-green {
+        background-color: #002d00;
+      }
+    }
+  </style>
+  </head>
+  <body>
+    <div id="contents">
+    <a href="https://ziglang.org/"><span id="logo"></span></a>
+    <h1>0.14.0 Release Notes</h1>
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_1.svg" style="height: 18em; float: right">
+    <p>
+    <a href="https://ziglang.org/download/#release-0.14.0">Download &amp; Documentation</a>
+    </p>
+    <p>
+    Zig is a general-purpose programming language and toolchain for maintaining
+    <strong>robust</strong>, <strong>optimal</strong>, and <strong>reusable</strong> software.
+    </p>
+    <p>Zig development is funded via <a href="/zsf/">Zig Software Foundation</a>,
+    a 501(c)(3) non-profit organization. Please consider a recurring donation
+    so that we can offer more billable hours to our core team members. This is
+    the most straightforward way to accelerate the project along the
+    {#link|Roadmap#} to 1.0.</p>
+    <p>
+    This release features <strong>9 months of work</strong>:
+    changes from <strong>251 different contributors</strong>, spread among
+    <strong>3467 commits</strong>.</p>
+
+    <p>Along with a slew of {#link|Build System#} upgrades, {#link|Language Changes#},
+    and {#link|Target Support#} enhancements, this release strides towards two
+    of our long-term investments - {#link|Incremental Compilation#} and fast {#link|x86 Backend#}
+    - both focused on
+    <strong>reducing edit/compile/debug cycle latency</strong>.</p>
+
+    {#header_open|Table of Contents#}
+    {#nav#}
+    {#header_close#}
+
+    {#header_open|Target Support#}
+    <p>
+      A major theme in this Zig release is improved target support; the list of targets that Zig can
+      correctly cross-compile to and run on has been greatly expanded. The {#link|Support Table#}
+      and {#link|Additional Platforms#} sections cover the targets that Zig can build programs for,
+      while the
+      <a href="https://github.com/ziglang/zig-bootstrap/blob/master/README.md#supported-triples">zig-bootstrap README</a>
+      covers the targets that the Zig compiler itself can be easily cross-compiled to run on.
+    </p>
+    <p>
+      The full list of target-specific fixes is too long to list here, but in short, if you've ever
+      tried to target arm/thumb, mips/mips64, powerpc/powerpc64, riscv32/riscv64, or s390x and run
+      into toolchain problems, missing standard library support, or seemingly nonsensical crashes,
+      then there's a good chance you'll find that things will Just Work with Zig 0.14.0.
+    </p>
+
+    {#header_open|Target Triple Changes#}
+    <p>
+      Some changes have been made to the target triples understood by Zig:
+    </p>
+    <ul>
+      <li>
+        <code>arm-windows-gnu</code> has been replaced with <code>thumb-windows-gnu</code> to
+        reflect the fact that Windows only supports Thumb-2 mode.
+      </li>
+      <li>
+        <code>armeb-windows-gnu</code> and <code>aarch64_be-windows-gnu</code> have been removed as
+        Windows does not support big endian.
+      </li>
+      <li>
+        <code>thumb[eb]-linux-musleabi[hf]</code> have been added for targeting pure Thumb mode
+        using musl libc.
+      </li>
+      <li>
+        <code>mips[el]-linux-musleabi</code> have been added for targeting 32-bit mips with soft
+        float ABI and musl libc.
+      </li>
+      <li>
+        <code>mips[el]-linux-musl</code> have been renamed to <code>mips[el]-linux-musleabihf</code>
+        to make it clear that they target hard float ABI.
+      </li>
+      <li>
+        <code>mips64[el]-linux-musl</code> have been renamed to <code>mips64[el]-linux-muslabi64</code>
+        to be in line with <code>mips64[el]-linux-gnuabi64</code>.
+      </li>
+      <li>
+        <code>mips64[el]-linux-muslabin32</code> have been added to target 64-bit mips with 32-bit
+        pointers and musl libc.
+      </li>
+      <li>
+        <code>powerpc-linux-musleabi</code> has been added for targeting 32-bit powerpc with soft
+        float ABI and musl libc.
+      </li>
+      <li>
+        <code>powerpc-linux-musl</code> has been renamed to <code>powerpc-linux-musleabihf</code> to
+        make it clear that this targets hard float ABI.
+      </li>
+      <li>
+        <code>x86_64-linux-muslx32</code> has been added for targeting 64-bit x86 with 32-bit
+        pointers and musl libc.
+      </li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Tier System#}
+    <p>
+      Zig's level of support for various targets is broadly categorized into four tiers with Tier 1
+      being the highest. Note that, currently, even some Tier 1 targets may have a few disabled
+      tests as we work towards 100% test pass rate.
+    </p>
+
+    {#header_open|Tier 1#}
+    <ul>
+      <li>
+        All non-experimental language features are known to work correctly.
+      </li>
+      <li>
+        The compiler can generate machine code for this target without relying on LLVM, while being
+        comparable to LLVM in terms of feature support.
+      </li>
+      <li>
+        libc is available for this target even when cross-compiling.
+      </li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Tier 2#}
+    <ul>
+      <li>
+        The standard library's cross-platform abstractions have implementations for this target.
+      </li>
+      <li>
+        This target has debug info capabilities and therefore produces stack traces on failed
+        assertions and crashes.
+      </li>
+      <li>
+        The CI machines automatically build and test this target on every commit to the
+        <code>master</code> branch.
+      </li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Tier 3#}
+    <ul>
+      <li>
+        The compiler can generate machine code for this target by relying on an external backend
+        such as LLVM.
+      </li>
+      <li>
+        The linker can produce object files, libraries, and executables for this target.
+      </li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Tier 4#}
+    <ul>
+      <li>
+        The compiler can generate assembly source code for this target by relying on an external
+        backend such as LLVM.
+      </li>
+      <li>
+        This target may be considered experimental by LLVM, in which case it is necessary to build
+        LLVM and Zig from source to be able to use it.
+      </li>
+    </ul>
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Support Table#}
+    <p>
+      In the following table, 🟢 indicates full support, 🔴 indicates no support, and 🟡 indicates
+      that there is partial support, e.g. only for some sub-targets, or with some notable known
+      issues. ❔ indicates that the status is largely unknown, typically because the target is
+      rarely exercised. Hover over other icons for details.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Target</th> <!-- e.g. aarch64-linux -->
+          <th>Tier</th> <!-- 1-4 with issue link -->
+          <th>Lang. Feat.</th> <!-- 🟢🟡🔴❔ -->
+          <th>Std. Lib.</th> <!-- 🟢🟡🔴❔ -->
+          <th>Code Gen.</th> <!-- 📄🖥️ with title attribute, ⚡ for self-hosted -->
+          <th>Linker</th> <!-- 🟢🟡🔴 -->
+          <th>Debug Info</th> <!-- 🟢🟡🔴❔ -->
+          <th>libc</th> <!-- 🟢🟡🔴 -->
+          <th>CI</th> <!-- 🟢🟡🔴 -->
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td><code>x86_64-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23079">1</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+
+        <tr>
+          <td colspan="10">
+            <hr />
+          </td>
+        </tr>
+
+        <tr>
+          <td><code>aarch64[_be]-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/2443">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>aarch64-macos</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23078">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>aarch64-windows</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/16665">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>arm[eb]-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/3174">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>powerpc-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21649">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟡</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟡</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>powerpc64-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21651">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟡</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟡</td> <!-- libc -->
+          <td>🟡</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>powerpc64le-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21650">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>wasm32-wasi</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23091">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/1929">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86-windows</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/537">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-macos</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/4897">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-windows</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23080">2</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+
+        <tr>
+          <td colspan="10">
+            <hr />
+          </td>
+        </tr>
+
+        <tr>
+          <td><code>aarch64-freebsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/3939">3</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>aarch64[_be]-netbsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23084">3</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>aarch64-openbsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23085">3</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>hexagon-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21652">3</a></td> <!-- Tier -->
+          <td>🟡</td> <!-- Lang. Feat. -->
+          <td>🟡</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>loongarch64-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21646">3</a></td> <!-- Tier -->
+          <td>🟡</td> <!-- Lang. Feat. -->
+          <td>🟡</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>mips[el]-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/3345">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>mips64[el]-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21647">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟡</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>riscv32-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21648">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>riscv64-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/4456">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>s390x-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/21402">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🔴</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🟢</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>sparc64-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/4931">3</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>sparc64-solaris</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23093">3</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted In Development">🛠️</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>wasm64-wasi</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23092">3</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-dragonfly</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/7149">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-freebsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/1759">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-illumos</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/7152">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-netbsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23082">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-openbsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/2016">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>🟢</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>x86_64-solaris</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/7151">3</a></td> <!-- Tier -->
+          <td>🟢</td> <!-- Lang. Feat. -->
+          <td>❔</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span><span title="Self-Hosted">⚡</span></td> <!-- Code Gen. -->
+          <td>🟢</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+
+        <tr>
+          <td colspan="10">
+            <hr />
+          </td>
+        </tr>
+
+        <tr>
+          <td><code>arc-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23086">4</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Assembly Code">📄</span></td> <!-- Code Gen. -->
+          <td>🔴</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>csky-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23087">4</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🟢</td> <!-- Std. Lib. -->
+          <td><span title="Assembly Code">📄</span></td> <!-- Code Gen. -->
+          <td>🔴</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>m68k-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23089">4</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🔴</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🔴</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>m68k-netbsd</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23090">4</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🔴</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🔴</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>sparc-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23081">4</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🔴</td> <!-- Std. Lib. -->
+          <td><span title="Machine Code">🖥️</span></td> <!-- Code Gen. -->
+          <td>🔴</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🟢</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+        <tr>
+          <td><code>xtensa-linux</code></td> <!-- Target -->
+          <td><a href="https://github.com/ziglang/zig/issues/23088">4</a></td> <!-- Tier -->
+          <td>❔</td> <!-- Lang. Feat. -->
+          <td>🔴</td> <!-- Std. Lib. -->
+          <td><span title="Assembly Code">📄</span></td> <!-- Code Gen. -->
+          <td>🔴</td> <!-- Linker -->
+          <td>❔</td> <!-- Debug Info -->
+          <td>🔴</td> <!-- libc -->
+          <td>🔴</td> <!-- CI -->
+        </tr>
+      </tbody>
+    </table>
+    {#header_close#}
+
+    {#header_open|Additional Platforms#}
+    <p>
+      Zig also has varying levels of support for these targets, for which the tier system does not
+      quite apply:
+    </p>
+
+    <ul style="columns: 3">
+      <li><code>aarch64-driverkit</code></li>
+      <li><code>aarch64[_be]-freestanding</code></li>
+      <li><code>aarch64-ios</code></li>
+      <li><code>aarch64-tvos</code></li>
+      <li><code>aarch64-uefi</code></li>
+      <li><code>aarch64-visionos</code></li>
+      <li><code>aarch64-watchos</code></li>
+      <li><code>amdgcn-amdhsa</code></li>
+      <li><code>arc-freestanding</code></li>
+      <li><code>arm[eb]-freestanding</code></li>
+      <li><code>avr-freestanding</code></li>
+      <li><code>bpf(eb,el)-freestanding</code></li>
+      <li><code>csky-freestanding</code></li>
+      <li><code>hexagon-freestanding</code></li>
+      <li><code>kalimba-freestanding</code></li>
+      <li><code>lanai-freestanding</code></li>
+      <li><code>loongarch(32,64)-freestanding</code></li>
+      <li><code>loongarch(32,64)-uefi</code></li>
+      <li><code>m68k-freestanding</code></li>
+      <li><code>mips[64][el]-freestanding</code></li>
+      <li><code>msp430-freestanding</code></li>
+      <li><code>nvptx[64]-cuda</code></li>
+      <li><code>nvptx[64]-nvcl</code></li>
+      <li><code>powerpc[64][le]-freestanding</code></li>
+      <li><code>propeller-freestanding</code></li>
+      <li><code>riscv(32,64)-freestanding</code></li>
+      <li><code>riscv(32,64)-uefi</code></li>
+      <li><code>s390x-freestanding</code></li>
+      <li><code>sparc[64]-freestanding</code></li>
+      <li><code>spirv(32,64)-opencl</code></li>
+      <li><code>spirv(32,64)-vulkan</code></li>
+      <li><code>ve-freestanding</code></li>
+      <li><code>wasm(32,64)-emscripten</code></li>
+      <li><code>wasm(32,64)-freestanding</code></li>
+      <li><code>x86-elfiamcu</code></li>
+      <li><code>x86[_64]-freestanding</code></li>
+      <li><code>x86[_64]-uefi</code></li>
+      <li><code>x86_64-driverkit</code></li>
+      <li><code>x86_64-ios</code></li>
+      <li><code>x86_64-tvos</code></li>
+      <li><code>x86_64-visionos</code></li>
+      <li><code>x86_64-watchos</code></li>
+      <li><code>xcore-freestanding</code></li>
+      <li><code>xtensa-freestanding</code></li>
+    </ul>
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Language Changes#}
+
+    {#header_open|Labeled Switch#}
+    <p>Zig 0.14.0 implements <a href="https://github.com/ziglang/zig/issues/8220">an accepted proposal</a> which allows {#syntax#}switch{#endsyntax#} statements to be labeled, and to be targeted by {#syntax#}continue{#endsyntax#} statements. Such a {#syntax#}continue{#endsyntax#} statement takes a single operand (like {#syntax#}break{#endsyntax#} can to return a value from a block or loop); this value is treated as a replacement operand to the original {#syntax#}switch{#endsyntax#} expression. This construct is semantically equivalent to a {#syntax#}switch{#endsyntax#} statement inside of a loop, with a variable tracking the {#syntax#}switch{#endsyntax#} operand; for instance, the following tests are equivalent:</p>
+    {#code|labeled_switch.zig#}
+<p>These constructs differ in two ways. The most obvious difference is in clarity: the new syntax form is clearer at times, for instance when implementing Finite State Automata where one can write {#syntax#}continue :fsa new_state{#endsyntax#} to represent a state transition. However, a key motivation for this language feature lies in its code generation. This is expanded on below.</p>
+<p>It is also possible to {#syntax#}break{#endsyntax#} from a labeled {#syntax#}switch{#endsyntax#}. This simply terminates evaluation of the {#syntax#}switch{#endsyntax#} expression, causing it to result in the given value, as though the case body were a labeled block. As with blocks, an unlabeled {#syntax#}break{#endsyntax#} will never target a {#syntax#}switch{#endsyntax#} statement; only a {#syntax#}while{#endsyntax#} or {#syntax#}for{#endsyntax#} loop.</p>
+<p>Unlike a typical {#syntax#}switch{#endsyntax#} statement, a labeled {#syntax#}switch{#endsyntax#} with one or more {#syntax#}continue{#endsyntax#}s targeting it is not implicitly evaluated at compile-time (this is similar to how loops behave). However, as with loops, compile-time evaluation can be forced by evaluating such an expression in a {#syntax#}comptime{#endsyntax#} context. </p>
+    {#header_open|Code Generation Properties#}
+<p>This language construct is designed to generate code which aids the CPU in predicting branches between cases of the switch, allowing for increased performance in hot loops, particularly those dispatching instructions, evaluating FSAs, or performing similar case-based evaluations. To achieve this, the generated code may be different to what one would intuitively expect.</p>
+<p>If the operand to {#syntax#}continue{#endsyntax#} is comptime-known, then it can be translated to an unconditional branch to the relevant case. Such a branch is perfectly predicted, and hence typically very fast to execute. </p>
+<p>If the operand is runtime-known, then each {#syntax#}continue{#endsyntax#} can become a separate conditional branch (ideally via a shared jump table) back to the same set of potential branch targets. The advantage of this pattern is that it aids the CPU&#39;s branch predictor by providing different branch instructions which can be associated with distinct prediction data. For instance, when evaluating an FSA, if case {#syntax#}a{#endsyntax#} is very likely to be followed by case {#syntax#}b{#endsyntax#}, while case {#syntax#}c{#endsyntax#} is very likely to be followed by case {#syntax#}d{#endsyntax#}, then the branch predictor can use the direct jumps between {#syntax#}switch{#endsyntax#} cases to predict the control flow more accurately, whereas a loop-based lowering causes the state dispatches to be "collapsed" into a single indirect branch or similar, hindering branch prediction.</p>
+<p>This lowering can inflate code size compared to a simple "switch in a loop" lowering, and any Zig implementation is, of course, free to lower this syntax however it wishes provided the language semantics are obeyed. However, the official ZSF compiler implementation will attempt to match the lowering described above, particularly in the <code>ReleaseFast</code> build mode.</p>
+    <p><a href="https://github.com/ziglang/zig/pull/21367">Updating Zig's tokenizer to take advantage of this feature resulted in a 13% performance boost</a>.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Decl Literals#}
+<p>Zig 0.14.0 extends the "enum literal" syntax ({#syntax#}.foo{#endsyntax#}) to provide a new feature, known as "decl literals". Now, an enum literal {#syntax#}.foo{#endsyntax#} doesn&#39;t necessarily refer to an enum variant, but, using
+<a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a>, can also refer to any declaration on the target type. For instance, consider the following example:</p>
+    {#code|decl_literals.zig#}
+<p>Since the initialization expression of {#syntax#}val{#endsyntax#} has a result type of {#syntax#}S{#endsyntax#}, the initialization is effectively equivalent to {#syntax#}S.default{#endsyntax#}. This can be particularly useful when initializing struct fields to avoid having to specify the type again:</p>
+    {#code|decl_literals_structs.zig#}
+<p>It can also help in avoiding <a href="https://ziglang.org/documentation/0.14.0/#Faulty-Default-Field-Values">Faulty Default Field Values</a>, like in the following example:</p>
+    {#code|faulty.zig#}
+<p>Many existing uses of field default values may be more appropriately handled by a declaration named {#syntax#}default{#endsyntax#} or {#syntax#}empty{#endsyntax#} or similar, to ensure data invariants are not violated by overriding single fields.</p>
+<p>Decl literals also support function calls, like this:</p>
+    {#code|call_decl_literal.zig#}
+<p>As before, this syntax can be particularly useful when initializing struct fields. It also supports calling functions which return error unions via {#syntax#}try{#endsyntax#}. The following example uses these in combination to initialize a thin wrapper around an {#syntax#}ArrayListUnmanaged{#endsyntax#}:</p>
+    {#code|init_with_decl_literal.zig#}
+<p>The introduction of decl literals comes with some standard library changes. In particular, unmanaged containers, including {#syntax#}ArrayListUnmanaged{#endsyntax#} and {#syntax#}HashMapUnmanaged{#endsyntax#}, should no longer be default-initialized with {#syntax#}.{}{#endsyntax#}, because the default field values here violate the guidance discussed above. Instead, they should be initialized using their {#syntax#}empty{#endsyntax#} declaration, which can be conveniently accessed via decl literals:</p>
+    {#code|default_init_buffer.zig#}
+<p>Similarly, {#syntax#}std.heap.GeneralPurposeAllocator{#endsyntax#} should now be initialized with its {#syntax#}.init{#endsyntax#} declaration.</p>
+<p>The deprecated default field values for these data structures will be removed in the next release cycle.</p>
+    {#header_open|Fields and Declarations Cannot Share Names#}
+<p>Zig 0.14.0 introduces a restriction that container types ({#syntax#}struct{#endsyntax#}, {#syntax#}union{#endsyntax#}, {#syntax#}enum{#endsyntax#} and {#syntax#}opaque{#endsyntax#}) cannot have fields and declarations ({#syntax#}const{#endsyntax#}/{#syntax#}var{#endsyntax#}/{#syntax#}fn{#endsyntax#}) with the same names. This restriction has been added to deal with the problem that whether {#syntax#}MyEnum.foo{#endsyntax#} looks up a declaration or an enum field is ambiguous (a problem amplified by {#link|Decl Literals#}. Generally, this can be avoided by following the standard naming conventions:</p>
+<pre>{#syntax#}
+const Foo = struct {
+    Thing: Thing,
+    const Thing = struct {
+        Data: u32,
+    };
+};
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+const Foo = struct {
+    thing: Thing,
+    const Thing = struct {
+        data: u32,
+    };
+};
+{#endsyntax#}</pre>
+    <p>One upside of this restriction is that documentation comments can now unambiguously refer to
+    field names, thus enabling such references to be hyperlinks.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|@splat Supports Arrays#}
+    <p>Zig 0.14.0 expands the {#syntax#}@splat{#endsyntax#} builtin to apply not
+    only to vectors, but to arrays. This is useful when default-initializing an
+    array to a constant value. For instance, in conjunction with {#link|Decl Literals#},
+    we can elegantly initialize an array of "color" values:</p>
+    <pre>{#syntax#}
+const Rgba = struct {
+    r: u8,
+    b: u8,
+    g: u8,
+    a: u8,
+    pub const black: Rgba = .{ .r = 0, .g = 0, .b = 0, .a = 255 };
+};
+var pixels: [width][height]Rgba = @splat(@splat(.black));
+    {#endsyntax#}</pre>
+    <p>The operand may be comptime-known or runtime-known. In addition, this builtin can also be used to initialize sentinel-terminated arrays.</p>
+    {#code|splat.zig#}
+    {#header_close#}
+
+    {#header_open|Global Variables can be Initialized with Address of Each Other#}
+    <p>This works now:</p>
+    {#code|reference_each_other.zig#}
+    {#header_close#}
+
+    {#header_open|@export Operand is Now a Pointer#}
+<p>This release of Zig simplifies the <code>@export</code> builtin. In previous versions of Zig, this builtin&#39;s first operand syntactically appeared to be the <em>value</em> which was to be exported, which was restricted to an identifier or field access of a local variable or container-level declaration. This system was unnecessarily restrictive, and moreover, syntactically confusing and inconsistent; it is reasonable to export constant comptime-known values, and this usage implied that the <em>value</em> was somehow being exported, whereas in reality its <em>address</em> was the relevant piece of information. To resolve this, <code>@export</code> has a new usage which closely mirrors that of <code>@extern</code>; its first operand is a <em>pointer</em>, which points to the data being exported. In most cases, solving this will just consist of adding a <code>&amp;</code> operator:</p>
+<pre>{#syntax#}
+const foo: u32 = 123;
+test "@export" {
+    @export(foo, .{ .name = "bar" });
+}
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+const foo: u32 = 123;
+test "@export" {
+    @export(&foo, .{ .name = "bar" });
+}
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|New @branchHint Builtin, Replacing @setCold#}
+<p>In high-performance code, it is sometimes desirable to hint to the optimizer which branch of a condition is more likely; this can allow more efficient machine code to be generated. Some languages offer this through a "likely" annotation on a boolean condition; for instance, GCC and Clang implement the <code>__builtin_expect</code> function. Zig 0.14.0 introduces a mechanism to communicate this information: the new <code>@branchHint(comptime hint: std.builtin.BranchHint)</code> builtin. This builtin, rather than modifying a condition, appears as the first statement in a block to communicate whether control flow is likely to reach the block in question:</p>
+<pre>{#syntax#}
+fn warnIf(cond: bool, message: []const u8) void {
+    if (cond) {
+        @branchHint(.unlikely); // we expect warnings to *not* happen most of the time!
+        std.log.warn("{s}", message);
+    }
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+<p>The <code>BranchHint</code> type is as follows:</p>
+<pre>{#syntax#}
+pub const BranchHint = enum(u3) {
+    /// Equivalent to no hint given.
+    none,
+    /// This branch of control flow is more likely to be reached than its peers.
+    /// The optimizer should optimize for reaching it.
+    likely,
+    /// This branch of control flow is less likely to be reached than its peers.
+    /// The optimizer should optimize for not reaching it.
+    unlikely,
+    /// This branch of control flow is unlikely to *ever* be reached.
+    /// The optimizer may place it in a different page of memory to optimize other branches.
+    cold,
+    /// It is difficult to predict whether this branch of control flow will be reached.
+    /// The optimizer should avoid branching behavior with expensive mispredictions.
+    unpredictable,
+};
+{#endsyntax#}</pre>
+<p>As well as being the first statement of a block behind a condition, <code>@branchHint</code> is also permitted as the first statement of any function. The expectation is that the optimizer may propagate likelihood information to branches containing these calls; for instance, if a given branch of control flow always calls a function which is marked <code>@branchHint(.unlikely)</code>, then the optimizer may assume that the branch in question is unlikely to be reached.</p>
+<p>This feature combined with the existence of the <code>.cold</code> variant of <code>BranchHint</code> means that the old <code>@setCold</code> builtin, which could be used to communicate that a function is unlikely to ever be called, becomes redundant. Therefore, <code>@setCold</code> has been removed in favor of <code>@branchHint</code>. In most cases, the migration will be very simple; just replace <code>@setCold(true)</code> with <code>@branchHint(.cold)</code>:</p>
+<pre>{#syntax#}
+fn foo() void {
+    @setCold(true);
+    // ...
+}
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+fn foo() void {
+    @branchHint(.cold);
+    // ...
+}
+{#endsyntax#}</pre>
+<p>However, remember that <code>@branchHint</code> must be the <em>first statement</em> in the enclosing block, which in this case is the function. This restriction did not exist for <code>@setCold</code>, so non-trivial usages may require small refactors:</p>
+<pre>{#syntax#}
+fn foo(comptime x: u8) void {
+    if (x == 0) {
+        @setCold(true);
+    }
+    // ...
+}
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+fn foo(comptime x: u8) void {
+    @branchHint(if (x == 0) .cold else .none);
+    // ...
+}
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Removal of @fence#}
+    <p>In Zig 0.14, <code>@fence</code> has been removed. <code>@fence</code> was
+      provided to be consistent with the C11 memory model, however, it complicates
+      semantics by modifying the memory orderings of all
+      <a href="https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence#Atomic-fence_synchronization">previous</a>
+      and
+      <a href="https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence#Fence-atomic_synchronization">future</a>
+      atomic operations.
+      This creates unforeseen constraints that are
+      <a href="https://github.com/google/sanitizers/issues/1415">hard to model in a sanitizer</a>.
+      Fences can be substituted by either upgrading atomic memory orderings or adding new atomic operations.</p>
+    <p>The most common use cases for <code>@fence</code> can be replaced by utilizing stronger memory orderings
+      or by introducing a new atomic variable.</p>
+
+    {#header_open|StoreLoad Barriers#}
+    <p>The most common use case is <code>@fence(.seq_cst)</code>. This is primarily used to ensure a consistent
+      order between multiple operations on different atomic variables.</p>
+<p>For example:
+<pre>
+thread-1:                     thread-2:
+store X         // A          store Y          // C
+fence(seq_cst)  // F1         fence(seq_cst)   // F2
+load  Y         // B          load  X          // D
+</pre></p>
+    <p>
+      The goal is to ensure either <code>load X</code> (D) sees <code>store X</code> (A), or <code>load Y</code>
+      (B) sees <code>store Y</code> (C). The pair of Sequentially Consistent fences guarantees this via
+      <a href="https://en.cppreference.com/w/cpp/atomic/memory_order#Strongly_happens-before:~:text=for%20every%20pair%20of%20atomic%20operations%20A%20and%20B%20on%20an%20object%20M%2C%20where%20A%20is%20coherence%2Dordered%2Dbefore%20B%3A">two</a>
+      <a href="https://en.cppreference.com/w/cpp/atomic/memory_order#Strongly_happens-before:~:text=if%20a%20memory_order_seq_cst%20fence%20X%20happens%2Dbefore%20A%2C%20and%20B%20happens%2Dbefore%20a%20memory_order_seq_cst%20fence%20Y%2C%20then%20X%20precedes%20Y%20in%20S.">invariance</a>.
+    </p>
+
+    <p>
+      Now that <code>@fence</code> is removed, there are other ways of achieving this relationship:
+      <ul>
+        <li>Making all related stores and loads (A, B, C, and D) <code>SeqCst</code>, including them all in the total order.</li>
+        <li>Making a store (A/C) <code>Acquire</code> and its matching load (D/B) <code>Release</code>.
+          Semantically, this would mean upgrading them to read-modify-write operations, which could
+          be such ordering. Loads can be replaced with a non-mutating RMW, i.e. <code>fetchAdd(0)</code> or <code>fetchOr(0)</code>.</li>
+      </ul>
+      Optimizers like LLVM may reduce this into a <code>@fence(.seq_cst) + load</code> internally.
+    </p>
+    {#header_close#}
+    {#header_open|Conditional Barriers#}
+    <p>
+      Another use case for fences is conditionally creating a <i>synchronizes-with</i> relationship with
+      previous or future atomic operations, using <code>Acquire</code> or <code>Release</code> respectively.
+      A simple example of this in the real world is an atomic reference counter:
+    </p>
+    {#syntax_block|zig#}
+fn inc(counter: *RefCounter) void {
+  _ = counter.rc.fetchAdd(1, .monotonic);
+}
+
+fn dec(counter: *RefCounter) void {
+  if (counter.rc.fetchSub(1, .release) == 1) {
+      @fence(.acquire);
+      counter.deinit();
+  }
+}
+    {#end_syntax_block#}
+    <p>
+      The load in the <code>fetchSub(1)</code> only needs to be <code>Acquire</code> for the last ref-count decrement to ensure previous decrements
+      <i>happen-before</i> the <code>deinit()</code>. The <code>@fence(.acquire)</code> here creates this relationship using the load part of the <code>fetchSub(1)</code>.
+    </p>
+    <p>Without <code>@fence</code>, there are two approaches here:</p>
+    <ol>
+      <li>Unconditionally strengthen the desired atomic operations with the fence's ordering.
+        {#syntax_block|zig#}
+  if (counter.rc.fetchSub(1, .acq_rel) == 1) {
+        {#end_syntax_block#}
+      </li>
+      <li>Conditionally duplicate the desired store or load with the fence's ordering
+        {#syntax_block|zig#}
+  if (counter.rc.fetchSub(1, .release) == 1) {
+    _ = counter.rc.load(.acquire);
+        {#end_syntax_block#}
+      </li>
+    </ol>
+    <p>
+      The <code>Acquire</code> will <i>synchronize-with</i> the longest release-sequence in
+      <code>rc</code>'s modification order, making all previous decrements <i>happen-before</i> the <code>deinit()</code>.
+    </p>
+    {#header_close#}
+    {#header_open|Synchronize External Operations#}
+    <p>
+      The least common usage of <code>@fence</code> is providing additional synchronization to atomic operations
+      the programmer has no control over (i.e. external function calls). Using a <code>@fence</code> in this
+      situation relies on the "hidden" functions having atomic operations with undesirably weak orderings.
+    </p>
+    <p>
+      Ideally, the "hidden" functions would be accessible to the user and they could simply increase
+      the order in the source code. But if this isn't possible, a last resort is introducing an
+      atomic variable to simulate the fence's barriers. For example:
+    </p>
+<pre>
+thread-1:                    thread-2:
+  queue.push()                e = signal.listen()
+  fence(.seq_cst)             fence(.seq_cst)
+  signal.notify()             if queue.empty(): e.wait()
+</pre>
+<pre>
+thread-1:                    thread-2:
+  queue.push()                e = signal.listen()
+  fetchAdd(0, .seq_cst)       fetchAdd(0, .seq_cst)
+  signal.notify()             if queue.empty(): e.wait()
+</pre>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Packed Struct Equality#}
+    <p>Packed structs can now be equated directly, without a {#syntax#}@bitCast{#endsyntax#} to the underlying integer type.</p>
+    {#code|packed_struct_equality.zig#}
+    {#header_close#}
+
+    {#header_open|Packed Struct Atomics#}
+    <p>Packed structs can now be used in atomic operations, without a {#syntax#}@bitCast{#endsyntax#} to the underlying integer type.</p>
+    {#code|packed_struct_atomics.zig#}
+    {#header_close#}
+
+    {#header_open|@ptrCast Allows Changing Slice Length#}
+    <p><a href="https://github.com/ziglang/zig/pull/22706">#22706</a></p>
+    {#header_close#}
+
+    {#header_open|Remove Anonymous Struct Types, Unify Tuples#}
+    <p>This change reworks how anonymous struct literals and tuples work.</p>
+    <p>Previously, an untyped anonymous struct literal (e.g. {#syntax#}const x = .{ .a = 123 }{#endsyntax#}) was given an "anonymous struct type", which is a special kind of struct which coerces using structural equivalence. This mechanism was a holdover from before we used <a href="https://ziglang.org/documentation/0.14.0/#Result-Location-Semantics">Result Location Semantics</a> as the primary mechanism of type inference. This change changes the language so that the type assigned here is a "normal" struct type. It uses a form of equivalence based on the AST node and the type&#39;s structure, much like a reified ({#syntax#}@Type{#endsyntax#}) type.</p>
+    <p>Additionally, tuples have been simplified. The distinction between "simple" and "complex" tuple types is eliminated. All tuples, even those explicitly declared using {#syntax#}struct { ... }{#endsyntax#} syntax, use structural equivalence, and do not undergo staged type resolution. Tuples are very restricted: they cannot have non-{#syntax#}auto{#endsyntax#} layouts, cannot have aligned fields, and cannot have default values with the exception of {#syntax#}comptime{#endsyntax#} fields. Tuples currently do not have optimized layout, but this can be changed in the future.</p>
+    <p>This change simplifies the language, and fixes some problematic coercions through pointers which led to unintuitive behavior.</p>
+    {#header_close#}
+
+    {#header_open|Calling Convention Enhancements and @setAlignStack Replaced#}
+<p>Zig allows setting the calling convention of a function with the <code>callconv(...)</code> annotation, where the value in parentheses is of type <code>std.builtin.CallingConvention</code>. In previous versions of Zig, this type was a simple <code>enum</code> listing a small number of common calling conventions, such as <code>.Stdcall</code> for x86 and <code>.AAPCS</code> for ARM. The <code>.C</code> variant referred to the default C calling convention for the target.</p>
+<p>Zig 0.14.0 changes <code>CallingConvention</code> to be far more exhaustive: it now contains every major calling convention for every target currently supported by Zig. Variants have names like <code>.x86_64_sysv</code>, <code>.arm_aapcs</code>, and <code>.riscv64_interrupt</code>. In addition, instead of an enum, <code>CallingConvention</code> is now a tagged union; this allows <em>options</em> to be specified on a calling convention.</p>
+<p>Most available calling conventions have a payload of <code>std.builtin.CallingConvention.CommonOptions</code>, which allows overriding the expected alignment of the stack when the function is called:</p>
+<pre>{#syntax#}
+/// Options shared across most calling conventions.
+pub const CommonOptions = struct {
+    /// The boundary the stack is aligned to when the function is called.
+    /// `null` means the default for this calling convention.
+    incoming_stack_alignment: ?u64 = null,
+};
+{#endsyntax#}</pre>
+<p>This is useful when, for instance, interacting with C code compiled with the <code>-mpreferred-stack-boundary</code> GCC flag.</p>
+<p>A small number of calling conventions have more complex options, for instance:</p>
+<pre>{#syntax#}
+/// Options for x86 calling conventions which support the regparm attribute to pass some
+/// arguments in registers.
+pub const X86RegparmOptions = struct {
+    /// The boundary the stack is aligned to when the function is called.
+    /// `null` means the default for this calling convention.
+    incoming_stack_alignment: ?u64 = null,
+    /// The number of arguments to pass in registers before passing the remaining arguments
+    /// according to the calling convention.
+    /// Equivalent to `__attribute__((regparm(x)))` in Clang and GCC.
+    register_params: u2 = 0,
+};
+{#endsyntax#}</pre>
+<p><strong>The default C calling convention is no longer represented by a special tag.</strong> Instead, <code>CallingConvention</code> contains a declaration named <code>c</code> which is defined as follows:</p>
+<pre>{#syntax#}
+/// This is an alias for the default C calling convention for this target.
+/// Functions marked as `extern` or `export` are given this calling convention by default.
+pub const c = builtin.target.cCallingConvention().?;
+{#endsyntax#}</pre>
+<p>When combined with {#link|Decl Literals#}, this permits writing <code>callconv(.c)</code> to specify this calling convention.</p>
+<p>Zig 0.14.0 includes declarations named <code>Unspecified</code>, <code>C</code>, <code>Naked</code>, <code>Stdcall</code>, etc, to allow existing usages of <code>callconv</code> to continue working thanks to Decl Literals. These declarations are deprecated, and will be removed in a future version of Zig.</p>
+<p>As previously mentioned, most calling conventions have an <code>incoming_stack_alignment</code> options to specify the byte boundary the stack will be aligned to when a function is called, which can be used to interop with code using stack alignments lower than the ABI mandates. Previously, the <code>@setAlignStack</code> builtin could be used for this use case; however, its behavior was somewhat ill-defined, and applying it to this use case required knowing the expected stack alignment for your ABI. As such, the <code>@setAlignStack</code> builtin has been removed. Instead, users should annotate on their <code>callconv</code> the expected stack alignment, allowing the optimizer to realign if necessary. This also allows the optimizer to <em>avoid</em> unnecessarily realigning the stack when such a function is called. For convenience, <code>CallingConvention</code> has a <code>withStackAlign</code> function which can be used to change the incoming stack alignment. Upgrading is generally fairly simple:</p>
+<pre>{#syntax#}
+// This function will be called by C code which uses a 4-byte aligned stack.
+export fn foo() void {
+    // I know that my target's ABI expects a 16-byte aligned stack.
+    @setAlignStack(16);
+    // ...
+}
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+// This function will be called by C code which uses a 4-byte aligned stack.
+// We simply specify that on the `callconv`.
+export fn foo() callconv(.withStackAlign(.c, 4)) void {
+    // ...
+}
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|std.builtin.Type Fields Renamed#}
+    <p>In most cases, Zig&#39;s standard library follows <a href="https://ziglang.org/documentation/0.14.0/#Names">naming conventions</a>. Zig 0.14.0 updates the fields of the <code>std.builtin.Type</code> tagged union to follow these conventions by lowercasing them:</p>
+<pre>{#syntax#}
+pub const Type = union(enum) {
+    type: void,
+    void: void,
+    bool: void,
+    noreturn: void,
+    int: Int,
+    float: Float,
+    pointer: Pointer,
+    array: Array,
+    @"struct": Struct,
+    comptime_float: void,
+    comptime_int: void,
+    undefined: void,
+    null: void,
+    optional: Optional,
+    error_union: ErrorUnion,
+    error_set: ErrorSet,
+    @"enum": Enum,
+    @"union": Union,
+    @"fn": Fn,
+    @"opaque": Opaque,
+    frame: Frame,
+    @"anyframe": AnyFrame,
+    vector: Vector,
+    enum_literal: void,
+    // ...
+};
+{#endsyntax#}</pre>
+    <p>Note that this requires using "quoted identifier" syntax for {#syntax#}@"struct"{#endsyntax#}, {#syntax#}@"union"{#endsyntax#}, {#syntax#}@"enum"{#endsyntax#}, {#syntax#}@"opaque"{#endsyntax#}, and {#syntax#}@"anyframe"{#endsyntax#}, because these identifiers are also keywords.</p>
+    <p>This change is widely breaking, but upgrading is simple:</p>
+    <pre>{#syntax#}
+test "switch on type info" {
+    const x = switch (@typeInfo(u8)) {
+        .Int => 0,
+        .ComptimeInt => 1,
+        .Struct => 2,
+        else => 3,
+    };
+    try std.testing.expect(0, x);
+}
+test "reify type" {
+    const U8 = @Type(.{ .Int = .{
+        .signedness = .unsigned,
+        .bits = 8,
+    } });
+    const S = @Type(.{ .Struct = .{
+        .layout = .auto,
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = false,
+    } });
+    try std.testing.expect(U8 == u8);
+    try std.testing.expect(@typeInfo(S) == .Struct);
+}
+const std = @import("std");
+    {#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}
+test "switch on type info" {
+    const x = switch (@typeInfo(u8)) {
+        .int => 0,
+        .comptime_int => 1,
+        .@"struct" => 2,
+        else => 3,
+    };
+    try std.testing.expect(0, x);
+}
+test "reify type" {
+    const U8 = @Type(.{ .int = .{
+        .signedness = .unsigned,
+        .bits = 8,
+    } });
+    const S = @Type(.{ .@"struct" = .{
+        .layout = .auto,
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = false,
+    } });
+    try std.testing.expect(U8 == u8);
+    try std.testing.expect(@typeInfo(S) == .@"struct");
+}
+const std = @import("std");
+    {#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|std.builtin.Type.Pointer.Size Field Renamed#}
+    <p>The fields of the {#syntax#}std.builtin.Type.Pointer.Size{#endsyntax#} enum have been renamed to lowercase, just like the fields of {#syntax#}std.builtin.Type{#endsyntax#}. Again, this is a breaking change, but one which is very easily updated to:</p>
+<pre>{#syntax#}
+test "pointer type info" {
+    comptime assert(@typeInfo(*u8).pointer.size == .One);
+}
+test "reify pointer" {
+    comptime assert(@Type(.{ .pointer = .{
+        .size = .One,
+        .is_const = false,
+        .is_volatile = false,
+        .alignment = 0,
+        .address_space = .generic,
+        .child = u8,
+        .is_allowzero = false,
+        .sentinel_ptr = null,
+    } }) == *u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+test "pointer type info" {
+    comptime assert(@typeInfo(*u8).pointer.size == .one);
+}
+test "reify pointer" {
+    comptime assert(@Type(.{ .pointer = .{
+        .size = .one,
+        .is_const = false,
+        .is_volatile = false,
+        .alignment = 0,
+        .address_space = .generic,
+        .child = u8,
+        .is_allowzero = false,
+        .sentinel_ptr = null,
+    } }) == *u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Simplify Usage Of ?*const anyopaque In std.builtin.Type#}
+<p>The {#syntax#}default_value{#endsyntax#} field on {#syntax#}std.builtin.Type.StructField{#endsyntax#}, and the {#syntax#}sentinel{#endsyntax#} fields on {#syntax#}std.builtin.Type.Array{#endsyntax#} and {#syntax#}std.builtin.Type.Pointer{#endsyntax#}, have to use {#syntax#}?*const anyopaque{#endsyntax#}, because Zig does not provide a way for the struct&#39;s type to depend on a field&#39;s value. This isn&#39;t a problem; however, it isn&#39;t particularly ergonomic at times.</p>
+<p>Zig 0.14.0 renames these fields to {#syntax#}default_value_ptr{#endsyntax#} and {#syntax#}sentinel_ptr{#endsyntax#} respectively, and adds helper methods {#syntax#}defaultValue(){#endsyntax#} and {#syntax#}sentinel(){#endsyntax#} to load the value with the correct type as an optional.</p>
+<pre>{#syntax#}
+test "get pointer sentinel" {
+    const T = [:0]const u8;
+    const ptr = @typeInfo(T).pointer;
+    const s = @as(*const ptr.child, @ptrCast(@alignCast(ptr.sentinel.?))).*;
+    comptime assert(s == 0);
+}
+test "reify array" {
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel = null } }) == [1]u8);
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel = &@as(u8, 0) } }) == [1:0]u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+test "get pointer sentinel" {
+    const T = [:0]const u8;
+    const ptr = @typeInfo(T).pointer;
+    const s = ptr.sentinel().?;
+    comptime assert(s == 0);
+}
+test "reify array" {
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel_ptr = null } }) == [1]u8);
+    comptime assert(@Type(.{ .array = .{ .len = 1, .child = u8, .sentinel_ptr = &@as(u8, 0) } }) == [1:0]u8);
+}
+const assert = @import("std").debug.assert;
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Non-Scalar Sentinel Types Disallowed#}
+    <p>Sentinel values are now forbidden from being aggregate types. In other
+    words, only types that support the {#syntax#}=={#endsyntax#} operator are
+    allowed.</p>
+    {#code|non_scalar_sentinel.zig#}
+    {#header_close#}
+
+    {#header_open|@FieldType builtin#}
+    <p>Zig 0.14.0 introduces the {#syntax#}@FieldType{#endsyntax#} builtin.
+    This serves the same purpose as the {#syntax#}std.meta.FieldType{#endsyntax#}
+    function: given a type and the name of one of its fields, it returns the
+    type of that field.</p>
+    {#code|fieldtype.zig#}
+    {#header_close#}
+
+    {#header_open|@src Gains Module Field#}
+    <p>{#syntax#}std.builtin.SourceLocation{#endsyntax#}:</p>
+    <pre>{#syntax#}
+pub const SourceLocation = struct {
+    /// The name chosen when compiling. Not a file path.
+    module: [:0]const u8,
+    /// Relative to the root directory of its module.
+    file: [:0]const u8,
+    fn_name: [:0]const u8,
+    line: u32,
+    column: u32,
+};{#endsyntax#}</pre>
+    <p>The {#syntax#}module{#endsyntax#} field is new.</p>
+    {#header_close#}
+
+    {#header_open|@memcpy Rules Adjusted#}
+    <ul>
+    <li>The langspec definition of {#syntax#}@memcpy{#endsyntax#} has been changed so that the source and destination element types must be in-memory coercible, allowing all such calls to be raw copying operations, not actually applying any coercions.</li>
+    <li>Implement aliasing check for comptime {#syntax#}@memcpy{#endsyntax#}; a compile error will now be emitted if the arguments alias.</li>
+    <li>Implement more efficient comptime {#syntax#}@memcpy{#endsyntax#} by loading and storing a whole array at once, similar to how {#syntax#}@memset{#endsyntax#} is implemented.</li>
+    </ul>
+    <p>This is a breaking change because while the old coercion behavior
+    triggered an "unimplemented" compile error at runtime, it did actually work
+    at comptime.</p>
+
+    {#header_close#}
+
+    {#header_open|Unsafe In-Memory Coercions Disallowed#}
+    <a href="https://github.com/ziglang/zig/pull/22243">#22243</a>
+    {#header_close#}
+
+    {#header_open|callconv, align, addrspace, linksection Cannot Reference Function Arguments#}
+    <a href="https://github.com/ziglang/zig/pull/22264">#22264</a>
+    {#header_close#}
+
+    {#header_open|Branch Quota Rules Adjusted for Function Calls#}
+    <a href="https://github.com/ziglang/zig/pull/22414">#22414</a>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Standard Library#}
+    <p>Uncategorized changes:</p>
+    <ul>
+    <li>mem: handle Float and Bool cases in byteSwapAllFields</li>
+    <li>fmt: remove placeholders from binary</li>
+    </ul>
+
+    {#header_open|DebugAllocator#}
+    <p><code>GeneralPurposeAllocator</code> relied on a compile-time known
+    {#link|page size|Runtime Page Size#}, so it had to be rewritten. It is now
+    rewritten to make fewer active mappings, to have better performance, and is renamed
+    to <code>DebugAllocator</code>.</p>
+    <p>Performance data point. This is running ast-check with a debug zig compiler, before/after the rewrite.</p>
+    <pre>Benchmark 1 (3 runs): master/bin/zig ast-check ../lib/compiler_rt/udivmodti4_test.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          22.8s  ±  184ms    22.6s  … 22.9s           0 ( 0%)        0%
+  peak_rss           58.6MB ± 77.5KB    58.5MB … 58.6MB          0 ( 0%)        0%
+  cpu_cycles         38.1G  ± 84.7M     38.0G  … 38.2G           0 ( 0%)        0%
+  instructions       27.7G  ± 16.6K     27.7G  … 27.7G           0 ( 0%)        0%
+  cache_references   1.08G  ± 4.40M     1.07G  … 1.08G           0 ( 0%)        0%
+  cache_misses       7.54M  ± 1.39M     6.51M  … 9.12M           0 ( 0%)        0%
+  branch_misses       165M  ±  454K      165M  …  166M           0 ( 0%)        0%
+Benchmark 2 (3 runs): branch/bin/zig ast-check ../lib/compiler_rt/udivmodti4_test.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          20.5s  ± 95.8ms    20.4s  … 20.6s           0 ( 0%)        ⚡- 10.1% ±  1.5%
+  peak_rss           54.9MB ±  303KB    54.6MB … 55.1MB          0 ( 0%)        ⚡-  6.2% ±  0.9%
+  cpu_cycles         34.8G  ± 85.2M     34.7G  … 34.9G           0 ( 0%)        ⚡-  8.6% ±  0.5%
+  instructions       25.2G  ± 2.21M     25.2G  … 25.2G           0 ( 0%)        ⚡-  8.8% ±  0.0%
+  cache_references   1.02G  ±  195M      902M  … 1.24G           0 ( 0%)          -  5.8% ± 29.0%
+  cache_misses       4.57M  ±  934K     3.93M  … 5.64M           0 ( 0%)        ⚡- 39.4% ± 35.6%
+  branch_misses       142M  ±  183K      142M  …  142M           0 ( 0%)        ⚡- 14.1% ±  0.5%</pre>
+    {#header_close#}
+
+    {#header_open|SmpAllocator#}
+    <p>An allocator that is designed for ReleaseFast optimization mode, with multi-threading enabled.</p>
+    <p>This allocator is a singleton; it uses global state and only one should be instantiated for the entire process.</p>
+    <p>This is a "sweet spot" - the implementation is about 200 lines of code and yet competitive with glibc performance.
+    For example, here is a comparison of Zig building itself, using glibc malloc vs SmpAllocator:</p>
+<pre>Benchmark 1 (3 runs): glibc/bin/zig build -Dno-lib -p trash
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          12.2s  ± 99.4ms    12.1s  … 12.3s           0 ( 0%)        0%
+  peak_rss            975MB ± 21.7MB     951MB …  993MB          0 ( 0%)        0%
+  cpu_cycles         88.7G  ± 68.3M     88.7G  … 88.8G           0 ( 0%)        0%
+  instructions        188G  ± 1.40M      188G  …  188G           0 ( 0%)        0%
+  cache_references   5.88G  ± 33.2M     5.84G  … 5.90G           0 ( 0%)        0%
+  cache_misses        383M  ± 2.26M      381M  …  385M           0 ( 0%)        0%
+  branch_misses       368M  ± 1.77M      366M  …  369M           0 ( 0%)        0%
+Benchmark 2 (3 runs): SmpAllocator/fast/bin/zig build -Dno-lib -p trash
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          12.2s  ± 49.0ms    12.2s  … 12.3s           0 ( 0%)          +  0.0% ±  1.5%
+  peak_rss            953MB ± 3.47MB     950MB …  957MB          0 ( 0%)          -  2.2% ±  3.6%
+  cpu_cycles         88.4G  ±  165M     88.2G  … 88.6G           0 ( 0%)          -  0.4% ±  0.3%
+  instructions        181G  ± 6.31M      181G  …  181G           0 ( 0%)        ⚡-  3.9% ±  0.0%
+  cache_references   5.48G  ± 17.5M     5.46G  … 5.50G           0 ( 0%)        ⚡-  6.9% ±  1.0%
+  cache_misses        386M  ± 1.85M      384M  …  388M           0 ( 0%)          +  0.6% ±  1.2%
+  branch_misses       377M  ±  899K      377M  …  378M           0 ( 0%)        💩+  2.6% ±  0.9%</pre>
+
+    <p>Basic design:</p>
+    <p>Each thread gets a separate freelist, however, the data must be recoverable when the thread exits. We do not directly learn when a thread exits, so occasionally, one thread must attempt to reclaim another thread&#39;s resources.</p>
+    <p>Above a certain size, those allocations are memory mapped directly, with no storage of allocation metadata. This works because the implementation refuses resizes that would move an allocation from small category to large category or vice versa.</p>
+    <p>Each allocator operation checks the thread identifier from a threadlocal variable to find out which metadata in the global state to access, and attempts to grab its lock. This will usually succeed without contention, unless another thread has been assigned the same id. In the case of such contention, the thread moves on to the next thread metadata slot and repeats the process of attempting to obtain the lock.</p>
+    <p>By limiting the thread-local metadata array to the same number as the CPU count, ensures that as threads are created and destroyed, they cycle through the full set of freelists.</p>
+
+    <p>To use it, put something like this in your main function:</p>
+<pre>{#syntax#}
+var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
+
+pub fn main() !void {
+    const gpa, const is_debug = gpa: {
+        if (native_os == .wasi) break :gpa .{ std.heap.wasm_allocator, false };
+        break :gpa switch (builtin.mode) {
+            .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
+            .ReleaseFast, .ReleaseSmall => .{ std.heap.smp_allocator, false },
+        };
+    };
+    defer if (is_debug) {
+        _ = debug_allocator.deinit();
+    };
+}
+{#endsyntax#}</pre>
+    <p><a href="https://ziglang.org/devlog/2025/#2025-02-07">devlog entry</a></p>
+    {#header_close#}
+
+    {#header_open|Allocator API Changes (remap)#}
+    <p>This release introduces a new function to <code>std.mem.Allocator.VTable</code> called <code>remap</code>. The key part from the doc comments:</p>
+    <blockquote>
+    <p>Attempt to expand or shrink memory, allowing relocation.</p>
+    <p>A non-<code>null</code> return value indicates the resize was successful. The allocation
+    may have same address, or may have been relocated. In either case, the
+    allocation now has size of <code>new_len</code>. A <code>null</code> return value indicates that
+    the resize would be equivalent to allocating new memory, copying the bytes
+    from the old memory, and then freeing the old memory. In such case, it is
+    more efficient for the caller to perform the copy.</p>
+    </blockquote>
+    <pre>{#syntax#}
+remap: *const fn (*anyopaque, memory: []u8, alignment: Alignment, new_len: usize, return_address: usize) ?[*]u8,
+    {#endsyntax#}</pre>
+    <p><code>resize</code> remains unchanged with the same semantics.</p>
+    <p>All the <code>Allocator.VTable</code> functions now take a <code>std.mem.Alignment</code> type rather than <code>u8</code>. The numerical value is the same, but now there is type safety and handy methods attached to the type.</p>
+    <p>Both <code>resize</code> and <code>remap</code> have their places. For example, <code>resize</code> is necessary for <code>std.heap.ArenaAllocator</code> which must not relocate its allocations. Meanwhile, <code>remap</code> is appropriate for <code>std.ArrayList</code> when the capacity increases.</p>
+    <p>It&#39;s important to remember with <code>remap</code> that an <code>Allocator</code> implementation should generally behave the same as <code>resize</code>, <em>unless</em> the remap can be done without performing the memcpy inside the allocator.</p>
+    <p>For instance, this release introduces support for calling <code>mremap</code> when supported, in which case the operating system remaps the pages, avoiding an expensive memcpy in userspace. Zig programmers can now expect this to happen when using <code>std.heap.page_allocator</code> as well as when using it as a backing allocator for e.g. <code>std.heap.ArenaAllocator</code> or <code>std.heap.GeneralPurposeAllocator</code>.</p>
+
+    <p>Additionally:</p>
+    <ul>
+    <li><code>std.heap.page_allocator</code> now supports alignments greater than page size, which was needed
+      for the {#link|DebugAllocator#} rewrite.</li>
+    <li>delete <code>std.heap.WasmPageAllocator</code> in favor of <code>std.heap.WasmAllocator</code></li>
+    <li>delete <code>std.heap.LoggingAllocator</code> did not belong in std, at least not in its current form</li>
+    <li>delete <code>std.heap.HeapAllocator</code> - this was Windows-only and depended on kernel32</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|ZON Parsing and Serialization#}
+    <p><code>std.zon.parse</code> provides functionality for parsing ZON into a Zig struct at runtime:</p>
+    <ul>
+      <li><code>std.zon.parse.fromSlice</code></li>
+      <li><code>std.zon.parse.fromZoir</code></li>
+      <li><code>std.zon.parse.fromZoirNode</code></li>
+      <li><code>std.zon.parse.free</code></li>
+    </ul>
+
+    <p>Typical use cases will use <code>std.zon.parse.fromSlice</code>, and <code>std.zon.parse.free</code> if the type requires allocation.</p>
+
+    <p>For ZON values with schemas that don't map cleanly to Zig structs,
+    <code>std.zig.ZonGen</code> can be used to generate a tree structure
+    (<code>std.Zoir</code>) that can be interpreted as desired. For importing
+    ZON at compile time, see {#link|Import ZON#}.</p>
+
+    <code>std.zon.stringify</code> provides functionality for serializing ZON at runtime:
+    <ul>
+      <li><code>std.zon.stringify.serialize</code></li>
+      <li><code>std.zon.stringify.serializeMaxDepth</code></li>
+      <li><code>std.zon.stringify.serializeArbitraryDepth</code></li>
+      <li><code>std.zon.stringify.serializer</code></li>
+    </ul>
+
+    <p>Typical use cases will use <code>serialize</code>, or one of its variants.</p>
+
+    <p><code>std.zon.stringify.serializer</code> returns a more fine grained interface. It may be used to serialize a value piece by piece, for example to apply different configuration to different parts of the value or to serialize a value in a different form than it is laid out in memory.</p>
+
+    {#header_close#}
+
+    {#header_open|Runtime Page Size#}
+    <p>Compile time known <code>std.mem.page_size</code> is removed, which is a
+    nonsensical concept since the page size is in fact runtime-known (sorry
+    about that), and replaces it with <code>std.heap.page_size_min</code> and
+    <code>std.heap.page_size_max</code> for comptime-known bounds of possible
+    page sizes. Uses of <code>std.mem.page_size</code> in pointer alignment
+    properties, such as in mmap, are migrated to
+    <code>std.heap.page_size_min</code>.</p> <p>In places where the page size
+    must be used, <code>std.heap.pageSize()</code> provides the answer. It will
+    return a comptime-known value if possible, otherwise querying the operating
+    system at runtime, and memoizing the result (atomically, of course). It
+    also has a <code>std.options</code> integration so the application
+    maintainer has the ability to override this behavior.</p>
+    <p>Notably, this fixes support for Linux running on Apple's new hardware,
+    such as <a href="https://asahilinux.org/">Asahi Linux</a>.</p>
+    {#header_close#}
+
+    {#header_open|Panic Interface#}
+    <a href="https://github.com/ziglang/zig/pull/22594">22594</a>
+    {#header_close#}
+
+    {#header_open|Transport Layer Security (std.crypto.tls)#}
+    <a href="https://github.com/ziglang/zig/pull/21872">#21872</a>
+    {#header_close#}
+
+    {#header_open|process.Child.collectOutput API Changed#}
+    <p>Upgrade guide:</p>
+    <pre>{#syntax#}
+var stdout = std.ArrayList(u8).init(allocator);
+defer stdout.deinit();
+var stderr = std.ArrayList(u8).init(allocator);
+defer stderr.deinit();
+
+try child.collectOutput(&stdout, &stderr, max_output_bytes);
+    {#endsyntax#}</pre>
+    <p>↓</p>
+    <pre>{#syntax#}
+var stdout: std.ArrayListUnmanaged(u8) = .empty;
+defer stdout.deinit(allocator);
+var stderr: std.ArrayListUnmanaged(u8) = .empty;
+defer stderr.deinit(allocator);
+
+try child.collectOutput(allocator, &stdout, &stderr, max_output_bytes);
+    {#endsyntax#}</pre>
+    <p>Before, {#syntax#}collectOutput{#endsyntax#} included a check to ensure that {#syntax#}stdout.allocator{#endsyntax#} was the same as {#syntax#}stderr.allocator{#endsyntax#}, which was necessary due to its internal implementation. However, comparing the {#syntax#}ptr{#endsyntax#} field of an {#syntax#}Allocator{#endsyntax#} interface can lead to illegal behavior, since {#syntax#}Allocator.ptr{#endsyntax#} is set to undefined in cases where the allocator implementation does not have any associated state ({#syntax#}page_allocator{#endsyntax#}, {#syntax#}c_allocator{#endsyntax#}, etc).</p>
+    <p>With this change, that unsafe {#syntax#}Allocator.ptr{#endsyntax#} comparison has been eliminated from {#syntax#}collectOutput{#endsyntax#} (and it was the only occurrence of such a comparison in the Zig codebase). Additionally, the documentation for the {#syntax#}ptr{#endsyntax#} field of both the {#syntax#}Allocator{#endsyntax#} and {#syntax#}Random{#endsyntax#} interfaces has been updated to mention that any comparison of those fields could lead to illegal behavior. In the future, this comparison <a href="https://github.com/ziglang/zig/issues/211">will become detectable illegal behavior</a>.</p>
+    {#header_close#}
+
+    {#header_open|LLVM Builder API#}
+    <p>
+      Zig is one of very few compilers that emit LLVM bitcode directly, rather than relying on
+      libLLVM which has an unstable API and is very large. This is part of our efforts toward
+      entirely eliminating the LLVM dependency from Zig
+      (<a href="https://github.com/ziglang/zig/issues/16270">#16270</a>). The Roc project recently
+      <a href="https://gist.github.com/rtfeldman/77fb430ee57b42f5f2ca973a3992532f">decided</a> to
+      rewrite their compiler in Zig, partly motivated by being able to reuse Zig's LLVM bitcode
+      builder. To make this even easier, we've decided to move the builder API to
+      <code>std.zig.llvm</code> for third-party projects to use. Do note that, as with everything
+      else in the <code>std.zig</code> namespace, this is an implementation detail of the Zig
+      compiler and is not necessarily subject to the same API stability and deprecation norms as the
+      rest of the standard library.
+    </p>
+    {#header_close#}
+
+    {#header_open|Embracing "Unmanaged"-Style Containers#}
+    <p><code>std.ArrayHashMap</code> is now deprecated and aliased to <code>std.ArrayHashMapWithAllocator</code>.</p>
+    <p>To upgrade, switch to <code>ArrayHashMapUnmanaged</code> which will entail updating callsites to pass an allocator to methods that need one. After Zig 0.14.0 is released, <code>std.ArrayHashMapWithAllocator</code> will be removed and <code>std.ArrayHashMapUnmanaged</code> will be a deprecated alias of <code>ArrayHashMap</code>. After Zig 0.15.0 is released, the deprecated alias <code>ArrayHashMapUnmanaged</code> will be removed.</p>
+    <p>This move comes from unanimous agreement among veteran Zig users who have converged on the "unmanaged" container variants. They act as better building blocks, avoiding storing the same data redundantly, and the presence/absence of the allocator parameter dovetails nicely with the reserve capacity / reserved insertion pattern.</p>
+    <p>The other "managed" container variants are also deprecated, such as <code>std.ArrayList</code>.</p>
+    <pre>{#syntax#}
+var list = std.ArrayList(i32).init(gpa);
+defer list.deinit();
+try list.append(1234);
+try list.ensureUnusedCapacity(1);
+list.appendAssumeCapacity(5678);
+    {#endsyntax#}</pre>
+    ⬇️
+    <pre>{#syntax#}
+const ArrayList = std.ArrayListUnmanaged;
+var list: std.ArrayList(i32) = .empty;
+defer list.deinit(gpa);
+try list.append(gpa, 1234);
+try list.ensureUnusedCapacity(gpa, 1);
+list.appendAssumeCapacity(5678);
+    {#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|List of Deprecations#}
+    <p>Deprecated aliases that are now compile errors:</p>
+    <ul>
+    <li><code>std.fs.MAX_PATH_BYTES</code> (renamed to <code>std.fs.max_path_bytes</code>)</li>
+    <li><code>std.mem.tokenize</code> (split into <code>tokenizeAny</code>, <code>tokenizeSequence</code>, <code>tokenizeScalar</code>)</li>
+    <li><code>std.mem.split</code> (split into <code>splitSequence</code>, <code>splitAny</code>, <code>splitScalar</code>)</li>
+    <li><code>std.mem.splitBackwards</code> (split into <code>splitBackwardsSequence</code>, <code>splitBackwardsAny</code>, <code>splitBackwardsScalar</code>)</li>
+    <li><code>std.unicode</code><ul>
+    <li><code>utf16leToUtf8Alloc</code>, <code>utf16leToUtf8AllocZ</code>, <code>utf16leToUtf8</code>, <code>fmtUtf16le</code> (all renamed to have capitalized <code>Le</code>)</li>
+    <li><code>utf8ToUtf16LeWithNull</code> (renamed to <code>utf8ToUtf16LeAllocZ</code>)</li>
+    </ul>
+    </li>
+    <li><code>std.zig.CrossTarget</code> (moved to <code>std.Target.Query</code>)</li>
+    <li>std.fs.Dir: Rename OpenDirOptions to OpenOptions</li>
+    <li><code>std.crypto.tls.max_cipertext_inner_record_len</code> renamed to <code>std.crypto.tls.max_ciphertext_inner_record_len</code></li>
+    </ul>
+    <p>Deprecated <code>lib/std/std.zig</code> decls were deleted instead of made a <code>@compileError</code> because the <code>refAllDecls</code> in the test block would trigger the <code>@compileError</code>. The deleted top-level <code>std</code> namespaces are:</p>
+    <ul>
+    <li><code>std.rand</code> (renamed to <code>std.Random</code>)</li>
+    <li><code>std.TailQueue</code> (renamed to <code>std.DoublyLinkedList</code>)</li>
+    <li><code>std.ChildProcess</code> (renamed/moved to <code>std.process.Child</code>)</li>
+    </ul>
+    <p>More deprecations:</p>
+    <ul>
+    <li>std.posix.iovec: use .base and .len instead of .iov_base and .iov_len</li>
+    <li><code>LockViolation</code> was added to <code>std.posix.ReadError</code>.  This error will occur if <code>std.os.windows.ReadFile</code> encounters <code>ERROR_LOCK_VIOLATION</code>.</li>
+    <li>{#syntax#}popOrNull{#endsyntax#} renamed to {#syntax#}pop{#endsyntax#} in all container types.</li>
+    </ul>
+    {#header_close#}
+    {#header_open|std.c Reorganization#}
+    <p>It is now composed of these main sections:</p>
+    <ul>
+    <li>Declarations that are shared among all operating systems.</li>
+    <li>Declarations that have the same name, but different type signatures depending on the operating system. Often multiple operating systems share the same type signatures however.</li>
+    <li>Declarations that are specific to a single operating system.<ul>
+    <li>These are imported one per line so you can see where they come from, protected by a comptime block inside the OS-specific file to prevent accessing the wrong one.</li>
+    </ul>
+    </li>
+    <li>A namespace called <code>private</code> at the bottom that is a bag of decls for logic above to pick and choose from.</li>
+    </ul>
+    <p>Closes <a href="https://github.com/ziglang/zig/issues/19352">#19352</a> by changing the convention for nonexisting symbols from {#syntax#}@compileError{#endsyntax#} to making types {#syntax#}void{#endsyntax#} and functions {#syntax#}{}{#endsyntax#}, so that it becomes possible to update {#syntax#}@hasDecl{#endsyntax#} sites to use {#syntax#}@TypeOf(f) != void{#endsyntax#} or {#syntax#}T != void{#endsyntax#}. Happily, this ended up removing some duplicate logic and update some bitrotted feature detection checks.</p>
+    <p>A handful of types have been modified to gain namespacing, type safety, and conform to field naming conventions. This is a breaking change.</p>
+    <p>With this, the last usage of {#syntax#}usingnamespace{#endsyntax#} site is eliminated from the standard library.</p>
+    {#header_close#}
+
+    {#header_open|Binary Search#}
+    <a href="https://github.com/ziglang/zig/pull/20927">#20927</a>
+    {#header_close#}
+
+    {#header_open|std.hash_map gains a rehash method#}
+    <p>Unordered hash maps currently have a nasty flaw: <a href="https://github.com/ziglang/zig/issues/17851">removals cause HashMaps to become slow</a>.</p>
+    <p>In the future, hash maps will be adjusted to not have this flaw, and this method will
+    be unceremoniously deleted.</p>
+    <p>Note that array hash maps do <em>not</em> have this flaw.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Build System#}
+    <p>Uncategorized changes:</p>
+    <ul>
+      <li>Report error on missing values for addConfigHeader</li>
+      <li>fix WriteFile and addCSourceFiles not adding LazyPath deps</li>
+      <li><strong>[Breaking]</strong> <code>Compile.installHeader</code> now takes a <code>LazyPath</code>.</li>
+      <li><strong>[Breaking]</strong> <code>Compile.installConfigHeader</code> has had its second argument removed and now uses the value of <code>include_path</code> as its sub path, for parity with <code>Module.addConfigHeader</code>. Use <code>artifact.installHeader(config_h.getOutput(), "foo.h")</code> if you want to set the sub path to something different.</li>
+      <li><strong>[Breaking]</strong> <code>Compile.installHeadersDirectory/installHeadersDirectoryOptions</code> have been consolidated into <code>Compile.installHeadersDirectory</code>, which takes a <code>LazyPath</code> and allows exclude/include filters just like <code>InstallDir</code>.</li>
+      <li><strong>[Breaking]</strong> <code>b.addInstallHeaderFile</code> now takes a <code>LazyPath</code>.</li>
+      <li><strong>[Breaking]</strong> As a workaround for <a href="https://github.com/ziglang/zig/issues/9698">#9698</a>, the generated <code>-femit-h</code> header is now never emitted even when the user specifies an override for <code>h_dir</code>. If you absolutely need the emitted header, you now need to do <code>install_artifact.emitted_h = artifact.getEmittedH()</code> until <code>-femit-h</code> is fixed.</li>
+      <li>added <code>WriteFile.addCopyDirectory</code>, which functions very similar to <code>InstallDir</code>.</li>
+      <li><code>InstallArtifact</code> has been updated to install the bundled headers alongide the artifact. The bundled headers are installed to the directory specified by <code>h_dir</code> (which is <code>zig-out/include</code> by default).</li>
+      <li>std.Build: Detect pkg-config names with "lib" prefix</li>
+      <li>fetch: add support for SHA-256 Git repositories</li>
+      <li>fetch: add executable detection for Mach-O file headers</li>
+      <li>Allow ConfigHeader values to be added outside of comptime</li>
+    </ul>
+
+    {#header_open|File System Watching#}
+<pre><code>  --watch                      Continuously rebuild when source files are modified
+  --debounce &lt;ms&gt;              Delay before rebuilding after changed file detected
+</code></pre>
+<p>Uses the build system&#39;s perfect knowledge of all file system inputs to the pipeline to keep the build runner alive after completion, watching the minimal number of directories in order to trigger re-running only the dirty steps from the graph.</p>
+<p>Default debounce time is 50ms but this is configurable. It helps prevent wasted rebuilds when source files are changed in rapid succession, for example when saving with vim it does not do an atomic rename into place but actually deletes the destination file before writing it again, causing a brief period of invalid state, which would cause a build failure without debouncing (it would be followed by a successful build, but it&#39;s annoying to experience the temporary build failure regardless).</p>
+<p>The purpose of this feature is to reduce latency between editing and debugging in the development cycle. In large projects, the cache system must call <code>fstat</code> on a large number of files even when it is a cache hit. File system watching allows more efficient detection of stale pipeline steps.</p>
+<p>Mainly this is motivated by {#link|Incremental Compilation#} landing soon, so that we can keep the compiler running and responding to source code changes as fast as possible. In this case, also keeping the rest of the build pipeline up-to-date is table stakes.</p>
+    {#header_close#}
+
+    {#header_open|New Package Hash Format#}
+    <p>Old hashes look like this: <code>1220115ff095a3c970cc90fce115294ba67d6fbc4927472dc856abc51e2a1a9364d7</code></p>
+    <p>New hashes look like this: <code>mime-3.0.0-zwmL-6wgAADuFwn7gr-_DAQDGJdIim94aDIPa6qO-6GT</code></p>
+    <p>Along with 200 bits of SHA-256, new hashes have the following additional data inside them:</p>
+    <ul>
+      <li>name</li>
+      <li>version</li>
+      <li>id component of the fingerprint</li>
+      <li>total unpacked size on disk</li>
+    </ul>
+    <p>This provides a better user experience when package hashes show up in compile errors or file paths, and
+    provides the data needed for implementing dependency tree management tooling. For instance, by knowing only the
+    package hashes of the entire dependency tree, it is now possible to know the total file size
+    on disk that will be required after all fetching is complete, as well as performing version selection,
+    <em>without doing any fetching</em>.</p>
+    <p>The file size can also be used as a heuristic when deciding whether to fetch lazy packages by default.</p>
+    <p>These benefits require some new rules that govern <code>build.zig.zon</code> files:</p>
+    <ul>
+      <li><code>name</code> and <code>version</code> are limited to 32 bytes.</li>
+      <li><code>name</code> must be a valid bare Zig-identifier. In the future, this restriction may be lifted;
+        a conservative rule was chosen for now.</li>
+    </ul>
+
+    <p><code>fingerprint</code> is an important concept to understand:</p>
+
+    <p>Together with <code>name</code>, this represents a globally unique package identifier. This
+    field is auto-initialized by the toolchain when the package is first created,
+    and then <em>never changes</em>. Despite the ecosystem being decentralized, this allows
+    Zig to unambiguously detect when one package is an updated version of
+    another.</p>
+    <p>When forking a Zig project, this fingerprint should be regenerated if the upstream
+    project is still maintained. Otherwise, the fork is <em>hostile</em>, attempting to
+    take control over the original project&#39;s identity. The fingerprint can be regenerated
+    by deleting the field and running <code>zig build</code>.</p>
+    <p>This 64-bit integer is the combination of a 32-bit id component and a 32-bit
+    checksum.</p>
+    <p>The id component within the fingerprint has these restrictions:</p>
+    <p><code>0x00000000</code> is reserved for legacy packages.</p>
+    <p><code>0xffffffff</code> is reserved to represent &quot;naked&quot; packages.</p>
+    <p>The checksum is computed from <code>name</code> and serves to protect Zig users from
+    accidental id collisions.</p>
+
+    <p>Version selection and related tooling that takes advantage of <code>fingerprint</code>
+    is not implemented yet.</p>
+
+    <p>Although the legacy hash format is still supported, this change breaks any packages
+    that do not already happen to follow the new package naming rules outlined above.
+    There is also a known bug: <a href="https://github.com/ziglang/zig/issues/23051">legacy packages are unnecessarily fetched</a>.
+    </p>
+    {#header_close#}
+
+    {#header_open|WriteFile Step#}
+<p>If you were using <code>WriteFile</code> for its ability to update source files, that functionality has been extracted into a separate step called <code>UpdateSourceFiles</code>. Everything else is the same, so migration looks like this:</p>
+<pre><code class="language-diff">-    const copy_zig_h = b.addWriteFiles();
++    const copy_zig_h = b.addUpdateSourceFiles();
+</code></pre>
+    {#header_close#}
+
+    {#header_open|RemoveDir Step#}
+<p>If you were using a <code>RemoveDir</code> step, it now takes a <code>LazyPath</code> instead of <code>[]const u8</code>. Probably your migration looks like this:</p>
+<pre><code class="language-diff">-        const cleanup = b.addRemoveDirTree(tmp_path);
++        const cleanup = b.addRemoveDirTree(.{ .cwd_relative = tmp_path });
+</code></pre>
+<p>However, please consider not choosing a temporary path at configure time as this is somewhat brittle when it comes to running your build pipeline concurrently.</p>
+    {#header_close#}
+
+    {#header_open|Fmt Step#}
+    <p>This step now prints file names that failed the format check.</p>
+    {#header_close#}
+
+    {#header_open|Creating Artifacts from Existing Modules#}
+<p>Zig 0.14.0 modifies the build system APIs for creating <code>Compile</code> steps, allowing them to be created from existing <code>std.Build.Module</code> objects. This allows for module graphs to be defined in a more clear manner, and for components of these graphs to be reused more easily; for instance, a module which exists as a dependency of another can easily have a corresponding test step created. The new APIs can be used by modifying your calls to <code>addExecutable</code>, <code>addTest</code>, etc. Instead of passing options like <code>root_source_file</code>, <code>target</code>, and <code>optimize</code> directly to these functions, you should pass in the <code>root_module</code> field a <code>*std.Build.Module</code> created using these parameters. Zig 0.14.0 still permits the old, deprecated usages for these functions; the next release will remove them.</p>
+<p>Users of the legacy APIs can upgrade with minimal effort by just moving the module-specific parts of their <code>addExecutable</code> (etc) call into a <code>createModule</code> call. For instance, here is the updated version of a simple build script:</p>
+<pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "hello",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    b.installArtifact(exe);
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "hello",
+        .root_module = b.createModule(.{ // this line was added
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }), // this line was added
+    });
+    b.installArtifact(exe);
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+<p>And, to demostrate the benefits of the new API, here is an example build script which elegantly constructs a complex build graph of multiple modules:</p>
+<pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    // First, we create our 3 modules.
+
+    const foo = b.createModule(.{
+        .root_source_file = b.path("src/foo.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const bar = b.createModule(.{
+        .root_source_file = b.path("src/bar.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const qux = b.createModule(.{
+        .root_source_file = b.path("src/qux.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    // Next, we set up all of their dependencies.
+
+    foo.addImport("bar", bar);
+    foo.addImport("qux", qux);
+    bar.addImport("qux", qux);
+    qux.addImport("bar", bar); // mutual recursion!
+
+    // Finally, we will create all of our `Compile` steps.
+    // `foo` will be the root of an executable, but all 3 modules also have unit tests we want to run.
+
+    const foo_exe = b.addExecutable(.{
+        .name = "foo",
+        .root_module = foo,
+    });
+
+    b.installArtifact(foo_exe);
+
+    const foo_test = b.addTest(.{
+        .name = "foo",
+        .root_module = foo,
+    });
+    const bar_test = b.addTest(.{
+        .name = "bar",
+        .root_module = bar,
+    });
+    const qux_test = b.addTest(.{
+        .name = "qux",
+        .root_module = qux,
+    });
+
+    const test_step = b.step("test", "Run all unit tests");
+    test_step.dependOn(&b.addRunArtifact(foo_test).step);
+    test_step.dependOn(&b.addRunArtifact(bar_test).step);
+    test_step.dependOn(&b.addRunArtifact(qux_test).step);
+}
+const std = @import("std");
+{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Allow Packages to Expose Arbitrary LazyPaths by Name#}
+    <p>In previous versions of Zig, packges could expose <em>artifacts</em>, <em>modules</em>, and <em>named <code>WriteFile</code> steps</em>. These can be exposed through <code>installArtifact</code>, <code>addModule</code>, and <code>addNamedWriteFiles</code> respectively, and can be accessed through methods on <code>std.Build.Dependency</code>. In addition to these, Zig 0.14.0 introduces the ability for packages for expose arbitrary <code>LazyPath</code>s. A dependency exposes them with <code>std.Build.addNamedLazyPath</code>, and a dependant package uses <code>std.Build.Dependency.namedLazyPath</code> to access them.</p>
+<p>One use case for this function is for a dependency to expose a generated file to its dependant package. For instance, in the following example, the dependency package <code>bar</code> exposes a generated Zig file which is used by the main package as a module import of an executable:</p>
+    <p>build.zig</p>
+    <pre>{#syntax#}
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+    const bar = b.dependency("bar", .{});
+    const exe = b.addExecutable(.{
+        .name = "main",
+        .root_source_file = b.path("main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("generated", bar.namedLazyPath("generated"));
+    b.installArtifact(exe);
+}
+    {#endsyntax#}</pre>
+
+    <p>bar/build.zig</p>
+    <pre>{#syntax#}
+pub fn build(b: *std.Build) {
+    const generator = b.addExecutable(.{
+        .name = "generator",
+        .root_source_file = b.path("generator.zig"),
+        .target = b.graph.host,
+        .optimize = .ReleaseSafe,
+    });
+    const run_gen = b.addRunArtifact(generator);
+    const generated_file = run_gen.addOutputFileArg("generated.zig");
+    b.addNamedLazyPath("generated", generated_file);
+}
+    {#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|addLibrary Function#}
+    <p>Acts as a replacement for <code>addSharedLibrary</code> and
+    <code>addStaticLibrary</code>, but linking mode can be changed more easily
+    in build.zig, for example:</p>
+
+    <p>In library:</p>
+    <pre>{#syntax#}
+const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode for a foo_bar library") orelse .static; // or other default
+    
+const lib = b.addLibrary(.{
+    .linkage = linkage,
+    .name = "foo_bar",
+    .root_module = mod,
+});
+    {#endsyntax#}</pre>
+
+    <p>In consumer:</p>
+    <pre>{#syntax#}
+const dep_foo_bar = b.dependency("foo_bar", .{
+    .target = target,
+    .optimize = optimize,
+    .linkage = .dynamic // or leave for default static
+});
+
+mod.linkLibrary(dep_foor_bar.artifact("foo_bar"));
+    {#endsyntax#}</pre>
+    <p>It also matches nicely with <code>linkLibrary</code> name.</p>
+
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Compiler#}
+    <p>Uncategorized changes:</p>
+    <ul>
+      <li><code>-fno-omit-frame-pointer</code> is now the default for ReleaseSmall on x86 targets</li>
+      <li>pipeline: spawn jobs earlier that produce linker inputs</li>
+    </ul>
+    {#header_open|Multithreaded Backend Support#}
+    <p>Some backends of the compiler, such as {#link|x86 Backend#}, now support running codegen
+    in a separate thread than the frontend. As a data point, this sped up the compiler building
+    itself on one computer from 12.8s to 8.57s.</p>
+    {#header_close#}
+
+    {#header_open|Incremental Compilation#}
+    <p>Although this feature is not ready to be enabled by default, it can be
+    opted into via the <code>-fincremental</code>
+    flag passed to <code>zig build</code>. It is recommended to be combined with {#link|File System Watching#},
+    since compiler state serialization is not implemented yet.</p>
+    <p>This feature has varying levels of completeness depending on which {#link|Linker#} backend is being used.
+    None of them are generally ready for use yet, however it works well combined with <code>-fno-emit-bin</code>.</p>
+    <p>Users are encouraged to create a build option for checking compile
+    errors only, and try out incremental compilation this way:</p>
+<pre>{#syntax#}
+const no_bin = b.option(bool, "no-bin", "skip emitting binary") orelse false;
+if (no_bin) {
+    b.getInstallStep().dependOn(&exe.step);
+} else {
+    b.installArtifact(exe);
+}
+{#endsyntax#}</pre>
+    <p>When working on a large refactor and want quick compile error feedback:</p>
+    <pre>
+$ zig build -Dno-bin -fincremental --watch
+Build Summary: 3/3 steps succeeded
+install success
+└─ zig build-exe zig Debug native success 14s
+   └─ options success
+Build Summary: 3/3 steps succeeded
+install success
+└─ zig build-exe zig Debug native success 63ms
+watching 119 directories, 1 processes
+    </pre>
+    <p>In the above example, it takes 14s to generate (no) compile errors for a half-million line codebase. However,
+    because we use <code>--watch</code> and <code>-fincremental</code>, after
+    making an edit and saving, it takes only 63ms to perform reanalysis of only
+    the changed code.</p>
+    <p>Users who invest in adding a <code>-Dno-bin</code> option to their build
+    scripts can enjoy a similar workflow. In the future, this will be able to
+    generate a fully working binary as well, which can be tested and debugged
+    like normal.</p>
+    <p>This feature is not yet compatible with {#syntax#}usingnamespace{#endsyntax#}.
+    Users are encouraged to avoid {#syntax#}usingnamespace{#endsyntax#} as much as possible.</p>
+    {#header_close#}
+
+    {#header_open|x86 Backend#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_2.svg" style="height: 16em; float: right">
+    <p>The x86 backend is now passing 1884/1923 (98%) of the behavior test
+    suite compared to the LLVM backend. Although it is not yet selected by
+    default, it is more often than not a better choice than LLVM backend
+    while developing, due to dramatically faster compilation speed, combined
+    with <a href="https://github.com/ziglang/zig/wiki/LLDB-for-Zig">better debugger support</a>.</p>
+    <p>This backend is nearing completion; it is expected to be selected by default for debug mode
+    early in the next release cycle. Users are encouraged to try it out in this
+    0.14.0 release. It can be selected with <code>-fno-llvm</code>,
+    or {#syntax#}use_llvm = false{#endsyntax#} in a build script.</p>
+    {#header_close#}
+
+    {#header_open|Import ZON#}
+    <p>ZON can now be imported at compile time:</p>
+
+    <pre>{#syntax#}
+const foo: Foo = @import("foo.zon");
+    {#endsyntax#}</pre>
+
+    <p>For the time being this requires a known result type, there are plans to lift this restriction in the future. For importing ZON at runtime see <a href="#ZON-Parsing-and-Serialization">ZON Parsing and Serialization</a>.</p>
+
+    {#header_close#}
+
+    {#header_open|tokenizer: simplification and spec conformance#}
+<p>I pointed a fuzzer at the tokenizer and it crashed immediately. Upon inspection, I was dissatisfied with the implementation. This commit removes several mechanisms:</p>
+<ul>
+<li>Removes the "invalid byte" compile error note.</li>
+<li>Dramatically simplifies tokenizer recovery by making recovery always occur at newlines, and never otherwise.</li>
+<li>Removes UTF-8 validation.</li>
+<li>Moves some character validation logic to <code>std.zig.parseCharLiteral</code>.</li>
+</ul>
+<p>Removing UTF-8 validation is a regression of <a href="https://github.com/ziglang/zig/issues/663">#663</a>, however, the existing implementation was already buggy. When adding this functionality back, it must be fuzz-tested while checking the property that it matches an independent Unicode validation implementation on the same file. While we&#39;re at it, fuzzing should check the other properties of that proposal, such as no ASCII control characters existing inside the source code, <code>\r</code> always followed by <code>\n</code>, etc.</p>
+<p>Other changes included in this commit:</p>
+<ul>
+<li>Deprecate <code>std.unicode.utf8Decode</code> and its WTF-8 counterpart. This function has an awkward API that is too easy to misuse.</li>
+<li>Make <code>utf8Decode2</code> and friends use arrays as parameters, eliminating a runtime assertion in favor of using the type system.</li>
+</ul>
+<p>After this commit, the crash found by fuzzing, which was <code>"\x07\xd5\x80\xc3=o\xda|a\xfc{\x9a\xec\x91\xdf\x0f\\\x1a^\xbe;\x8c\xbf\xee\xea"</code> no longer causes a crash. However, I did not feel the need to add this test case because the simplified logic eradicates crashes of this nature.</p>
+<pre>Benchmark 1 (100 runs): before/zig ast-check /home/andy/dev/zig/src/Sema.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          50.0ms ± 2.04ms    48.7ms … 57.4ms         14 (14%)        0%
+  peak_rss           60.0MB ±  147KB    59.4MB … 60.2MB          3 ( 3%)        0%
+  cpu_cycles          232M  ±  745K      230M  …  234M           3 ( 3%)        0%
+  instructions        522M  ± 24.3       522M  …  522M           1 ( 1%)        0%
+  cache_references   6.55M  ±  120K     6.39M  … 7.45M           2 ( 2%)        0%
+  cache_misses        205K  ± 3.47K      198K  …  215K           1 ( 1%)        0%
+  branch_misses      2.86M  ± 10.3K     2.80M  … 2.87M           9 ( 9%)        0%
+Benchmark 2 (104 runs): after/zig ast-check /home/andy/dev/zig/src/Sema.zig
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          48.3ms ±  250us    48.1ms … 50.0ms         10 (10%)        ⚡-  3.3% ±  0.8%
+  peak_rss           62.4MB ±  142KB    62.1MB … 62.6MB          0 ( 0%)        💩+  4.1% ±  0.1%
+  cpu_cycles          227M  ±  637K      226M  …  230M           7 ( 7%)        ⚡-  1.9% ±  0.1%
+  instructions        501M  ± 44.8       501M  …  501M           7 ( 7%)        ⚡-  4.0% ±  0.0%
+  cache_references   6.65M  ±  141K     6.45M  … 7.67M           4 ( 4%)          +  1.5% ±  0.5%
+  cache_misses        208K  ± 3.79K      201K  …  226K           3 ( 3%)          +  1.3% ±  0.5%
+  branch_misses      2.84M  ± 8.62K     2.81M  … 2.86M           1 ( 1%)          -  0.4% ±  0.1%</pre>
+<p>I also noticed that the tokenizer did not conform to <a href="https://github.com/ziglang/zig-spec/issues/38">https://github.com/ziglang/zig-spec/issues/38</a> so I fixed it.</p>
+    {#header_close#}
+
+    {#header_open|Include Error Trace in All Functions#}
+    <a href="https://github.com/ziglang/zig/pull/22572">#22572</a>
+    {#header_close#}
+
+    {#header_close#}
+
+    {#header_open|Linker#}
+    {#header_open|Move Input File Parsing to the Frontend#}
+    <p>Moves GNU ld script processing to the frontend to join the relevant library lookup logic, making the libraries within subject to the same search criteria as all the other libraries.</p>
+    <p>This change is necessary so that the compiler has knowledge of all linker inputs at the start of compilation, so that linking and compilation can begin at the same time. Finding out about linker inputs during flush() is too late. This branch fully removes <code>lib_dirs</code> from being passed to the ELF linking code.</p>
+    <p>This unfortunately means doing file system access on all .so files when targeting ELF to determine if they are linker scripts, so I introduced an opt-in CLI flag to enable .so scripts. When a GNU ld script is encountered, the error message instructs users about the CLI flag that will immediately solve their problem, which is passing <code>-fallow-so-scripts</code> to <code>zig build</code>. This means that users who don&#39;t have funky libraries, or at least avoid linking against them, don&#39;t have to pay the cost of these file system accesses.</p>
+    <p>All object file, archive, and shared object file parsing now happens during the parallel compilation pipeline rather than bottlenecking at the end.</p>
+    <p>This is a step towards {#link|Incremental Compilation#}.</p>
+    {#header_close#}
+
+    {#header_open|Wasm Linker Rewritten#}
+    <p>The goals of this rewrite were:</p>
+    <ul>
+    <li>compile faster when using the wasm linker and backend</li>
+    <li>enable saving compiler state by directly copying in-memory linker state to disk.</li>
+    <li>more efficient compiler memory utilization</li>
+    <li>introduce integer type safety to wasm linker code</li>
+    <li>generate better WebAssembly code</li>
+    <li>fully participate in {#link|Incremental Compilation#}</li>
+    <li>do as much work as possible in the compiler pipeline rather than
+    bottlenecking at the end, while continuing to do garbage collection.</li>
+    <li>avoid unnecessary heap allocations</li>
+    <li>avoid unnecessary indirect function calls</li>
+    </ul>
+    <p>All of these goals were accomplished. Demos and performance data points are available
+    in <a href="https://github.com/ziglang/zig/pull/22220">the writeup</a>.
+    <p>Although it is passing the same test suite from before, the linker is not finished yet,
+    not enabled by default yet, and therefore does not eliminate the dependency on LLD.</p>
+    {#header_close#}
+
+    {#header_close#}
+
+
+    {#header_open|Fuzzer#}
+    <p>Zig 0.14.0 ships with an integrated fuzzer. It is alpha quality status, which means that
+    using it requires participating in the development process.</p>
+
+    <p>Adds a <code>--fuzz</code> CLI option to the build runner. When this is used it rebuilds any unit test binaries which contained at least one fuzz test with <code>-ffuzz</code> and then tells it to start fuzzing, which does in-process fuzzing.</p>
+
+<p>This contains only a rudimentary implementation of fuzzer logic, really just some early, early experiments, but already it makes this test case fail in 65 milliseconds on my machine:</p>
+    <pre>{#syntax#}
+fn findSecret(context: []const u8, input: []const u8) !void {
+    if (std.mem.eql(u8, context, input))
+        return error.FoundSecretString;
+}
+test "fuzz example" {
+    try std.testing.fuzz(@as([]const u8, "canyoufindme"), findSecret, .{});
+}
+const std = @import("std");
+    {#endsyntax#}</pre>
+
+    <p>The <code>--fuzz</code> flag causes the build system to spawn an HTTP
+    server that provides a fuzzer web UI, which shows live-updating code coverage
+    as the fuzzer explores different inputs.</p>
+
+    <pre>$ zig build test --fuzz
+info: web interface listening at http://127.0.0.1:38239/
+info: hint: pass --port 38239 to use this same port next time
+[0/1] Fuzzing
+└─ foo.bar.example</pre>
+
+
+<p><a href="https://asciinema.org/a/asgN7rIr6LFeMhQMOXI825wGe">asciinema demo</a></p>
+<p><a href="https://github.com/ziglang/zig/pull/20958">video demo and screenshots</a></p>
+    {#header_close#}
+
+
+    {#header_open|Bug Fixes#}
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.14.0">Full list of the 416 bug reports closed during this release cycle</a>.</p>
+    <p>Many bugs were both introduced and resolved within this release cycle.
+    Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+
+    {#header_open|This Release Contains Bugs#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
+    <p>
+    Zig has
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>,
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Amiscompilation">miscompilations</a>, and
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Aregression">regressions</a>.
+    </p>
+    <p>Even with Zig 0.14.0, working on a non-trivial project using Zig may
+    require participating in the development process.</p>
+    <p>When Zig reaches 1.0.0, {#link|Tier 1#} support will gain a bug policy as an additional
+    requirement.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Toolchain#}
+    {#header_open|UBSan Runtime#}
+    <p>Zig now provides a runtime library for
+    <a href="https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html">UBSan</a>,
+    which is enabled by default when compiling in <code>Debug</code> mode.</p>
+    <p>In summary, by default, when Undefined Behavior is triggered in C code, it looks like this now:</p>
+    <pre><code>$ zig run test.c -lc
+thread 208135 panic: signed integer overflow: 2147483647 + 2147483647 cannot be represented in type 'int'
+/home/david/Code/zig/build/test.c:4:14: 0x1013e41 in foo (test.c)
+    return x + y;
+             ^
+/home/david/Code/zig/build/test.c:8:18: 0x1013e63 in main (test.c)
+    int result = foo(0x7fffffff, 0x7fffffff);
+                 ^
+../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7fca4c42e1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+../csu/libc-start.c:360:3: 0x7fca4c42e28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+???:?:?: 0x1013de4 in ??? (???)
+???:?:?: 0x0 in ??? (???)
+fish: Job 1, 'zig run test.c -lc' terminated by signal SIGABRT (Abort)</code></pre>
+    <p>If the default does not correctly detect whether the runtime library
+    should be omitted or included, it can be overridden with
+    <code>-fno-ubsan-rt</code> and <code>-fubsan-rt</code>, respectively.
+    <a href="https://github.com/ziglang/zig/issues/23052">Tracking issue for enhanced default detection</a>.
+    <p><a href="/devlog/2025/#2025-02-24">devlog entry</a></p>
+    {#header_close#}
+
+    {#header_open|compiler_rt#}
+    {#header_open|Optimized memcpy#}
+    <p><a href="https://github.com/ziglang/zig/pull/18912">#18912</a></a>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|LLVM 19#}
+    <p>
+      This release of Zig upgrades to
+      <a href="https://releases.llvm.org/19.1.0/docs/ReleaseNotes.html">LLVM 19.1.7</a>. This
+      covers Clang (<code>zig cc</code>/<code>zig c++</code>), libc++, libc++abi, libunwind, and
+      libtsan well.
+    </p>
+    {#header_close#}
+
+    {#header_open|musl 1.2.5#}
+    <p>
+    Zig ships with the source code to <a href="http://musl.libc.org/">musl</a>.
+    When the musl C ABI is selected, Zig builds static musl from source for the selected target.
+    Zig also supports targeting dynamically linked musl which is useful for Linux distributions
+    that use it as their system libc, such as
+    <a href="https://www.alpinelinux.org/">Alpine Linux</a>.
+    </p>
+    <p>
+    This release keeps v1.2.5, however:
+    </p>
+    <ul>
+      <li>Applies Rich Felker's <a href="https://www.openwall.com/lists/oss-security/2025/02/13/2">CVE-2025-26519 mitigation patches</a>.</li>
+      <li>Applies a number of target-specific patches that are in the process of being upstreamed.</li>
+      <li>Updates the list of libc stub symbols made available when linking dynamically.</li>
+      <li>Fixes a stack overflow in some special libc functions such as <code>fma</code> on soft float targets.</li>
+    </ul>
+    <p>Additionally, Zig <a href="https://github.com/ziglang/zig/pull/22513">no longer ships musl's memcpy files</a>.
+    Instead, Zig provides {#link|Optimized memcpy#}.</p>
+    {#header_close#}
+
+    {#header_open|glibc 2.41#}
+    <p>
+      glibc versions 2.40 and 2.41 are now available when cross-compiling.
+    </p>
+    <p>Some notable fixes:</p>
+    <ul>
+      <li>
+        Fixed Zig-built executables not defining <code>_IO_stdin_used</code>, rendering them
+        unusable on several targets.
+      </li>
+      <li>
+        Fixed an edge case leading to duplicate stub symbols for certain targets, e.g.
+        <code>lgammal</code> on powerpc and s390x.
+      </li>
+      <li>
+        Changed stub symbols to not all have the same address. This caused LLVM to merge them on
+        some targets, resulting in very broken code.
+      </li>
+      <li>
+        Applied a workaround for an LLVM bug causing <code>j $ra</code> to be assembled incorrectly
+        when targeting mips r6.
+      </li>
+      <li>
+        Applied a workaround for missing syntax support in LLVM's s390x assembler.
+      </li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Linux 6.13.4 Headers#}
+    <p>This release includes Linux kernel headers for version 6.13.4.</p>
+    {#header_close#}
+
+    {#header_open|Darwin libSystem 15.1#}
+    <p>This release includes Darwin libSystem symbols for Xcode SDK version 15.1.</p>
+    {#header_close#}
+
+    {#header_open|MinGW-w64#}
+    <p>
+      This release bumps the bundled MinGW-w64 copy to commit
+      <code>3839e21b08807479a31d5a9764666f82ae2f0356</code>.
+    </p>
+    <p>Additional changes:</p>
+    <ul>
+      <li>Zig now bundles the winpthreads library.</li>
+      <li>Zig now supports cross-compiling for <code>thumb-windows-gnu</code>.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|wasi-libc#}
+    <p>
+      This release bumps the bundled wasi-libc copy to commit
+      <code>d03829489904d38c624f6de9983190f1e5e7c9c5</code>.
+    </p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Roadmap#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_8.svg" style="height: 12em; float: right; transform: scaleX(-1)">
+
+    <p>The major theme of the 0.15.0 release cycle will be <strong>compilation speed</strong>.</p>
+    <p>Some upcoming milestones we will be working towards:</p>
+    <ul>
+      <li>Making the x86 Backend the default backend for debug mode.</li>
+      <li>Enhance {#link|Linker#} implementations, eliminating dependency on
+      <a href="https://lld.llvm.org/">LLD</a> and supporting {#link|Incremental Compilation#}.</li>
+      <li>Enhance the integrated {#link|Fuzzer#} to be competitive with AFL and other state-of-the-art fuzzers.</li>
+    </ul>
+    <p>The idea here is that prioritizing faster compilation will increase
+    development velocity on the {#link|Compiler#} itself, leading to more bugs
+    fixed and features completed in the following release cycles.</p>
+    <p>It also could potentially lead to {#link|Language Changes#} that unblock fast compilation.</p>
+    {#header_close#}
+
+    {#header_open|Thank You Contributors!#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em; float: right">
+    <p>Here are all the people who landed at least one contribution into this release:</p>
+    <ul style="columns: 3">
+<li>Alex Rønne Petersen</li>
+<li>Andrew Kelley</li>
+<li>Matthew Lugg</li>
+<li>Jakub Konka</li>
+<li>Jacob Young</li>
+<li>David Rubin</li>
+<li>Robin Voetter</li>
+<li>Linus Groh</li>
+<li>Frank Denis</li>
+<li>Ryan Liptak</li>
+<li>Evan Haas</li>
+<li>Pavel Verigo</li>
+<li>Krzysztof Wolicki</li>
+<li>Meghan Denny</li>
+<li>Ali Cheraghi</li>
+<li>Casey Banner</li>
+<li>YANG Xudong</li>
+<li>Michael Dusan</li>
+<li>Techatrix</li>
+<li>Ian Johnson</li>
+<li>John Benediktsson</li>
+<li>Will Lillis</li>
+<li>87flowers</li>
+<li>Dominic</li>
+<li>Eric Joldasov</li>
+<li>Pat Tullmann</li>
+<li>Patrick Wickenhaeuser</li>
+<li>Tau</li>
+<li>Wooster</li>
+<li>Igor Anić</li>
+<li>Loris Cro</li>
+<li>Alex Kladov</li>
+<li>Hugo Beauzée-Luyssen</li>
+<li>Isaac Freund</li>
+<li>Jonathan Marler</li>
+<li>Jarrod Meyer</li>
+<li>Marc Tiehuis</li>
+<li>Veikka Tuominen</li>
+<li>antlilja</li>
+<li>xdBronch</li>
+<li>Carter Snook</li>
+<li>Daniel Hooper</li>
+<li>Fri3dNstuff</li>
+<li>Jens Goldberg</li>
+<li>Lucas Santos</li>
+<li>Michael Bradshaw</li>
+<li>Shun Sakai</li>
+<li>Tw</li>
+<li>Xavier Bouchoux</li>
+<li>achan1989</li>
+<li>clickingbuttons</li>
+<li>mochalins</li>
+<li>Carl Åstholm</li>
+<li>Chris Boesch</li>
+<li>Constantin Bilz</li>
+<li>Jan200101</li>
+<li>Jari Vetoniemi</li>
+<li>Jay Petacat</li>
+<li>Jeremy Hertel</li>
+<li>Josh Wolfe</li>
+<li>Justin Braben</li>
+<li>Maciej 'vesim' Kuliński</li>
+<li>Nico Elbers</li>
+<li>Parzival-3141</li>
+<li>Sashko</li>
+<li>andrewkraevskii</li>
+<li>gooncreeper</li>
+<li>nikneym</li>
+<li>rpkak</li>
+<li>saurabh</li>
+<li>schtvn</li>
+<li>Adheesh Wadkar</li>
+<li>Aikawa Yataro</li>
+<li>Benjamin Thompson</li>
+<li>Bogdan Romanyuk</li>
+<li>Des-Nerger</li>
+<li>Felix "xq" Queißner</li>
+<li>Francesco Alemanno</li>
+<li>Gabriel Borrelli</li>
+<li>GalaxyShard</li>
+<li>JonathanHallstrom</li>
+<li>Karol Kosek</li>
+<li>Ketan Reynolds</li>
+<li>Liam Swayne</li>
+<li>Luuk de Gram</li>
+<li>Mario Nachbaur</li>
+<li>Mason Remaley</li>
+<li>Nguyễn Gia Phong</li>
+<li>PauloCampana</li>
+<li>Pierre Tachoire</li>
+<li>Reuben Dunnington</li>
+<li>Scott Redig</li>
+<li>Stephen Gregoratto</li>
+<li>Travis Lange</li>
+<li>Travis Staloch</li>
+<li>Tristan Ross</li>
+<li>Yusuf Bham</li>
+<li>axel escalada</li>
+<li>bilaliscarioth</li>
+<li>gooncreeper</li>
+<li>ippsav</li>
+<li>kj4tmp</li>
+<li>pfg</li>
+<li>poypoyan</li>
+<li>rohlem</li>
+<li>sobolevn</li>
+<li>thejohnny5</li>
+<li>xtex</li>
+<li>87</li>
+<li>Alec Fessler</li>
+<li>Alex Ambrose</li>
+<li>Aman Karmani</li>
+<li>Anders Bondehagen</li>
+<li>Andrew Barchuk</li>
+<li>Archbirdplus</li>
+<li>Archit Gupta</li>
+<li>Arwalk</li>
+<li>Ben Grant</li>
+<li>Benjamin</li>
+<li>Benjamin Hetz</li>
+<li>Bing Sun</li>
+<li>Bingwu Zhang</li>
+<li>Bob Farrell</li>
+<li>Brad Olson</li>
+<li>Bram</li>
+<li>Brian Cain</li>
+<li>Brook Jeynes</li>
+<li>Bruno Franca dos Reis</li>
+<li>Bruno Reis</li>
+<li>Bryce Vandegrift</li>
+<li>Cheng Sheng</li>
+<li>Chris Covington</li>
+<li>Christian Fillion</li>
+<li>CrazyboyQCD</li>
+<li>Daniel Berg</li>
+<li>Devin J. Pohly</li>
+<li>Don</li>
+<li>DravenK</li>
+<li>Ekin Dursun</li>
+<li>Enrique Miguel Mora Meza</li>
+<li>Eric Petersen</li>
+<li>Erik Arvstedt</li>
+<li>Eugene-Dash</li>
+<li>ExeVirus</li>
+<li>Fabio Arnold</li>
+<li>Fausto Ribeiro</li>
+<li>Federico Di Pierro</li>
+<li>Forest</li>
+<li>Frank Plowman</li>
+<li>Gabor Lekeny</li>
+<li>Gordon Cassie</li>
+<li>Guillaume Wenzek</li>
+<li>Harrison McCarty</li>
+<li>Hayden Riddiford</li>
+<li>Hila Friedman</li>
+<li>Igor Stojković</li>
+<li>Ilia Choly</li>
+<li>InKryption</li>
+<li>Jakub Dóka</li>
+<li>Jan Hendrik Farr</li>
+<li>Jean-Baptiste "Jiboo" Lepesme</li>
+<li>Jeffrey C. Ollie</li>
+<li>Jesse Wattenbarger</li>
+<li>Jonathan Hallstrom</li>
+<li>Jora Troosh</li>
+<li>José M Rico</li>
+<li>Juan Julián Merelo Guervós</li>
+<li>Julian Noble</li>
+<li>Julian Vesper</li>
+<li>KNnut</li>
+<li>Kamil T</li>
+<li>Karim Mk</li>
+<li>Kiëd Llaentenn</li>
+<li>Kouosi Takayama</li>
+<li>Kyle Schwarz</li>
+<li>L zard</li>
+<li>LiterallyVoid</li>
+<li>LmanTW</li>
+<li>Manuel Spagnolo</li>
+<li>Mark Rushakoff</li>
+<li>Matthew Ettler</li>
+<li>Meili C</li>
+<li>Michael Lynch</li>
+<li>Michael Ortmann</li>
+<li>Michał Drozd</li>
+<li>Misaki Kasumi</li>
+<li>Mohanavel S K</li>
+<li>MrDmitry</li>
+<li>Nameless</li>
+<li>Nelson Crosby</li>
+<li>Nikita</li>
+<li>PauloCampana</li>
+<li>Peng Guanwen</li>
+<li>Prokop Randáček</li>
+<li>Raed Rizqie</li>
+<li>Rafael Batiati</li>
+<li>Rich Remer</li>
+<li>Rohan Vashisht</li>
+<li>Roman Frołow</li>
+<li>Rui He</li>
+<li>Ryan G</li>
+<li>Ryan Sepassi</li>
+<li>Sammy James</li>
+<li>Samuel Fiedler</li>
+<li>Sean</li>
+<li>Shane Peelar</li>
+<li>Shawn Gao</li>
+<li>Simon Ekström</li>
+<li>T</li>
+<li>Tangtang Zhou</li>
+<li>ThisPC</li>
+<li>Vahur Sinijärv</li>
+<li>Vesim</li>
+<li>Wayne Wu</li>
+<li>Wyatt Radkiewicz</li>
+<li>bing</li>
+<li>bsubei</li>
+<li>cancername</li>
+<li>cdeler</li>
+<li>cheme</li>
+<li>cryptocode</li>
+<li>curuvar</li>
+<li>dave caruso</li>
+<li>dbubel</li>
+<li>eric-saintetienne</li>
+<li>expikr</li>
+<li>fdfdjfk3</li>
+<li>fmaggi</li>
+<li>fn ⌃ ⌥</li>
+<li>gabeuehlein</li>
+<li>gbaraldi</li>
+<li>geemili</li>
+<li>injuly</li>
+<li>ippsav</li>
+<li>isaac yonemoto</li>
+<li>llogick</li>
+<li>matt</li>
+<li>matt ettler</li>
+<li>max</li>
+<li>melonedo</li>
+<li>nobkd</li>
+<li>pseudoc</li>
+<li>reokodoku</li>
+<li>saccharin</li>
+<li>sidharta</li>
+<li>sin-ack</li>
+<li>snoire</li>
+<li>ssmid</li>
+<li>tgschultz</li>
+<li>zhylmzr</li>
+<li>ziggoon</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Thank You Sponsors!#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 11em">
+    <p>
+    Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
+    Because of recurring donations, Zig is driven by the open source community, rather
+    than the goal of making profit. In particular, these fine folks sponsor Zig
+    for $50/month or more:
+    </p>
+    <ul style="columns: 3">
+<li><a href="https://github.com/thejoshwolfe" rel="nofollow noopener" target="_blank" class="external-link">Josh Wolfe</a></li>
+<li><a href="https://mattnite.net" rel="nofollow noopener" target="_blank" class="external-link">Matt Knight</a></li>
+<li><a href="https://www.hryx.net/" rel="nofollow noopener" target="_blank" class="external-link">Stevie Hryciw</a></li>
+<li><a href="https://jethron.id.au" rel="nofollow noopener" target="_blank" class="external-link">Jethro Nederhof</a></li>
+<li><a href="https://hachyderm.io/@karrick" rel="nofollow noopener" target="_blank" class="external-link">Karrick McDermott</a></li>
+<li><a href="https://www.kapricornmedia.com" rel="nofollow noopener" target="_blank" class="external-link">José M Rico</a></li>
+<li><a href="https://github.com/drfuchs" rel="nofollow noopener" target="_blank" class="external-link">drfuchs</a></li>
+<li><a href="https://github.com/tigerbeetle/tigerbeetle" rel="nofollow noopener" target="_blank" class="external-link">Joran Dirk Greef</a></li>
+<li><a href="https://github.com/rui314" rel="nofollow noopener" target="_blank" class="external-link">Rui Ueyama</a></li>
+<li><a href="https://github.com/bfredl" rel="nofollow noopener" target="_blank" class="external-link">bfredl</a></li>
+<li><a href="https://codeberg.org/tauoverpi/" rel="nofollow noopener" target="_blank" class="external-link">Simon A. Nielsen Knights</a></li>
+<li><a href="https://emidoots.com" rel="nofollow noopener" target="_blank" class="external-link">Emi</a></li>
+<li><a href="https://derekcollison.net" rel="nofollow noopener" target="_blank" class="external-link">Derek Collison</a></li>
+<li><a href="https://github.com/jmc-88" rel="nofollow noopener" target="_blank" class="external-link">Daniele Cocca</a></li>
+<li><a href="https://twitter.com/rbatiati" rel="nofollow noopener" target="_blank" class="external-link">Rafael Batiati</a></li>
+<li><a href="https://aras-p.info" rel="nofollow noopener" target="_blank" class="external-link">Aras Pranckevičius</a></li>
+<li><a href="https://terinstock.com" rel="nofollow noopener" target="_blank" class="external-link">Terin Stock</a></li>
+<li><a href="https://kalvad.com" rel="nofollow noopener" target="_blank" class="external-link">Loïc Tosser</a></li>
+<li><a href="https://scheibo.com" rel="nofollow noopener" target="_blank" class="external-link">Kirk Scheibelhut</a></li>
+<li><a href="https://github.com/briangold" rel="nofollow noopener" target="_blank" class="external-link">Brian Gold</a></li>
+<li><a href="https://github.com/phrrngtn" rel="nofollow noopener" target="_blank" class="external-link">Paul Harrington</a></li>
+<li><a href="https://github.com/cgaebel" rel="nofollow noopener" target="_blank" class="external-link">Clark Gaebel</a></li>
+<li><a href="https://bun.sh/" rel="nofollow noopener" target="_blank" class="external-link">Bun</a></li>
+<li><a href="https://www.marcus.art/" rel="nofollow noopener" target="_blank" class="external-link">Marcus Eagan</a></li>
+<li><a href="https://www.chilton-consulting.com" rel="nofollow noopener" target="_blank" class="external-link">Ken Chilton</a></li>
+<li><a href="https://twitter.com/_willmanning" rel="nofollow noopener" target="_blank" class="external-link">Will Manning</a></li>
+<li><a href="https://spiraldb.com" rel="nofollow noopener" target="_blank" class="external-link">Spiral</a></li>
+<li><a href="https://mack.work" rel="nofollow noopener" target="_blank" class="external-link">Alex Mackenzie at Tapestry VC</a></li>
+<li><a href="https://github.com/slonik-az" rel="nofollow noopener" target="_blank" class="external-link">Leo Razoumov</a></li>
+<li><a href="http://www.parlikar.com" rel="nofollow noopener" target="_blank" class="external-link">Alok Parlikar</a></li>
+<li><a href="https://www.horster.org" rel="nofollow noopener" target="_blank" class="external-link">Viktor Tratsevskyy</a></li>
+<li><a href="https://huly.io" rel="nofollow noopener" target="_blank" class="external-link">Huly® Platform™</a></li>
+<li><a href="https://keygen.sh" rel="nofollow noopener" target="_blank" class="external-link">Keygen</a></li>
+<li>Reuben Dunnington</li>
+<li>Isaac Yonemoto</li>
+<li>Auguste Rame</li>
+<li>Jay Petacat</li>
+<li>Dirk de Visser</li>
+<li>Santiago Andaluz</li>
+<li>Andrew Mangogna</li>
+<li>Yaroslav Zhavoronkov</li>
+<li>Chris Heyes</li>
+<li>James McGill</li>
+<li>Luke Champine</li>
+<li>AG.王爱国</li>
+<li>Wojtek Mach</li>
+<li>Daniel Hensley</li>
+<li>Erik Mållberg</li>
+<li>Christopher Dolan</li>
+<li>Fabio Arnold</li>
+<li>Ross Rheingans-Yoo</li>
+<li>Justin "J.R." Hill</li>
+<li>🇺🇦 Mykhailo Tsiuptsiun</li>
+<li>Kiril Mihaylov</li>
+<li>Brett Slatkin</li>
+<li>Sean Carey</li>
+<li>Yurii Rashkovskii</li>
+<li>OM PropTech GmbH</li>
+<li>Lucas</li>
+<li>Alex Sergeev</li>
+<li>Josh Ashby</li>
+<li>Chris Baldwin</li>
+<li>Malcolm Still</li>
+<li>Francis Bouvier</li>
+<li>Nathan Bourgeois</li>
+<li>Fawzi Mohamed</li>
+<li>Ian Johnson</li>
+<li>Carlos Pizano Uribe</li>
+<li>Anita SV</li>
+<li>Rene Schallner</li>
+<li>Jinkyu Yi</li>
+<li>Jake Hemmerle</li>
+<li>Will Pragnell</li>
+<li>Peter Snelgrove</li>
+<li>Jeff Fowler</li>
+<li>Christian Gibson</li>
+<li>Kohei Nozaki</li>
+<li>Dylan Conway</li>
+<li>Hlib Kanunnikov</li>
+<li>Miguel Filipe</li>
+<li>merkleplant</li>
+<li>Duncan Marsh</li>
+<li>Nikolay Govorov</li>
+<li>Roast Beef Kazenzakis</li>
+<li>Willian Hasse</li>
+<li>daily.dev</li>
+<li>Sonic</li>
+<li>Matteo De Wint</li>
+<li>FumingPower</li>
+<li>Matteias Collet</li>
+<li>smallkirby</li>
+<li>Stefan Hagen</li>
+<li>Miles J McGruder</li>
+<li>Álvaro Justen</li>
+<li>Laaman03</li>
+<li>Paul Horn</li>
+    </ul>
+    {#header_close#}
+    </div>
+  </body>
+</html>
