@@ -50,7 +50,7 @@ pub fn build(b: *std.Build) void {
     }
 
     var build_assets = std.ArrayList(zine.BuildAsset).init(b.allocator);
-    runZigScripts(b, &build_assets, "assets/zig-code", &.{
+    runZigScripts(b, &build_assets, "zig-code", &.{
         "index.zig",
 
         "samples/hello-world.zig",
@@ -127,95 +127,11 @@ pub fn build(b: *std.Build) void {
         "features/26-build.zig",
     });
 
-    zine.multilingualWebsite(b, .{
-        .debug = true,
-        .host_url = "https://ziglang.org",
-        .i18n_dir_path = "i18n",
-        .layouts_dir_path = "layouts",
-        .assets_dir_path = "assets",
-        .build_assets = build_assets.items,
-        .static_assets = &.{
-            ".well-known/funding-manifest-urls",
-            "funding.json",
+    const website = zine.website(b, .{ .build_assets = build_assets.items });
+    b.getInstallStep().dependOn(&website.step);
 
-            "external-link-dark.svg",
-            "external-link-light.svg",
-            "heart.svg",
-            "zig-logo-dark.svg",
-            "zig-logo-light.svg",
-            "zig-performance-logo-dark.svg",
-            "zig-performance-logo-light.svg",
-
-            "sponsors/Blacksmith_Logo-Black.svg",
-            "sponsors/Blacksmith_Logo-White.svg",
-            "sponsors/coil-logo-black.svg",
-            "sponsors/coil-logo-white.svg",
-            "sponsors/dropbox.png",
-            "sponsors/lavatech.png",
-            "sponsors/pex-dark.svg",
-            "sponsors/pex-white.svg",
-            "sponsors/scaleway.png",
-            "sponsors/shiguredo-logo-dark.svg",
-            "sponsors/shiguredo-logo-light.svg",
-            "sponsors/tb-logo-black.png",
-            "sponsors/tb-logo-white.png",
-            "sponsors/zml.svg",
-
-            "chart/chartist-1.3.0.css",
-            "chart/chartist-1.3.0.umd.js",
-        },
-        .locales = &.{
-            .{
-                .code = "en-US",
-                .name = "English (original)",
-                .site_title = "Zig Programming Language",
-                .content_dir_path = "content/en-US",
-                .output_prefix_override = "",
-            },
-            .{
-                .code = "es-AR",
-                .name = "Español",
-                .site_title = "El Lenguaje de Programación Zig",
-                .content_dir_path = "content/es-AR",
-            },
-            .{
-                .code = "ru-RU",
-                .name = "Русский",
-                .site_title = "Язык программирования Zig",
-                .content_dir_path = "content/ru-RU",
-            },
-            .{
-                .code = "it-IT",
-                .name = "Italiano",
-                .site_title = "Zig Programming Language",
-                .content_dir_path = "content/it-IT",
-            },
-            .{
-                .code = "de-DE",
-                .name = "Deutsch",
-                .site_title = "Zig Programmiersprache",
-                .content_dir_path = "content/de-DE",
-            },
-            .{
-                .code = "uk-UA",
-                .name = "Українська",
-                .site_title = "Zig Programming Language",
-                .content_dir_path = "content/uk-UA",
-            },
-            .{
-                .code = "ja-JP",
-                .name = "日本語",
-                .site_title = "Zig Programming Language",
-                .content_dir_path = "content/ja-JP",
-            },
-            .{
-                .code = "zh-CN",
-                .name = "中文",
-                .site_title = "Zig 编程语言",
-                .content_dir_path = "content/zh-CN",
-            },
-        },
-    });
+    const serve = zine.serve(b, .{ .build_assets = build_assets.items });
+    b.step("serve", "serve the zine website").dependOn(&serve.step);
 }
 
 fn installFile(b: *std.Build, lp: std.Build.LazyPath, dest_rel_path: []const u8) void {
