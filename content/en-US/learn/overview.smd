@@ -424,11 +424,12 @@ It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issu
 
 Zig comes with a build system, so you don't need make, cmake, or anything like that.
 ```
-$ zig init-exe
-Created build.zig
-Created src/main.zig
-
-Next, try `zig build --help` or `zig build run`
+$ zig init
+info: created build.zig
+info: created build.zig.zon
+info: created src/main.zig
+info: created src/root.zig
+info: see `zig build --help` for a menu of options
 ```
 
 <u>src/main.zig</u>
@@ -445,40 +446,108 @@ $ zig build --help
 Usage: zig build [steps] [options]
 
 Steps:
-  install (default)      Copy build artifacts to prefix path
-  uninstall              Remove build artifacts from prefix path
-  run                    Run the app
+  install (default)            Copy build artifacts to prefix path
+  uninstall                    Remove build artifacts from prefix path
+  run                          Run the app
+  test                         Run unit tests
 
 General Options:
-  --help                 Print this help and exit
-  --verbose              Print commands before executing them
-  --prefix [path]        Override default install prefix
-  --search-prefix [path] Add a path to look for binaries, libraries, headers
+  -p, --prefix [path]          Where to install files (default: zig-out)
+  --prefix-lib-dir [path]      Where to install libraries
+  --prefix-exe-dir [path]      Where to install executables
+  --prefix-include-dir [path]  Where to install C header files
+
+  --release[=mode]             Request release mode, optionally specifying a
+                               preferred optimization mode: fast, safe, small
+
+  -fdarling,  -fno-darling     Integration with system-installed Darling to
+                               execute macOS programs on Linux hosts
+                               (default: no)
+  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
+                               foreign-architecture programs on Linux hosts
+                               (default: no)
+  --glibc-runtimes [path]      Enhances QEMU integration by providing glibc built
+                               for multiple foreign architectures, allowing
+                               execution of non-native programs that link with glibc.
+  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
+                               ARM64 macOS hosts. (default: no)
+  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
+                               execute WASI binaries. (default: no)
+  -fwine,     -fno-wine        Integration with system-installed Wine to execute
+                               Windows programs on Linux hosts. (default: no)
+
+  -h, --help                   Print this help and exit
+  -l, --list-steps             Print available steps
+  --verbose                    Print commands before executing them
+  --color [auto|off|on]        Enable or disable colored error messages
+  --prominent-compile-errors   Buffer compile errors and display at end
+  --summary [mode]             Control the printing of the build summary
+    all                        Print the build summary in its entirety
+    new                        Omit cached steps
+    failures                   (Default) Only print failed steps
+    none                       Do not print the build summary
+  -j<N>                        Limit concurrent jobs (default is to use all CPU cores)
+  --maxrss <bytes>             Limit memory usage (default is to use available memory)
+  --skip-oom-steps             Instead of failing, skip steps that would exceed --maxrss
+  --fetch                      Exit after fetching dependency tree
+  --watch                      Continuously rebuild when source files are modified
+  --fuzz                       Continuously search for unit test failures
+  --debounce <ms>              Delay before rebuilding after changed file detected
+     -fincremental             Enable incremental compilation
+  -fno-incremental             Disable incremental compilation
 
 Project-Specific Options:
-  -Dtarget=[string]      The CPU architecture, OS, and ABI to build for.
-  -Drelease-safe=[bool]  optimizations on and safety on
-  -Drelease-fast=[bool]  optimizations on and safety off
-  -Drelease-small=[bool] size optimizations on and safety off
+  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
+  -Dcpu=[string]               Target CPU features to add or subtract
+  -Dofmt=[string]              Target object format
+  -Ddynamic-linker=[string]    Path to interpreter on the target system
+  -Doptimize=[enum]            Prioritize performance, safety, or binary size
+                                 Supported Values:
+                                   Debug
+                                   ReleaseSafe
+                                   ReleaseFast
+                                   ReleaseSmall
+
+System Integration Options:
+  --search-prefix [path]       Add a path to look for binaries, libraries, headers
+  --sysroot [path]             Set the system root directory (usually /)
+  --libc [file]                Provide a file which specifies libc paths
+
+  --system [pkgdir]            Disable package fetching; enable all integrations
+  -fsys=[name]                 Enable a system integration
+  -fno-sys=[name]              Disable a system integration
+
+  Available System Integrations:                Enabled:
+  (none)                                        -
 
 Advanced Options:
-  --build-file [file]         Override path to build.zig
-  --cache-dir [path]          Override path to zig cache directory
-  --override-lib-dir [arg]    Override path to Zig lib directory
-  --verbose-tokenize          Enable compiler debug output for tokenization
-  --verbose-ast               Enable compiler debug output for parsing into an AST
-  --verbose-link              Enable compiler debug output for linking
-  --verbose-ir                Enable compiler debug output for Zig IR
-  --verbose-llvm-ir           Enable compiler debug output for LLVM IR
-  --verbose-cimport           Enable compiler debug output for C imports
-  --verbose-cc                Enable compiler debug output for C compilation
-  --verbose-llvm-cpu-features Enable compiler debug output for LLVM CPU features
+  -freference-trace[=num]      How many lines of reference trace should be shown per compile error
+  -fno-reference-trace         Disable reference trace
+  -fallow-so-scripts           Allows .so files to be GNU ld scripts
+  -fno-allow-so-scripts        (default) .so files must be ELF files
+  --build-file [file]          Override path to build.zig
+  --cache-dir [path]           Override path to local Zig cache directory
+  --global-cache-dir [path]    Override path to global Zig cache directory
+  --zig-lib-dir [arg]          Override path to Zig lib directory
+  --build-runner [file]        Override path to build runner
+  --seed [integer]             For shuffling dependency traversal order (default: random)
+  --debug-log [scope]          Enable debugging the compiler
+  --debug-pkg-config           Fail if unknown pkg-config flags encountered
+  --debug-rt                   Debug compiler runtime libraries
+  --verbose-link               Enable compiler debug output for linking
+  --verbose-air                Enable compiler debug output for Zig AIR
+  --verbose-llvm-ir[=file]     Enable compiler debug output for LLVM IR
+  --verbose-llvm-bc=[file]     Enable compiler debug output for LLVM BC
+  --verbose-cimport            Enable compiler debug output for C imports
+  --verbose-cc                 Enable compiler debug output for C compilation
+  --verbose-llvm-cpu-features  Enable compiler debug output for LLVM CPU features
 ```
 
 You can see that one of the available steps is run.
 ```
 $ zig build run
-All your base are belong to us.
+All your codebase are belong to us.
+Run `zig build test` to run the tests.
 ```
 
 Here are some example build scripts:
