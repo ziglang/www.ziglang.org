@@ -24,6 +24,15 @@ Follow [the instructions](https://zine-ssg.io/docs/editors/) on the official Zin
 
 Following this step will give you syntax highlighting and LSP support for the templating language.
 
+### Get other dependencies
+Some code examples present on the site require some basic system dependencies:
+- tar
+- zlib
+- jq 
+
+It should be possible to get them on all major OSs although on Windows it might be easier to just use WSL.
+If you know how to get all dependencies on Windows please PR some instructions!
+
 ## Writing a Translation
 
 See [the Zine documentation](https://zine-ssg.io/docs/) to learn more about content and templating syntax.
