@@ -1,54 +1,49 @@
 ---
-.title = "Zig Build System",
+.title = "Zigビルドシステム",
 .author = "",
 .date = @date("2024-08-07:00:00:00"),
 .layout = "page.shtml",
 .custom = {
-	"mobile_menu_title": "Zig Build System",
+	"mobile_menu_title": "Zigビルドシステム",
 	"toc": true,
 },
 ---
-# [When to bust out the Zig Build System?]($heading.id('build-system'))
+# [Zigビルドシステムを使うべきときは？]($heading.id('build-system'))
 
-The fundamental commands `zig build-exe`, `zig build-lib`, `zig build-obj`, and
-`zig test` are often sufficient. However, sometimes a project needs another
-layer of abstraction to manage the complexity of building from source.
+基本的なコマンド `zig build-exe`、`zig build-lib`、`zig build-obj`、および `zig test` が十分な場合が多いです。
+しかし、時にはプロジェクトがソースからビルドするための複雑さを管理するために別の抽象化レイヤーが必要な場合もあります。
 
-For example, perhaps one of these situations applies:
+たとえば、以下のような状況が当てはまるかもしれません:
 
-- The command line becomes too long and unwieldly, and you want some place to
-  write it down.
-- You want to build many things, or the build process contains many steps.
-- You want to take advantage of concurrency and caching to reduce build time.
-- You want to expose configuration options for the project.
-- The build process is different depending on the target system and other options.
-- You have dependencies on other projects.
-- You want to avoid an unnecessary dependency on cmake, make, shell, msvc,
-  python, etc., making the project accessible to more contributors.
-- You want to provide a package to be consumed by third parties.
-- You want to provide a standardized way for tools such as IDEs to semantically understand
-  how to build the project.
+- コマンドラインが長くて扱いにくくなり、それを書き留める場所が欲しい。
+- 多くのものをビルドしたい、またはビルドプロセスに多くのステップが含まれている。
+- 並行処理とキャッシングを活用してビルド時間を短縮したい。
+- プロジェクトの設定オプションを公開したい。
+- ビルドプロセスがターゲットシステムや他のオプションによって異なる。
+- 他のプロジェクトへの依存関係がある。
+- cmake、make、シェル、msvc、pythonなどへの不必要な依存を避け、より多くの貢献者にプロジェクトをアクセスしやすくしたい。
+- サードパーティが利用できるパッケージを提供したい。
+- IDEなどのツールがプロジェクトのビルド方法を意味的に理解するための標準化された方法を提供したい。
 
-If any of these apply, the project will benefit from using the Zig Build System.
+これらのいずれかに当てはまる場合、プロジェクトはZigビルドシステムを使用することで恩恵を受けるでしょう。
 
-# [Getting Started]($heading.id('getting-started'))
-## [Simple Executable]($heading.id('simple'))
-This build script creates an executable from a Zig file that contains a public main function definition.
+# [はじめに]($heading.id('getting-started'))
+## [シンプルな実行ファイル]($heading.id('simple'))
+このビルドスクリプトは、パブリックなmain関数定義を含むZigファイルから実行ファイルを作成します。
 
 []($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
 []($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
 
-## [Installing Build Artifacts]($heading.id('installing-artifacts'))
+## [ビルド成果物のインストール]($heading.id('installing-artifacts'))
 
-The Zig build system, like most build systems, is based on modeling the project as a directed acyclic graph (DAG) of steps, which are independently and concurrently run.
+Zigビルドシステムは、ほとんどのビルドシステムと同様に、個別に並行して実行されるステップの有向非巡回グラフ（DAG）としてプロジェクトをモデル化することに基づいています。
 
-By default, the main step in the graph is the **Install** step, whose purpose
-is to copy build artifacts into their final resting place. The Install step
-starts with no dependencies, and therefore nothing will happen when `zig build`
-is run. A project's build script must add to the set of things to install, which
-is what the `installArtifact` function call does above.
 
-**Output**
+デフォルトでは、グラフの主要なステップは**インストール**ステップであり、その目的はビルド成果物を最終的な置き場所にコピーすることです。
+インストールステップは最初は依存関係がなく、したがって `zig build` を実行しても何も起こりません。
+プロジェクトのビルドスクリプトはインストールするもののセットに追加する必要があり、それが上記の `installArtifact` 関数呼び出しの役割です。
+
+**出力**
 ```
 ├── build.zig
 ├── hello.zig
@@ -58,63 +53,57 @@ is what the `installArtifact` function call does above.
         └── hello
 ```
 
-There are two generated directories in this output: `.zig-cache` and `zig-out`. The first one contains files that will make subsequent builds faster, but these files are not intended to be checked into source-control and this directory can be completely deleted at any time with no consequences.
+この出力には2つの生成されたディレクトリがあります: `.zig-cache` と `zig-out`です。
+最初のものは後続のビルドを高速化するファイルを含んでいますが、これらのファイルはソース管理することを意図しておらず、このディレクトリはいつでも完全に削除しても問題ありません。
 
-The second one, `zig-out`, is an "installation prefix". This maps to the standard file system hierarchy concept. This directory is not chosen by the project, but by the user of `zig build` with the `--prefix` flag (`-p` for short).
+2つ目の `zig-out` は「インストールプレフィックス」です。これは標準的なファイルシステム階層の概念にマッピングされます。
+このディレクトリはプロジェクトによって選択されるのではなく、`--prefix`フラグ（短縮形は `-p`）を使用して `zig build` のユーザーによって選択されます。
 
-You, as the project maintainer, pick what gets put in this directory, but the user chooses where to install it in their system. The build script cannot hardcode output paths because this would break caching, concurrency, and composability, as well as annoy the final user.
+プロジェクトメンテナとして、あなたはこのディレクトリに何を配置するかを決めますが、ユーザーはそれをシステムのどこにインストールするかを選びます。
+ビルドスクリプトは出力パスをハードコーディングすることはできません。なぜなら、これがキャッシング、並行性、組み合わせ可能性を破壊し、最終ユーザーを困らせることになるからです。
 
-## [Adding a Convenience Step for Running the Application]($heading.id('run-step'))
+## [アプリケーション実行のための便利なステップの追加]($heading.id('run-step'))
 
-It is common to add a **Run** step to provide a way to run one's main application directly
-from the build command.
+ビルドコマンドから直接メインアプリケーションを実行する方法を提供するために、**実行**ステップを追加することが一般的です。
 
 []($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
 []($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
 
-# [The Basics]($heading.id('basics'))
+# [基本]($heading.id('basics'))
 
-## [User-Provided Options]($heading.id('user-options'))
+## [ユーザー提供オプション](#user-provided-options)
 
-Use `b.option` to make the build script configurable to end users as well as
-other projects that depend on the project as a package.
+`b.option`を使用して、エンドユーザーやパッケージとしてプロジェクトに依存する他のプロジェクトに対して、ビルドスクリプトを設定可能にします。
 
 []($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
 []($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
 
-Please direct your attention to these lines:
+以下の行に注目してください:
 
 ```
 Project-Specific Options:
   -Dwindows=[bool]             Target Microsoft Windows
 ```
+ヘルプメニューのこの部分は、`build.zig`ロジックの実行に基づいて自動生成されます。
 
-This part of the help menu is auto-generated based on running the `build.zig` logic. Users
-can discover configuration options of the build script this way.
+## [標準設定オプション]($heading.id('standard-options'))
 
-## [Standard Configuration Options]($heading.id('standard-options'))
+以前は、Windowsをビルド対象とすることを示すためにブール値フラグを使用していました。しかし、より良い方法があります。
 
-Previously, we used a boolean flag to indicate building for Windows. However, we can do
-better.
+ほとんどのプロジェクトはターゲットと最適化設定を変更する機能を提供したいと考えています。
+これらのオプションの標準的な命名規則を推奨するために、Zigは`standardTargetOptions`と`standardOptimizeOption`というヘルパー関数を提供しています。
 
-Most projects want to provide the ability to change the target and optimization settings.
-In order to encourage standard naming conventions for these options, Zig provides the
-helper functions, `standardTargetOptions` and `standardOptimizeOption`.
+標準ターゲットオプションにより、`zig build`を実行する人はビルド対象を選択することが出来ます。
+デフォルトでは、どのターゲットも許可され、選択がない場合はホストシステムをターゲットにします。
+サポートされるターゲットセットを制限するための他のオプションも利用できます。
 
-Standard target options allows the person running `zig build` to choose what
-target to build for. By default, any target is allowed, and no choice means to
-target the host system. Other options for restricting supported target set are
-available.
-
-Standard optimization options allow the person running `zig build` to select
-between `Debug`, `ReleaseSafe`, `ReleaseFast`, and `ReleaseSmall`. By default
-none of the release options are considered the preferable choice by the build
-script, and the user must make a decision in order to create a release build.
+標準最適化オプションにより、`zig build`を実行する人は、`Debug`、`ReleaseSafe`、`ReleaseFast`、および `ReleaseSmall`の間で選択することができます。
+デフォルトでは、ビルドスクリプトはどのリリースオプションも優先的な選択とみなさず、ユーザーはリリースビルドを作成するためにユーザーが決定を下す必要があります。
 
 []($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
 []($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
 
-Now, our `--help` menu contains more items:
+`--help`メニューには、より多くの項目が含まれています:
 
 ```
 Project-Specific Options:
@@ -128,11 +117,10 @@ Project-Specific Options:
                                    ReleaseSmall
 ```
 
-It is entirely possible to create these options via `b.option` directly, but this
-API provides a commonly used naming convention for these frequently used settings.
+`b.option`で直接これらのオプションを作成することも完全に可能ですが、このAPIはこれらの頻繁に使用される設定のために一般的に使用される命名規則を提供します。
 
-In our terminal output, observe that we passed `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`.
-Compared to the first example, now we see different files in the installation prefix:
+ターミナル出力では、`-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`を渡したことがわかります。
+最初の例と比較して、インストールプレフィックスに異なるファイルが表示されます:
 
 ```
 zig-out/
@@ -140,29 +128,25 @@ zig-out/
     └── hello.exe
 ```
 
-## [Options for Conditional Compilation]($heading.id('conditional-compilation'))
+## [条件付きコンパイルのためのオプション]($heading.id('conditional-compilation'))
 
-To pass options from the build script and into the project's Zig code, use
-the `Options` step.
+ビルドスクリプトからプロジェクトのZigコードにオプションを渡すには、`Options`ステップを使用します。
 
 []($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
 []($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
 
-In this example, the data provided by `@import("config")` is comptime-known,
-preventing the `@compileError` from triggering. If we had passed `-Dversion=0.2.3`
-or omitted the option, then we would have seen the compilation of `app.zig` fail with
-the "too old" error.
+この例では、`@import("config")`によって提供されるデータはコンパイル時に既知であり、`@compileError`の発動を防ぎます。
+もし`-Dversion=0.2.3`を渡したり、オプションを省略した場合、`app.zig`のコンパイルが「too old」というエラーで失敗します。
 
-## [Static Library]($heading.id('static-library'))
+## [静的ライブラリ]($heading.id('static-library'))
 
-This build script creates a static library from Zig code, and then also an
-executable from other Zig code that consumes it.
+このビルドスクリプトはZigコードから静的ライブラリを生成し、さらにそれらを利用する他のZigコードから実行ファイルも生成します。
 
 []($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
 []($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
 []($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
 
-In this case, only the static library ends up being installed:
+この場合、静的ライブラリのみがインストールされます:
 
 ```
 zig-out/
@@ -170,8 +154,8 @@ zig-out/
     └── libfizzbuzz.a
 ```
 
-However, if you look closely, the build script contains an option to also install the demo.
-If we additionally pass `-Denable-demo`, then we see this in the installation prefix:
+しかしよく見るとビルドスクリプトはデモもインストールするオプションを含んでいます。
+さらに `-Denable-demo` を渡すと、インストールプレフィックスに以下のように表示されます:
 
 ```
 zig-out/
@@ -181,19 +165,16 @@ zig-out/
     └── libfizzbuzz.a
 ```
 
-Note that despite the unconditional call to `addExecutable`, the build system in fact
-does not waste any time building the `demo` executable unless it is requested
-with `-Denable-demo`, because the build system is based on a Directed Acyclic
-Graph with dependency edges.
+`addExecutable`への無条件の呼び出しにも関わらず、`-Denable-demo` で要求されない限り、ビルドシステムは実際には`demo`実行可能ファイルをビルドするのに時間を無駄にしません。
+これはビルドシステムが依存関係エッジをもつ有向非巡回グラフに基づいているからです。
 
-## [Dynamic Library]($heading.id('dynamic-library'))
+## [動的ライブラリ]($heading.id('dynamic-library'))
 
-Here we keep all the files the same from the [Static Library](#static-library) example, except
-the `build.zig` file is changed.
+ここでは、[静的ライブラリ](#static-library)の例からすべてのファイルを同じままにしておきますが、`build.zig`ファイルを変更します。
 
 []($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
 
-**Output**
+**出力**
 ```
 zig-out
 └── lib
@@ -202,43 +183,32 @@ zig-out
     └── libfizzbuzz.so.1.2.3
 ```
 
-As in the static library example, to make an executable link against it, use code like this:
+静的ライブラリの例と同様に、実行ファイルがそれにリンクするにはこのようなコードを使用します:
 
 ```zig
 exe.linkLibrary(libfizzbuzz);
 ```
 
-## [Testing]($heading.id('testing'))
+## [テスト]($heading.id('testing'))
 
-Individual files can be tested directly with `zig test foo.zig`, however, more
-complex use cases can be solved by orchestrating testing via the build script.
+個々のファイルは `zig test foo.zig` で直接テストできますが、より複雑なユースケースはビルドスクリプトを通じてテストを調整することで解決できます。
 
-When using the build script, unit tests are broken into two different steps in
-the build graph, the **Compile** step and the **Run** step. Without a call to
-`addRunArtifact`, which establishes a dependency edge between these two steps,
-the unit tests will not be executed.
+ビルドスクリプトを使用する場合、ユニットテストはビルドグラフの2つの異なるステップ、**コンパイル**ステップと**実行**ステップに分けられます。
+これらの2つのステップ間に依存関係エッジを確立する `addRunArtifact` の呼び出さない限り、ユニットテストは実行されません。
 
-The Compile step can be configured the same as any executable, library, or
-object file, for example by [linking against system libraries](#linking-to-system-libraries),
-setting target options, or adding additional compilation units.
+コンパイルステップは、例えば [システムライブラリにリンクする](#linking-to-system-libraries)、ターゲットオプションを設定する、または追加のコンパイルユニットを追加するなど、実行可能ファイル、ライブラリ、またはオブジェクトファイルと同様に構成できます。
 
-The Run step can be configured the same as any Run step, for example by
-skipping execution when the host is not capable of executing the binary.
+実行ステップは、任意の実行ステップと同じように構成できます。例えば、ホストがバイナリを実行できない場合に実行をスキップするなどです。
 
-When using the build system to run unit tests, the build runner and the test
-runner communicate via *stdin* and *stdout* in order to run multiple unit test
-suites concurrently, and report test failures in a meaningful way without
-having their output jumbled together. This is one reason why
-[writing to standard out in unit tests is problematic](https://github.com/ziglang/zig/issues/15091) -
-it will interfere with this communication channel. On the flip side, this
-mechanism will enable an upcoming feature, which is is the
-[ability for a unit test to expect a panic](https://github.com/ziglang/zig/issues/1356).
+ビルドシステムを使用してユニットテストを実行する場合、ビルドランナーとテストランナーは複数のユニットテストスイートを並行して実行し、それらの出力が混ざり合うことなく意味のある方法でテスト失敗を報告するために、*stdin*と*stdout*を介して通信します。
+これらは [ユニットテストで標準出力に書き込むことが問題となる](https://github.com/ziglang/zig/issues/15091)理由の1つです。- この通信チャネルに干渉するためです。
+一方で、このメカニズムは今後の機能、つまり[ユニットテストがパニックを期待する能力](https://github.com/ziglang/zig/issues/1356)を可能にします。
+
 
 []($code.language('=html').buildAsset("build-system/unit-testing/main.zig"))
 []($code.language('=html').buildAsset("build-system/unit-testing/build.zig"))
 
-In this case it might be a nice adjustment to enable `skip_foreign_checks` for
-the unit tests:
+この場合`skip_foreign_checks`をユニットテストに対して有効にするのは良い調整かもしれません:
 
 ```diff
 @@ -23,6 +23,7 @@
@@ -253,47 +223,36 @@ the unit tests:
 
 []($code.language('=html').buildAsset("build-system/unit-testing-skip-foreign/build.zig"))
 
-## [Linking to System Libraries]($heading.id('linking-to-system-libraries'))
+## [システムライブラリへのリンク]($heading.id('linking-to-system-libraries'))
 
-For satisfying library dependencies, there are two choices:
+ライブラリ依存関係を満たすには、2つの選択肢があります:
 
-1. Provide these libraries via the Zig Build System
-   (see Package Management and [Static Library](#static-library)).
-2. Use the files provided by the host system.
+1. Zigビルドシステムを通じてこれらのライブラリを提供する
+    (パッケージ管理と[静的ライブラリ](#static-library)を参照)。
+2. ホストシステムが提供するファイルを使用する。
 
-For the use case of upstream project maintainers, obtaining these libraries via
-the Zig Build System provides the least friction and puts the configuration
-power in the hands of those maintainers. Everyone who builds this way will have
-reproducible, consistent results as each other, and it will work on every
-operating system and even support cross-compilation. Furthermore, it allows the
-project to decide with perfect precision the exact versions of its entire
-dependency tree it wishes to build against. This is expected to be the
-generally preferred way to depend on external libraries.
+上流プロジェクトメンテナのユーズケースでは、Zigビルドシステムを通じてこれらのライブラリを取得することで、摩擦が最小限に抑えられ、設定の力をそれらのメンテナの手に委ねることが出来ます。
+この方法でビルドする全ての人は互いに再現可能で一貫した結果を得ることができ、あらゆるオペレーティングシステムで機能し、さらにクロスコンパイルもサポートします。
+さらに、プロジェクトが依存関係ツリー全体の正確なバージョンを完璧な精度で決定することも可能です。これが一般的に好まれる外部ライブラリへの依存方法と予想されます。
 
-However, for the use case of packaging software into repositories such as
-Debian, Homebrew, or Nix, it is mandatory to link against system libraries. So,
-build scripts must
-[detect the mode](https://github.com/ziglang/zig/issues/14281) and configure accordingly.
+しかし、Debian, Homebrew, Nixなどのリポジトリにソフトウェアをパッケージするユースケースでは、システムライブラリにリンクすることが必須です。
+そのためビルドスクリプトは、[モードを検出](https://github.com/ziglang/zig/issues/14281)してそれに応じて構成する必要があります。
 
 []($code.language('=html').buildAsset("build-system/system-libraries/build.zig"))
 
-Users of `zig build` may use `--search-prefix` to provide additional
-directories that are considered "system directories" for the purposes of finding
-static and dynamic libraries.
+`zig build`のユーザーは、`--search-prefix`を使用して、静的および動的ライブラリを見つけるための「システムディレクトリ」と見なされる追加のディレクトリを提供するために`--search-prefix`を使用できます。
 
-# [Generating Files]($heading.id('generating-files'))
+# [ファイルの生成]($heading.id('generating-files'))
 
-## [Running System Tools]($heading.id('system-tools'))
-This version of hello world expects to find a `word.txt` file in the same path,
-and we want to use a system tool to generate it starting from a JSON file.
+## [システムツールの実行]($heading.id('system-tools'))
 
-Be aware that system dependencies will make your project harder to build for your
-users. This build script depends on `jq`, for example, which is not present by
-default in most Linux distributions and which might be an unfamiliar tool for
-Windows users.
+このバージョンのhello worldは、同じパスに `word.txt` ファイルがあることを期待しており、JSONファイルから生成するためにシステムツールを使用して生成したいと考えています。
 
-The next section will replace `jq` with a Zig tool included in the source tree,
-which is the preferred approach.
+システム依存関係はプロジェクトのビルドをユーザーにとって難しくすることに注意してください。
+例えば、このビルドスクリプトは `jq` に依存していますが、これはほとんどのLinuxディストリビューションにデフォルトでは存在せず、Windowsユーザーには馴染みのないツールかもしれません。
+
+次のセクションでは、`jq`をソースツリーに含まれるZigツールに置き換えます。これが推奨されるアプローチです。
+
 
 **`words.json`**
 ```json
@@ -307,7 +266,7 @@ which is the preferred approach.
 []($code.language('=html').buildAsset("build-system/10.5-system-tool/src/main.zig"))
 []($code.language('=html').buildAsset("build-system/10.5-system-tool/build.zig"))
 
-**Output**
+**出力**
 
 ```
 zig-out
@@ -315,12 +274,11 @@ zig-out
 └── word.txt
 ```
 
-Note how `captureStdOut` creates a temporary file with the output of the `jq` invocation.
+`captureStdOut`が`jq`の呼び出しの出力を持つ一時ファイルを作成する方法に注目してください。
 
-## [Running the Project's Tools]($heading.id('project-tools'))
+## [プロジェクトのツールの実行]($heading.id('project-tools'))
 
-This version of hello world expects to find a `word.txt` file in the same path,
-and we want to produce it at build-time by invoking a Zig program on a JSON file.
+このバージョンのhello worldは、同じパスに `word.txt` ファイルがあることを期待しており、ビルド時にJSONファイルにZigプログラムを呼びだして生成したいと考えています。
 
 
 **`tools/words.json`**
@@ -338,17 +296,17 @@ and we want to produce it at build-time by invoking a Zig program on a JSON file
 
 []($code.language('=html').buildAsset("build-system/11-zig-tool/build.zig"))
 
-**Output**
+**出力**
 
 ```
 zig-out
 ├── hello
 └── word.txt
 ```
-## [Producing Assets for `@embedFile`]($heading.id('embed-file'))
+## [`@embedFile`のためのアセットの生成]($heading.id('embed-file'))
 
-This version of hello world wants to `@embedFile` an asset generated at build time,
-which we're going to produce using a tool written in Zig.
+このバージョンのhello worldはビルド時に生成されたアセットを`@embedFile`したいと考えており、
+Zigで書かれたツールを使用して生成します。
 
 
 **`tools/words.json`**
@@ -366,7 +324,7 @@ which we're going to produce using a tool written in Zig.
 
 []($code.language('=html').buildAsset("build-system/12-embedfile/build.zig"))
 
-**Output**
+**出力**
 
 ```
 zig-out/
@@ -374,15 +332,14 @@ zig-out/
     └── hello
 ```
 
-## [Generating Zig Source Code]($heading.id('generating-zig'))
-This build file uses a Zig program to generate a Zig file and then exposes it
-to the main program as a module dependency.
+## [Zigソースコードの生成]($heading.id('generating-zig'))
+このビルドファイルはZigプログラムを使用してZigファイルを生成し、それをモジュール依存関係としてメインプログラムに公開します。
 
 []($code.language('=html').buildAsset("build-system/13-import/src/main.zig"))
 []($code.language('=html').buildAsset("build-system/13-import/tools/generate_struct.zig"))
 []($code.language('=html').buildAsset("build-system/13-import/build.zig"))
 
-**Output**
+**出力**
 
 ```
 zig-out/
@@ -390,41 +347,32 @@ zig-out/
     └── hello
 ```
 
-## [Dealing With One or More Generated Files]($heading.id('write-files'))
+## [1つまたは複数の生成されたファイルの処理]($heading.id('write-files'))
 
-The **WriteFiles** step provides a way to generate one or more files which
-share a parent directory. The generated directory lives inside the local `.zig-cache`,
-and each generated file is independently available as a `std.Build.LazyPath`.
-The parent directory itself is also available as a `LazyPath`.
+**WriteFiles**ステップは、親ディレクトリを共有する1つまたは複数のファイルを生成する方法を提供します。
+生成されたディレクトリはローカルの`.zig-cache`内にあり、生成された各ファイルは個別に`std.Build.LazyPath`として利用可能です。
+親ディレクトリ自体も`LazyPath`として利用可能です。
 
-This API supports writing arbitrary strings to the generated directory as well
-as copying files into it.
+このAPIは、生成されたディレクトリに任意の文字列を書き込んだり、ファイルをそこにコピーしたりすることをサポートしています。
 
 []($code.language('=html').buildAsset("build-system/write-files/src/main.zig"))
 []($code.language('=html').buildAsset("build-system/write-files/build.zig"))
 
-**Output**
+**出力**
 
 ```
 zig-out/
 └── project.tar.gz
 ```
 
-## [Mutating Source Files in Place]($heading.id('mutating-source'))
+## [ソースファイルのその場での変更]($heading.id('mutating-source'))
 
-It is uncommon, but sometimes the case that a project commits generated files
-into version control. This can be useful when the generated files are seldomly updated
-and have burdensome system dependencies for the update process, but *only* during the
-update process.
+一般的ではありませんが、プロジェクトが生成されたファイルをバージョン管理にコミットすることがあります。これは、生成されたファイルが滅多に更新されず、更新プロセスに負担のかかるシステム依存関係がある場合に役立ちますが、更新プロセス中のみです。
 
-For this, **WriteFiles** provides a way to accomplish this task. This is a feature that
-[will be extracted from WriteFiles into its own Build Step](https://github.com/ziglang/zig/issues/14944)
-in a future Zig version.
 
-Be careful with this functionality; it should not be used during the normal
-build process, but as a utility run by a developer with intention to update
-source files, which will then be committed to version control. If it is done
-during the normal build process, it will cause caching and concurrency bugs.
+このために、**WriteFiles**はこのタスクを達成する方法を提供します。これは将来のZigのバージョンで[WriteFilesから独自のビルドステップに抽出される予定の機能](https://github.com/ziglang/zig/issues/14944)です。
+
+この機能は注意して使用してください。通常のビルドプロセス中ではなく、ソースファイルを更新する意図を持った開発者が実行するユーティリティとして使用すべきで、それらはバージョン管理にコミットされます。通常のビルドプロセス中に行われると、キャッシングと並行性のバグを引き起こします。
 
 []($code.language('=html').buildAsset("build-system/mutate-source-files/tools/proto_gen.zig"))
 []($code.language('=html').buildAsset("build-system/mutate-source-files/src/main.zig"))
@@ -441,18 +389,18 @@ update-protocol<span class="sgr-32m"> success</span>
 </code></pre>
 ```
 
-After running this command, `src/protocol.zig` is updated in place.
+このコマンドを実行すると、`src/protocol.zig`がその場で更新されます。
 
-# [Handy Examples]($heading.id('examples'))
+# [便利な例]($heading.id('examples'))
 
-## [Build for multiple targets to make a release]($heading.id('release'))
+## [リリース作成のための複数のターゲットビルド]($heading.id('release'))
 
-In this example we're going to change some defaults when creating an `InstallArtifact` step in order to put the build for each target into a separate subdirectory inside the install path.
+この例では、`InstallArtifact`ステップを作成する際にいくつかのデフォルトを変更し、各ターゲットのビルドをインストールパス内の別々のサブディレクトリに配置します。
 
 []($code.language('=html').buildAsset("build-system/10-release/build.zig"))
 []($code.language('=html').buildAsset("build-system/10-release/hello.zig"))
 
-**Output**
+**出力**
 
 ```
 zig-out
