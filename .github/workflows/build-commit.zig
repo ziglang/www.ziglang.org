@@ -118,7 +118,6 @@ pub fn main() !void {
     const github_output = try std.fs.cwd().createFile(GITHUB_OUTPUT, .{});
     defer github_output.close();
 
-    try env_map.put("PATH", "/home/ci/local/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
     try env_map.put("XZ_OPT", "-9");
     try env_map.put("CMAKE_GENERATOR", "Ninja");
 
@@ -580,7 +579,7 @@ fn deleteOld(builds_dir: std.fs.Dir, now: i64) !void {
                 const delta_ns = now - stat.ctime;
                 const days = @divTrunc(delta_ns, std.time.ns_per_day);
                 if (days > 30) {
-                    log.info("deleting {d}-day-old tarball {s}", .{ days, entry.path });
+                    log.info("deleting {d}-day-old tarball {s} (dry run)", .{ days, entry.path });
                     //try builds_dir.remove(entry.path); // TODO enable after verifying output
                 } else {
                     log.info("not deleting {d}-day-old tarball {s}", .{ days, entry.path });
