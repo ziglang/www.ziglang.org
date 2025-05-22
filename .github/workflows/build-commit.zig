@@ -111,7 +111,6 @@ pub fn main() !void {
     const index_json_template_filename = args[1]; // example: "index.json";
     const now = std.time.timestamp();
 
-    const website_dir = try std.fs.cwd().openDir(".", .{});
     const zig_dir = try std.fs.cwd().openDir("../zig", .{ .iterate = true });
     const work_dir = try std.fs.cwd().openDir("../..", .{});
     const bootstrap_dir = try work_dir.openDir("zig-bootstrap", .{ .iterate = true });
@@ -143,12 +142,12 @@ pub fn main() !void {
         else => |e| fatal("failed to check .git/shallow: {s}", .{@errorName(e)}),
     }
 
-    const zig_ver = if (env_map.get("ZIG_RELEASE_TAG")) |ZIG_RELEASE_TAG| v: {
+    const zig_ver, const is_release = if (env_map.get("ZIG_RELEASE_TAG")) |ZIG_RELEASE_TAG| v: {
         // Manually triggered workflow.
         try github_output.writeAll("skipped=yes\n"); // Prevent website deploy
         run(&env_map, zig_dir, &.{ "git", "checkout", ZIG_RELEASE_TAG });
         log.info("Building version from commit: {s}", .{ZIG_RELEASE_TAG});
-        break :v ZIG_RELEASE_TAG;
+        break :v .{ ZIG_RELEASE_TAG, true };
     } else v: {
         const GH_TOKEN = env_map.get("GH_TOKEN").?;
         const json_text = try fetch(
@@ -174,7 +173,7 @@ pub fn main() !void {
             log.info("Versions are equal, nothing to do here.", .{});
             return;
         }
-        break :v zig_ver;
+        break :v .{ zig_ver, false };
     };
     log.info("zig version: {s}", .{zig_ver});
 
@@ -301,9 +300,15 @@ pub fn main() !void {
 
     // Instead of updating via git, update directly to prevent the www.ziglang.org git
     // repo from growing too big.
-    _ = website_dir;
-    //try updateWebsiteRepo(&env_map, builds_dir, index_json_basename, website_dir, "assets/download/index.json");
+    if (is_release) {
+        // For releases, a separate command will update this file and sign it
+        // after integrating the new release information which was outputted
+        // above.
+        return;
+    }
+
     try builds_dir.copyFile(index_json_basename, www_dir, "download/index.json", .{});
+
     const langref_path = print("zig-{s}-{s}/doc/langref.html", .{ targets[0].key, zig_ver });
     try tarballs_dir.copyFile(langref_path, www_dir, "documentation/master/index.html", .{});
 
