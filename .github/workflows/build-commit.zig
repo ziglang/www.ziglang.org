@@ -414,7 +414,7 @@ fn runWorkaround(
         child.stdin.?.close();
         child.stdin = null;
     }
-    const term = child.spawnAndWait() catch |err| {
+    const term = child.wait() catch |err| {
         fatal("following command failed with {s}:\n{s}", .{ @errorName(err), allocPrintCmd(argv) });
     };
     switch (term) {
