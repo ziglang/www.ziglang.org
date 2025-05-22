@@ -14,8 +14,6 @@ const mem = std.mem;
 const fatal = std.debug.panic;
 const log = std.log;
 
-const minisign_key_path = "/home/ci/.minisign/minisign.key";
-
 const Target = struct {
     triple: []const u8,
     cpu: []const u8,
@@ -426,11 +424,25 @@ fn zigVer(env_map: *const std.process.EnvMap, dir: std.fs.Dir) ![]const u8 {
     }
 }
 
-fn run(env_map: *const std.process.EnvMap, dir: std.fs.Dir, argv: []const []const u8) void {
+fn runWorkaround(
+    env_map: *const std.process.EnvMap,
+    dir: std.fs.Dir,
+    argv: []const []const u8,
+    workaround: bool,
+) void {
     var child: std.process.Child = .init(argv, arena);
-    child.stdin_behavior = .Close;
+    child.stdin_behavior = if (workaround) .Pipe else .Close;
     child.cwd_dir = dir;
     child.env_map = env_map;
+    child.spawn() catch |err| {
+        fatal("following command failed with {s}:\n{s}", .{ @errorName(err), allocPrintCmd(argv) });
+    };
+    if (workaround) {
+        // minisign requires this otherwise it pointlessly prompts for a password
+        child.stdin.?.writeAll("\n") catch |err| fatal("failed to write newline: {s}", .{@errorName(err)});
+        child.stdin.?.close();
+        child.stdin = null;
+    }
     const term = child.spawnAndWait() catch |err| {
         fatal("following command failed with {s}:\n{s}", .{ @errorName(err), allocPrintCmd(argv) });
     };
@@ -443,6 +455,10 @@ fn run(env_map: *const std.process.EnvMap, dir: std.fs.Dir, argv: []const []cons
             fatal("following command terminated abnormally via {s}:\n{s}", .{ @tagName(term), allocPrintCmd(argv) });
         },
     }
+}
+
+fn run(env_map: *const std.process.EnvMap, dir: std.fs.Dir, argv: []const []const u8) void {
+    return runWorkaround(env_map, dir, argv, false);
 }
 
 fn allocPrintCmd(argv: []const []const u8) []u8 {
@@ -570,9 +586,7 @@ fn signAndMove(
     std.fs.rename(src_dir, basename, dest_dir, basename) catch |err| {
         fatal("failed to move {s}: {s}", .{ basename, @errorName(err) });
     };
-    run(env_map, dest_dir, &.{
-        "minisign", "-S", "-s", minisign_key_path, "-m", basename,
-    });
+    runWorkaround(env_map, dest_dir, &.{ "minisign", "-Sm", basename }, true);
 }
 
 fn deleteOld(builds_dir: std.fs.Dir, now: i64) !void {
