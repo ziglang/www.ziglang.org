@@ -402,6 +402,7 @@ fn runWorkaround(
     argv: []const []const u8,
     workaround: bool,
 ) void {
+    log.info("running {s}...", .{argv[0]});
     var child: std.process.Child = .init(argv, arena);
     child.stdin_behavior = if (workaround) .Pipe else .Close;
     child.cwd_dir = dir;
