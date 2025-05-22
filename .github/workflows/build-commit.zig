@@ -173,7 +173,7 @@ pub fn main() !void {
     var tarballs_dir = try work_dir.makeOpenPath("tarballs", .{});
     defer tarballs_dir.close();
     const zig_ver_sub_path = print("zig-{s}", .{zig_ver});
-    var tarballs_zig_dir = try work_dir.makeOpenPath(zig_ver_sub_path, .{});
+    var tarballs_zig_dir = try tarballs_dir.makeOpenPath(zig_ver_sub_path, .{});
     defer tarballs_zig_dir.close();
     try copyTree(zig_dir, tarballs_zig_dir, &.{
         ".github",
@@ -212,7 +212,7 @@ pub fn main() !void {
 
     {
         try bootstrap_dir.deleteTree("zig");
-        try std.fs.rename(work_dir, zig_ver_sub_path, bootstrap_dir, "zig");
+        try std.fs.rename(tarballs_dir, zig_ver_sub_path, bootstrap_dir, "zig");
     }
     try updateLine(bootstrap_dir, "build", "ZIG_VERSION=", print("ZIG_VERSION=\"{s}\"\n", .{
         zig_ver,
