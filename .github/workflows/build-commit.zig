@@ -271,7 +271,7 @@ pub fn main() !void {
     try deleteOld(builds_dir, now);
 
     for (targets) |target| {
-        const bootstrap_basename = print("zig-{s}-{s}", .{ target.triple, target.cpu });
+        const bootstrap_basename = print("out/zig-{s}-{s}", .{ target.triple, target.cpu });
         const user_basename = print("zig-{s}-{s}", .{ target.key, zig_ver });
         std.fs.rename(bootstrap_dir, bootstrap_basename, tarballs_dir, user_basename) catch |err| {
             fatal("failed to rename {s} to {s}: {s}", .{ bootstrap_basename, user_basename, @errorName(err) });
@@ -586,8 +586,8 @@ fn deleteOld(builds_dir: std.fs.Dir, now: i64) !void {
         switch (entry.kind) {
             .file => {
                 const stat = try builds_dir.statFile(entry.path);
-                const delta_ns = now - stat.ctime;
-                const days = @divTrunc(delta_ns, std.time.ns_per_day);
+                const delta_s = now - @divTrunc(stat.ctime, std.time.ns_per_s);
+                const days = @divTrunc(delta_s, std.time.s_per_day);
                 if (days > 30) {
                     log.info("deleting {d}-day-old tarball {s} (dry run)", .{ days, entry.path });
                     //try builds_dir.remove(entry.path); // TODO enable after verifying output
