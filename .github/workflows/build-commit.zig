@@ -124,6 +124,8 @@ pub fn main() !void {
     // Override the cache directories because they won't actually help other CI runs
     // which will be testing alternate versions of zig, and ultimately would just
     // fill up space on the hard drive for no reason.
+    try bootstrap_dir.makePath("out/zig-global-cache");
+    try bootstrap_dir.makePath("out/zig-local-cache");
     try env_map.put("ZIG_GLOBAL_CACHE_DIR", try bootstrap_dir.realpathAlloc(arena, "out/zig-global-cache"));
     try env_map.put("ZIG_LOCAL_CACHE_DIR", try bootstrap_dir.realpathAlloc(arena, "out/zig-local-cache"));
 
@@ -240,8 +242,6 @@ pub fn main() !void {
     signAndMove(&env_map, tarballs_dir, bootstrap_src_tarball_name, builds_dir);
     try addTemplateEntry(&template_map, "bootstrap", builds_dir, bootstrap_src_tarball_name);
 
-    const zig_exe = try bootstrap_dir.realpathAlloc(arena, "out/host/bin/zig");
-
     for (targets) |target| {
         // NOTE: Debian's cmake (3.18.4) is too old for zig-bootstrap.
         run(&env_map, bootstrap_dir, &.{ "./build", target.triple, target.cpu });
@@ -288,6 +288,7 @@ pub fn main() !void {
 
     // Standard library autodocs are intentionally excluded from tarballs of
     // Zig but we want to host them on the website.
+    const zig_exe = try bootstrap_dir.realpathAlloc(arena, "out/host/bin/zig");
     run(&env_map, bootstrap_dir, &.{ zig_exe, "build-obj", "-fno-emit-bin", "-femit-docs=std", "zig/lib/std/std.zig" });
 
     gzipCopy(&env_map, bootstrap_dir, "std/index.html", std_docs_dir);
