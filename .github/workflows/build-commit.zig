@@ -142,12 +142,17 @@ pub fn main() !void {
         else => |e| fatal("failed to check .git/shallow: {s}", .{@errorName(e)}),
     }
 
-    const zig_ver, const is_release = if (env_map.get("ZIG_RELEASE_TAG")) |ZIG_RELEASE_TAG| v: {
+    const zig_release_tag = if (env_map.get("ZIG_RELEASE_TAG")) |t|
+        if (t.len == 0) null else t
+    else
+        null;
+
+    const zig_ver, const is_release = if (zig_release_tag) |tag| v: {
         // Manually triggered workflow.
         try github_output.writeAll("skipped=yes\n"); // Prevent website deploy
-        run(&env_map, zig_dir, &.{ "git", "checkout", ZIG_RELEASE_TAG });
-        log.info("Building version from commit: {s}", .{ZIG_RELEASE_TAG});
-        break :v .{ ZIG_RELEASE_TAG, true };
+        run(&env_map, zig_dir, &.{ "git", "checkout", tag });
+        log.info("Building version from commit: {s}", .{tag});
+        break :v .{ tag, true };
     } else v: {
         const GH_TOKEN = env_map.get("GH_TOKEN").?;
         const json_text = try fetch(
