@@ -14,6 +14,8 @@ const mem = std.mem;
 const fatal = std.debug.panic;
 const log = std.log;
 
+const minisign_key_path = "/home/ci/.minisign/minisign.key";
+
 const Target = struct {
     triple: []const u8,
     cpu: []const u8,
@@ -133,9 +135,9 @@ pub fn main() !void {
         try github_output.writeAll("skipped=yes\n"); // Prevent website deploy
         run(&env_map, zig_dir, &.{ "git", "checkout", ZIG_COMMIT });
         if (is_release) {
-            log.info("Building development version from commit: {s}", .{ZIG_COMMIT});
+            log.info("Building release(!) version from tag: {s}", .{ZIG_COMMIT});
         } else {
-            log.info("Building release version from tag: {s}", .{ZIG_COMMIT});
+            log.info("Building development version from commit: {s}", .{ZIG_COMMIT});
         }
         break :v ZIG_COMMIT;
     } else v: {
@@ -426,6 +428,7 @@ fn zigVer(env_map: *const std.process.EnvMap, dir: std.fs.Dir) ![]const u8 {
 
 fn run(env_map: *const std.process.EnvMap, dir: std.fs.Dir, argv: []const []const u8) void {
     var child: std.process.Child = .init(argv, arena);
+    child.stdin_behavior = .Close;
     child.cwd_dir = dir;
     child.env_map = env_map;
     const term = child.spawnAndWait() catch |err| {
@@ -567,7 +570,9 @@ fn signAndMove(
     std.fs.rename(src_dir, basename, dest_dir, basename) catch |err| {
         fatal("failed to move {s}: {s}", .{ basename, @errorName(err) });
     };
-    run(env_map, dest_dir, &.{ "minisign", "-Sm", basename });
+    run(env_map, dest_dir, &.{
+        "minisign", "-S", "-s", minisign_key_path, "-m", basename,
+    });
 }
 
 fn deleteOld(builds_dir: std.fs.Dir, now: i64) !void {
