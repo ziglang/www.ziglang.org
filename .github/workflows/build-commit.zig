@@ -196,6 +196,12 @@ pub fn main() !void {
         "build-debug",
         "zig-cache",
     });
+    try updateLine(
+        tarballs_zig_dir,
+        "bootstrap.c",
+        "        const char *zig_version = \"",
+        print("        const char *zig_version = \"{s}\";\n", .{zig_ver}),
+    );
 
     var template_map: std.StringHashMapUnmanaged([]const u8) = .empty;
     try template_map.put(arena, "master_version", zig_ver);
