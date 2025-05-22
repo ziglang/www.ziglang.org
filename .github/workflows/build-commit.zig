@@ -129,6 +129,15 @@ pub fn main() !void {
     try env_map.put("ZIG_GLOBAL_CACHE_DIR", try bootstrap_dir.realpathAlloc(arena, "out/zig-global-cache"));
     try env_map.put("ZIG_LOCAL_CACHE_DIR", try bootstrap_dir.realpathAlloc(arena, "out/zig-local-cache"));
 
+    if (zig_dir.access(".git/shallow", .{})) |_| {
+        run(&env_map, zig_dir, &.{ "git", "fetch", "--tags", "--unshallow" });
+    } else |err| switch (err) {
+        error.FileNotFound => {
+            run(&env_map, zig_dir, &.{ "git", "fetch", "--tags" });
+        },
+        else => |e| fatal("failed to check .git/shallow: {s}", .{@errorName(e)}),
+    }
+
     const zig_ver = if (env_map.get("ZIG_RELEASE_TAG")) |ZIG_RELEASE_TAG| v: {
         // Manually triggered workflow.
         try github_output.writeAll("skipped=yes\n"); // Prevent website deploy
@@ -301,14 +310,6 @@ fn zigVer(env_map: *const std.process.EnvMap, dir: std.fs.Dir) ![]const u8 {
     // Make the `zig version` number consistent.
     // This will affect the "git describe" command below.
     run(env_map, dir, &.{ "git", "config", "core.abbrev", "9" });
-    if (dir.access(".git/shallow", .{})) |_| {
-        run(env_map, dir, &.{ "git", "fetch", "--tags", "--unshallow" });
-    } else |err| switch (err) {
-        error.FileNotFound => {
-            run(env_map, dir, &.{ "git", "fetch", "--tags" });
-        },
-        else => |e| fatal("failed to check .git/shallow: {s}", .{@errorName(e)}),
-    }
 
     const build_zig_contents = try dir.readFileAlloc(arena, "build.zig", 100 * 1024);
     const zig_version = v: {
