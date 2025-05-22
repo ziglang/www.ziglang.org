@@ -107,9 +107,9 @@ pub fn main() !void {
     const now = std.time.timestamp();
 
     const website_dir = try std.fs.cwd().openDir(".", .{});
-    const zig_dir = try std.fs.cwd().openDir("../zig", .{});
+    const zig_dir = try std.fs.cwd().openDir("../zig", .{ .iterate = true });
     const work_dir = try std.fs.cwd().openDir("../..", .{});
-    const bootstrap_dir = try work_dir.openDir("zig-bootstrap", .{});
+    const bootstrap_dir = try work_dir.openDir("zig-bootstrap", .{ .iterate = true });
     const www_dir = try std.fs.cwd().makeOpenPath(www_prefix, .{});
     const builds_dir = try www_dir.makeOpenPath("builds", .{ .iterate = true });
     const std_docs_dir = try www_dir.makeOpenPath("documentation/master/std", .{});
