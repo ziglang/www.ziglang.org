@@ -127,19 +127,13 @@ pub fn main() !void {
     try env_map.put("ZIG_GLOBAL_CACHE_DIR", try bootstrap_dir.realpathAlloc(arena, "out/zig-global-cache"));
     try env_map.put("ZIG_LOCAL_CACHE_DIR", try bootstrap_dir.realpathAlloc(arena, "out/zig-local-cache"));
 
-    const is_release = if (env_map.get("ZIG_RELEASE")) |ZIG_RELEASE| mem.eql(u8, ZIG_RELEASE, "true") else false;
-    const zig_ver = if (env_map.get("ZIG_COMMIT")) |ZIG_COMMIT| v: {
+    const zig_ver = if (env_map.get("ZIG_RELEASE_TAG")) |ZIG_RELEASE_TAG| v: {
         // Manually triggered workflow.
         try github_output.writeAll("skipped=yes\n"); // Prevent website deploy
-        run(&env_map, zig_dir, &.{ "git", "checkout", ZIG_COMMIT });
-        if (is_release) {
-            log.info("Building release(!) version from tag: {s}", .{ZIG_COMMIT});
-        } else {
-            log.info("Building development version from commit: {s}", .{ZIG_COMMIT});
-        }
-        break :v ZIG_COMMIT;
+        run(&env_map, zig_dir, &.{ "git", "checkout", ZIG_RELEASE_TAG });
+        log.info("Building version from commit: {s}", .{ZIG_RELEASE_TAG});
+        break :v ZIG_RELEASE_TAG;
     } else v: {
-        if (is_release) fatal("release requires explicit ZIG_COMMIT env var", .{});
         const GH_TOKEN = env_map.get("GH_TOKEN").?;
         const json_text = try fetch(
             "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&event=push",
@@ -300,29 +294,6 @@ pub fn main() !void {
     gzipCopy(&env_map, bootstrap_dir, "std/main.js", std_docs_dir);
     gzipCopy(&env_map, bootstrap_dir, "std/main.wasm", std_docs_dir);
     gzipCopy(&env_map, bootstrap_dir, "std/sources.tar", std_docs_dir);
-
-    if (is_release) {
-        const download_dir = try www_dir.makeOpenPath(print("download/{s}", .{zig_ver}), .{});
-        copyToRelease(builds_dir, download_dir, print("zig-{s}.tar.xz", .{zig_ver}));
-        copyToRelease(builds_dir, download_dir, print("zig-{s}.tar.xz.minisign", .{zig_ver}));
-        copyToRelease(builds_dir, download_dir, print("zig-bootstrap-{s}.tar.xz", .{zig_ver}));
-        copyToRelease(builds_dir, download_dir, print("zig-bootstrap-{s}.tar.xz.minisign", .{zig_ver}));
-        for (targets) |target| {
-            copyToRelease(builds_dir, download_dir, print("zig-{s}-{s}.{s}", .{
-                target.key, zig_ver, target.ext(),
-            }));
-            copyToRelease(builds_dir, download_dir, print("zig-{s}-{s}.{s}.minisign", .{
-                target.key, zig_ver, target.ext(),
-            }));
-        }
-    }
-}
-
-fn copyToRelease(builds_dir: std.fs.Dir, download_dir: std.fs.Dir, basename: []const u8) void {
-    builds_dir.copyFile(basename, download_dir, basename, .{}) catch |err| {
-        fatal("failed to copy {s} from builds to dowload dir: {s}", .{ basename, @errorName(err) });
-    };
-    // TODO update the json template with the new data
 }
 
 fn zigVer(env_map: *const std.process.EnvMap, dir: std.fs.Dir) ![]const u8 {
