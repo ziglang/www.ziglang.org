@@ -31,6 +31,11 @@ const targets = [_]Target{
         .key = "x86_64-linux",
     },
     .{
+        .triple = "s390x-linux-musl",
+        .cpu = "baseline",
+        .key = "s390x-linux",
+    },
+    .{
         .triple = "aarch64-macos-none",
         .cpu = "apple_a14",
         .key = "aarch64-macos",
@@ -227,6 +232,7 @@ pub fn main() !void {
     try updateLine(bootstrap_dir, "README.md", " * zig ", print(" * zig {s}\n", .{
         zig_ver,
     }));
+
     try bootstrap_dir.deleteTree("out");
 
     {
