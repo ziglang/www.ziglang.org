@@ -11,7 +11,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const mem = std.mem;
-const fatal = std.process.fatal;
+const fatal = std.debug.panic;
 const log = std.log;
 
 const Target = struct {
@@ -515,7 +515,11 @@ fn copyTree(src_dir: std.fs.Dir, dest_dir: std.fs.Dir, exclude: []const []const 
     var it = try src_dir.walk(arena);
     next_entry: while (try it.next()) |entry| {
         for (exclude) |p| {
-            if (mem.eql(u8, entry.path, p)) continue :next_entry;
+            if (mem.startsWith(u8, entry.path, p) and
+                (entry.path.len == p.len or entry.path[p.len] == '/'))
+            {
+                continue :next_entry;
+            }
         }
         switch (entry.kind) {
             .directory => {
