@@ -108,7 +108,7 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(arena);
 
     const www_prefix = args[1]; // example: "/var/www/html";
-    const index_json_template_filename = args[1]; // example: "index.json";
+    const index_json_template_filename = args[2]; // example: "index.json";
     const now = std.time.timestamp();
 
     const zig_dir = try std.fs.cwd().openDir("../zig", .{ .iterate = true });
