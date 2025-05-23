@@ -118,7 +118,14 @@ pub fn main() !void {
     const builds_dir = try www_dir.makeOpenPath("builds", .{ .iterate = true });
     const std_docs_dir = try www_dir.makeOpenPath("documentation/master/std", .{});
 
+    // GitHub passes missing environment variables as empty string.
     const GITHUB_OUTPUT = env_map.get("GITHUB_OUTPUT").?;
+    const ZIG_RELEASE_TAG = env_map.get("ZIG_RELEASE_TAG").?;
+    const ZIG_BOOTSTRAP_BRANCH = env_map.get("ZIG_BOOTSTRAP_BRANCH").?;
+
+    const zig_release_tag = if (ZIG_RELEASE_TAG.len != 0) ZIG_RELEASE_TAG else null;
+    const branch = if (ZIG_BOOTSTRAP_BRANCH.len != 0) ZIG_BOOTSTRAP_BRANCH else "master";
+
     const github_output = try std.fs.cwd().createFile(GITHUB_OUTPUT, .{});
     defer github_output.close();
 
@@ -141,11 +148,6 @@ pub fn main() !void {
         },
         else => |e| fatal("failed to check .git/shallow: {s}", .{@errorName(e)}),
     }
-
-    const zig_release_tag = if (env_map.get("ZIG_RELEASE_TAG")) |t|
-        if (t.len == 0) null else t
-    else
-        null;
 
     const zig_ver, const is_release = if (zig_release_tag) |tag| v: {
         // Manually triggered workflow.
@@ -225,8 +227,6 @@ pub fn main() !void {
     run(&env_map, bootstrap_dir, &.{ "git", "clean", "-fd" });
     run(&env_map, bootstrap_dir, &.{ "git", "reset", "--hard", "HEAD" });
     run(&env_map, bootstrap_dir, &.{ "git", "fetch" });
-
-    const branch = env_map.get("ZIG_BOOTSTRAP_BRANCH") orelse "master";
     run(&env_map, bootstrap_dir, &.{ "git", "checkout", print("origin/{s}", .{branch}) });
 
     {
