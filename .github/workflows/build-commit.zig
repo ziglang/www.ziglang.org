@@ -210,8 +210,8 @@ pub fn main() !void {
     );
 
     var template_map: std.StringHashMapUnmanaged([]const u8) = .empty;
-    try template_map.put(arena, "master_version", zig_ver);
-    try template_map.put(arena, "master_date", timestamp(now));
+    try template_map.put(arena, "master-version", zig_ver);
+    try template_map.put(arena, "master-date", timestamp(now));
 
     const src_tarball_name = print("zig-{s}.tar.xz", .{zig_ver});
     run(&env_map, tarballs_dir, &.{
@@ -615,9 +615,9 @@ fn addTemplateEntry(
     defer file.close();
     const size = (try file.stat()).size;
     const digest = try sha256sum(file, size);
-    try map.put(arena, print("{s}_tarball", .{name}), tarball_basename);
-    try map.put(arena, print("{s}_shasum", .{name}), print("{}", .{std.fmt.fmtSliceHexLower(&digest)}));
-    try map.put(arena, print("{s}_bytesize", .{name}), print("{d}", .{size}));
+    try map.put(arena, print("{s}-tarball", .{name}), tarball_basename);
+    try map.put(arena, print("{s}-shasum", .{name}), print("{}", .{std.fmt.fmtSliceHexLower(&digest)}));
+    try map.put(arena, print("{s}-bytesize", .{name}), print("{d}", .{size}));
 }
 
 fn sha256sum(file: std.fs.File, size: u64) ![32]u8 {
