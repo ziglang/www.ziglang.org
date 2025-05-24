@@ -635,7 +635,7 @@ fn sha256sum(file: std.fs.File, size: u64) ![32]u8 {
 }
 
 fn timestamp(now: i64) []const u8 {
-    const epoch_seconds: std.time.epoch.EpochSeconds = .{ .secs = @intCast(@divTrunc(now, std.time.ns_per_s)) };
+    const epoch_seconds: std.time.epoch.EpochSeconds = .{ .secs = @intCast(now) };
     const epoch_day = epoch_seconds.getEpochDay();
     const year_day = epoch_day.calculateYearDay();
     const month_day = year_day.calculateMonthDay();
@@ -643,7 +643,7 @@ fn timestamp(now: i64) []const u8 {
 }
 
 test timestamp {
-    try std.testing.expectEqualStrings("2025-05-21", timestamp(1747871443764528578));
+    try std.testing.expectEqualStrings("2025-05-24", timestamp(1748110477));
 }
 
 fn render(
