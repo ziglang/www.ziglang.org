@@ -764,7 +764,7 @@ fn gzipCopy(env_map: *std.process.EnvMap, bootstrap_dir: std.fs.Dir, src: []cons
             fatal("following command terminated abnormally:\n{s}", .{allocPrintCmd(&argv)});
         },
     }
-    const new_name = print("documentation/master/{s}.gz", .{src});
+    const new_name = print("{s}.gz", .{std.fs.path.basename(src)});
     dest_dir.writeFile(.{
         .sub_path = new_name,
         .data = result.stdout,
