@@ -84,7 +84,7 @@ const targets = [_]Target{
         .is_windows = true,
     },
     .{
-        .triple = "arm-linux-musleabihf",
+        .triple = "arm-linux-musleabi",
         .cpu = "baseline",
         .key = "armv7a-linux",
     },
