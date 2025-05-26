@@ -37,7 +37,7 @@ const targets = [_]Target{
     },
     .{
         .triple = "aarch64-macos-none",
-        .cpu = "apple_a14",
+        .cpu = "baseline",
         .key = "aarch64-macos",
     },
     .{
