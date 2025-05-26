@@ -66,11 +66,6 @@ const targets = [_]Target{
         .cpu = "baseline",
         .key = "powerpc64le-linux",
     },
-    //.{
-    //    .triple = "powerpc-linux-musl",
-    //    .cpu = "baseline",
-    //    .key = "powerpc-linux",
-    //},
     .{
         .triple = "x86-linux-musl",
         .cpu = "baseline",
