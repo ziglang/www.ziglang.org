@@ -93,6 +93,31 @@ const targets = [_]Target{
         .cpu = "baseline",
         .key = "loongarch64-linux",
     },
+    .{
+        .triple = "aarch64-freebsd.14.0-none",
+        .cpu = "baseline",
+        .key = "aarch64-freebsd",
+    },
+    .{
+        .triple = "powerpc64-freebsd.14.0-none",
+        .cpu = "baseline",
+        .key = "powerpc64-freebsd",
+    },
+    .{
+        .triple = "powerpc64le-freebsd.14.0-none",
+        .cpu = "baseline",
+        .key = "powerpc64le-freebsd",
+    },
+    .{
+        .triple = "riscv64-freebsd.14.0-none",
+        .cpu = "baseline",
+        .key = "riscv64-freebsd",
+    },
+    .{
+        .triple = "x86_64-freebsd.14.0-none",
+        .cpu = "baseline",
+        .key = "x86_64-freebsd",
+    },
 };
 
 var arena_instance = std.heap.ArenaAllocator.init(std.heap.page_allocator);
