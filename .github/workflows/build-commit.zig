@@ -614,8 +614,8 @@ fn deleteOld(builds_dir: std.fs.Dir, now: i64) !void {
                 const delta_s = now - @divTrunc(stat.ctime, std.time.ns_per_s);
                 const days = @divTrunc(delta_s, std.time.s_per_day);
                 if (days > 30) {
-                    log.info("deleting {d}-day-old tarball {s} (dry run)", .{ days, entry.path });
-                    //try builds_dir.remove(entry.path); // TODO enable after verifying output
+                    log.info("deleting {d}-day-old tarball {s}", .{ days, entry.path });
+                    try builds_dir.remove(entry.path);
                 } else {
                     log.info("not deleting {d}-day-old tarball {s}", .{ days, entry.path });
                 }
