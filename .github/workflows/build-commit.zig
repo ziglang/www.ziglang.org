@@ -769,6 +769,7 @@ fn gzipCopy(env_map: *std.process.EnvMap, bootstrap_dir: std.fs.Dir, src: []cons
         .cwd_dir = bootstrap_dir,
         .argv = &argv,
         .env_map = env_map,
+        .max_output_bytes = 50 * 1024 * 1024,
     }) catch |err| {
         fatal("failed to run the following command with {s}:\n{s}", .{ @errorName(err), allocPrintCmd(&argv) });
     };
