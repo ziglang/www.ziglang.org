@@ -615,7 +615,7 @@ fn deleteOld(builds_dir: std.fs.Dir, now: i64) !void {
                 const days = @divTrunc(delta_s, std.time.s_per_day);
                 if (days > 30) {
                     log.info("deleting {d}-day-old tarball {s}", .{ days, entry.path });
-                    try builds_dir.remove(entry.path);
+                    try builds_dir.deleteFile(entry.path);
                 } else {
                     log.info("not deleting {d}-day-old tarball {s}", .{ days, entry.path });
                 }
