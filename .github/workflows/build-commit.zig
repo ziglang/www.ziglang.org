@@ -118,6 +118,26 @@ const targets = [_]Target{
         .cpu = "baseline",
         .key = "x86_64-freebsd",
     },
+    .{
+        .triple = "aarch64-netbsd.10.1-none",
+        .cpu = "baseline",
+        .key = "aarch64-netbsd",
+    },
+    .{
+        .triple = "arm-netbsd.10.1-eabihf",
+        .cpu = "baseline",
+        .key = "arm-netbsd",
+    },
+    .{
+        .triple = "x86-netbsd.10.1-none",
+        .cpu = "baseline",
+        .key = "x86-netbsd",
+    },
+    .{
+        .triple = "x86_64-netbsd.10.1-none",
+        .cpu = "baseline",
+        .key = "x86_64-netbsd",
+    },
 };
 
 var arena_instance = std.heap.ArenaAllocator.init(std.heap.page_allocator);
