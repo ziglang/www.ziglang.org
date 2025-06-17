@@ -86,7 +86,7 @@ const targets = [_]Target{
     .{
         .triple = "arm-linux-musleabi",
         .cpu = "baseline",
-        .key = "armv7a-linux",
+        .key = "arm-linux",
     },
     .{
         .triple = "loongarch64-linux-musl",
