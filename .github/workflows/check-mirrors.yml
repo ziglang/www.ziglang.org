@@ -1,0 +1,25 @@
+name: Check Mirrors
+on:
+  schedule: [{ cron: "0 0 * * *" }]
+  workflow_dispatch: null
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check Mirrors
+        run: /home/ci/deps/zig-linux-x86_64-0.14.0/zig run ./.github/workflows/check-mirrors.zig -- "$GITHUB_STEP_SUMMARY"
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: [check]
+    if: ${{ always() && (needs.check.result == 'failure' || needs.check.result == 'timed_out') }}
+    steps:
+      - name: Send Notification
+        env:
+          PUSHOVER_USER: ${{ secrets.MIRROR_CHECK_PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.MIRROR_CHECK_PUSHOVER_TOKEN }}
+        run: curl -s \
+               -F user="$PUSHOVER_USER" \
+               -F token="$PUSHOVER_TOKEN" \
+               -F message="Zig download mirror validation failed" \
+               https://api.pushover.net/1/messages.json
