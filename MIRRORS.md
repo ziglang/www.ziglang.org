@@ -16,7 +16,8 @@ The following rules define how a mirror works and the requirements it is expecte
 * The mirror **must** support HTTPS with a valid signed certificate. `X` **must** start with `https://`.
 * The mirror **must** cache tarballs locally. For instance, it may not simply forward all requests to another mirror.
 * The mirror **may** routinely evict its local tarball caches based on any reasonable factor, such as age, access frequency, or the existence of newer versions. This does not affect whether the mirror may respond with 404 Not Found for requests to these files (see below).
-* The mirror **must** download its tarballs from `https://ziglang.org/`.
+* The mirror **must** download tarballs from `https://ziglang.org/` or a valid mirror of it.
+  * Typically, it is best to download only from `https://ziglang.org/`. One possible exception is when a pre-release is requested which is more likely to be available from an alternative mirror.
 * When a mirror receives a GET request for `X/<filename>`, the behavior depends on `<filename>`.
   * Parse the file name to extract the Zig version string. More details on this are [below](#parsing-versions).
   * Determine whether this is a "normal" or "pre-release" [Semantic Version](https://semver.org/).
