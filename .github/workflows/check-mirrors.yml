@@ -7,7 +7,8 @@ jobs:
   check:
     runs-on: [self-hosted, website]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with: { clean: false }
       - name: Check Mirrors
         run: |
           cd check-mirrors
@@ -15,7 +16,7 @@ jobs:
   notify-failure:
     runs-on: [self-hosted, website]
     needs: [check]
-    if: ${{ always() && (needs.check.result == 'failure' || needs.check.result == 'timed_out') }}
+    if: ${{ always() && (github.event_name != 'pull_request') && (needs.check.result == 'failure' || needs.check.result == 'timed_out') }}
     steps:
       - name: Send Notification
         env:

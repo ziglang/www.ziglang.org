@@ -189,10 +189,7 @@ pub fn main() Allocator.Error!u8 {
 
     std.log.info("{d} mirrors; {d} tarballs; {d} signatures", .{ mirrors.len, tarballs.items.len, minisigs.items.len });
 
-    var root_prog_node = std.Progress.start(.{
-        .root_name = "check",
-        .estimated_total_items = tarballs.items.len + minisigs.items.len,
-    });
+    var root_prog_node = std.Progress.start(.{ .root_name = "check" });
     defer root_prog_node.end();
     const tarballs_prog_node = root_prog_node.start("tarballs", tarballs.items.len);
     const minisigs_prog_node = root_prog_node.start("signatures", minisigs.items.len);
