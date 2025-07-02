@@ -121,7 +121,7 @@ pub fn main() Allocator.Error!u8 {
     defer http_client.deinit();
 
     const mirrors: []Mirror = mirrors: {
-        const raw = std.fs.cwd().readFileAllocOptions(arena, mirrors_path, 1024 * 1024 * 8, null, 1, 0) catch |err| {
+        const raw = std.fs.cwd().readFileAllocOptions(arena, mirrors_path, 1024 * 1024 * 8, null, .of(u8), 0) catch |err| {
             std.debug.panic("failed to read mirrors file '{s}': {s}", .{ mirrors_path, @errorName(err) });
         };
         const parsed = ziggy.parseLeaky([]const Mirror.Parsed, arena, raw, .{}) catch |err| {
