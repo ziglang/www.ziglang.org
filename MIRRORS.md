@@ -85,11 +85,11 @@ Note that the Zig core team always reserves the right to exclude mirrors from th
 
 ## Community-Written Solutions
 
-Some members of the Zig community have written software for hosting Zig mirrors, making it easier to comply with the requirements listed above. If you have an
-open-source repository which would fit here, feel free to open a pull request adding it below.
+Some members of the Zig community have written software for hosting Zig mirrors, making it easier to comply with the requirements listed above. If you have an open-source repository or guide that would fit here, feel free to open a pull request adding it below.
 
 > [!WARNING]
 > The Zig Software Foundation has not written or audited this code. As such, no guarantees can be made regarding its correctness, and it should **not** be
 > implicitly trusted. You are strongly encouraged to audit this software before using it, particularly if it will not be run in an isolated environment.
 
 * [hexops/wrench](https://github.com/hexops/wrench?tab=readme-ov-file#run-your-own-ziglangorgdownload-mirror)
+* [silversquirl/bunny-cdn-instructions](https://gist.github.com/silversquirl/5c8d734ce8e5712eff8126295847e99f)
