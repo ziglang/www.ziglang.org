@@ -60,7 +60,7 @@ const File = struct {
         ok: u64,
         content_mismatch,
         bad_status: std.http.Status,
-        err: anyerror,
+        fetch_error: GetResult.FetchError,
 
         pub fn format(res: Result, comptime fmt: []const u8, options: std.fmt.FormatOptions, w: anytype) !void {
             if (fmt.len != 0) std.fmt.invalidFmtError(fmt, res);
@@ -68,7 +68,7 @@ const File = struct {
             switch (res) {
                 .ok => |query_ns| try w.print("{}", .{std.fmt.fmtDuration(query_ns)}),
                 .content_mismatch => try w.writeAll(":warning: incorrect contents"),
-                .err => |err| try w.print(":warning: error: {s}", .{@errorName(err)}),
+                .fetch_error => |fe| try w.print(":warning: error: {s}", .{@errorName(fe.err)}),
                 .bad_status => |s| try w.print(":warning: bad status: {d} {s}", .{ @intFromEnum(s), s.phrase() orelse "?" }),
             }
         }
@@ -107,7 +107,10 @@ pub fn main() Allocator.Error!u8 {
 
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
-    const arena = arena_state.allocator();
+    var thread_safe_arena_state: std.heap.ThreadSafeAllocator = .{
+        .child_allocator = arena_state.allocator(),
+    };
+    const arena = thread_safe_arena_state.allocator();
 
     const args = std.process.argsAlloc(arena) catch @panic("argsAlloc failed");
     if (args.len != 3) @panic("usage: check-mirrors <mirrors.ziggy> <out.md>");
@@ -132,7 +135,7 @@ pub fn main() Allocator.Error!u8 {
         break :mirrors mirrors;
     };
 
-    const download_json_raw: []const u8 = try httpGetZsf(arena, &http_client, download_json_url);
+    const download_json_raw: []const u8 = try httpGetZsf(arena, arena, &http_client, download_json_url);
     const download_json: std.json.Value = std.json.parseFromSliceLeaky(std.json.Value, arena, download_json_raw, .{}) catch |err| {
         std.debug.panic("failed to parse download json: {s}", .{@errorName(err)});
     };
@@ -200,6 +203,9 @@ pub fn main() Allocator.Error!u8 {
     defer out_al.deinit(gpa);
     const out = out_al.writer(gpa);
 
+    var error_traces_out: std.ArrayListUnmanaged(u8) = .empty;
+    defer error_traces_out.deinit(gpa);
+
     try out.writeAll("## Tarballs\n\n");
 
     // Write a table header that looks like this (minus the whitespace on the second line):
@@ -218,6 +224,21 @@ pub fn main() Allocator.Error!u8 {
         for (mirrors) |m| {
             if (m.file_result != .ok) any_failures = true;
             try out.print(" {} |", .{m.file_result});
+            trace: {
+                if (builtin.strip_debug_info) break :trace;
+                const fe = switch (m.file_result) {
+                    .fetch_error => |fe| fe,
+                    else => break :trace,
+                };
+                const ert = fe.ert orelse break :trace;
+                const self_info = std.debug.getSelfDebugInfo() catch break :trace;
+                try error_traces_out.append(gpa, '\n');
+                std.debug.writeStackTrace(ert, error_traces_out.writer(gpa), self_info, .no_color) catch |err| switch (err) {
+                    error.OutOfMemory => |e| return e,
+                    else => {},
+                };
+                try error_traces_out.append(gpa, '\n');
+            }
         }
     }
     try out.writeAll("\n| **Avg. time** | |");
@@ -227,6 +248,11 @@ pub fn main() Allocator.Error!u8 {
         // Reset for below
         m.total_ns = 0;
         m.ns_div = 0;
+    }
+
+    if (error_traces_out.items.len > 0) {
+        try out.print("\n\n### Error Traces\n\n```{s}```", .{error_traces_out.items});
+        error_traces_out.clearRetainingCapacity();
     }
 
     try out.writeAll("\n\n## Signatures\n\n");
@@ -245,6 +271,21 @@ pub fn main() Allocator.Error!u8 {
         for (mirrors) |m| {
             if (m.file_result != .ok) any_failures = true;
             try out.print(" {} |", .{m.file_result});
+            trace: {
+                if (builtin.strip_debug_info) break :trace;
+                const fe = switch (m.file_result) {
+                    .fetch_error => |fe| fe,
+                    else => break :trace,
+                };
+                const ert = fe.ert orelse break :trace;
+                const self_info = std.debug.getSelfDebugInfo() catch break :trace;
+                try error_traces_out.append(gpa, '\n');
+                std.debug.writeStackTrace(ert, error_traces_out.writer(gpa), self_info, .no_color) catch |err| switch (err) {
+                    error.OutOfMemory => |e| return e,
+                    else => {},
+                };
+                try error_traces_out.append(gpa, '\n');
+            }
         }
     }
     try out.writeAll("\n| **Avg. time** | |");
@@ -252,6 +293,11 @@ pub fn main() Allocator.Error!u8 {
         const avg_ns: u64 = if (m.ns_div == 0) 0 else m.total_ns / m.ns_div;
         try out.print(" {} |", .{std.fmt.fmtDuration(avg_ns)});
         // No need to reset, we're not doing any more checks
+    }
+
+    if (error_traces_out.items.len > 0) {
+        try out.print("\n\n### Error Traces\n\n```{s}```", .{error_traces_out.items});
+        error_traces_out.clearRetainingCapacity();
     }
 
     try out.writeByte('\n');
@@ -289,18 +335,16 @@ fn checkFile(
     else
         try std.fmt.allocPrint(arena, master_tarball_template, .{file.name});
 
-    const trusted_data = try httpGetZsf(gpa, http_client, trusted_url);
+    const trusted_data = try httpGetZsf(gpa, arena, http_client, trusted_url);
     defer gpa.free(trusted_data);
 
     var wg: std.Thread.WaitGroup = .{};
 
     var oom: std.atomic.Value(bool) = .init(false);
     for (mirrors) |*m| {
-        // `arena` isn't thread-safe, so alloc the URL now.
-        const url = try std.fmt.allocPrint(arena, "{s}/{s}", .{ m.url, file.name });
         wg.spawnManager(
             checkOneFile,
-            .{ gpa, http_client, m, url, trusted_data, &oom, prog_node },
+            .{ gpa, arena, http_client, m, file, trusted_data, &oom, prog_node },
         );
     }
     wg.wait();
@@ -309,16 +353,22 @@ fn checkFile(
 
 fn checkOneFile(
     gpa: Allocator,
+    arena: Allocator,
     http_client: *std.http.Client,
     mirror: *Mirror,
-    url: []const u8,
+    file: *const File,
     trusted_data: []const u8,
     oom: *std.atomic.Value(bool),
     prog_node: std.Progress.Node,
 ) void {
     const mirror_prog_node = prog_node.start(mirror.username, 0);
     defer mirror_prog_node.end();
-    mirror.file_result = if (httpGet(gpa, http_client, url)) |get_result| switch (get_result) {
+
+    const url = std.fmt.allocPrint(arena, "{s}/{s}", .{ mirror.url, file.name }) catch |err| switch (err) {
+        error.OutOfMemory => return oom.store(true, .monotonic),
+    };
+
+    mirror.file_result = if (httpGet(gpa, arena, http_client, url)) |get_result| switch (get_result) {
         .success => |success| res: {
             defer gpa.free(success.data);
             if (std.mem.eql(u8, success.data, trusted_data)) {
@@ -329,7 +379,7 @@ fn checkOneFile(
                 break :res .content_mismatch;
             }
         },
-        .err => |err| .{ .err = err },
+        .fetch_error => |fe| .{ .fetch_error = fe },
         .bad_status => |s| .{ .bad_status = s },
     } else |err| switch (err) {
         error.OutOfMemory => return oom.store(true, .monotonic),
@@ -337,16 +387,22 @@ fn checkOneFile(
 }
 
 const GetResult = union(enum) {
-    err: anyerror,
+    fetch_error: FetchError,
     bad_status: std.http.Status,
     success: struct {
         /// Allocated into `gpa`, caller must free
         data: []u8,
         query_ns: u64,
     },
+    const FetchError = struct {
+        err: anyerror,
+        /// `ert.instruction_addresses` is allocated into `arena`.
+        ert: ?std.builtin.StackTrace,
+    };
 };
 fn httpGet(
     gpa: Allocator,
+    arena: Allocator,
     http_client: *std.http.Client,
     url: []const u8,
 ) Allocator.Error!GetResult {
@@ -358,7 +414,16 @@ fn httpGet(
         .location = .{ .url = url },
         .response_storage = .{ .dynamic = &buf },
         .max_append_size = 512 * 1024 * 1024,
-    }) catch |err| return .{ .err = err };
+    }) catch |err| {
+        const ert: ?std.builtin.StackTrace = if (@errorReturnTrace()) |ert| ert: {
+            const new_addrs = try arena.dupe(usize, ert.instruction_addresses);
+            break :ert .{ .index = ert.index, .instruction_addresses = new_addrs };
+        } else null;
+        return .{ .fetch_error = .{
+            .err = err,
+            .ert = ert,
+        } };
+    };
     if (res.status != .ok) {
         return .{ .bad_status = res.status };
     }
@@ -369,11 +434,12 @@ fn httpGet(
 }
 fn httpGetZsf(
     gpa: Allocator,
+    arena: Allocator,
     http_client: *std.http.Client,
     url: []const u8,
 ) Allocator.Error![]u8 {
-    switch (try httpGet(gpa, http_client, url)) {
-        .err => |err| std.debug.panic("fetch '{s}' failed: {s}", .{ url, @errorName(err) }),
+    switch (try httpGet(gpa, arena, http_client, url)) {
+        .fetch_error => |fe| std.debug.panic("fetch '{s}' failed: {s}", .{ url, @errorName(fe.err) }),
         .bad_status => |status| std.debug.panic("fetch '{s}' failed: bad status: {d} {s}", .{ url, @intFromEnum(status), status.phrase() orelse "?" }),
         .success => |res| return res.data,
     }
@@ -451,4 +517,5 @@ fn releaseTarballVersion(basename: []const u8) []const u8 {
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
+const builtin = @import("builtin");
 const ziggy = @import("ziggy");
