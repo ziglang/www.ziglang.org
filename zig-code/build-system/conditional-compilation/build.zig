@@ -24,6 +24,6 @@ fn detectWhetherToEnableLibFoo() bool {
 }
 
 // build=succeed
-// additional_option=-Dversion=1.2.3
+// additional_option=-Dversion="1.2.3"
 // additional_option=--summary
 // additional_option=all
