@@ -32,7 +32,7 @@ The following rules define how a mirror works and the requirements it is expecte
   * Invalid accesses, for instance to malformed filenames, **may** cause a 404 Not Found response.
   * Accesses to file names which do not end with ".zip", ".tar.xz", ".zip.minisig", or ".tar.xz.minisig", **may** cause a 404 Not Found response.
 * Files provided by the mirror **must** be bit-for-bit identical to their `https://ziglang.org/` counterparts.
-* If a mirror is required to serve a tarball which is has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org`, and respond with that downloaded file.
+* If a mirror is required to serve a tarball which is has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org`, and respond with that downloaded file (in case of concurrent requests, the mirror can respond with 503 Service Unavailable.). 
 * The mirror **may** rate-limit accesses. If an access failed due to rate-limiting, the mirror **should** respond with 429 Too Many Requests.
 * The mirror **may** undergo maintenance, upgrades, and other scheduled downtime. If an access fails for this reason, where possible, the mirror **should** respond with 503 Unavailable. The mirror **should** try to minimize such downtime.
 * The mirror **may** undergo occasional unintended and unscheduled downtime. The mirror **must** go to all efforts to minimize such outages, and **must** resolve such outages within a reasonable time upon being notified of them.
