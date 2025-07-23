@@ -28,6 +28,71 @@
 // an example of a correct date string.
 ---
 
+# [New Aarch64 Backend]($section.id('2025-07-23'))
+Author: Andrew Kelley & Jacob Young
+
+Jacob [upstreamed his new backend yesterday](https://github.com/ziglang/zig/pull/24536).
+
+```
+    275 src/codegen/aarch64/Mir.zig
+    138 src/codegen/aarch64/abi.zig
+  11799 src/codegen/aarch64/encoding.zig
+  10981 src/codegen/aarch64/Select.zig
+    905 src/codegen/aarch64/Disassemble.zig
+   1653 src/codegen/aarch64/Assemble.zig
+    194 src/codegen/aarch64.zig
+  25945 total
+```
+
+It's passing 1547/1960 (79%) of the behavior tests compared to the LLVM backend.
+
+Although it will grow in size as it approaches completion, it is considerably less logic than the x86 backend:
+
+```
+     608 src/arch/x86_64/abi.zig
+     904 src/arch/x86_64/bits.zig
+  194471 src/arch/x86_64/CodeGen.zig
+     507 src/arch/x86_64/Disassembler.zig
+     980 src/arch/x86_64/Emit.zig
+    2790 src/arch/x86_64/encoder.zig
+    1072 src/arch/x86_64/Encoding.zig
+    2700 src/arch/x86_64/encodings.zon
+     689 src/arch/x86_64/Lower.zig
+    2152 src/arch/x86_64/Mir.zig
+  206873 total
+```
+
+In terms of binary size, it adds about 330KB (2%) to the compiler executable.
+
+Jacob made some pretty neat architectural decisions with this one. For instance, it uses the actual machine code instruction encoding for the compiler's internal MIR structure. This means that instruction encoding is done on the N codegen threads instead of the 1 linker thread.
+
+All of the previous backends used a shared two-pass liveness analysis. This new backend has its own similar bespoke two-pass liveness analysis, except that the second pass also happens to generate all of the Mir in reverse at the same time! Besides cutting down on the number of passes that need to iterate over each function, making this backend speedier than other backends at generating code, this will allow backend-specific instruction lowerings that match multiple Air instructions to affect liveness and cause earlier instructions to become unused and end up not producing any code. This means that none of the incredibly complex deferred value tracking from the x86_64 backend is needed, allowing the tracking state machine to be vastly simplified.
+
+It's not quite an apples-to-apples comparison due to missing features, but so far it is significantly faster than the x86 backend:
+
+```
+Benchmark 1 (117 runs): zig build-exe hello.zig -fno-llvm -OReleaseSmall -target x86_64-linux
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          42.7ms ± 5.03ms    34.2ms … 54.1ms          0 ( 0%)        0%
+  peak_rss            110MB ±  580KB     109MB …  111MB          0 ( 0%)        0%
+  cpu_cycles          115M  ± 2.50M      110M  …  122M           0 ( 0%)        0%
+  instructions        167M  ± 11.4K      167M  …  167M           0 ( 0%)        0%
+  cache_references   7.64M  ± 80.4K     7.45M  … 7.86M           0 ( 0%)        0%
+  cache_misses       1.18M  ± 37.9K     1.10M  … 1.29M           1 ( 1%)        0%
+  branch_misses       885K  ± 11.2K      859K  …  911K           0 ( 0%)        0%
+Benchmark 2 (156 runs): zig build-exe hello.zig -fno-llvm -OReleaseSmall -target aarch64-linux
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          32.1ms ± 4.22ms    23.7ms … 44.2ms          0 ( 0%)        ⚡- 24.8% ±  2.6%
+  peak_rss            103MB ±  663KB     101MB …  105MB          7 ( 4%)        ⚡-  6.5% ±  0.1%
+  cpu_cycles         40.8M  ± 1.17M     37.8M  … 43.5M           0 ( 0%)        ⚡- 64.6% ±  0.4%
+  instructions       50.9M  ± 9.49K     50.9M  … 50.9M           0 ( 0%)        ⚡- 69.5% ±  0.0%
+  cache_references   2.58M  ± 52.4K     2.49M  … 2.85M           1 ( 1%)        ⚡- 66.2% ±  0.2%
+  cache_misses        454K  ± 22.9K      413K  …  512K           0 ( 0%)        ⚡- 61.6% ±  0.6%
+  branch_misses       274K  ± 3.13K      268K  …  283K           1 ( 1%)        ⚡- 69.0% ±  0.2%
+```
+
+As for machine code quality, it's too early to make reasonable comparisons, but suffice to say it's looking quite promising! I'll make another devlog entry when it's capable of compiling more complex projects.
+
 # [Zig Roadmap 2026]($section.id('2025-06-30'))
 Author: Loris Cro
 
