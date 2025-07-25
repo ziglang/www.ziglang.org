@@ -364,7 +364,7 @@ fn checkOneFile(
     const mirror_prog_node = prog_node.start(mirror.username, 0);
     defer mirror_prog_node.end();
 
-    const url = std.fmt.allocPrint(arena, "{s}/{s}", .{ mirror.url, file.name }) catch |err| switch (err) {
+    const url = std.fmt.allocPrint(arena, "{s}/{s}?source=health-check", .{ mirror.url, file.name }) catch |err| switch (err) {
         error.OutOfMemory => return oom.store(true, .monotonic),
     };
 
