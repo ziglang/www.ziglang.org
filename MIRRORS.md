@@ -31,6 +31,7 @@ The following rules define how a mirror works and the requirements it is expecte
     * These requirements apply equally to source tarballs (e.g. `zig-0.15.0-dev.671+c907866d5.tar.xz`), bootstrap source tarballs (e.g. `zig-bootstrap-0.15.0-dev.671+c907866d5.tar.xz`), and binary tarballs (e.g. `zig-x86_64-linux-0.15.0-dev.671+c907866d5.tar.xz`).
   * Invalid accesses, for instance to malformed filenames, **may** cause a 404 Not Found response.
   * Accesses to file names which do not end with ".zip", ".tar.xz", ".zip.minisig", or ".tar.xz.minisig", **may** cause a 404 Not Found response.
+* A tarball is always prefixed by the string: `zig`; every request with a differnet prefix maybe be discarded and the mirror **may** reply with 404 Not Found response (favicon.ico or others resources can be considered a valid request).
 * Files provided by the mirror **must** be bit-for-bit identical to their `https://ziglang.org/` counterparts.
 * If a mirror is required to serve a tarball which is has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org`, and respond with that downloaded file.
 * The mirror **may** rate-limit accesses. If an access failed due to rate-limiting, the mirror **should** respond with 429 Too Many Requests.
