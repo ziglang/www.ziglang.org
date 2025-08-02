@@ -1,4 +1,4 @@
-// build with `zig build-exe cimport.zig -lc -lraylib`
+// build with `zig build-exe c-interop.zig -lc -lraylib`
 const ray = @cImport({
     @cInclude("raylib.h");
 });
