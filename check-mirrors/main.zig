@@ -62,11 +62,9 @@ const File = struct {
         bad_status: std.http.Status,
         fetch_error: GetResult.FetchError,
 
-        pub fn format(res: Result, comptime fmt: []const u8, options: std.fmt.FormatOptions, w: anytype) !void {
-            if (fmt.len != 0) std.fmt.invalidFmtError(fmt, res);
-            _ = options;
+        pub fn format(res: Result, w: *std.Io.Writer) std.Io.Writer.Error!void {
             switch (res) {
-                .ok => |query_ns| try w.print("{}", .{std.fmt.fmtDuration(query_ns)}),
+                .ok => |query_ns| try w.print("{D}", .{query_ns}),
                 .content_mismatch => try w.writeAll(":warning: incorrect contents"),
                 .fetch_error => |fe| try w.print(":warning: error: {s}", .{@errorName(fe.err)}),
                 .bad_status => |s| try w.print(":warning: bad status: {d} {s}", .{ @intFromEnum(s), s.phrase() orelse "?" }),
@@ -102,7 +100,7 @@ const Mirror = struct {
     }
 };
 
-pub fn main() Allocator.Error!u8 {
+pub fn main() error{ OutOfMemory, WriteFailed }!u8 {
     const gpa = std.heap.smp_allocator;
 
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
@@ -199,12 +197,12 @@ pub fn main() Allocator.Error!u8 {
 
     var any_failures = false;
 
-    var out_al: std.ArrayListUnmanaged(u8) = .empty;
-    defer out_al.deinit(gpa);
-    const out = out_al.writer(gpa);
+    var out_aw: std.Io.Writer.Allocating = .init(gpa);
+    defer out_aw.deinit();
+    const out = &out_aw.writer;
 
-    var error_traces_out: std.ArrayListUnmanaged(u8) = .empty;
-    defer error_traces_out.deinit(gpa);
+    var error_traces_out: std.Io.Writer.Allocating = .init(gpa);
+    defer error_traces_out.deinit();
 
     try out.writeAll("## Tarballs\n\n");
 
@@ -223,7 +221,7 @@ pub fn main() Allocator.Error!u8 {
         try out.print("\n| `{s}` | {s} |", .{ file.name, file.version orelse "master" });
         for (mirrors) |m| {
             if (m.file_result != .ok) any_failures = true;
-            try out.print(" {} |", .{m.file_result});
+            try out.print(" {f} |", .{m.file_result});
             trace: {
                 if (builtin.strip_debug_info) break :trace;
                 const fe = switch (m.file_result) {
@@ -232,26 +230,26 @@ pub fn main() Allocator.Error!u8 {
                 };
                 const ert = fe.ert orelse break :trace;
                 const self_info = std.debug.getSelfDebugInfo() catch break :trace;
-                try error_traces_out.append(gpa, '\n');
-                std.debug.writeStackTrace(ert, error_traces_out.writer(gpa), self_info, .no_color) catch |err| switch (err) {
+                try error_traces_out.writer.writeByte('\n');
+                std.debug.writeStackTrace(ert, &error_traces_out.writer, self_info, .no_color) catch |err| switch (err) {
                     error.OutOfMemory => |e| return e,
                     else => {},
                 };
-                try error_traces_out.append(gpa, '\n');
+                try error_traces_out.writer.writeByte('\n');
             }
         }
     }
     try out.writeAll("\n| **Avg. time** | |");
     for (mirrors) |*m| {
         const avg_ns: u64 = if (m.ns_div == 0) 0 else m.total_ns / m.ns_div;
-        try out.print(" {} |", .{std.fmt.fmtDuration(avg_ns)});
+        try out.print(" {D} |", .{avg_ns});
         // Reset for below
         m.total_ns = 0;
         m.ns_div = 0;
     }
 
-    if (error_traces_out.items.len > 0) {
-        try out.print("\n\n### Error Traces\n\n```{s}```", .{error_traces_out.items});
+    if (error_traces_out.written().len > 0) {
+        try out.print("\n\n### Error Traces\n\n```{s}```", .{error_traces_out.written()});
         error_traces_out.clearRetainingCapacity();
     }
 
@@ -270,7 +268,7 @@ pub fn main() Allocator.Error!u8 {
         try out.print("\n| `{s}` | {s} |", .{ file.name, file.version orelse "master" });
         for (mirrors) |m| {
             if (m.file_result != .ok) any_failures = true;
-            try out.print(" {} |", .{m.file_result});
+            try out.print(" {f} |", .{m.file_result});
             trace: {
                 if (builtin.strip_debug_info) break :trace;
                 const fe = switch (m.file_result) {
@@ -279,24 +277,24 @@ pub fn main() Allocator.Error!u8 {
                 };
                 const ert = fe.ert orelse break :trace;
                 const self_info = std.debug.getSelfDebugInfo() catch break :trace;
-                try error_traces_out.append(gpa, '\n');
-                std.debug.writeStackTrace(ert, error_traces_out.writer(gpa), self_info, .no_color) catch |err| switch (err) {
+                try error_traces_out.writer.writeByte('\n');
+                std.debug.writeStackTrace(ert, &error_traces_out.writer, self_info, .no_color) catch |err| switch (err) {
                     error.OutOfMemory => |e| return e,
                     else => {},
                 };
-                try error_traces_out.append(gpa, '\n');
+                try error_traces_out.writer.writeByte('\n');
             }
         }
     }
     try out.writeAll("\n| **Avg. time** | |");
     for (mirrors) |*m| {
         const avg_ns: u64 = if (m.ns_div == 0) 0 else m.total_ns / m.ns_div;
-        try out.print(" {} |", .{std.fmt.fmtDuration(avg_ns)});
+        try out.print(" {D} |", .{avg_ns});
         // No need to reset, we're not doing any more checks
     }
 
-    if (error_traces_out.items.len > 0) {
-        try out.print("\n\n### Error Traces\n\n```{s}```", .{error_traces_out.items});
+    if (error_traces_out.written().len > 0) {
+        try out.print("\n\n### Error Traces\n\n```{s}```", .{error_traces_out.written()});
         error_traces_out.clearRetainingCapacity();
     }
 
@@ -308,7 +306,7 @@ pub fn main() Allocator.Error!u8 {
         };
         defer out_file.close();
 
-        out_file.writeAll(out_al.items) catch |err| {
+        out_file.writeAll(out_aw.written()) catch |err| {
             std.debug.panic("failed to write output: {s}", .{@errorName(err)});
         };
     }
@@ -406,14 +404,13 @@ fn httpGet(
     http_client: *std.http.Client,
     url: []const u8,
 ) Allocator.Error!GetResult {
-    var buf: std.ArrayList(u8) = .init(gpa);
-    defer buf.deinit();
+    var response: std.Io.Writer.Allocating = .init(gpa);
+    defer response.deinit();
     var timer = std.time.Timer.start() catch @panic("std.time.Timer not supported");
     const res = http_client.fetch(.{
         .method = .GET,
         .location = .{ .url = url },
-        .response_storage = .{ .dynamic = &buf },
-        .max_append_size = 512 * 1024 * 1024,
+        .response_writer = &response.writer,
     }) catch |err| {
         const ert: ?std.builtin.StackTrace = if (@errorReturnTrace()) |ert| ert: {
             const new_addrs = try arena.dupe(usize, ert.instruction_addresses);
@@ -428,7 +425,7 @@ fn httpGet(
         return .{ .bad_status = res.status };
     }
     return .{ .success = .{
-        .data = try buf.toOwnedSlice(),
+        .data = try response.toOwnedSlice(),
         .query_ns = timer.read(),
     } };
 }
