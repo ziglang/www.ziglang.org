@@ -99,6 +99,11 @@ const targets = [_]Target{
         .key = "aarch64-freebsd",
     },
     .{
+        .triple = "arm-freebsd-eabihf",
+        .cpu = "baseline",
+        .key = "arm-freebsd",
+    },
+    .{
         .triple = "powerpc64-freebsd-none",
         .cpu = "baseline",
         .key = "powerpc64-freebsd",
