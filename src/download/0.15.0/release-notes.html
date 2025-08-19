@@ -359,8 +359,10 @@
     <strong>647 commits</strong>.</p>
 
     <p>This release enables Zig's {#link|x86 Backend#} by default in Debug mode,
-    introduces a work-in-progress {#link|aarch64 Backend#}, and makes a large set of breaking changes
-    to I/O streams in pursuit of a concrete plan to resurrect async/await in the {#link|Standard Library#}.</p>
+    introduces a work-in-progress {#link|aarch64 Backend#}, and
+    {#link|completely reworks I/O streams|Writergate#} in pursuit of
+    <a href="https://kristoff.it/blog/zig-new-async-io/">a concrete plan to resurrect async/await</a> in the
+    {#link|Standard Library#}.</p>
 
     {#header_open|Table of Contents#}
     {#nav#}
@@ -381,8 +383,13 @@
     the specifier. #22997</li>
     </ul>
 
-    {#header_open|allow @ptrCast single-item pointer to slice#}
+    {#header_open|Allow @ptrCast single-item pointer to slice#}
     {#code|ptrcast-single.zig#}
+    {#header_close#}
+
+    {#header_open|Allow more operators on bool vectors#}
+    <p>Allow binary not, binary and, binary or, binary xor, and boolean not
+    operators on vectors of {#syntax#}bool{#endsyntax#}.</p>
     {#header_close#}
 
     {#header_close#}
@@ -396,12 +403,170 @@
     <li>TODO</li>
     </ul>
 
+    {#header_open|Writergate#}
+    <p><a href="/download/0.9.0/release-notes.html#Allocgate">Previous Scandal</a></p>
+    <p>All existing std.io readers and writers are deprecated in favor of the newly provided <code>std.Io.Reader</code> and <code>std.Io.Writer</code> which are <em>non-generic</em> and have the buffer above the vtable - in other words the buffer is <strong>in the interface, not the implementation</strong>. This means that although Reader and Writer are no longer generic, they are still transparent to optimization; all of the interface functions have a concrete hot path operating on the buffer, and only make vtable calls when the buffer is full.</p>
+<p>These changes are extremely breaking. I am sorry for that, but I have carefully examined the situation and acquired confidence that this is the direction that Zig needs to go. I hope you will strap in your seatbelt and come along for the ride; it will be worth it.</p>
+
+    {#header_open|Motivation#}
+    <p><a href="https://www.youtube.com/watch?v=f30PceqQWko">Systems Distributed 2025 Talk: Don't Forget To Flush</a></p>
+<ul>
+<li>The old interface was generic, poisoning structs that contain them and forcing all functions to be generic as well with <code>anytype</code>. The new interface is concrete.<ul>
+<li>Bonus: the concreteness removes temptation to make APIs operate directly on networking streams, file handles, or memory buffers, giving us a more reusable body of code. For example, <code>http.Server</code> after the change no longer depends on <code>std.net</code> - it operates only on streams now.</li>
+</ul>
+</li>
+<li>The old interface passed errors through rather than defining its own set of error codes. This made errors in streams about as useful as <code>anyerror</code>. The new interface carefully defines precise error sets for each function with actionable meaning.</li>
+<li>The new interface has the buffer in the interface, rather than as a separate &quot;BufferedReader&quot; / &quot;BufferedWriter&quot; abstraction. This is more optimizer friendly, particularly for debug mode.</li>
+<li>The new interface supports high level concepts such as vectors, splatting, and direct file-to-file transfer, which can propagate through an entire graph of readers and writers, reducing syscall overhead, memory bandwidth, and CPU usage.</li>
+<li>The new interface has &quot;peek&quot; functionality - a buffer awareness that offers API convenience for the user as well as simplicity for the implementation.</li>
+</ul>
+    {#header_close#}
+
+    {#header_open|Adapter API#}
+    <p>If you have an old stream and you need a new one, you can use <code>adaptToNewApi()</code> like this:</p>
+<pre>{#syntax#}fn foo(old_writer: anytype) !void {
+    var adapter = old_writer.adaptToNewApi(&.{});
+    const w: *std.Io.Writer = &adapter.new_interface;
+    try w.print("{s}", .{"example"});
+    // ...
+}{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|New std.Io.Writer and std.Io.Reader API#}
+    <p>These <strong>ring buffers</strong> have a bunch of handy new APIs that are more convenient, perform
+    better, and are not generic. For instance look at how reading until a
+    delimiter works now:</p>
+    <pre>{#syntax#}while (reader.takeDelimiterExclusive('\n')) |line| {
+    // do something with line...
+} else |err| switch (err) {
+    error.EndOfStream, // stream ended not on a line break
+    error.StreamTooLong, // line could not fit in buffer
+    error.ReadFailed, // caller can check reader implementation for diagnostics
+    => |e| return e,
+}{#endsyntax#}</pre>
+    <p>These streams also feature some unique concepts compared with other languages&#39; stream implementations:</p>
+    <ul>
+    <li>The concept of <strong>discarding</strong> when reading: allows efficiently ignoring data. For instance a decompression stream, when asked to discard a large amount of data, can skip decompression of entire frames.</li>
+    <li>The concept of <strong>splatting</strong> when writing: this allows a logical &quot;memset&quot; operation to pass through I/O pipelines without actually doing any memory copying, turning an O(M*N) operation into O(M) operation, where M is the number of streams in the pipeline and N is the number of repeated bytes. In some cases it can be even more efficient, such as when splatting a zero value that ends up being written to a file; this can be lowered as a seek forward.</li>
+    <li>Sending a file when writing: this allows an I/O pipeline to do direct fd-to-fd copying when the operating system supports it.</li>
+    <li>The stream user provides the buffer, but the stream implementation decides the minimum buffer size. This effectively moves state from the stream implementation into the user&#39;s buffer</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|std.fs.File.Reader and std.fs.File.Writer#}
+    <p><code>std.fs.File.Reader</code> memoizes key information about a file handle such as:</p>
+    <ul>
+    <li>The size from calling stat, or the error that occurred therein.</li>
+    <li>The current seek position.</li>
+    <li>The error that occurred when trying to seek.</li>
+    <li>Whether reading should be done positionally or streaming.</li>
+    <li>Whether reading should be done via fd-to-fd syscalls (e.g. <code>sendfile</code>)<br>versus plain variants (e.g. <code>read</code>).</li>
+    </ul>
+    <p>Fulfills the <code>std.Io.Reader</code> interface.</p>
+    <p>This API turned out to be super handy in practice. Having a concrete
+    type to pass around that memoizes file size is really nice. Most code that previously was calling
+    seek functions on a file handle should be updated to operate on this API instead, causing those
+    seeks to become no-ops thanks to positional reads, while still supporting a fallback to
+    streaming reading.</p>
+    <p><code>std.fs.File.Writer</code> is the same idea but for writing.</p>
+    {#header_close#}
+
+    {#header_open|Upgrading std.io.getStdOut().writer().print()#}
+<p>Please use buffering! And <strong>don't forget to flush</strong>!</p>
+<pre>{#syntax#}var stdout_buffer: [1024]u8 = undefined;
+var stdout_writer = std.fs.File.stdout().writer(&buffer);
+const stdout = &stdout_writer.interface;
+
+// ...
+
+try stdout.print("...", .{});
+
+// ...
+
+try stdout.flush();{#endsyntax#}</pre>
+    {#header_close#}
+
+
+    {#header_close#}
+
+    {#header_open|"{f}" Required to Call format Methods#}
+<p>Turn on <code>-freference-trace</code> to help you find all the format string breakage.</p>
+<p>Example:</p>
+<pre>{#syntax#}std.debug.print("{}", .{std.zig.fmtId("example")});{#endsyntax#}</pre>
+<p>This will now cause a compile error:</p>
+<pre><code>error: ambiguous format string; specify {f} to call format method, or {any} to skip it
+</code></pre>
+<p>Fixed by:</p>
+<pre>{#syntax#}std.debug.print("{f}", .{std.zig.fmtId("example")});{#endsyntax#}</pre>
+<p>Motivation: eliminate these two footguns:</p>
+<p>Introducing a <code>format</code> method to a struct caused a bug if there was formatting code somewhere that prints with {} and then starts rendering differently.</p>
+<p>Removing a <code>format</code> method to a struct caused a bug if there was formatting code somewhere that prints with {} and is now changed without notice.</p>
+<p>Now, introducing a <code>format</code> method will cause compile errors at all <code>{}</code> sites. In the future, it will have no effect.</p>
+<p>Similarly, eliminating a <code>format</code> method will not change any sites that use <code>{}</code>.</p>
+<p>Using <code>{f}</code> always tries to call a <code>format</code> method, causing a compile error if none exists.</p>
+    {#header_close#}
+
+    {#header_open|Format Methods No Longer Have Format Strings or Options#}
+<pre>{#syntax#}pub fn format(
+    this: @This(),
+    comptime format_string: []const u8,
+    options: std.fmt.FormatOptions,
+    writer: anytype,
+) !void { ... }{#endsyntax#}</pre>
+<p>⬇️</p>
+<pre>{#syntax#}pub fn format(this: @This(), writer: *std.io.Writer) std.io.Writer.Error!void { ... }{#endsyntax#}</pre>
+<p>The deleted <code>FormatOptions</code> are now for numbers only.</p>
+<p>Any state that you got from the format string, there are three suggested alternatives:</p>
+<ol>
+<li>different format methods</li>
+</ol>
+<pre>{#syntax#}pub fn formatB(foo: Foo, writer: *std.io.Writer) std.io.Writer.Error!void { ... }{#endsyntax#}</pre>
+<p>This can be called with {#syntax#}"{f}", .{std.fmt.alt(Foo, .formatB)}{#endsyntax#}.</p>
+<ol start="2">
+<li><code>std.fmt.Alt</code></li>
+</ol>
+<pre>{#syntax#}pub fn bar(foo: Foo, context: i32) std.fmt.Alt(F, F.baz) {
+    return .{ .data = .{ .context = context } };
+}
+const F = struct {
+    context: i32,
+    pub fn baz(f: F, writer: *std.io.Writer) std.io.Writer.Error!void { ... }
+};{#endsyntax#}</pre>
+<p>This can be called with {#syntax#}"{f}", .{foo.bar(1234)}{#endsyntax#}.</p>
+<ol start="3">
+<li>return a struct instance that has a format method, combined with <code>{f}</code>.</li>
+</ol>
+<pre>{#syntax#}pub fn bar(foo: Foo, context: i32) F {
+    return .{ .context = 1234 };
+}
+const F = struct {
+    context: i32,
+    pub fn format(f: F, writer: *std.io.Writer) std.io.Writer.Error!void { ... }
+};{#endsyntax#}</pre>
+<p>This can be called with {#syntax#}"{f}", .{foo.bar(1234)}{#endsyntax#}.</p>
+    {#header_close#}
+
+    {#header_open|Formatted Printing No Longer Deals with Unicode#}
+    <p>If you were relying on alignment combined with Unicode codepoints, it is
+    now ASCII/bytes only. The previous implementation was not fully
+    Unicode-aware. If you want to align Unicode strings you need full Unicode
+    support which the standard library does not provide.</p>
+    {#header_close#}
+
+    {#header_open|New Formatted Printing Specifiers#}
+    <ul>
+    <li>{t} is shorthand for <code>@tagName()</code> and <code>@errorName()</code></li>
+    <li>{d} and other integer printing can be used with custom types which calls <code>formatNumber</code> method.</li>
+    <li>{b64}: output string as standard base64</li>
+    </ul>
+    {#header_close#}
+
     {#header_open|De-Genericify Linked Lists#}
     <p>With these changes, there's no longer any incentive to hand-roll
     next/prev pointers. A little bit less bloat too.</p>
     <p>Migration guide:</p>
     <pre>{#syntax#}std.DoublyLinkedList(T).Node{#endsyntax#}</pre>
-    ⬇️
+    <p>⬇️</p>
     <pre>{#syntax#}struct {
     node: std.DoublyLinkedList.Node,
     data: T,
@@ -415,7 +580,26 @@
     {#header_open|List of Deprecations#}
     <p>Deprecated aliases that are now compile errors:</p>
     <ul>
-    <li>TODO</li>
+    <li>std.fs.File.reader -&gt; std.fs.File.deprecatedReader</li>
+    <li>std.fs.File.writer -&gt; std.fs.File.deprecatedWriter</li>
+    <li>std.fmt.fmtSliceEscapeLower -&gt; std.ascii.hexEscape</li>
+    <li>std.fmt.fmtSliceEscapeUpper -&gt; std.ascii.hexEscape</li>
+    <li>std.zig.fmtEscapes -&gt; std.zig.fmtString</li>
+    <li>std.fmt.fmtSliceHexLower -&gt; {x}</li>
+    <li>std.fmt.fmtSliceHexUpper -&gt; {X}</li>
+    <li>std.fmt.fmtIntSizeDec -&gt; {B}</li>
+    <li>std.fmt.fmtIntSizeBin -&gt; {Bi}</li>
+    <li>std.fmt.fmtDuration -&gt; {D}</li>
+    <li>std.fmt.fmtDurationSigned -&gt; {D}</li>
+    <li>std.fmt.Formatter -&gt; std.fmt.Alt<ul>
+      <li>now takes context type explicitly</li>
+      <li>no fmt string</li>
+      </ul></li>
+    <li>std.fmt.format -&gt; std.Io.Writer.print</li>
+    <li>std.io.GenericReader -&gt; std.Io.Reader</li>
+    <li>std.io.GenericWriter -&gt; std.Io.Writer</li>
+    <li>std.io.AnyReader -&gt; std.Io.Reader</li>
+    <li>std.io.AnyWriter -&gt; std.Io.Writer</li>
     </ul>
     {#header_close#}
     {#header_close#}
@@ -443,7 +627,7 @@
     </ul>
 
     {#header_open|x86 Backend#}
-    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_2.svg" style="height: 16em; float: right">
+    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_10.svg" style="height: 16em; float: right">
     TODO
     {#header_close#}
 
