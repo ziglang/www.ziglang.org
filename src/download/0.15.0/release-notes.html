@@ -379,9 +379,148 @@
     <li>packed union fields are no longer allowed to specify an align
     attribute, matching the existing behaviour with packed structs. Providing
     an override for the alignment previously did not affect the alignment of
-    fields, and migration to these new rules takes the form of simply deleting
+    fields, and migration to these new rules takes the form of deleting
     the specifier. #22997</li>
     </ul>
+
+    {#header_open|usingnamespace Removed#}
+    <p>This keyword added distance between the "expected" definition of a declaration
+    and its "actual" definition. Without it, discovering a declaration's definition
+    site is incredibly simple: find the definition of the namespace you are
+    looking in, then find the identifier being defined within that type
+    declaration. With {#syntax#}usingnamespace{#endsyntax#}, however, the
+    programmer can be led on a wild goose chase through different types and
+    files.</p>
+    <p>Not only does this harm readability for humans, but it is also
+    problematic for tooling; for instance, Autodoc cannot reasonably see
+    through non-trivial uses of <code>usingnamespace</code> (try looking for dl_iterate_phdr
+    under std.c in the 0.14.1 documentation).</p>
+    <p>By eliminating this feature, all identifiers can be trivially traced back to where they are
+    imported - by humans and machines alike.</p>
+
+    <p>Additionally, <code>usingnamespace</code> encourages poor namespacing.
+    When declarations are stored in a separate file, that typically means they
+    share something in common which is not shared with the contents of another
+    file. As such, it is likely a very reasonable choice to actually expose the
+    contents of that file via a separate namespace, rather than including them
+    in a more general parent namespace. Matthew often summarizes this point as
+    <strong>"Namespaces are good, actually"</strong>.</p>
+
+    <p>Finally, removal of this feature makes {#link|Incremental Compilation#}
+    fundamentally simpler.</p>
+
+    {#header_open|Use Case: Conditional Inclusion#}
+<p><code>usingnamespace</code> can be used to conditionally include a declaration as follows:</p>
+<pre>{#syntax#}pub usingnamespace if (have_foo) struct {
+    pub const foo = 123;
+} else struct {};{#endsyntax#}</pre>
+<p>The solution here is pretty simple: usually, you can just include the
+declaration unconditionally. Zig's lazy compilation means that it will not be
+analyzed unless referenced, so there are no problems!</p>
+<pre>{#syntax#}pub const foo = 123;{#endsyntax#}</pre>
+<p>Occasionally, this is not a good solution, as it lacks safety. Perhaps
+analyzing <code>foo</code> will always work, but will only give a meaningful
+result if <code>have_foo</code> is true, and it would be a bug to use it in any
+other case. In such cases, the declaration can be conditionally made a compile
+error:</p>
+<pre>{#syntax#}pub const foo = if (have_foo)
+    123
+else
+    @compileError("foo not supported on this target");{#endsyntax#}</pre>
+<p>Note that this does break feature detection with {#syntax#}@hasDecl{#endsyntax#}. However, feature detection through this mechanism is discouraged anyway, as it is very prone to typos and bitrotting.</p>
+    {#header_close#}
+
+    {#header_open|Use Case: Implementation Switching#}
+<p>A close cousin of conditional inclusion, <code>usingnamespace</code> can also be used to select from multiple implementations of a declaration at comptime:</p>
+<pre>{#syntax#}pub usingnamespace switch (target) {
+    .windows => struct {
+        pub const target_name = "windows";
+        pub fn init() T {
+            // ...
+        }
+    },
+    else => struct {
+        pub const target_name = "something good";
+        pub fn init() T {
+            // ...
+        }
+    },
+};{#endsyntax#}</pre>
+<p>The alternative to this is simpler and results in better code: make the definition itself a conditional.</p>
+<pre>{#syntax#}pub const target_name = switch (target) {
+    .windows => "windows",
+    else => "something good",
+};
+pub const init = switch (target) {
+    .windows => initWindows,
+    else => initOther,
+};
+fn initWindows() T {
+    // ...
+}
+fn initOther() T {
+    // ...
+}{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Use Case: Mixins#}
+    <p>A very common use case for <code>usingnamespace</code> in the wild was to implement mixins:</p>
+    <pre>{#syntax#}/// Mixin to provide methods to manipulate the `count` field.
+pub fn CounterMixin(comptime T: type) type {
+    return struct {
+        pub fn incrementCounter(x: *T) void {
+            x.count += 1;
+        }
+        pub fn resetCounter(x: *T) void {
+            x.count = 0;
+        }
+    };
+}
+
+pub const Foo = struct {
+    count: u32 = 0,
+    pub usingnamespace CounterMixin(Foo);
+};{#endsyntax#}</pre>
+    <p>The alternative for this is based on the key observation made above:
+    <strong>namespacing is good, actually</strong>. The same logic can be
+    applied to mixins. The word &quot;counter&quot; in
+    <code>incrementCounter</code> and <code>resetCounter</code> already kind of
+    <em>is</em> a namespace in spirit -- it&#39;s like how we used to have
+    <code>std.ChildProcess</code> but have since renamed it to
+    <code>std.process.Child</code>. The same idea can be applied here: what if
+    instead of <code>foo.incrementCounter()</code>, you called
+    <code>foo.counter.increment()</code>?</p>
+    <p>This can be elegantly achieved using a zero-bit field and <code>@fieldParentPtr</code>. Here is the above example ported to use this mechanism:</p>
+<pre>{#syntax#}/// Mixin to provide methods to manipulate the `count` field.
+pub fn CounterMixin(comptime T: type) type {
+    return struct {
+        pub fn increment(m: *@This()) void {
+            const x: *T = @alignCast(@fieldParentPtr("counter", m));
+            x.count += 1;
+        }
+        pub fn reset(m: *@This()) void {
+            const x: *T = @alignCast(@fieldParentPtr("counter", m));
+            x.count = 0;
+        }
+    };
+}
+
+pub const Foo = struct {
+    count: u32 = 0,
+    counter: CounterMixin(Foo) = .{},
+};{#endsyntax#}</pre>
+    <p>This code provides identical effects, but with a usage of
+    <code>foo.counter.increment()</code> rather than
+    <code>foo.incrementCounter()</code>. We have applied namespacing to our
+    mixin using zero-bit fields. In fact, this mechanism is <em>more</em>
+    useful, because it allows you to also include fields! For instance, in this
+    case, we could move the <code>count</code> field to
+    <code>CounterMixin</code>. Of course, in this case that wouldn&#39;t be a
+    mixin at all, but there are certainly cases where a mixin might require
+    certain additional state, which this system allows you to avoid duplicating
+    at the mixin&#39;s use site.</p>
+    {#header_close#}
+    {#header_close#}
 
     {#header_open|Allow @ptrCast Single-Item Pointer to Slice#}
     <p>This is essentially an extension of the 0.14.0 change which allowed {#syntax#}@ptrCast{#endsyntax#} to change the length of a slice. It can now also cast from a single-item pointer to any slice, returning a slice which refers to the same number of bytes as the operand.</p>
@@ -396,7 +535,7 @@
     {#header_close#}
 
     {#header_open|Error on Lossy Coercion from Int to Float#}
-    <p>This compile error has always been intended, but has simply gone unimplemented until now. The compiler will now emit a compile error if an integer value is coerced to a float at {#syntax#}comptime{#endsyntax#} but the integer value could not be precisely represented due to floating-point precision limitations. If you encounter this, you will get a compile error like this:</p>
+    <p>This compile error has always been intended, but has gone unimplemented until now. The compiler will now emit a compile error if an integer value is coerced to a float at {#syntax#}comptime{#endsyntax#} but the integer value could not be precisely represented due to floating-point precision limitations. If you encounter this, you will get a compile error like this:</p>
     {#code|lossy_int_to_float_coercion.zig#}
     <p>The solution is typically just to change an integer literal to a floating-point literal, thereby opting in to floating-point rounding behavior:</p>
     {#code|lossy_int_to_float_coercion_new.zig#}
@@ -638,7 +777,7 @@ const F = struct {
     <p>The web interface is, by itself, relatively uninteresting: it merely shows the list of build steps and information about which are in progress, and has a button to manually trigger a rebuild (hence giving a possible alternative to the <code>zig build --watch</code> workflow). If <code>--fuzz</code> is passed to <code>zig build</code>, it also exposes the {#link|Fuzzer#} interface, which is mostly unchanged from 0.14.0.</p>
     <p>However, the web interface also exposes a new feature known as "time reports". By passing the new <code>--time-report</code> option to <code>zig build</code>, the web interface will include expandable information about the time taken to evaluate every step in the graph. In particular, any {#syntax#}std.Build.Step.Compile{#endsyntax#} in the graph will be associated with detailed information about which parts of the Zig compiler pipeline were fast and slow, and which individual files and declarations took the most time to semantically analyze, generate machine code for, and link into the binary.</p>
     <img src="release-notes/build-webui.png" alt="zig build web interface" style="width:100%">
-    <p>This is a relatively advanced feature, but it can be very useful for determining parts of your code which are needlessly slowing down compilation, by simply opening the "Declarations" table and viewing the first few rows.</p>
+    <p>This is a relatively advanced feature, but it can be very useful for determining parts of your code which are needlessly slowing down compilation, by opening the "Declarations" table and viewing the first few rows.</p>
     <img src="release-notes/build-webui-time-report.png" alt="compile step time report" style="width:100%">
     <p>LLVM pass timing informations are also provided if the LLVM backend was used for the compilation.</p>
     {#header_close#}
@@ -684,8 +823,8 @@ const F = struct {
     {#header_close#}
 
     {#header_open|Compile Tests to Object File#}
-    <p>Typically, Zig's testing functionality is used to simply build an executable directly. However, there are situations in which you may want to build tests without linking them into a final executable, such as for integration with external code which loads your application as a shared library. Zig 0.15.0 facilitates such use cases by allowing an object file to be emitted instead of a binary, and this object can then be linked however is necessary.</p>
-    <p>On the CLI, this is represented simply by running <code>zig test-obj</code> instead of <code>zig test</code>.
+    <p>Typically, Zig's testing functionality is used to build an executable directly. However, there are situations in which you may want to build tests without linking them into a final executable, such as for integration with external code which loads your application as a shared library. Zig 0.15.0 facilitates such use cases by allowing an object file to be emitted instead of a binary, and this object can then be linked however is necessary.</p>
+    <p>On the CLI, this is represented by running <code>zig test-obj</code> instead of <code>zig test</code>.
     <p>When using the build system, it is represented through a new <code>std.Build</code> API. By passing the <code>emit_object</code> option to <code>std.Build.addTest</code>, you get a <code>Step.Compile</code> which emits an object file, which you can then use that as you would any other object. For instance, it can be installed for external use, or it can be directly linked into another step. However, note that when using this feature, the build runner does not communicate with the test runner, falling back to the default <code>zig test</code> behavior of reporting failed tests over stderr. Users of this feature will likely want to override the test runner for the compilation as well, replacing it with a custom one which communicates with some external test harness.</p>
     {#header_close#}
 
