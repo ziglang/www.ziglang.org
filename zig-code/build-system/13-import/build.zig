@@ -3,8 +3,10 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const tool = b.addExecutable(.{
         .name = "generate_struct",
-        .root_source_file = b.path("tools/generate_struct.zig"),
-        .target = b.graph.host,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tools/generate_struct.zig"),
+            .target = b.graph.host,
+        }),
     });
 
     const tool_step = b.addRunArtifact(tool);
@@ -14,9 +16,11 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const exe = b.addExecutable(.{
         .name = "hello",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     exe.root_module.addAnonymousImport("person", .{

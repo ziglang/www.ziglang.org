@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>0.15.0 Release Notes ⚡ The Zig Programming Language</title>
+    <link rel="icon" href="/favicon.png">
+    <link rel="icon" href="/favicon.svg">
+    <style>
+      :root{
+         --nav-width: 24em;
+         --nav-margin-l: 1em;
+      }
+      body{
+        font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+        margin: 0;
+        line-height: 1.5;
+      }
+      header {
+        padding: 0 1em;
+      }
+      h1, h2, h3, h4, h5 {
+        margin: 0.5em 0 0.5em;
+        line-height: 1.2;
+        font-weight: bold;
+        clear: both;
+      }
+      h1, h2 { font-size: 2.0em; }
+      h3 { font-size: 1.5em; }
+      h4 { font-size: 1.25em; }
+      h5 { font-size: 1.0em; }
+      #contents {
+        max-width: 60em;
+        margin: auto;
+        padding: 0 1em;
+      }
+      #navigation {
+        padding: 0 1em;
+      }
+
+      @media screen and (min-width: 1025px) {
+        header {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+        header h1 {
+          margin: auto;
+          max-width: 30em;
+        }
+        #navigation {
+          overflow: auto;
+          width: var(--nav-width);
+          height: 100vh;
+          position: fixed;
+          top:0;
+          left:0;
+          bottom:0;
+          padding: unset;
+          margin-left: var(--nav-margin-l);
+        }
+        #navigation nav ul {
+          padding-left: 1em;
+        }
+        #contents-wrapper {
+          margin-left: calc(var(--nav-width) + var(--nav-margin-l));
+        }
+    }
+
+    a:hover,a:focus {
+      background: #fff2a8;
+    }
+    dt {
+      font-weight: bold;
+    }
+    th, td {
+      padding: 0.6em;
+    }
+    tr:nth-child(even) {
+      background: #f2f3f3;
+    }
+    .t0_1, .t37, .t37_1 {
+      font-weight: bold;
+    }
+    .t2_0 {
+      color: #575757;
+    }
+    .t31_1 {
+      color: #b40000;
+    }
+    .t32_1 {
+      color: green;
+    }
+    .t36_1 {
+      color: #005C7A;
+    }
+    .file {
+      font-weight: bold;
+      border: unset;
+    }
+    code {
+      background: #f8f8f8;
+      border: 1px dotted silver;
+      padding-left: 0.3em;
+      padding-right: 0.3em;
+    }
+    pre > code {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    samp {
+      background: #fafafa;
+    }
+    pre > samp {
+      display: block;
+      overflow: auto;
+      padding: 0.5em;
+      border: 1px solid #eee;
+      line-height: normal;
+    }
+    kbd {
+      font-weight: bold;
+    }
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .tok-kw {
+        color: #333;
+        font-weight: bold;
+    }
+    .tok-str {
+        color: #d14;
+    }
+    .tok-builtin {
+        color: #005C7A;
+    }
+    .tok-comment {
+        color: #545454;
+        font-style: italic;
+    }
+    .tok-fn {
+        color: #900;
+        font-weight: bold;
+    }
+    .tok-null {
+        color: #005C5C;
+    }
+    .tok-number {
+        color: #005C5C;
+    }
+    .tok-type {
+        color: #458;
+        font-weight: bold;
+    }
+
+    figure {
+      margin: auto 0;
+    }
+    figure pre {
+      margin-top: 0;
+    }
+
+    figcaption {
+      padding-left: 0.5em;
+      font-size: small;
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+    figcaption.zig-cap {
+      background: #fcdba5;
+    }
+    figcaption.c-cap {
+      background: #a8b9cc;
+      color: #000;
+    }
+    figcaption.peg-cap {
+      background: #fcdba5;
+    }
+    figcaption.javascript-cap {
+      background: #365d95;
+      color: #fff;
+    }
+    figcaption.shell-cap {
+      background: #ccc;
+      color: #000;
+    }
+
+    aside {
+      border-left: 0.25em solid #f7a41d;
+      padding: 0 1em 0 1em;
+    }
+
+    h1 a, h2 a, h3 a, h4 a, h5 a {
+      text-decoration: none;
+      color: #333;
+    }
+
+    a.hdr {
+      visibility: hidden;
+    }
+    h1:hover > a.hdr, h2:hover > a.hdr, h3:hover > a.hdr, h4:hover > a.hdr, h5:hover > a.hdr {
+      visibility: visible;
+    }
+
+    pre {
+      counter-reset: line;
+    }
+    pre .line:before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      padding-right: 1em;
+      width: 2em;
+      text-align: right;
+      color: #999;
+    }
+    th pre code {
+        background: none;
+    }
+    th .line:before {
+        display: none;
+    }
+
+    #logo {
+      width: 100%;
+      height: 7em;
+      display: block;
+      background-image: url(https://ziglang.org/img/zig-logo-dark.svg);
+      background-repeat: no-repeat;
+    }
+
+    .diff-red {
+      background-color: #ffaeae;
+    }
+    .diff-green {
+      background-color: #bfb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body{
+          background:#121212;
+          color: #ccc;
+      }
+      a {
+          color: #88f;
+      }
+      a:hover,a:focus {
+          color: #000;
+      }
+      tr:nth-child(even) {
+        background: #1e1e1e;
+      }
+      .t2_0 {
+          color: grey;
+      }
+      .t31_1 {
+          color: red;
+      }
+      .t32_1 {
+          color: #00B800;
+      }
+      .t36_1 {
+          color: #0086b3;
+      }
+      code {
+        background: #222;
+        border-color: #444;
+      }
+      pre > code {
+          color: #ccc;
+          background: #222;
+          border: unset;
+      }
+      samp {
+        background: #000;
+        color: #ccc;
+      }
+      pre > samp {
+        border: unset;
+      }
+      .tok-kw {
+          color: #eee;
+      }
+      .tok-str {
+          color: #2e5;
+      }
+      .tok-builtin {
+          color: #ff894c;
+      }
+      .tok-comment {
+          color: #aa7;
+      }
+      .tok-fn {
+          color: #B1A0F8;
+      }
+      .tok-null {
+          color: #ff8080;
+      }
+      .tok-number {
+          color: #ff8080;
+      }
+      .tok-type {
+          color: #68f;
+      }
+      h1 a, h2 a, h3 a, h4 a, h5 a {
+          color: #aaa;
+      }
+      figcaption.zig-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.peg-cap {
+          background-color: #b27306;
+          color: #000;
+      }
+      figcaption.shell-cap {
+        background: #2a2a2a;
+        color: #fff;
+      }
+      #logo {
+        background-image: url(https://ziglang.org/img/zig-logo-light.svg);
+      }
+      .diff-red {
+        background-color: #410000;
+      }
+      .diff-green {
+        background-color: #002d00;
+      }
+    }
+  </style>
+  </head>
+  <body>
+    <div id="contents">
+    <a href="https://ziglang.org/"><span id="logo"></span></a>
+    <h1>0.15.0 Release Notes</h1>
+    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_1.svg" style="height: 18em; float: right">
+    <p>
+    <a href="https://ziglang.org/download/#release-0.15.0">Download &amp; Documentation</a>
+    </p>
+    <p>
+    Zig is a general-purpose programming language and toolchain for maintaining
+    <strong>robust</strong>, <strong>optimal</strong>, and <strong>reusable</strong> software.
+    </p>
+    <p>Zig development is funded via <a href="/zsf/">Zig Software Foundation</a>,
+    a 501(c)(3) non-profit organization. Please consider a recurring donation
+    so that we can offer more billable hours to our core team members. This is
+    the most straightforward way to accelerate the project along the
+    {#link|Roadmap#} to 1.0.</p>
+    <p>
+    This release features <strong>5 months of work</strong>:
+    changes from <strong>162 different contributors</strong>, spread among
+    <strong>647 commits</strong>.</p>
+
+    <p>This release enables Zig's x86 backend by default in Debug mode,
+    introduces a new, work-in-progress aarch64 backend, and makes a serious of breaking changes
+    to I/O streams in pursuit of a concrete plan to resurrect async/await in userland.</p>
+
+    {#header_open|Table of Contents#}
+    {#nav#}
+    {#header_close#}
+
+    {#header_open|Target Support#}
+    TODO
+    TODO don't forget to mention minimum supported OS versions this time
+    {#header_close#}
+
+    {#header_open|Language Changes#}
+    TODO
+    {#header_close#}
+
+    {#header_open|Standard Library#}
+    <p>Uncategorized changes:</p>
+    <ul>
+    <li>TODO</li>
+    </ul>
+
+    {#header_open|List of Deprecations#}
+    <p>Deprecated aliases that are now compile errors:</p>
+    <ul>
+    <li>TODO</li>
+    </ul>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Build System#}
+    <p>Uncategorized changes:</p>
+    <ul>
+      <li>TODO</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Compiler#}
+    <p>Uncategorized changes:</p>
+    <ul>
+      <li>TODO</li>
+    </ul>
+
+    {#header_open|x86 Backend#}
+    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_2.svg" style="height: 16em; float: right">
+    TODO
+    {#header_close#}
+
+    {#header_open|aarch64 Backend#}
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Linker#}
+    TODO
+    {#header_close#}
+
+
+    {#header_open|Fuzzer#}
+    TODO
+    {#header_close#}
+
+    {#header_open|Bug Fixes#}
+    <p><a href="https://github.com/ziglang/zig/issues?q=is%3Aclosed+is%3Aissue+label%3Abug+milestone%3A0.15.0">Full list of the 201 bug reports closed during this release cycle</a>.</p>
+    <p>Many bugs were both introduced and resolved within this release cycle.
+    Most bug fixes are omitted from these release notes for the sake of brevity.</p>
+
+    {#header_open|This Release Contains Bugs#}
+    <img alt="Zero the Ziguana" src="https://ziglang.org/img/Zero_8.svg" style="height: 13em; float: right">
+    <p>
+    Zig has
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Abug">known bugs</a>,
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Amiscompilation">miscompilations</a>, and
+    <a href="https://github.com/ziglang/zig/issues?q=is%3Aopen+is%3Aissue+label%3Aregression">regressions</a>.
+    </p>
+    <p>Even with Zig 0.15.0, working on a non-trivial project using Zig may
+    require participating in the development process.</p>
+    <p>When Zig reaches 1.0.0, {#link|Tier 1#} support will gain a bug policy as an additional
+    requirement.</p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Toolchain#}
+
+    {#header_open|LLVM 20#}
+    <p>
+      This release of Zig upgrades to
+      <a href="https://releases.llvm.org/20.1.0/docs/ReleaseNotes.html">LLVM 20.1.8</a>. This
+      covers Clang (<code>zig cc</code>/<code>zig c++</code>), libc++, libc++abi, libunwind, and
+      libtsan as well.
+    </p>
+    {#header_close#}
+
+    {#header_open|glibc 2.42#}
+    <p>
+      glibc version 2.42 is now available when cross-compiling.
+    </p>
+    {#header_close#}
+
+    {#header_open|MinGW-w64#}
+    <p>
+      This release bumps the bundled MinGW-w64 copy to commit
+      <code>38c8142f660b6ba11e7c408f2de1e9f8bfaf839e</code>.
+    </p>
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Roadmap#}
+    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_5.svg" style="height: 12em; float: right">
+
+    <p>The two major themes of the 0.16.0 release cycle will be <strong>async I/O</strong> and
+    <strong>aarch64 backend</strong>.</p>
+    <p>Some upcoming milestones we will be working towards:</p>
+    <ul>
+      <li>Introducing {#link|I/O as an Interface#}</li>
+      <li>Making the {#link|aarch64 Backend#} the default backend for debug mode.</li>
+      <li>Enhance {#link|Linker#} implementations, eliminating dependency on
+      <a href="https://lld.llvm.org/">LLD</a> and supporting {#link|Incremental Compilation#}.</li>
+      <li>Enhance the integrated {#link|Fuzzer#} to be competitive with AFL and other state-of-the-art fuzzers.</li>
+    </ul>
+    {#header_open|I/O as an Interface#}
+    TODO
+    {#header_close#}
+    {#header_close#}
+
+    {#header_open|Thank You Contributors!#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_7.svg" style="height: 11em; float: right">
+    <p>Here are all the people who landed at least one contribution into this release:</p>
+    <ul style="columns: 3">
+<li>Alex Rønne Petersen</li>
+<li>Andrew Kelley</li>
+<li>Matthew Lugg</li>
+<li>Jacob Young</li>
+<li>Ali Cheraghi</li>
+<li>Justus Klausecker</li>
+<li>Pat Tullmann</li>
+<li>Ryan Liptak</li>
+<li>David Rubin</li>
+<li>Linus Groh</li>
+<li>Carl Åstholm</li>
+<li>Pavel Verigo</li>
+<li>Techatrix</li>
+<li>Dominic</li>
+<li>Igor Anić</li>
+<li>Carmen</li>
+<li>Casey Banner</li>
+<li>Lewis Gaul</li>
+<li>Elaine Gibson</li>
+<li>Frank Denis</li>
+<li>Isaac Freund</li>
+<li>Kendall Condon</li>
+<li>samy007</li>
+<li>Bingwu Zhang</li>
+<li>Ian Johnson</li>
+<li>Loris Cro</li>
+<li>Alex Kladov</li>
+<li>Mason Remaley</li>
+<li>Meghan Denny</li>
+<li>tjog</li>
+<li>David Senoner</li>
+<li>IOKG04</li>
+<li>Jonathan Marler</li>
+<li>Koki Ueha</li>
+<li>Robin Voetter</li>
+<li>Shun Sakai</li>
+<li>xdBronch</li>
+<li>孙冰</li>
+<li>HydroH</li>
+<li>Marc Tiehuis</li>
+<li>Rue</li>
+<li>Silver</li>
+<li>Stefan Weigl-Bosker</li>
+<li>Stephen Gregoratto</li>
+<li>Wooster</li>
+<li>antlilja</li>
+<li>Brandon Black</li>
+<li>Carter Snook</li>
+<li>Chinmay Dalal</li>
+<li>Dacheng Gao</li>
+<li>Daniel Kongsgaard</li>
+<li>Felix Rabe</li>
+<li>Giuseppe Cesarano</li>
+<li>Ivan Stepanov</li>
+<li>Jackson Wambolt</li>
+<li>Jan200101</li>
+<li>John Benediktsson</li>
+<li>KNnut</li>
+<li>LN Liberda</li>
+<li>Manlio Perillo</li>
+<li>Michael Pfaff</li>
+<li>Misaki Kasumi</li>
+<li>Parker Liu</li>
+<li>SuperAuguste</li>
+<li>Veikka Tuominen</li>
+<li>Will Lillis</li>
+<li>kj4tmp</li>
+<li>psbob</li>
+<li>taylor.fish</li>
+<li>ziggoon</li>
+<li>Андрей Краевский</li>
+<li>190n</li>
+<li>A cursed quail</li>
+<li>Alexandre</li>
+<li>Alexandre Blais</li>
+<li>Andrew Barchuk</li>
+<li>Anton Serov</li>
+<li>Arnau Camprubí</li>
+<li>AsmArtisan256</li>
+<li>Atlas Yu</li>
+<li>Auguste Rame</li>
+<li>BreadTom</li>
+<li>Bryson Miller</li>
+<li>Cezary Kupaj</li>
+<li>Chris Boesch</li>
+<li>Chris Clark</li>
+<li>Cutie Deng</li>
+<li>David John</li>
+<li>Deatil</li>
+<li>DialecticalMaterialist</li>
+<li>Dimitris Dinodimos</li>
+<li>Dongjia Zhang</li>
+<li>DubbleClick</li>
+<li>Elijah M. Immer</li>
+<li>Eric Joldasov</li>
+<li>Erik Schlyter</li>
+<li>Evan Silberman</li>
+<li>Felix "xq" Queißner</li>
+<li>Felix Koppe</li>
+<li>Fri3dNstuff</li>
+<li>GalaxyShard</li>
+<li>GasInfinity</li>
+<li>Giuseppe Cesarano</li>
+<li>Gungun974</li>
+<li>Hilger Baumstark</li>
+<li>Jeremy Hertel</li>
+<li>Jonathan Gautheron</li>
+<li>Joost Doornbos</li>
+<li>Josh Wolfe</li>
+<li>Kevin Boulain</li>
+<li>Kevin Primm</li>
+<li>Kiëd Llaentenn</li>
+<li>Krzysztof Wolicki</li>
+<li>Kurt Wagner</li>
+<li>Kuwazy</li>
+<li>Luis Cáceres</li>
+<li>Maksat</li>
+<li>Marc</li>
+<li>Marcos Gutiérrez Alonso</li>
+<li>Mathias Lafeldt</li>
+<li>Matthew Roush</li>
+<li>Micah Switzer</li>
+<li>Mun Maks</li>
+<li>Nameless</li>
+<li>Pavel Otchertsov</li>
+<li>PlayDay</li>
+<li>Pratham</li>
+<li>Roman Frołow</li>
+<li>Ryan King</li>
+<li>Rémy Mathieu</li>
+<li>Sean Stasiak</li>
+<li>Seiichi Uchida</li>
+<li>Simon Brown</li>
+<li>Super User</li>
+<li>TCROC</li>
+<li>TibboddiT</li>
+<li>Tobias Simetsreiter</li>
+<li>Travis Staloch</li>
+<li>Tristan Ross</li>
+<li>Vadzim Dambrouski</li>
+<li>Xavier Bouchoux</li>
+<li>Zenomat</li>
+<li>Ziyi Yan</li>
+<li>blurrycat</li>
+<li>dan</li>
+<li>fardragon</li>
+<li>g-logunov</li>
+<li>godalming123</li>
+<li>homersimpsons</li>
+<li>imreallybadatnames™️</li>
+<li>jaune</li>
+<li>lumanetic</li>
+<li>massi</li>
+<li>mikastiv</li>
+<li>mochalins</li>
+<li>oittaa</li>
+<li>phatchman</li>
+<li>remeh</li>
+<li>rpkak</li>
+<li>sdzx-1</li>
+<li>triallax</li>
+<li>Özgür Akkurt</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|Thank You Sponsors!#}
+    <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 11em">
+    <p>
+    Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
+    Because of recurring donations, Zig is driven by the open source community, rather
+    than the goal of making profit. In particular, these fine folks sponsor Zig
+    for $50/month or more:
+    </p>
+    <ul style="columns: 3">
+TODO
+    </ul>
+    {#header_close#}
+    </div>
+  </body>
+</html>
