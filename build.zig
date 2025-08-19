@@ -25,7 +25,7 @@ const releases = [_][]const u8{
     "0.13.0",
     "0.14.0",
     "0.14.1",
-    "0.15.0",
+    "0.15.1",
 };
 
 pub fn build(b: *std.Build) void {
@@ -191,7 +191,7 @@ fn installReleaseNotes(
     doctest_exe: *std.Build.Step.Compile,
     docgen_exe: *std.Build.Step.Compile,
 ) void {
-    const release = "0.15.0";
+    const release = "0.15.1";
     const dirname = b.fmt("src/download/{s}/release-notes", .{release});
     const input = b.fmt("src/download/{s}/release-notes.html", .{release});
     const output = b.fmt("download/{s}/release-notes.html", .{release});
