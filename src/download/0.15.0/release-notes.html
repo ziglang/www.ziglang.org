@@ -335,7 +335,7 @@
     <div id="contents">
     <a href="https://ziglang.org/"><span id="logo"></span></a>
     <h1>0.15.0 Release Notes</h1>
-    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_1.svg" style="height: 18em; float: right">
+    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_3.svg" style="height: 18em; float: right">
     <p>
     <a href="https://ziglang.org/download/#release-0.15.0">Download &amp; Documentation</a>
     </p>
@@ -358,9 +358,9 @@
     changes from <strong>162 different contributors</strong>, spread among
     <strong>647 commits</strong>.</p>
 
-    <p>This release enables Zig's x86 backend by default in Debug mode,
-    introduces a new, work-in-progress aarch64 backend, and makes a serious list of breaking changes
-    to I/O streams in pursuit of a concrete plan to resurrect an improved version of async/await in userland.</p>
+    <p>This release enables Zig's {#link|x86 Backend#} by default in Debug mode,
+    introduces a work-in-progress {#link|aarch64 Backend#}, and makes a large set of breaking changes
+    to I/O streams in pursuit of a concrete plan to resurrect async/await in the {#link|Standard Library#}.</p>
 
     {#header_open|Table of Contents#}
     {#nav#}
@@ -372,14 +372,45 @@
     {#header_close#}
 
     {#header_open|Language Changes#}
-    TODO
+    <p>Minor changes:</p>
+    <ul>
+    <li>packed union fields are no longer allowed to specify an align
+    attribute, matching the existing behaviour with packed structs. Providing
+    an override for the alignment previously did not affect the alignment of
+    fields, and migration to these new rules takes the form of simply deleting
+    the specifier. #22997</li>
+    </ul>
+
+    {#header_open|allow @ptrCast single-item pointer to slice#}
+    {#code|ptrcast-single.zig#}
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Standard Library#}
+    <p>Warning: Zig 0.15.0 was tagged with an HTTPS regression:
+    <a href="https://github.com/ziglang/zig/issues/24911">HTTPS doesn't work on Windows</a>. If this
+    affects you, we recommend to wait until 0.15.1 before upgrading.</p>
     <p>Uncategorized changes:</p>
     <ul>
     <li>TODO</li>
     </ul>
+
+    {#header_open|De-Genericify Linked Lists#}
+    <p>With these changes, there's no longer any incentive to hand-roll
+    next/prev pointers. A little bit less bloat too.</p>
+    <p>Migration guide:</p>
+    <pre>{#syntax#}std.DoublyLinkedList(T).Node{#endsyntax#}</pre>
+    ⬇️
+    <pre>{#syntax#}struct {
+    node: std.DoublyLinkedList.Node,
+    data: T,
+}{#endsyntax#}</pre>
+    <p>Then use {#syntax#}@fieldParentPtr{#endsyntax#} to get from {#syntax#}node{#endsyntax#} to {#syntax#}data{#endsyntax#}.</p>
+    <p>In many cases there's a better pattern instead which is to put the node
+    intrusively into the data structure. If you're not already doing that,
+    there's a good chance linked list is the wrong data structure.</p>
+    {#header_close#}
 
     {#header_open|List of Deprecations#}
     <p>Deprecated aliases that are now compile errors:</p>
@@ -390,10 +421,19 @@
     {#header_close#}
 
     {#header_open|Build System#}
+    <p>Warning: Zig 0.15.0 was tagged with a package fetching regression:
+    <a href="https://github.com/ziglang/zig/issues/24911">HTTPS doesn't work on Windows</a>. If this
+    affects you, we recommend to wait until 0.15.1 is released before upgrading.</p>
     <p>Uncategorized changes:</p>
     <ul>
       <li>TODO</li>
     </ul>
+
+    {#header_open|allow emitting tests to an object file#}
+<p>A new <code>std.Build</code> API is introduced to allow representing this. By passing the <code>emit_object</code> option to <code>std.Build.addTest</code>, you get a <code>Step.Compile</code> which emits an object file; you can then use that as you would any other object, such as either installing it for external use, or linking it into another step.</p>
+<p>A standalone test is added to cover the build system API. It builds a test into an object, and links it into a final executable, which it then runs.</p>
+<p>Using this build system mechanism prevents the build system from noticing that you&#39;re running a <code>zig test</code>, so the build runner and test runner do not communicate over stdio. However, that&#39;s okay, because the real-world use cases for this feature don&#39;t want to do that anyway!</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|Compiler#}
@@ -413,6 +453,21 @@
 
     {#header_open|Incremental Compilation#}
     TODO
+    {#header_close#}
+
+    {#header_open|Threaded Codegen#}
+    TODO #24124
+    {#header_close#}
+
+    {#header_open|Allow configuring UBSan mode at the module level#}
+<p>The Zig CLI and build system now allow more control over the UBSan mode. <code>zig build-exe</code> and friends accept <code>-fsanitize-c=trap</code> and <code>-fsanitize-c=full</code>, with the old <code>-fsanitize-c</code> spelling being equivalent to the latter.</p>
+<ul>
+<li>With <code>full</code>, the UBSan runtime is built and linked into the program, resulting in better error messages when undefined behavior is triggered, at the cost of code size.</li>
+<li>With <code>trap</code>, trap instructions are inserted instead, resulting in <code>SIGILL</code> when undefined behavior is triggered, but smaller code size.</li>
+</ul>
+<p>If no flag is given, the default depends on the build mode.</p>
+<p>For {#link|zig cc#}, in addition to the existing <code>-fsanitize=undefined</code>, <code>-fsanitize-trap=undefined</code> is now also understood and is generally equivalent to <code>-fsanitize-c=trap</code> for <code>zig build-exe</code>.</p>
+<p>Due to this change, the <code>sanitize_c</code> field in the <code>std.Build</code> API had to have its type changed from <code>?bool</code> to <code>?std.zig.SanitizeC</code>. If you were setting this field to <code>true</code> or <code>false</code> previously, you&#39;ll now want <code>.full</code> or <code>.off</code>, respectively, to get the same behavior.</p>
     {#header_close#}
     {#header_close#}
 
@@ -454,12 +509,28 @@
       covers Clang (<code>zig cc</code>/<code>zig c++</code>), libc++, libc++abi, libunwind, and
       libtsan as well.
     </p>
+    <p>Zig now allows using LLVM's SPIR-V backend. Note that the self-hosted
+    SPIR-V backend remains the default. To use the LLVM backend, build with
+    <code>-fllvm</code>.</p>
+    {#header_close#}
+
+    {#header_open|Support dynamically-linked FreeBSD libc when cross-compiling#}
+    <p>Zig now allows cross-compiling to FreeBSD 14+ by providing stub libraries for dynamic libc, similar to how cross-compilation for glibc is handled. Additionally, all system and libc headers are provided.</p>
+    {#header_close#}
+
+    {#header_open|Support dynamically-linked NetBSD libc when cross-compiling#}
+    <p>Zig now allows cross-compiling to NetBSD 10.1+ by providing stub libraries for dynamic libc, similar to how cross-compilation for glibc is handled. Additionally, all system and libc headers are provided.</p>
     {#header_close#}
 
     {#header_open|glibc 2.42#}
     <p>
       glibc version 2.42 is now available when cross-compiling.
     </p>
+
+    {#header_open|Allow linking native glibc statically#}
+<p>Zig now permits linking against native glibc statically. This is not generally a good idea, but can be fine in niche use cases that don&#39;t rely on glibc functionality which internally requires dynamic linking (for things such as NSS and <code>iconv</code>).</p>
+<p>Note that this does not apply when cross-compiling using Zig&#39;s bundled glibc as Zig only provides dynamic glibc.</p>
+    {#header_close#}
     {#header_close#}
 
     {#header_open|MinGW-w64#}
@@ -467,6 +538,28 @@
       This release bumps the bundled MinGW-w64 copy to commit
       <code>38c8142f660b6ba11e7c408f2de1e9f8bfaf839e</code>.
     </p>
+    {#header_close#}
+
+    {#header_open|zig libc#}
+    <p>In this release, we've started the effort to share code between the
+    statically-linked libcs that Zig provides -- currently musl, wasi-libc, and
+    {#link|MinGW-w64#} -- by reimplementing common functions in Zig code in the new
+    zig libc library. This means that there is a single canonical implementation
+    of each function, and we're able to improve the implementation without
+    having to modify the vendored libc code from the aforementioned projects.
+    The <em>very</em> long term aspiration here -- which will require a
+    <em>lot</em> of work -- is to completely eliminate our dependency on the
+    upstream C implementation code of those libcs, such that we ship only their
+    headers.</p>
+
+    <p>This effort is contributor-friendly, so if this sounds interesting to
+    you, check out <a href="https://github.com/ziglang/zig/issues/2879">issue #2879</a> for details.</p>
+    {#header_close#}
+
+    {#header_open|zig cc#}
+    <p>zig cc now properly respects the -static and -dynamic flags. Most
+    notably, this allows statically linking native glibc, and dynamically
+    linking cross-compiled musl.</p>
     {#header_close#}
     {#header_close#}
 
@@ -661,9 +754,8 @@
     <img alt="Ziggy the Ziguana" src="https://ziglang.org/img/Ziggy_6.svg" style="height: 11em">
     <p>
     Special thanks to those who <a href="/zsf/">sponsor Zig</a>.
-    Because of recurring donations, Zig is driven by the open source community, rather
-    than the goal of making profit. In particular, these fine folks sponsor Zig
-    for $50/month or more:
+    Because of diverse, recurring donations, Zig is driven by the open source community, rather
+    than the goal of making profit. In particular, those below sponsor Zig for $50/month or more:
     </p>
     <ul style="columns: 3">
       <li><a href="https://github.com/thejoshwolfe" rel="nofollow noopener" target="_blank" class="external-link">Josh Wolfe</a></li>
