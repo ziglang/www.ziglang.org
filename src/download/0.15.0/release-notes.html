@@ -383,8 +383,23 @@
     the specifier. #22997</li>
     </ul>
 
-    {#header_open|Allow @ptrCast single-item pointer to slice#}
+    {#header_open|Allow @ptrCast Single-Item Pointer to Slice#}
+    <p>This is essentially an extension of the 0.14.0 change which allowed {#syntax#}@ptrCast{#endsyntax#} to change the length of a slice. It can now also cast from a single-item pointer to any slice, returning a slice which refers to the same number of bytes as the operand.</p>
     {#code|ptrcast-single.zig#}
+    <p>Note that in a future release, it is planned to move this functionality from {#syntax#}@ptrCast{#endsyntax#} to a new {#syntax#}@memCast{#endsyntax#} builtin, with the intention that the latter is a safer builtin which helps avoid unintentional out-of-bounds memory access. For more information, see <a href="https://github.com/ziglang/zig/issues/23935">issue #23935</a>.</p>
+    {#header_close#}
+
+    {#header_open|New Rules for Arithmetic on <code>undefined</code>#}
+    <p>Zig 0.15.0 begins to standardise the rules around how {#syntax#}undefined{#endsyntax#} behaves in different contexts -- in particular, how it behaves as an operand to arithmetic operators. In summary, only operators which can never trigger Illegal Behavior permit {#syntax#}undefined{#endsyntax#} as an operand. Any other operator will trigger Illegal Behavior (or a compile error if evaluated at {#syntax#}comptime{#endsyntax#}) if any operand is {#syntax#}undefined{#endsyntax#}.</p>
+    <p>Generally, it is always best practice to avoid any operation on {#syntax#}undefined{#endsyntax#}. If you do that, this language change, and any that follow, are unlikely to affect you. If you are affected by this language change, you might see a compile error on code which previously worked:</p>
+    {#code|arith-on-undefined.zig#}
+    {#header_close#}
+
+    {#header_open|Error on Lossy Coercion from Int to Float#}
+    <p>This compile error has always been intended, but has simply gone unimplemented until now. The compiler will now emit a compile error if an integer value is coerced to a float at {#syntax#}comptime{#endsyntax#} but the integer value could not be precisely represented due to floating-point precision limitations. If you encounter this, you will get a compile error like this:</p>
+    {#code|lossy_int_to_float_coercion.zig#}
+    <p>The solution is typically just to change an integer literal to a floating-point literal, thereby opting in to floating-point rounding behavior:</p>
+    {#code|lossy_int_to_float_coercion_new.zig#}
     {#header_close#}
 
     {#header_open|Allow more operators on bool vectors#}
@@ -613,11 +628,21 @@ const F = struct {
       <li>TODO</li>
     </ul>
 
-    {#header_open|allow emitting tests to an object file#}
-<p>A new <code>std.Build</code> API is introduced to allow representing this. By passing the <code>emit_object</code> option to <code>std.Build.addTest</code>, you get a <code>Step.Compile</code> which emits an object file; you can then use that as you would any other object, such as either installing it for external use, or linking it into another step.</p>
-<p>A standalone test is added to cover the build system API. It builds a test into an object, and links it into a final executable, which it then runs.</p>
-<p>Using this build system mechanism prevents the build system from noticing that you&#39;re running a <code>zig test</code>, so the build runner and test runner do not communicate over stdio. However, that&#39;s okay, because the real-world use cases for this feature don&#39;t want to do that anyway!</p>
+    {#header_open|macOS File System Watching#}
+    <p>The <code>--watch</code> flag to <code>zig build</code> is now supported on macOS. In Zig 0.14.0, the flag was accepted, but unfortunately behaved incorrectly with most editors. In Zig 0.15.0, this functionality has been <a href="https://github.com/ziglang/zig/pull/24649">rewritten on macOS</a> to use the File System Events API for fast and reliable file system update watching.</p>
+    <p>So, if you were avoiding <code>--watch</code> in previous Zig versions due to the macOS bug, you can now use it safely. This is particularly useful if you are interested in trying {#link|Incremental Compilation#}, since the typical way to use that feature today involves passing the flags <code>--watch -fincremental</code> to <code>zig build</code>.</p>
     {#header_close#}
+
+    {#header_open|Web Interface and Time Report#}
+    <p>Zig 0.14.0 included an experiemental web interface for the work-in-progress built-in fuzzer. In this version, that interface has been replaced with a more general web interface for the build system in general. This interface can be exposed using <code>zig build --webui</code>. When this option is passed, the <code>zig build</code> process will continue running even after the build completes.</p>
+    <p>The web interface is, by itself, relatively uninteresting: it merely shows the list of build steps and information about which are in progress, and has a button to manually trigger a rebuild (hence giving a possible alternative to the <code>zig build --watch</code> workflow). If <code>--fuzz</code> is passed to <code>zig build</code>, it also exposes the {#link|Fuzzer#} interface, which is mostly unchanged from 0.14.0.</p>
+    <p>However, the web interface also exposes a new feature known as "time reports". By passing the new <code>--time-report</code> option to <code>zig build</code>, the web interface will include expandable information about the time taken to evaluate every step in the graph. In particular, any {#syntax#}std.Build.Step.Compile{#endsyntax#} in the graph will be associated with detailed information about which parts of the Zig compiler pipeline were fast and slow, and which individual files and declarations took the most time to semantically analyze, generate machine code for, and link into the binary.</p>
+    <img src="release-notes/build-webui.png" alt="zig build web interface" style="width:100%">
+    <p>This is a relatively advanced feature, but it can be very useful for determining parts of your code which are needlessly slowing down compilation, by simply opening the "Declarations" table and viewing the first few rows.</p>
+    <img src="release-notes/build-webui-time-report.png" alt="compile step time report" style="width:100%">
+    <p>LLVM pass timing informations are also provided if the LLVM backend was used for the compilation.</p>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Compiler#}
@@ -636,11 +661,15 @@ const F = struct {
     {#header_close#}
 
     {#header_open|Incremental Compilation#}
-    TODO
+    <p>Zig 0.15.0 makes further progress on the work-in-progress Incremental Compilation functionality, which allows the compiler to perform very fast rebuilds by only re-compiling code which has changed. Various bugs have been fixed, particularly relating to changing file imports.</p>
+    <p>This feature is still experimental -- it has known bugs and can lead to miscompilations or incorrect compile errors. However, it is now stable enough in some contexts that much of the Zig core team have incorporated it into certain workflows; in particular, fixing large amounts of compile errors using incremental compilation with <code>-fno-emit-bin</code> usually works very well.</p>
+    <p>The next release cycle will continue to make progress towards enabling Incremental Compilation by default. In the meantime, if you are interested in trying this experimental feature, take a look at <a href="https://github.com/ziglang/zig/issues/21165">#21165</a>.</p>
     {#header_close#}
 
     {#header_open|Threaded Codegen#}
-    TODO #24124
+    <p>The Zig compiler is designed to be parallelized, so that different pieces of compilation work can run in parallel with one another to improve compiler performance. In the past the Zig compiler was largely single-threaded, but 0.14.0 introduced the ability for certain compiler backends to run in parallel with the frontend (Semantic Analysis). Zig 0.15.0 continues down this path by allowing Semantic Analysis, Code Generation, and Linking to <em>all</em> happen in parallel with one another. Code Generation in particular can itself be split across arbitrarily many threads.</p>
+    <p>Compared to 0.14.0, this typically leads to another performance boost when using self-hosted backends such as the {#link|x86 Backend#}. The improvement in wall-clock time varies from relatively insignificant to upwards of 50% depending on the specific code being compiled. However, as one real-world data point, building the Zig compiler using its own x86_64 backend got 27% faster on one system from this change, with the wall-clock time going from 13.8s to 10.0s.</p>
+    <p><a href="https://ziglang.org/devlog/2025/#2025-06-14">This devlog</a> looks a little more closely at this change, but in short, you can expect better compiler performance when using self-hosted backends thanks to this parallelization. <a href="https://asciinema.org/a/bgDEbDt4AkZWORDX1YBMuKBD3">Oh, and you get more detailed progress information too.</a></p>
     {#header_close#}
 
     {#header_open|Allow configuring UBSan mode at the module level#}
@@ -653,6 +682,13 @@ const F = struct {
 <p>For {#link|zig cc#}, in addition to the existing <code>-fsanitize=undefined</code>, <code>-fsanitize-trap=undefined</code> is now also understood and is generally equivalent to <code>-fsanitize-c=trap</code> for <code>zig build-exe</code>.</p>
 <p>Due to this change, the <code>sanitize_c</code> field in the <code>std.Build</code> API had to have its type changed from <code>?bool</code> to <code>?std.zig.SanitizeC</code>. If you were setting this field to <code>true</code> or <code>false</code> previously, you&#39;ll now want <code>.full</code> or <code>.off</code>, respectively, to get the same behavior.</p>
     {#header_close#}
+
+    {#header_open|Compile Tests to Object File#}
+    <p>Typically, Zig's testing functionality is used to simply build an executable directly. However, there are situations in which you may want to build tests without linking them into a final executable, such as for integration with external code which loads your application as a shared library. Zig 0.15.0 facilitates such use cases by allowing an object file to be emitted instead of a binary, and this object can then be linked however is necessary.</p>
+    <p>On the CLI, this is represented simply by running <code>zig test-obj</code> instead of <code>zig test</code>.
+    <p>When using the build system, it is represented through a new <code>std.Build</code> API. By passing the <code>emit_object</code> option to <code>std.Build.addTest</code>, you get a <code>Step.Compile</code> which emits an object file, which you can then use that as you would any other object. For instance, it can be installed for external use, or it can be directly linked into another step. However, note that when using this feature, the build runner does not communicate with the test runner, falling back to the default <code>zig test</code> behavior of reporting failed tests over stderr. Users of this feature will likely want to override the test runner for the compilation as well, replacing it with a custom one which communicates with some external test harness.</p>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|Linker#}
