@@ -129,7 +129,10 @@ pub fn build(b: *std.Build) void {
         "features/26-build.zig",
     });
 
-    const website = zine.website(b, .{ .build_assets = build_assets.items });
+    const website = zine.website(b, .{
+        .build_assets = build_assets.items,
+        .force = true,
+    });
     b.getInstallStep().dependOn(&website.step);
 
     const serve = zine.serve(b, .{ .build_assets = build_assets.items });
