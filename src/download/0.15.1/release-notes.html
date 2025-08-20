@@ -495,7 +495,7 @@
 
         <tr>
           <td colspan="9">
-            <hr />
+            <hr>
           </td>
         </tr>
 
@@ -788,7 +788,7 @@
 
         <tr>
           <td colspan="9">
-            <hr />
+            <hr>
           </td>
         </tr>
 
@@ -1103,7 +1103,7 @@
 
         <tr>
           <td colspan="9">
-            <hr />
+            <hr>
           </td>
         </tr>
 
@@ -1902,7 +1902,7 @@ const body_reader = try response.reader(&reader_buffer);{#endsyntax#}</pre>
     {#header_open|Removal of BoundedArray#}
     <p>This data structure was popular due to being trivially copyable. However,
     such convenience comes at a cost.</p>
-    <p>To upgrade, categorize code based on where the limit comes from:<p>
+    <p>To upgrade, categorize code based on where the limit comes from:</p>
     <ul>
     <li>Is it an arbitrary limit for which the BoundedArray usage is making a reasonable guess at the upper bound, or deciding resource limits? Don&#39;t guess. Don&#39;t make that choice for the calling code. Accept a buffer as a slice as an input, or use dynamic allocation. (example: the markdown code in #24699)</li>
     <li>Is it type safety around a stack buffer? Just use ArrayListUnmanaged. It&#39;s fine. It&#39;s actually really convenient that this same data structure works here. (example: test_switch_dispatch_loop.zig in #24699)</li>
@@ -1984,11 +1984,6 @@ try stack.appendSliceBounded(initial_stack);{#endsyntax#}</pre>
 
     {#header_close#}
     {#header_open|Compiler#}
-    <p>Uncategorized changes:</p>
-    <ul>
-      <li>TODO</li>
-    </ul>
-
     {#header_open|x86 Backend#}
     <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_10.svg" style="height: 16em; float: right">
     <p><strong>Zig 0.15.0 enables Zig's self-hosted x86_64 code generation backend by default in Debug mode.</strong></p>
@@ -2040,7 +2035,7 @@ try stack.appendSliceBounded(initial_stack);{#endsyntax#}</pre>
 
     {#header_open|Compile Tests to Object File#}
     <p>Typically, Zig's testing functionality is used to build an executable directly. However, there are situations in which you may want to build tests without linking them into a final executable, such as for integration with external code which loads your application as a shared library. Zig 0.15.x facilitates such use cases by allowing an object file to be emitted instead of a binary, and this object can then be linked however is necessary.</p>
-    <p>On the CLI, this is represented by running <code>zig test-obj</code> instead of <code>zig test</code>.
+    <p>On the CLI, this is represented by running <code>zig test-obj</code> instead of <code>zig test</code>.</p>
     <p>When using the build system, it is represented through a new <code>std.Build</code> API. By passing the <code>emit_object</code> option to <code>std.Build.addTest</code>, you get a <code>Step.Compile</code> which emits an object file, which you can then use that as you would any other object. For instance, it can be installed for external use, or it can be directly linked into another step. However, note that when using this feature, the build runner does not communicate with the test runner, falling back to the default <code>zig test</code> behavior of reporting failed tests over stderr. Users of this feature will likely want to override the test runner for the compilation as well, replacing it with a custom one which communicates with some external test harness.</p>
     {#header_close#}
 
@@ -2075,12 +2070,17 @@ try stack.appendSliceBounded(initial_stack);{#endsyntax#}</pre>
     {#header_close#}
 
     {#header_open|Linker#}
-    TODO
+    <p>Zig's linker received only bug fixes and maintenance during this release cycle. However,
+    it will be a key focus in the {#link|next release cycle|Roadmap#} in order to improve
+    {#link|Incremental Compilation#}.</p>
     {#header_close#}
 
-
     {#header_open|Fuzzer#}
-    TODO
+    <p>Although the core team remains enthusiastic about fuzzing, we did not find the time
+    to actively push forward on it during this release cycle. We'd like to acknowledge the efforts
+    of contributor Kendall Condon who opened a pull request
+    <a href="https://github.com/ziglang/zig/pull/23416">greatly improve capabilities of the fuzzer</a>, and is
+    patiently waiting for collaboration from the core team.</p>
     {#header_close#}
 
     {#header_open|Bug Fixes#}
@@ -2185,7 +2185,13 @@ try stack.appendSliceBounded(initial_stack);{#endsyntax#}</pre>
       <li>Enhance the integrated {#link|Fuzzer#} to be competitive with AFL and other state-of-the-art fuzzers.</li>
     </ul>
     {#header_open|I/O as an Interface#}
-    TODO
+    <p>Moving forward, Zig will rearrange all of its file system, networking,
+    timers, synchronization, and pretty much everything that can block into a new <code>std.Io</code> interface.
+    All code that performs I/O will need access to an <code>Io</code> instance, similar to how
+    all code that allocates memory needs access to an <code>Allocator</code> instance.</p>
+    <p>This will make it possible to write optimal, reusable packages that are agnostic to the application's
+    concurrency model, express <a href="https://kristoff.it/blog/asynchrony-is-not-concurrency/">asynchrony</a>,
+    catch more kinds of bugs, and make event loops first class citizens in the Zig ecosystem.</p>
     {#header_close#}
     {#header_close#}
 
