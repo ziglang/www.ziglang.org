@@ -525,9 +525,64 @@ pub const Foo = struct {
     {#header_open|async and await keywords removed#}
     <p>Also removed <code>@frameSize</code>.</p>
     <p>While {#syntax#}suspend{#endsyntax#}, {#syntax#}resume{#endsyntax#}, and
-    other machinery might remain depending on #23446, it is settled that there
-    will not be async/await keywords in the language. Instead, they will be
-    in the {#link|Standard Library#} as part of the {#link|Io Interface|I/O as an Interface#}.</p>
+    other machinery might remain depending on
+    <a href="https://github.com/ziglang/zig/issues/23446">Proposal: stackless coroutines as low-level primitives</a>,
+    it is settled that there will not be async/await keywords in the language.
+    Instead, they will be in the {#link|Standard Library#} as part of the
+    {#link|Io Interface|I/O as an Interface#}.</p>
+    {#header_close#}
+
+    {#header_open|switch on non-exhaustive enums#}
+    <p>Switching on non-exhaustive enums now allows mixing explicit tags with the <code>_</code> prong
+    (which represents all the unnamed values):</p>
+    <pre>{#syntax#}switch (enum_val) {
+    .special_case_1 => foo(),
+    .special_case_2 => bar(),
+    _, .special_case_3 => baz(),
+}{#endsyntax#}</pre>
+    <p>Additionally, it is now allowed to have both {#syntax#}else{#endsyntax#} and <code>_</code>:</p>
+    <pre>{#syntax#}const Enum = enum(u32) {
+    A = 1,
+    B = 2,
+    C = 44,
+    _
+};
+
+fn someOtherFunction(value: Enum) void {
+    // Does not compile giving "error: else and '_' prong in switch expression"
+    switch (value) {
+        .A   => {},
+        .C   => {},
+        else => {}, // Named tags go here (so, .B in this case)
+        _    => {}, // Unnamed tags go here
+    }
+}{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|Allow more operators on bool vectors#}
+    <p>Allow binary not, binary and, binary or, binary xor, and boolean not
+    operators on vectors of {#syntax#}bool{#endsyntax#}.</p>
+    {#header_close#}
+
+    {#header_open|Inline Assembly: Typed Clobbers#}
+    <p>Until now these were stringly typed. It's kinda obvious when you think about it.</p>
+    <pre>{#syntax#}pub fn syscall1(number: usize, arg1: usize) usize {
+    return asm volatile ("syscall"
+        : [ret] "={rax}" (-> usize),
+        : [number] "{rax}" (number),
+          [arg1] "{rdi}" (arg1),
+        : "rcx", "r11"
+    );
+}{#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}pub fn syscall1(number: usize, arg1: usize) usize {
+    return asm volatile ("syscall"
+        : [ret] "={rax}" (-> usize),
+        : [number] "{rax}" (number),
+          [arg1] "{rdi}" (arg1),
+        : .{ .rcx = true, .r11 = true });
+}{#endsyntax#}</pre>
+    <p>To auto-upgrade, run <code>zig fmt</code>.</p>
     {#header_close#}
 
     {#header_open|Allow @ptrCast Single-Item Pointer to Slice#}
@@ -549,17 +604,16 @@ pub const Foo = struct {
     {#code|lossy_int_to_float_coercion_new.zig#}
     {#header_close#}
 
-    {#header_open|Allow more operators on bool vectors#}
-    <p>Allow binary not, binary and, binary or, binary xor, and boolean not
-    operators on vectors of {#syntax#}bool{#endsyntax#}.</p>
-    {#header_close#}
-
     {#header_close#}
 
     {#header_open|Standard Library#}
     <p>Uncategorized changes:</p>
     <ul>
-    <li>TODO</li>
+    <li><code>fs.Dir.copyFile</code> no longer can fail with  <code>error.OutOfMemory</code></li>
+    <li><code>fs.Dir.atomicFile</code> now requires a <code>write_buffer</code> in the options</li>
+    <li><code>fs.AtomicFile</code> now has a <code>File.Writer</code> field rather than <code>File</code> field</li>
+    <li><code>fs.File</code>: removed <code>WriteFileOptions</code>, <code>writeFileAll</code>, <code>writeFileAllUnseekable</code> in favor of  <code>File.Writer</code> </li>
+    <li><code>posix.sendfile</code> removed in favor of <code>fs.File.Reader.sendFile</code></li>
     </ul>
 
     {#header_open|Writergate#}
@@ -645,6 +699,33 @@ try stdout.print("...", .{});
 try stdout.flush();{#endsyntax#}</pre>
     {#header_close#}
 
+    {#header_open|reworked std.compress.flate#}
+    <p><code>std.compress</code> API restructured everything to do with flate, which includes zlib and gzip.
+    <code>std.compress.flate.Decompress</code> is your main API now and it has a container parameter.</p>
+
+    <p>New API example:</p>
+    <pre>{#syntax#}var decompress_buffer: [std.compress.flate.max_window_len]u8 = undefined;
+var decompress: std.compress.flate.Decompress = .init(reader, .zlib, &decompress_buffer);
+const decompress_reader: *std.Io.Reader = &decompress.reader;{#endsyntax#}</pre>
+    <p>If <code>decompress_reader</code> will be piped entirely to a particular <code>*Writer</code>, then give it an empty buffer:</p>
+    <pre>{#syntax#}var decompress: std.compress.flate.Decompress = .init(reader, .zlib, &.{});
+const n = try decompress.streamRemaining(writer);{#endsyntax#}</pre>
+    <p>Compression functionality was removed. Sorry, you will have to copy the
+    old code into your application, or use a third party package.</p>
+    <p>It will be nice to get deflate back into the Zig standard library, but
+    for now, progressing the language takes priority over progressing the
+    standard library, and this change is on the path towards locking in the
+    final language design with respect to {#link|I/O as an Interface#}.</p>
+    <p>Some notable factors:</p>
+    <ul>
+    <li>New implementation does not calculate a checksum since it can be done out-of-band.</li>
+    <li>New implementation has the fancy match logic replaced with a naive {#syntax#}for{#endsyntax#}
+    loop. In the future it would be nice to add a memory copying utility for this that zstd would also use.
+    Despite this, the new implementation performs roughly 10% better in an untar implementation, while
+    reducing compiler code size by 2%. #24614</li>
+    </ul>
+
+    {#header_close#}
 
     {#header_close#}
 
@@ -736,8 +817,61 @@ const F = struct {
     there's a good chance linked list is the wrong data structure.</p>
     {#header_close#}
 
-    {#header_open|List of Deprecations#}
-    <p>Deprecated aliases that are now compile errors:</p>
+    {#header_open|std.Progress supports progress bar escape codes#}
+    <p>Turns out there are
+    <a href="https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC">escape codes for sending progress status to the terminal</a>.</p>
+    <p>It integrates with <code>--watch</code> in the {#link|Build System#} to set error state when
+    failures occur, and clear it when they are fixed, also to clear progress
+    when waiting for user input.</p>
+    <p><code>std.Progress</code> gains a <code>setStatus</code> function and the following enum:</p>
+    <pre>{#syntax#}pub const Status = enum {
+    /// Indicates the application is progressing towards completion of a task.
+    /// Unless the application is interactive, this is the only status the
+    /// program will ever have!
+    working,
+    /// The application has completed an operation, and is now waiting for user
+    /// input rather than calling exit(0).
+    success,
+    /// The application encountered an error, and is now waiting for user input
+    /// rather than calling exit(1).
+    failure,
+    /// The application encountered at least one error, but is still working on
+    /// more tasks.
+    failure_working,
+};{#endsyntax#}</pre>
+    {#header_close#}
+
+    {#header_open|HTTP Client and Server#}
+    TODO #24698
+    {#header_close#}
+
+    {#header_open|TLS Client#}
+    <p>std.crypto.tls.Client no longer depends on <code>std.net</code> or <code>std.fs</code>. Instead, it only
+    depends on <code>std.Io.Reader</code> and <code>std.Io.Writer</code>.</p>
+    {#header_close#}
+
+    {#header_open|ArrayList: make unmanaged the default#}
+    <ul>
+    <li><code>std.ArrayList</code> -&gt; <code>std.array_list.Managed</code></li>
+    <li><code>std.ArrayListAligned</code> -&gt; <code>std.array_list.AlignedManaged</code></li>
+    </ul>
+    <p>Warning: these will both eventually be removed entirely.</p>
+    <p>Having an extra field is more complicated than not having an extra field, so not having it is the null hypothesis. What pattern does having an allocator field allow that not having one doesn&#39;t?</p>
+    <ul>
+    <li>avoiding accidentally using the wrong allocator</li>
+    <li>convenience when you need to pass an allocator also</li>
+    </ul>
+    <p>But there are downsides:</p>
+    <ul>
+    <li>worse method function signatures in the face of reservations</li>
+    <li>lost inability to statically initialize</li>
+    <li>extra memory storage cost, particularly for nested containers</li>
+    </ul>
+    <p>The reasoning goes like this: the upsides are not worth the downsides. Also, given that the correct allocator is always handy, and incorrect use can be trivially safety-checked, the simplicity of only having one implementation is quite valuable compared to the convenience that is gained by having a second implementation.</p>
+    <p>In practice, this has not been a controversial change with experienced Zig users.</p>
+    {#header_close#}
+
+    {#header_open|Deletions and Deprecations#}
     <ul>
     <li>std.fs.File.reader -&gt; std.fs.File.deprecatedReader</li>
     <li>std.fs.File.writer -&gt; std.fs.File.deprecatedWriter</li>
@@ -759,6 +893,20 @@ const F = struct {
     <li>std.io.GenericWriter -&gt; std.Io.Writer</li>
     <li>std.io.AnyReader -&gt; std.Io.Reader</li>
     <li>std.io.AnyWriter -&gt; std.Io.Writer</li>
+    <li>deleted <code>std.io.SeekableStream</code><ul>
+    <li>Instead, use <code>*std.fs.File.Reader</code>, <code>*std.fs.File.Writer</code>, or <code>std.ArrayListUnmanaged</code> concrete types, because the implementations will be fundamentally different based on whether you are operating on files or memory.</li>
+    </ul>
+    </li>
+    <li>deleted <code>std.io.BitReader</code><ul>
+    <li>Bit reading should not be astracted at this layer; it just makes your hot loop harder to optimize. Tightly couple this code with your stream implementation.</li>
+    </ul>
+    </li>
+    <li>deleted <code>std.io.BitWriter</code><ul>
+    <li>ditto</li>
+    </ul></li>
+    <li>deleted <code>std.Io.LimitedReader</code></li>
+    <li>deleted <code>std.Io.BufferedReader</code></li>
+    <li>deleted <code>std.fifo</code></li>
     </ul>
     {#header_close#}
     {#header_close#}
@@ -766,7 +914,7 @@ const F = struct {
     {#header_open|Build System#}
     <p>Uncategorized changes:</p>
     <ul>
-      <li>TODO</li>
+      <li><code>zig build</code>: print newline before build summary</li>
     </ul>
 
     {#header_open|macOS File System Watching#}
@@ -955,6 +1103,11 @@ const F = struct {
     <p>zig cc now properly respects the -static and -dynamic flags. Most
     notably, this allows statically linking native glibc, and dynamically
     linking cross-compiled musl.</p>
+    {#header_close#}
+
+    {#header_open|zig objcopy regressed#}
+    <p>Sorry, the code was not up to quality standards and must be reworked.
+    Some functionality remains; other functionality errors with "unimplemented". #24522</p>
     {#header_close#}
     {#header_close#}
 
