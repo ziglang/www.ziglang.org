@@ -25,6 +25,7 @@ const releases = [_][]const u8{
     "0.13.0",
     "0.14.0",
     "0.14.1",
+    "0.15.1",
 };
 
 pub fn build(b: *std.Build) void {
@@ -50,7 +51,7 @@ pub fn build(b: *std.Build) void {
         installFile(b, generated, b.fmt("documentation/{s}/index.html", .{release}));
     }
 
-    var build_assets = std.ArrayList(zine.BuildAsset).init(b.allocator);
+    var build_assets = std.array_list.Managed(zine.BuildAsset).init(b.allocator);
     runZigScripts(b, &build_assets, "zig-code", &.{
         "index.zig",
 
@@ -128,7 +129,10 @@ pub fn build(b: *std.Build) void {
         "features/26-build.zig",
     });
 
-    const website = zine.website(b, .{ .build_assets = build_assets.items });
+    const website = zine.website(b, .{
+        .build_assets = build_assets.items,
+        .force = true,
+    });
     b.getInstallStep().dependOn(&website.step);
 
     const serve = zine.serve(b, .{ .build_assets = build_assets.items });
@@ -141,7 +145,7 @@ fn installFile(b: *std.Build, lp: std.Build.LazyPath, dest_rel_path: []const u8)
 
 fn runZigScripts(
     b: *std.Build,
-    assets: *std.ArrayList(zine.BuildAsset),
+    assets: *std.array_list.Managed(zine.BuildAsset),
     assets_dir_path: []const u8,
     paths: []const []const u8,
 ) void {
@@ -187,7 +191,7 @@ fn installReleaseNotes(
     doctest_exe: *std.Build.Step.Compile,
     docgen_exe: *std.Build.Step.Compile,
 ) void {
-    const release = "0.14.0";
+    const release = "0.15.1";
     const dirname = b.fmt("src/download/{s}/release-notes", .{release});
     const input = b.fmt("src/download/{s}/release-notes.html", .{release});
     const output = b.fmt("download/{s}/release-notes.html", .{release});

@@ -26,7 +26,7 @@ pub fn main() !void {
         while (i < args.len) : (i += 1) {
             const arg = args[i];
             if (std.mem.eql(u8, "-h", arg) or std.mem.eql(u8, "--help", arg)) {
-                try std.io.getStdOut().writeAll(usage);
+                try std.fs.File.stdout().writeAll(usage);
                 return std.process.cleanExit();
             } else if (std.mem.eql(u8, "--input-file", arg)) {
                 i += 1;
@@ -57,13 +57,15 @@ pub fn main() !void {
         fatal("unable to open '{s}': {s}", .{ input_file_path, @errorName(err) });
     };
     defer input_file.close();
+    var input_file_buffer: [1000]u8 = undefined;
+    var input_file_reader = input_file.reader(&input_file_buffer);
 
     var output_file = std.fs.cwd().createFile(output_file_path, .{}) catch |err| {
         fatal("unable to open '{s}': {s}", .{ output_file_path, @errorName(err) });
     };
     defer output_file.close();
 
-    var json_reader = std.json.reader(arena, input_file.reader());
+    var json_reader: std.json.Reader = .init(arena, &input_file_reader.interface);
     var words = try std.json.ArrayHashMap([]const u8).jsonParse(arena, &json_reader, .{
         .allocate = .alloc_if_needed,
         .max_value_len = 1000,
