@@ -1787,11 +1787,60 @@ const F = struct {
     {#header_close#}
 
     {#header_open|HTTP Client and Server#}
-    TODO #24698
+    <p>These APIs and implementations have been completely reworked.</p>
+    <p>Server API no longer depends on <code>std.net</code>. Instead, it only depends on
+    <code>std.Io.Reader</code> and <code>std.Io.Writer</code>. It also has all
+    the arbitrary limitations removed. For instance, there is no longer a limit
+    on how many headers can be sent.</p>
+    <pre>{#syntax#}var read_buffer: [8000]u8 = undefined;
+var server = std.http.Server.init(connection, &read_buffer);{#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}var recv_buffer: [4000]u8 = undefined;
+var send_buffer: [4000]u8 = undefined;
+var conn_reader = connection.stream.reader(&recv_buffer);
+var conn_writer = connection.stream.writer(&send_buffer);
+var server = std.http.Server.init(conn_reader.interface(), &conn_writer.interface);{#endsyntax#}</pre>
+    <p>Server and Client both share <code>std.http.Reader</code> and <code>std.http.BodyWriter</code> which
+    again only depends on I/O streams and not networking.</p>
+    <p>Client upgrade example:</p>
+    <pre>{#syntax#}var server_header_buffer: [1024]u8 = undefined;
+var req = try client.open(.GET, uri, .{
+    .server_header_buffer = &server_header_buffer,
+});
+defer req.deinit();
+
+try req.send();
+try req.wait();
+
+const body_reader = try req.reader();
+// read from body_reader...
+
+var it = req.response.iterateHeaders();
+while (it.next()) |header| {
+    _ = header.name;
+    _ = header.value;
+}{#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}var req = try client.request(.GET, uri, .{});
+defer req.deinit();
+
+try req.sendBodiless();
+var response = try req.receiveHead(&.{});
+
+// Once we call reader() below, strings inside `response.head` are invalidated.
+var it = response.head.iterateHeaders();
+while (it.next()) |header| {
+    _ = header.name;
+    _ = header.value;
+}
+
+// Optimal size depends on how you will use the reader.
+var reader_buffer: [100]u8 = undefined;
+const body_reader = try response.reader(&reader_buffer);{#endsyntax#}</pre>
     {#header_close#}
 
     {#header_open|TLS Client#}
-    <p>std.crypto.tls.Client no longer depends on <code>std.net</code> or <code>std.fs</code>. Instead, it only
+    <p><code>std.crypto.tls.Client</code> no longer depends on <code>std.net</code> or <code>std.fs</code>. Instead, it only
     depends on <code>std.Io.Reader</code> and <code>std.Io.Writer</code>.</p>
     {#header_close#}
 
