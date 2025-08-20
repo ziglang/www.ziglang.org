@@ -391,6 +391,7 @@
     declaration. With {#syntax#}usingnamespace{#endsyntax#}, however, the
     programmer can be led on a wild goose chase through different types and
     files.</p>
+    <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_1.svg" style="height: 12em; float: right">
     <p>Not only does this harm readability for humans, but it is also
     problematic for tooling; for instance, Autodoc cannot reasonably see
     through non-trivial uses of <code>usingnamespace</code> (try looking for dl_iterate_phdr
@@ -869,6 +870,40 @@ const F = struct {
     </ul>
     <p>The reasoning goes like this: the upsides are not worth the downsides. Also, given that the correct allocator is always handy, and incorrect use can be trivially safety-checked, the simplicity of only having one implementation is quite valuable compared to the convenience that is gained by having a second implementation.</p>
     <p>In practice, this has not been a controversial change with experienced Zig users.</p>
+    {#header_close#}
+
+    {#header_open|Ring Buffers#}
+    <p><a href="https://github.com/ziglang/zig/issues/19231">There are too many ring buffer implementations in the standard library!</a></p>
+    <p><code>std.fifo.LinearFifo</code> is removed due to being poorly designed. This data structure was
+    unnecessarily generic due to accepting a comptime enum parameter that determined whether
+    its buffer was heap-allocated with an Allocator parameter, passed in as an externally-owned slice,
+    or stored in the struct itself. Each of these different buffer management strategies
+    describes a fundamentally different data structure.</p>
+    <p>Furthermore, most of its real-world use cases are subsumed by
+    {#link|New std.Io.Writer and std.Io.Reader API#} which are both ring buffers.</p>
+
+    <p>Similarly, <code>std.RingBuffer</code> is removed since it was only used by the zstd implementation which
+    has been upgraded to use {#link|New std.Io.Writer and std.Io.Reader API#}.</p>
+
+    <p>There was also <code>std.compress.flate.CircularBuffer</code> which was internal to the flate implementation;
+    now deleted.</p>
+
+    <p>There was also one each in {#link|HTTP Client and Server#} - again
+    deleted in favor of {#link|New std.Io.Writer and std.Io.Reader API#}.</p>
+
+    <p>Even with all five of these deletions, these things pop up like
+    whack-a-mole. Here are some more ring buffers that have been spotted:</p>
+    <ul>
+      <li><code>lib/std/compress/lzma/decode/lzbuffer.zig</code> - internal to lzma implementation.</li>
+      <li><code>lib/std/crypto/tls.zig</code> - made redundant with std.Io.Reader.</li>
+      <li><code>lib/std/debug/FixedBufferReader.zig</code> - made redundant by std.Io.Reader's excellent Debug mode performance.</li>
+      <li><a href="https://github.com/ziglang/zig/pull/24705">this random pull request</a> - nice try, you almost got away with it!!</li>
+    </ul>
+    <p>
+    Jokes aside, there will likely be room for a general-purpose, reusable ring buffer implementation in
+    the standard library, however, first ask yourself if what you really need is <code>std.Io.Reader</code>
+    or <code>std.Io.Writer</code>.
+    </p>
     {#header_close#}
 
     {#header_open|Deletions and Deprecations#}
