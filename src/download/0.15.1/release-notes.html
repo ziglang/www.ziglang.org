@@ -1319,8 +1319,8 @@
     share something in common which is not shared with the contents of another
     file. As such, it is likely a very reasonable choice to actually expose the
     contents of that file via a separate namespace, rather than including them
-    in a more general parent namespace. Matthew often summarizes this point as
-    <strong>"Namespaces are good, actually"</strong>.</p>
+    in a more general parent namespace. To put it shortly: <strong>namespacing
+    is good, actually</strong>.</p>
 
     <p>Finally, removal of this feature makes {#link|Incremental Compilation#}
     fundamentally simpler.</p>
@@ -1343,7 +1343,8 @@ error:</p>
     123
 else
     @compileError("foo not supported on this target");{#endsyntax#}</pre>
-<p>Note that this does break feature detection with {#syntax#}@hasDecl{#endsyntax#}. However, feature detection through this mechanism is discouraged anyway, as it is very prone to typos and bitrotting.</p>
+<p>This does break feature detection with {#syntax#}@hasDecl{#endsyntax#}. If feature detection is needed, a better appraoch&mdash;less prone to typos and bitrotting&mdash;is to conditionally initialize the declaration to some &quot;sentinel&quot; value which can be detected. A good choice is often the {#syntax#}void{#endsyntax#} value {#syntax#}{}{#endsyntax#}:</p>
+{#code|feature-detection.zig#}
     {#header_close#}
 
     {#header_open|Use Case: Implementation Switching#}
@@ -1401,12 +1402,12 @@ pub const Foo = struct {
     <strong>namespacing is good, actually</strong>. The same logic can be
     applied to mixins. The word &quot;counter&quot; in
     <code>incrementCounter</code> and <code>resetCounter</code> already kind of
-    <em>is</em> a namespace in spirit -- it&#39;s like how we used to have
+    <em>is</em> a namespace in spirit&mdash;it&#39;s like how we used to have
     <code>std.ChildProcess</code> but have since renamed it to
     <code>std.process.Child</code>. The same idea can be applied here: what if
     instead of <code>foo.incrementCounter()</code>, you called
     <code>foo.counter.increment()</code>?</p>
-    <p>This can be elegantly achieved using a zero-bit field and <code>@fieldParentPtr</code>. Here is the above example ported to use this mechanism:</p>
+    <p>This can be achieved using a zero-bit field and <code>@fieldParentPtr</code>. Here is the above example ported to use this mechanism:</p>
 <pre>{#syntax#}/// Mixin to provide methods to manipulate the `count` field.
 pub fn CounterMixin(comptime T: type) type {
     return struct {
@@ -1425,16 +1426,15 @@ pub const Foo = struct {
     count: u32 = 0,
     counter: CounterMixin(Foo) = .{},
 };{#endsyntax#}</pre>
-    <p>This code provides identical effects, but with a usage of
-    <code>foo.counter.increment()</code> rather than
-    <code>foo.incrementCounter()</code>. We have applied namespacing to our
-    mixin using zero-bit fields. In fact, this mechanism is <em>more</em>
-    useful, because it allows you to also include fields! For instance, in this
-    case, we could move the <code>count</code> field to
-    <code>CounterMixin</code>. Of course, in this case that wouldn&#39;t be a
-    mixin at all, but there are certainly cases where a mixin might require
-    certain additional state, which this system allows you to avoid duplicating
-    at the mixin&#39;s use site.</p>
+    <p>This code works just like before, except the usage is {#syntax#}foo.counter.increment(){#endsyntax#}
+    rather than {#syntax#}foo.incrementCounter(){#endsyntax#}. We have applied namespacing to our
+    mixin using zero-bit fields. In fact, this mechanism is <em>more</em> useful, because it allows
+    you to also include fields! For instance, in this case, we could move the <code>count</code>
+    field to <code>CounterMixin</code>. In this case that actually wouldn&#39;t be a mixin at all,
+    since that field is the only state <code>CounterMixin</code> uses&mdash;in fact, this is a
+    demonstration that the need for mixins is relatively rare. But in cases where a mixin <em>is</em>
+    appropriate, yet requires additional state, this approach allows using the mixin without needing
+    to duplicate fields at each mixin site.</p>
     {#header_close#}
     {#header_close#}
 
@@ -1507,7 +1507,7 @@ fn someOtherFunction(value: Enum) void {
     <p>Note that in a future release, it is planned to move this functionality from {#syntax#}@ptrCast{#endsyntax#} to a new {#syntax#}@memCast{#endsyntax#} builtin, with the intention that the latter is a safer builtin which helps avoid unintentional out-of-bounds memory access. For more information, see <a href="https://github.com/ziglang/zig/issues/23935">issue #23935</a>.</p>
     {#header_close#}
 
-    {#header_open|New Rules for Arithmetic on <code>undefined</code>#}
+    {#header_open|New Rules for Arithmetic on undefined#}
     <p>Zig 0.15.x begins to standardise the rules around how {#syntax#}undefined{#endsyntax#} behaves in different contexts&mdash;in particular, how it behaves as an operand to arithmetic operators. In summary, only operators which can never trigger Illegal Behavior permit {#syntax#}undefined{#endsyntax#} as an operand. Any other operator will trigger Illegal Behavior (or a compile error if evaluated at {#syntax#}comptime{#endsyntax#}) if any operand is {#syntax#}undefined{#endsyntax#}.</p>
     <p>Generally, it is always best practice to avoid any operation on {#syntax#}undefined{#endsyntax#}. If you do that, this language change, and any that follow, are unlikely to affect you. If you are affected by this language change, you might see a compile error on code which previously worked:</p>
     {#code|arith-on-undefined.zig#}
@@ -1941,11 +1941,19 @@ try stack.appendSliceBounded(initial_stack);{#endsyntax#}</pre>
 
     {#header_open|x86 Backend#}
     <img alt="Carmen the Allocgator" src="https://ziglang.org/img/Carmen_10.svg" style="height: 16em; float: right">
-    TODO
+    <p><strong>Zig 0.15.0 enables Zig's self-hosted x86_64 code generation backend by default in Debug mode.</strong></p>
+    <p>More specifically, the self-hosted backend is now the default when building an ELF or Mach-O binary for x86_64 in Debug mode, except on NetBSD and OpenBSD. (Note that the output format restriction does mean that the LLVM backend is still the default when targeting Windows&mdash;this is due to deficiencies in our self-hosted COFF {#link|Linker#} which will be solved in a future release.)</p>
+    <p>When this backend is selected, you will begin to reap the benefits of the investments the Zig project has made over the past few years. Compilation time is <em>significantly</em> improved&mdash;around a 5x decrease compared to LLVM in most cases. <strong>This is only the beginning;</strong> the self-hosted x86_64 backend has been built to support {#link|Incremental Compilation#}, which will result in another extreme speed-up when it is stable enough to be enabled by default. Fast compilation is a key goal of the Zig project, and one we have been quietly making progress on for years&mdash;this release sees those efforts starting to come to fruition.</p>
+    <p>Using the self-hosted x86 backend also means you are not subject to the effects of upstream LLVM bugs, of which <a href="https://github.com/ziglang/zig/issues?q=is%3Aissue%20state%3Aopen%20label%3Abackend-llvm%20label%3Aupstream">we are currently tracking over 60</a>. In fact, the self-hosted x86 backend already passes a larger subset of our &quot;behavior test suite&quot; than the LLVM backend does (1984/2008 vs 1977/2008). In other words, this backend provides a more complete and correct implementation of the Zig language.</p>
+    <p>Of course, the self-hosted x86 backend does currently have <a href="https://github.com/ziglang/zig/issues?q=is%3Aissue%20state%3Aopen%20label%3Abackend-self-hosted%20label%3Aarch-x86_64">some deficiencies and bugs of its own</a>. In the unlikely situation that you are affected by any of these issues, you can temporarily revert to the LLVM backend for Debug builds by passing <code>-fllvm</code> on the command-line or by setting {#syntax#}.use_llvm = true{#endsyntax#} when creating a {#syntax#}std.Build.Step.Compile{#endsyntax#}. The self-hosted x86 backend is also currently known to emit <a href="https://github.com/ziglang/zig/issues/24144">slower machine code than the LLVM backend</a>.</p>
+    <p>But in most cases, the self-hosted backend is now a better choice for development. For instance, the Zig core team have been building the Zig compiler almost exclusively with the self-hosted x86 backend instead of LLVM for quite a while. This has been a serious improvement to our workflows, with the Zig compiler building in just a few seconds rather than 1-2 minutes. You can now expect to see similar improvements to your own development experience.</p>
     {#header_close#}
 
     {#header_open|aarch64 Backend#}
-    TODO
+    <p>Having improved the self-hosted {#link|x86 Backend#} enough for it to be enabled by default, Jacob has set his eyes on a new target: aarch64. This architecture is growing in popularity, particularly since modern Apple hardware is based on it. Therefore, aarch64 is the Zig project's next big focus for self-hosted code generation without LLVM.</p>
+    <p>For this work-in-progress backend, Jacob has been able to take the lessons learnt from the x86 backend to explore new design directions. It's too early to be sure, but we expect that the new design will improve both compiler performance (being even faster than the self-hosted x86_64 backend) <em>and</em> the quality of emitted machine code, with the ultimate goal of becoming competitive with LLVM's codegen quality in Debug mode. <a href="https://ziglang.org/devlog/2025/#2025-07-23">This devlog</a> has some more details.</p>
+    <p>This backend is incomplete, so is not ready to be enabled by default, nor is it currently usable in any real use case. However, it is making rapid progress, and is expected to become the default for Debug mode in a future release.</p>
+    <p>Our work on self-hosted code generation backends is a part of our long-term plan to <a href="https://kristoff.it/blog/zig-new-relationship-llvm/">transition LLVM to an optional dependency</a> and <a href="https://github.com/ziglang/zig/issues/16270">decouple it from the compiler implementation</a>. Achieving this goal will lead to large decreases in compile time, good support for incremental compilation in Debug builds, and could even allow us to explore language features which LLVM cannot lower effectively.</p>
     {#header_close#}
 
     {#header_open|Incremental Compilation#}
