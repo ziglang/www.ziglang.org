@@ -906,6 +906,28 @@ const F = struct {
     </p>
     {#header_close#}
 
+    {#header_open|Removal of BoundedArray#}
+    <p>This data structure was popular due to being trivially copyable. However,
+    such convenience comes at a cost.</p>
+    <p>To upgrade, categorize code based on where the limit comes from:<p>
+    <ul>
+    <li>Is it an arbitrary limit for which the BoundedArray usage is making a reasonable guess at the upper bound, or deciding resource limits? Don&#39;t guess. Don&#39;t make that choice for the calling code. Accept a buffer as a slice as an input, or use dynamic allocation. (example: the markdown code in #24699)</li>
+    <li>Is it type safety around a stack buffer? Just use ArrayListUnmanaged. It&#39;s fine. It&#39;s actually really convenient that this same data structure works here. (example: test_switch_dispatch_loop.zig in #24699)</li>
+    </ul>
+    <p><code>std.ArrayList</code> now has "Bounded" variants of all the "AssumeCapacity" methods:</p>
+    <pre>{#syntax#}var stack = try std.BoundedArray(i32, 8).fromSlice(initial_stack);{#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}var buffer: [8]i32 = undefined;
+var stack = std.ArrayListUnmanaged(i32).initBuffer(&buffer);
+try stack.appendSliceBounded(initial_stack);{#endsyntax#}</pre>
+    <ul>
+    <li>Is it an ordered set with a well-defined maximum capacity? Quite rare. Just free-code it. (example: changes to Zcu.zig in #24699)</li>
+    <li>Is it being used as a growable array that can be copied? This wastes
+    time copying undefined memory all over the place and causes unnecessary
+    generic code bloat.</li>
+    </ul>
+    {#header_close#}
+
     {#header_open|Deletions and Deprecations#}
     <ul>
     <li>std.fs.File.reader -&gt; std.fs.File.deprecatedReader</li>
