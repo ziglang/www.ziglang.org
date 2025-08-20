@@ -728,6 +728,34 @@ const n = try decompress.streamRemaining(writer);{#endsyntax#}</pre>
 
     {#header_close#}
 
+    {#header_open|CountingWriter Deleted#}
+    <ul>
+    <li>If you were discarding the bytes, use <code>std.Io.Writer.Discarding</code>, which has a count.</li>
+    <li>If you were allocating the bytes, use <code>std.Io.Writer.Allocating</code>, since you can check how much was allocated.</li>
+    <li>If you were writing to a fixed buffer, use <code>std.Io.Writer.fixed</code>, and then check the <code>end</code> position.</li>
+    <li>Otherwise, try not to create an entire node in the stream graph solely for counting bytes. It&#39;s very disruptive to optimal buffering.</li>
+    </ul>
+    {#header_close#}
+
+    {#header_open|BufferedWriter Deleted#}
+    <pre>{#syntax#}const stdout_file = std.fs.File.stdout().writer();
+var bw = std.io.bufferedWriter(stdout_file);
+const stdout = bw.writer();
+
+try stdout.print("Run `zig build test` to run the tests.\n", .{});
+
+try bw.flush(); // Don't forget to flush!{#endsyntax#}</pre>
+    <p>⬇️</p>
+    <pre>{#syntax#}var stdout_buffer: [4096]u8 = undefined;
+var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+const stdout = &stdout_writer.interface;
+
+try stdout.print("Run `zig build test` to run the tests.\n", .{});
+
+try stdout.flush(); // Don't forget to flush!{#endsyntax#}</pre>
+    <p>Consider making your stdout buffer global.</p>
+    {#header_close#}
+
     {#header_close#}
 
     {#header_open|"{f}" Required to Call format Methods#}
