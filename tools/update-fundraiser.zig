@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const zero_raised = 1625;
-const ziggy_raised = 3755;
-const carmen_raised = 1266;
-const current_day = 5;
+const zero_raised = 1725;
+const ziggy_raised = 4320;
+const carmen_raised = 1286;
+const current_day = 6;
 const days = 30;
 const days_left: comptime_float = days - current_day;
 const max_raised: comptime_float = @max(zero_raised, ziggy_raised, carmen_raised);
