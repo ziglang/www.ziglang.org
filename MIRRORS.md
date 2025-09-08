@@ -14,6 +14,7 @@ The following rules define how a mirror works and the requirements it is expecte
 * `X` **may** include a path component, but is not required to. For instance, `https://foo.bar/zig/` is okay,
   as is `https://zig.baz.qux/`.
 * The mirror **must** support HTTPS with a valid signed certificate. `X` **must** start with `https://`.
+* The mirror **must** support HTTPS requests on both IPv4 and IPv6.
 * The mirror **must** cache tarballs locally. For instance, it may not simply forward all requests to another mirror.
 * The mirror **may** routinely evict its local tarball caches based on any reasonable factor, such as age, access frequency, or the existence of newer versions. This does not affect whether the mirror may respond with 404 Not Found for requests to these files (see below).
 * The mirror **must** download tarballs from `https://ziglang.org/` or a valid mirror of it.
@@ -31,7 +32,8 @@ The following rules define how a mirror works and the requirements it is expecte
     * Otherwise, the mirror **must** return the tarball.
     * These requirements apply equally to source tarballs (e.g. `zig-0.15.0-dev.671+c907866d5.tar.xz`), bootstrap source tarballs (e.g. `zig-bootstrap-0.15.0-dev.671+c907866d5.tar.xz`), and binary tarballs (e.g. `zig-x86_64-linux-0.15.0-dev.671+c907866d5.tar.xz`).
 * Files provided by the mirror **must** be bit-for-bit identical to their `https://ziglang.org/` counterparts.
-* If a mirror is required to serve a tarball which is has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org`, and respond with that downloaded file.
+* If a mirror is required to serve a tarball which is has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org/`, and respond with that downloaded file.
+  * If the request to `https://ziglang.org/` fails in any way, including timing out after a reasonable time period (a suggested timeout is two times the standard tarball download time for this mirror), then the mirror **should** (but is not required to) respond with 504 Gateway Timeout. The intention is to inform the client that the issue does not lie with this mirror, but rather with `https://ziglang.org/` itself.
 * The mirror **may** rate-limit accesses. If an access failed due to rate-limiting, the mirror **should** respond with 429 Too Many Requests.
 * The mirror **may** undergo maintenance, upgrades, and other scheduled downtime. If an access fails for this reason, where possible, the mirror **should** respond with 503 Unavailable. The mirror **should** try to minimize such downtime.
 * The mirror **may** undergo occasional unintended and unscheduled downtime. The mirror **must** go to all efforts to minimize such outages, and **must** resolve such outages within a reasonable time upon being notified of them.
