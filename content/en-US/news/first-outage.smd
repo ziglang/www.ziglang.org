@@ -1,0 +1,77 @@
+---
+.title = "The first ziglang.org outage",
+.date = "2025-09-08T00:00:00.000Z",
+.author = "Loris Cro",
+.layout = "news-page.shtml",
+.custom = {
+  "mobile_menu_title": "ziglang.org outage",
+}
+---
+
+On September 1st a community member notified us ([#529](https://github.com/ziglang/www.ziglang.org/issues/529)) that ziglang.org was having issues (slow loading pages, HTTP 500 replies).
+
+Looking at the dashboards showed a drastic increase of data transmission in the previous 24 hours:
+
+![](peak.png "a graph of data usage over time, showing a big peak at the very end (from an average of about 1000GB daily, up to six times as much)")
+
+Looking at access logs showed a frenetic amount of activity by clients using `facebookexternalhit/1.1` as their user agent:
+
+[*Running `tail -f` on the access log to see requests in realtime.*]($video.asset('facebook_bot.mp4'))
+
+
+Frank Denis had initially theorized that this could have been an instance of an incident [he already reported on social media](https://x.com/jedisct1/status/1961822114358444520), and the access log immediately confirmed his suspicions.
+
+Grepping the access log showed that the bot had been going circles while crawling the website and, in the ~36 hours it was active, **it had downloaded the same tarball more than one million times**.
+
+Soon after we started returning 403 for the user agent used by the bot and the website returned to normal levels of operation.
+
+Today we can still see activity from `facebookexternalhit/1.1`, which will eventually force us to issue IP-level bans (in order to minimize the load caused by the bot).
+
+## Community Mirrors during the outage
+
+At the peak of crawling activity the official Zig website had reduced performance and would occasionally return http 500 replies, which caused a disruption of activity for some Zig users.
+
+I would like to personally thank all the people that showed concern for the situation and that offered alternative solutions (and especially those who setup a community mirror in response to this event!), but I would also like to re-iterate that ziglang.org is *designed* to break rather than bend when put under stress.
+
+To explain in more concrete terms what I mean, I'll go through some solutions that were suggested to prevent downtime:
+
+- Use AWS S3 or another autoscaling/serverless solution: we would have wasted money to feed the Facebook bot instead of paying contributors to work on Zig.
+- Use some free CDN bandwidth or get free credits from AWS:  we don't want a hard dependency on the goodwill of any one cloud company, especially not in order to feed bots of another big tech company.
+- Use GitHub for hosting releases: given the long list of issues ([e.g.](https://github.com/actions/runner/issues/3792)) we've been having with GitHub, we're in the process of minimizing our reliance on it, not the other way around.
+
+In summary, we believe that preventing this kind of event from surfacing is the wrong approach because nobody's resources (be ones we pay for or not) should be silently wasted on poorly coded bots (or poorly cached CI jobs, for that matter). 
+
+That said, we don't believe that ziglang.org outages should impact the whole Zig community, which is why we announced previously the [Community Mirrors](announcing-community-mirrors/) initiative.
+
+This was our first time experiencing what would happen to the ecosystem if the official Zig website became partially unavailable.
+
+Users of tagged versions of Zig were likely to not encounter any disruption because community mirrors are very likely to keep the relative artifacts in cache. Anecdotally none of my CI jobs encountered any issue thanks to [mlugg/setup-zig](https://github.com/mlugg/setup-zig).
+
+Some users of unstable builds of Zig did experience disruption when they requested a specific unstable build that was not cached by some community mirrors. More specifically one issue we discovered is that some community mirrors would retry fetching from ziglang.org the missing tarball multiple times, which in turn caused very long time outs and prevented clients from promptly trying other mirrors.
+
+Experiencing disruption because mirrors don't have in cache a specific unstable build of Zig is to be expected, but the very long time outs were not.
+
+So, while not perfect, our first outage showed that community mirrors are a viable path forward, we just need to learn from our experience.
+
+
+## Plans for the future
+
+As a result of this outage we have [amended] the community mirrors specification to suggest time out limits for both clients and mirrors (alongside other improvements).
+
+Once async I/O lands in master branch we plan to work on an official mirror reference implementation in Zig so that community mirror maintainers can easily deploy a spec-conformant mirror[^1].
+
+To some this might look like a lot of work just for a matter of principle, but in reality being mindful about resource consumption is critical when it comes to finance, even more than when it comes to designing software. 
+
+Today Zig is still small enough that we could easily rely on any free service thrown our way, but looking at our growth curve this won't stay true for long. There will be a point where there will be too much activity for any one business to be willing to sponsor us in exchange for nothing.
+
+Being resource efficient is maybe the single most important detail the Zig project got right, and it's what is allowing us to innovate compiler infrastructure in a way that would be impossible without our independence.
+
+Year after year, more than 90% of our donation income has been used to pay contributors to work on Zig, and we plan to keep this true for as long as possible, which includes being vigilant about how the community (and Facebook bots) make use of our shared resources, like the official Zig website.
+
+**In 2024 [our budget increased by 13%](2025-financials/) and we still spent 92% of our income on paying contributors.**
+
+We currently have a running fundraiser, please consider supporting our work in order to reach Zig v1.0 faster.
+
+-- Loris
+
+[^1]: As the Zig HTTP server implementation has not yet been audited nor is it battletested, we will recommend to keep it behind a reverse proxy and in an isolated environment.
