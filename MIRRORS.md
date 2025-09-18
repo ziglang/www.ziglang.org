@@ -32,7 +32,7 @@ The following rules define how a mirror works and the requirements it is expecte
     * Otherwise, the mirror **must** return the tarball.
     * These requirements apply equally to source tarballs (e.g. `zig-0.15.0-dev.671+c907866d5.tar.xz`), bootstrap source tarballs (e.g. `zig-bootstrap-0.15.0-dev.671+c907866d5.tar.xz`), and binary tarballs (e.g. `zig-x86_64-linux-0.15.0-dev.671+c907866d5.tar.xz`).
 * Files provided by the mirror **must** be bit-for-bit identical to their `https://ziglang.org/` counterparts.
-* If a mirror is required to serve a tarball which is has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org/`, and respond with that downloaded file.
+* If a mirror is requested to serve a tarball which it has not yet cached locally, it **must** immediately download it from its source at `https://ziglang.org/`, and respond with that downloaded file.
   * If the request to `https://ziglang.org/` fails in any way, including timing out after a reasonable time period (a suggested timeout is two times the standard tarball download time for this mirror), then the mirror **should** (but is not required to) respond with 504 Gateway Timeout. The intention is to inform the client that the issue does not lie with this mirror, but rather with `https://ziglang.org/` itself.
 * The mirror **may** rate-limit accesses. If an access failed due to rate-limiting, the mirror **should** respond with 429 Too Many Requests.
 * The mirror **may** undergo maintenance, upgrades, and other scheduled downtime. If an access fails for this reason, where possible, the mirror **should** respond with 503 Unavailable. The mirror **should** try to minimize such downtime.
