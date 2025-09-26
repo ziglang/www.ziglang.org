@@ -1,0 +1,50 @@
+---
+.title = "Community Mirrors: A Better Way To Download Zig",
+.date = "2025-06-30",
+.author = "",
+.layout = "news-page.shtml",
+.custom = {
+  "mobile_menu_title": "Community Mirrors",
+}
+---
+
+With Zig being in active development, it's pretty common to need to download new Zig compiler releases, particularly if you track the "master" pre-releases
+instead of tagged releases. There are also some situations where you might want to re-fetch the *same* Zig version, such as stateless CI runs. This brings us to
+what might seem like a trivial problem: *how do you actually download Zig*?
+
+The obvious way to do this has always been to download the tarball from ziglang.org. However, this website is hosted on an [intentionally simple
+configuration][self-hosted-website], with the intention of optimizing overall efficiency rather than expending huge amounts of resources on web hosting. So, to
+avoid excessive load, we've previously publicly recommended that people use mirrors to download Zig where possible, and we [cryptographically sign our
+tarballs][minisign] to make this approach more viable. The official Zig website doesn't provide any uptime or bandwidth guarantees, so download mirrors actually
+*directly benefit users* by potentially improving availability and speed.
+
+There's just one problem: so far, there haven't really been any mirrors available to use. This began to change last year, when the [setup-zig][setup-zig]
+project became the first widely-used project to actually utilize download mirrors for Zig tarballs. However, they weren't easily accessible to other projects,
+who didn't want to take on the burden of maintaining their own mirror lists.
+
+**To solve this, we're introducing Community Mirrors.**
+
+The idea is simple. Instead of downloading tarballs from ziglang.org, automations should instead fetch from it a small text file, maintained by the Zig core
+team, which contains URLs of community-run mirrors. This takes the burden off of others to maintain their own lists of mirrors, so makes it simpler for tools to
+*efficiently* download Zig. We also have some [nifty automated testing][check-mirrors] to make sure that all of the mirrors are behaving, so there's no risk of
+problems with a mirror going unnoticed.
+
+The Download page now contains a link to the new [Community Mirrors][mirrors] page, which explains how to use the mirrors in your code -- please check it out if
+you've written code which downloads Zig. The process boils down to fetching the mirror list (which is just plaintext ASCII with one URL per line), shuffling it,
+and attempting each mirror in turn before falling back to ziglang.org. **You must verify the cryptographic signature of tarballs downloaded from mirrors** --
+because they are hosted by third parties, a mirror could theoretically serve you malicious or corrupted files.
+
+If you have the resources and time, a great way to contribute to the Zig ecosystem is now to [host your own mirror][host-mirror]. You don't need any specific
+experience or permission: just check out that link. Hosting a download mirror helps to keep Zig accessible as it grows in popularity, and shouldn't need too
+much ongoing maintenance.
+
+That's all for today. Thanks folks!
+
+Matthew
+
+[self-hosted-website]: /news/migrate-to-self-hosting/
+[minisign]: https://jedisct1.github.io/minisign/
+[setup-zig]: https://github.com/marketplace/actions/setup-zig-compiler
+[check-mirrors]: https://github.com/ziglang/www.ziglang.org/actions/runs/15976134096#summary-45058979620
+[mirrors]: /download/community-mirrors/
+[host-mirror]: https://github.com/ziglang/www.ziglang.org/blob/main/MIRRORS.md
