@@ -11,7 +11,12 @@ pub fn main() !void {
 
     const word = try self_exe_dir.readFileAlloc(arena, "word.txt", 1000);
 
-    try std.io.getStdOut().writer().print("Hello {s}\n", .{word});
+    var stdout_buffer: [1000]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("Hello {s}\n", .{word});
+    try stdout.flush();
 }
 
 // syntax

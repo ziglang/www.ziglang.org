@@ -28,6 +28,245 @@
 // an example of a correct date string.
 ---
 
+# [Async DNS Resolution]($section.id('2025-10-15'))
+Author: Andrew Kelley
+
+Without libc in the picture, DNS resolution is a happy async utopia.
+We can blast out multiple queries and handle responses as they arrive,
+using standard system primitives such as file descriptors and `poll`.
+
+Perturbingly, a pernicious pair of party poopers plot to puncture perfection:
+1. The libc API for DNS resolution is `getaddrinfo`, which is ass.
+2. Operating systems hide important details such as the configured nameservers
+   behind libc, so you have to use it.
+
+For example, if you bypass libc on a glibc system in order to get the good API,
+then you end up with people complaining that your application does not integrate
+properly with [NSS](https://sourceware.org/glibc/manual/).
+
+But `getaddrinfo` is crap! It blocks until *all* the DNS queries return, so the
+best you can do is run it in a utility thread and then wait until it's done. And
+even then there's a footgun... it reads `environ` so if any code anywhere in the
+process calls `setenv` then you have corrupt memory access. This alone makes
+me not take POSIX seriously. If they want to regain my respect they have to fix
+this along with making `close` infallible. Rumor has it they made `close` fallible
+because they thought that was an appropriate place to rewind tape drives. 🤦
+
+Anyway, thankfully some systems have non-standard alternatives that support
+asynchrony and cancellation:
+* glibc has `getaddrinfo_a` / `gai_cancel`
+* Windows has `GetAddrInfoExW` / `GetAddrInfoExCancel`
+* OpenBSD has `getaddrinfo_async` / `asr_abort`
+* macOS has `CFHostStartInfoResolution` / `CFHostCancelInfoResolution`
+* FreeBSD has `dnsres_getaddrinfo`, but no cancellation support
+
+And that's it. If your OS is not in this list, your DNS resolution API is crap!
+Fix it!
+
+I didn't take advantage any of those APIs yet, but I did implement the case
+without pesky libc. I want to share that code here because it's a pretty nifty
+example of the new `std.Io` interface in action:
+
+```zig
+pub const ConnectError = LookupError || IpAddress.ConnectError;
+
+pub fn connect(
+    host_name: HostName,
+    io: Io,
+    port: u16,
+    options: IpAddress.ConnectOptions,
+) ConnectError!Stream {
+    var connect_many_buffer: [32]ConnectManyResult = undefined;
+    var connect_many_queue: Io.Queue(ConnectManyResult) = .init(&connect_many_buffer);
+
+    var connect_many = io.async(connectMany, .{ host_name, io, port, &connect_many_queue, options });
+    var saw_end = false;
+    defer {
+        connect_many.cancel(io);
+        if (!saw_end) while (true) switch (connect_many_queue.getOneUncancelable(io)) {
+            .connection => |loser| if (loser) |s| s.close(io) else |_| continue,
+            .end => break,
+        };
+    }
+
+    var aggregate_error: ConnectError = error.UnknownHostName;
+
+    while (connect_many_queue.getOne(io)) |result| switch (result) {
+        .connection => |connection| if (connection) |stream| return stream else |err| switch (err) {
+            error.SystemResources,
+            error.OptionUnsupported,
+            error.ProcessFdQuotaExceeded,
+            error.SystemFdQuotaExceeded,
+            error.Canceled,
+            => |e| return e,
+
+            error.WouldBlock => return error.Unexpected,
+
+            else => |e| aggregate_error = e,
+        },
+        .end => |end| {
+            saw_end = true;
+            try end;
+            return aggregate_error;
+        },
+    } else |err| switch (err) {
+        error.Canceled => |e| return e,
+    }
+}
+
+pub const ConnectManyResult = union(enum) {
+    connection: IpAddress.ConnectError!Stream,
+    end: ConnectError!void,
+};
+
+/// Asynchronously establishes a connection to all IP addresses associated with
+/// a host name, adding them to a results queue upon completion.
+pub fn connectMany(
+    host_name: HostName,
+    io: Io,
+    port: u16,
+    results: *Io.Queue(ConnectManyResult),
+    options: IpAddress.ConnectOptions,
+) void {
+    var canonical_name_buffer: [max_len]u8 = undefined;
+    var lookup_buffer: [32]HostName.LookupResult = undefined;
+    var lookup_queue: Io.Queue(LookupResult) = .init(&lookup_buffer);
+    var group: Io.Group = .init;
+
+    group.async(io, lookup, .{ host_name, io, &lookup_queue, .{
+        .port = port,
+        .canonical_name_buffer = &canonical_name_buffer,
+    } });
+
+    while (lookup_queue.getOne(io)) |dns_result| switch (dns_result) {
+        .address => |address| group.async(io, enqueueConnection, .{ address, io, results, options }),
+        .canonical_name => continue,
+        .end => |lookup_result| {
+            results.putOneUncancelable(io, .{
+                .end = if (group.wait(io)) lookup_result else |err| err,
+            });
+            return;
+        },
+    } else |err| switch (err) {
+        error.Canceled => |e| {
+            group.cancel(io);
+            results.putOneUncancelable(io, .{ .end = e });
+        },
+    }
+}
+```
+
+This code has the following properties:
+
+* It asynchronously sends out DNS queries to each configured nameserver
+* As each response comes in, it immediately, asynchronously tries to TCP connect to the
+  returned IP address.
+* Upon the first successful TCP connection, all other in-flight connection
+  attempts are canceled, including DNS queries.
+* Regardless of whether `Io` is implemented via threads, or via an event loop, this code
+  behaves optimally.
+* The code also works when using single-threaded, blocking `Io` even though the
+  operations happen sequentially.
+* No heap allocation.
+
+I'm pleased that, on top of all this, it reads like standard, idiomatic Zig code. We still
+use all the reguar control flow: `try`, `defer`, `while`, etc.
+
+The code is flat, not much nesting. And just like non-async code, we can insert
+`try foo` almost anywhere and rest assured that the same resource management
+patterns have the error handling taken care of.
+
+So hopefully that gives you a taste of what these changes bring to the table:
+
+[std: Introduce Io Interface](https://github.com/ziglang/zig/pull/25592)
+
+# [no-matrix build option]($section.id('2025-10-09'))
+Author: Andrew Kelley
+
+I added a new build option, `-Dno-matrix`, which makes it so that using
+`zig build test-std` or `zig build test-behavior` it only runs the default, native
+target tests. This is handy when you already know it's going to be in a failing
+state for a while and you're working on a big change.
+
+In particular, it combines with `--watch` and `-fincremental` to make the
+development loop instant. This is huge for me since I work on the standard
+library often. Previously, I would run `zig test lib/std.zig` in order to get
+this effect, but since it takes a few seconds to compile, I would try to fix
+all the errors before rerunning the command. This worked okay to amortize the
+cost, but now I just press save in vim and the new errors are literally on my
+screen in the blink of an eye.
+
+So here's the full build command I've been enjoying:
+
+```
+zig build test-std -Dno-matrix --watch -fincremental
+```
+
+# [New Aarch64 Backend]($section.id('2025-07-23'))
+Author: Andrew Kelley & Jacob Young
+
+Jacob [upstreamed his new backend yesterday](https://github.com/ziglang/zig/pull/24536).
+
+```
+    275 src/codegen/aarch64/Mir.zig
+    138 src/codegen/aarch64/abi.zig
+  11799 src/codegen/aarch64/encoding.zig
+  10981 src/codegen/aarch64/Select.zig
+    905 src/codegen/aarch64/Disassemble.zig
+   1653 src/codegen/aarch64/Assemble.zig
+    194 src/codegen/aarch64.zig
+  25945 total
+```
+
+It's passing 1547/1960 (79%) of the behavior tests compared to the LLVM backend.
+
+Although it will grow in size as it approaches completion, it is considerably less logic than the x86 backend:
+
+```
+     608 src/arch/x86_64/abi.zig
+     904 src/arch/x86_64/bits.zig
+  194471 src/arch/x86_64/CodeGen.zig
+     507 src/arch/x86_64/Disassembler.zig
+     980 src/arch/x86_64/Emit.zig
+    2790 src/arch/x86_64/encoder.zig
+    1072 src/arch/x86_64/Encoding.zig
+    2700 src/arch/x86_64/encodings.zon
+     689 src/arch/x86_64/Lower.zig
+    2152 src/arch/x86_64/Mir.zig
+  206873 total
+```
+
+In terms of binary size, it adds about 330KB (2%) to the compiler executable.
+
+Jacob made some pretty neat architectural decisions with this one. For instance, it uses the actual machine code instruction encoding for the compiler's internal MIR structure. This means that instruction encoding is done on the N codegen threads instead of the 1 linker thread.
+
+All of the previous backends used a shared two-pass liveness analysis. This new backend has its own similar bespoke two-pass liveness analysis, except that the second pass also happens to generate all of the Mir in reverse at the same time! Besides cutting down on the number of passes that need to iterate over each function, making this backend speedier than other backends at generating code, this will allow backend-specific instruction lowerings that match multiple Air instructions to affect liveness and cause earlier instructions to become unused and end up not producing any code. This means that none of the incredibly complex deferred value tracking from the x86_64 backend is needed, allowing the tracking state machine to be vastly simplified.
+
+It's not quite an apples-to-apples comparison due to missing features, but so far it is significantly faster than the x86 backend:
+
+```
+Benchmark 1 (117 runs): zig build-exe hello.zig -fno-llvm -OReleaseSmall -target x86_64-linux
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          42.7ms ± 5.03ms    34.2ms … 54.1ms          0 ( 0%)        0%
+  peak_rss            110MB ±  580KB     109MB …  111MB          0 ( 0%)        0%
+  cpu_cycles          115M  ± 2.50M      110M  …  122M           0 ( 0%)        0%
+  instructions        167M  ± 11.4K      167M  …  167M           0 ( 0%)        0%
+  cache_references   7.64M  ± 80.4K     7.45M  … 7.86M           0 ( 0%)        0%
+  cache_misses       1.18M  ± 37.9K     1.10M  … 1.29M           1 ( 1%)        0%
+  branch_misses       885K  ± 11.2K      859K  …  911K           0 ( 0%)        0%
+Benchmark 2 (156 runs): zig build-exe hello.zig -fno-llvm -OReleaseSmall -target aarch64-linux
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          32.1ms ± 4.22ms    23.7ms … 44.2ms          0 ( 0%)        ⚡- 24.8% ±  2.6%
+  peak_rss            103MB ±  663KB     101MB …  105MB          7 ( 4%)        ⚡-  6.5% ±  0.1%
+  cpu_cycles         40.8M  ± 1.17M     37.8M  … 43.5M           0 ( 0%)        ⚡- 64.6% ±  0.4%
+  instructions       50.9M  ± 9.49K     50.9M  … 50.9M           0 ( 0%)        ⚡- 69.5% ±  0.0%
+  cache_references   2.58M  ± 52.4K     2.49M  … 2.85M           1 ( 1%)        ⚡- 66.2% ±  0.2%
+  cache_misses        454K  ± 22.9K      413K  …  512K           0 ( 0%)        ⚡- 61.6% ±  0.6%
+  branch_misses       274K  ± 3.13K      268K  …  283K           1 ( 1%)        ⚡- 69.0% ±  0.2%
+```
+
+As for machine code quality, it's too early to make reasonable comparisons, but suffice to say it's looking quite promising! We'll make another devlog entry when it's capable of compiling more complex projects.
+
 # [Zig Roadmap 2026]($section.id('2025-06-30'))
 Author: Loris Cro
 

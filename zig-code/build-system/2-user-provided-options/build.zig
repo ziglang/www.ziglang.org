@@ -5,9 +5,11 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "hello",
-        .root_source_file = b.path("example.zig"),
-        .target = b.resolveTargetQuery(.{
-            .os_tag = if (windows) .windows else null,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("example.zig"),
+            .target = b.resolveTargetQuery(.{
+                .os_tag = if (windows) .windows else null,
+            }),
         }),
     });
 

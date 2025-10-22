@@ -12,9 +12,11 @@ pub fn build(b: *std.Build) !void {
     for (targets) |t| {
         const exe = b.addExecutable(.{
             .name = "hello",
-            .root_source_file = b.path("hello.zig"),
-            .target = b.resolveTargetQuery(t),
-            .optimize = .ReleaseSafe,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("hello.zig"),
+                .target = b.resolveTargetQuery(t),
+                .optimize = .ReleaseSafe,
+            }),
         });
 
         const target_output = b.addInstallArtifact(exe, .{
