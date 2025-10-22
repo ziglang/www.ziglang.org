@@ -84,7 +84,7 @@ pub fn connect(
     defer {
         connect_many.cancel(io);
         if (!saw_end) while (true) switch (connect_many_queue.getOneUncancelable(io)) {
-            .connection => |loser| if (loser) |s| s.closeConst(io) else |_| continue,
+            .connection => |loser| if (loser) |s| s.close(io) else |_| continue,
             .end => break,
         };
     }
@@ -131,20 +131,20 @@ pub fn connectMany(
     var canonical_name_buffer: [max_len]u8 = undefined;
     var lookup_buffer: [32]HostName.LookupResult = undefined;
     var lookup_queue: Io.Queue(LookupResult) = .init(&lookup_buffer);
+    var group: Io.Group = .init;
 
-    host_name.lookup(io, &lookup_queue, .{
+    group.async(io, lookup, .{ host_name, io, &lookup_queue, .{
         .port = port,
         .canonical_name_buffer = &canonical_name_buffer,
-    });
-
-    var group: Io.Group = .init;
+    } });
 
     while (lookup_queue.getOne(io)) |dns_result| switch (dns_result) {
         .address => |address| group.async(io, enqueueConnection, .{ address, io, results, options }),
         .canonical_name => continue,
         .end => |lookup_result| {
-            group.waitUncancelable(io);
-            results.putOneUncancelable(io, .{ .end = lookup_result });
+            results.putOneUncancelable(io, .{
+                .end = if (group.wait(io)) lookup_result else |err| err,
+            });
             return;
         },
     } else |err| switch (err) {
