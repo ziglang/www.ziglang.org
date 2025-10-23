@@ -94,47 +94,52 @@ const targets = [_]Target{
         .key = "loongarch64-linux",
     },
     .{
-        .triple = "aarch64-freebsd.14.0-none",
+        .triple = "aarch64-freebsd-none",
         .cpu = "baseline",
         .key = "aarch64-freebsd",
     },
     .{
-        .triple = "powerpc64-freebsd.14.0-none",
+        .triple = "arm-freebsd-eabihf",
+        .cpu = "baseline",
+        .key = "arm-freebsd",
+    },
+    .{
+        .triple = "powerpc64-freebsd-none",
         .cpu = "baseline",
         .key = "powerpc64-freebsd",
     },
     .{
-        .triple = "powerpc64le-freebsd.14.0-none",
+        .triple = "powerpc64le-freebsd-none",
         .cpu = "baseline",
         .key = "powerpc64le-freebsd",
     },
     .{
-        .triple = "riscv64-freebsd.14.0-none",
+        .triple = "riscv64-freebsd-none",
         .cpu = "baseline",
         .key = "riscv64-freebsd",
     },
     .{
-        .triple = "x86_64-freebsd.14.0-none",
+        .triple = "x86_64-freebsd-none",
         .cpu = "baseline",
         .key = "x86_64-freebsd",
     },
     .{
-        .triple = "aarch64-netbsd.10.1-none",
+        .triple = "aarch64-netbsd-none",
         .cpu = "baseline",
         .key = "aarch64-netbsd",
     },
     .{
-        .triple = "arm-netbsd.10.1-eabihf",
+        .triple = "arm-netbsd-eabihf",
         .cpu = "baseline",
         .key = "arm-netbsd",
     },
     .{
-        .triple = "x86-netbsd.10.1-none",
+        .triple = "x86-netbsd-none",
         .cpu = "baseline",
         .key = "x86-netbsd",
     },
     .{
-        .triple = "x86_64-netbsd.10.1-none",
+        .triple = "x86_64-netbsd-none",
         .cpu = "baseline",
         .key = "x86_64-netbsd",
     },
@@ -440,7 +445,9 @@ fn zigVer(env_map: *const std.process.EnvMap, dir: std.fs.Dir) ![]const u8 {
 
             const ancestor_ver = try std.SemanticVersion.parse(tagged_ancestor);
             if (zig_version.order(ancestor_ver) != .gt) {
-                fatal("Zig version '{}' must be greater than tagged ancestor '{}'", .{ zig_version, ancestor_ver });
+                fatal("Zig version '{f}' must be greater than tagged ancestor '{f}'", .{
+                    zig_version, ancestor_ver,
+                });
             }
 
             // Check that the commit hash is prefixed with a 'g' (a Git convention).
@@ -508,16 +515,16 @@ fn allocPrintCmd(argv: []const []const u8) []u8 {
 }
 
 fn fetch(url: []const u8, headers: std.http.Client.Request.Headers, extra_headers: []const std.http.Header) ![]u8 {
-    var response: std.ArrayList(u8) = .init(arena);
+    var response: std.Io.Writer.Allocating = .init(arena);
     var client: std.http.Client = .{ .allocator = arena };
     const result = try client.fetch(.{
         .location = .{ .url = url },
-        .response_storage = .{ .dynamic = &response },
+        .response_writer = &response.writer,
         .headers = headers,
         .extra_headers = extra_headers,
     });
-    if (result.status != .ok) fatal("fetch from {s} result: {s}", .{ url, @tagName(result.status) });
-    return response.items;
+    if (result.status != .ok) fatal("fetch from {s} result: {t}", .{ url, result.status });
+    return response.written();
 }
 
 fn pluckLastSuccessFromJson(json_text: []const u8) []const u8 {
@@ -656,7 +663,7 @@ fn addTemplateEntry(
     const size = (try file.stat()).size;
     const digest = try sha256sum(file, size);
     try map.put(arena, print("{s}-tarball", .{name}), tarball_basename);
-    try map.put(arena, print("{s}-shasum", .{name}), print("{}", .{std.fmt.fmtSliceHexLower(&digest)}));
+    try map.put(arena, print("{s}-shasum", .{name}), print("{x}", .{&digest}));
     try map.put(arena, print("{s}-bytesize", .{name}), print("{d}", .{size}));
 }
 
@@ -698,7 +705,7 @@ fn render(
 ) !void {
     const in_contents = try std.fs.cwd().readFileAlloc(arena, in_file, 1 * 1024 * 1024);
 
-    var buffer = std.ArrayList(u8).init(arena);
+    var buffer: std.Io.Writer.Allocating = .init(arena);
     defer buffer.deinit();
 
     const State = enum {
@@ -707,7 +714,7 @@ fn render(
         VarName,
         EndBrace,
     };
-    const writer = buffer.writer();
+    const writer = &buffer.writer;
     var state = State.Start;
     var var_name_start: usize = undefined;
     var line: usize = 1;
@@ -737,7 +744,7 @@ fn render(
                         const trimmed = mem.trim(u8, value, " \r\n");
                         if (fmt == .html and mem.endsWith(u8, var_name, "bytesize")) {
                             const size = try std.fmt.parseInt(u64, trimmed, 10);
-                            try writer.print("{:.1}", .{std.fmt.fmtIntSizeDec(size)});
+                            try writer.print("{Bi:.1}", .{size});
                         } else {
                             try writer.writeAll(trimmed);
                         }
@@ -762,7 +769,7 @@ fn render(
             line += 1;
         }
     }
-    try out_dir.writeFile(.{ .sub_path = out_file, .data = buffer.items });
+    try out_dir.writeFile(.{ .sub_path = out_file, .data = buffer.written() });
 }
 
 fn updateWebsiteRepo(

@@ -4,8 +4,10 @@ pub fn build(b: *std.Build) void {
     const lang = b.option([]const u8, "language", "language of the greeting") orelse "en";
     const tool = b.addExecutable(.{
         .name = "word_select",
-        .root_source_file = b.path("tools/word_select.zig"),
-        .target = b.graph.host,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tools/word_select.zig"),
+            .target = b.graph.host,
+        }),
     });
 
     const tool_step = b.addRunArtifact(tool);
@@ -21,9 +23,11 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const exe = b.addExecutable(.{
         .name = "hello",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     const install_artifact = b.addInstallArtifact(exe, .{

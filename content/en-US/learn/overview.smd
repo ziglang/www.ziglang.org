@@ -36,7 +36,7 @@ Zig has four [build modes](https://ziglang.org/documentation/master/#Build-Mode)
 
 | Parameter | [Debug](https://ziglang.org/documentation/master/#Debug) | [ReleaseSafe](https://ziglang.org/documentation/master/#ReleaseSafe) | [ReleaseFast](https://ziglang.org/documentation/master/#ReleaseFast) | [ReleaseSmall](https://ziglang.org/documentation/master/#ReleaseSmall) |
 |-----------|-------|-------------|-------------|--------------|
-Optimizations - improve speed, harm debugging, harm compile time | | -O3 | -O3| -Os |
+Optimizations - improve speed, harm debugging, harm compile time | | On | On | On |
 Runtime Safety Checks - harm speed, harm size, crash instead of undefined behavior | On | On | | |
 
 Here is what [Integer Overflow](https://ziglang.org/documentation/master/#Integer-Overflow) looks like at compile time, regardless of the build mode:
@@ -58,11 +58,11 @@ Zig uses [undefined behavior](https://ziglang.org/documentation/master/#Undefine
 
 Speaking of performance, Zig is faster than C.
 
-- The reference implementation uses LLVM as a backend for state of the art optimizations.
-- What other projects call "Link Time Optimization" Zig does automatically.
-- For native targets, advanced CPU features are enabled (-march=native), thanks to the fact that [Cross-compiling is a first-class use case](#cross-compiling-is-a-first-class-use-case).
-- Carefully chosen undefined behavior. For example, in Zig both signed and unsigned integers have undefined behavior on overflow, contrasted to only signed integers in C. This [facilitates optimizations that are not available in C](https://godbolt.org/z/n_nLEU).
+- All Zig code lives in one compilation unit, optimized together.
+- Carefully chosen illegal behavior. For example, in Zig both signed and unsigned integers have illegal behavior on overflow, contrasted to only signed integers in C. This [facilitates optimizations that are not available in C](https://godbolt.org/z/vhjv9oM1W).
 - Zig directly exposes a [SIMD vector type](https://ziglang.org/documentation/master/#Vectors), making it easy to write portable vectorized code.
+- The standard library provides essential data structures such as hash maps and array lists, whereas in C it is tempting to use linked lists for simplicity.
+- Advanced CPU features are enabled by default, unless [cross-compiling](#cross-compiling-is-a-first-class-use-case).
 
 Please note that Zig is not a fully safe language. For those interested in following Zig's safety story, subscribe to these issues:
 
@@ -107,7 +107,7 @@ Unadorned Zig pointers cannot be null:
 
 []($code.language('=html').buildAsset('features/6-null-to-ptr.zig'))
 
-However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with ?:
+However any type can be made into an [optional type](https://ziglang.org/documentation/master/#Optionals) by prefixing it with `?`:
 
 []($code.language('=html').buildAsset('features/7-optional-syntax.zig'))
 
@@ -179,7 +179,7 @@ In addition, the standard library has the ability to capture a stack trace at an
 
 []($code.language('=html').buildAsset('features/17-stack-traces.zig'))
 
-You can see this technique being used in the ongoing [GeneralPurposeDebugAllocator project](https://github.com/andrewrk/zig-general-purpose-allocator/#current-status).
+The standard library's DebugAllocator uses this technique to report leaks and double frees.
 
 ## Generic data structures and functions
 
@@ -238,20 +238,20 @@ int main(int argc, char **argv) {
 ```
 
 ```
-$ zig build-exe hello.c --library c
+$ zig build-exe hello.c -lc
 $ ./hello
 Hello world
 ```
 
 You can use `--verbose-cc` to see what C compiler command this executed:
 ```
-$ zig build-exe hello.c --library c --verbose-cc
+$ zig build-exe hello.c -lc --verbose-cc
 zig cc -MD -MV -MF .zig-cache/tmp/42zL6fBH8fSo-hello.o.d -nostdinc -fno-spell-checking -isystem /home/andy/dev/zig/build/lib/zig/include -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-gnu -isystem /home/andy/dev/zig/build/lib/zig/libc/include/generic-glibc -isystem /home/andy/dev/zig/build/lib/zig/libc/include/x86_64-linux-any -isystem /home/andy/dev/zig/build/lib/zig/libc/include/any-linux-any -march=native -g -fstack-protector-strong --param ssp-buffer-size=4 -fno-omit-frame-pointer -o .zig-cache/tmp/42zL6fBH8fSo-hello.o -c hello.c -fPIC
 ```
 
 Note that if you run the command again, there is no output, and it finishes instantly:
 ```
-$ time zig build-exe hello.c --library c --verbose-cc
+$ time zig build-exe hello.c -lc --verbose-cc
 
 real	0m0.027s
 user	0m0.018s
@@ -327,61 +327,112 @@ This works on any Tier 3+ target, for any Tier 3+ target.
 You can find the available libc targets with `zig targets`:
 ```
 ...
- "libc": [
-  "aarch64_be-linux-gnu",
-  "aarch64_be-linux-musl",
-  "aarch64_be-windows-gnu",
-  "aarch64-linux-gnu",
-  "aarch64-linux-musl",
-  "aarch64-windows-gnu",
-  "armeb-linux-gnueabi",
-  "armeb-linux-gnueabihf",
-  "armeb-linux-musleabi",
-  "armeb-linux-musleabihf",
-  "armeb-windows-gnu",
+.libc = .{
+  "arc-linux-gnu",
+  "arm-freebsd-eabihf",
   "arm-linux-gnueabi",
   "arm-linux-gnueabihf",
   "arm-linux-musleabi",
   "arm-linux-musleabihf",
-  "arm-windows-gnu",
-  "mips64el-linux-gnuabi64",
-  "mips64el-linux-gnuabin32",
-  "mips64el-linux-musl",
+  "arm-netbsd-eabi",
+  "arm-netbsd-eabihf",
+  "armeb-linux-gnueabi",
+  "armeb-linux-gnueabihf",
+  "armeb-linux-musleabi",
+  "armeb-linux-musleabihf",
+  "armeb-netbsd-eabi",
+  "armeb-netbsd-eabihf",
+  "thumb-linux-musleabi",
+  "thumb-linux-musleabihf",
+  "thumb-windows-gnu",
+  "thumbeb-linux-musleabi",
+  "thumbeb-linux-musleabihf",
+  "aarch64-freebsd-none",
+  "aarch64-linux-gnu",
+  "aarch64-linux-musl",
+  "aarch64-macos-none",
+  "aarch64-netbsd-none",
+  "aarch64-windows-gnu",
+  "aarch64_be-linux-gnu",
+  "aarch64_be-linux-musl",
+  "aarch64_be-netbsd-none",
+  "csky-linux-gnueabi",
+  "csky-linux-gnueabihf",
+  "hexagon-linux-musl",
+  "loongarch64-linux-gnu",
+  "loongarch64-linux-gnusf",
+  "loongarch64-linux-musl",
+  "loongarch64-linux-muslsf",
+  "m68k-linux-gnu",
+  "m68k-linux-musl",
+  "m68k-netbsd-none",
+  "mips-linux-gnueabi",
+  "mips-linux-gnueabihf",
+  "mips-linux-musleabi",
+  "mips-linux-musleabihf",
+  "mips-netbsd-eabi",
+  "mips-netbsd-eabihf",
+  "mipsel-linux-gnueabi",
+  "mipsel-linux-gnueabihf",
+  "mipsel-linux-musleabi",
+  "mipsel-linux-musleabihf",
+  "mipsel-netbsd-eabi",
+  "mipsel-netbsd-eabihf",
   "mips64-linux-gnuabi64",
   "mips64-linux-gnuabin32",
-  "mips64-linux-musl",
-  "mipsel-linux-gnu",
-  "mipsel-linux-musl",
-  "mips-linux-gnu",
-  "mips-linux-musl",
-  "powerpc64le-linux-gnu",
-  "powerpc64le-linux-musl",
+  "mips64-linux-muslabi64",
+  "mips64-linux-muslabin32",
+  "mips64el-linux-gnuabi64",
+  "mips64el-linux-gnuabin32",
+  "mips64el-linux-muslabi64",
+  "mips64el-linux-muslabin32",
+  "powerpc-freebsd-eabihf",
+  "powerpc-linux-gnueabi",
+  "powerpc-linux-gnueabihf",
+  "powerpc-linux-musleabi",
+  "powerpc-linux-musleabihf",
+  "powerpc-netbsd-eabi",
+  "powerpc-netbsd-eabihf",
+  "powerpc64-freebsd-none",
   "powerpc64-linux-gnu",
   "powerpc64-linux-musl",
-  "powerpc-linux-gnu",
-  "powerpc-linux-musl",
+  "powerpc64le-freebsd-none",
+  "powerpc64le-linux-gnu",
+  "powerpc64le-linux-musl",
+  "riscv32-linux-gnu",
+  "riscv32-linux-musl",
+  "riscv64-freebsd-none",
   "riscv64-linux-gnu",
   "riscv64-linux-musl",
   "s390x-linux-gnu",
   "s390x-linux-musl",
   "sparc-linux-gnu",
-  "sparcv9-linux-gnu",
-  "wasm32-freestanding-musl",
+  "sparc-netbsd-none",
+  "sparc64-linux-gnu",
+  "sparc64-netbsd-none",
+  "wasm32-wasi-musl",
+  "x86-freebsd-none",
   "x86-linux-gnu",
   "x86-linux-musl",
+  "x86-netbsd-none",
   "x86-windows-gnu",
+  "x86_64-freebsd-none",
   "x86_64-linux-gnu",
   "x86_64-linux-gnux32",
   "x86_64-linux-musl",
-  "x86_64-windows-gnu"
- ],
+  "x86_64-linux-muslx32",
+  "x86_64-macos-none",
+  "x86_64-netbsd-none",
+  "x86_64-windows-gnu",
+},
+...
  ```
 
-What this means is that `--library c` for these targets *does not depend on any system files*!
+What this means is that `-lc` for these targets *does not depend on any system files*!
 
 Let's look at that [C hello world example](#zig-is-also-a-c-compiler) again:
 ```
-$ zig build-exe hello.c --library c
+$ zig build-exe hello.c -lc
 $ ./hello
 Hello world
 $ ldd ./hello
@@ -396,7 +447,7 @@ $ ldd ./hello
 
 [glibc](https://www.gnu.org/software/libc/) does not support building statically, but [musl](https://www.musl-libc.org/) does:
 ```
-$ zig build-exe hello.c --library c -target x86_64-linux-musl
+$ zig build-exe hello.c -lc -target x86_64-linux-musl
 $ ./hello
 Hello world
 $ ldd hello
@@ -407,7 +458,7 @@ In this example, Zig built musl libc from source and then linked against it. The
 
 This means that this functionality is available on any platform. Windows and macOS users can build Zig and C code, and link against libc, for any of the targets listed above. Similarly code can be cross compiled for other architectures:
 ```
-$ zig build-exe hello.c --library c -target aarch64-linux-gnu
+$ zig build-exe hello.c -lc -target aarch64-linux-gnu
 $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
@@ -560,19 +611,24 @@ Here are some example build scripts:
 
 Zig uses a "support tier" system to communicate the level of support for different targets.
 
-[Support Table as of Zig 0.14.0](https://ziglang.org/download/0.14.0/release-notes.html#Target-Support)
+[Support Table as of Zig 0.15](https://ziglang.org/download/0.15.1/release-notes.html#Target-Support)
 
 ## Friendly toward package maintainers
 
-The reference Zig compiler is not completely self-hosted yet, but no matter what, [it will remain exactly 3 steps](https://github.com/ziglang/zig/issues/853) to go from having a system C++ compiler to having a fully self-hosted Zig compiler for any target. As Maya Rashish notes, [porting Zig to other platforms is fun and speedy](http://coypu.sdf.org/porting-zig.html).
+Even though Zig is self-hosted, building from source only depends on system
+C/C++ toolchain and LLVM, using standard CMake build steps thanks to
+[a WebAssembly based bootstrap process](/news/goodbye-cpp/).
+
+For those distributions that want to avoid binary blobs, there is a
+well-documented set of steps to
+[reproduce Zig without binaries](https://jakstys.lt/2024/zig-reproduced-without-binaries/).
+
+In the future, we hope to inspire a third party to implement a Zig interpreter
+written in C that can reduce this to O(1) step.
+
+As Maya Rashish notes,
+[porting Zig to other platforms is fun and speedy](http://coypu.sdf.org/porting-zig.html).
 
 Non-debug [build modes](https://ziglang.org/documentation/master/#Build-Mode) are reproducible/deterministic.
 
 There is a [JSON version of the download page](https://ziglang.org/download/index.json).
-
-Several members of the Zig team have experience maintaining packages.
-
-- [Daurnimator](https://github.com/daurnimator) maintains the [Arch Linux package](https://archlinux.org/packages/extra/x86_64/zig/)
-- [Marc Tiehuis](https://tiehuis.github.io/) maintains the Visual Studio Code package.
-- [Andrew Kelley](https://andrewkelley.me/) spent a year or so doing [Debian and Ubuntu packaging](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), and casually contributes to [nixpkgs](https://github.com/NixOS/nixpkgs/).
-- [Jeff Fowler](https://blog.jfo.click/) maintains the Homebrew package and started the [Sublime package](https://github.com/ziglang/sublime-zig-language) (now maintained by [emekoi](https://github.com/emekoi)).
