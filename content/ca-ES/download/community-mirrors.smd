@@ -1,0 +1,92 @@
+---
+.title = "Community Mirrors",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "download/community-mirrors.shtml",
+.alternatives = [{
+    .name = "list",
+    .layout = "download/community-mirrors-list.shtml",
+    .output = "/download/community-mirrors.txt",
+}],
+.custom = { "mobile_menu_title": "Mirrors" },
+---
+
+If you're setting something up which will automatically download Zig, like CI, you might be interested in using community mirrors instead of downloading from
+ziglang.org.
+
+The ziglang.org website does not offer any uptime or speed guarantees, meaning that your CI will sporadically fail or have slower runs if it hardcodes it as a
+download URL. In fact, configuring your CI to fetch from ziglang.org directly contributes to uptime and speed issues, because this site is [intentionally hosted
+on a simple one-computer configuration](https://ziglang.org/news/migrate-to-self-hosting). Instead, it is often a good idea to fetch Zig from one of many community-maintained
+mirrors. These mirrors are not officially endorsed by the Zig Software Foundation, but they can be used without security risks thanks to our signing of
+archives. While no individual mirror has an uptime or speed guarantee, configuring your automation to cycle through the list of available mirrors can
+effectively guarantee high uptime in practice.
+
+> # [Security Notice]($block)
+> Community mirrors are not officially trusted or endorsed by the Zig Software Foundation, and could in theory serve malicious binaries. If you are using them,
+> you **must** make sure to validate the minisign signature for every tarball you download against the ZSF's public key, available on [the download
+> page](/download).
+
+## GitHub Actions
+
+If you are setting up an automation using GitHub Actions, you may be interested in the
+[mlugg/setup-zig](https://github.com/marketplace/actions/setup-zig-compiler) Action (note that this is not an official ZSF project). Not only does it install a
+Zig version of your choice from a community mirror, but it also saves your Zig cache directory between workflow runs, allowing for faster rebuilds.
+
+## Using Mirrors
+
+The list of community mirrors is available in a newline-separated ASCII text file at https://ziglang.org/download/community-mirrors.txt. Tooling is recommended
+to fetch this list and try mirrors in a randomized order (to avoid putting excessive load on any one mirror, as this slows it down for everyone).
+
+Every Zig tarball is associated with a [minisign](https://jedisct1.github.io/minisign/) signature file, which can also be downloaded from mirrors. **When you
+download a tarball from a mirror, you must also download its associated signature and verify the tarball against it.** Failing to check the signature could
+theoretically leave you vulnerable to malicious mirrors hosting modified tarballs.
+
+Put simply, the recommended strategy is approximately this pseudocode:
+
+```python
+pubkey = "(copy this from https://ziglang.org/download)"
+tarball_name = "zig-x86_64-linux-0.14.1.tar.xz"
+# To improve uptime, optionally cache this GET:
+mirrors = http_get("https://ziglang.org/download/community-mirrors.txt")
+# ASCII-encoded, one mirror per line, newlines are LF, there is a trailing newline.
+shuffled = shuffle_lines(mirrors)
+for mirror_url in shuffled:
+    tarball = http_get(f"{mirror_url}/{tarball_name}?source=my_automation_name")
+    if success:
+        # NEVER SKIP THIS STEP. The signature must be verified before the tarball is deemed safe.
+        signature = http_get(f"{mirror_url}/{tarball_name}.minisig?source=my_automation_name")
+        if success and minisign_verify(tarball, signature, pubkey):
+            print("Successfully fetched Zig 0.14.1!")
+```
+
+Because ziglang.org does not have guaranteed uptime, the `community-mirrors.txt` file may at times become inaccessible. For this reason, you may wish to
+consider caching its contents to prevent disruption in the event that ziglang.org encounters downtime. The recommended refetch interval is approximately
+once per day. At this point in time, mirrors may be added or removed on a monthly basis as the ecosystem evolves, so periodic re-fetching is essential.
+
+Written more precisely, here is the key information and recommend workflow for downloading Zig tarballs:
+
+* The mirror list file is available at https://ziglang.org/download/community-mirrors.txt.
+  * Because ziglang.org does not guarantee uptime, it may be desirable to cache this file.
+* The mirror list file contains ASCII-encoded mirror URLs, separated with newline characters (ASCII LF 0x20). There is a trailing newline. There is no other whitespace. There are no blank lines.
+* Mirrors are required to support HTTPS. Every line in the mirror list file begins with "https://".
+* Mirrors cannot guarantee uptime, so if one fails to serve you a tarball, you should try another. Ideally, shuffle the list, and try each mirror in turn.
+  * Usually, the first one will work. If no mirror works, you may choose to try `ziglang.org` as a final fallback.
+* To download a tarball from a mirror, perform a GET request to "mirror/filename", where "mirror" is the mirror URL, and "filename" is the basename of the corresponding tarball on ziglang.org (e.g. `zig-x86_64-linux-0.14.1.tar.xz`).
+  * You are highly encouraged to include in your request a query parameter named `source` containing a string indicating what is making this request. For instance, the `mlugg/setup-zig` GitHub Action passes it as `?source=github-mlugg-setup-zig`.
+  * Source tarballs, bootstrap tarballs, and binary tarballs are available from all listed mirrors, as well as minisign signatures for all such files.
+  * Binary tarballs for recent Zig versions are of the form `zig-x86_64-linux-0.14.1.tar.xz`.
+  * If a mirror responds with a HTTP status code other than 200 OK:
+    * `503 Unavailable` may indicate scheduled downtime.
+    * `429 Too Many Requests` may indicate intentional rate-limiting.
+    * `404 Not Found` is a permitted response when requesting Zig releases 0.5.0 or earlier, or Zig development builds earlier than the current latest release.
+    * `504 Gateway Timeout` indicates that the tarball is unavailable because `https://ziglang.org/` is currently inaccessible (and the tarball is not in the mirror's cache).
+    * Otherwise, feel free to [open an issue](https://github.com/ziglang/www.ziglang.org/issues/new) to inform us of the problem.
+* The Zig Software Foundation can never guarantee the security of any mirror, so every time a tarball is downloaded, it is **essential** to also download the minisign signature (suffix the filename with ".minisig") and verify it against the ZSF's public key (which you should copy from the ziglang.org/download page). **Never skip this step.**
+  * If a mirror responds with `200 OK` but signature validation fails on the returned tarball, feel free to [open an issue](https://github.com/ziglang/www.ziglang.org/issues/new) to inform us of the problem.
+* When the minisig signature is verified, it is also necessary to validate its **trusted comment** (which the reference implementation `minisign` always does), and ensure that its "file" field matches the name of the requested tarball, to prevent downgrade attacks.
+
+## Hosting a Mirror
+
+If you are interested in hosting a mirror, please consult the [documentation in the www.ziglang.org
+repository](https://github.com/ziglang/www.ziglang.org/blob/main/MIRRORS.md). Thank you for helping
+to improve and decentralize the Zig ecosystem!
