@@ -49,7 +49,7 @@ To recap, a translation needs to:
 
 Crafting a translation is not a straight-forward process. You have to think about adaptation, spatial constraints (in the front page especially), and other Zine-specific issues that might not be immediately obvious.
 
-If you don't mind instant messaging, please consider joining one of the [Zig communities](https://github.com/ziglang/zig/wiki/Community), where you will be able to communicate with other contributors and share some knowledge.
+If you don't mind instant messaging, please consider joining one of the [Zig communities](https://ziglang.org/community/), where you will be able to communicate with other contributors and share some knowledge.
 
 If you prefer asynchronous communication, feel free to open a draft PR, we will make sure to engage with you pronto.
 
