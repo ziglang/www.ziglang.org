@@ -1,6 +1,6 @@
 # ziglang.org
 
-Website for [Zig](https://github.com/ziglang/zig).
+Website for [Zig](https://ziglang.org/).
 
 ## How to Run Locally
 
