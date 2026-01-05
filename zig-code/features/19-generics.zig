@@ -9,7 +9,7 @@ fn List(comptime T: type) type {
 
 pub fn main() void {
     var buffer: [10]i32 = undefined;
-    var list = List(i32){
+    var list: List(i32) = .{
         .items = &buffer,
         .len = 0,
     };

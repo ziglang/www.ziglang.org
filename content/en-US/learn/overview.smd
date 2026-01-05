@@ -64,11 +64,6 @@ Speaking of performance, Zig is faster than C.
 - The standard library provides essential data structures such as hash maps and array lists, whereas in C it is tempting to use linked lists for simplicity.
 - Advanced CPU features are enabled by default, unless [cross-compiling](#cross-compiling-is-a-first-class-use-case).
 
-Please note that Zig is not a fully safe language. For those interested in following Zig's safety story, subscribe to these issues:
-
-- [enumerate all kinds of undefined behavior, even that which cannot be safety-checked](https://github.com/ziglang/zig/issues/1966)
-- [make Debug and ReleaseSafe modes fully safe](https://github.com/ziglang/zig/issues/2301)
-
 ## Zig competes with C instead of depending on it
 
 The Zig Standard Library integrates with libc, but does not depend on it. Here's Hello World:
@@ -127,12 +122,13 @@ Another option is to use if:
 
 A library written in Zig is eligible to be used anywhere:
 
-- [Desktop applications](https://github.com/TM35-Metronome/)
-- Low latency servers
-- [Operating System kernels](https://github.com/AndreaOrru/zen)
-- [Embedded devices](https://github.com/skyfex/zig-nrf-demo/)
+- [Desktop applications](https://isaacfreund.com/software/river/)
+- Low-latency servers
+- [Databases](https://tigerbeetle.com/)
+- Operating System kernels
+- [Embedded devices](https://microzig.tech/)
 - Real-time software, e.g. live performances, airplanes, pacemakers
-- [In web browsers or other plugins with WebAssembly](https://shritesh.github.io/zigfmt-web/)
+- In web browsers or other plugins with WebAssembly
 - By other programming languages, using the C ABI
 
 In order to accomplish this, Zig programmers must manage their own memory, and must handle memory allocation failure.
@@ -303,7 +299,7 @@ $ zig build test
 
 ## [Cross-compiling is a first-class use case]($heading.id('cross-compiling-is-a-first-class-use-case'))
 
-Zig can build for any of the targets from the Support Table (see latest release notes) with Tier 3 Support or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
+Zig builds for all supported targets independently of the host. There is no separate "cross toolchain" or anything like that. Here's a native Hello World:
 
 []($code.language('=html').buildAsset('features/4-hello.zig'))
 
@@ -350,6 +346,7 @@ You can find the available libc targets with `zig targets`:
   "aarch64-freebsd-none",
   "aarch64-linux-gnu",
   "aarch64-linux-musl",
+  "aarch64-maccatalyst-none",
   "aarch64-macos-none",
   "aarch64-netbsd-none",
   "aarch64-windows-gnu",
@@ -386,7 +383,6 @@ You can find the available libc targets with `zig targets`:
   "mips64el-linux-gnuabin32",
   "mips64el-linux-muslabi64",
   "mips64el-linux-muslabin32",
-  "powerpc-freebsd-eabihf",
   "powerpc-linux-gnueabi",
   "powerpc-linux-gnueabihf",
   "powerpc-linux-musleabi",
@@ -421,6 +417,7 @@ You can find the available libc targets with `zig targets`:
   "x86_64-linux-gnux32",
   "x86_64-linux-musl",
   "x86_64-linux-muslx32",
+  "x86_64-maccatalyst-none",
   "x86_64-macos-none",
   "x86_64-netbsd-none",
   "x86_64-windows-gnu",
@@ -428,7 +425,7 @@ You can find the available libc targets with `zig targets`:
 ...
  ```
 
-What this means is that `-lc` for these targets *does not depend on any system files*!
+This means `-lc` for these targets *does not depend on any system files*!
 
 Let's look at that [C hello world example](#zig-is-also-a-c-compiler) again:
 ```
@@ -463,13 +460,20 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
 
-In some ways, Zig is a better C compiler than C compilers!
+Zig is a better C compiler than C compilers!
 
-This functionality is more than bundling a cross-compilation toolchain along with Zig. For example, the total size of libc headers that Zig ships is 22 MiB uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux headers), yet Zig currently ships with 40 libcs. With a naive bundling that would be 444 MiB. However, thanks to this [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig), and some [good old manual labor](https://github.com/ziglang/zig/wiki/Updating-libc), Zig binary tarballs remain roughly 30 MiB total, despite supporting libc for all these targets, as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler. For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132 MiB.
-
-Note that only the Tier 1 Support targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
-
-It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](#zig-build-system) attractive for Zig programmers and C programmers alike.
+This functionality is more than bundling a cross-compilation toolchain along
+with Zig. For example, the total size of libc headers that Zig ships is 130 MiB
+uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64
+alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux
+headers), yet Zig currently ships with 97 libcs. With a naive bundling that
+would be 776 MiB. However, thanks to this [process_headers
+tool](https://codeberg.org/ziglang/zig/src/commit/0.15.2/tools/process_headers.zig), and
+some [good old manual labor](https://codeberg.org/ziglang/infra/src/branch/master/libc-update),
+Zig binary tarballs remain roughly 50 MiB total, despite supporting libc for
+all these targets, as well as compiler-rt, libunwind, libcxx, and libtsan, and
+despite being a clang-compatible C compiler. For comparison, the Windows binary
+build of clang 8.0.0 itself from llvm.org is 132 MiB.
 
 ## [Zig Build System]($heading.id('zig-build-system'))
 
