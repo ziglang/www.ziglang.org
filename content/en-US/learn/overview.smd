@@ -475,9 +475,10 @@ all these targets, as well as compiler-rt, libunwind, libcxx, and libtsan, and
 despite being a clang-compatible C compiler. For comparison, the Windows binary
 build of clang 8.0.0 itself from llvm.org is 132 MiB.
 
-## [Zig Build System]($heading.id('zig-build-system'))
+## [Zig Build System and Package Manager]($heading.id('zig-build-system'))
 
-Zig comes with a build system, so you don't need make, cmake, or anything like that.
+Zig comes with a build system, so you don't need a separate tool to orchestrate
+your build process.
 ```
 $ zig init
 info: created build.zig
@@ -504,52 +505,7 @@ Steps:
   install (default)            Copy build artifacts to prefix path
   uninstall                    Remove build artifacts from prefix path
   run                          Run the app
-  test                         Run unit tests
-
-General Options:
-  -p, --prefix [path]          Where to install files (default: zig-out)
-  --prefix-lib-dir [path]      Where to install libraries
-  --prefix-exe-dir [path]      Where to install executables
-  --prefix-include-dir [path]  Where to install C header files
-
-  --release[=mode]             Request release mode, optionally specifying a
-                               preferred optimization mode: fast, safe, small
-
-  -fdarling,  -fno-darling     Integration with system-installed Darling to
-                               execute macOS programs on Linux hosts
-                               (default: no)
-  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
-                               foreign-architecture programs on Linux hosts
-                               (default: no)
-  --glibc-runtimes [path]      Enhances QEMU integration by providing glibc built
-                               for multiple foreign architectures, allowing
-                               execution of non-native programs that link with glibc.
-  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
-                               ARM64 macOS hosts. (default: no)
-  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
-                               execute WASI binaries. (default: no)
-  -fwine,     -fno-wine        Integration with system-installed Wine to execute
-                               Windows programs on Linux hosts. (default: no)
-
-  -h, --help                   Print this help and exit
-  -l, --list-steps             Print available steps
-  --verbose                    Print commands before executing them
-  --color [auto|off|on]        Enable or disable colored error messages
-  --prominent-compile-errors   Buffer compile errors and display at end
-  --summary [mode]             Control the printing of the build summary
-    all                        Print the build summary in its entirety
-    new                        Omit cached steps
-    failures                   (Default) Only print failed steps
-    none                       Do not print the build summary
-  -j<N>                        Limit concurrent jobs (default is to use all CPU cores)
-  --maxrss <bytes>             Limit memory usage (default is to use available memory)
-  --skip-oom-steps             Instead of failing, skip steps that would exceed --maxrss
-  --fetch                      Exit after fetching dependency tree
-  --watch                      Continuously rebuild when source files are modified
-  --fuzz                       Continuously search for unit test failures
-  --debounce <ms>              Delay before rebuilding after changed file detected
-     -fincremental             Enable incremental compilation
-  -fno-incremental             Disable incremental compilation
+  test                         Run tests
 
 Project-Specific Options:
   -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
@@ -575,6 +531,71 @@ System Integration Options:
   Available System Integrations:                Enabled:
   (none)                                        -
 
+General Options:
+  -p, --prefix [path]          Where to install files (default: zig-out)
+  --prefix-lib-dir [path]      Where to install libraries
+  --prefix-exe-dir [path]      Where to install executables
+  --prefix-include-dir [path]  Where to install C header files
+
+  --release[=mode]             Request release mode, optionally specifying a
+                               preferred optimization mode: fast, safe, small
+
+  -fdarling,  -fno-darling     Integration with system-installed Darling to
+                               execute macOS programs on Linux hosts
+                               (default: no)
+  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
+                               foreign-architecture programs on Linux hosts
+                               (default: no)
+  --libc-runtimes [path]       Enhances QEMU integration by providing dynamic libc
+                               (e.g. glibc or musl) built for multiple foreign
+                               architectures, allowing execution of non-native
+                               programs that link with libc.
+  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
+                               ARM64 macOS hosts. (default: no)
+  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
+                               execute WASI binaries. (default: no)
+  -fwine,     -fno-wine        Integration with system-installed Wine to execute
+                               Windows programs on Linux hosts. (default: no)
+
+  -h, --help                   Print this help and exit
+  -l, --list-steps             Print available steps
+  --verbose                    Print commands before executing them
+  --color [auto|off|on]        Enable or disable colored error messages
+  --error-style [style]        Control how build errors are printed
+    verbose                    (Default) Report errors with full context
+    minimal                    Report errors after summary, excluding context like command lines
+    verbose_clear              Like 'verbose', but clear the terminal at the start of each update
+    minimal_clear              Like 'minimal', but clear the terminal at the start of each update
+  --multiline-errors [style]   Control how multi-line error messages are printed
+    indent                     (Default) Indent non-initial lines to align with initial line
+    newline                    Include a leading newline so that the error message is on its own lines
+    none                       Print as usual so the first line is misaligned
+  --summary [mode]             Control the printing of the build summary
+    all                        Print the build summary in its entirety
+    new                        Omit cached steps
+    failures                   (Default if short-lived) Only print failed steps
+    line                       (Default if long-lived) Only print the single-line summary
+    none                       Do not print the build summary
+  -j<N>                        Limit concurrent jobs (default is to use all CPU cores)
+  --maxrss <bytes>             Limit memory usage (default is to use available memory)
+  --skip-oom-steps             Instead of failing, skip steps that would exceed --maxrss
+  --test-timeout <timeout>     Limit execution time of unit tests, terminating if exceeded.
+                               The timeout must include a unit: ns, us, ms, s, m, h
+  --fetch[=mode]               Fetch dependency tree (optionally choose laziness) and exit
+    needed                     (Default) Lazy dependencies are fetched as needed
+    all                        Lazy dependencies are always fetched
+  --watch                      Continuously rebuild when source files are modified
+  --debounce <ms>              Delay before rebuilding after changed file detected
+  --webui[=ip]                 Enable the web interface on the given IP address
+  --fuzz[=limit]               Continuously search for unit test failures with an optional
+                               limit to the max number of iterations. The argument supports
+                               an optional 'K', 'M', or 'G' suffix (e.g. '10K'). Implies
+                               '--webui' when no limit is specified.
+  --time-report                Force full rebuild and provide detailed information on
+                               compilation time of Zig source code (implies '--webui')
+     -fincremental             Enable incremental compilation
+  -fno-incremental             Disable incremental compilation
+
 Advanced Options:
   -freference-trace[=num]      How many lines of reference trace should be shown per compile error
   -fno-reference-trace         Disable reference trace
@@ -586,6 +607,13 @@ Advanced Options:
   --zig-lib-dir [arg]          Override path to Zig lib directory
   --build-runner [file]        Override path to build runner
   --seed [integer]             For shuffling dependency traversal order (default: random)
+  --build-id[=style]           At a minor link-time expense, embeds a build ID in binaries
+      fast                     8-byte non-cryptographic hash (COFF, ELF, WASM)
+      sha1, tree               20-byte cryptographic hash (ELF, WASM)
+      md5                      16-byte cryptographic hash (ELF)
+      uuid                     16-byte random UUID (ELF, WASM)
+      0x[hexstring]            Constant ID, maximum 32 bytes (ELF, WASM)
+      none                     (default) No build ID
   --debug-log [scope]          Enable debugging the compiler
   --debug-pkg-config           Fail if unknown pkg-config flags encountered
   --debug-rt                   Debug compiler runtime libraries
