@@ -1,0 +1,89 @@
+---
+.title = "Mirroirs communautaires",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "download/community-mirrors.shtml",
+.alternatives = [{
+    .name = "list",
+    .layout = "download/community-mirrors-list.shtml",
+    .output = "/download/community-mirrors.txt",
+}],
+.custom = { "mobile_menu_title": "Mirrors" },
+---
+Si vous mettez en place un téléchargement automatique de Zig, comme une intégration continue, l'utilisation de miroirs communautaires peut être plus intéréssante qu'un téléchargement depuis ziglang.org.
+ziglang.org n'offre aucune garantie d'accessibilité ou de vitesse de téléchargement et peut donc conduire à des échecs ponctuels de téléchargement ou des ralentissements.
+De fait, une intégration continue qui télécharge directement depuis ziglang.org contribue aux problèmes d'accessibilité et de téléchargement.
+En effet, ce site est [hébergé de manière intentionnelle sur un seul ordinateur](/news/migrate-to-self-hosting).
+
+Il est donc souvent judicieux de récupérer Zig depuis l'un des nombreux miroirs maintenus par la communauté.
+Ces miroirs ne sont pas officiellement approuvés par la Fondation Logicielle Zig, mais ils peuvent être utilisés sans risques de sécurité grâce aux signature des archives.
+Aucun miroir individuel ne garantit un accessibilité ou une vitesse minimale, donc utiliser tous les miroirs disponibles pour de l'intégration continue peut significativement améliorer l'accessibilité en pratique.
+
+> # [Attention]($block)
+> Les miroirs communautaires ne sont pas officiellement approuvés ni soutenus par la Fondation Logicielle Zig.
+> Ils peuvent en théorie contenir des binaires malveillants.
+> Si vous les utilisez, vous **devez** vérifier la signature minisign de chaque archive que vous téléchargez avec la clé publique de la ZSF, disponible sur [la page de téléchargement](/download).
+
+## Action GitHub 
+Si vous utilisez les Actions GitHub, vous pourriez être intéressé par l'Action [mlugg/setup-zig](https://github.com/marketplace/actions/setup-zig-compiler),
+bien que ce ne soit pas un projet officiel ZSF.
+Elle permet d'installer une version Zig de votre choix depuis un miroir communautaire et sauvegarde votre cache Zig entre les exécutions pour accélérer les compilations suivantes.
+
+
+## Utilisation des Miroirs
+La liste des miroirs communautaires est disponible dans un fichier texte ASCII séparé par des retours à la ligne sur https://ziglang.org/download/community-mirrors.txt.
+Il est recommandé de récupérer cette liste et d'essayer les miroirs dans un ordre aléatoire (pour éviter de mettre une charge excessive sur un seul miroir et donc de ralentir l'accès pour tout le monde).
+Chaque archive Zig est associée à une signature [minisign](https://jedisct1.github.io/minisign/), qui peut être téléchargée depuis les miroirs.
+Pour chaque archive sur un miroir, veillez à télécharger sa signature et vérifier l'archive avec celle-ci.
+Sans cela, vous êtes théoriquement vulnérable à des miroirs malveillants hébergeant des archives modifiées.
+La stratégie recommandée peut être résumée comme suit:
+
+```python
+pubkey = "(copy this from https://ziglang.org/download)"
+tarball_name = "zig-x86_64-linux-0.14.1.tar.xz"
+# To improve uptime, optionally cache this GET:
+mirrors = http_get("https://ziglang.org/download/community-mirrors.txt")
+# ASCII-encoded, one mirror per line, newlines are LF, there is a trailing newline.
+shuffled = shuffle_lines(mirrors)
+for mirror_url in shuffled:
+    tarball = http_get(f"{mirror_url}/{tarball_name}?source=my_automation_name")
+    if success:
+        # NEVER SKIP THIS STEP. The signature must be verified before the tarball is deemed safe.
+        signature = http_get(f"{mirror_url}/{tarball_name}.minisig?source=my_automation_name")
+        if success and minisign_verify(tarball, signature, pubkey):
+            print("Successfully fetched Zig 0.14.1!")
+```
+
+Comme l'accessibilité de  ziglang.org n'est pas garantie, le fichier community-mirrors.txt peut parfois être inaccessible.
+Il est donc possible de le mettre en cache pour éviter les interruptions quand ziglang.org est inacessible.
+Il est recommandé de le re-télécharger quotidiennement.
+Les miroirs peuvent être ajoutés ou supprimés une fois par mois selon l'évolution de l'écosystème. Il est donc primordial de re-récupérer périodiquement la liste des miroirs.
+Voici la méthode recommandée pour télécharger les archives Zig :
+
+- La liste des miroirs est disponible à https://ziglang.org/download/community-mirrors.txt.
+	-  Son accessibilité n'est pas garantie, il peut donc être utile de la mettre en cache.
+- La liste des miroirs contient des URL en ASCII, séparées par des retours à la ligne (ASCII LF 0x20). La dernière ligne du fichier est un retour à la ligne.
+Il n'y a pas d'autres espaces, ni de lignes vides.
+- Les miroirs doivent supporter HTTPS. Chaque ligne dans le fichier commence par "https://".
+- L'accessibilité des miroirs n'est pas garantie donc si un miroir est inaccessible, il est recommandé d'essayer le suivant. En général, le premier suffit mais un parcours aléatoire de la liste est conseillé.
+Si aucun miroir n'est accessible, vous pouvez essayer ziglang.org en dernier recours.
+- Pour télécharger une archive depuis un miroir, il faut effecture une requête GET vers "miroir/nomdefichier", où "miroir" est l'URL du miroir,
+et "nomdefichier" est le nom de base de l'archive correspondante sur ziglang.org (par ex. zig-x86_64-linux-0.14.1.tar.xz).
+	- Il est fortement conseillé d'inclure dans la requête un paramètre nommé source contenant une chaîne indiquant l'expédititeur.
+	Par exemple, l'Action GitHub mlugg/setup-zig le défiint comme provenant de ?source=github-mlugg-setup-zig.
+	- Les archives sources, bootstrap, et binaires sont disponibles depuis tous les miroirs listés, ainsi que leurs signatures minisign.
+    - Les archives binaires pour les versions récentes de Zig sont de la forme zig-x86_64-linux-0.14.1.tar.xz.
+	- Si un miroir répond avec un code de statut HTTP autre que 200 OK :
+		- `503 Unavailable` peut être du à une maintenance programmée.
+		- `429 Too Many Requests` peut indiquer que le débit a été limité temporairement..
+		- `404 Not Found` est autorisé pour les versions Zig 0.5.0 ou antérieures, ou les versions de développement antérieures à la dernière version actuelle.
+		- Sinon, n'hésitez pas à [signaler le problème](https://github.com/ziglang/www.ziglang.org/issues/new).
+
+La Fondation Logicielle Zig ne peut garantir la sécurité d'aucun miroir. Après chaque téléchargement d'une archive, il est **impératif** de télécharger sa signature minisign
+(en rajoutant ".minisign" au nom de fichier) et la vérifier avec la clé publique de la ZSF, accessible depuis ziglang.org/download. **Ne jamais sauter cette étape**.
+
+Si un miroir renvoie `200 OK` mais que la validation de signature échoue, n'hésitez pas à  [signaler le problème ](https://github.com/ziglang/www.ziglang.org/issues/new).
+
+## Héberger un Miroir
+Si vous êtes intéressé pour héberger un miroir, veuillez consulter la [documentation dans le dépôt www.ziglang.org](https://github.com/ziglang/www.ziglang.org/blob/main/MIRRORS.md).
+Merci d'aider à améliorer et décentraliser l'écosystème Zig !
