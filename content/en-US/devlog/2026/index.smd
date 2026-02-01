@@ -1,0 +1,85 @@
+---
+.title = "Devlog",
+.author = "",
+.date = @date("2026-01-31T00:00:00"),
+.layout = "devlog.shtml",
+// When archiving this devlog, remember to disable
+// RSS feed generation, as only the current year page
+// should be generating a feed.
+.alternatives = [{
+    .name = "rss",
+	.layout = "devlog.xml",
+	.output = "/devlog/index.xml",
+}],
+.custom = {
+	"mobile_menu_title": "Devlog",
+},
+// Every entry is a block of markdown content that
+// starts with a $section heading.
+// The $section.id is the date of the new micro-post.
+// It will also be used as the unique identifier for your
+// new entry both in HTML (as the fragment value) and in
+// the RSS feed.
+// If you want to publish more than one entry in the same
+// day, add hours, minutes and seconds to the id value.
+// If you get a date parsing error on build, you messed up
+// the date syntax.
+// You can look at this page's '.date' frontmatter field for
+// an example of a correct date string.
+---
+
+# [zig libc]($section.id('2026-01-31'))
+
+Author: Andrew Kelley
+
+Over the past month or so, several enterprising contributors have taken an interest in the
+[zig libc subproject](https://codeberg.org/ziglang/zig/issues/30978). The idea
+here is to incrementally delete redundant code, by providing libc functions as
+Zig standard library wrappers rather than as vendored C source files. In many
+cases, these functions are one-to-one mappings, such as `memcpy` or `atan2`, or
+trivially wrap a generic function, like `strnlen`:
+
+```zig
+fn strnlen(str: [*:0]const c_char, max: usize) callconv(.c) usize {
+    return std.mem.findScalar(u8, @ptrCast(str[0..max]), 0) orelse max;
+}
+```
+
+So far, roughly 250 C source files have been deleted from the Zig repository,
+with 2032 remaining.
+
+With each function that makes the transition, Zig gains independence from third
+party projects and from the C programming language, compilation speed improves,
+Zig's installation size is simplified and reduced, and user applications which
+statically link libc enjoy reduced binary size.
+
+Additionally, a [recent enhancement](https://codeberg.org/ziglang/zig/pulls/31037)
+now makes zig libc share the Zig Compilation Unit with other Zig code rather than
+being a separate static archive, linked together later. This is one of the advantages
+of Zig having an integrated compiler and linker. When the exported libc functions
+share the ZCU, redundant code is eliminated because functions can be optimized together.
+It's kind of like enabling LTO (Link-Time Optimization) across the libc
+boundary, except it's done properly in the frontend instead of too late, in the
+linker.
+
+Furthermore, when this work is combined with the recent
+[std.Io changes](https://codeberg.org/ziglang/zig/issues/30150), there
+is potential for users to seamlessly control how libc performs I/O - for
+example forcing all calls to `read` and `write` to participate in an
+io_uring event loop, even though that code was not written with such use case
+in mind. Or,
+[resource leak detection](https://codeberg.org/ziglang/zig/pulls/30788)
+could be enabled for third-party C code. For now this is only a vaporware idea
+which has not been experimented with, but the idea intrigues me.
+
+Big thanks to Szabolcs Nagy for
+[libc-test](https://wiki.musl-libc.org/libc-test.html). This project has been a
+huge help in making sure that we don't regress any math functions.
+
+As a reminder to our users, now that Zig is transitioning to being the static
+libc provider, if you encounter issues with the musl, mingw-w64, or wasi-libc
+libc functionality provided by Zig, **please file bug reports in Zig first** so we
+don't annoy maintainers for bugs that are in Zig, and no longer vendored by
+independent libc implementation projects.
+
+Abolish ICE.
