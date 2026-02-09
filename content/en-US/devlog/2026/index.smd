@@ -1,0 +1,311 @@
+---
+.title = "Devlog",
+.author = "",
+.date = @date("2026-01-31T00:00:00"),
+.layout = "devlog.shtml",
+// When archiving this devlog, remember to disable
+// RSS feed generation, as only the current year page
+// should be generating a feed.
+.alternatives = [{
+    .name = "rss",
+	.layout = "devlog.xml",
+	.output = "/devlog/index.xml",
+}],
+.custom = {
+	"mobile_menu_title": "Devlog",
+},
+// Every entry is a block of markdown content that
+// starts with a $section heading.
+// The $section.id is the date of the new micro-post.
+// It will also be used as the unique identifier for your
+// new entry both in HTML (as the fragment value) and in
+// the RSS feed.
+// If you want to publish more than one entry in the same
+// day, add hours, minutes and seconds to the id value.
+// If you get a date parsing error on build, you messed up
+// the date syntax.
+// You can look at this page's '.date' frontmatter field for
+// an example of a correct date string.
+---
+
+# [Two Package Management Workflow Enhancements]($section.id('2026-02-06'))
+
+Author: Andrew Kelley
+
+If you have a Zig project with dependencies, two big changes just landed which
+I think you will be interested to learn about.
+
+Fetched packages are now stored *locally* in the `zig-pkg` directory of the
+project root (next to your `build.zig` file).
+
+For example here are a few results from
+[awebo](https://codeberg.org/awebo-chat/awebo) after running `zig build`:
+
+```
+$ du -sh zig-pkg/*
+13M    freetype-2.14.1-alzUkTyBqgBwke4Jsot997WYSpl207Ij9oO-2QOvGrOi
+20K    opus-0.0.2-vuF-cMAkAADVsm707MYCtPmqmRs0gzg84Sz0qGbb5E3w
+4.3M   pulseaudio-16.1.1-9-mk_62MZkNwBaFwiZ7ZVrYRIf_3dTqqJR5PbMRCJzSuLw
+5.2M   uucode-0.1.0-ZZjBPvtWUACf5dqD_f9I37VGFsN24436CuceC5pTJ25n
+728K   vaxis-0.5.1-BWNV_AxECQCj3p4Hcv4U3Yo1WMUJ7Z2FUj0UkpuJGxQQ
+```
+
+It is highly recommended to add this directory to the project-local source
+control ignore file (e.g. `.gitignore`). However, by being outside of
+`.zig-cache`, it provides the possibility of distributing self-contained source
+tarballs, which contain all dependencies and therefore can be used to build
+offline, or for archival purposes.
+
+Meanwhile, an *additional* copy of the dependency is cached globally. After
+filtering out all the unused files based on the `paths` filter, the contents
+are recompressed:
+
+```
+$ du -sh ~/.cache/zig/p/*
+2.4M    freetype-2.14.1-alzUkTyBqgBwke4Jsot997WYSpl207Ij9oO-2QOvGrOi.tar.gz
+4.0K    opus-0.0.2-vuF-cMAkAADVsm707MYCtPmqmRs0gzg84Sz0qGbb5E3w.tar.gz
+636K    pulseaudio-16.1.1-9-mk_62MZkNwBaFwiZ7ZVrYRIf_3dTqqJR5PbMRCJzSuLw.tar.gz
+880K    uucode-0.1.0-ZZjBPvtWUACf5dqD_f9I37VGFsN24436CuceC5pTJ25n.tar.gz
+120K    vaxis-0.5.1-BWNV_BFECQBbXeTeFd48uTJRjD5a-KD6kPuKanzzVB01.tar.gz
+```
+
+The motivation for this change is to make it easier to tinker. Go ahead and
+edit those files, see what happens. Swap out your package directory with a git
+clone. Grep your dependencies all together. Configure your IDE to auto-complete
+based on the `zig-pkg` directory. [Run baobab on your dependency
+tree](https://codeberg.org/awebo-chat/awebo/issues/61). Furthermore, by having
+the global cache have compressed files instead makes it easier to share that
+cached data between computers. In the future, [it is planned to support
+peer-to-peer torrenting of dependency
+trees](https://github.com/ziglang/zig/issues/23236). By recompressing packages
+into a canonical form, this will allow peers to share Zig packages with minimal
+bandwidth. I love this idea because it simultaneously provides resilience to
+network outages, as well as a popularity contest. Find out which open source
+packages are popular based on number of seeders!
+
+The second change here is the addition of the `--fork` flag to `zig build`.
+
+In retrospect, it seems so obvious, I don't know why I didn't think of it since
+the beginning. It looks like this:
+
+```
+zig build --fork=[path]
+```
+
+This is a **project override** option. Given a path to a source checkout of a
+project, all packages matching that project across the entire dependency tree
+will be overridden.
+
+Thanks to the fact that package content hashes include name and fingerprint,
+**this resolves before the package is potentially fetched**.
+
+This is an easy way to temporarily use one or more forks which are in entirely
+separate directories. You can iterate on your entire dependency tree until
+everything is working, while using comfortably the development environment and
+source control of the dependency projects.
+
+The fact that it is a CLI flag makes it appropriately ephemeral. The moment you
+drop the flags, you're back to using your pristine, fetched dependency tree.
+
+If the project does not match, an error occurs, preventing confusion:
+
+```
+$ zig build --fork=/home/andy/dev/mime
+error: fork /home/andy/dev/mime matched no mime packages
+$
+```
+
+If the project does match, you get a reminder that you are using a fork, preventing confusion:
+
+```
+$ zig build --fork=/home/andy/dev/dvui
+info: fork /home/andy/dev/dvui matched 1 (dvui) packages
+...
+```
+
+This functionality is intended to enhance the workflow of dealing with
+ecosystem breakage. I already tried it a bit and found it to be quite pleasant
+to work with. The new workflow goes like this:
+
+1. Fail to build from source due to ecosystem breakage.
+2. Tinker with `--fork` until your project works again. During this time you can use the actual upstream source control, test suite, `zig build test --watch -fincremental`, etc.
+3. Now you have a new option: be selfish and just keep working on your own stuff, or you can proceed to submit your patches upstream.
+
+...and you can probably skip the step where you switch your `build.zig.zon` to
+your fork unless you expect upstream to take a long time to merge your fixes.
+
+# [Bypassing Kernel32.dll for Fun and Nonprofit]($section.id('2026-02-03'))
+
+Author: Andrew Kelley
+
+The Windows operating system provides a large ABI surface area for doing things in the kernel.
+However, not all ABIs are created equally. As Casey Muratori points out in his lecture,
+[The Only Unbreakable Law](https://www.youtube.com/watch?v=5IUj1EZwpJY), the organizational
+structure of software development teams has a direct impact on the structure of the software
+they produce.
+
+The DLLs on Windows are organized into a heirarchy, with some of the APIs being
+high-level wrappers around lower-level ones. For example, whenever you call
+functions of `kernel32.dll`, ultimately, the actual work is done by `ntdll.dll`.
+You can observe this directly by using ProcMon.exe and examining stack traces.
+
+What we've learned empirically is that the ntdll APIs are generally
+well-engineered, reasonable, and powerful, but the kernel32 wrappers introduce
+unnecessary heap allocations, additional failure modes, unintentional CPU
+usage, and bloat.
+
+This is why the Zig standard library policy is to [Prefer the Native API over
+Win32](https://codeberg.org/ziglang/zig/issues/31131). We're not quite there
+yet - we have plenty of calls into kernel32 remaining - but we've taken great
+strides recently. I'll give you two examples.
+
+## Example 1: Entropy
+
+According to the official documentation, Windows does not have a
+straightforward way to get random bytes.
+
+[Many projects including Chromium, boringssl, Firefox, and
+Rust](https://github.com/rust-random/rand/issues/111) call
+`SystemFunction036` from `advapi32.dll` because it worked on versions
+older than Windows 8.
+
+Unfortunately, starting with Windows 8, the first time you call this function,
+it dynamically loads `bcryptprimitives.dll` and calls
+[ProcessPrng](https://learn.microsoft.com/en-us/windows/win32/seccng/processprng).
+If loading the DLL fails (for example due to an overloaded system, which we have
+observed on Zig CI several times), it returns error 38 (from a function that
+has `void` return type and is documented to never fail).
+
+The first thing `ProcessPrng` does is heap allocate a small, constant number of
+bytes. If this fails it returns `NO_MEMORY` in a `BOOL` (documented behavior is
+to never fail, and always return `TRUE`).
+
+`bcryptprimitives.dll` apparently also runs a test suite every time you load it.
+
+All that `ProcessPrng` is *really* doing is `NtOpenFile` on `"\\Device\\CNG"`
+and reading 48 bytes with `NtDeviceIoControlFile` to get a seed, and then
+initializing a per-CPU AES-based CSPRNG.
+
+So the dependency on `bcryptprimitives.dll` and `advapi32.dll` can both be avoided,
+and the nondeterministic failure and latencies on first RNG read can also be
+avoided.
+
+## Example 2: NtReadFile and NtWriteFile
+
+`ReadFile` looks like this:
+
+```zig
+pub extern "kernel32" fn ReadFile(
+    hFile: HANDLE,
+    lpBuffer: LPVOID,
+    nNumberOfBytesToRead: DWORD,
+    lpNumberOfBytesRead: ?*DWORD,
+    lpOverlapped: ?*OVERLAPPED,
+) callconv(.winapi) BOOL;
+```
+
+`NtReadFile` looks like this:
+
+```zig
+pub extern "ntdll" fn NtReadFile(
+    FileHandle: HANDLE,
+    Event: ?HANDLE,
+    ApcRoutine: ?*const IO_APC_ROUTINE,
+    ApcContext: ?*anyopaque,
+    IoStatusBlock: *IO_STATUS_BLOCK,
+    Buffer: *anyopaque,
+    Length: ULONG,
+    ByteOffset: ?*const LARGE_INTEGER,
+    Key: ?*const ULONG,
+) callconv(.winapi) NTSTATUS;
+```
+
+As a reminder, *the above function is implemented by calling the below function*.
+
+Already we can see some nice things about using the lower level API. For
+instance, the *real* API simply gives us the error code as the return value,
+while the kernel32 wrapper hides the status code somewhere, returns a `BOOL`
+and then requires you to call `GetLastError` to find out what went wrong.
+Imagine! Returning a value from a function 🌈
+
+Furthermore, `OVERLAPPED` is a fake type. The Windows kernel doesn't actually
+know or care about it at all! The actual primitives here are events, APCs, and
+`IO_STATUS_BLOCK`.
+
+If you have a synchronous file handle, then `Event` and `ApcRoutine` must be `null`.
+You get the answer in the `IO_STATUS_BLOCK` immediately. If you pass an APC routine
+here then some old bitrotted 32-bit code runs and you get garbage results.
+
+On the other hand if you have an asynchronous file handle, then you need to either
+use an `Event` or an `ApcRoutine`. `kernel32.dll` uses events, which means that it's
+doing extra, unnecessary resource allocation and management just to read from a file.
+Instead, Zig now passes an APC routine and then calls `NtDelayExecution`. This integrates
+seamlessly with cancelation, making it possible to cancel tasks while they
+perform file I/O, regardless of whether the file was opened in synchronous mode
+or asynchronous mode.
+
+For a deeper dive into this topic, please refer to this issue:
+
+[Windows: Prefer the Native API over Win32](https://codeberg.org/ziglang/zig/issues/31131)
+
+# [zig libc]($section.id('2026-01-31'))
+
+Author: Andrew Kelley
+
+Over the past month or so, several enterprising contributors have taken an interest in the
+[zig libc subproject](https://codeberg.org/ziglang/zig/issues/30978). The idea
+here is to incrementally delete redundant code, by providing libc functions as
+Zig standard library wrappers rather than as vendored C source files. In many
+cases, these functions are one-to-one mappings, such as `memcpy` or `atan2`, or
+trivially wrap a generic function, like `strnlen`:
+
+```zig
+fn strnlen(str: [*:0]const c_char, max: usize) callconv(.c) usize {
+    return std.mem.findScalar(u8, @ptrCast(str[0..max]), 0) orelse max;
+}
+```
+
+So far, roughly 250 C source files have been deleted from the Zig repository,
+with 2032 remaining.
+
+With each function that makes the transition, Zig gains independence from third
+party projects and from the C programming language, compilation speed improves,
+Zig's installation size is simplified and reduced, and user applications which
+statically link libc enjoy reduced binary size.
+
+Additionally, a [recent enhancement](https://codeberg.org/ziglang/zig/pulls/31037)
+now makes zig libc share the Zig Compilation Unit with other Zig code rather than
+being a separate static archive, linked together later. This is one of the advantages
+of Zig having an integrated compiler and linker. When the exported libc functions
+share the ZCU, redundant code is eliminated because functions can be optimized together.
+It's kind of like enabling LTO (Link-Time Optimization) across the libc
+boundary, except it's done properly in the frontend instead of too late, in the
+linker.
+
+Furthermore, when this work is combined with the recent
+[std.Io changes](https://codeberg.org/ziglang/zig/issues/30150), there
+is potential for users to seamlessly control how libc performs I/O - for
+example forcing all calls to `read` and `write` to participate in an
+io_uring event loop, even though that code was not written with such use case
+in mind. Or,
+[resource leak detection](https://codeberg.org/ziglang/zig/pulls/30788)
+could be enabled for third-party C code. For now this is only a vaporware idea
+which has not been experimented with, but the idea intrigues me.
+
+Big thanks to Szabolcs Nagy for
+[libc-test](https://wiki.musl-libc.org/libc-test.html). This project has been a
+huge help in making sure that we don't regress any math functions.
+
+As a reminder to our users, now that Zig is transitioning to being the static
+libc provider, if you encounter issues with the musl, mingw-w64, or wasi-libc
+libc functionality provided by Zig, **please file bug reports in Zig first** so we
+don't annoy maintainers for bugs that are in Zig, and no longer vendored by
+independent libc implementation projects.
+
+The very same day I sat at home writing this devlog like a coward, less than
+five miles away, [armed forces who are in my city against the will of our
+elected officials shot tear gas, unprovoked, at peaceful
+protestors](https://www.kptv.com/2026/01/31/live-labor-unions-rally-march-portland-ice-facility-protest/).
+Next time I hope to have the courage to join my neighbors, and I hope to not
+get shot like [Alex Pretti](https://en.wikipedia.org/wiki/Killing_of_Alex_Pretti) and
+[Renée Good](https://en.wikipedia.org/wiki/Killing_of_Ren%C3%A9e_Good).
