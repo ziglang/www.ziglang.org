@@ -64,6 +64,30 @@ The second one, `zig-out`, is an "installation prefix". This maps to the standar
 
 You, as the project maintainer, pick what gets put in this directory, but the user chooses where to install it in their system. The build script cannot hardcode output paths because this would break caching, concurrency, and composability, as well as annoy the final user.
 
+## [The Build Graph]($heading.id('build-graph'))
+We previously mentioned that the Zig build system models the build process as a DAG.
+We will now discuss how this graph is constructed.
+
+The core of this graph is `std.Build.Step`.
+Every `Step` has a name and a list of dependencies, which are other `Step`s.
+These `Step`s and the dependencies between them form the build graph.
+
+The most basic way to create a new step is via the `std.Build.step` method.
+This method creates a new standalone `Step`, meaning that it does not depend on any other `Step`s, and no other `Step`s depend on it.
+You can add this step as a dependency of another step via the dependent step's `std.Build.Step.dependOn` method.
+You can also use `dependOn` to add dependencies to _this_ step.
+
+The `std.Build.step` method is generic in the sense that it's agnostic to the contents and purpose of the `Step` that it creates.
+However, in many cases there are helper methods to create `Step`s for various purposes.
+For instance, the `std.Build.installArtifact` method creates a `std.Build.Step.InstallArtifact` and adds its step as a dependency of the top-level "install" step.
+This ensures that some artifact will be installed to `zig-out` when `zig build install` or `zig build` (since "install" is the default step) are run.
+It's also possible to use the `std.Build.addInstallArtifact` method to create an `InstallArtifact` step that _isn't_ tied to the top-level "install" step, which gives you the ability to install an artifact as part of some other build step.
+
+Another helper method to be aware of is `std.Build.addExecutable`, which was shown in the previous section.
+This helper method creates a `std.Build.Step.Compile`, which is one of the arguments required by the `std.Build.installArtifact` method.
+This is why in examples you'll frequently see both `addExecutable` and `installArtifact`.
+This may give you the impression that "executable" and "artifact" are different kinds of entities that you need to know about in order to write your `build.zig`, but it really just boils down to `Step`s.
+
 ## [Adding a Convenience Step for Running the Application]($heading.id('run-step'))
 
 It is common to add a **Run** step to provide a way to run one's main application directly
