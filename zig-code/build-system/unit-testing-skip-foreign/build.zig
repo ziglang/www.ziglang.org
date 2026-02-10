@@ -29,8 +29,7 @@ pub fn build(b: *std.Build) void {
     }
 }
 
-// zig-doctest: build-system --collapseable -- test --summary all
-
 // build=succeed
+// additional_option=test
 // additional_option=--summary
 // additional_option=all
