@@ -1,0 +1,164 @@
+---
+.title = "Per què Zig quan ja hi ha C++, D i Rust?",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Per què Zig?",
+},
+---
+
+# Sense flux de control ocult
+
+Si el codi Zig no sembla que estigui saltant per cridar una funció, vol dir que no ho fa. Això significa que podeu estar segurs que el codi següent crida només `foo()` i després `bar()`, i això està garantit sense necessitat de conèixer els tipus de res:
+
+```zig
+var a = b + c.d;
+foo();
+bar();
+```
+
+Exemples de flux de control ocult:
+
+* D té funcions `@property`, que són mètodes que es criden amb el que sembla un accés a un camp, de manera que a l'exemple anterior, `c.d` podria cridar una funció.
+* C++, D i Rust tenen sobrecàrrega d'operadors, de manera que l'operador `+` podria cridar una funció.
+* C++, D i Go tenen excepcions throw/catch (de vegades també anomenades panic/recover), de manera que `foo()` podria llançar una excepció i evitar que es cridi `bar()`. (Per descomptat, fins i tot a Zig `foo()` podria bloquejar-se i evitar que es cridi `bar()`, però això pot passar en qualsevol llenguatge Turing-complet).
+
+El propòsit d'aquesta decisió de disseny és millorar la llegibilitat.
+
+# Sense assignacions ocultes
+
+Zig té un enfocament de no intervenció pel que fa a l'assignació de memòria dinàmica
+(heap). No hi ha cap paraula clau `new` ni cap altra característica del llenguatge que utilitzi
+un assignador de memòria dinàmica (per exemple, l'operador de concatenació de cadenes[1]). Tot
+el concepte de memòria dinàmica és gestionat pel codi de la biblioteca i de l'aplicació,
+no pel llenguatge.
+
+Exemples d'assignacions de memòria ocultes:
+
+* El `defer` de Go assigna memòria a una pila local de funció. A més de ser una manera poc intuïtiva
+  perquè funcioni aquest flux de control, pot causar fallades de memòria insuficient si utilitzeu
+  `defer` dins d'un bucle.
+* Les corrutines de C++ assignen memòria dinàmica per cridar una corrutina.
+* A Go, una crida a funció pot causar assignació de memòria dinàmica perquè les goroutines assignen piles petites
+  que es redimensionen quan la pila de crides es fa prou profunda.
+* Les API principals de la biblioteca estàndard de Rust entren en pànic en condicions de memòria insuficient, i les API alternatives
+  que accepten paràmetres d'assignador de memòria són una idea d'últim moment
+  (vegeu [rust-lang/rust#29802](https://github.com/rust-lang/rust/issues/29802)).
+
+Gairebé tots els llenguatges amb recollida de memòria brossa tenen assignacions ocultes
+escampades, ja que el recollidor de memòria brossa amaga l'evidència en la part de neteja.
+
+El problema principal amb les assignacions ocultes és que impedeixen la *reutilització*
+d'un tros de codi, limitant innecessàriament el nombre d'entorns als quals aquest codi seria
+apropiat per desplegar-se. En poques paraules, hi ha casos d'ús on cal poder confiar que el
+flux de control i les crides a funcions no tinguin l'efecte secundari de l'assignació de
+memòria, per tant, un llenguatge de programació només pot servir aquests casos d'ús si
+pot proporcionar de manera realista aquesta garantia.
+
+A Zig, hi ha característiques de la biblioteca estàndard que proporcionen i treballen amb
+assignadors de memòria dinàmica, però aquestes són característiques opcionals de la
+biblioteca estàndard, no integrades al llenguatge en si.
+Si mai inicialitzeu un assignador de memòria dinàmica, podeu estar segurs que el vostre
+programa no farà assignacions de memòria dinàmica.
+
+Tota característica de la biblioteca estàndard que necessita assignar memòria dinàmica
+accepta un paràmetre `Allocator` per fer-ho. Això significa que la biblioteca estàndard de
+Zig admet objectius autònoms (freestanding). Per exemple, `std.ArrayList` i `std.AutoHashMap`
+es poden utilitzar per a la programació en maquinari nu!
+
+Els assignadors de memòria personalitzats fan que la gestió manual de la memòria sigui
+molt fàcil. Zig té un assignador de memòria de depuració que manté la seguretat de la
+memòria davant de l'ús després de l'alliberament (use-after-free) i el doble alliberament
+(double-free). Detecta automàticament i imprimeix traces de pila (stack traces) de fuites de
+memòria (memory leaks). Hi ha un assignador de memòria d'arena perquè pugueu agrupar qualsevol
+nombre d'assignacions en una de sola i alliberar-les totes alhora en lloc de gestionar cada
+assignació de manera independent. Es poden utilitzar assignadors de memòria de propòsit
+especial per millorar el rendiment o l'ús de memòria per a les necessitats de qualsevol
+aplicació particular.
+
+[1]: De fet, hi ha un operador de concatenació de cadenes (generalment un operador de concatenació de matrius), però només funciona en temps de compilació, de manera que encara no fa cap assignació de memòria dinàmica en temps d'execució.
+
+# Suport de primera classe per a no tenir biblioteca estàndard
+
+Com s'ha insinuat anteriorment, Zig té una biblioteca estàndard totalment opcional. Cada
+API de la biblioteca estàndard només es compila al vostre programa si l'utilitzeu. Zig té
+el mateix suport tant per enllaçar amb libc com per no enllaçar-hi. Zig és amigable amb el
+desenvolupament bare-metal i d'alt rendiment.
+
+És el millor dels dos móns; per exemple, a Zig, els programes WebAssembly poden utilitzar les
+característiques normals de la biblioteca estàndard i, tot i així, donar lloc als binaris
+més petits en comparació amb altres llenguatges de programació que admeten la compilació
+a WebAssembly.
+
+# Un llenguatge portable per a biblioteques
+
+Un dels sants graals de la programació és la reutilització de codi. Malauradament, a la pràctica, ens trobem reinventant la roda moltes vegades. Sovint està justificat.
+
+ * Si una aplicació té requisits de temps real, aleshores qualsevol biblioteca que utilitzi recollida de memòria brossa o qualsevol altre comportament no determinista queda desqualificada com a dependència.
+ * Si un llenguatge fa que sigui massa fàcil ignorar els errors, i per tant difícil de verificar que una biblioteca gestiona i propaga els errors correctament, pot ser temptador ignorar la biblioteca i reimplementar-la, sabent que un ha gestionat tots els errors rellevants correctament. Zig està dissenyat de manera que la cosa més mandrosa que un programador pot fer és gestionar els errors correctament, i per tant un pot estar raonablement segur que una biblioteca propagarà els errors correctament.
+ * Actualment és pragmàticament cert que C és el llenguatge més versàtil i portable. Qualsevol llenguatge que no tingui la capacitat d'interactuar amb codi C corre el risc de caure en l'obscuritat. Zig està intentant convertir-se en el nou llenguatge portable per a biblioteques fent que sigui senzill complir amb l'ABI de C per a funcions externes, i introduint seguretat i disseny de llenguatge que prevenen errors comuns dins de les implementacions.
+
+# Un gestor de paquets i sistema de compilació per a projectes existents
+
+Zig és una cadena d'eines a més d'un llenguatge de programació. Ve amb un
+[sistema de comilació i gestor de paquets](/learn/build-system/) que són útils fins i tot
+en el context d'un projecte tradicional de C/C++.
+
+No només podeu escriure codi Zig en lloc de codi C o C++, sinó que podeu utilitzar Zig com
+a reemplaçament d'autotools, cmake, make, scons, ninja, etc. I a més d'això, proporciona
+un gestor de paquets per a dependències natives. Aquest sistema de compilació és apropiat
+fins i tot si la totalitat del codi base d'un projecte és en C o C++.  Per exemple,
+[portant ffmpeg al sistema de compilació de zig](https://github.com/andrewrk/ffmpeg),
+es fa possible compilar ffmpeg en qualsevol sistema compatible per a qualsevol sistema compatible
+utilitzant només una [descàrrega de 50 MiB de zig](/download/). Per als projectes de codi
+obert, aquesta capacitat simplificada de construir des de la font - i fins i tot compilar de
+manera creuada - pot ser la diferència entre guanyar o perdre col·laboradors valuosos.
+
+Els gestors de paquets del sistema com apt-get, pacman, homebrew i altres són fonamentals per
+a l'experiència de l'usuari final, però poden ser insuficients per a les necessitats dels
+desenvolupadors. Un gestor de paquets específic del llenguatge pot ser la diferència entre
+no tenir col·laboradors i tenir-ne molts. Per als projectes de codi obert, la dificultat
+d'aconseguir que el projecte es compili és un gran obstacle per als col·laboradors
+potencials. Per als projectes C/C++, tenir dependències pot ser fatal, especialment a Windows,
+on no hi ha gestor de paquets. Fins i tot quan es construeix el propi Zig, la majoria dels
+col·laboradors potencials tenen dificultats amb la dependència de LLVM. Zig ofereix una manera
+perquè els projectes depenguin de biblioteques natives directament - sense dependre del gestor
+de paquets del sistema dels usuaris per tenir la versió correcta disponible, i d'una manera que
+està pràcticament garantida per construir projectes amb èxit al primer intent independentment
+del sistema que s'utilitzi i independentment de la plataforma a la qual es dirigeixi.
+
+**Altres llenguatges tenen gestors de paquets però no eliminen les molestes dependències del
+sistema com ho fa Zig.**
+
+Zig pot substituir el sistema de construcció d'un projecte amb un llenguatge raonable
+utilitzant una API declarativa per construir projectes, que també proporciona gestió de
+paquets, i per tant la capacitat de dependre realment d'altres biblioteques C. La capacitat
+de tenir dependències permet abstraccions de nivell superior, i per tant la proliferació de
+codi d'alt nivell reutilitzable.
+
+# Simplicitat
+
+C++, Rust i D tenen un nombre tan gran de característiques que poden distreure del significat real de l'aplicació en què esteu treballant. Un es troba depurant el seu coneixement del llenguatge de programació en lloc de depurar l'aplicació en si.
+
+Zig no té macros però encara és prou potent per expressar programes complexos d'una
+manera clara i no repetitiva. Fins i tot Rust té macros amb casos especials com `format!`,
+que s'implementa al propi compilador. Mentrestant, a Zig, la funció equivalent s'implementa
+a la biblioteca estàndard sense cap codi de cas especial al compilador.
+
+# Eines
+
+Zig es pot descarregar des de la [secció de descàrregues](/download/). Zig proporciona fitxers
+d'arxiu binaris per a Linux, Windows i macOS. A continuació es descriu el que obteniu amb un
+d'aquests arxius:
+
+* instal·lat descarregant i extraient un sol arxiu, no cal configuració del sistema
+* compilat estàticament perquè no hi hagi dependències en temps d'execució
+* admet l'ús de LLVM per a compilacions de llançament optimitzades mentre utilitza els backends personalitzats de Zig per a un rendiment de compilació més ràpid
+* admet addicionalment un backend per generar codi C
+* compilació creuada immediata a la majoria de plataformes principals
+* s'envia amb el codi font per a libc que es compilarà dinàmicament quan sigui necessari per a qualsevol plataforma compatible
+* inclou sistema de construcció amb concurrència i memòria cau
+* compila codi C i C++ amb suport libc
+* compatibilitat de línia d'ordres GCC/Clang directa amb `zig cc`
+* compilador de recursos de Windows
