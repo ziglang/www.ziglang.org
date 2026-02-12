@@ -52,11 +52,26 @@ mirrors = http_get("https://ziglang.org/download/community-mirrors.txt")
 shuffled = shuffle_lines(mirrors)
 for mirror_url in shuffled:
     tarball = http_get(f"{mirror_url}/{tarball_name}?source=my_automation_name")
-    if success:
-        # NEVER SKIP THIS STEP. The signature must be verified before the tarball is deemed safe.
-        signature = http_get(f"{mirror_url}/{tarball_name}.minisig?source=my_automation_name")
-        if success and minisign_verify(tarball, signature, pubkey):
-            print("Successfully fetched Zig 0.14.1!")
+    if not success:
+        continue # failed to download tarball
+
+    # NEVER SKIP THESE STEPS. The signature must be verified before the tarball is deemed safe.
+    signature = http_get(f"{mirror_url}/{tarball_name}.minisig?source=my_automation_name")
+    if not success:
+        continue # failed to download signature file
+
+    if not minisign_verify(tarball, signature, pubkey):
+        continue # failed to verify signature file
+
+    # The signature files provided by the ZSF include a "file" field in the trusted 
+    # comment that indicates the tarball the signature applies to.
+    # This must be verified against the requested tarball name to prevent downgrade attacks.
+    actual_tarball_name = minisign_signature_parse_filename(signature)
+    if actual_tarball_name != tarball_name:
+        continue # wrong tarball provided
+
+    print("Successfully fetched Zig 0.14.1!")
+    break
 ```
 
 Because ziglang.org does not have guaranteed uptime, the `community-mirrors.txt` file may at times become inaccessible. For this reason, you may wish to
@@ -81,9 +96,10 @@ Written more precisely, here is the key information and recommend workflow for d
     * `404 Not Found` is a permitted response when requesting Zig releases 0.5.0 or earlier, or Zig development builds earlier than the current latest release.
     * `504 Gateway Timeout` indicates that the tarball is unavailable because `https://ziglang.org/` is currently inaccessible (and the tarball is not in the mirror's cache).
     * Otherwise, feel free to [open an issue](https://github.com/ziglang/www.ziglang.org/issues/new) to inform us of the problem.
-* The Zig Software Foundation can never guarantee the security of any mirror, so every time a tarball is downloaded, it is **essential** to also download the minisign signature (suffix the filename with ".minisig") and verify it against the ZSF's public key (which you should copy from the ziglang.org/download page). **Never skip this step.**
+* After downloading a tarball, the following verification steps are required: **Never skip these step.**
+  * Every time a tarball is downloaded, it is **essential** to also download the minisign signature (suffix the filename with ".minisig") and verify it against the ZSF's public key (which you should copy from the ziglang.org/download page).
+  * To prevent downgrade attacks, a "file" field in the [trusted comment](https://jedisct1.github.io/minisign/#:~:text=Trusted%20comments) is provided that must be verified to match the name of the requested tarball. The reference implementation, `minisign`, will verify the trusted comment but does **not** look for a "file" field, so this verification step must be implemented manually.
   * If a mirror responds with `200 OK` but signature validation fails on the returned tarball, feel free to [open an issue](https://github.com/ziglang/www.ziglang.org/issues/new) to inform us of the problem.
-* When the minisig signature is verified, it is also necessary to validate its **trusted comment** (which the reference implementation `minisign` always does), and ensure that its "file" field matches the name of the requested tarball, to prevent downgrade attacks.
 
 ## Hosting a Mirror
 
