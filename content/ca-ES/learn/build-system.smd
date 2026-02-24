@@ -1,0 +1,442 @@
+---
+.title = "Sistema de Compilació de Zig",
+.author = "",
+.date = @date("2024-08-07:00:00:00"),
+.layout = "page.shtml",
+.custom = {
+	"mobile_menu_title": "Sistema de Compilació",
+	"toc": true,
+},
+---
+# [Quan cal utilitzar el Sistema de Compilació de Zig?]($heading.id('build-system'))
+
+Les ordres fonamentals `zig build-exe`, `zig build-lib`, `zig build-obj` i `zig test` sovint són suficients. No obstant això, de vegades un projecte necessita una altra capa d'abstracció per gestionar la complexitat de la compilació des del codi font.
+
+Per exemple, potser alguna d'aquestes situacions s'aplica:
+
+- La línia d'ordres esdevé massa llarga i difícil de gestionar, i voleu un lloc on anotar-la.
+- Voleu compilar moltes coses, o el procés de compilació conté molts passos.
+- Voleu aprofitar la concurrència i la memòria cau per reduir el temps de compilació.
+- Voleu exposar opcions de configuració per al projecte.
+- El procés de compilació és diferent segons el sistema objectiu i altres opcions.
+- Teniu dependències d'altres projectes.
+- Voleu evitar una dependència innecessària de cmake, make, shell, msvc, python, etc., fent el projecte accessible a més col·laboradors.
+- Voleu proporcionar un paquet per ser consumit per tercers.
+- Voleu proporcionar una manera estandarditzada perquè eines com els IDEs entenguin semànticament com compilar el projecte.
+
+Si alguna d'aquestes s'aplica, el projecte es beneficiarà d'utilitzar el Sistema de Compilació de Zig.
+
+# [Primers Passos]($heading.id('getting-started'))
+## [Executable Senzill]($heading.id('simple'))
+Aquest script de compilació crea un executable a partir d'un fitxer Zig que conté una definició de funció `main` pública.
+
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/1-simple-executable/build.zig"))
+
+## [Instal·lant Artefactes de Compilació]($heading.id('installing-artifacts'))
+
+El sistema de compilació de Zig, com la majoria de sistemes de compilació, es basa en modelar el projecte com un graf dirigit acíclic (DAG) de passos, que s'executen de manera independent i concurrent.
+
+Per defecte, el pas principal al graf és el pas d'**Instal·lació**, la finalitat del qual és copiar els artefactes de compilació al seu lloc final. El pas d'instal·lació comença sense dependències i, per tant, no passarà res quan s'executi `zig build`. El script de compilació d'un projecte ha d'afegir al conjunt de coses a instal·lar, que és el que fa la crida a la funció `installArtifact` anterior.
+
+**Sortida**
+```
+├── build.zig
+├── hello.zig
+├── .zig-cache
+└── zig-out
+    └── bin
+        └── hello
+```
+
+Hi ha dos directoris generats en aquesta sortida: `.zig-cache` i `zig-out`. El primer conté fitxers que faran que les compilacions posteriors siguin més ràpides, però aquests fitxers no estan destinats a ser inclosos al control de codi font i aquest directori es pot suprimir completament en qualsevol moment sense conseqüències.
+
+El segon, `zig-out`, és un "prefix d'instal·lació". Això es correspon amb el concepte de jerarquia de sistema de fitxers estàndard. Aquest directori no és escollit pel projecte, sinó per l'usuari de `zig build` amb la bandera `--prefix` (`-p` per abreujar).
+
+Com a mantenidor del projecte, trieu què es posa en aquest directori, però l'usuari tria on instal·lar-lo al seu sistema. El script de compilació no pot fixar rutes de sortida perquè això trencaria la memòria cau, la concurrència i la composabilitat, a més de molestar l'usuari final.
+
+## [Afegint un Pas de Conveniència per Executar l'Aplicació]($heading.id('run-step'))
+
+És comú afegir un pas d'**Execució** per proporcionar una manera d'executar l'aplicació principal directament des de l'ordre de compilació.
+
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/hello.zig"))
+[]($code.language('=html').buildAsset("build-system/convenience-run-step/build.zig"))
+
+# [Conceptes Bàsics]($heading.id('basics'))
+
+
+
+## [Opcions Proporcionades per l'Usuari]($heading.id('user-options'))
+
+
+
+Utilitzeu `b.option` per fer que l'script de compilació sigui configurable per als usuaris finals, així com per a altres projectes que depenen del projecte com a paquet.
+
+
+
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/build.zig"))
+
+[]($code.language('=html').buildAsset("build-system/2-user-provided-options/example.zig"))
+
+
+
+Dirigiu la vostra atenció a aquestes línies:
+
+
+
+```
+
+Project-Specific Options:
+
+  -Dwindows=[bool]             Target Microsoft Windows
+
+```
+
+
+
+Aquesta part del menú d'ajuda s'autogenera basant-se en l'execució de la lògica de `build.zig`. Els usuaris poden descobrir les opcions de configuració de l'script de compilació d'aquesta manera.
+
+
+
+## [Opcions de Configuració Estàndard]($heading.id('standard-options'))
+
+
+
+Anteriorment, utilitzàvem una bandera booleana per indicar la compilació per a Windows. No obstant això, podem fer-ho millor.
+
+
+
+La majoria de projectes volen proporcionar la capacitat de canviar les configuracions d'objectiu i optimització. Per fomentar les convencions de noms estàndard per a aquestes opcions, Zig proporciona les funcions d'ajuda, `standardTargetOptions` i `standardOptimizeOption`.
+
+
+
+Les opcions d'objectiu estàndard permeten a la persona que executa `zig build` triar per a quin objectiu compilar. Per defecte, es permet qualsevol objectiu, i no triar cap significa apuntar al sistema amfitrió. Hi ha altres opcions disponibles per restringir el conjunt d'objectius compatibles.
+
+
+
+Les opcions d'optimització estàndard permeten a la persona que executa `zig build` seleccionar entre `Debug`, `ReleaseSafe`, `ReleaseFast` i `ReleaseSmall`. Per defecte, cap de les opcions de llançament es considera l'elecció preferible per l'script de compilació, i l'usuari ha de prendre una decisió per crear una compilació de llançament.
+
+
+
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/hello.zig"))
+
+[]($code.language('=html').buildAsset("build-system/3-standard-config-options/build.zig"))
+
+
+
+Ara, el nostre `--help` menu conté més ítems:
+
+
+
+```
+
+Project-Specific Options:
+
+  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
+
+  -Dcpu=[string]               Target CPU features to add or subtract
+
+  -Doptimize=[enum]            Prioritize performance, safety, or binary size (-O flag)
+
+                                 Supported Values:
+
+                                   Debug
+
+                                   ReleaseSafe
+
+                                   ReleaseFast
+
+                                   ReleaseSmall
+
+```
+
+
+
+És totalment possible crear aquestes opcions directament mitjançant `b.option`, però aquesta API proporciona una convenció de noms d'ús comú per a aquestes configuracions d'ús freqüent.
+
+
+
+A la nostra sortida del terminal, observeu que vam passar `-Dtarget=x86_64-windows -Doptimize=ReleaseSmall`. En comparació amb el primer exemple, ara veiem fitxers diferents al prefix d'instal·lació:
+
+```
+zig-out/
+└── bin
+    └── hello.exe
+```
+
+## [Opcions per a la Compilació Condicional]($heading.id('conditional-compilation'))
+
+Per passar opcions de l'script de compilació al codi Zig del projecte, utilitzeu el pas `Options`.
+
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/app.zig"))
+[]($code.language('=html').buildAsset("build-system/conditional-compilation/build.zig"))
+
+En aquest exemple, les dades proporcionades per `@import("config")` són conegudes en temps de compilació, evitant que s'activi `@compileError`. Si haguéssim passat `-Dversion=0.2.3` o ometut l'opció, hauríem vist fallar la compilació de `app.zig` amb l'error "massa antic".
+
+## [Biblioteca Estàtica]($heading.id('static-library'))
+
+Aquest script de compilació crea una biblioteca estàtica a partir de codi Zig, i després també un executable a partir d'altre codi Zig que la consumeix.
+
+[]($code.language('=html').buildAsset("build-system/simple-static-library/fizzbuzz.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/demo.zig"))
+[]($code.language('=html').buildAsset("build-system/simple-static-library/build.zig"))
+
+En aquest cas, només la biblioteca estàtica acaba sent instal·lada:
+
+```
+zig-out/
+└── lib
+    └── libfizzbuzz.a
+```
+
+No obstant això, si observeu amb atenció, el script de compilació conté una opció per instal·lar també la demostració. Si a més passem `-Denable-demo`, veiem això al prefix d'instal·lació:
+
+```
+zig-out/
+├── bin
+│   └── demo
+└── lib
+    └── libfizzbuzz.a
+```
+
+Tingueu en compte que, malgrat la crida incondicional a `addExecutable`, el sistema de compilació de fet no perd temps compilant l'executable `demo` tret que se sol·liciti amb `-Denable-demo`, perquè el sistema de compilació es basa en un Graf Dirigit Acíclic amb arestes de dependència.
+
+## [Biblioteca Dinàmica]($heading.id('dynamic-library'))
+
+Aquí mantenim tots els fitxers igual que en l'exemple de la [Biblioteca Estàtica](#static-library), excepte que es canvia el fitxer `build.zig`.
+
+[]($code.language('=html').buildAsset("build-system/dynamic-library/build.zig"))
+
+**Sortida**
+```
+zig-out
+└── lib
+    ├── libfizzbuzz.so -> libfizzbuzz.so.1
+    ├── libfizzbuzz.so.1 -> libfizzbuzz.so.1.2.3
+    └── libfizzbuzz.so.1.2.3
+```
+
+Com en l'exemple de la biblioteca estàtica, per fer que un executable s'enllaci amb ella, utilitzeu codi com aquest:
+
+```zig
+exe.linkLibrary(libfizzbuzz);
+```
+
+## [Proves]($heading.id('testing'))
+
+Els fitxers individuals es poden provar directament amb `zig test foo.zig`, però els casos d'ús més complexos es poden resoldre orquestrant les proves mitjançant l'script de compilació.
+
+Quan s'utilitza l'script de compilació, les proves unitàries es divideixen en dos passos diferents al graf de compilació: el pas de **Compilació** i el pas d'**Execució**. Sense una crida a `addRunArtifact`, que estableix una aresta de dependència entre aquests dos passos, les proves unitàries no s'executaran.
+
+El pas de *Compilació* es pot configurar de la mateixa manera que qualsevol executable, biblioteca o fitxer objecte; per exemple, [enllaçant amb biblioteques del sistema](#linking-to-system-libraries), configurant opcions d'objectiu o afegint unitats de compilació addicionals.
+
+El pas d'*Execució* es pot configurar de la mateixa manera que qualsevol pas d'Execució; per exemple, ometent l'execució quan l'amfitrió no és capaç d'executar el binari.
+
+Quan s'utilitza el sistema de compilació per executar proves unitàries, l'executor de compilació i l'executor de proves es comuniquen mitjançant *stdin* i *stdout* per tal d'executar diverses suites de proves unitàries de manera concurrent, i informar de les fallades de les proves d'una manera significativa sense que la seva sortida es barregi. Aquesta és una de les raons per les quals [escriure a *standard out* en proves unitàries és problemàtic](https://github.com/ziglang/zig/issues/15091) - interferirà amb aquest canal de comunicació. D'altra banda, aquest mecanisme habilitarà una característica propera, que és la [capacitat d'una prova unitària d'esperar un *panic*](https://github.com/ziglang/zig/issues/1356).
+
+[]($code.language('=html').buildAsset("build-system/unit-testing/main.zig"))
+[]($code.language('=html').buildAsset("build-system/unit-testing/build.zig"))
+
+En aquest cas, podria ser un bon ajust habilitar `skip_foreign_checks` per a les proves unitàries:
+
+```diff
+@@ -23,6 +23,7 @@
+         });
+
+         const run_unit_tests = b.addRunArtifact(unit_tests);
++        run_unit_tests.skip_foreign_checks = true;
+         test_step.dependOn(&run_unit_tests.step);
+     }
+ }
+```
+
+[]($code.language('=html').buildAsset("build-system/unit-testing-skip-foreign/build.zig"))
+
+## [Enllaçament a Biblioteques del Sistema]($heading.id('linking-to-system-libraries'))
+
+Per satisfer les dependències de la biblioteca, hi ha dues opcions:
+
+1. Proporcionar aquestes biblioteques mitjançant el Sistema de Compilació de Zig
+   (vegeu [Gestió de Paquets](#) i [Biblioteca Estàtica](#static-library)).
+2. Utilitzar els fitxers proporcionats pel sistema amfitrió.
+
+Per al cas d'ús dels mantenidors de projectes *upstream*, obtenir aquestes biblioteques mitjançant el Sistema de Compilació de Zig proporciona la menor fricció i posa el poder de configuració en mans d'aquests mantenidors. Tothom que compili d'aquesta manera tindrà resultats reproduïbles i consistents entre si, i funcionarà en tots els sistemes operatius i fins i tot admetrà la compilació creuada. A més, permet al projecte decidir amb perfecta precisió les versions exactes de tot el seu arbre de dependències amb les quals desitja compilar. S'espera que aquesta sigui la manera generalment preferida de dependre de biblioteques externes.
+
+No obstant això, per al cas d'ús d'empaquetar programari en repositoris com Debian, Homebrew o Nix, és obligatori enllaçar amb biblioteques del sistema. Per tant, els scripts de compilació han de [detectar el mode de compilació](https://github.com/ziglang/zig/issues/14281) i configurar-se en conseqüència.
+
+[]($code.language('=html').buildAsset("build-system/system-libraries/build.zig"))
+
+Els usuaris de `zig build` poden utilitzar `--search-prefix` per proporcionar directoris addicionals que es consideren "directoris del sistema" per a la cerca de biblioteques estàtiques i dinàmiques.
+
+# [Generant Fitxers]($heading.id('generating-files'))
+
+## [Executant Eines del Sistema]($heading.id('system-tools'))
+Aquesta versió de *hello world* espera trobar un fitxer `word.txt` al mateix camí,
+i volem utilitzar una eina del sistema per generar-lo a partir d'un fitxer JSON.
+
+Cal tenir en compte que les dependències del sistema faran que el vostre projecte
+sigui més difícil de compilar per als usuaris. Aquest script de compilació depèn
+de `jq`, per exemple, que no està present per defecte a la majoria de distribucions
+Linux i que pot ser una eina desconeguda per als usuaris de Windows.
+
+La secció següent substituirà `jq` per una eina Zig inclosa a l'arbre de codi font,
+que és l'enfocament preferible.
+
+**`words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界"
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/10.5-system-tool/build.zig"))
+
+**Sortida**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+
+Fixeu-vos que `captureStdOut` crea un fitxer temporal amb la sortida de la invocació de `jq`.
+
+## [Executant les Eines del Projecte]($heading.id('project-tools'))
+
+Aquesta versió de *hello world* espera trobar un fitxer `word.txt` al mateix camí, i volem produir-lo en temps de compilació invocant un programa Zig sobre un fitxer JSON.
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界"
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/src/main.zig"))
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/tools/word_select.zig"))
+
+[]($code.language('=html').buildAsset("build-system/11-zig-tool/build.zig"))
+
+**Sortida**
+
+```
+zig-out
+├── hello
+└── word.txt
+```
+
+
+## [Produint Recursos per a `@embedFile`]($heading.id('embed-file'))
+
+Aquesta versió de *hello world* vol fer servir `@embedFile` amb un recurs generat en temps de compilació, que produirem utilitzant una eina escrita en Zig.
+
+**`tools/words.json`**
+```json
+{
+  "en": "world",
+  "it": "mondo",
+  "ja": "世界"
+}
+```
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/src/main.zig"))
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/tools/word_select.zig"))
+
+[]($code.language('=html').buildAsset("build-system/12-embedfile/build.zig"))
+
+**Sortida**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [Generant Codi Font Zig]($heading.id('generating-zig'))
+Aquest fitxer de compilació utilitza un programa Zig per generar un fitxer Zig i després l'exposa al programa principal com a dependència de mòdul.
+
+[]($code.language('=html').buildAsset("build-system/13-import/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/tools/generate_struct.zig"))
+[]($code.language('=html').buildAsset("build-system/13-import/build.zig"))
+
+**Sortida**
+
+```
+zig-out/
+└── bin
+    └── hello
+```
+
+## [Gestionant un o més Fitxers Generats]($heading.id('write-files'))
+
+El pas **WriteFiles** proporciona una manera de generar un o més fitxers que comparteixen un mateix directori pare. El directori generat viu dins de la `.zig-cache` local, i cada fitxer generat està disponible de manera independent com a `std.Build.LazyPath`. El directori pare també està disponible com a `LazyPath`.
+
+Aquesta API permet escriure cadenes arbitràries al directori generat així com copiar-hi fitxers.
+
+[]($code.language('=html').buildAsset("build-system/write-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/write-files/build.zig"))
+
+**Sortida**
+
+```
+zig-out/
+└── project.tar.gz
+```
+
+## [Mutant Fitxers Font in Situ]($heading.id('mutating-source'))
+
+No és habitual, però de vegades passa que un projecte fa *commit* de fitxers generats al control de versions. Això pot ser útil quan els fitxers generats s'actualitzen poques vegades i tenen dependències de sistema feixugues per al procés d'actualització, però *només* durant aquest procés.
+
+Per a tal efecte, **WriteFiles** proporciona una manera d'aconseguir-ho. És una funcionalitat que [s'extraurà de WriteFiles en un Pas de Compilació propi](https://github.com/ziglang/zig/issues/14944) en una versió futura de Zig.
+
+Aneu amb compte amb aquesta funcionalitat; no s'ha d'utilitzar durant el procés de compilació normal, sinó com una utilitat que executa un desenvolupador amb la intenció d'actualitzar fitxers font, els quals després s'afegiran al control de versions. Si s'utilitza durant el procés de compilació normal, provocarà errors de memòria cau i de concurrència.
+
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/tools/proto_gen.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/main.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/src/protocol.zig"))
+[]($code.language('=html').buildAsset("build-system/mutate-source-files/build.zig"))
+
+```=html
+<pre><code class="shell">$ zig build update-protocol --summary all
+<span class="sgr-36m">Build Summary:</span> 4/4 steps succeeded
+update-protocol<span class="sgr-32m"> success</span>
+└─ WriteFile<span class="sgr-32m"> success</span>
+   └─ run proto_gen (protocol.zig)<span class="sgr-32m"> success</span><span class="sgr-2m"> 401us</span><span class="sgr-2m"> MaxRSS:1M</span>
+      └─ zig build-exe proto_gen Debug native<span class="sgr-32m"> success</span><span class="sgr-2m"> 1s</span><span class="sgr-2m"> MaxRSS:183M</span>
+</code></pre>
+```
+
+Després d'executar aquesta ordre, `src/protocol.zig` s'actualitza in situ.
+
+# [Exemples Útils]($heading.id('examples'))
+
+## [Compilar per a múltiples objectius per fer un llançament]($heading.id('release'))
+
+En aquest exemple canviarem algunes opcions per defecte en crear un pas `InstallArtifact` per tal de posar la compilació de cada objectiu en un subdirectori separat dins del camí d'instal·lació.
+
+[]($code.language('=html').buildAsset("build-system/10-release/build.zig"))
+[]($code.language('=html').buildAsset("build-system/10-release/hello.zig"))
+
+**Sortida**
+
+```
+zig-out
+├── aarch64-linux
+│   └── hello
+├── aarch64-macos
+│   └── hello
+├── x86_64-linux-gnu
+│   └── hello
+├── x86_64-linux-musl
+│   └── hello
+└── x86_64-windows
+    ├── hello.exe
+    └── hello.pdb
+```
