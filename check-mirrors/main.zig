@@ -410,6 +410,7 @@ fn httpGet(
     const res = http_client.fetch(.{
         .method = .GET,
         .location = .{ .url = url },
+        .keep_alive = false,
         .response_writer = &response.writer,
     }) catch |err| {
         const ert: ?std.builtin.StackTrace = if (@errorReturnTrace()) |ert| ert: {
