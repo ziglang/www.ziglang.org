@@ -17,8 +17,10 @@ pub fn build(b: *std.Build) void {
 
     for (test_targets) |target| {
         const unit_tests = b.addTest(.{
-            .root_source_file = b.path("main.zig"),
-            .target = b.resolveTargetQuery(target),
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("main.zig"),
+                .target = b.resolveTargetQuery(target),
+            }),
         });
 
         const run_unit_tests = b.addRunArtifact(unit_tests);

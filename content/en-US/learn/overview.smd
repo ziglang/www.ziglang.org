@@ -54,7 +54,7 @@ With Zig one can rely on a safety-enabled build mode, and selectively disable sa
 
 []($code.language('=html').buildAsset('features/3-undefined-behavior.zig'))
 
-Zig uses [undefined behavior](https://ziglang.org/documentation/master/#Undefined-Behavior) as a razor sharp tool for both bug prevention and performance enhancement.
+Zig uses [Illegal Behavior](https://ziglang.org/documentation/master/#Illegal-Behavior) as a razor sharp tool for both bug prevention and performance enhancement.
 
 Speaking of performance, Zig is faster than C.
 
@@ -63,11 +63,6 @@ Speaking of performance, Zig is faster than C.
 - Zig directly exposes a [SIMD vector type](https://ziglang.org/documentation/master/#Vectors), making it easy to write portable vectorized code.
 - The standard library provides essential data structures such as hash maps and array lists, whereas in C it is tempting to use linked lists for simplicity.
 - Advanced CPU features are enabled by default, unless [cross-compiling](#cross-compiling-is-a-first-class-use-case).
-
-Please note that Zig is not a fully safe language. For those interested in following Zig's safety story, subscribe to these issues:
-
-- [enumerate all kinds of undefined behavior, even that which cannot be safety-checked](https://github.com/ziglang/zig/issues/1966)
-- [make Debug and ReleaseSafe modes fully safe](https://github.com/ziglang/zig/issues/2301)
 
 ## Zig competes with C instead of depending on it
 
@@ -127,12 +122,13 @@ Another option is to use if:
 
 A library written in Zig is eligible to be used anywhere:
 
-- [Desktop applications](https://github.com/TM35-Metronome/)
-- Low latency servers
-- [Operating System kernels](https://github.com/AndreaOrru/zen)
-- [Embedded devices](https://github.com/skyfex/zig-nrf-demo/)
+- [Desktop applications](https://isaacfreund.com/software/river/)
+- Low-latency servers
+- [Databases](https://tigerbeetle.com/)
+- Operating System kernels
+- [Embedded devices](https://microzig.tech/)
 - Real-time software, e.g. live performances, airplanes, pacemakers
-- [In web browsers or other plugins with WebAssembly](https://shritesh.github.io/zigfmt-web/)
+- In web browsers or other plugins with WebAssembly
 - By other programming languages, using the C ABI
 
 In order to accomplish this, Zig programmers must manage their own memory, and must handle memory allocation failure.
@@ -303,7 +299,7 @@ $ zig build test
 
 ## [Cross-compiling is a first-class use case]($heading.id('cross-compiling-is-a-first-class-use-case'))
 
-Zig can build for any of the targets from the Support Table (see latest release notes) with Tier 3 Support or better. No "cross toolchain" needs to be installed or anything like that. Here's a native Hello World:
+Zig builds for all supported targets independently of the host. There is no separate "cross toolchain" or anything like that. Here's a native Hello World:
 
 []($code.language('=html').buildAsset('features/4-hello.zig'))
 
@@ -350,6 +346,7 @@ You can find the available libc targets with `zig targets`:
   "aarch64-freebsd-none",
   "aarch64-linux-gnu",
   "aarch64-linux-musl",
+  "aarch64-maccatalyst-none",
   "aarch64-macos-none",
   "aarch64-netbsd-none",
   "aarch64-windows-gnu",
@@ -386,7 +383,6 @@ You can find the available libc targets with `zig targets`:
   "mips64el-linux-gnuabin32",
   "mips64el-linux-muslabi64",
   "mips64el-linux-muslabin32",
-  "powerpc-freebsd-eabihf",
   "powerpc-linux-gnueabi",
   "powerpc-linux-gnueabihf",
   "powerpc-linux-musleabi",
@@ -421,6 +417,7 @@ You can find the available libc targets with `zig targets`:
   "x86_64-linux-gnux32",
   "x86_64-linux-musl",
   "x86_64-linux-muslx32",
+  "x86_64-maccatalyst-none",
   "x86_64-macos-none",
   "x86_64-netbsd-none",
   "x86_64-windows-gnu",
@@ -428,7 +425,7 @@ You can find the available libc targets with `zig targets`:
 ...
  ```
 
-What this means is that `-lc` for these targets *does not depend on any system files*!
+This means `-lc` for these targets *does not depend on any system files*!
 
 Let's look at that [C hello world example](#zig-is-also-a-c-compiler) again:
 ```
@@ -463,17 +460,25 @@ $ file hello
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 2.0.0, with debug_info, not stripped
 ```
 
-In some ways, Zig is a better C compiler than C compilers!
+Zig is a better C compiler than C compilers!
 
-This functionality is more than bundling a cross-compilation toolchain along with Zig. For example, the total size of libc headers that Zig ships is 22 MiB uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64 alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux headers), yet Zig currently ships with 40 libcs. With a naive bundling that would be 444 MiB. However, thanks to this [process_headers tool](https://github.com/ziglang/zig/blob/0.4.0/libc/process_headers.zig), and some [good old manual labor](https://github.com/ziglang/zig/wiki/Updating-libc), Zig binary tarballs remain roughly 30 MiB total, despite supporting libc for all these targets, as well as compiler-rt, libunwind, and libcxx, and despite being a clang-compatible C compiler. For comparison, the Windows binary build of clang 8.0.0 itself from llvm.org is 132 MiB.
+This functionality is more than bundling a cross-compilation toolchain along
+with Zig. For example, the total size of libc headers that Zig ships is 130 MiB
+uncompressed. Meanwhile, the headers for musl libc + linux headers on x86_64
+alone are 8 MiB, and for glibc are 3.1 MiB (glibc is missing the linux
+headers), yet Zig currently ships with 97 libcs. With a naive bundling that
+would be 776 MiB. However, thanks to this [process_headers
+tool](https://codeberg.org/ziglang/zig/src/commit/0.15.2/tools/process_headers.zig), and
+some [good old manual labor](https://codeberg.org/ziglang/infra/src/branch/master/libc-update),
+Zig binary tarballs remain roughly 50 MiB total, despite supporting libc for
+all these targets, as well as compiler-rt, libunwind, libcxx, and libtsan, and
+despite being a clang-compatible C compiler. For comparison, the Windows binary
+build of clang 8.0.0 itself from llvm.org is 132 MiB.
 
-Note that only the Tier 1 Support targets have been thoroughly tested. It is planned to [add more libcs](https://github.com/ziglang/zig/issues/514) (including for Windows), and to [add test coverage for building against all the libcs](https://github.com/ziglang/zig/issues/2058).
+## [Zig Build System and Package Manager]($heading.id('zig-build-system'))
 
-It's [planned to have a Zig Package Manager](https://github.com/ziglang/zig/issues/943), but it's not done yet. One of the things that will be possible is to create a package for C libraries. This will make the [Zig Build System](#zig-build-system) attractive for Zig programmers and C programmers alike.
-
-## [Zig Build System]($heading.id('zig-build-system'))
-
-Zig comes with a build system, so you don't need make, cmake, or anything like that.
+Zig comes with a build system, so you don't need a separate tool to orchestrate
+your build process.
 ```
 $ zig init
 info: created build.zig
@@ -500,52 +505,7 @@ Steps:
   install (default)            Copy build artifacts to prefix path
   uninstall                    Remove build artifacts from prefix path
   run                          Run the app
-  test                         Run unit tests
-
-General Options:
-  -p, --prefix [path]          Where to install files (default: zig-out)
-  --prefix-lib-dir [path]      Where to install libraries
-  --prefix-exe-dir [path]      Where to install executables
-  --prefix-include-dir [path]  Where to install C header files
-
-  --release[=mode]             Request release mode, optionally specifying a
-                               preferred optimization mode: fast, safe, small
-
-  -fdarling,  -fno-darling     Integration with system-installed Darling to
-                               execute macOS programs on Linux hosts
-                               (default: no)
-  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
-                               foreign-architecture programs on Linux hosts
-                               (default: no)
-  --glibc-runtimes [path]      Enhances QEMU integration by providing glibc built
-                               for multiple foreign architectures, allowing
-                               execution of non-native programs that link with glibc.
-  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
-                               ARM64 macOS hosts. (default: no)
-  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
-                               execute WASI binaries. (default: no)
-  -fwine,     -fno-wine        Integration with system-installed Wine to execute
-                               Windows programs on Linux hosts. (default: no)
-
-  -h, --help                   Print this help and exit
-  -l, --list-steps             Print available steps
-  --verbose                    Print commands before executing them
-  --color [auto|off|on]        Enable or disable colored error messages
-  --prominent-compile-errors   Buffer compile errors and display at end
-  --summary [mode]             Control the printing of the build summary
-    all                        Print the build summary in its entirety
-    new                        Omit cached steps
-    failures                   (Default) Only print failed steps
-    none                       Do not print the build summary
-  -j<N>                        Limit concurrent jobs (default is to use all CPU cores)
-  --maxrss <bytes>             Limit memory usage (default is to use available memory)
-  --skip-oom-steps             Instead of failing, skip steps that would exceed --maxrss
-  --fetch                      Exit after fetching dependency tree
-  --watch                      Continuously rebuild when source files are modified
-  --fuzz                       Continuously search for unit test failures
-  --debounce <ms>              Delay before rebuilding after changed file detected
-     -fincremental             Enable incremental compilation
-  -fno-incremental             Disable incremental compilation
+  test                         Run tests
 
 Project-Specific Options:
   -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
@@ -571,6 +531,71 @@ System Integration Options:
   Available System Integrations:                Enabled:
   (none)                                        -
 
+General Options:
+  -p, --prefix [path]          Where to install files (default: zig-out)
+  --prefix-lib-dir [path]      Where to install libraries
+  --prefix-exe-dir [path]      Where to install executables
+  --prefix-include-dir [path]  Where to install C header files
+
+  --release[=mode]             Request release mode, optionally specifying a
+                               preferred optimization mode: fast, safe, small
+
+  -fdarling,  -fno-darling     Integration with system-installed Darling to
+                               execute macOS programs on Linux hosts
+                               (default: no)
+  -fqemu,     -fno-qemu        Integration with system-installed QEMU to execute
+                               foreign-architecture programs on Linux hosts
+                               (default: no)
+  --libc-runtimes [path]       Enhances QEMU integration by providing dynamic libc
+                               (e.g. glibc or musl) built for multiple foreign
+                               architectures, allowing execution of non-native
+                               programs that link with libc.
+  -frosetta,  -fno-rosetta     Rely on Rosetta to execute x86_64 programs on
+                               ARM64 macOS hosts. (default: no)
+  -fwasmtime, -fno-wasmtime    Integration with system-installed wasmtime to
+                               execute WASI binaries. (default: no)
+  -fwine,     -fno-wine        Integration with system-installed Wine to execute
+                               Windows programs on Linux hosts. (default: no)
+
+  -h, --help                   Print this help and exit
+  -l, --list-steps             Print available steps
+  --verbose                    Print commands before executing them
+  --color [auto|off|on]        Enable or disable colored error messages
+  --error-style [style]        Control how build errors are printed
+    verbose                    (Default) Report errors with full context
+    minimal                    Report errors after summary, excluding context like command lines
+    verbose_clear              Like 'verbose', but clear the terminal at the start of each update
+    minimal_clear              Like 'minimal', but clear the terminal at the start of each update
+  --multiline-errors [style]   Control how multi-line error messages are printed
+    indent                     (Default) Indent non-initial lines to align with initial line
+    newline                    Include a leading newline so that the error message is on its own lines
+    none                       Print as usual so the first line is misaligned
+  --summary [mode]             Control the printing of the build summary
+    all                        Print the build summary in its entirety
+    new                        Omit cached steps
+    failures                   (Default if short-lived) Only print failed steps
+    line                       (Default if long-lived) Only print the single-line summary
+    none                       Do not print the build summary
+  -j<N>                        Limit concurrent jobs (default is to use all CPU cores)
+  --maxrss <bytes>             Limit memory usage (default is to use available memory)
+  --skip-oom-steps             Instead of failing, skip steps that would exceed --maxrss
+  --test-timeout <timeout>     Limit execution time of unit tests, terminating if exceeded.
+                               The timeout must include a unit: ns, us, ms, s, m, h
+  --fetch[=mode]               Fetch dependency tree (optionally choose laziness) and exit
+    needed                     (Default) Lazy dependencies are fetched as needed
+    all                        Lazy dependencies are always fetched
+  --watch                      Continuously rebuild when source files are modified
+  --debounce <ms>              Delay before rebuilding after changed file detected
+  --webui[=ip]                 Enable the web interface on the given IP address
+  --fuzz[=limit]               Continuously search for unit test failures with an optional
+                               limit to the max number of iterations. The argument supports
+                               an optional 'K', 'M', or 'G' suffix (e.g. '10K'). Implies
+                               '--webui' when no limit is specified.
+  --time-report                Force full rebuild and provide detailed information on
+                               compilation time of Zig source code (implies '--webui')
+     -fincremental             Enable incremental compilation
+  -fno-incremental             Disable incremental compilation
+
 Advanced Options:
   -freference-trace[=num]      How many lines of reference trace should be shown per compile error
   -fno-reference-trace         Disable reference trace
@@ -582,6 +607,13 @@ Advanced Options:
   --zig-lib-dir [arg]          Override path to Zig lib directory
   --build-runner [file]        Override path to build runner
   --seed [integer]             For shuffling dependency traversal order (default: random)
+  --build-id[=style]           At a minor link-time expense, embeds a build ID in binaries
+      fast                     8-byte non-cryptographic hash (COFF, ELF, WASM)
+      sha1, tree               20-byte cryptographic hash (ELF, WASM)
+      md5                      16-byte cryptographic hash (ELF)
+      uuid                     16-byte random UUID (ELF, WASM)
+      0x[hexstring]            Constant ID, maximum 32 bytes (ELF, WASM)
+      none                     (default) No build ID
   --debug-log [scope]          Enable debugging the compiler
   --debug-pkg-config           Fail if unknown pkg-config flags encountered
   --debug-rt                   Debug compiler runtime libraries
@@ -605,25 +637,34 @@ Here are some example build scripts:
 
 - [Build script of OpenGL Tetris game](https://github.com/andrewrk/tetris/blob/master/build.zig)
 - [Build script of bare metal Raspberry Pi 3 arcade game](https://github.com/andrewrk/clashos/blob/master/build.zig)
-- [Build script of self-hosted Zig compiler](https://github.com/ziglang/zig/blob/master/build.zig)
+- [Build script of Zig compiler](https://github.com/ziglang/zig/blob/master/build.zig)
 
 ## Wide range of targets supported
 
 Zig uses a "support tier" system to communicate the level of support for different targets.
 
-[Support Table as of Zig 0.14.0](https://ziglang.org/download/0.14.0/release-notes.html#Target-Support)
+[Support Table as of Zig 0.15](https://ziglang.org/download/0.15.1/release-notes.html#Target-Support)
 
 ## Friendly toward package maintainers
 
-The reference Zig compiler is not completely self-hosted yet, but no matter what, [it will remain exactly 3 steps](https://github.com/ziglang/zig/issues/853) to go from having a system C++ compiler to having a fully self-hosted Zig compiler for any target. As Maya Rashish notes, [porting Zig to other platforms is fun and speedy](http://coypu.sdf.org/porting-zig.html).
+Even though Zig is self-hosted, building from source only depends on system
+C/C++ toolchain and LLVM, using standard CMake build steps thanks to
+[a WebAssembly based bootstrap process](/news/goodbye-cpp/).
+
+For those distributions that want to avoid binary blobs, there is a
+well-documented set of steps to
+[reproduce Zig without binaries](https://jakstys.lt/2024/zig-reproduced-without-binaries/).
+
+In the future, we hope to inspire a third party to implement a Zig interpreter
+written in C that can reduce this to O(1) step.
+
+The build system acknowledges system integration as an explicit intent. For
+example, the `--system <path>` flag disables package fetching and enables all
+`-fsys=[name]` options. Those "system integration options" are available in
+build scripts, allowing package maintainers and upstream developers to
+cooperate. Fewer patches for package maintainers, and upstream authors can make
+intentional choices in response to system integration build configuration.
 
 Non-debug [build modes](https://ziglang.org/documentation/master/#Build-Mode) are reproducible/deterministic.
 
 There is a [JSON version of the download page](https://ziglang.org/download/index.json).
-
-Several members of the Zig team have experience maintaining packages.
-
-- [Daurnimator](https://github.com/daurnimator) maintains the [Arch Linux package](https://archlinux.org/packages/extra/x86_64/zig/)
-- [Marc Tiehuis](https://tiehuis.github.io/) maintains the Visual Studio Code package.
-- [Andrew Kelley](https://andrewkelley.me/) spent a year or so doing [Debian and Ubuntu packaging](https://qa.debian.org/developer.php?login=superjoe30%40gmail.com&comaint=yes), and casually contributes to [nixpkgs](https://github.com/NixOS/nixpkgs/).
-- [Jeff Fowler](https://blog.jfo.click/) maintains the Homebrew package and started the [Sublime package](https://github.com/ziglang/sublime-zig-language) (now maintained by [emekoi](https://github.com/emekoi)).

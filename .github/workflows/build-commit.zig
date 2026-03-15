@@ -157,22 +157,18 @@ pub fn main() !void {
     const now = std.time.timestamp();
 
     const zig_dir = try std.fs.cwd().openDir("../zig", .{ .iterate = true });
-    const work_dir = try std.fs.cwd().openDir("../..", .{});
+    const work_dir = try std.fs.cwd().openDir("..", .{});
     const bootstrap_dir = try work_dir.openDir("zig-bootstrap", .{ .iterate = true });
     const www_dir = try std.fs.cwd().makeOpenPath(www_prefix, .{});
     const builds_dir = try www_dir.makeOpenPath("builds", .{ .iterate = true });
     const std_docs_dir = try www_dir.makeOpenPath("documentation/master/std", .{});
 
     // GitHub passes missing environment variables as empty string.
-    const GITHUB_OUTPUT = env_map.get("GITHUB_OUTPUT").?;
     const ZIG_RELEASE_TAG = env_map.get("ZIG_RELEASE_TAG").?;
     const ZIG_BOOTSTRAP_BRANCH = env_map.get("ZIG_BOOTSTRAP_BRANCH").?;
 
     const zig_release_tag = if (ZIG_RELEASE_TAG.len != 0) ZIG_RELEASE_TAG else null;
     const branch = if (ZIG_BOOTSTRAP_BRANCH.len != 0) ZIG_BOOTSTRAP_BRANCH else "master";
-
-    const github_output = try std.fs.cwd().createFile(GITHUB_OUTPUT, .{});
-    defer github_output.close();
 
     try env_map.put("XZ_OPT", "-9");
     try env_map.put("CMAKE_GENERATOR", "Ninja");
@@ -196,22 +192,11 @@ pub fn main() !void {
 
     const zig_ver, const is_release = if (zig_release_tag) |tag| v: {
         // Manually triggered workflow.
-        try github_output.writeAll("skipped=yes\n"); // Prevent website deploy
         run(&env_map, zig_dir, &.{ "git", "checkout", tag });
         log.info("Building version from commit: {s}", .{tag});
         break :v .{ tag, true };
     } else v: {
-        const GH_TOKEN = env_map.get("GH_TOKEN").?;
-        const json_text = try fetch(
-            "https://api.github.com/repos/ziglang/zig/actions/runs?branch=master&status=success&per_page=1&event=push",
-            .{
-                .authorization = .{ .override = print("Bearer {s}", .{GH_TOKEN}) },
-            },
-            &.{
-                .{ .name = "accept", .value = "application/vnd.github+json" },
-            },
-        );
-        const last_success = pluckLastSuccessFromJson(json_text);
+        const last_success = env_map.get("ZIG_LAST_SUCCESS").?;
         run(&env_map, zig_dir, &.{ "git", "checkout", last_success });
         const zig_ver = try zigVer(&env_map, zig_dir);
         log.info("Last commit with green CI: {s}", .{last_success});
@@ -221,7 +206,6 @@ pub fn main() !void {
         log.info("Last deployed version: {s}", .{last_tarball});
 
         if (std.mem.eql(u8, zig_ver, last_tarball)) {
-            try github_output.writeAll("skipped=yes\n");
             log.info("Versions are equal, nothing to do here.", .{});
             return;
         }

@@ -26,6 +26,7 @@ const releases = [_][]const u8{
     "0.14.0",
     "0.14.1",
     "0.15.1",
+    "0.15.2",
 };
 
 pub fn build(b: *std.Build) void {
