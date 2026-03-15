@@ -117,3 +117,4 @@ Some members of the Zig community have written software for hosting Zig mirrors,
 * [hexops/wrench](https://github.com/hexops/wrench?tab=readme-ov-file#run-your-own-ziglangorgdownload-mirror)
 * [silversquirl/bunny-cdn-instructions](https://gist.github.com/silversquirl/5c8d734ce8e5712eff8126295847e99f)
 * [inge4pres/zigmirror.com](https://github.com/inge4pres/zigmirror.com)
+* [savalione/go-mirror-zig](https://github.com/SavaLione/go-mirror-zig/)
